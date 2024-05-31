@@ -1,0 +1,17 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+    @font-face {
+        font-family: "Lexend";
+        font-optical-sizing: auto;
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('../assets/fonts/Lexend-Regular.ttf') format('ttf');
+    }
+}
