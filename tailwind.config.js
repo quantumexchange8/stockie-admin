@@ -15,13 +15,27 @@ export default {
         //                                  TYPOGRAPHY
         // ----------------------------------------------------------------------------------
         fontSize: {
-            tiny: '10px',
-            xs: '12px',
-            sm: '14px',
-            standard: '16px',
-            md: '20px',
-            lg: '24px',
-            xl: '30px',
+            '2xs': ['10px', {
+                letterSpacing: '-0.2px',
+            }],
+            'xs': ['12px', {
+                letterSpacing: '-0.24px',
+            }],
+            'sm': ['14px', {
+                letterSpacing: '-0.28px',
+            }],
+            'base': ['16px', {
+                letterSpacing: '-0.32px',
+            }],
+            'md': ['20px', {
+                letterSpacing: '-0.4px',
+            }],
+            'lg': ['24px', {
+                letterSpacing: '-0.48px',
+            }],
+            'xl': ['30px', {
+                letterSpacing: '-0.6px',
+            }],
         },
         fontWeight: {
             regular: '400',
