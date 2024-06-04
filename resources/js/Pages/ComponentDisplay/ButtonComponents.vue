@@ -6,6 +6,8 @@ import Button from '@/Components/Button.vue'
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 justify-items-center">
         <!--  -------------------------Left Col----------------------------- -->
         <div class="flex flex-col col-span-1 xl:col-span-6">
+            <h2>Medium Sized Buttons</h2>
+            <h2>Primary</h2>
             <!-- ---------------Variant: Primary, Size: M------------- -->
             <div class="flex flex-col gap-4 mb-12">
                 <!-- State: Default & Hover -->
@@ -64,6 +66,7 @@ import Button from '@/Components/Button.vue'
                     </Button>
                 </div>
             </div>
+            <h2>Secondary</h2>
             <!-- ---------------Variant: Secondary, Size: M------------ -->
             <div class="flex flex-col gap-4 mb-12">
                 <!-- State: Default & Hover -->
@@ -128,6 +131,7 @@ import Button from '@/Components/Button.vue'
                     </Button>
                 </div>
             </div>
+            <h2>Tertiary</h2>
             <!-- ---------------Variant: Tertiary, Size: M-------------- -->
             <div class="flex flex-col gap-4 mb-12">
                 <!-- State: Default & Hover -->
@@ -192,6 +196,7 @@ import Button from '@/Components/Button.vue'
                     </Button>
                 </div>
             </div>
+            <h2>Red</h2>
             <!-- ---------------Variant: Red, Size: M------------------- -->
             <div class="flex flex-col gap-4 mb-12">
                 <!-- State: Default & Hover -->
@@ -261,6 +266,8 @@ import Button from '@/Components/Button.vue'
         <!--  -------------------------Right Col----------------------------- -->
         <!-- Variant: Primary, Size: L -->
         <div class="flex flex-col col-span-1 xl:col-span-6">
+            <h2>Large Sized Buttons</h2>
+            <h2>Primary</h2>
             <!-- ---------------Variant: Primary, Size: L------------- -->
             <div class="flex flex-col gap-4 mb-12">
                 <!-- State: Default & Hover -->
@@ -319,6 +326,7 @@ import Button from '@/Components/Button.vue'
                     </Button>
                 </div>
             </div>
+            <h2>Secondary</h2>
             <!-- ---------------Variant: Secondary, Size: L------------ -->
             <div class="flex flex-col gap-4 mb-12">
                 <!-- State: Default & Hover -->
@@ -383,6 +391,7 @@ import Button from '@/Components/Button.vue'
                     </Button>
                 </div>
             </div>
+            <h2>Tertiary</h2>
             <!-- ---------------Variant: Tertiary, Size: L-------------- -->
             <div class="flex flex-col gap-4 mb-12">
                 <!-- State: Default & Hover -->
@@ -447,6 +456,7 @@ import Button from '@/Components/Button.vue'
                     </Button>
                 </div>
             </div>
+            <h2>Red</h2>
             <!-- ---------------Variant: Red, Size: L------------------- -->
             <div class="flex flex-col gap-4 mb-12">
                 <!-- State: Default & Hover -->

@@ -1,21 +1,21 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import Label from '@/Components/Label.vue'
-// import Tooltip from '@/Components/Tooltip.vue'
+import HintText from '@/Components/HintText.vue'
 import InputError from '@/Components/InputError.vue'
 
 const props = defineProps({
 	inputName: String,
 	modelValue: String,
-    labelValue: String,
+    labelText: String,
     errorMessage: String,
 	inputType: {
 		type: String,
 		default: 'text'
 	},
-    withTooltip: {
-        type: Boolean,
-        default: false
+    hintText: {
+        type: String,
+        default: ''
     },
     disabled: {
         type: Boolean,
@@ -23,7 +23,7 @@ const props = defineProps({
     },
 })
 
-const { inputId, inputName, labelValue, errorMessage, inputType, disabled } = props
+const { inputId, inputName, labelText, errorMessage, inputType, disabled } = props
 
 defineEmits(['update:modelValue'])
 
@@ -46,24 +46,34 @@ onMounted(() => {
 
 <template>
 	<div class="input-wrapper">
-        <span class="flex flex-row gap-2" v-if="labelValue !== ''">
-            <Label
-                :value="labelValue"
-                :for="inputName"
-                class="mb-2"
-            >
-            </Label>
-            <!-- <Tooltip v-if="withTooltip">
-                <slot></slot>
-            </Tooltip> -->
-        </span>
+        <Label
+            :value="labelText"
+            :for="inputName"
+            :class="[
+                    'mb-1 text-xs font-medium',
+                    {
+                        'text-grey-900': disabled === false,
+                        'text-grey-500': disabled === true,
+                    }
+                ]"
+            v-if="labelText !== ''"
+        >
+        </Label>
         <input
             :name="inputName"
             :class="[
-                'min-w-[268px] max-w-[268px] min-h-[44px] max-h-[44px] py-3 px-4 rounded-[5px]',
-                'placeholder-grey-200 text-base text-grey-700 border-grey-300 active:ring-0',
+                'min-w-[268px] max-w-[268px] min-h-[44px] max-h-[44px] py-3 px-4 mb-1',
+                'rounded-[5px] text-base text-grey-700 active:ring-0',
                 'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                 'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
+                {
+                    'placeholder:text-grey-200': labelText === '',
+                    'placeholder:text-transparent': labelText !== '',
+                    'placeholder:text-grey-200 border-grey-100': disabled === true,
+                    'border-grey-300': disabled === false,
+                    'border-red-500 focus:border-red-500 hover:border-red-500': errorMessage,
+                }
             ]"
             :type="inputType"
             :value="modelValue"
@@ -71,6 +81,10 @@ onMounted(() => {
             ref="input"
             :disabled="disabled"
             :placeholder="'Placeholder Text'"
+        />
+        <HintText 
+            v-if="hintText !== ''"
+            :hintText="hintText"
         />
         <InputError
             :message="errorMessage"

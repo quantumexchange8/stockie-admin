@@ -37,15 +37,6 @@ export default {
                 letterSpacing: '-0.6px',
             }],
         },
-        fontWeight: {
-            regular: '400',
-            medium: '500',
-            semibold: '600',
-            bold: '700',
-        },
-        lineHeight: {
-            normal: '1.5',
-        },
         letterSpacing: {
             tiny: '-0.2px',
             xs: '-0.24px',

@@ -5,170 +5,68 @@ import TextInput from '@/Components/TextInput.vue'
 <template>
     <div class="flex flex-col gap-16 items-center">
         <!--  -------------------------Labelled Text Input----------------------------- -->
+        <h2>Labelled Text Input</h2>
         <div class="flex flex-col gap-2 w-max-[100%]">
-            <!-- ---------------State: Default------------- -->
+            <!-- ---------------State: Default & Hover------------- -->
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
-                <!-- Hint: No, Error: No -->
+                <!-- Hint: No, Error: No --> 
                 <TextInput
                     :inputId="'label'"
                     class="col-span-full xl:col-span-4"
-                >
-                </TextInput>
+                    :labelText="'Label'"
+                />
                 <!-- Hint: Yes, Error: No -->
                 <TextInput
                     class="xl:col-span-4"
-                >
-                </TextInput>
+                    :hintText="'Hint text to help user'"
+                    :labelText="'Label'"
+                />
                 <!-- Hint: No, Error: Yes -->
                 <TextInput
                     class="xl:col-span-4"
-                >
-                </TextInput>
-            </div>
-            <!-- ---------------State: Hover------------ -->
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
-                <!-- Hint: No, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: Yes, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: No, Error: Yes -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
+                    :errorMessage="'This is an error message'"
+                    :labelText="'Label'"
+                />
             </div>
             <!-- ---------------State: Active-------------- -->
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
                 <!-- Hint: No, Error: No -->
                 <TextInput
                     class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: Yes, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: No, Error: Yes -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-            </div>
-            <!-- ---------------State: Filled------------------- -->
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
-                <!-- Hint: No, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: Yes, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: No, Error: Yes -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-            </div>
-            <!-- ---------------State: Disabled------------------- -->
-            <div class="flex gap-20 mb-12">
-                <!-- Hint: No, Error: No -->
-                <TextInput
-                >
-                </TextInput>
+                    :disabled="true"
+                    :labelText="'Label'"
+                />
             </div>
         </div>
         
         <!--  -------------------------Text Input--------------------------------------- -->
-        <!-- Variant: Primary, Size: L -->
+        <h2>Text Input</h2>
         <div class="flex flex-col gap-4">
-            <!-- ---------------Variant: Primary, Size: M------------- -->
+            <!-- ---------------State: Default & Hover------------- -->
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
+                <!-- Hint: No, Error: No --> 
+                <TextInput
+                    :inputId="'label'"
+                    class="col-span-full xl:col-span-4"
+                />
+                <!-- Hint: Yes, Error: No -->
+                <TextInput
+                    class="xl:col-span-4"
+                    :hintText="'Hint text to help user'"
+                />
+                <!-- Hint: No, Error: Yes -->
+                <TextInput
+                    class="xl:col-span-4"
+                    :errorMessage="'This is an error message'"
+                />
+            </div>
+            <!-- ---------------State: Active-------------- -->
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
                 <!-- Hint: No, Error: No -->
                 <TextInput
                     class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: Yes, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: No, Error: Yes -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-            </div>
-            <!-- ---------------Variant: Secondary, Size: M------------ -->
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
-                <!-- Hint: No, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: Yes, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: No, Error: Yes -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-            </div>
-            <!-- ---------------Variant: Tertiary, Size: M-------------- -->
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
-                <!-- Hint: No, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: Yes, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: No, Error: Yes -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-            </div>
-            <!-- ---------------Variant: Red, Size: M------------------- -->
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-20 mb-12 self-center">
-                <!-- Hint: No, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: Yes, Error: No -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-                <!-- Hint: No, Error: Yes -->
-                <TextInput
-                    class="xl:col-span-4"
-                >
-                </TextInput>
-            </div>
-            <!-- ---------------Variant: Red, Size: M------------------- -->
-            <div class="flex gap-20 mb-12">
-                <!-- Hint: No, Error: No -->
-                <TextInput
-                >
-                </TextInput>
+                    :disabled="true"
+                />
             </div>
         </div>
     </div>

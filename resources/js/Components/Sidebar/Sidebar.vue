@@ -1,0 +1,60 @@
+<script setup>
+import { onMounted } from 'vue'
+import { router } from '@inertiajs/vue3'
+import { sidebarState } from '@/Composables'
+import SidebarHeader from '@/Components/Sidebar/SidebarHeader.vue'
+import SidebarContent from '@/Components/Sidebar/SidebarContent.vue'
+import SidebarFooter from '@/Components/Sidebar/SidebarFooter.vue'
+
+onMounted(() => {
+    // window.addEventListener('resize', sidebarState.handleWindowResize)
+
+    sidebarState.isOpen = true
+
+    // router.on('navigate', () => {
+    //     if (window.innerWidth <= 1024) {
+    //         sidebarState.isOpen = false
+    //     }
+    // })
+})
+</script>
+
+<template>
+    <!-- <transition
+        enter-active-class="transition"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+    >
+        <div
+            v-show="sidebarState.isOpen"
+            @click="sidebarState.isOpen = false"
+            class="fixed inset-0 z-20 bg-black/50 lg:hidden"
+        ></div>
+    </transition> -->
+
+    <aside
+        style="
+            transition-property: width, transform;
+            transition-duration: 150ms;
+        "
+        :class="[
+            'fixed inset-y-0 p-4 m-4 flex flex-col justify-between dark:bg-dark-eval-1 w-[251px] max-h-[1024px]',
+            {
+                'translate-x-0 w-[283px] z-20':
+                    sidebarState.isOpen,
+                '-translate-x-full w-0 md:translate-x-0 z-0':
+                    !sidebarState.isOpen,
+            },
+        ]"
+    >
+        <div class="flex flex-col gap-[32px]">
+            <SidebarHeader />
+            <SidebarContent />
+        </div>
+
+        <SidebarFooter />
+    </aside>
+</template>
