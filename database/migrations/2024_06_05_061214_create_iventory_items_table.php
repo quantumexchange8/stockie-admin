@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('iventory_items', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('inventory_id');
+            $table->string('item_name');
+            $table->string('item_code');
+            $table->double('unit')->default(0);
+            $table->double('stock_qty')->default(0);
+            $table->string('status');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('iventory_items');
+    }
+};
