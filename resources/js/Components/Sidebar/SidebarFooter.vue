@@ -4,6 +4,7 @@ import Button from '@/Components/Button.vue'
 import { sidebarState } from '@/Composables'
 import DropdownLink from '@/Components/DropdownLink.vue';
 import SidebarLink from '@/Components/Sidebar/SidebarLink.vue'
+import { OutIcon } from '@/Components/Icons/solid';
 </script>
 
 <template>
@@ -14,10 +15,9 @@ import SidebarLink from '@/Components/Sidebar/SidebarLink.vue'
             class="" 
         >
             <template #icon>
-                <!-- <DashboardIcon 
-                    class="flex-shrink-0 w-6 h-6" 
+                <OutIcon 
                     aria-hidden="true" 
-                /> -->
+                />
             </template>
         </SidebarLink>
     </div>

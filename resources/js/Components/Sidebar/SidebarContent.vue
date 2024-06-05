@@ -5,7 +5,11 @@ import SidebarLink from '@/Components/Sidebar/SidebarLink.vue'
 // import { TemplateIcon } from '@heroicons/vue/outline'
 import DropdownLink from '@/Components/DropdownLink.vue';
 import { sidebarState } from '@/Composables'
-// import { HomeIcon } from '@/Components/Icons/solid';
+import { 
+    HomeIcon, OrderIcon, MenuIcon, OperationIcon, SummaryReportIcon, 
+    BillingIcon, ConfigurationIcon, AdminUserIcon, OutIcon, WaiterIcon, 
+    InventoryIcon, CustomerIcon, TableRoomIcon, LoyaltyIcon 
+} from '@/Components/Icons/solid';
 </script>
 
 <template>
@@ -19,7 +23,9 @@ import { sidebarState } from '@/Composables'
             :active="route().current('dashboard')"
         >
             <template #icon>
-                <!-- <HomeIcon /> -->
+                <HomeIcon 
+                    aria-hidden="true" 
+                />
             </template>
         </SidebarLink>
 
@@ -31,10 +37,9 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <OrderIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
                 <SidebarLink 
@@ -42,10 +47,9 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <MenuIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
             </div>
@@ -59,10 +63,9 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <InventoryIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
                 <SidebarLink 
@@ -70,10 +73,9 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <WaiterIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
                 <SidebarLink 
@@ -81,10 +83,9 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <CustomerIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
                 <SidebarLink 
@@ -92,10 +93,9 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <TableRoomIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
             </div>
@@ -109,10 +109,9 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <LoyaltyIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
                 <SidebarLink 
@@ -120,10 +119,9 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <SummaryReportIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
                 <SidebarLink 
@@ -131,23 +129,12 @@ import { sidebarState } from '@/Composables'
                     :href="route('dashboard')" 
                 >
                     <template #icon>
-                        <!-- <DashboardIcon 
-                            class="flex-shrink-0 w-6 h-6" 
+                        <ConfigurationIcon 
                             aria-hidden="true" 
-                        /> -->
+                        />
                     </template>
                 </SidebarLink>
             </div>
         </div>
-        
-        <!-- <SidebarLink 
-            title="Log Out" 
-            :href="route('logout')" 
-            method="post" 
-            as="button"
-        >
-            <template #icon>
-            </template>
-        </SidebarLink> -->
     </div>
 </template>
