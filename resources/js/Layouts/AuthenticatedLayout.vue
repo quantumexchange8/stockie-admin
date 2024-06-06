@@ -1,5 +1,6 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
+import { onMounted } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
 import { sidebarState, rightSidebarState } from '@/Composables'
 import { NotificationIcon, LanguageIcon, LogOutIcon } from '@/Components/Icons/solid';
@@ -8,6 +9,9 @@ defineProps({
     title: String
 })
 
+onMounted(() => {
+    rightSidebarState.isOpen = false
+})
 </script>
 
 <template>
@@ -30,6 +34,7 @@ defineProps({
                 style="transition-property: margin; transition-duration: 150ms"
                 :class="[
                     'flex flex-col backdrop-blur-[25.700000762939453px] my-[33px] mr-[25px] h-full',
+                    'justify-center h-[1520px] flex-shrink-0',
                     'shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] rounded-[8px] bg-white',
                     {
                         'lg:ml-[315px]': sidebarState.isOpen,
@@ -38,7 +43,7 @@ defineProps({
                 ]"
             >
                 <!-- Page Heading -->
-                <header class="pl-6" v-if="$slots.header">
+                <header class="pl-6 flex flex-col items-center gap-[10px]" v-if="$slots.header">
                     <div class="flex flex-col items-start gap-[19px] self-stretch pt-8">
                         <div class="flex items-center justify-between self-stretch pr-6">
                             <div class="flex items-center gap-[20px]">
@@ -80,7 +85,7 @@ defineProps({
                             <div class="flex items-start gap-3">
                                 <NotificationIcon 
                                     :withNotification="true"
-                                    :notificationValue="2"
+                                    :notificationValue="1"
                                     aria-hidden="true" 
                                 />
                                 <LanguageIcon 
@@ -96,8 +101,10 @@ defineProps({
                 </header>
 
                 <!-- Page Content -->
-                <main class="max-w-[1440px] flex-1 w-full self-center flex justify-center items-start gap-[10px] flex-shrink">
-                    <slot />
+                <main class="max-w-[1440px] self-stretch flex-[1_0_0] m-auto border border-red-900">
+                    <div class="flex h-[1410px] flex-col self-center gap-[10px] flex-shrink-0 pl-[22px] pr-[20px] pt-[21px] pb-[23px]">
+                        <slot />
+                    </div>
                 </main>
             </div>
         </div>
