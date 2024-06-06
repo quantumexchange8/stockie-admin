@@ -12,7 +12,7 @@ defineProps({
 })
 
 onMounted(() => {
-    rightSidebarState.isOpen = false
+    rightSidebarState.isOpen = true
 })
 </script>
 
@@ -24,9 +24,9 @@ onMounted(() => {
                 transition-duration: 1150ms;
             "
             :class="[
-                'fixed !z-50 inset-y-0 right-0 flex flex-col items-start gap-[8px] w-[507px] max-h-[1024px] bg-[#FFF] self-stretch',
+                'fixed inset-y-0 right-0 flex flex-col items-start gap-[8px] w-[507px] max-h-[1024px] bg-[#FFF] self-stretch',
                 {
-                    'translate-x-0 w-[283px]':
+                    'translate-x-0 w-[283px] z-20':
                         rightSidebarState.isOpen,
                     'translate-x-full -right-10 w-0 md:translate-x-0 hidden':
                         !rightSidebarState.isOpen,

@@ -7,7 +7,7 @@ import SidebarContent from '@/Components/Sidebar/SidebarContent.vue'
 import SidebarFooter from '@/Components/Sidebar/SidebarFooter.vue'
 
 onMounted(() => {
-    // window.addEventListener('resize', sidebarState.handleWindowResize)
+    window.addEventListener('resize', sidebarState.handleWindowResize)
 
     sidebarState.isOpen = true
 
@@ -41,11 +41,11 @@ onMounted(() => {
             transition-duration: 150ms;
         "
         :class="[
-            'fixed inset-y-0 p-4 m-4 flex flex-col justify-between dark:bg-dark-eval-1 w-[251px] max-h-[1024px]',
+            'fixed inset-y-0 p-4 m-4 flex flex-col justify-between w-[251px] max-h-[1024px]',
             {
                 'translate-x-0 w-[283px] z-20':
                     sidebarState.isOpen,
-                '-translate-x-full w-0 md:translate-x-0 z-0':
+                '-translate-x-full w-0 md:translate-x-0 z-0 !hidden':
                     !sidebarState.isOpen,
             },
         ]"

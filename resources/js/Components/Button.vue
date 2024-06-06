@@ -119,9 +119,23 @@ const Tag = external ?  'a' : Link
 </script>
 
 <style scoped>
-:slotted(slot) {
-  color: red;
+/* Add styles for the slot container */
+.icon-slot-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
 }
+
+.margin-right {
+  margin-right: 6px;
+}
+
+.margin-left {
+  margin-left: 6px;
+}
+
 </style>
 
 <template>
@@ -164,35 +178,39 @@ const Tag = external ?  'a' : Link
             }"
             v-if="iconPosition === 'left'"
         >
-            <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="16" 
-                height="16" 
-                viewBox="0 0 16 16" 
-                fill="none"
-                class="self-center mr-[6px]"
-            >
-                <g clip-path="url(#clip0_16_1351)">
-                    <path 
-                        d="M8.00016 14.6666C11.6821 14.6666 14.6668 11.6818 14.6668 7.99992C14.6668 
-                            4.31802 11.6821 1.33325 8.00016 1.33325C4.31826 1.33325 1.3335 4.31802 
-                            1.3335 7.99992C1.3335 11.6818 4.31826 14.6666 8.00016 14.6666Z" 
-                        stroke="currentcolor" 
-                        stroke-width="2" 
-                        stroke-linecap="round" 
-                        stroke-linejoin="round"
-                    />
-                </g>
-                <defs>
-                    <clipPath id="clip0_16_1351">
-                        <rect 
-                            width="16" 
-                            height="16" 
-                            fill="white"
-                        />
-                    </clipPath>
-                </defs>
-            </svg>
+            <span class="icon-slot-container margin-right">
+                <slot name="icon">
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 16 16" 
+                        fill="none"
+                        class="self-center"
+                    >
+                        <g clip-path="url(#clip0_16_1351)">
+                            <path 
+                                d="M8.00016 14.6666C11.6821 14.6666 14.6668 11.6818 14.6668 7.99992C14.6668 
+                                    4.31802 11.6821 1.33325 8.00016 1.33325C4.31826 1.33325 1.3335 4.31802 
+                                    1.3335 7.99992C1.3335 11.6818 4.31826 14.6666 8.00016 14.6666Z" 
+                                stroke="currentcolor" 
+                                stroke-width="2" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"
+                            />
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_16_1351">
+                                <rect 
+                                    width="16" 
+                                    height="16" 
+                                    fill="white"
+                                />
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </slot>
+            </span>
             <slot :iconSizeClasses="iconSizeClasses" />
         </span>
         <span 
@@ -205,35 +223,39 @@ const Tag = external ?  'a' : Link
         >
             <slot :iconSizeClasses="iconSizeClasses" />
         
-            <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="16" 
-                height="16" 
-                viewBox="0 0 16 16" 
-                fill="none"
-                class="self-center ml-[6px]"
-            >
-                <g clip-path="url(#clip0_16_1351)">
-                    <path 
-                        d="M8.00016 14.6666C11.6821 14.6666 14.6668 11.6818 14.6668 7.99992C14.6668 
-                            4.31802 11.6821 1.33325 8.00016 1.33325C4.31826 1.33325 1.3335 4.31802 
-                            1.3335 7.99992C1.3335 11.6818 4.31826 14.6666 8.00016 14.6666Z" 
-                        stroke="currentcolor" 
-                        stroke-width="2" 
-                        stroke-linecap="round" 
-                        stroke-linejoin="round"
-                    />
-                </g>
-                <defs>
-                    <clipPath id="clip0_16_1351">
-                        <rect 
-                            width="16" 
-                            height="16" 
-                            fill="white"
-                        />
-                    </clipPath>
-                </defs>
-            </svg>
+            <span class="icon-slot-container margin-left">
+                <slot name="icon">
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 16 16" 
+                        fill="none"
+                        class="self-center ml-[6px]"
+                    >
+                        <g clip-path="url(#clip0_16_1351)">
+                            <path 
+                                d="M8.00016 14.6666C11.6821 14.6666 14.6668 11.6818 14.6668 7.99992C14.6668 
+                                    4.31802 11.6821 1.33325 8.00016 1.33325C4.31826 1.33325 1.3335 4.31802 
+                                    1.3335 7.99992C1.3335 11.6818 4.31826 14.6666 8.00016 14.6666Z" 
+                                stroke="currentcolor" 
+                                stroke-width="2" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"
+                            />
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_16_1351">
+                                <rect 
+                                    width="16" 
+                                    height="16" 
+                                    fill="white"
+                                />
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </slot>
+            </span>
         </span>
         <span 
             class="flex justify-center items-center"

@@ -712,108 +712,120 @@ export const NotificationIcon = defineComponent({
         },
     },
     setup(props) {
-        return () => (
-            // Default
-            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-[3.799px] py-[2px] pr-[3.829px] text-red-900 hover:text-red-800">
-                <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="18" 
-                    height="20" 
-                    viewBox="0 0 18 20" 
-                    fill="none"
-                >
-                    <path 
-                        d="M17.1597 14C17.1986 13.565 17.1336 13.1269 16.9702 12.7218C16.8068 12.3168 16.5496 
-                        11.9563 16.2197 11.67C15.7024 11.2297 15.3498 10.6268 15.2197 9.96L14.6097 6.29C14.4246 
-                        5.12484 13.8812 4.04624 13.0551 3.20399C12.229 2.36174 11.1611 1.79763 9.99972 1.59V1C9.99972 
-                        0.734784 9.89436 0.48043 9.70682 0.292893C9.51929 0.105357 9.26493 0 8.99972 0C8.7345 0 
-                        8.48015 0.105357 8.29261 0.292893C8.10507 0.48043 7.99972 0.734784 7.99972 1V1.59C6.83429 
-                        1.79137 5.76079 2.35151 4.92899 3.19228C4.09719 4.03304 3.54859 5.11248 3.35972 6.28L2.73972 
-                        10C2.63103 10.6499 2.30278 11.2429 1.80972 11.68L1.71972 11.76C1.30529 12.1255 1.01201 12.6085 
-                        0.878915 13.1448C0.745816 13.6811 0.779213 14.2452 0.974659 14.7621C1.1701 15.2789 1.51833 
-                        15.724 1.97298 16.038C2.42764 16.3521 2.96715 16.5202 3.51972 16.52H14.4397C15.1271 16.5195 
-                        15.789 16.2598 16.2932 15.7926C16.7974 15.3255 17.1068 14.6853 17.1597 14Z" 
-                        fill="currentColor"
-                    />
-                    <path 
-                        d="M8.99883 20C9.71498 20.01 10.4111 19.7635 10.9613 19.305C11.5115 18.8464 11.8795 18.2062 
-                        11.9988 17.5H6.04883C6.16676 18.1977 6.52749 18.8312 7.0673 19.2887C7.60711 19.7462 8.29125 
-                        19.9981 8.99883 20Z" 
-                        fill="currentColor"
-                    />
-                </svg>
-            </span>
-            // Figma design for this notification with number unable create, need readjust
+        const showDefaultIcon = computed(() => !props.withNotification);
+        const showNotificationIcon = computed(() => props.withNotification);
 
-            // on Hover
-            // <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-[1.925px] py-0 pr-[1.629px]">
-            //     <svg 
-            //         xmlns="http://www.w3.org/2000/svg" 
-            //         width="22" 
-            //         height="23" 
-            //         viewBox="0 0 22 23" 
-            //         fill="none"
-            //     >
-            //         <path 
-            //             d="M17.3165 18.1265C17.4794 17.7212 17.5438 17.2831 17.5043 16.8481C17.4649 16.4131 17.3228 15.9937 17.0897 
-            //             15.6243C16.7216 15.0533 16.5582 14.3743 16.6263 13.6983L17.1024 10.0086C17.2617 8.8396 17.0531 7.65002 16.5055 
-            //             6.60504C15.9579 5.56005 15.0985 4.71151 14.0466 4.17725L14.217 3.6124C14.2937 3.35849 14.2663 3.08455 14.1409 
-            //             2.85083C14.0155 2.61712 13.8025 2.44278 13.5485 2.36617C13.2946 2.28955 13.0207 2.31694 12.787 2.44231C12.5533 
-            //             2.56768 12.3789 2.78076 12.3023 3.03467L12.1319 3.59951C10.958 3.45565 9.76842 3.68181 8.72921 4.24645C7.69 
-            //             4.81109 6.85297 5.68604 6.33489 6.74923L4.66673 10.1315C4.37495 10.7223 3.88939 11.1952 3.29108 11.4713L3.18181 
-            //             11.5219C2.67948 11.7521 2.25916 12.1298 1.97682 12.6048C1.69448 13.0798 1.5635 13.6295 1.60131 14.1807C1.63912 
-            //             14.732 1.84394 15.2587 2.1885 15.6907C2.53305 16.1227 3.001 16.4395 3.53006 16.5989L13.9845 19.7533C14.6427 
-            //             19.9514 15.3514 19.894 15.9691 19.5924C16.5868 19.2908 17.0679 18.7673 17.3165 18.1265Z" 
-            //             fill="#9F151A"
-            //         />
-            //         <path 
-            //             d="M7.67278 21.6525C8.35475 21.8714 9.09251 21.839 9.75269 21.5613C10.4129 21.2835 10.9519 20.7788 11.2724 
-            //             20.1383L5.58203 18.3997C5.49095 19.1014 5.65082 19.8127 6.0334 20.4079C6.41598 21.0031 6.99664 21.444 7.67278 21.6525Z" 
-            //             fill="#9F151A"
-            //         />
-            //     </svg>
-            // </span>
-            // <span class="flex flex-col w-6 h-6 justify-center items-center flex-shrink-0 pl-[3.799px] py-[2px] pr-[1.002px]">
-            //     <span 
-            //         class="flex flex-col justify-center items-center gap-[5px] flex-shrink-0 w-[10px] h-[10px] p-[5px] 
-            //                 rounded-[15px] border border-white bg-red-500"
-            //     >
-            //         <p class="text-red-25 text-center text-[5px] leading-[-0.1px]">{props.notificationValue}</p>
-            //     </span>
-            //     <svg 
-            //         xmlns="http://www.w3.org/2000/svg" 
-            //         width="18" 
-            //         height="17" 
-            //         viewBox="0 0 18 17" 
-            //         fill="none"
-            //     >
-            //         <path 
-            //             d="M17.1597 14C17.1986 13.565 17.1336 13.1269 16.9702 12.7218C16.8068 12.3168 16.5496 11.9563 16.2197 
-            //             11.67C15.7024 11.2297 15.3498 10.6268 15.2197 9.96L14.6097 6.29C14.4246 5.12484 13.8812 4.04624 13.0551 
-            //             3.20399C12.229 2.36174 11.1611 1.79763 9.99972 1.59V1C9.99972 0.734784 9.89436 0.48043 9.70682 
-            //             0.292893C9.51929 0.105357 9.26493 0 8.99972 0C8.7345 0 8.48015 0.105357 8.29261 0.292893C8.10507 0.48043 
-            //             7.99972 0.734784 7.99972 1V1.59C6.83429 1.79137 5.76079 2.35151 4.92899 3.19228C4.09719 4.03304 3.54859 
-            //             5.11248 3.35972 6.28L2.73972 10C2.63103 10.6499 2.30278 11.2429 1.80972 11.68L1.71972 11.76C1.30529 12.1255 
-            //             1.01201 12.6085 0.878915 13.1448C0.745816 13.6811 0.779213 14.2452 0.974659 14.7621C1.1701 15.2789 1.51833 
-            //             15.724 1.97298 16.038C2.42764 16.3521 2.96715 16.5202 3.51972 16.52H14.4397C15.1271 16.5195 15.789 16.2598 
-            //             16.2932 15.7926C16.7974 15.3255 17.1068 14.6853 17.1597 14Z" 
-            //             fill="#7E171B"
-            //         />
-            //     </svg>
-            //     <svg 
-            //         xmlns="http://www.w3.org/2000/svg" 
-            //         width="6" 
-            //         height="3" 
-            //         viewBox="0 0 6 3" 
-            //         fill="none"
-            //     >
-            //         <path 
-            //             d="M2.99883 3C3.71498 3.01001 4.41108 2.76347 4.96129 2.30496C5.51151 1.84644 5.87953 1.20621 5.99883 
-            //             0.5H0.0488281C0.166756 1.19768 0.527494 1.83123 1.0673 2.2887C1.60711 2.74616 2.29125 2.9981 2.99883 3Z" 
-            //             fill="#7E171B"
-            //         />
-            //     </svg>
-            // </span>
+        return () => (
+            <span>
+                {/* // Default */}
+                {showDefaultIcon.value && (
+                    <span class="default-icon flex w-6 h-6 justify-center items-center flex-shrink-0 pl-[3.799px] py-[2px] pr-[3.829px] text-white hover:text-red-800">
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            width="18" 
+                            height="20" 
+                            viewBox="0 0 18 20" 
+                            fill="none"
+                        >
+                            <path 
+                                d="M17.1597 14C17.1986 13.565 17.1336 13.1269 16.9702 12.7218C16.8068 12.3168 16.5496 
+                                11.9563 16.2197 11.67C15.7024 11.2297 15.3498 10.6268 15.2197 9.96L14.6097 6.29C14.4246 
+                                5.12484 13.8812 4.04624 13.0551 3.20399C12.229 2.36174 11.1611 1.79763 9.99972 1.59V1C9.99972 
+                                0.734784 9.89436 0.48043 9.70682 0.292893C9.51929 0.105357 9.26493 0 8.99972 0C8.7345 0 
+                                8.48015 0.105357 8.29261 0.292893C8.10507 0.48043 7.99972 0.734784 7.99972 1V1.59C6.83429 
+                                1.79137 5.76079 2.35151 4.92899 3.19228C4.09719 4.03304 3.54859 5.11248 3.35972 6.28L2.73972 
+                                10C2.63103 10.6499 2.30278 11.2429 1.80972 11.68L1.71972 11.76C1.30529 12.1255 1.01201 12.6085 
+                                0.878915 13.1448C0.745816 13.6811 0.779213 14.2452 0.974659 14.7621C1.1701 15.2789 1.51833 
+                                15.724 1.97298 16.038C2.42764 16.3521 2.96715 16.5202 3.51972 16.52H14.4397C15.1271 16.5195 
+                                15.789 16.2598 16.2932 15.7926C16.7974 15.3255 17.1068 14.6853 17.1597 14Z" 
+                                fill="currentColor"
+                            />
+                            <path 
+                                d="M8.99883 20C9.71498 20.01 10.4111 19.7635 10.9613 19.305C11.5115 18.8464 11.8795 18.2062 
+                                11.9988 17.5H6.04883C6.16676 18.1977 6.52749 18.8312 7.0673 19.2887C7.60711 19.7462 8.29125 
+                                19.9981 8.99883 20Z" 
+                                fill="currentColor"
+                            />
+                        </svg>
+                    </span>
+                )}
+
+                {/* With Notification Icon */}
+                {showNotificationIcon.value && (
+                    <span class="icon-wrapper flex flex-col w-6 h-6 justify-center items-center flex-shrink-0 pl-[3.799px] py-[2px] pr-[1.002px]">
+                        <div 
+                            class="notification-icon"
+                        >
+                            <p class="notification-icon-value">{props.notificationValue}</p>
+                        </div>
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            width="18" 
+                            height="17" 
+                            viewBox="0 0 18 17" 
+                            fill="none"
+                        >
+                            <path 
+                                d="M17.1597 14C17.1986 13.565 17.1336 13.1269 16.9702 12.7218C16.8068 12.3168 16.5496 11.9563 16.2197 
+                                11.67C15.7024 11.2297 15.3498 10.6268 15.2197 9.96L14.6097 6.29C14.4246 5.12484 13.8812 4.04624 13.0551 
+                                3.20399C12.229 2.36174 11.1611 1.79763 9.99972 1.59V1C9.99972 0.734784 9.89436 0.48043 9.70682 
+                                0.292893C9.51929 0.105357 9.26493 0 8.99972 0C8.7345 0 8.48015 0.105357 8.29261 0.292893C8.10507 0.48043 
+                                7.99972 0.734784 7.99972 1V1.59C6.83429 1.79137 5.76079 2.35151 4.92899 3.19228C4.09719 4.03304 3.54859 
+                                5.11248 3.35972 6.28L2.73972 10C2.63103 10.6499 2.30278 11.2429 1.80972 11.68L1.71972 11.76C1.30529 12.1255 
+                                1.01201 12.6085 0.878915 13.1448C0.745816 13.6811 0.779213 14.2452 0.974659 14.7621C1.1701 15.2789 1.51833 
+                                15.724 1.97298 16.038C2.42764 16.3521 2.96715 16.5202 3.51972 16.52H14.4397C15.1271 16.5195 15.789 16.2598 
+                                16.2932 15.7926C16.7974 15.3255 17.1068 14.6853 17.1597 14Z" 
+                                fill="currentColor"
+                            />
+                        </svg>
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            width="6" 
+                            height="3" 
+                            viewBox="0 0 6 3" 
+                            fill="none"
+                        >
+                            <path 
+                                d="M2.99883 3C3.71498 3.01001 4.41108 2.76347 4.96129 2.30496C5.51151 1.84644 5.87953 1.20621 5.99883 
+                                0.5H0.0488281C0.166756 1.19768 0.527494 1.83123 1.0673 2.2887C1.60711 2.74616 2.29125 2.9981 2.99883 3Z" 
+                                fill="currentColor"
+                            />
+                        </svg>
+                    </span>
+                )}
+            </span>
+            
+
+                // Figma design for this notification with number unable create, need readjust
+
+                // On Hover Icon
+                // <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-[1.925px] py-0 pr-[1.629px]">
+                //     <svg 
+                //         xmlns="http://www.w3.org/2000/svg" 
+                //         width="22" 
+                //         height="23" 
+                //         viewBox="0 0 22 23" 
+                //         fill="none"
+                //     >
+                //         <path 
+                //             d="M17.3165 18.1265C17.4794 17.7212 17.5438 17.2831 17.5043 16.8481C17.4649 16.4131 17.3228 15.9937 17.0897 
+                //             15.6243C16.7216 15.0533 16.5582 14.3743 16.6263 13.6983L17.1024 10.0086C17.2617 8.8396 17.0531 7.65002 16.5055 
+                //             6.60504C15.9579 5.56005 15.0985 4.71151 14.0466 4.17725L14.217 3.6124C14.2937 3.35849 14.2663 3.08455 14.1409 
+                //             2.85083C14.0155 2.61712 13.8025 2.44278 13.5485 2.36617C13.2946 2.28955 13.0207 2.31694 12.787 2.44231C12.5533 
+                //             2.56768 12.3789 2.78076 12.3023 3.03467L12.1319 3.59951C10.958 3.45565 9.76842 3.68181 8.72921 4.24645C7.69 
+                //             4.81109 6.85297 5.68604 6.33489 6.74923L4.66673 10.1315C4.37495 10.7223 3.88939 11.1952 3.29108 11.4713L3.18181 
+                //             11.5219C2.67948 11.7521 2.25916 12.1298 1.97682 12.6048C1.69448 13.0798 1.5635 13.6295 1.60131 14.1807C1.63912 
+                //             14.732 1.84394 15.2587 2.1885 15.6907C2.53305 16.1227 3.001 16.4395 3.53006 16.5989L13.9845 19.7533C14.6427 
+                //             19.9514 15.3514 19.894 15.9691 19.5924C16.5868 19.2908 17.0679 18.7673 17.3165 18.1265Z" 
+                //             fill="#9F151A"
+                //         />
+                //         <path 
+                //             d="M7.67278 21.6525C8.35475 21.8714 9.09251 21.839 9.75269 21.5613C10.4129 21.2835 10.9519 20.7788 11.2724 
+                //             20.1383L5.58203 18.3997C5.49095 19.1014 5.65082 19.8127 6.0334 20.4079C6.41598 21.0031 6.99664 21.444 7.67278 21.6525Z" 
+                //             fill="#9F151A"
+                //         />
+                //     </svg>
+                // </span>
 
         )
     },
@@ -822,13 +834,14 @@ export const NotificationIcon = defineComponent({
 export const LanguageIcon = defineComponent({
     setup() {
         return () => (
-            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pt-[2px] px-[2.01px] pb-[1.689px] text-red-900 hover:text-red-800">
+            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pt-[2px] px-[2.01px] pb-[1.689px]">
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     width="20" 
                     height="21" 
                     viewBox="0 0 20 21" 
                     fill="none"
+                    class="icon-wrapper"
                 >
                     <path 
                         d="M10 6C9.60218 6 9.22064 6.15804 8.93934 6.43934C8.65804 6.72064 8.5 7.10218 8.5 7.5V8.5H11.5V7.5C11.5 
@@ -857,13 +870,14 @@ export const LanguageIcon = defineComponent({
 export const LogOutIcon = defineComponent({
     setup() {
         return () => (
-            <span class="w-6 h-6 flex-shrink-0 text-red-900 hover:text-red-800">
+            <span class="w-6 h-6 flex-shrink-0">
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     width="24" 
                     height="24" 
                     viewBox="0 0 24 24" 
                     fill="none"
+                    class="icon-wrapper"
                 >
                     <path 
                         d="M4.91919 19.0711C3.52067 17.6726 2.56826 15.8907 2.1824 13.951C1.79654 12.0112 
@@ -899,13 +913,14 @@ export const LogOutIcon = defineComponent({
 export const EditIcon = defineComponent({
     setup() {
         return () => (
-            <span class="w-6 h-6 flex-shrink-0 text-red-900 hover:text-red-800">
+            <span class="w-6 h-6 flex-shrink-0">
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     width="24" 
                     height="24" 
                     viewBox="0 0 24 24" 
                     fill="none"
+                    class="icon-wrapper"
                 >
                     <path 
                         d="M4.34294 16.2761L4.00728 19.0547C3.99156 19.173 4.00137 19.2933 4.03606 19.4075C4.07075 19.5217 
@@ -943,13 +958,14 @@ export const EditIcon = defineComponent({
 export const ViewIcon = defineComponent({
     setup() {
         return () => (
-            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-1 pt-[3px] pb-[2.372px] pr-[4.2px] text-red-900 hover:text-red-800">
+            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-1 pt-[3px] pb-[2.372px] pr-[4.2px]">
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     width="16" 
                     height="19" 
                     viewBox="0 0 16 19" 
                     fill="none"
+                    class="icon-wrapper"
                 >
                     <path 
                         d="M8.20654 18.6283L10.0064 16.8285C10.6021 17.2389 11.3231 17.4806 12.1014 17.4806C14.1436 17.4806 15.7992 
@@ -979,13 +995,14 @@ export const ViewIcon = defineComponent({
 export const ReplenishIcon = defineComponent({
     setup() {
         return () => (
-            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-[3px] py-[3px] pr-[2.841px] text-red-900 hover:text-red-800">
+            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-[3px] py-[3px] pr-[2.841px]">
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     width="19" 
                     height="18" 
                     viewBox="0 0 19 18" 
                     fill="none"
+                    class="icon-wrapper"
                 >
                     <path 
                         d="M10.7811 3.21576H9.83529V0.756648C9.83529 0.338978 9.49631 0 9.07864 0C8.66097 0 8.32199 0.338978 
@@ -1023,13 +1040,14 @@ export const ReplenishIcon = defineComponent({
 export const CancelOrderIcon = defineComponent({
     setup() {
         return () => (
-            <span class="w-6 h-6 flex-shrink-0 text-red-600 hover:text-red-700">
+            <span class="w-6 h-6 flex-shrink-0">
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     width="24" 
                     height="24" 
                     viewBox="0 0 24 24" 
                     fill="none"
+                    class="icon-wrapper"
                 >
                     <path 
                         d="M12.6502 3.5H10.1C9.63058 3.5 9.25 3.88056 9.25 4.35V5.20001C9.25 5.66945 9.63058 6.05001 10.1 
@@ -1086,13 +1104,14 @@ export const CancelOrderIcon = defineComponent({
 export const DeleteIcon = defineComponent({
     setup() {
         return () => (
-            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-[4px] py-[3px] pr-[3.8px] text-red-600 hover:text-red-700">
+            <span class="flex w-6 h-6 justify-center items-center flex-shrink-0 pl-[4px] py-[3px] pr-[3.8px]">
                 <svg 
                     xmlns="http://www.w3.org/2000/svg"
                     width="17" 
                     height="18" 
                     viewBox="0 0 17 18" 
                     fill="none"
+                    class="icon-wrapper"
                 >
                     <path 
                         d="M0 3.94735C0 3.51135 0.31084 3.1579 0.694283 3.1579L3.09209 3.15747C3.5685 3.14374 3.9888 2.79928 4.1509 
@@ -1117,6 +1136,56 @@ export const DeleteIcon = defineComponent({
                         14.7232 9.8336 14.6841C9.46262 14.6451 9.19199 14.2969 9.22907 13.9065L9.67907 9.1696C9.71615 8.77918 10.047 8.49424 
                         10.4179 8.5333Z" 
                         fill="#E51D25"
+                    />
+                </svg>
+            </span>
+        )
+    },
+})
+
+export const PlusIcon = defineComponent({
+    setup() {
+        return () => (
+            <span class="w-[20px] h-[20px] flex-shrink-0">
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 20 20" 
+                    fill="none"
+                    class="plus-icon-wrapper"
+                >
+                    <path 
+                        d="M10.0013 4.16602V15.8327M4.16797 9.99935H15.8346" 
+                        stroke="currentColor" 
+                        stroke-width="2" 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round"
+                    />
+                </svg>
+            </span>
+        )
+    },
+})
+
+export const TimesIcon = defineComponent({
+    setup() {
+        return () => (
+            <span class="w-6 h-6 flex-shrink-0">
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="24" 
+                    height="24" 
+                    viewBox="0 0 24 24" 
+                    fill="none"
+                    class="times-icon-wrapper"
+                >
+                    <path 
+                        d="M17 7L7 17M7 7L17 17" 
+                        stroke="currentColor" 
+                        stroke-width="3" 
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
                     />
                 </svg>
             </span>

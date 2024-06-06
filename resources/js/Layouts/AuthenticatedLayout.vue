@@ -18,7 +18,7 @@ onMounted(() => {
     <Head :title="title"></Head>
     
     <div>
-        <div class="h-[1024px] max-h-[1174px] bg-[#FFF]">
+        <div class="max-h-[1174px] h-[100vh] overflow-hidden bg-[#FFF]">
             <!-- Sidebar Menu -->
             <Sidebar />
 
@@ -34,7 +34,7 @@ onMounted(() => {
                 style="transition-property: margin; transition-duration: 150ms"
                 :class="[
                     'flex flex-col backdrop-blur-[25.700000762939453px] my-[33px] mr-[25px] h-full',
-                    'justify-center h-[1520px] flex-shrink-0',
+                    'justify-center flex-shrink-0',
                     'shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] rounded-[8px] bg-white',
                     {
                         'lg:ml-[315px]': sidebarState.isOpen,
@@ -101,8 +101,8 @@ onMounted(() => {
                 </header>
 
                 <!-- Page Content -->
-                <main class="max-w-[1440px] self-stretch flex-[1_0_0] m-auto border border-red-900">
-                    <div class="flex h-[1410px] flex-col self-center gap-[10px] flex-shrink-0 pl-[22px] pr-[20px] pt-[21px] pb-[23px]">
+                <main class="max-w-[1440px] h-full self-stretch flex-[1_0_0] m-auto border border-red-900 overflow-y-auto">
+                    <div class="flex flex-col w-full self-center gap-[10px] flex-shrink-0 pl-[22px] pr-[20px] pt-[21px] pb-[23px]">
                         <slot />
                     </div>
                 </main>
