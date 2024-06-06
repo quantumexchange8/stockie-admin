@@ -17,13 +17,17 @@ const props = defineProps({
         type: String,
         default: ''
     },
+    placeholder: {
+        type: String,
+        default: ''
+    },
     disabled: {
         type: Boolean,
         default: false,
     },
 })
 
-const { inputId, inputName, labelText, errorMessage, inputType, disabled } = props
+const { inputId, inputName, labelText, errorMessage, inputType, hintText, placeholder, disabled } = props
 
 defineEmits(['update:modelValue'])
 
@@ -62,7 +66,7 @@ onMounted(() => {
         <input
             :name="inputName"
             :class="[
-                'min-w-[268px] max-w-[268px] min-h-[44px] max-h-[44px] py-3 px-4 mb-1',
+                'min-w-[268px] min-h-[44px] max-h-[44px] py-3 px-4 mb-1',
                 'rounded-[5px] text-base text-grey-700 active:ring-0',
                 'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                 'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
@@ -80,7 +84,7 @@ onMounted(() => {
             @input="$emit('update:modelValue', $event.target.value)"
             ref="input"
             :disabled="disabled"
-            :placeholder="'Placeholder Text'"
+            :placeholder="placeholder"
         />
         <HintText 
             v-if="hintText !== ''"
