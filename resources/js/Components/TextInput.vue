@@ -57,7 +57,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="input-wrapper">
+    <div class="w-full">
         <Label
             :value="labelText"
             :for="inputName"
@@ -74,15 +74,13 @@ onMounted(() => {
         <input
             :name="inputName"
             :class="[
-                'min-w-[268px] min-h-[44px] max-h-[44px] py-3 px-4 mb-1',
-                'rounded-[5px] text-base text-grey-700 active:ring-0',
+                'w-full min-h-[44px] max-h-[44px] py-3 px-4 mb-1',
+                'rounded-[5px] text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
                 'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                 'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                 'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
                 {
-                    'placeholder:text-grey-200': labelText === '',
-                    'placeholder:text-transparent': labelText !== '',
-                    'placeholder:text-grey-200 border-grey-100':
+                    'border-grey-100':
                         disabled === true,
                     'border-grey-300': disabled === false,
                     'border-red-500 focus:border-red-500 hover:border-red-500':

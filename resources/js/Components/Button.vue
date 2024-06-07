@@ -61,7 +61,7 @@ const { type, variant, size, squared, pill, href, iconOnly, iconPosition, srText
 const { disabled } = toRefs(props)
 
 const baseClasses = [
-    'flex items-end justify-center self-center whitespace-nowrap transition-colors font-medium select-none disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none',
+    'flex w-full items-end justify-center self-center whitespace-nowrap transition-colors font-medium select-none disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none',
 ]
 
 const variantClasses = (variant) => ({
@@ -100,8 +100,8 @@ const classes = computed(() => [
 
 const iconSizeClasses = [
     {
-        'w-[76px] h-[18px]': size == 'md',
-        'w-[86px] h-[20px]': size == 'lg',
+        'h-[18px]': size == 'md',
+        'h-[20px]': size == 'lg',
     },
 ]
 
@@ -173,8 +173,8 @@ const Tag = external ?  'a' : Link
         <span 
             class="flex items-center"
             :class="{
-                'min-w-[96px] max-w-[96px] min-h-[18px] max-h-[18px]': size === 'md',
-                'min-w-[114px] max-w-[114px] min-h-[20px] max-h-[20px]': size === 'lg',
+                'min-h-[18px] max-h-[18px]': size === 'md',
+                'min-h-[20px] max-h-[20px]': size === 'lg',
             }"
             v-if="iconPosition === 'left'"
         >

@@ -1,7 +1,9 @@
 <script setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue';
+import { TimesIcon } from '@/Components/Icons/solid';
 
 const props = defineProps({
+    title: String,
     show: {
         type: Boolean,
         default: false,
@@ -50,11 +52,11 @@ onUnmounted(() => {
 
 const maxWidthClass = computed(() => {
     return {
-        sm: 'sm:max-w-sm',
-        md: 'sm:max-w-md',
-        lg: 'sm:max-w-lg',
-        xl: 'sm:max-w-xl',
-        '2xl': 'sm:max-w-2xl',
+        '2xs': 'sm:max-w-[333px]',
+        'xs': 'sm:max-w-[370px]',
+        'sm': 'sm:max-w-[574px]',
+        'md': 'sm:max-w-[746px]',
+        'lg': 'sm:max-w-[1000px]',
     }[props.maxWidth];
 });
 </script>
@@ -62,7 +64,7 @@ const maxWidthClass = computed(() => {
 <template>
     <Teleport to="body">
         <Transition leave-active-class="duration-200">
-            <div v-show="show" class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50" scroll-region>
+            <div v-show="show" class="fixed inset-0 top-36 overflow-y-auto px-4 py-6 sm:px-0 z-50" scroll-region>
                 <Transition
                     enter-active-class="ease-out duration-300"
                     enter-from-class="opacity-0"
@@ -89,7 +91,16 @@ const maxWidthClass = computed(() => {
                         class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full sm:mx-auto"
                         :class="maxWidthClass"
                     >
-                        <slot v-if="show" />
+                        <div class="flex flex-col items-start p-6 w-full">
+                            <div class="flex justify-between items-start self-stretch pb-6">
+                                <p class="text-center text-red-950 text-md font-medium">{{ title }}</p>
+                                <TimesIcon
+                                    class="hover:cursor-pointer"
+                                    @click="close"
+                                />
+                            </div>
+                            <slot v-if="show" />
+                        </div>
                     </div>
                 </Transition>
             </div>
