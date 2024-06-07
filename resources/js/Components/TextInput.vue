@@ -1,65 +1,73 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import Label from '@/Components/Label.vue'
-import HintText from '@/Components/HintText.vue'
-import InputError from '@/Components/InputError.vue'
+import { onMounted, ref } from "vue";
+import Label from "@/Components/Label.vue";
+import HintText from "@/Components/HintText.vue";
+import InputError from "@/Components/InputError.vue";
 
 const props = defineProps({
-	inputName: String,
-	modelValue: String,
+    inputName: String,
+    modelValue: String,
     labelText: String,
     errorMessage: String,
-	inputType: {
-		type: String,
-		default: 'text'
-	},
+    inputType: {
+        type: String,
+        default: "text",
+    },
     hintText: {
         type: String,
-        default: ''
+        default: "",
     },
     placeholder: {
         type: String,
-        default: ''
+        default: "",
     },
     disabled: {
         type: Boolean,
         default: false,
     },
-})
+});
 
-const { inputId, inputName, labelText, errorMessage, inputType, hintText, placeholder, disabled } = props
+const {
+    inputId,
+    inputName,
+    labelText,
+    errorMessage,
+    inputType,
+    hintText,
+    placeholder,
+    disabled,
+} = props;
 
-defineEmits(['update:modelValue'])
+defineEmits(["update:modelValue"]);
 
-const input = ref(null)
+const input = ref(null);
 
-const focus = () => input.value?.focus()
+const focus = () => input.value?.focus();
 
 defineExpose({
     input,
-    focus
-})
+    focus,
+});
 
 onMounted(() => {
-    if (input.value.hasAttribute('autofocus')) {
-        input.value.focus()
+    if (input.value.hasAttribute("autofocus")) {
+        input.value.focus();
     }
-})
-
+});
 </script>
 
 <template>
-	<div class="input-wrapper">
+    <div class="input-wrapper">
         <Label
             :value="labelText"
             :for="inputName"
             :class="[
-                    'mb-1 text-xs font-medium',
-                    {
-                        'text-grey-900': disabled === false,
-                        'text-grey-500': disabled === true,
-                    }
-                ]"
+                'mb-1 text-xs font-medium',
+                {
+                    'text-grey-900': disabled === false,
+                    'text-grey-500': disabled === true,
+                },
+            ]"
             v-if="labelText !== ''"
         >
         </Label>
@@ -74,10 +82,12 @@ onMounted(() => {
                 {
                     'placeholder:text-grey-200': labelText === '',
                     'placeholder:text-transparent': labelText !== '',
-                    'placeholder:text-grey-200 border-grey-100': disabled === true,
+                    'placeholder:text-grey-200 border-grey-100':
+                        disabled === true,
                     'border-grey-300': disabled === false,
-                    'border-red-500 focus:border-red-500 hover:border-red-500': errorMessage,
-                }
+                    'border-red-500 focus:border-red-500 hover:border-red-500':
+                        errorMessage,
+                },
             ]"
             :type="inputType"
             :value="modelValue"
@@ -86,13 +96,7 @@ onMounted(() => {
             :disabled="disabled"
             :placeholder="placeholder"
         />
-        <HintText 
-            v-if="hintText !== ''"
-            :hintText="hintText"
-        />
-        <InputError
-            :message="errorMessage"
-            v-if="errorMessage"
-        />
+        <HintText v-if="hintText !== ''" :hintText="hintText" />
+        <InputError :message="errorMessage" v-if="errorMessage" />
     </div>
 </template>

@@ -12,7 +12,7 @@
         font-style: normal;
         font-weight: 400;
         font-display: swap;
-        src: url('../assets/fonts/Lexend-Regular.ttf') format('ttf');
+        src: url("../assets/fonts/Lexend-Regular.ttf") format("ttf");
     }
 }
 
@@ -32,12 +32,12 @@
     height: 10px;
     padding: 5px;
     border-radius: 15px;
-    border: 1px solid #FFF;
-    background-color: #F83B42;
+    border: 1px solid #fff;
+    background-color: #f83b42;
 }
 
 .notification-icon-value {
-    color: #FFF9F9;
+    color: #fff9f9;
     text-align: center;
     font-size: 5px;
     font-weight: 600;
@@ -48,7 +48,9 @@
     transition: transform 0.1s ease-in-out, color 100ms ease-in-out; /* Smooth transition for hover effect */
 }
 .default-icon:hover {
-    transform: rotate(18deg); /* Adjust the angle to match the On Hover Icon's tilt */
+    transform: rotate(
+        18deg
+    ); /* Adjust the angle to match the On Hover Icon's tilt */
     color: rgb(153 27 27 / 1);
 }
 
