@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('incentive_id');
             $table->unsignedBigInteger('user_id');
             $table->string('status');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

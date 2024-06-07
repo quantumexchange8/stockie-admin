@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('merchant_contact');
             $table->string('merchant_address');
             $table->string('percentage');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->dateTime('promotion_from');
             $table->dateTime('promotion_to');
             $table->string('image');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

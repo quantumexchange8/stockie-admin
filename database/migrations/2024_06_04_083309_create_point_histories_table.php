@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('qty');
             $table->string('redeem_by');
             $table->dateTime('redemption_date');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

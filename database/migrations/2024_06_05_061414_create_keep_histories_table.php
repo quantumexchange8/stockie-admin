@@ -20,6 +20,7 @@ return new class extends Migration
             $table->dateTime('expired_from');
             $table->dateTime('expired_to');
             $table->dateTime('status');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

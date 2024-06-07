@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('profile_photo')->nullable();
             $table->string('salary')->nullable();
             $table->rememberToken();
+            $table->softDeletes();
             $table->timestamps();
         });
 

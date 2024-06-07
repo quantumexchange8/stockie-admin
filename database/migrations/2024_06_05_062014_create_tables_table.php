@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('zone_id');
             $table->string('status');
             $table->string('order_id');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

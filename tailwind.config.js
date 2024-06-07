@@ -37,15 +37,15 @@ export default {
                 letterSpacing: '-0.6px',
             }],
         },
-        letterSpacing: {
-            tiny: '-0.2px',
-            xs: '-0.24px',
-            sm: '-0.28px',
-            standard: '-0.32px',
-            md: '-0.4px',
-            lg: '-0.48px',
-            xl: '-0.6px',
-        },
+        // letterSpacing: {
+        //     tiny: '-0.2px',
+        //     xs: '-0.24px',
+        //     sm: '-0.28px',
+        //     standard: '-0.32px',
+        //     md: '-0.4px',
+        //     lg: '-0.48px',
+        //     xl: '-0.6px',
+        // },
         extend: {
             fontFamily: {
                 sans: ['Lexend', 'sans-serif'],
@@ -127,5 +127,28 @@ export default {
 
     plugins: [
         require('@tailwindcss/forms'),
+        function ({addUtilities}) {
+            const newUtilities = {
+                ".scrollnar-thin" : {
+                    scrollbarWidth : "thin", 
+                    scrollbarColor: "rgba(107, 114, 128, 1) white",
+                }, 
+                ".scrollbar-webkit": {
+                    "&::-webkit-scrollbar" : {
+                        width: "2px"
+                    },
+                    "&::-webkit-scrollbar-track" : {
+                        background: "#d6dce1"
+                    },
+                    "&::-webkit-scrollbar-thumb" : {
+                        backgroundColor: "#c1141b",
+                        borderRadius: "20px",
+                        border: "1px solid rgba(107, 114, 128, 0.3)",
+                    }
+                }
+            }
+            
+            addUtilities(newUtilities, ["responsive", "hover"])
+        }
     ],
 };

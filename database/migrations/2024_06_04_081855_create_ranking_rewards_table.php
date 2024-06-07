@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('item_qty')->nullable();
             $table->dateTime('valid_period_from')->nullable();
             $table->dateTime('valid_period_to')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

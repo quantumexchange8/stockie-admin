@@ -17,6 +17,7 @@ return new class extends Migration
             $table->dateTime('check_in');
             $table->dateTime('check_out');
             $table->string('status');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

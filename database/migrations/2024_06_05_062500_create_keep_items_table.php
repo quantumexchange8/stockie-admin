@@ -21,6 +21,7 @@ return new class extends Migration
             $table->unsignedInteger('waiter_id')->nullable();
             $table->string('status');
             $table->dateTime('expired_date');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

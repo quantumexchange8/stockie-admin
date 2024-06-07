@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('total_amount');
             $table->string('voucher');
             $table->string('status');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

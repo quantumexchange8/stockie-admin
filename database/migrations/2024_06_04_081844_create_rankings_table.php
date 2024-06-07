@@ -17,6 +17,7 @@ return new class extends Migration
             $table->bigInteger('min_amount');
             $table->string('reward');
             $table->string('icon');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

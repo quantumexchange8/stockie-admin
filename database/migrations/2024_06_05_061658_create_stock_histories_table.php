@@ -20,6 +20,7 @@ return new class extends Migration
             $table->double('out');
             $table->double('current_stock');
             $table->dateTime('date');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->double('unit')->default(0);
             $table->double('stock_qty')->default(0);
             $table->string('status');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

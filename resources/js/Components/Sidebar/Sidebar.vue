@@ -41,7 +41,7 @@ onMounted(() => {
             transition-duration: 150ms;
         "
         :class="[
-            'fixed inset-y-0 p-4 m-4 flex flex-col justify-between w-[251px] max-h-[1024px]',
+            'fixed inset-y-0 p-8 flex flex-col justify-between w-[251px] overflow-auto scrollbar-thin scrollbar-webkit',
             {
                 'translate-x-0 w-[283px] z-20':
                     sidebarState.isOpen,
@@ -50,11 +50,11 @@ onMounted(() => {
             },
         ]"
     >
-        <div class="flex flex-col gap-[32px]">
+        <div class="flex flex-col gap-8">
             <SidebarHeader />
             <SidebarContent />
         </div>
 
-        <SidebarFooter />
+        <!-- <SidebarFooter /> -->
     </aside>
 </template>

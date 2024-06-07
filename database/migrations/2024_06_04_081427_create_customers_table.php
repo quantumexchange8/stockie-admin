@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('role');
             $table->string('point');
             $table->string('profile_photo');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

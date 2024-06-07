@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('comm_id');
             $table->string('item');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

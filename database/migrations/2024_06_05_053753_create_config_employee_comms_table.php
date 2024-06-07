@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('comm_rate');
             $table->string('rate');
+            $table->softDeletes();
             $table->timestamps();
         });
     }
