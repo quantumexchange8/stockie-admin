@@ -56,7 +56,7 @@ const maxWidthClass = computed(() => {
         'xs': 'sm:max-w-[370px]',
         'sm': 'sm:max-w-[574px]',
         'md': 'sm:max-w-[746px]',
-        'lg': 'sm:max-w-[1000px]',
+        'lg': 'sm:max-w-[1080px]',
     }[props.maxWidth];
 });
 </script>
