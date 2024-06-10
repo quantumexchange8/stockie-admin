@@ -4,8 +4,10 @@ import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ButtonComponents from './ButtonComponents.vue'
 import InputComponents from './InputComponents.vue'
+import DropdownComponents from './DropdownComponents.vue'
+import ToggleComponents from './ToggleComponents.vue'
 
-const openTab = ref(1);
+const openTab = ref(4);
 </script>
 
 <template>
@@ -36,6 +38,20 @@ const openTab = ref(1);
                                 >
                                     Input Fields
                                 </button>
+                                <button 
+                                    @click="openTab = 3" 
+                                    :class="{ 'bg-blue-600 text-white': openTab === 3 }" 
+                                    type="button" class="flex-1 py-2 px-4 rounded-md focus:outline-none focus:shadow-outline-blue transition-all duration-300"
+                                >
+                                    Dropdowns
+                                </button>
+                                <button 
+                                    @click="openTab = 4" 
+                                    :class="{ 'bg-blue-600 text-white': openTab === 4 }" 
+                                    type="button" class="flex-1 py-2 px-4 rounded-md focus:outline-none focus:shadow-outline-blue transition-all duration-300"
+                                >
+                                    Dropdowns
+                                </button>
                             </div>
 
                             <div 
@@ -50,6 +66,19 @@ const openTab = ref(1);
                                 class="transition-all duration-300 bg-white px-4 py-8 rounded-lg shadow-md border-l-4"
                             >
                                 <InputComponents/>
+                            </div>
+
+                            <div 
+                                v-if="openTab === 3" 
+                                class="transition-all duration-300 bg-white px-4 py-8 rounded-lg shadow-md border-l-4"
+                            >
+                                <DropdownComponents/>
+                            </div>
+                            <div 
+                                v-if="openTab === 4" 
+                                class="transition-all duration-300 bg-white px-4 py-8 rounded-lg shadow-md border-l-4"
+                            >
+                                <ToggleComponents/>
                             </div>
                         </div>
                     </div>
