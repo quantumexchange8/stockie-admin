@@ -7,7 +7,7 @@ import InputComponents from './InputComponents.vue'
 import DropdownComponents from './DropdownComponents.vue'
 import ToggleComponents from './ToggleComponents.vue'
 
-const openTab = ref(4);
+const openTab = ref(1);
 </script>
 
 <template>
@@ -50,7 +50,7 @@ const openTab = ref(4);
                                     :class="{ 'bg-blue-600 text-white': openTab === 4 }" 
                                     type="button" class="flex-1 py-2 px-4 rounded-md focus:outline-none focus:shadow-outline-blue transition-all duration-300"
                                 >
-                                    Dropdowns
+                                    Others
                                 </button>
                             </div>
 

@@ -216,8 +216,8 @@ const Tag = external ?  'a' : Link
         <span 
             class="flex items-center"
             :class="{
-                'min-w-[96px] max-w-[96px] min-h-[18px] max-h-[18px]': size === 'md',
-                'min-w-[114px] max-w-[114px] min-h-[20px] max-h-[20px]': size === 'lg',
+                'min-h-[18px] max-h-[18px]': size === 'md',
+                'min-h-[20px] max-h-[20px]': size === 'lg',
             }"
             v-else-if="iconPosition === 'right'"
         >
@@ -260,8 +260,8 @@ const Tag = external ?  'a' : Link
         <span 
             class="flex justify-center items-center"
             :class="{
-                'min-w-[76px] max-w-[76px] min-h-[18px] max-h-[18px]': size === 'md',
-                'min-w-[86px] max-w-[86px] min-h-[20px] max-h-[20px]': size === 'lg',
+                'min-h-[18px] max-h-[18px]': size === 'md',
+                'min-h-[20px] max-h-[20px]': size === 'lg',
             }"
             v-else
         >

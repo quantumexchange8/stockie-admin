@@ -32,28 +32,25 @@ const proxyChecked = computed({
 </script>
 
 <style scoped>
-    .checkbox {
+    .radio {
         background-color: #FFFFFF;
     }
-    .checkbox:checked {
-        padding: 6px 5px 4px 5px;
-        border: none;
+    .radio:checked {
         background-color: rgb(127 29 29 / 1);
         background-size: auto;
         background-repeat: no-repeat;
-        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11.6663 3.5L5.24967 9.91667L2.33301 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     }
-    .checkbox:checked:hover {
+    .radio:checked:hover {
         background-color: rgb(153 27 27 / 1);
     }
-    .checkbox:disabled {
+    .radio:disabled {
         border-width: 1px;
         border-color: rgb(214 220 225 / 1);
         background-color: rgb(236 239 242 / 1);
         opacity: unset;
     }
-    .checkbox:checked:disabled {
-        border-width: 0;
+    .radio:checked:disabled {
+        border-width: 1px;
         border-color: transparent;
         background-color: #FFC7C9;
         opacity: unset;
@@ -62,18 +59,18 @@ const proxyChecked = computed({
 
 <template>
     <input
-        type="checkbox"
+        type="radio"
         :name="props.inputName"
         :value="props.value"
         :checked="proxyChecked"
+        :disabled="props.disabled"
         :class="[
-            'checkbox rounded-[100px] border flex items-center justify-center hover:border-red-100',
+            'radio rounded-[100px] border flex items-center justify-center hover:border-red-100',
             '',
             {
                 'bg-grey-100 border-grey-200': props.disabled === true,
                 'bg-white border-grey-300': props.disabled === false,
             }
         ]"
-        :disabled="props.disabled"
     />
 </template>
