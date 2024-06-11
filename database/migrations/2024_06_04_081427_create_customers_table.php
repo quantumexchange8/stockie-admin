@@ -23,6 +23,8 @@ return new class extends Migration
             $table->string('role');
             $table->string('point');
             $table->string('profile_photo');
+            $table->string('verification_code')->nullable();
+            $table->timestamp('verification_code_expires_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
