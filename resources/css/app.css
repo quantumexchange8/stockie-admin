@@ -16,67 +16,15 @@
     }
 }
 
-/* Icons Set */
-/* Notification Icon */
+/* ----------------------------------------------------------------------------Default Styling----------------------------------------------------------------------------- */
+h1, h2, h3, h4, h5, p {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1" height="16" viewBox="0 0 1 16" fill="none"><rect width="1" height="16" rx="0.5" fill="#7E171B"/></svg>'), auto;
+}
+
+/* ----------------------------------------------------------------------------Icons Set----------------------------------------------------------------------------- */
 .notification-icon {
-    position: absolute;
-    top: 44px;
-    right: 95px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
-    flex-shrink: 0;
-    width: 10px;
-    height: 10px;
-    padding: 5px;
-    border-radius: 15px;
-    border: 1px solid #fff;
-    background-color: #f83b42;
-}
-
-.notification-icon-value {
-    color: #fff9f9;
-    text-align: center;
-    font-size: 5px;
-    font-weight: 600;
-    letter-spacing: -0.1px;
-}
-
-.default-icon {
     transition: transform 0.1s ease-in-out, color 100ms ease-in-out; /* Smooth transition for hover effect */
 }
-.default-icon:hover {
-    transform: rotate(
-        18deg
-    ); /* Adjust the angle to match the On Hover Icon's tilt */
-    color: rgb(153 27 27 / 1);
-}
-
-/* Common */
-.icon-wrapper {
-    color: rgb(127 29 29 / 1);
-}
-
-.icon-wrapper:hover {
-    color: rgb(153 27 27 / 1);
-}
-
-/* Plus Icon */
-.plus-icon-wrapper {
-    color: rgb(253 246 239 / 1);
-}
-
-.plus-icon-wrapper:hover {
-    color: rgb(251 234 217 / 1);
-}
-
-/* Times Icon */
-.times-icon-wrapper {
-    color: rgb(127 29 29 / 1);
-}
-
-.times-icon-wrapper:hover {
-    color: rgb(153 27 27 / 1);
+.notification-icon:hover {
+    transform: rotate(18deg); /* Adjust the angle to match the On Hover Icon's tilt */
 }

@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import { onMounted } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
 import { sidebarState, rightSidebarState } from '@/Composables'
-import { NotificationIcon, LanguageIcon, LogOutIcon } from '@/Components/Icons/solid';
+import { NumberedNotificationIcon, LanguageIcon, LogOutIcon } from '@/Components/Icons/solid';
 
 defineProps({
     title: String
@@ -84,15 +84,17 @@ onMounted(() => {
                                 </p>
                             </div>
                             <div class="flex items-start gap-3">
-                                <NotificationIcon 
-                                    :withNotification="true"
-                                    :notificationValue="1"
+                                <NumberedNotificationIcon 
+                                    class="text-red-900 hover:text-red-800"
+                                    :notificationValue="10"
                                     aria-hidden="true" 
                                 />
                                 <LanguageIcon 
+                                    class="text-red-900 hover:text-red-800"
                                     aria-hidden="true" 
                                 />
                                 <LogOutIcon 
+                                    class="text-red-900 hover:text-red-800"
                                     aria-hidden="true" 
                                 />
                             </div>
