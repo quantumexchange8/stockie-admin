@@ -1,20 +1,20 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import InputError from './InputError.vue';
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import InputError from "./InputError.vue";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 
 const props = defineProps({
     labelText: String,
     errorMessage: String,
-	inputName: String,
-	inputArray: {
-		type: [Array, Object],
-		default: () => [],
-	},
-	dataValue: {
+    inputName: String,
+    inputArray: {
+        type: [Array, Object],
+        default: () => [],
+    },
+    dataValue: {
         type: [String, Number],
-        default: '',
+        default: "",
     },
     hintText: {
         type: String,
@@ -30,46 +30,48 @@ const props = defineProps({
     },
 });
 
-const emits = defineEmits(['update:modelValue']);
+const emits = defineEmits(["update:modelValue"]);
 
 const open = ref(false);
-const selectedOption = ref('');
-const selectedValue = ref('');
+const selectedOption = ref("");
+const selectedValue = ref("");
 
 const choose = (option, value) => {
     selectedOption.value = option;
     selectedValue.value = value;
     open.value = false;
-    emits('update:modelValue', value)
+    emits("update:modelValue", value);
 };
 
 const closeDropdown = (event) => {
-  if (!event.target.closest('#dropdown')) {
-    open.value = false;
-  }
+    if (!event.target.closest("#dropdown")) {
+        open.value = false;
+    }
 };
 
 const vClickOutside = {
-  mounted(el, binding) {
-    el.__clickOutsideHandler__ = event => {
-      if (!(el === event.target || el.contains(event.target))) {
-        binding.value(event);
-      }
-    };
-    document.addEventListener('click', el.__clickOutsideHandler__);
-  },
-  unmounted(el) {
-    document.removeEventListener('click', el.__clickOutsideHandler__);
-  },
+    mounted(el, binding) {
+        el.__clickOutsideHandler__ = (event) => {
+            if (!(el === event.target || el.contains(event.target))) {
+                binding.value(event);
+            }
+        };
+        document.addEventListener("click", el.__clickOutsideHandler__);
+    },
+    unmounted(el) {
+        document.removeEventListener("click", el.__clickOutsideHandler__);
+    },
 };
 
 onMounted(() => {
     selectedValue.value = props.dataValue;
-    selectedOption.value = props.inputArray[props.dataValue] ? props.inputArray[props.dataValue] : props.placeholder;
-    document.addEventListener('click', closeDropdown);
-})
+    selectedOption.value = props.inputArray[props.dataValue]
+        ? props.inputArray[props.dataValue]
+        : props.placeholder;
+    document.addEventListener("click", closeDropdown);
+});
 onUnmounted(() => {
-  document.removeEventListener('click', closeDropdown);
+    document.removeEventListener("click", closeDropdown);
 });
 </script>
 
@@ -88,14 +90,21 @@ onUnmounted(() => {
             v-if="labelText !== ''"
         >
         </Label>
-        <div class="relative" id="dropdown" v-click-outside="closeDropdown" v-if="props.inputArray.length || Object.keys(props.inputArray).length">
+        <div
+            class="relative"
+            id="dropdown"
+            v-click-outside="closeDropdown"
+            v-if="
+                props.inputArray.length || Object.keys(props.inputArray).length
+            "
+        >
             <span class="inline-block w-full rounded-md shadow-sm mb-1">
-                <button 
+                <button
                     type="button"
                     @click="open = !open"
-                    aria-haspopup="listbox" 
-                    :aria-expanded="open" 
-                    aria-labelledby="assigned-to-label" 
+                    aria-haspopup="listbox"
+                    :aria-expanded="open"
+                    aria-labelledby="assigned-to-label"
                     :disabled="props.disabled"
                     :class="[
                         'w-full max-h-[44px] px-4 py-3 flex justify-between items-center hover:text-red-300 active:text-red-300 focus:text-red-300',
@@ -106,52 +115,62 @@ onUnmounted(() => {
                         {
                             'border-grey-100': props.disabled === true,
                             'border-grey-300': props.disabled === false,
-                            'border-red-500 focus:border-red-500 hover:border-red-500': errorMessage,
+                            'border-red-500 focus:border-red-500 hover:border-red-500':
+                                errorMessage,
                         },
                     ]"
                 >
-                    <span 
+                    <span
                         :class="[
                             'text-base font-normal',
                             {
-                                'text-grey-200': selectedOption === props.placeholder,
-                                'text-grey-700': selectedOption !== props.placeholder,
-                            }
+                                'text-grey-200':
+                                    selectedOption === props.placeholder,
+                                'text-grey-700':
+                                    selectedOption !== props.placeholder,
+                            },
                         ]"
                     >
-                        {{ selectedOption === '' ? 'Select' : selectedOption }}
+                        {{ selectedOption === "" ? "Select" : selectedOption }}
                     </span>
-                    <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="16" 
-                        height="16" 
-                        viewBox="0 0 16 16" 
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
                         fill="none"
                         :class="[
-                            open ? 'transition-all duration-200 rotate-270 transform self-center' : '',
-                            !open ? 'transition-all duration-200 rotate-180 transform self-center' : '',
+                            open
+                                ? 'transition-all duration-200 rotate-270 transform self-center'
+                                : '',
+                            !open
+                                ? 'transition-all duration-200 rotate-180 transform self-center'
+                                : '',
                         ]"
                     >
-                        <path 
-                            d="M12 10L8 6L4 10" 
-                            stroke="currentColor" 
-                            stroke-width="1.3" 
-                            stroke-linecap="round" 
+                        <path
+                            d="M12 10L8 6L4 10"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
                             stroke-linejoin="round"
                         />
                     </svg>
                 </button>
 
-                <ul class="z-50 absolute mt-1 w-full p-1 bg-white rounded-[5px] border-2 border-red-50 gap-0.5 items-start flex flex-col shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]" v-show="open">
-                    <li 
+                <ul
+                    class="z-50 absolute mt-1 w-full p-1 bg-white rounded-[5px] border-2 border-red-50 gap-0.5 items-start flex flex-col shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]"
+                    v-show="open"
+                >
+                    <li
                         :class="[
                             'cursor-pointer select-none py-2 px-4 self-stretch items-center flex rounded-[5px] hover:bg-grey-50 active:bg-red-50',
                             {
                                 'bg-red-50': selectedOption === option,
-                            }
-                        ]" 
-                        v-for="(option, ix) in props.inputArray" 
-                        :key="ix"  
+                            },
+                        ]"
+                        v-for="(option, ix) in props.inputArray"
+                        :key="ix"
                         @click="choose(option, ix)"
                     >
                         {{ option }}
@@ -160,13 +179,7 @@ onUnmounted(() => {
             </span>
         </div>
         <span class="text-sm" v-else>No options available</span>
-        <HintText 
-            v-if="hintText !== ''" 
-            :hintText="hintText" 
-        />
-        <InputError
-            :message="errorMessage"
-            v-if="errorMessage"
-        />
+        <HintText v-if="hintText !== ''" :hintText="hintText" />
+        <InputError :message="errorMessage" v-if="errorMessage" />
     </div>
 </template>

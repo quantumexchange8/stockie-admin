@@ -80,8 +80,7 @@ onMounted(() => {
                 'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                 'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
                 {
-                    'border-grey-100':
-                        disabled === true,
+                    'border-grey-100': disabled === true,
                     'border-grey-300': disabled === false,
                     'border-red-500 focus:border-red-500 hover:border-red-500':
                         errorMessage,

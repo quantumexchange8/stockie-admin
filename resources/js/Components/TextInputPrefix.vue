@@ -3,13 +3,8 @@ import { onMounted, ref } from "vue";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
-import { SearchIcon } from "@/Components/Icons/solid";
-import Filter from "@/Components/Filter.vue";
-const typing = ref(false);
 
 const props = defineProps({
-    showFilter: Boolean, // Add a boolean prop to control whether to show the filter component
-
     inputName: String,
     modelValue: String,
     labelText: String,
@@ -30,6 +25,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    prefix: {
+        type: String,
+        default: "",
+    },
 });
 
 const {
@@ -41,6 +40,7 @@ const {
     hintText,
     placeholder,
     disabled,
+    prefix,
 } = props;
 
 defineEmits(["update:modelValue"]);
@@ -59,15 +59,10 @@ onMounted(() => {
         input.value.focus();
     }
 });
-
-const handleInput = (event) => {
-    typing.value = true;
-    $emit("update:modelValue", event.target.value);
-};
 </script>
 
 <template>
-    <div class="relative w-full">
+    <div class="w-full">
         <Label
             :value="labelText"
             :for="inputName"
@@ -79,36 +74,36 @@ const handleInput = (event) => {
                 },
             ]"
             v-if="labelText !== ''"
-        />
+        >
+        </Label>
         <div class="relative">
+            <div
+                class="absolute min-h-[44px] max-h-[44px] flex items-center pl-3 py-3 text-base mb-1"
+            >
+                <slot name="prefix"></slot>
+            </div>
             <input
                 :name="inputName"
                 :class="[
-                    'w-full min-h-[44px] max-h-[44px] py-3 px-12 mb-1',
-                    'rounded-[5px] text-base active:ring-0 placeholder:text-grey-200',
+                    'w-full min-h-[44px] max-h-[44px] py-3 px-4 mb-1 pl-10',
+                    'rounded-[5px] text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
                     'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                     'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                     'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
-                    'focus:outline-none',
                     {
-                        'text-[#45535F]': typing,
-                        'text-grey-700': !typing,
                         'border-grey-100': disabled === true,
-                        'border-[#7E171B]': !disabled,
-                        'border-red-500 focus:border-red-500': errorMessage,
+                        'border-grey-300': disabled === false,
+                        'border-red-500 focus:border-red-500 hover:border-red-500':
+                            errorMessage,
                     },
                 ]"
                 :type="inputType"
                 :value="modelValue"
-                @input="handleInput"
+                @input="$emit('update:modelValue', $event.target.value)"
                 ref="input"
                 :disabled="disabled"
                 :placeholder="placeholder"
             />
-            <SearchIcon
-                class="absolute top-1/2 transform -translate-y-1/2 left-4 w-5 h-5 hover:cursor-pointer"
-            />
-            <Filter v-if="showFilter" class="absolute top-0 right-0 h-full" />
         </div>
 
         <HintText v-if="hintText !== ''" :hintText="hintText" />

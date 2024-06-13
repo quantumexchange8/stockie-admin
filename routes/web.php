@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WaiterController;
+use App\Http\Controllers\AddWaiterController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -33,6 +34,11 @@ Route::middleware('auth')->group(function () {
 Route::prefix('waiter')->group(function () {
     Route::get('waiter', [WaiterController::class, 'waiter'])->name('waiter');
 });
+
+
+Route::post('/submit-form', [AddWaiterController::class, 'store']);
+Route::post('waiter/add-waiter', [AddWaiterController::class, 'store'])->name('waiter.add-waiter');
+
 
 
 require __DIR__.'/auth.php';
