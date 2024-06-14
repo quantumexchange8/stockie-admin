@@ -62,7 +62,7 @@ onMounted(() => {
             :value="labelText"
             :for="inputName"
             :class="[
-                'mb-1 text-xs font-medium',
+                'mb-1 text-xs !font-medium',
                 {
                     'text-grey-900': disabled === false,
                     'text-grey-500': disabled === true,
