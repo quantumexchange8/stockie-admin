@@ -4,7 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WaiterController;
-use App\Http\Controllers\MainController;
+
 use Inertia\Inertia;
 use App\Http\Controllers\ConfigPromotionController;
 use App\Http\Controllers\ProductController;
@@ -20,12 +20,16 @@ Route::get('/', function () {
 
 
 Route::middleware('auth')->group(function () {
-    
-    /******* Component *********/
-    Route::get('/components', [MainController::class, 'component'])->name('components');
 
-    /******* Dashboard *********/
-    Route::get('/dashboard', [MainController::class, 'dashboard'])->name('dashboard');
+   /********* Dashboard **********/
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
+
+    /********* Components **********/
+    Route::get('/components', function () {
+        return Inertia::render('ComponentDisplay/ComponentShowcase');
+    })->name('components');
 
     /********* Waiter **********/
     Route::get('waiter', [WaiterController::class, 'waiter'])->name('waiter');
@@ -54,6 +58,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+
+    /******* Configuration ********/
+    Route::get('/configuration', function () {
+        return Inertia::render('Configuration/MainConfiguration');
+    })->name('configuration');
+
+
 });
 
 require __DIR__.'/auth.php';

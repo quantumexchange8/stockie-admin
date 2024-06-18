@@ -14,12 +14,13 @@ const closeModal = () => {
 
 const form = useForm({
     name: "",
+    full_name: "",
     phone: "",
     email: "",
-    staffid: "",
+    role_id: "",
     salary: "",
-    stockie_email: "",
-    stockie_password: "",
+    worker_email: "",
+    password: "",
 });
 
 const submit = () => {
@@ -28,8 +29,12 @@ const submit = () => {
             console.log("Form submitted successfully!");
             closeModal();
         },
-        onError: () => {
-            console.log("Invalid value");
+        onError: (error) => {
+            console.error(error); // Log the error details
+            if (form.errors.full_name) console.error(error);
+
+            if (form.errors.phone) console.error(error);
+            if (form.errors.email) console.error(error);
         },
     });
 };
@@ -37,12 +42,13 @@ const submit = () => {
 const isFormIncomplete = () => {
     return (
         !form.name ||
+        !form.full_name ||
         !form.phone ||
         !form.email ||
-        !form.staffid ||
+        !form.role_id ||
         !form.salary ||
-        !form.stockie_email ||
-        !form.stockie_password
+        !form.worker_email ||
+        !form.password
     );
 };
 </script>
@@ -61,13 +67,22 @@ const isFormIncomplete = () => {
                             </div>
 
                             <div class="flex flex-col md:gap-4">
-                                <TextInput
-                                    label-text="Full name"
-                                    :placeholder="'eg: John Doe'"
-                                    inputId="name"
-                                    type="'name'"
-                                    v-model="form.name"
-                                ></TextInput>
+                                <div class="flex md:gap-4">
+                                    <TextInput
+                                        label-text="Full name"
+                                        :placeholder="'eg: John Doe'"
+                                        inputId="full_name"
+                                        type="'name'"
+                                        v-model="form.full_name"
+                                    ></TextInput>
+                                    <TextInput
+                                        label-text="Username"
+                                        :placeholder="'eg: johndoe'"
+                                        inputId="name"
+                                        type="'name'"
+                                        v-model="form.name"
+                                    ></TextInput>
+                                </div>
 
                                 <div class="flex md:gap-4">
                                     <div class="w-full flex flex-col">
@@ -113,12 +128,12 @@ const isFormIncomplete = () => {
                                     <TextInput
                                         label-text="Staff ID"
                                         :placeholder="'eg: J8192'"
-                                        inputId="staffid"
+                                        inputId="role_id"
                                         type="'text'"
-                                        v-model="form.staffid"
+                                        v-model="form.role_id"
                                     ></TextInput>
                                     <InputError
-                                        :message="form.errors.staffid"
+                                        :message="form.errors.role_id"
                                     />
                                 </div>
                                 <div class="w-full flex flex-col">
@@ -147,24 +162,24 @@ const isFormIncomplete = () => {
                                     <TextInput
                                         label-text="Email address"
                                         :placeholder="'for Stockie account log-in'"
-                                        inputId="stockie_email"
+                                        inputId="worker_email"
                                         type="'email'"
-                                        v-model="form.stockie_email"
+                                        v-model="form.worker_email"
                                     ></TextInput>
                                     <InputError
-                                        :message="form.errors.stockie_email"
+                                        :message="form.errors.worker_email"
                                     />
                                 </div>
                                 <div class="w-full flex flex-col">
                                     <TextInput
                                         label-text="Password"
                                         :placeholder="'for Stockie account log-in'"
-                                        inputId="stockie_password"
+                                        inputId="password"
                                         :inputType="'password'"
-                                        v-model="form.stockie_password"
+                                        v-model="form.password"
                                     ></TextInput>
                                     <InputError
-                                        :message="form.errors.stockie_password"
+                                        :message="form.errors.password"
                                     />
                                 </div>
                             </div>

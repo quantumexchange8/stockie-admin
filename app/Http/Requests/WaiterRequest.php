@@ -14,13 +14,14 @@ class WaiterRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|max:255',
+          
+            'name'=>'required|string|max:255',
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
-            'email' => 'required|email|unique:waiters,email',
-            'staffid' => 'required|string|unique:waiters,staffid',
+            'email' => 'required|email|unique:users,email',
+            'role_id' => 'required|string|unique:users,role_id',
             'salary' => 'required|integer|min:0',
-            'stockie_email' => 'required|email',
-            'stockie_password' => 'required|string',
+            'worker_email' => 'required|email',
+            'password' => 'required|string',
         ];
     }
 
@@ -28,14 +29,14 @@ class WaiterRequest extends FormRequest
     public function messages()
     {
         return [
-           
+     
             'email.unique' => 'Email has already been taken.',
             'email.email' => 'Invalid email.',
-            'staffid.unique' => 'Staff ID has already been taken.',
+            'role_id.unique' => 'Staff ID has already been taken.',
             'phone.regex' => 'Invalid phone number',
             'salary.integer' => 'Salary must be an integer value.',
             'salary.min' => 'Salary must be at least 0.',
-            'stockie_email.email' => 'Invalid email',
+            'worker_email.email' => 'Invalid email',
 
         ];
     }
