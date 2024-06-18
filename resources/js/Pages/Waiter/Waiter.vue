@@ -2,11 +2,11 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Button from "@/Components/Button.vue";
 import SearchBar from "@/Components/SearchBar.vue";
-import SalesPerformance from "./SalesPerformance.vue";
-import AddWaiter from "./AddWaiter.vue";
+import SalesPerformance from "./Partials/SalesPerformance.vue";
+import AddWaiter from "./Partials/AddWaiter.vue";
 import { PlusIcon } from "@/Components/Icons/solid";
 import { ref } from "vue";
-
+import Modal from "@/Components/Modal.vue";
 const isModalOpen = ref(false);
 const openModal = () => {
     isModalOpen.value = true;
@@ -15,6 +15,7 @@ const openModal = () => {
 const closeModal = () => {
     isModalOpen.value = false;
 };
+const inputValue = ref("");
 </script>
 
 <template>
@@ -45,7 +46,11 @@ const closeModal = () => {
                 >
                     <div class="w-full flex items-center gap-5">
                         <!-- Search Bar -->
-                        <SearchBar placeholder="Search" :show-filter="false">
+                        <SearchBar
+                            placeholder="Search"
+                            :show-filter="false"
+                            v-model="inputValue"
+                        >
                         </SearchBar>
 
                         <Button
@@ -54,15 +59,20 @@ const closeModal = () => {
                             :iconPosition="'left'"
                             class="md:w-[166px] flex items-center gap-2"
                             @click="openModal"
-                        >
-                            <template #icon>
+                            ><template #icon>
                                 <PlusIcon />
                             </template>
 
                             New Waiter
+                            <Modal
+                                :show="isModalOpen"
+                                @close="closeModal"
+                                :title="'Add New Waiter'"
+                                :maxWidth="'lg'"
+                            >
+                                <AddWaiter @close="closeModal" />
+                            </Modal>
                         </Button>
-                        <!-- Modal Add Waiter -->
-                        <AddWaiter :show="isModalOpen" @close="closeModal" />
                     </div>
 
                     <div>

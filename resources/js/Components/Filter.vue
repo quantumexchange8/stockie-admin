@@ -4,31 +4,9 @@ import { Link } from "@inertiajs/vue3";
 import { FilterIcon } from "./Icons/solid";
 
 const props = defineProps({
-    variant: {
-        type: String,
-        default: "tertiary",
-        validator(value) {
-            return ["tertiary"].includes(value);
-        },
-    },
     type: {
         type: String,
         default: "submit",
-    },
-    size: {
-        type: String,
-        default: "md",
-        validator(value) {
-            return ["md", "lg"].includes(value);
-        },
-    },
-    squared: {
-        type: Boolean,
-        default: false,
-    },
-    pill: {
-        type: Boolean,
-        default: false,
     },
     href: {
         type: String,
@@ -37,14 +15,7 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
-    iconPosition: {
-        type: String,
-        default: "",
-    },
-    iconOnly: {
-        type: Boolean,
-        default: false,
-    },
+
     srText: {
         type: String || undefined,
         default: undefined,
@@ -57,57 +28,46 @@ const props = defineProps({
 
 const emit = defineEmits(["click"]);
 
-const {
-    type,
-    variant,
-    size,
-    squared,
-    pill,
-    href,
-    iconOnly,
-    iconPosition,
-    srText,
-    external,
-} = props;
+const { type, href, srText, external } = props;
 
 const { disabled } = toRefs(props);
 
-const baseClasses = [
-    "flex w-full items-center justify-center transition-colors font-medium select-none disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none",
-];
+// const baseClasses = [
+//     "flex w-full items-center justify-center transition-colors font-medium select-none disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none",
+// ];
 
-const variantClasses = (variant) => ({
-    "bg-white hover:bg-[#FFF9F9] hover:text-primary-800 text-primary-900 border border-primary-800":
-        variant == "tertiary",
-});
+// const variantClasses = (variant) => ({
+//     "bg-white hover:bg-[#FFF9F9] hover:text-primary-800 text-primary-900 border border-primary-800":
+//         variant == "tertiary",
+// });
 
-const classes = computed(() => [
-    ...baseClasses,
-    iconOnly
-        ? {
-              "px-4 py-3 text-base": true,
-          }
-        : null,
+// const classes = computed(() => [
+//     ...baseClasses,
+//     iconOnly
+//         ? {
+//               "px-4 py-3 text-base": true,
+//           }
+//         : null,
 
-    variantClasses(variant),
-    {
-        "rounded-tr-md": iconPosition !== "right", // Rounded top-right corner if icon is not on the right
-        "rounded-br-md": iconPosition !== "right", // Rounded bottom-right corner if icon is not on the right
-        "rounded-tl-md": squared, // Always rounded top-left corner
-        "rounded-bl-md": squared, // Always rounded bottom-left corner
-        "rounded-full": pill,
-    },
-    {
-        "pointer-events-none": href && disabled.value,
-    },
-    {
-        "!bg-grey-100 !text-grey-200":
-            disabled.value === true && variant === "primary",
-        "!bg-primary-100": disabled.value === true && variant === "secondary",
-        "!bg-primary-200": disabled.value === true && variant === "tertiary",
-        "!bg-primary-300": disabled.value === true && variant === "red",
-    },
-]);
+//     variantClasses(variant),
+//     {
+//         "rounded-tr-md": iconPosition !== "right", // Rounded top-right corner if icon is not on the right
+//         "rounded-br-md": iconPosition !== "right", // Rounded bottom-right corner if icon is not on the right
+//         "rounded-tl-md": squared, // Always rounded top-left corner
+//         "rounded-bl-md": squared, // Always rounded bottom-left corner
+//         "rounded-full": pill,
+//     },
+//     {
+//         "pointer-events-none": href && disabled.value,
+//     },
+//     {
+//         "!bg-grey-100 !text-grey-200":
+//             disabled.value === true && variant === "primary",
+//         "!bg-primary-100": disabled.value === true && variant === "secondary",
+//         "!bg-primary-200": disabled.value === true && variant === "tertiary",
+//         "!bg-primary-300": disabled.value === true && variant === "red",
+//     },
+// ]);
 
 const handleClick = (e) => {
     if (disabled.value) {
@@ -122,15 +82,6 @@ const Tag = external ? "a" : Link;
 </script>
 
 <style scoped>
-/* Add styles for the slot container */
-.icon-slot-container {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-}
-
 .margin-right {
     margin-right: 6px;
 }
@@ -141,7 +92,8 @@ const Tag = external ? "a" : Link;
 
 button:hover svg,
 button:hover span,
-button:active span {
+button:active span,
+button:focus span {
     color: #9f151a; /* Equivalent to red-800 in Tailwind CSS */
 }
 button:active svg,
@@ -162,8 +114,6 @@ button:active svg {
         <span v-if="srText" class="sr-only">
             {{ srText }}
         </span>
-
-        <slot :iconSizeClasses="iconSizeClasses" />
     </component>
 
     <button
@@ -173,17 +123,16 @@ button:active svg {
         :disabled="disabled"
         style="width: 103px; height: 44px"
         :class="[
-            classes,
-            'w-full max-h-[44px] px-4 py-3 flex justify-between items-center hover:text-red-800 active:text-red-800 focus:text-red-800',
-            'rounded-tr-[5px] rounded-br-[5px] text-grey-500 active:ring-0 border border-grey-300',
+            'w-[103px] max-h-[44px] px-4 py-3 flex justify-between items-center',
+            ' text-primary-900 hover:text-red-800 active:text-red-800 focus:text-red-800',
+            'bg-white hover:bg-[#FFF9F9] focus:bg-[#FFF1F2] active:bg-white',
+            'rounded-tr-[5px] rounded-br-[5px] active:ring-0 border border-primary-900',
             'hover:border-red-95 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-            'active:border-red-900',
-            'focus:border-red-900 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
+            'active:border-red-800',
+            'focus:border-red-800 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
             {
                 'border-grey-100': props.disabled === true,
                 'border-grey-300': props.disabled === false,
-                'border-red-500 focus:border-red-500 hover:border-red-500':
-                    errorMessage,
             },
         ]"
     >
@@ -204,7 +153,7 @@ button:active svg {
                 />
             </svg>
 
-            <span class="text-primary-950">Filter</span>
+            <span class="text-primary-950 focus:text-primary-800">Filter</span>
         </div>
     </button>
 </template>

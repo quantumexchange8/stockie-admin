@@ -3,13 +3,10 @@ import { onMounted, ref } from "vue";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
-import { SearchIcon } from "@/Components/Icons/solid";
 import Filter from "@/Components/Filter.vue";
-const typing = ref(false);
 
 const props = defineProps({
-    showFilter: Boolean, // Add a boolean prop to control whether to show the filter component
-
+    showFilter: Boolean, 
     inputName: String,
     modelValue: String,
     labelText: String,
@@ -30,6 +27,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    prefix: {
+        type: String,
+        default: "",
+    },
 });
 
 const {
@@ -41,18 +42,25 @@ const {
     hintText,
     placeholder,
     disabled,
+    showFilter,
+
 } = props;
 
-defineEmits(["update:modelValue"]);
+
 
 const input = ref(null);
-
+//defineEmits(["update:modelValue"]);
 const focus = () => input.value?.focus();
-
+const emit = defineEmits(["update:modelValue"]);
 defineExpose({
     input,
     focus,
 });
+
+const clearInput = () => {
+    emit('update:modelValue', '');
+    input.value.focus(); // Optional: Keep focus on the input after clearing
+};
 
 onMounted(() => {
     if (input.value.hasAttribute("autofocus")) {
@@ -60,14 +68,10 @@ onMounted(() => {
     }
 });
 
-const handleInput = (event) => {
-    typing.value = true;
-    $emit("update:modelValue", event.target.value);
-};
 </script>
 
 <template>
-    <div class="relative w-full">
+    <div class="w-full">
         <Label
             :value="labelText"
             :for="inputName"
@@ -79,36 +83,72 @@ const handleInput = (event) => {
                 },
             ]"
             v-if="labelText !== ''"
-        />
+        >
+        </Label>
         <div class="relative">
-            <input
-                :name="inputName"
+            <div
                 :class="[
-                    'w-full min-h-[44px] max-h-[44px] py-3 px-12 mb-1',
-                    'rounded-[5px] text-base active:ring-0 placeholder:text-grey-200',
+                    'w-full max-h-[44px] pl-4 py-3 flex justify-between items-center hover:text-red-300 active:text-primary-200 focus:text-primary-300',
+                    'rounded-[5px] text-primary-900 active:ring-0 border border-primary-900',
                     'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                    'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                    'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                     'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
-                    'focus:outline-none',
                     {
-                        'text-[#45535F]': typing,
-                        'text-grey-700': !typing,
-                        'border-grey-100': disabled === true,
-                        'border-[#7E171B]': !disabled,
-                        'border-red-500 focus:border-red-500': errorMessage,
+                        'border-grey-100': props.disabled === true,
+                        'border-grey-300': props.disabled === false,
+                        'border-red-500 focus:border-red-500 hover:border-red-500':
+                            errorMessage,
                     },
                 ]"
+            >
+            <slot name="prefix">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                    >
+                        <path
+                            d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                </slot>
+                <input
+                 :name="inputName"
+                    :class="[
+                        'w-full border-none text-base font-normal',
+                        'text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
+                    ]"
                 :type="inputType"
                 :value="modelValue"
-                @input="handleInput"
+                @input="$emit('update:modelValue', $event.target.value)"
                 ref="input"
                 :disabled="disabled"
                 :placeholder="placeholder"
-            />
-            <SearchIcon
-                class="absolute top-1/2 transform -translate-y-1/2 left-4 w-5 h-5 hover:cursor-pointer"
-            />
-            <Filter v-if="showFilter" class="absolute top-0 right-0 h-full" />
+                >
+               
+                <button
+                    type="button"
+                    v-if="modelValue && !disabled"
+                    class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    @click="clearInput"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect width="16" height="16" rx="8" fill="#ECEFF2"/>
+                        <path d="M10 6L6 10M6 6L10 10" stroke="#546775" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                </input>
+             
+                <Filter v-if="showFilter" class="absolute top-0 right-0 h-full" />
+            </div>
+        
+
         </div>
 
         <HintText v-if="hintText !== ''" :hintText="hintText" />

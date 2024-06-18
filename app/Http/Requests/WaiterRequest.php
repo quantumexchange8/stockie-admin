@@ -28,12 +28,14 @@ class WaiterRequest extends FormRequest
     public function messages()
     {
         return [
-            'email.unique' => 'The email has already been taken.',
-            'staffid.unique' => 'The staff ID has already been taken.',
+           
+            'email.unique' => 'Email has already been taken.',
+            'email.email' => 'Invalid email.',
+            'staffid.unique' => 'Staff ID has already been taken.',
             'phone.regex' => 'Invalid phone number',
-            'salary.integer' => 'The salary must be an integer value.',
-            'salary.min' => 'The salary must be at least 0.',
-            'stockie_email.email' => 'The stockie email must be a valid email address.',
+            'salary.integer' => 'Salary must be an integer value.',
+            'salary.min' => 'Salary must be at least 0.',
+            'stockie_email.email' => 'Invalid email',
 
         ];
     }

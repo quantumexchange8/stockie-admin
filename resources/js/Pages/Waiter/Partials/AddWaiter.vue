@@ -1,0 +1,198 @@
+<script setup>
+import Button from "@/Components/Button.vue";
+import TextInput from "@/Components/TextInput.vue";
+import InputPrefix from "@/Components/TextInputPrefix.vue";
+import InputError from "@/Components/InputError.vue";
+import { useForm } from "@inertiajs/vue3";
+
+const emit = defineEmits(["close"]);
+const closeModal = () => {
+    form.reset(); //Reset form field
+    form.errors = {}; // Clear all errors
+    emit("close");
+};
+
+const form = useForm({
+    name: "",
+    phone: "",
+    email: "",
+    staffid: "",
+    salary: "",
+    stockie_email: "",
+    stockie_password: "",
+});
+
+const submit = () => {
+    form.post(route("waiter.add-waiter"), {
+        onSuccess: () => {
+            console.log("Form submitted successfully!");
+            closeModal();
+        },
+        onError: () => {
+            console.log("Invalid value");
+        },
+    });
+};
+
+const isFormIncomplete = () => {
+    return (
+        !form.name ||
+        !form.phone ||
+        !form.email ||
+        !form.staffid ||
+        !form.salary ||
+        !form.stockie_email ||
+        !form.stockie_password
+    );
+};
+</script>
+<template>
+    <div class="w-full flex flex-col">
+        <form @submit.prevent="submit">
+            <div class="w-full flex flex-col md:gap-9">
+                <div class="w-full flex md:gap-6">
+                    <div
+                        class="w-[373px] h-[373px] p-3 border-[#D6DCE1] border-[1px] rounded-[5px] border-dashed bg-[#F8F9FA]"
+                    ></div>
+                    <div class="flex flex-grow flex-col md:gap-[48px]">
+                        <div class="flex flex-col md:gap-6">
+                            <div class="md:text-[20px] text-[#48070A]">
+                                Personal Detail
+                            </div>
+
+                            <div class="flex flex-col md:gap-4">
+                                <TextInput
+                                    label-text="Full name"
+                                    :placeholder="'eg: John Doe'"
+                                    inputId="name"
+                                    type="'name'"
+                                    v-model="form.name"
+                                ></TextInput>
+
+                                <div class="flex md:gap-4">
+                                    <div class="w-full flex flex-col">
+                                        <InputPrefix
+                                            label-text="Phone number"
+                                            inputId="phone"
+                                            type="'tel'"
+                                            v-model="form.phone"
+                                        >
+                                            <template #prefix>
+                                                <span class="text-grey-900"
+                                                    >+60</span
+                                                >
+                                            </template>
+                                        </InputPrefix>
+                                        <InputError
+                                            :message="form.errors.phone"
+                                        />
+                                    </div>
+
+                                    <div class="w-full flex flex-col">
+                                        <TextInput
+                                            label-text="Email address"
+                                            :placeholder="'eg: johndoe@gmail.com'"
+                                            inputId="email"
+                                            type="'email'"
+                                            v-model="form.email"
+                                        >
+                                        </TextInput>
+                                        <InputError
+                                            :message="form.errors.email"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col md:gap-6">
+                            <div class="md:text-[20px] text-[#48070A]">
+                                Work Detail
+                            </div>
+                            <div class="flex md:gap-4">
+                                <div class="w-full flex flex-col">
+                                    <TextInput
+                                        label-text="Staff ID"
+                                        :placeholder="'eg: J8192'"
+                                        inputId="staffid"
+                                        type="'text'"
+                                        v-model="form.staffid"
+                                    ></TextInput>
+                                    <InputError
+                                        :message="form.errors.staffid"
+                                    />
+                                </div>
+                                <div class="w-full flex flex-col">
+                                    <InputPrefix
+                                        label-text="Basic salary (per month)"
+                                        inputId="salary"
+                                        type="'text'"
+                                        v-model="form.salary"
+                                    >
+                                        <template #prefix>
+                                            <span class="text-grey-900"
+                                                >RM</span
+                                            >
+                                        </template>
+                                    </InputPrefix>
+                                    <InputError :message="form.errors.salary" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col md:gap-6">
+                            <div class="md:text-[20px] text-[#48070A]">
+                                Account Detail
+                            </div>
+                            <div class="flex md:gap-4">
+                                <div class="w-full flex flex-col">
+                                    <TextInput
+                                        label-text="Email address"
+                                        :placeholder="'for Stockie account log-in'"
+                                        inputId="stockie_email"
+                                        type="'email'"
+                                        v-model="form.stockie_email"
+                                    ></TextInput>
+                                    <InputError
+                                        :message="form.errors.stockie_email"
+                                    />
+                                </div>
+                                <div class="w-full flex flex-col">
+                                    <TextInput
+                                        label-text="Password"
+                                        :placeholder="'for Stockie account log-in'"
+                                        inputId="stockie_password"
+                                        :inputType="'password'"
+                                        v-model="form.stockie_password"
+                                    ></TextInput>
+                                    <InputError
+                                        :message="form.errors.stockie_password"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex md:gap-4">
+                    <Button
+                        variant="tertiary"
+                        type="button"
+                        @click="form.reset()"
+                        :size="'lg'"
+                        >Cancel</Button
+                    >
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        :size="'lg'"
+                        :disabled="isFormIncomplete()"
+                        v-bind:class="[
+                            isFormIncomplete()
+                                ? 'disabled-class'
+                                : 'enabled-class',
+                        ]"
+                        >Add</Button
+                    >
+                </div>
+            </div>
+        </form>
+    </div>
+</template>
