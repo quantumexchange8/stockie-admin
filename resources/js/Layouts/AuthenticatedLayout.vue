@@ -1,5 +1,5 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { onMounted } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
 import { sidebarState, rightSidebarState } from '@/Composables'
@@ -79,33 +79,39 @@ onMounted(() => {
                                         />
                                     </svg>
                                 </button>
-                                <p class="font-medium text-lg text-red-800 leading-tight">
+                                <p class="font-medium text-lg text-primary-800 leading-tight">
                                     <slot name="header"/>
                                 </p>
                             </div>
                             <div class="flex items-start gap-3">
                                 <NumberedNotificationIcon 
-                                    class="text-red-900 hover:text-red-800"
+                                    class="text-primary-900 hover:text-primary-800"
                                     :notificationValue="10"
                                     aria-hidden="true" 
                                 />
                                 <LanguageIcon 
-                                    class="text-red-900 hover:text-red-800"
+                                    class="text-primary-900 hover:text-primary-800"
                                     aria-hidden="true" 
                                 />
-                                <LogOutIcon 
-                                    class="text-red-900 hover:text-red-800"
-                                    aria-hidden="true" 
-                                />
+                                <Link 
+                                    :href="route('logout')" 
+                                    method="post"
+                                    as="button"
+                                >
+                                    <LogOutIcon 
+                                        class="text-primary-900 hover:text-primary-800"
+                                        aria-hidden="true" 
+                                    />
+                                </Link>
                             </div>
                         </div>
-                        <div class="bg-red-900 w-full h-[0.5px]"></div>
+                        <div class="bg-primary-900 w-full h-[0.5px]"></div>
                     </div>
                 </header>
 
                 <!-- Page Content -->
                 <main class="w-full flex justify-center">
-                    <div class="xl:max-w-[1440px] flex flex-col w-full self-center gap-[10px] flex-shrink-1 p-5">
+                    <div class="xl:max-w-[1440px] flex flex-col w-full self-center gap-[10px] flex-shrink-1 p-5 border border-primary-900">
                         <slot />
                     </div>
                 </main>

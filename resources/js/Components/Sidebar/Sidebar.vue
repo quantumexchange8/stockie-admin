@@ -4,6 +4,7 @@ import { sidebarState } from '@/Composables'
 import SidebarHeader from '@/Components/Sidebar/SidebarHeader.vue'
 import SidebarContent from '@/Components/Sidebar/SidebarContent.vue'
 import SidebarFooter from '@/Components/Sidebar/SidebarFooter.vue'
+import { TimesIcon } from '../Icons/solid';
 
 onMounted(() => {
     window.addEventListener('resize', sidebarState.handleWindowResize)
@@ -23,7 +24,7 @@ onMounted(() => {
             transition-duration: 150ms;
         "
         :class="[
-            'fixed inset-y-0 p-8 flex flex-col justify-between w-[251px] overflow-auto scrollbar-thin scrollbar-webkit',
+            'fixed inset-y-0 p-8 flex flex-col justify-between w-[251px] backdrop-blur-[25px] bg-white overflow-auto scrollbar-thin scrollbar-webkit',
             {
                 'translate-x-0 w-[283px] z-20':
                     sidebarState.isOpen,

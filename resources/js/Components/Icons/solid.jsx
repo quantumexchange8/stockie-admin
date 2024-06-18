@@ -1252,7 +1252,7 @@ export const CircledTimesIcon = defineComponent({
                     width="16" 
                     height="16" 
                     rx="8" 
-                    fill="#FFF1F2"
+                    fill="fill-current"
                 />
                 <path 
                     d="M10 6L6 10M6 6L10 10" 
