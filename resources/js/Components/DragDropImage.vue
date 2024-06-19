@@ -7,7 +7,7 @@ import { CircledTimesIcon } from './Icons/solid';
 const props = defineProps({
     inputName: String,
     errorMessage: String,
-	modelValue: [String, Date, Array],
+	modelValue: [String, File],
     disabled: {
         type: Boolean,
         default: false,
@@ -20,7 +20,7 @@ const emit = defineEmits(['update:modelValue']);
 
 const selectFile = (files) => {
     hasFile.value = files.length > 0;
-    emit('update:modelValue', files.length > 0 ? files[0].name : '');
+    emit('update:modelValue', files.length > 0 ? files[0] : '');
 }
 
 const removeFile = (removeFileCallback) => {
