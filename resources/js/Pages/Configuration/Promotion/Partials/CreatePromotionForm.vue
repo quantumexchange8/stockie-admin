@@ -89,7 +89,7 @@ const closeForm = () => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="console.log(form.errors.description)"
+                @click="closeForm"
             >
                 Cancel
             </Button>

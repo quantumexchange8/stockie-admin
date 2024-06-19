@@ -47,13 +47,6 @@ Route::middleware('auth')->group(function () {
     //     })->middleware(['auth', 'verified'])->name('components');
     // });
 
-    /********* Configuration **********/
-    Route::get('/configurations', function () {
-        return Inertia::render('Configuration/Promotion');
-    })->name('configurations.index');
-    
-    Route::resource('/configurations/promotions', ConfigPromotionController::class);
-
     /******* Profile ********/
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -61,11 +54,13 @@ Route::middleware('auth')->group(function () {
 
 
     /******* Configuration ********/
-    Route::get('/configuration', function () {
-        return Inertia::render('Configuration/MainConfiguration');
-    })->name('configuration');
-
-
+    Route::prefix('configurations')->group(function () {
+        Route::get('/configurations', function () {
+            return Inertia::render('Configuration/MainConfiguration');
+        })->name('configurations');
+        
+        Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');
+    });
 });
 
 require __DIR__.'/auth.php';

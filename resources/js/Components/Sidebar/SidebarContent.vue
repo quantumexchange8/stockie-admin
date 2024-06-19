@@ -108,7 +108,7 @@ import {
                         <SummaryReportIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink title="Configuration" :href="route('configurations.index')">
+                <SidebarLink title="Configuration" :href="route('configurations.promotions.index')">
                     <template #icon>
                         <ConfigurationIcon aria-hidden="true" />
                     </template>

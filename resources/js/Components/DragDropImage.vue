@@ -19,8 +19,13 @@ const hasFile = ref(false);
 const emit = defineEmits(['update:modelValue']);
 
 const selectFile = (files) => {
-    hasFile.value = true;
-    emit('update:modelValue', files[0].name);
+    hasFile.value = files.length > 0;
+    emit('update:modelValue', files.length > 0 ? files[0].name : '');
+}
+
+const removeFile = (removeFileCallback) => {
+    removeFileCallback();
+    emit('update:modelValue', '');
 }
 </script>
 
@@ -34,7 +39,16 @@ const selectFile = (files) => {
             accept="image/*" 
             :maxFileSize="6000000"
             :fileLimit="1"
+            :disabled="hasFile"
+            :class="[
+                {
+                    'hover:cursor-no-drop': hasFile
+                }
+            ]"
             :pt="{
+                message: {
+                    class: 'absolute flex flex-row justify-between self-stretch w-full border border-primary-800 bg-blue'
+                },
                 input: {
                     class: 'hidden'
                 },
@@ -50,7 +64,41 @@ const selectFile = (files) => {
             }"
         >
             <template #header="{ chooseCallback, uploadCallback, clearCallback, files }">
-                <div class="flex flex-col justify-center gap-3 p-3 w-full h-full self-stretch items-center" v-if="files.length === 0">
+                <div class="flex justify-center items-center w-full">
+                    <Button 
+                        @click="chooseCallback()" 
+                        :type="'button'"
+                        :size="'md'"
+                        class="!w-fit absolute top-60"
+                    >
+                        Select an image
+                    </Button>
+                </div>
+            </template>
+            <template #content="{ files, uploadedFiles, removeUploadedFileCallback, removeFileCallback }">
+                <div v-if="files.length > 0">
+                    <div 
+                        class="w-full h-full flex self-stretch items-center" 
+                        :class="[
+                            {
+                                'hover:cursor-no-drop': hasFile
+                            }
+                        ]">
+                        <img 
+                            role="presentation" 
+                            :alt="files[0].name" 
+                            :src="files[0].objectURL" 
+                            class="h-[244px] w-full object-contain"
+                        />
+                        <CircledTimesIcon 
+                            class="absolute top-72 left-1/2 w-6 h-6 fill-white text-primary-900 hover:text-primary-500 cursor-pointer"
+                            @click="removeFile(removeFileCallback); hasFile = false;"  
+                        />
+                    </div>
+                </div>
+            </template>
+            <template #empty>
+                <div class="flex flex-col justify-center gap-3 p-3 w-full h-full self-stretch items-center">
                     <div class="flex flex-col justify-center items-center pt-2">
                         <svg 
                             xmlns="http://www.w3.org/2000/svg" 
@@ -72,33 +120,10 @@ const selectFile = (files) => {
                         <div class="flex flex-col justify-center items-center gap-1">
                             <p class="text-lg font-semibold text-grey-300">Drag & drop</p>
                             <p class="text-base font-normal text-grey-300">or</p>
+                            <div class="h-11"></div>
                         </div>
                     </div>
-                    <Button 
-                        @click="chooseCallback()" 
-                        :type="'button'"
-                        :size="'md'"
-                        class="!w-fit"
-                    >
-                        Select an image
-                    </Button>
                     <p class="text-grey-300 text-xs font-medium">Suggested image size: 1920 x 1080 pixel</p>
-                </div>
-            </template>
-            <template #content="{ files, uploadedFiles, removeUploadedFileCallback, removeFileCallback }">
-                <div v-if="files.length > 0">
-                    <div class="w-full h-full flex self-stretch items-center">
-                        <img 
-                            role="presentation" 
-                            :alt="files[0].name" 
-                            :src="files[0].objectURL" 
-                            class="h-[244px] w-full object-contain"
-                        />
-                        <CircledTimesIcon 
-                            class="absolute top-72 left-1/2 w-6 h-6 fill-white text-primary-900 hover:text-primary-500 cursor-pointer"
-                            @click="removeFileCallback(); hasFile = false"  
-                        />
-                    </div>
                 </div>
             </template>
         </FileUpload>

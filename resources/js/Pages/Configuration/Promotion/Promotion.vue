@@ -33,7 +33,7 @@ const hideCreateForm = () => {
             <div class="flex flex-col justify-center flex-[1_0_0] h-6">
                 <p class="text-md font-medium text-primary-900">Promotion List</p>
             </div>
-            <div class="flex gap-5 self-stretch">
+            <div class="flex w-full gap-5 self-stretch flex-wrap md:flex-nowrap">
                 <SearchBar
                     :inputName="'searchbar'"
                     :placeholder="'Search'"
@@ -42,7 +42,7 @@ const hideCreateForm = () => {
                     :type="'button'"
                     :size="'lg'"
                     :iconPosition="'left'"
-                    class="w-fit"
+                    class="md:!w-fit"
                     @click="showCreateForm"
                 >
                     <template #icon>
