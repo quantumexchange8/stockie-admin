@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ConfigPromotionRequest;
 use App\Models\ConfigPromotion;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
@@ -44,7 +46,7 @@ class ConfigPromotionController extends Controller
         ]);
 
         
-        return Redirect::route('configurations.index');
+        return Redirect::route('configurations.promotions.index');
     }
 
     /**

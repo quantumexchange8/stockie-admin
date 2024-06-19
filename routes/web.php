@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
         })->name('configurations');
         
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');
+        Route::post('/promotions/store', [ConfigPromotionController::class, 'store'])->name('configurations.promotions.store');
     });
 });
 

@@ -33,7 +33,7 @@ const formSubmit = () => {
         form.promotion_to = (endDate.getFullYear() < 10 ? '0' + endDate.getFullYear() : endDate.getFullYear()) + '/' + ((endDate.getMonth() + 1) < 10 ? '0' + (endDate.getMonth() + 1) : (endDate.getMonth() + 1)) + '/' + (endDate.getDate()  < 10 ? '0' + endDate.getDate() : endDate.getDate());
     }
 
-    form.post(route('promotions.store'), {
+    form.post(route('configurations.promotions.store'), {
         preserveScroll: true,
         onSuccess: () => closeForm(),
     })
