@@ -51,10 +51,7 @@ import {
                         <OrderIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink 
-                    title="Menu Management" 
-                    :href="route('dashboard')" 
-                >
+                <SidebarLink title="Menu Management" :href="route('dashboard')">
                     <template #icon>
                         <MenuIcon aria-hidden="true" />
                     </template>
@@ -108,7 +105,10 @@ import {
                         <SummaryReportIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink title="Configuration" :href="route('configurations.promotions.index')">
+                <SidebarLink
+                    title="Configuration"
+                    :href="route('configurations')"
+                >
                     <template #icon>
                         <ConfigurationIcon aria-hidden="true" />
                     </template>

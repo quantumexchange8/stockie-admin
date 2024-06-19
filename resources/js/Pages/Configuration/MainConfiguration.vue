@@ -8,8 +8,17 @@ import TabPanel from "primevue/tabpanel";
     <AuthenticatedLayout>
         <template #header> Configuration </template>
 
-        <TabView>
-            <TabPanel header="Header I">
+        <TabView
+            :pt="{
+                inkbar: {
+                    class: 'border-2 border-primary-900 absolute bottom-0 left-0 right-0',
+                },
+                navContent: {
+                    class: 'w-fit',
+                },
+            }"
+        >
+            <TabPanel header="Stock">
                 <p class="m-0">
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
                     do eiusmod tempor incididunt ut labore et dolore magna
@@ -21,7 +30,7 @@ import TabPanel from "primevue/tabpanel";
                     deserunt mollit anim id est laborum.
                 </p>
             </TabPanel>
-            <TabPanel header="Header II">
+            <TabPanel header="Employee Commission">
                 <p class="m-0">
                     Sed ut perspiciatis unde omnis iste natus error sit
                     voluptatem accusantium doloremque laudantium, totam rem
@@ -33,7 +42,31 @@ import TabPanel from "primevue/tabpanel";
                     velit, sed quia non numquam eius modi.
                 </p>
             </TabPanel>
-            <TabPanel header="Header III">
+            <TabPanel header="Employee Incentive Programme">
+                <p class="m-0">
+                    At vero eos et accusamus et iusto odio dignissimos ducimus
+                    qui blanditiis praesentium voluptatum deleniti atque
+                    corrupti quos dolores et quas molestias excepturi sint
+                    occaecati cupiditate non provident, similique sunt in culpa
+                    qui officia deserunt mollitia animi, id est laborum et
+                    dolorum fuga. Et harum quidem rerum facilis est et expedita
+                    distinctio. Nam libero tempore, cum soluta nobis est
+                    eligendi optio cumque nihil impedit quo minus.
+                </p>
+            </TabPanel>
+            <TabPanel header="Promotion">
+                <p class="m-0">
+                    At vero eos et accusamus et iusto odio dignissimos ducimus
+                    qui blanditiis praesentium voluptatum deleniti atque
+                    corrupti quos dolores et quas molestias excepturi sint
+                    occaecati cupiditate non provident, similique sunt in culpa
+                    qui officia deserunt mollitia animi, id est laborum et
+                    dolorum fuga. Et harum quidem rerum facilis est et expedita
+                    distinctio. Nam libero tempore, cum soluta nobis est
+                    eligendi optio cumque nihil impedit quo minus.
+                </p>
+            </TabPanel>
+            <TabPanel header="Merchant Detail">
                 <p class="m-0">
                     At vero eos et accusamus et iusto odio dignissimos ducimus
                     qui blanditiis praesentium voluptatum deleniti atque
