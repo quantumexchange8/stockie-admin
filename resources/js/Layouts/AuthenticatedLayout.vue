@@ -111,7 +111,7 @@ onMounted(() => {
 
                 <!-- Page Content -->
                 <main class="w-full flex justify-center">
-                    <div class="xl:max-w-[1440px] flex flex-col w-full self-center gap-[10px] flex-shrink-1 p-5 border border-primary-900">
+                    <div class="xl:max-w-[1440px] flex flex-col w-full self-center gap-[10px] flex-shrink-1 p-5">
                         <slot />
                     </div>
                 </main>
