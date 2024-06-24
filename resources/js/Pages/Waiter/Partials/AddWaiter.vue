@@ -1,7 +1,6 @@
 <script setup>
 import Button from "@/Components/Button.vue";
 import TextInput from "@/Components/TextInput.vue";
-import InputPrefix from "@/Components/TextInputPrefix.vue";
 import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 
@@ -31,10 +30,6 @@ const submit = () => {
         },
         onError: (error) => {
             console.error(error); // Log the error details
-            if (form.errors.full_name) console.error(error);
-
-            if (form.errors.phone) console.error(error);
-            if (form.errors.email) console.error(error);
         },
     });
 };
@@ -86,7 +81,7 @@ const isFormIncomplete = () => {
 
                                 <div class="flex md:gap-4">
                                     <div class="w-full flex flex-col">
-                                        <InputPrefix
+                                        <TextInput
                                             label-text="Phone number"
                                             inputId="phone"
                                             type="'tel'"
@@ -97,7 +92,7 @@ const isFormIncomplete = () => {
                                                     >+60</span
                                                 >
                                             </template>
-                                        </InputPrefix>
+                                        </TextInput>
                                         <InputError
                                             :message="form.errors.phone"
                                         />
@@ -137,7 +132,7 @@ const isFormIncomplete = () => {
                                     />
                                 </div>
                                 <div class="w-full flex flex-col">
-                                    <InputPrefix
+                                    <TextInput
                                         label-text="Basic salary (per month)"
                                         inputId="salary"
                                         type="'text'"
@@ -148,7 +143,7 @@ const isFormIncomplete = () => {
                                                 >RM</span
                                             >
                                         </template>
-                                    </InputPrefix>
+                                    </TextInput>
                                     <InputError :message="form.errors.salary" />
                                 </div>
                             </div>
@@ -198,7 +193,8 @@ const isFormIncomplete = () => {
                         variant="primary"
                         type="submit"
                         :size="'lg'"
-                        :disabled="isFormIncomplete()"
+                        :disabled="isFormIncomplete() && form.processing"
+                        :class="{ 'opacity-25': form.processing }"
                         v-bind:class="[
                             isFormIncomplete()
                                 ? 'disabled-class'

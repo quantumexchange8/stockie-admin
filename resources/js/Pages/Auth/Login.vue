@@ -1,11 +1,11 @@
 <script setup>
-import Checkbox from '@/Components/Checkbox.vue';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import Main from "../../../assets/images/login/Main.svg";
+import StockieLogo from "../../../assets/images/login/stockie-logo.svg";
+import Button from "@/Components/Button.vue";
+import Checkbox from "@/Components/Checkbox.vue";
+import InputError from "@/Components/InputError.vue";
+import TextInput from "@/Components/TextInput.vue";
+import { useForm } from "@inertiajs/vue3";
 
 defineProps({
     canResetPassword: {
@@ -17,78 +17,112 @@ defineProps({
 });
 
 const form = useForm({
-    email: '',
-    password: '',
+    role_id: "",
+    password: "",
     remember: false,
 });
 
 const submit = () => {
-    form.post(route('login'), {
-        onFinish: () => form.reset('password'),
+    form.post(route("login"), {
+        onFinish: () => form.reset("password"),
     });
 };
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Log in" />
-
-        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
-            {{ status }}
+    <div class="flex min-h-screen">
+        <div
+            class="w-full bg-primary-900 flex flex-col pt-[99px] pr-[56px] gap-[94px]"
+        >
+            <div class="flex flex-col pl-[45px]">
+                <div class="w-full flex flex-col gap-[7px]">
+                    <div class="text-white font-black text-[40px]">
+                        Welcome to
+                        <span class="bg-primary-800 pl-2 pr-3">Stockie!</span>
+                    </div>
+                    <div class="w-[434px] text-md text-white">
+                        Experience the ease of a hassle-free inventory
+                        management system today.
+                    </div>
+                </div>
+            </div>
+            <div><img :src="Main" alt="Stockie" /></div>
         </div>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+        <div
+            class="w-full bg-white flex flex-col justify-center items-center pl-[113px] pr-[106px]"
+        >
+            <form @submit.prevent="submit">
+                <div class="w-[421px] flex flex-col gap-[73px]">
+                    <div class="flex flex-col gap-[10px]">
+                        <img
+                            :src="StockieLogo"
+                            alt="Stockie"
+                            class="w-[80px] h-[80px]"
+                        />
+                        <div class="flex flex-col gap-1">
+                            <div class="font-black text-xl text-primary-900">
+                                stockie
+                            </div>
+                            <div class="font-medium text-base text-grey-900">
+                                Your Inventory, Perfectly Managed
+                            </div>
+                        </div>
+                    </div>
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
+                    <div class="w-full flex flex-col gap-6">
+                        <div class="flex flex-col">
+                            <TextInput
+                                label-text="ID"
+                                :inputType="'text'"
+                                :placeholder="'Enter your ID here'"
+                                v-model="form.role_id"
+                                required
+                                autofocus
+                                autocomplete="role_id"
+                            >
+                            </TextInput>
+                            <InputError
+                                :message="form.errors.role_id"
+                            ></InputError>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <div>
+                                <TextInput
+                                    label-text="Password"
+                                    :placeholder="'Enter your password here'"
+                                    id="password"
+                                    :inputType="'password'"
+                                    v-model="form.password"
+                                    required
+                                    autocomplete="password"
+                                />
 
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
+                                <InputError :message="form.errors.password" />
+                            </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
+                            <div class="flex items-center gap-[9px]">
+                                <Checkbox
+                                    name="remember"
+                                    id="remember"
+                                    v-model:checked="form.remember"
+                                />
+                                <span class="text-xs text-gray-900"
+                                    >Remember me</span
+                                >
+                            </div>
+                        </div>
+                    </div>
 
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="current-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
-
-            <div class="block mt-4">
-                <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-gray-600">Remember me</span>
-                </label>
-            </div>
-
-            <div class="flex items-center justify-end mt-4">
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    Forgot your password?
-                </Link>
-
-                <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Log in
-                </PrimaryButton>
-            </div>
-        </form>
-    </GuestLayout>
+                    <Button
+                        variant="primary"
+                        :size="'lg'"
+                        :class="{ 'opacity-25': form.processing }"
+                        :disabled="form.processing"
+                        >Log in</Button
+                    >
+                </div>
+            </form>
+        </div>
+    </div>
 </template>

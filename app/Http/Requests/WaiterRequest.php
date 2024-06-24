@@ -14,7 +14,7 @@ class WaiterRequest extends FormRequest
     public function rules()
     {
         return [
-          
+            'full_name'=>'string|max:255',
             'name'=>'required|string|max:255',
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
             'email' => 'required|email|unique:users,email',

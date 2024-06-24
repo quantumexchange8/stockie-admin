@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
-
+import { EyeIcon, EyeOffIcon } from "./Icons/solid";
 const props = defineProps({
     inputName: String,
     modelValue: String,
@@ -49,6 +49,12 @@ defineExpose({
     focus,
 });
 
+const showPassword = ref(false);
+
+const toggleShow = () => {
+    showPassword.value = !showPassword.value;
+};
+
 onMounted(() => {
     if (input.value.hasAttribute("autofocus")) {
         input.value.focus();
@@ -71,28 +77,60 @@ onMounted(() => {
             v-if="labelText !== ''"
         >
         </Label>
-        <input
-            :name="inputName"
-            :class="[
-                'w-full min-h-[44px] max-h-[44px] py-3 px-4 mb-1',
-                'rounded-[5px] text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
-                'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
-                {
-                    'border-grey-100': disabled === true,
-                    'border-grey-300': disabled === false,
-                    'border-red-500 focus:border-red-500 hover:border-red-500':
-                        errorMessage,
-                },
-            ]"
-            :type="inputType"
-            :value="modelValue"
-            @input="$emit('update:modelValue', $event.target.value)"
-            ref="input"
-            :disabled="disabled"
-            :placeholder="placeholder"
-        />
+        <div class="relative">
+            <div
+                v-if="$slots.prefix"
+                class="absolute min-h-[44px] max-h-[44px] flex items-center pl-3 py-3 text-base mb-1"
+            >
+                <slot name="prefix"></slot>
+            </div>
+            <input
+                :name="inputName"
+                :class="[
+                    'w-full min-h-[44px] max-h-[44px] py-3 px-4 mb-1',
+                    'rounded-[5px] text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
+                    'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                    'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                    'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
+                    {
+                        'border-grey-100': disabled === true,
+                        'border-grey-300': disabled === false,
+                        'border-red-500 focus:border-red-500 hover:border-red-500':
+                            errorMessage,
+                        'pl-12': $slots.prefix,
+                        'pl-4': !$slots.prefix,
+                    },
+                ]"
+                :type="
+                    inputType !== 'password'
+                        ? inputType
+                        : showPassword
+                        ? 'text'
+                        : 'password'
+                "
+                :value="modelValue"
+                @input="$emit('update:modelValue', $event.target.value)"
+                ref="input"
+                :disabled="disabled"
+                :placeholder="placeholder"
+            />
+            <span
+                v-if="inputType === 'password'"
+                class="absolute inset-y-0 right-0 flex items-center px-4"
+            >
+                <button
+                    type="button"
+                    class="justify-center max-h-max"
+                    @click="toggleShow"
+                >
+                    <component
+                        :is="showPassword ? EyeOffIcon : EyeIcon"
+                        class="flex-shrink-0 w-5 h-5 cursor-pointer text-cyan-500"
+                        aria-hidden="true"
+                    />
+                </button>
+            </span>
+        </div>
         <HintText v-if="hintText !== ''" :hintText="hintText" />
         <InputError :message="errorMessage" v-if="errorMessage" />
     </div>

@@ -4,13 +4,13 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WaiterController;
-
 use Inertia\Inertia;
 use App\Http\Controllers\ConfigPromotionController;
 use App\Http\Controllers\ProductController;
 
+
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
+    return Inertia::render('Auth/Login', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     })->name('components');
 
     /********* Waiter **********/
+    //add prefix
     Route::get('waiter', [WaiterController::class, 'waiter'])->name('waiter');
     Route::post('waiter/add-waiter', [WaiterController::class, 'store'])->name('waiter.add-waiter');
 
@@ -62,6 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');
         Route::post('/promotions/store', [ConfigPromotionController::class, 'store'])->name('configurations.promotions.store');
     });
+
 });
 
 require __DIR__.'/auth.php';

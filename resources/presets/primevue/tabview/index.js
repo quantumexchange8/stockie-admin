@@ -90,13 +90,13 @@ export default {
                 "relative",
 
                 // Font
-                "font-bold",
+                "font-medium",
 
                 // Flexbox and Alignment
                 "flex items-center",
 
                 // Spacing
-                "p-5",
+                "p-3",
                 "-mb-[2px]",
 
                 // Shape
@@ -109,14 +109,14 @@ export default {
                         parent.state.d_activeIndex !== context.index,
                     "bg-surface-0 dark:bg-surface-800":
                         parent.state.d_activeIndex !== context.index,
-                    "text-surface-700 dark:text-surface-0/80":
+                    "text-grey-200":
                         parent.state.d_activeIndex !== context.index,
 
                     "bg-surface-0 dark:bg-surface-800":
                         parent.state.d_activeIndex === context.index,
                     "border-primary":
                         parent.state.d_activeIndex === context.index,
-                    "text-primary":
+                    "text-primary-900":
                         parent.state.d_activeIndex === context.index,
                 },
 
@@ -124,11 +124,11 @@ export default {
                 "focus-visible:outline-none focus-visible:outline-offset-0 focus-visible:ring focus-visible:ring-inset",
                 "focus-visible:ring-primary-400/50 dark:focus-visible:ring-primary-300/50",
                 {
-                    "hover:bg-surface-0 dark:hover:bg-surface-800/80":
+                    "hover:bg-surface-0":
                         parent.state.d_activeIndex !== context.index,
-                    "hover:border-surface-400 dark:hover:border-primary-400":
+                    "hover:border-surface-400":
                         parent.state.d_activeIndex !== context.index,
-                    "hover:text-surface-900 dark:hover:text-surface-0":
+                    "hover:text-surface-900 ":
                         parent.state.d_activeIndex !== context.index,
                 },
 
@@ -144,14 +144,14 @@ export default {
         headerTitle: {
             class: [
                 // Text
-                "leading-none",
+                "text-[14px] leading-none",
                 "whitespace-nowrap",
             ],
         },
         content: {
             class: [
                 // Spacing
-                "p-5",
+                "py-5 px-4",
 
                 // Shape
                 "rounded-b-md",

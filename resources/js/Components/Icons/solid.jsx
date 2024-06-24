@@ -1241,24 +1241,19 @@ export const FilterIcon = defineComponent({
 export const CircledTimesIcon = defineComponent({
     setup() {
         return () => (
-            <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="16" 
-                height="16" 
-                viewBox="0 0 16 16" 
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
                 fill="none"
             >
-                <rect 
-                    width="16" 
-                    height="16" 
-                    rx="8" 
-                    fill="fill-current"
-                />
-                <path 
-                    d="M10 6L6 10M6 6L10 10" 
-                    stroke="currentColor" 
-                    stroke-width="1.2" 
-                    stroke-linecap="round" 
+                <rect width="16" height="16" rx="8" fill="fill-current" />
+                <path
+                    d="M10 6L6 10M6 6L10 10"
+                    stroke="currentColor"
+                    stroke-width="1.2"
+                    stroke-linecap="round"
                     stroke-linejoin="round"
                 />
             </svg>
@@ -1269,26 +1264,26 @@ export const CircledTimesIcon = defineComponent({
 export const CircledArrowHeadLeftIcon = defineComponent({
     setup() {
         return () => (
-            <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 20 20" 
-                fill="none" 
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
-                <rect 
-                    x="20" 
-                    y="20" 
-                    width="20" 
-                    height="20" 
-                    rx="10" 
-                    transform="rotate(180 20 20)" 
+                <rect
+                    x="20"
+                    y="20"
+                    width="20"
+                    height="20"
+                    rx="10"
+                    transform="rotate(180 20 20)"
                     fill="fill-current"
                 />
-                <path 
-                    d="M12.917 15.8333L7.08366 9.99996L12.917 4.16663" 
-                    stroke="#353D45" 
-                    stroke-width="1.25" 
+                <path
+                    d="M12.917 15.8333L7.08366 9.99996L12.917 4.16663"
+                    stroke="#353D45"
+                    stroke-width="1.25"
                     stroke-linecap="square"
                 />
             </svg>
@@ -1299,24 +1294,24 @@ export const CircledArrowHeadLeftIcon = defineComponent({
 export const CircledArrowHeadRightIcon = defineComponent({
     setup() {
         return () => (
-            <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 20 20" 
-                fill="none" 
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
-                <rect 
-                    width="20" 
-                    height="20" 
-                    rx="10" 
-                    transform="matrix(1 0 0 -1 0 20)" 
+                <rect
+                    width="20"
+                    height="20"
+                    rx="10"
+                    transform="matrix(1 0 0 -1 0 20)"
                     fill="fill-current"
                 />
-                <path 
-                    d="M7.08301 15.8333L12.9163 9.99996L7.08301 4.16663" 
-                    stroke="currentColor" 
-                    stroke-width="1.25" 
+                <path
+                    d="M7.08301 15.8333L12.9163 9.99996L7.08301 4.16663"
+                    stroke="currentColor"
+                    stroke-width="1.25"
                     stroke-linecap="square"
                 />
             </svg>
@@ -1327,24 +1322,24 @@ export const CircledArrowHeadRightIcon = defineComponent({
 export const CircledArrowHeadUpIcon = defineComponent({
     setup() {
         return () => (
-            <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 20 20" 
-                fill="none" 
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
-                <rect 
-                    width="20" 
-                    height="20" 
-                    rx="10" 
-                    transform="matrix(0 -1 -1 0 20 20)" 
+                <rect
+                    width="20"
+                    height="20"
+                    rx="10"
+                    transform="matrix(0 -1 -1 0 20 20)"
                     fill="fill-current"
                 />
-                <path 
-                    d="M15.8337 12.9166L10.0003 7.08329L4.16699 12.9166" 
-                    stroke="currentColor" 
-                    stroke-width="1.25" 
+                <path
+                    d="M15.8337 12.9166L10.0003 7.08329L4.16699 12.9166"
+                    stroke="currentColor"
+                    stroke-width="1.25"
                     stroke-linecap="square"
                 />
             </svg>
@@ -1355,26 +1350,93 @@ export const CircledArrowHeadUpIcon = defineComponent({
 export const CircledArrowHeadDownIcon = defineComponent({
     setup() {
         return () => (
-            <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 20 20" 
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
-                <rect 
-                    x="20" 
-                    width="20" 
-                    height="20" 
-                    rx="10" 
-                    transform="rotate(90 20 0)" 
+                <rect
+                    x="20"
+                    width="20"
+                    height="20"
+                    rx="10"
+                    transform="rotate(90 20 0)"
                     fill="fill-current"
                 />
-                <path 
-                    d="M15.8337 7.08337L10.0003 12.9167L4.16699 7.08337" 
-                    stroke="currentColor" 
-                    stroke-width="1.25" 
+                <path
+                    d="M15.8337 7.08337L10.0003 12.9167L4.16699 7.08337"
+                    stroke="currentColor"
+                    stroke-width="1.25"
                     stroke-linecap="square"
+                />
+            </svg>
+        );
+    },
+});
+export const EyeOffIcon = defineComponent({
+    setup() {
+        return () => (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="21"
+                viewBox="0 0 20 21"
+                fill="none"
+            >
+                <path
+                    d="M2.01677 11.0943C1.90328 10.9146 1.84654 10.8248 1.81477 10.6862C1.79091 10.5821 1.79091 10.4179 1.81477 10.3138C1.84654 10.1752 1.90328 10.0854 2.01677 9.90569C2.95461 8.42071 5.74617 4.66667 10.0003 4.66667C14.2545 4.66667 17.0461 8.42071 17.9839 9.90569C18.0974 10.0854 18.1541 10.1752 18.1859 10.3138C18.2098 10.4179 18.2098 10.5821 18.1859 10.6862C18.1541 10.8248 18.0974 10.9146 17.9839 11.0943C17.0461 12.5793 14.2545 16.3333 10.0003 16.3333C5.74617 16.3333 2.95461 12.5793 2.01677 11.0943Z"
+                    stroke="#353D45"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M10.0003 13C11.381 13 12.5003 11.8807 12.5003 10.5C12.5003 9.11929 11.381 8.00001 10.0003 8.00001C8.61962 8.00001 7.50034 9.11929 7.50034 10.5C7.50034 11.8807 8.61962 13 10.0003 13Z"
+                    stroke="#353D45"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                <line
+                    x1="17.07"
+                    y1="1.67"
+                    x2="3.37"
+                    y2="18.89"
+                    fill="none"
+                    stroke="#353d45"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                />
+            </svg>
+        );
+    },
+});
+export const EyeIcon = defineComponent({
+    setup() {
+        return () => (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="21"
+                viewBox="0 0 20 21"
+                fill="none"
+            >
+                <path
+                    d="M2.01677 11.0943C1.90328 10.9146 1.84654 10.8248 1.81477 10.6862C1.79091 10.5821 1.79091 10.4179 1.81477 10.3138C1.84654 10.1752 1.90328 10.0854 2.01677 9.90569C2.95461 8.42071 5.74617 4.66667 10.0003 4.66667C14.2545 4.66667 17.0461 8.42071 17.9839 9.90569C18.0974 10.0854 18.1541 10.1752 18.1859 10.3138C18.2098 10.4179 18.2098 10.5821 18.1859 10.6862C18.1541 10.8248 18.0974 10.9146 17.9839 11.0943C17.0461 12.5793 14.2545 16.3333 10.0003 16.3333C5.74617 16.3333 2.95461 12.5793 2.01677 11.0943Z"
+                    stroke="#353D45"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M10.0003 13C11.381 13 12.5003 11.8807 12.5003 10.5C12.5003 9.11929 11.381 8.00001 10.0003 8.00001C8.61962 8.00001 7.50034 9.11929 7.50034 10.5C7.50034 11.8807 8.61962 13 10.0003 13Z"
+                    stroke="#353D45"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
                 />
             </svg>
         );
