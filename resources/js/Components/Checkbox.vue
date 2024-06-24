@@ -66,6 +66,7 @@ const proxyChecked = computed({
         :name="props.inputName"
         :value="props.value"
         :checked="proxyChecked"
+        @change="proxyChecked = $event.target.checked"
         :class="[
             'checkbox rounded-[100px] border flex items-center justify-center hover:border-red-100',
             '',
