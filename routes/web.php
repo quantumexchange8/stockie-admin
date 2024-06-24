@@ -32,10 +32,12 @@ Route::middleware('auth')->group(function () {
     })->name('components');
 
     /********* Waiter **********/
-    //add prefix
-    Route::get('waiter', [WaiterController::class, 'waiter'])->name('waiter');
-    Route::post('waiter/add-waiter', [WaiterController::class, 'store'])->name('waiter.add-waiter');
-
+    Route::prefix('waiter')->group(function(){
+       Route::get('/waiter', [WaiterController::class, 'waiter'])->name('waiter');
+    Route::post('/waiter-create', [WaiterController::class, 'store'])->name('waiter.add-waiter');
+    
+    });
+ 
     /********* Menu Management **********/
     Route::middleware(['auth', 'verified'])->prefix('menu-management')->group(function () {
         Route::resource('/products', ProductController::class);
