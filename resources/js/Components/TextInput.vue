@@ -25,6 +25,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    iconPosition: {
+        type: String,
+        default: "",
+    },
 });
 
 const {
@@ -80,10 +84,14 @@ onMounted(() => {
         <div class="relative">
             <div
                 v-if="$slots.prefix"
-                class="absolute min-h-[44px] max-h-[44px] flex items-center pl-3 py-3 text-base mb-1"
+                :class="[
+                    'absolute min-h-[44px] max-h-[44px] flex py-3 text-base mb-1 items-center',
+                    iconPosition === 'left' ? 'left-0  pl-3' : 'right-0 pr-3',
+                ]"
             >
                 <slot name="prefix"></slot>
             </div>
+
             <input
                 :name="inputName"
                 :class="[
@@ -97,8 +105,9 @@ onMounted(() => {
                         'border-grey-300': disabled === false,
                         'border-red-500 focus:border-red-500 hover:border-red-500':
                             errorMessage,
-                        'pl-12': $slots.prefix,
-                        'pl-4': !$slots.prefix,
+                        'pl-12 pr-12': $slots.prefix,
+                        'pl-4 pr-4': !$slots.prefix,
+                        'text-center': iconPosition === 'right',
                     },
                 ]"
                 :type="
@@ -132,6 +141,6 @@ onMounted(() => {
             </span>
         </div>
         <HintText v-if="hintText !== ''" :hintText="hintText" />
-        <InputError :message="errorMessage" v-if="errorMessage" />
+        <InputError :message="props.errorMessage" v-if="props.errorMessage" />
     </div>
 </template>
