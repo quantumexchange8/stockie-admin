@@ -18,7 +18,6 @@ Route::get('/', function () {
     ]);
 });
 
-
 Route::middleware('auth')->group(function () {
 
    /********* Dashboard **********/
@@ -39,8 +38,11 @@ Route::middleware('auth')->group(function () {
     });
  
     /********* Menu Management **********/
-    Route::middleware(['auth', 'verified'])->prefix('menu-management')->group(function () {
-        Route::resource('/products', ProductController::class);
+    Route::prefix('menu-management')->group(function () {
+        Route::get('/products/getTestingRecords', [ProductController::class, 'getTestingRecords'])->name('products.getTestingRecords');
+        Route::get('/products_details/{id}', [ProductController::class, 'showProductDetails'])->name('products.showProductDetails');
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     });
 
     /********* Inventory **********/

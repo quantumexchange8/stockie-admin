@@ -174,7 +174,7 @@ export default {
         class: ['flex']
     },
     group: {
-        class: ['flex-1', 'border-l', 'pr-0.5', 'pl-0.5', 'pt-0', 'pb-0', 'first:pl-0', 'first:border-l-0']
+        class: ['flex-1', 'pr-0.5', 'pl-0.5', 'pt-0', 'pb-0', 'first:pl-0']
     },
     buttonbar: {
         class: ['flex justify-between items-center', 'py-3 px-0', 'border-t']

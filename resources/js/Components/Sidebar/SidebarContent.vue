@@ -51,7 +51,7 @@ import {
                         <OrderIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink title="Menu Management" :href="route('dashboard')">
+                <SidebarLink title="Menu Management" :href="route('products.index')">
                     <template #icon>
                         <MenuIcon aria-hidden="true" />
                     </template>

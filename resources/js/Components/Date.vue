@@ -17,7 +17,7 @@ const props = defineProps({
     },
     withPresetRanges: {
         type: Boolean,
-        default: true,
+        default: false,
     },
     withTime: {
         type: Boolean,
