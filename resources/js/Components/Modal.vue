@@ -19,6 +19,10 @@ const props = defineProps({
         type: String,
         default: '2xl',
     },
+    withHeader: {
+        type: Boolean,
+        default: true,
+    },
     closeable: {
         type: Boolean,
         default: true,
@@ -97,12 +101,13 @@ const maxWidthClass = computed(() => {
                         leave-to="opacity-0 scale-95"
                     >
                         <DialogPanel
-                            class="transform overflow-hidden w-full fixed rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+                            class="transform w-full fixed rounded-[5px] bg-white p-6 text-left align-middle shadow-xl transition-all"
                             :class="maxWidthClass"
                         >
                             <DialogTitle
                                 :as="'div'"
                                 class="flex justify-between items-start self-stretch pb-6"
+                                v-if="props.withHeader"
                             >
                                 <p class="text-center text-red-950 text-md font-medium">{{ title }}</p>
                                 <TimesIcon
