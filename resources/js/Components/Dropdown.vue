@@ -28,6 +28,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    iconOptions: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const emits = defineEmits(["update:modelValue"]);
@@ -98,7 +102,7 @@ onUnmounted(() => {
                 props.inputArray.length || Object.keys(props.inputArray).length
             "
         >
-            <span class="inline-block w-full rounded-md shadow-sm mb-1">
+            <span class="w-full rounded-md shadow-sm mb-1">
                 <button
                     type="button"
                     @click="open = !open"
@@ -174,6 +178,16 @@ onUnmounted(() => {
                         @click="choose(option, ix)"
                     >
                         {{ option }}
+                        <template v-if="iconOptions">
+                            <span class="absolute right-0 pr-4">
+                                <component
+                                    :is="iconOptions[option]"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                            /></span>
+                        </template>
                     </li>
                 </ul>
             </span>
