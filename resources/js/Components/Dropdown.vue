@@ -32,6 +32,11 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
+    // New prop for grouped options
+    grouped: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emits = defineEmits(["update:modelValue"]);
@@ -40,11 +45,11 @@ const open = ref(false);
 const selectedOption = ref("");
 const selectedValue = ref("");
 
-const choose = (option, value) => {
-    selectedOption.value = option;
-    selectedValue.value = value;
+const choose = (option) => {
+    selectedOption.value = option.text;
+    selectedValue.value = option.value;
     open.value = false;
-    emits("update:modelValue", value);
+    emits("update:modelValue", option.value);
 };
 
 const closeDropdown = (event) => {
@@ -98,11 +103,9 @@ onUnmounted(() => {
             class="relative"
             id="dropdown"
             v-click-outside="closeDropdown"
-            v-if="
-                props.inputArray.length || Object.keys(props.inputArray).length
-            "
         >
             <span class="w-full rounded-md shadow-sm mb-1">
+                <!-- The dropdown input field as a button -->
                 <button
                     type="button"
                     @click="open = !open"
@@ -124,6 +127,7 @@ onUnmounted(() => {
                         },
                     ]"
                 >
+                    <!-- The text to be displayed along with dropdown icons -->
                     <span
                         :class="[
                             'text-base font-normal',
@@ -162,26 +166,80 @@ onUnmounted(() => {
                     </svg>
                 </button>
 
+                <!-- The list of options for the dropdown field -->
                 <ul
-                    class="z-50 absolute mt-1 w-full p-1 bg-white rounded-[5px] border-2 border-red-50 gap-0.5 items-start flex flex-col shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]"
+                    class="z-50 absolute mt-1 p-1 bg-white rounded-[5px] border-2 border-red-50 gap-0.5 items-start flex flex-col shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]"
+                    :class="[
+                        {
+                            'w-fit': grouped,
+                            'w-full': !grouped,
+                        }
+                    ]"
                     v-show="open"
                 >
+                    <!-- Grouped option: group by group name and list of its options -->
+                    <div v-for="(group, index) in props.inputArray" v-if="grouped">
+                        <div
+                            :class="[
+                                'py-2 px-4 text-base text-grey-400 flex items-center bg-grey-25',
+                            ]"
+                        >
+                            <div
+                                class="flex gap-[10px] items-center justify-center"
+                            >
+                                <slot name="grouped_header">
+                                    <span class="w-4 h-4 flex-shrink-0 rounded-full bg-grey-700"></span>
+                                    <span class="text-base font-bold">{{ group.group_name }}</span>
+                                </slot>
+                            </div>
+                        </div>
+
+                        <li
+                            :class="[
+                                'cursor-pointer select-none py-2 px-4 self-stretch items-center flex rounded-[5px] hover:bg-grey-50 active:bg-red-50',
+                                {
+                                    'bg-red-50': selectedOption === item.text,
+                                },
+                            ]"
+                            v-for="(item, optionIndex) in group.items"
+                            :key="optionIndex"
+                            @click="choose(item)"
+                        >
+                            {{ item.text }}
+
+                            <!-- Optional for including an icon to the right of the text of a specified option -->
+                            <template v-if="iconOptions">
+                                <span class="absolute right-0 pr-4">
+                                    <component
+                                        :is="iconOptions[item.text]"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                /></span>
+                            </template>
+                        </li>
+                    </div>
+                    <!-- Default option: directly displays options -->
                     <li
                         :class="[
                             'cursor-pointer select-none py-2 px-4 self-stretch items-center flex rounded-[5px] hover:bg-grey-50 active:bg-red-50',
                             {
-                                'bg-red-50': selectedOption === option,
+                                'bg-red-50': selectedOption === option.text,
                             },
                         ]"
+                        v-else
                         v-for="(option, ix) in props.inputArray"
                         :key="ix"
-                        @click="choose(option, ix)"
+                        @click="choose(option)"
                     >
-                        {{ option }}
+                        {{ option.text }}
+
+                        <!-- Optional for including an icon to the right of the text of a specified option -->
                         <template v-if="iconOptions">
                             <span class="absolute right-0 pr-4">
                                 <component
-                                    :is="iconOptions[option]"
+                                    :is="iconOptions[option.text]"
                                     width="24"
                                     height="24"
                                     viewBox="0 0 24 24"
@@ -192,8 +250,26 @@ onUnmounted(() => {
                 </ul>
             </span>
         </div>
-        <span class="text-sm" v-else>No options available</span>
         <HintText v-if="hintText !== ''" :hintText="hintText" />
         <InputError :message="errorMessage" v-if="errorMessage" />
     </div>
 </template>
+
+<!-- group option should pass this format of json data -->
+<!-- 
+const unitArrs = ref([
+    {
+        'group_name': 'Heineken',
+        'items': [
+            {
+                'text': 'Bottle',
+                'value': 'Bottle'
+            },
+            {
+                'text': 'Can',
+                'value': 'Can'
+            }
+        ],
+    }, 
+]);
+ -->
