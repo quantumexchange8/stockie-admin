@@ -1,35 +1,35 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import TabView from "primevue/tabview";
-import TabPanel from "primevue/tabpanel";
 import Stock from "./Stock/Stock.vue";
 import MerchantDetail from "./MerchantDetail/MerchantDetail.vue";
 import Commision from "./EmployeeCommission/EmployeeCommision.vue";
 import IncentiveProg from "./IncentiveProgram/IncentiveProgram.vue";
+import TabView from "@/Components/TabView.vue";
+import { ref } from "vue";
+const tabs = ref([
+    "Stock",
+    "Employee Commission",
+    "Employee Incentive Programme",
+    "Promotion",
+    "Merchant Detail",
+]);
 </script>
 
 <template>
     <AuthenticatedLayout>
         <template #header> Configuration </template>
 
-        <TabView
-            :pt="{
-                inkbar: {
-                    class: 'border-2 border-primary-900 absolute bottom-0 left-0 right-0',
-                },
-                navContent: {
-                    class: 'w-fit',
-                },
-            }"
-        >
-            <TabPanel header="Stock"> <Stock></Stock></TabPanel>
-            <TabPanel header="Employee Commission">
+        <TabView :tabs="tabs">
+            <template #tab-0>
+                <Stock></Stock>
+            </template>
+            <template #tab-1>
                 <Commision />
-            </TabPanel>
-            <TabPanel header="Employee Incentive Programme">
+            </template>
+            <template #tab-2>
                 <IncentiveProg />
-            </TabPanel>
-            <TabPanel header="Promotion">
+            </template>
+            <template #tab-3>
                 <p class="m-0">
                     At vero eos et accusamus et iusto odio dignissimos ducimus
                     qui blanditiis praesentium voluptatum deleniti atque
@@ -40,10 +40,11 @@ import IncentiveProg from "./IncentiveProgram/IncentiveProgram.vue";
                     distinctio. Nam libero tempore, cum soluta nobis est
                     eligendi optio cumque nihil impedit quo minus.
                 </p>
-            </TabPanel>
-            <TabPanel header="Merchant Detail">
+            </template>
+            <template #tab-4> <MerchantDetail /> </template>
+            <template #tab-5>
                 <MerchantDetail></MerchantDetail>
-            </TabPanel>
+            </template>
         </TabView>
     </AuthenticatedLayout>
 </template>

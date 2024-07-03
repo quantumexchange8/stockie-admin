@@ -68,7 +68,7 @@ export default {
 
             // Colors
             "bg-surface-0 dark:bg-surface-800",
-            "border-b-2 border-surface-200 dark:border-surface-700",
+            "border-b-1 border-surface-200 dark:border-surface-700",
             "text-surface-900 dark:text-surface-0/80",
         ],
     },
@@ -151,7 +151,7 @@ export default {
         content: {
             class: [
                 // Spacing
-                "py-5 px-4",
+                "py-5",
 
                 // Shape
                 "rounded-b-md",

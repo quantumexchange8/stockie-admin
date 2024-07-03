@@ -67,15 +67,17 @@ const isFormIncomplete = () => {
                                         label-text="Full name"
                                         :placeholder="'eg: John Doe'"
                                         inputId="full_name"
-                                        type="'name'"
+                                        type="'text'"
                                         v-model="form.full_name"
+                                        :errorMessage="form.errors.full_name"
                                     ></TextInput>
                                     <TextInput
                                         label-text="Username"
                                         :placeholder="'eg: johndoe'"
                                         inputId="name"
-                                        type="'name'"
+                                        type="'text'"
                                         v-model="form.name"
+                                        :errorMessage="form.errors.name"
                                     ></TextInput>
                                 </div>
 
@@ -86,6 +88,8 @@ const isFormIncomplete = () => {
                                             inputId="phone"
                                             type="'tel'"
                                             v-model="form.phone"
+                                            :errorMessage="form.errors.phone"
+                                            :iconPosition="'left'"
                                         >
                                             <template #prefix>
                                                 <span class="text-grey-900"
@@ -93,9 +97,6 @@ const isFormIncomplete = () => {
                                                 >
                                             </template>
                                         </TextInput>
-                                        <InputError
-                                            :message="form.errors.phone"
-                                        />
                                     </div>
 
                                     <div class="w-full flex flex-col">
@@ -105,11 +106,9 @@ const isFormIncomplete = () => {
                                             inputId="email"
                                             type="'email'"
                                             v-model="form.email"
+                                            :errorMessage="form.errors.email"
                                         >
                                         </TextInput>
-                                        <InputError
-                                            :message="form.errors.email"
-                                        />
                                     </div>
                                 </div>
                             </div>
@@ -137,6 +136,7 @@ const isFormIncomplete = () => {
                                         inputId="salary"
                                         type="'text'"
                                         v-model="form.salary"
+                                        :iconPosition="'left'"
                                     >
                                         <template #prefix>
                                             <span class="text-grey-900"

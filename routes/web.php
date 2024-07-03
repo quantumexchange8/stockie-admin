@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WaiterController;
+use App\Http\Controllers\LoyaltyController;
 use Inertia\Inertia;
 use App\Http\Controllers\ConfigPromotionController;
 use App\Http\Controllers\ProductController;
@@ -66,6 +67,13 @@ Route::middleware('auth')->group(function () {
         
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');
         Route::post('/promotions/store', [ConfigPromotionController::class, 'store'])->name('configurations.promotions.store');
+    });
+
+    /********Loyalty Programme **********/
+    Route::prefix('loyalty-programme')->group(function(){
+        Route::get('/loyalty-programme', [LoyaltyController::class, 'index'])->name('loyalty-program');
+        Route::post('/create-tier', [LoyaltyController::class, 'store'])->name('loyalty.create-tier');
+    
     });
 
 });

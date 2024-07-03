@@ -14,7 +14,7 @@ class WaiterRequest extends FormRequest
     public function rules()
     {
         return [
-            'full_name'=>'string|max:255',
+            'full_name'=>'required|string|max:255',
             'name'=>'required|string|max:255',
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
             'email' => 'required|email|unique:users,email',
@@ -29,7 +29,7 @@ class WaiterRequest extends FormRequest
     public function messages()
     {
         return [
-     
+    
             'email.unique' => 'Email has already been taken.',
             'email.email' => 'Invalid email.',
             'role_id.unique' => 'Staff ID has already been taken.',

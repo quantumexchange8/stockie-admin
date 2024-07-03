@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Ranking extends Model
 {
     use HasFactory;
+    protected $fillable = [
+        'name',
+        'min_amount',
+        'reward',
+        'icon',
+    ];
 }
