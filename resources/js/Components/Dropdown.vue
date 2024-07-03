@@ -47,7 +47,9 @@ const selectedValue = ref("");
 
 // Method to update the selected option
 const updateSelectedOption = (inputArray, dataValue) => {
-    let selectedText = inputArray.find(option => option.value === dataValue)?.text || props.placeholder;
+    let selectedText =
+        inputArray.find((option) => option.value === dataValue)?.text ||
+        props.placeholder;
     selectedValue.value = dataValue;
     selectedOption.value = selectedText;
 };
@@ -90,13 +92,19 @@ onUnmounted(() => {
 });
 
 // Watchers
-watch(() => props.inputArray, (newValue) => {
-    updateSelectedOption(newValue, props.dataValue);
-});
+watch(
+    () => props.inputArray,
+    (newValue) => {
+        updateSelectedOption(newValue, props.dataValue);
+    }
+);
 
-watch(() => props.dataValue, (newValue) => {
-    updateSelectedOption(props.inputArray, newValue);
-});
+watch(
+    () => props.dataValue,
+    (newValue) => {
+        updateSelectedOption(props.inputArray, newValue);
+    }
+);
 </script>
 
 <template>
@@ -114,11 +122,7 @@ watch(() => props.dataValue, (newValue) => {
             v-if="labelText !== ''"
         >
         </Label>
-        <div
-            class="relative"
-            id="dropdown"
-            v-click-outside="closeDropdown"
-        >
+        <div class="relative" id="dropdown" v-click-outside="closeDropdown">
             <span class="w-full rounded-md shadow-sm mb-1">
                 <!-- The dropdown input field as a button -->
                 <button
@@ -131,15 +135,20 @@ watch(() => props.dataValue, (newValue) => {
                         'w-full max-h-[44px] px-4 py-3 flex justify-between items-center',
                         'rounded-[5px] text-grey-500 border',
                         open ? 'border-red-500' : 'border-grey-300',
-                        props.disabled ? 'border-grey-100' : 'hover:border-red-100 active:border-red-300 focus:border-red-300',
-                        props.errorMessage && 'border-red-500 focus:border-red-500 hover:border-red-500'
+                        props.disabled
+                            ? 'border-grey-100'
+                            : 'hover:border-red-100 active:border-red-300 focus:border-red-300',
+                        props.errorMessage &&
+                            'border-red-500 focus:border-red-500 hover:border-red-500',
                     ]"
                 >
                     <!-- The text to be displayed along with dropdown icons -->
                     <span
                         :class="[
                             'text-base font-normal',
-                            selectedOption === props.placeholder ? 'text-grey-200' : 'text-grey-700'
+                            selectedOption === props.placeholder
+                                ? 'text-grey-200'
+                                : 'text-grey-700',
                         ]"
                     >
                         {{ selectedOption || props.placeholder }}
@@ -166,16 +175,36 @@ watch(() => props.dataValue, (newValue) => {
                 <!-- The list of options for the dropdown field -->
                 <ul
                     class="z-50 absolute mt-1 p-1 bg-white rounded-[5px] border-2 border-red-50 gap-0.5 items-start flex flex-col shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]"
-                    :class="{ 'w-fit': props.grouped, 'w-full': !props.grouped }"
+                    :class="{
+                        'w-fit': props.grouped,
+                        'w-full': !props.grouped,
+                    }"
                     v-show="open"
                 >
                     <!-- Grouped option: group by group name and list of its options -->
-                    <div v-for="(group, index) in props.inputArray" :key="index" v-if="grouped">
-                        <div class="py-2 px-4 text-base text-grey-400 flex items-center bg-grey-25">
-                            <div class="flex gap-[10px] items-center justify-center">
+                    <div
+                        v-for="(group, index) in props.inputArray"
+                        :key="index"
+                        v-if="grouped"
+                    >
+                        <div
+                            class="py-2 px-4 text-base text-grey-400 flex items-center bg-grey-25"
+                        >
+                            <div
+                                class="flex gap-[10px] items-center justify-center"
+                            >
                                 <slot name="grouped_header">
-                                    <span class="w-4 h-4 flex-shrink-0 rounded-full bg-grey-700"></span>
-                                    <span class="text-base font-bold">{{ group.group_name }}</span>
+                                    <span>
+                                        <img
+                                            v-if="group.image"
+                                            :src="group.image"
+                                            alt=""
+                                            class="w-6 h-6 flex-shrink-0 rounded-full"
+                                        />
+                                    </span>
+                                    <span class="text-base font-bold">{{
+                                        group.group_name
+                                    }}</span>
                                 </slot>
                             </div>
                         </div>
@@ -185,12 +214,15 @@ watch(() => props.dataValue, (newValue) => {
                             @click="choose(item)"
                             :class="[
                                 'cursor-pointer select-none py-2 px-4 self-stretch items-center flex rounded-[5px] hover:bg-grey-50 active:bg-red-50',
-                                selectedOption === item.text && 'bg-red-50'
+                                selectedOption === item.text && 'bg-red-50',
                             ]"
                         >
                             {{ item.text }}
                             <!-- Optional for including an icon to the right of the text of a specified option -->
-                            <span class="absolute right-0 pr-4" v-if="props.iconOptions">
+                            <span
+                                class="absolute right-0 pr-4"
+                                v-if="props.iconOptions"
+                            >
                                 <component
                                     :is="props.iconOptions[item.text]"
                                     width="24"
@@ -209,12 +241,15 @@ watch(() => props.dataValue, (newValue) => {
                         v-else
                         :class="[
                             'cursor-pointer select-none py-2 px-4 self-stretch items-center flex rounded-[5px] hover:bg-grey-50 active:bg-red-50',
-                            selectedOption === option.text && 'bg-red-50'
+                            selectedOption === option.text && 'bg-red-50',
                         ]"
                     >
                         {{ option.text }}
                         <!-- Optional for including an icon to the right of the text of a specified option -->
-                        <span class="absolute right-0 pr-4" v-if="props.iconOptions">
+                        <span
+                            class="absolute right-0 pr-4"
+                            v-if="props.iconOptions"
+                        >
                             <component
                                 :is="props.iconOptions[option.text]"
                                 width="24"
