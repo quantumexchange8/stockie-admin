@@ -7,9 +7,11 @@ import DateInput from "@/Components/Date.vue";
 import NumberCounter from "@/Components/NumberCounter.vue";
 import { Calendar } from "@/Components/Icons/solid";
 import { useForm } from "@inertiajs/vue3";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import axios from "axios";
 import Carlsbeg from "../../../../assets/images/Loyalty/Carlsbeg.svg";
 import Tiger from "../../../../assets/images/Loyalty/Tiger.svg";
+
 const emit = defineEmits(["close"]);
 
 const rewardOption = ref([
@@ -64,13 +66,6 @@ const groupedItem = ref([
     },
 ]);
 
-const form = useForm({
-    name: "",
-    min_amount: "",
-    reward: "inactive",
-    rewards: [],
-});
-
 const rewardList = ref([
     {
         type: "",
@@ -87,6 +82,7 @@ const rewardList = ref([
         error: "",
     },
 ]);
+
 const validateAmount = (reward) => {
     const value = reward.amount;
     const value2 = reward.min_purchase_amount;
@@ -113,6 +109,13 @@ const validateAmount = (reward) => {
     }
 };
 
+const toggleMinPurchase = (index) => {
+    rewardList.value[index].min_purchase =
+        rewardList.value[index].min_purchase === "active"
+            ? "inactive"
+            : "active";
+};
+
 const addReward = () => {
     rewardList.value.push({
         type: "",
@@ -127,13 +130,6 @@ const addReward = () => {
         free_item: "",
         item_qty: 0,
     });
-};
-
-const toggleMinPurchase = (index) => {
-    rewardList.value[index].min_purchase =
-        rewardList.value[index].min_purchase === "active"
-            ? "inactive"
-            : "active";
 };
 
 const toggleReward = () => {
@@ -155,6 +151,15 @@ const toggleReward = () => {
     form.reward = form.reward === "active" ? "inactive" : "active";
 };
 
+const form = useForm({
+    name: "",
+    min_amount: "",
+    reward: "inactive",
+    rewards: [],
+    icon: "",
+});
+
+//function to submit the form
 const submit = () => {
     rewardList.value.forEach((reward) => {
         if (reward.valid_period === 0 && reward.date_range !== "") {
@@ -233,6 +238,8 @@ const closeModal = () => {
     form.errors = {};
     emit("close");
 };
+
+//Function to change the text when reward type is selected
 const getDropdownLabel = (type, index) => {
     if (type !== null) {
         return `Reward Type ${index + 1}`;
@@ -241,6 +248,7 @@ const getDropdownLabel = (type, index) => {
     }
 };
 
+//Function to disabled button  unless all field is fill
 const isAddButtonDisabled = computed(() => {
     for (const reward of rewardList.value) {
         if (form.reward === "active" && reward.type === "") {
@@ -299,22 +307,34 @@ const isAddButtonDisabled = computed(() => {
                     <div class="w-full flex gap-6">
                         <div class="flex flex-col gap-1">
                             <p class="text-xs">Select an icon</p>
-                            <div class="w-[308px] flex gap-4">
-                                <div
-                                    class="w-[44px] h-[44px] border-[#D6DCE1] border-[1px] rounded-[5px] border-dashed bg-[#F8F9FA]"
-                                ></div>
-                                <div
-                                    class="w-[44px] h-[44px] border-[#D6DCE1] border-[1px] rounded-[5px] border-dashed bg-[#F8F9FA]"
-                                ></div>
-                                <div
-                                    class="w-[44px] h-[44px] border-[#D6DCE1] border-[1px] rounded-[5px] border-dashed bg-[#F8F9FA]"
-                                ></div>
-                                <div
-                                    class="w-[44px] h-[44px] border-[#D6DCE1] border-[1px] rounded-[5px] border-dashed bg-[#F8F9FA]"
-                                ></div>
-                                <div
-                                    class="w-[44px] h-[44px] border-[#D6DCE1] border-[1px] rounded-[5px] border-dashed bg-[#F8F9FA]"
-                                ></div>
+
+                            <div
+                                class="w-[308px] flex flex-wrap gap-4 items-center"
+                            >
+                                <!-- Existing icons from database -->
+
+                                <!-- Icons  -->
+                                <div class="flex flex-col gap-4 items-center">
+                                    <div
+                                        class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="24"
+                                            height="24"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                        >
+                                            <path
+                                                d="M4 16.2422C2.79401 15.435 2 14.0602 2 12.5C2 10.1564 3.79151 8.23129 6.07974 8.01937C6.54781 5.17213 9.02024 3 12 3C14.9798 3 17.4522 5.17213 17.9203 8.01937C20.2085 8.23129 22 10.1564 22 12.5C22 14.0602 21.206 15.435 20 16.2422M8 16L12 12M12 12L16 16M12 12V21"
+                                                stroke="#B2BEC7"
+                                                stroke-width="1.4"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -384,7 +404,6 @@ const isAddButtonDisabled = computed(() => {
                             <template
                                 v-if="reward.type === 'Discount (Amount)'"
                             >
-                                <!-- Discount Amount fields -->
                                 <div class="flex flex-col gap-3">
                                     <div class="flex gap-3">
                                         <TextInput
@@ -398,11 +417,11 @@ const isAddButtonDisabled = computed(() => {
                                             <template #prefix>RM</template>
                                         </TextInput>
                                         <TextInput
-                                            :labelText="'Minimum purchase amount'"
-                                            :iconPosition="'left'"
                                             v-if="
                                                 reward.min_purchase === 'active'
                                             "
+                                            :labelText="'Minimum purchase amount'"
+                                            :iconPosition="'left'"
                                             inputId="min_purchase_amount"
                                             :inputName="'min_purchase_amount'"
                                             v-model="reward.min_purchase_amount"
@@ -419,7 +438,6 @@ const isAddButtonDisabled = computed(() => {
                                             With minimum purchase
                                         </p>
                                         <Toggle
-                                            class="xl:col-span-2"
                                             :checked="
                                                 form.min_purchase === 'active'
                                             "

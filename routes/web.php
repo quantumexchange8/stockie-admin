@@ -73,7 +73,13 @@ Route::middleware('auth')->group(function () {
     Route::prefix('loyalty-programme')->group(function(){
         Route::get('/loyalty-programme', [LoyaltyController::class, 'index'])->name('loyalty-program');
         Route::post('/create-tier', [LoyaltyController::class, 'store'])->name('loyalty.create-tier');
+        Route::get('/getShowRecords', [LoyaltyController::class, 'showRecord'])->name('loyalty-program.show');
+        Route::get('/getIcons', [LoyaltyController::class, 'showIcons'])->name('loyalty-program.showIcons');
+        Route::get('/tier_details/{id}', [LoyaltyController::class, 'showTierDetails'])->name('products.showTierDetails');
+        Route::get('/getMemberList', [LoyaltyController::class, 'showMemberList'])->name('loyalty-programme.getMemberList');
+        Route::get('/getTierData', [LoyaltyController::class, 'showTierData'])->name('loyalty-programme.getTierData');
     
+
     });
 
 });

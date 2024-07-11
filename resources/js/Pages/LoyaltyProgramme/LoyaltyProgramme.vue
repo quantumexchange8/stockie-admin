@@ -15,7 +15,7 @@ const tabs = ref(["Points", "Tier"]);
                 <!--Points-->
             </template>
             <template #tab-1>
-                <Tier></Tier>
+                <Tier />
             </template>
         </TabView>
     </AuthenticatedLayout>
