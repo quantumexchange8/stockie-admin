@@ -21,6 +21,7 @@
     },
     "dependencies": {
         "@headlessui/vue": "^1.7.22",
+        "chart.js": "^4.4.3",
         "primevue": "^3.52.0"
     }
 }

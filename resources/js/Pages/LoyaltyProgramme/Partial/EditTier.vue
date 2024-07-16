@@ -12,7 +12,7 @@ import TextInput from "@/Components/TextInput.vue";
 import { Calendar } from "@/Components/Icons/solid";
 import Carlsbeg from "../../../../assets/images/Loyalty/Carlsbeg.svg";
 import Tiger from "../../../../assets/images/Loyalty/Tiger.svg";
-import DiscountAmount from "@/Pages/LoyaltyProgramme/Partial/DiscountAmount.vue";
+// import DiscountAmount from "@/Pages/LoyaltyProgramme/Partial/DiscountAmount.vue";
 
 const props = defineProps({
     id: String,
@@ -282,7 +282,8 @@ const toggleMinPurchase = (index) => {
                         <template
                             v-if="props.reward_type === 'Discount (Amount)'"
                         >
-                            <DiscountAmount :periodOption="periodOption" />
+                            <!-- Need to remake this component as Hanis didnt push this component -->
+                            <!-- <DiscountAmount :periodOption="periodOption" /> -->
                             <!-- Discount Amount fields -->
                         </template>
                         <!-- Discount Percentage -->

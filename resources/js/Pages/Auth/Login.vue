@@ -94,8 +94,6 @@ const submit = () => {
                                     id="password"
                                     :inputType="'password'"
                                     v-model="form.password"
-                                    required
-                                    autocomplete="password"
                                 />
 
                                 <InputError :message="form.errors.password" />

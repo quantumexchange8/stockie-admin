@@ -64,7 +64,7 @@ import {
                 Operation
             </p>
             <div class="flex flex-col">
-                <SidebarLink title="Inventory" :href="route('dashboard')">
+                <SidebarLink title="Inventory" :href="route('inventory')">
                     <template #icon>
                         <InventoryIcon aria-hidden="true" />
                     </template>

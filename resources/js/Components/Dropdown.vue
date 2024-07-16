@@ -47,9 +47,34 @@ const selectedValue = ref("");
 
 // Method to update the selected option
 const updateSelectedOption = (inputArray, dataValue) => {
-    let selectedText =
-        inputArray.find((option) => option.value === dataValue)?.text ||
-        props.placeholder;
+    let selectedText = '';
+
+    if (props.grouped) {
+        inputArray.forEach(group => {
+            group.items.forEach(item => {
+                if (item.value === dataValue) {
+                    selectedText = item.text;
+                }
+            });
+        });
+        if (!selectedText) {
+            selectedText = props.placeholder;
+        }
+    } else {
+        const foundItem = inputArray.find(option => option.value === dataValue);
+        selectedText = foundItem ? foundItem.text : props.placeholder;
+    }
+
+    // inputArray.find((option) => option.value === dataValue)?.text ||
+    // props.placeholder;
+    // if (props.grouped) {
+    //     inputArray.forEach(el => {
+    //         el.items.forEach(item => {
+    //             console.log(item.value);
+    //         });
+            
+    //     });
+    // }
     selectedValue.value = dataValue;
     selectedOption.value = selectedText;
 };
@@ -83,6 +108,7 @@ const vClickOutside = {
 };
 
 onMounted(() => {
+    // console.log(props.dataValue);
     updateSelectedOption(props.inputArray, props.dataValue);
     document.addEventListener("click", closeDropdown);
 });

@@ -35,7 +35,7 @@ const props = defineProps({
     rowType: Object,
     actions: {
         type: Object,
-        required: true,
+        default: () => ({})
     }
 });
 
@@ -52,10 +52,14 @@ const defaultActions = {
     delete: () => '#'
 };
 
-const mergedActions = computed(() => ({
-    ...defaultActions,
-    ...props.actions
-}));
+const mergedActions = computed(() => {
+    return Object.keys(props.actions).length === 0 
+        ? defaultActions 
+        : {
+            ...defaultActions,
+            ...props.actions
+        };
+});
 
 const defaultRowType = {
     rowGroups: false,
@@ -120,6 +124,20 @@ const computedProps = computed(() => {
 
     return props;
 });
+
+// Computed property to calculate total stock quantity for each group
+const totalStockByGroup = computed(() => {
+    const totals = {};
+    props.rows.forEach(row => {
+        const group = row.inventory.name;
+        if (!totals[group]) {
+            totals[group] = 0;
+        }
+        totals[group] += row.stock_qty;
+    });
+    return totals;
+});
+
 
 onMounted(() => {
     loading.value = true;
@@ -190,7 +208,7 @@ onMounted(() => {
                             },
                             'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
                             'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
-                            'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',,
+                            'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
                             'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
                             'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
                         ]
@@ -383,8 +401,12 @@ onMounted(() => {
             </Column>
 
             <template #groupfooter="slotProps" v-if="mergedRowType.rowGroups">
-                <slot name="groupfooter" :="slotProps.data"></slot>
-            </template>
+                <slot name="groupfooter" :="slotProps.data">
+                    <div class="pr-[50px] text-sm font-semibold text-grey-950">
+                        Total Stock: {{ totalStockByGroup[slotProps.data.inventory.name] }}
+                    </div>
+                </slot>
+            </template> 
 
             <template #paginatorstart>
                 <div class="text-xs font-medium text-grey-500">

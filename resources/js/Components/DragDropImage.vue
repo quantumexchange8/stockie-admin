@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import FileUpload from 'primevue/fileupload';
 import Button from './Button.vue';
 import { CircledTimesIcon } from './Icons/solid';
@@ -8,6 +8,10 @@ const props = defineProps({
     inputName: String,
     errorMessage: String,
 	modelValue: [String, File],
+    imageClass: {
+        type: String,
+        default: 'h-60',
+    },
     disabled: {
         type: Boolean,
         default: false,
@@ -27,11 +31,16 @@ const removeFile = (removeFileCallback) => {
     removeFileCallback();
     emit('update:modelValue', '');
 }
+
+const imageClasses = computed(() => [
+    'w-full h-full object-cover rounded-[5px]',
+    props.imageClass
+])
 </script>
 
 <template>
     <div 
-        class="w-full h-[244px] rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"
+        class="w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"
     >
         <FileUpload 
             :name="props.inputName" 
@@ -46,11 +55,20 @@ const removeFile = (removeFileCallback) => {
                 }
             ]"
             :pt="{
+                root: {
+                    class: 'relative w-full h-full'
+                },
                 message: {
                     class: 'absolute flex flex-row justify-between self-stretch w-full border border-primary-800 bg-blue'
                 },
                 input: {
                     class: 'hidden'
+                },
+                content: {
+                    class: 'w-full h-full'
+                },
+                empty: {
+                    class: 'w-full h-full flex flex-col items-center justify-center'
                 },
                 buttonbar: ({ files }) => {
                     return {
@@ -69,32 +87,31 @@ const removeFile = (removeFileCallback) => {
                         @click="chooseCallback()" 
                         :type="'button'"
                         :size="'md'"
-                        class="!w-fit absolute top-60"
+                        class="!w-fit absolute bottom-28"
                     >
                         Select an image
                     </Button>
                 </div>
             </template>
             <template #content="{ files, uploadedFiles, removeUploadedFileCallback, removeFileCallback }">
-                <div v-if="files.length > 0">
-                    <div 
-                        class="w-full h-full flex self-stretch items-center" 
-                        :class="[
-                            {
-                                'hover:cursor-no-drop': hasFile
-                            }
-                        ]">
-                        <img 
-                            role="presentation" 
-                            :alt="files[0].name" 
-                            :src="files[0].objectURL" 
-                            class="h-[244px] w-full object-contain"
-                        />
-                        <CircledTimesIcon 
-                            class="absolute top-72 left-1/2 w-6 h-6 fill-white text-primary-900 hover:text-primary-500 cursor-pointer"
-                            @click="removeFile(removeFileCallback); hasFile = false;"  
-                        />
-                    </div>
+                <div 
+                    v-if="files.length > 0"
+                    class="relative w-full h-full flex self-stretch" 
+                    :class="[
+                        {
+                            'hover:cursor-no-drop': hasFile
+                        }
+                    ]">
+                    <img 
+                        role="presentation" 
+                        :alt="files[0].name" 
+                        :src="files[0].objectURL" 
+                        :class="imageClasses"
+                    />
+                    <CircledTimesIcon 
+                        class="absolute top-2 right-2 w-6 h-6 fill-white text-primary-900 hover:text-primary-500 cursor-pointer"
+                        @click="removeFile(removeFileCallback); hasFile = false;"  
+                    />
                 </div>
             </template>
             <template #empty>

@@ -46,18 +46,18 @@ class ProductRequest extends FormRequest
         return [
             'product_name.required' => 'This field is required.',
             'product_name.string' => 'This field must be a string.',
-            'product_name.max' => 'This field must not exceed 244 characters.',
+            'product_name.max' => 'This field must not exceed 255 characters.',
             'price.required' => 'This field is required.',
             'price.string' => 'This field must be a string.',
-            'price.max' => 'This field must not exceed 244 characters.',
+            'price.max' => 'This field must not exceed 255 characters.',
             'point.required' => 'This field is required.',
             'point.string' => 'This field must be a string.',
-            'point.max' => 'This field must not exceed 244 characters.',
+            'point.max' => 'This field must not exceed 255 characters.',
             'category_id.required' => 'This field is required.',
             'category_id.integer' => 'This field must be an integer.',
             'keep.required' => 'This field is required.',
             'keep.string' => 'This field must be a string.',
-            'keep.max' => 'This field must not exceed 244 characters.',
+            'keep.max' => 'This field must not exceed 255 characters.',
         ];
     }
 }

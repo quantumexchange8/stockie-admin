@@ -120,6 +120,7 @@ onMounted(() => {
                 :value="modelValue"
                 @input="$emit('update:modelValue', $event.target.value)"
                 ref="input"
+                :autocomplete="inputType === 'password' ? 'current-password' : ''"
                 :disabled="disabled"
                 :placeholder="placeholder"
             />

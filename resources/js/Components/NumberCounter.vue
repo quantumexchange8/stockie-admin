@@ -94,9 +94,12 @@ const updateState = () => {
                 viewBox="0 0 20 20" 
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg" 
-                class="w-6 h-6" 
                 :class="[
-                    isTypingState ? 'text-primary-900' : 'text-grey-100'
+                    'w-6 h-6 [&>rect]:hover:fill-primary-200 hover:text-primary-900',
+                    {
+                        '[&>rect]:fill-primary-900 text-primary-50': isTypingState,
+                        '[&>rect]:fill-grey-100 text-grey-300': !isTypingState,
+                    }
                 ]"
                 @click="decrement"
             >
@@ -104,13 +107,11 @@ const updateState = () => {
                     width="20" 
                     height="20" 
                     rx="10" 
-                    fill="currentColor"
+                    fill="fill-current"
                 />
                 <path 
                     d="M7 10.0834H13.1667" 
-                    :class="[
-                        isTypingState ? 'stroke-primary-50' : 'stroke-grey-300'
-                    ]"
+                    stroke="currentColor"
                     stroke-width="1.48002" 
                     stroke-linecap="round" 
                     stroke-linejoin="round"
@@ -146,18 +147,21 @@ const updateState = () => {
                 viewBox="0 0 20 20" 
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg" 
-                class="w-6 h-6" 
+                :class="[
+                    'w-6 h-6 [&>rect]:fill-primary-900 text-primary-50 [&>rect]:hover:fill-primary-200 hover:text-primary-900',
+                ]"
                 @click="increment"
             >
                 <rect 
                     width="20" 
                     height="20" 
                     rx="10" 
-                    fill="#7E171B"
+                    fill="fill-current"
                 />
                 <path 
                     d="M10.0834 7V13.1667M7 10.0834H13.1667" 
-                    stroke="#FFF1F2" stroke-width="1.48002" 
+                    stroke="currentColor"
+                    stroke-width="1.48002" 
                     stroke-linecap="round" 
                     stroke-linejoin="round"
                 />

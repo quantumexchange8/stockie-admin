@@ -7,6 +7,7 @@ use App\Http\Controllers\WaiterController;
 use App\Http\Controllers\LoyaltyController;
 use Inertia\Inertia;
 use App\Http\Controllers\ConfigPromotionController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 
 
@@ -46,12 +47,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     });
 
-    /********* Inventory **********/
-    // Route::middleware(['auth', 'verified'])->prefix('inventory')->group(function () {
-    //     Route::get('/components', function () {
-    //         return Inertia::render('ComponentDisplay/ComponentShowcase');
-    //     })->middleware(['auth', 'verified'])->name('components');
-    // });
+     /********* Inventory **********/
+     Route::prefix('inventory')->group(function () {
+        Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
+        Route::get('/inventory/getInventories', [InventoryController::class, 'getInventories']);
+        Route::get('/inventory/getAllCategories', [InventoryController::class, 'getAllCategories']);
+        Route::get('/inventory/getAllItemCategories', [InventoryController::class, 'getAllItemCategories']);
+        Route::get('/inventory/getDropdownValue', [InventoryController::class, 'getDropdownValue']);
+        Route::get('/inventory/getInventoryItems/{id}', [InventoryController::class, 'getInventoryItems']);
+        Route::get('/inventory/getRecentKeepHistory', [InventoryController::class, 'getRecentKeepHistory']);
+        Route::post('/inventory/store', [InventoryController::class, 'store'])->name('inventory.store');
+        Route::put('/inventory/updateInventoryItemStock/{id}', [InventoryController::class, 'updateInventoryItemStock'])->name('inventory.updateInventoryItemStock');
+        Route::put('/inventory/updateInventoryAndItems/{id}', [InventoryController::class, 'updateInventoryAndItems'])->name('inventory.updateInventoryAndItems');
+        Route::delete('/inventory/deleteInventory/{id}', [InventoryController::class, 'deleteInventory'])->name('inventory.deleteInventory');
+    });
 
     /******* Profile ********/
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

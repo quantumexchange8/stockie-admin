@@ -43,7 +43,7 @@ onMounted(() => {
             ]"
         >
             <!-- Page Heading -->
-            <div class="flex flex-col backdrop-blur-[25px] shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] rounded-[8px] bg-white">
+            <div class="flex flex-col shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] rounded-[8px] bg-white">
                 <header class="pl-6 flex flex-col items-center gap-[10px]" v-if="$slots.header">
                     <div class="w-full flex flex-col items-end gap-[19px] pt-8">
                         <div class="flex items-center justify-between self-stretch pr-6">
