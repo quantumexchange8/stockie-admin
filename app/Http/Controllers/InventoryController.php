@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 class InventoryController extends Controller
 {
@@ -59,15 +60,42 @@ class InventoryController extends Controller
     /**
      * Get inventory and its items.
      */
-    public function getInventories()
+    public function getInventories(Request $request)
     {
-        $data = IventoryItem::with(['inventory', 'itemCategory:id,low_stock_qty'])
-                        ->orderBy('inventory_id')
+        $queries = IventoryItem::query();
+
+        // Check if there are any filters selected
+        if (isset($request['checkedFilters'])) {
+            $queries->where(function (Builder $query) use ($request) {
+                // Check if there are any item category filter option selected
+                if (isset($request['checkedFilters']['itemCategory']) && count($request['checkedFilters']['itemCategory']) > 0) {
+                    $query->whereIn('item_cat_id', $request['checkedFilters']['itemCategory']);
+                }
+    
+                // Check if there are any stock level filter option selected
+                if (isset($request['checkedFilters']['stockLevel']) && count($request['checkedFilters']['stockLevel']) > 0) {
+                    foreach ($request['checkedFilters']['stockLevel'] as $key => $value) {
+                        switch ($value) {
+                            case 'In Stock':
+                                $query->where('stock_qty', '>', 0);
+                                break;
+                                
+                            case 'Low Stock':
+                                $query->whereBetween('stock_qty', [0, 26]);
+                                break;
+
+                            case 'Out of Stock':
+                                $query->where('stock_qty', 0);
+                                break;
+                        }
+                    }
+                }
+            });
+        }
+
+        $queries->with(['inventory', 'itemCategory:id,low_stock_qty']);
+        $data = $queries->orderBy('inventory_id')
                         ->get();
-
-        $inventory = Iventory::with(['inventoryItems'])->get();
-
-        // dd($inventory);
 
         return response()->json($data);
     }

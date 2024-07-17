@@ -8,6 +8,10 @@ const props = defineProps({
         type: [Array, Boolean],
         required: true,
     },
+    defaultChecked: {
+        type: Boolean,
+        default: false,
+    },
     value: {
         default: null,
     },
@@ -22,7 +26,7 @@ const props = defineProps({
 
 const proxyChecked = computed({
     get() {
-        return props.checked;
+        return props.defaultChecked ? true : props.checked;
     },
 
     set(val) {

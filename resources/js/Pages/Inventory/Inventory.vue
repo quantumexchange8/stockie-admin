@@ -34,6 +34,7 @@ const keepHistoryColumns = ref([
 ]);
 
 const inventories = ref([]);
+const initialInventories = ref([]);
 const recentKeepHistories = ref([]);
 const inventoriesTotalPages = ref(1);
 const recentKeepHistoriesTotalPages = ref(1);
@@ -73,9 +74,33 @@ const actions = [
     }
 ];
 
+// Get filtered inventories
+const getInventories = async (filters = {}) => {
+    try {
+        const inventoriesResponse = await axios.get('/inventory/inventory/getInventories', {
+            method: 'GET',
+            params: {
+                checkedFilters: filters,
+            }
+        });
+        inventories.value = inventoriesResponse.data;
+        inventoriesTotalPages.value = Math.ceil(inventories.value.length / rowsPerPage.value);
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+}
+
+const applyFilters = (filters) => {
+    getInventories(filters);
+};
+
 onMounted(async () => {
     try {
+        // Get initial inventories
         const inventoriesResponse = await axios.get('/inventory/inventory/getInventories');
+        initialInventories.value = inventoriesResponse.data;
         inventories.value = inventoriesResponse.data;
         inventoriesTotalPages.value = Math.ceil(inventories.value.length / rowsPerPage.value);
 
@@ -95,7 +120,7 @@ onMounted(async () => {
 const totalGroups = computed(() => {
     var groups = [];
 
-    inventories.value.forEach(item => {
+    initialInventories.value.forEach(item => {
         groups.push(item.inventory.id);
     });
 
@@ -103,13 +128,13 @@ const totalGroups = computed(() => {
 })
 
 const totalItems = computed(() => {
-    return inventories.value.length;
+    return initialInventories.value.length;
 })
 
 const totalStock = computed(() => {
     var stock = 0;
 
-    inventories.value.forEach(item => {
+    initialInventories.value.forEach(item => {
         stock += item.stock_qty;
     });
 
@@ -119,7 +144,7 @@ const totalStock = computed(() => {
 const totalEmptyStockGroups = computed(() => {
     var groups = [];
 
-    inventories.value.forEach(item => {
+    initialInventories.value.forEach(item => {
         if (item.stock_qty === 0) {
             groups.push(item.id);
         }
@@ -129,7 +154,7 @@ const totalEmptyStockGroups = computed(() => {
 })
 
 const outOfStockItems = computed(() => {
-    return inventories.value.filter(item => item.stock_qty < 1);
+    return initialInventories.value.filter(item => item.stock_qty < 1);
 })
 
 const showAddStockForm = (group) => {
@@ -205,14 +230,14 @@ const hideAddStockForm = () => {
                 />
     
                 <InventorySummaryChart
-                    :inventories="inventories"
+                    :inventories="initialInventories"
                     class="col-span-full md:col-span-4"
                 />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                 <TotalStockChart
-                    :inventories="inventories"
+                    :inventories="initialInventories"
                     class="col-span-full md:col-span-4"
                 />
                     
@@ -259,6 +284,7 @@ const hideAddStockForm = () => {
                 :actions="actions[0]"
                 :totalPages="inventoriesTotalPages"
                 :rowsPerPage="rowsPerPage"
+                @applyFilters="applyFilters"
             />
         </div>
     </AuthenticatedLayout>

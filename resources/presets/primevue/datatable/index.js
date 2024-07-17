@@ -1,7 +1,7 @@
 export default {
     root: ({ props }) => ({
         class: [
-        'relative flex gap-6 flex-col',
+        'relative flex gap-4 flex-col',
         // Flex & Alignment
         { 'flex flex-col': props.scrollable && props.scrollHeight === 'flex' },
         // Size

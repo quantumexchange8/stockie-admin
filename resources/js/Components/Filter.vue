@@ -1,7 +1,8 @@
 <script setup>
-import { toRefs, computed } from "vue";
+import { toRefs, ref, computed } from "vue";
 import { Link } from "@inertiajs/vue3";
-import { FilterIcon } from "./Icons/solid";
+import { FilterIcon, TimesIcon } from "./Icons/solid";
+import OverlayPanel from 'primevue/overlaypanel';
 
 const props = defineProps({
     type: {
@@ -32,64 +33,30 @@ const { type, href, srText, external } = props;
 
 const { disabled } = toRefs(props);
 
-// const baseClasses = [
-//     "flex w-full items-center justify-center transition-colors font-medium select-none disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none",
-// ];
+const op = ref();
 
-// const variantClasses = (variant) => ({
-//     "bg-white hover:bg-[#FFF9F9] hover:text-primary-800 text-primary-900 border border-primary-800":
-//         variant == "tertiary",
-// });
+const toggle = (event) => {
+    op.value.toggle(event);
+}
 
-// const classes = computed(() => [
-//     ...baseClasses,
-//     iconOnly
-//         ? {
-//               "px-4 py-3 text-base": true,
-//           }
-//         : null,
+const hideOverlay = () => {
+    op.value.hide();
+}
 
-//     variantClasses(variant),
-//     {
-//         "rounded-tr-md": iconPosition !== "right", // Rounded top-right corner if icon is not on the right
-//         "rounded-br-md": iconPosition !== "right", // Rounded bottom-right corner if icon is not on the right
-//         "rounded-tl-md": squared, // Always rounded top-left corner
-//         "rounded-bl-md": squared, // Always rounded bottom-left corner
-//         "rounded-full": pill,
-//     },
-//     {
-//         "pointer-events-none": href && disabled.value,
-//     },
-//     {
-//         "!bg-grey-100 !text-grey-200":
-//             disabled.value === true && variant === "primary",
-//         "!bg-primary-100": disabled.value === true && variant === "secondary",
-//         "!bg-primary-200": disabled.value === true && variant === "tertiary",
-//         "!bg-primary-300": disabled.value === true && variant === "red",
-//     },
-// ]);
-
-const handleClick = (e) => {
+const handleClick = (event) => {
     if (disabled.value) {
-        e.preventDefault();
-        e.stopPropagation();
+        event.preventDefault();
+        event.stopPropagation();
         return;
     }
-    emit("click", e);
+    emit("click", event);
+    toggle(event);
 };
 
 const Tag = external ? "a" : Link;
 </script>
 
 <style scoped>
-.margin-right {
-    margin-right: 6px;
-}
-
-.margin-left {
-    margin-left: 6px;
-}
-
 button:hover svg,
 button:hover span,
 button:active span,
@@ -156,4 +123,58 @@ button:active svg {
             <span class="text-primary-950 focus:text-primary-800">Filter</span>
         </div>
     </button>
+
+    <OverlayPanel 
+        ref="op" 
+        appendTo="body"
+        :pt="{
+            root: {
+                class: [
+                    // Shape
+                    'rounded-[5px] shadow-lg',
+                    'border-0',
+
+                    // Position
+                    'absolute left-0 top-0 mt-2',
+                    'z-40 transform origin-center',
+
+                    // Color
+                    'bg-white opacity-95',
+
+                    // Before: Triangle
+                    'before:absolute before:-top-[9px] before:-ml-[9px] before:left-[calc(var(--overlayArrowLeft,0)+1.25rem)] z-0',
+                    'before:w-0 before:h-0 before:shadow-inner',
+                    'before:border-transparent before:border-solid',
+                    'before:border-x-[8px] before:border-[8px]',
+                    'before:border-t-0 before:border-b-grey-300/10',
+
+                    'after:absolute after:-top-2 after:-ml-[8px] after:left-[calc(var(--overlayArrowLeft,0)+1.25rem)]',
+                    'after:w-0 after:h-0 after:shadow-inner',
+                    'after:border-transparent after:border-solid',
+                    'after:border-x-[0.5rem] after:border-[0.5rem]',
+                    'after:border-t-0 after:border-b-white after:opacity-80'
+                ]
+            },
+            content: {
+                class: 'p-6'
+            },
+            transition: {
+                enterFromClass: 'opacity-0 scale-y-[0.8]',
+                enterActiveClass: 'transition-[transform,opacity] duration-[120ms] ease-[cubic-bezier(0,0,0.2,1)]',
+                leaveActiveClass: 'transition-opacity duration-100 ease-linear',
+                leaveToClass: 'opacity-0'
+            }
+        }"
+    >
+        <div class="flex flex-col gap-6 max-w-72">
+            <div class="flex items-center justify-between">
+                <span class="text-primary-950 text-center text-md font-medium">Filter by</span>
+                <TimesIcon
+                    class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
+                    @click="hideOverlay"
+                />
+            </div>
+            <slot name="overlayContent"></slot>
+        </div>
+    </OverlayPanel>
 </template>

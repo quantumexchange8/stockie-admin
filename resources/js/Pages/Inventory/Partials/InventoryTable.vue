@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue'
-import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon } from '@/Components/Icons/solid';
+import { ref, computed, watch } from 'vue'
+import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon, TimesIcon } from '@/Components/Icons/solid';
 import Tag from '@/Components/Tag.vue';
 import Modal from '@/Components/Modal.vue'
 import Table from '@/Components/Table.vue'
@@ -9,6 +9,8 @@ import AddStockForm from './AddStockForm.vue'
 import EditInventoryForm from './EditInventoryForm.vue'
 import CreateInventoryForm from './CreateInventoryForm.vue'
 import SearchBar from "@/Components/SearchBar.vue";
+import Checkbox from '@/Components/Checkbox.vue'
+import { FilterMatchMode } from 'primevue/api';
 
 const props = defineProps({
     errors: Object,
@@ -42,11 +44,24 @@ const props = defineProps({
     },
 })
 
+const emit = defineEmits(["applyFilters", "clearFilters"]);
+
 const createFormIsOpen = ref(false);
 const addStockFormIsOpen = ref(false);
 const editGroupFormIsOpen = ref(false);
 const deleteGroupFormIsOpen = ref(false);
 const selectedGroup = ref(null);
+
+const checkedFilters = ref({
+    itemCategory: [],
+    stockLevel: [],
+});
+
+const stockLevels = ref(['In Stock', 'Low Stock', 'Out of Stock']);
+
+const filters = ref({
+    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
+});
 
 const showCreateForm = () => {
     createFormIsOpen.value = true;
@@ -92,10 +107,30 @@ const hideDeleteGroupForm = () => {
     }, 300);
 }
 
-const handleLinkClick = (event) => {
-    event.stopPropagation();  // Prevent the row selection event
-    event.preventDefault();   // Prevent the default link action
-    window.location.href = event.currentTarget.href;  // Manually handle the link navigation
+const clearFilters = () => {
+    checkedFilters.value = {
+        itemCategory: [],
+        stockLevel: [],
+    };
+    emit('applyFilters', checkedFilters.value);
+};
+
+const toggleItemCategory = (value) => {
+    const index = checkedFilters.value.itemCategory.indexOf(value);
+    if (index > -1) {
+        checkedFilters.value.itemCategory.splice(index, 1);
+    } else {
+        checkedFilters.value.itemCategory.push(value);
+    }
+};
+
+const toggleStockLevel = (value) => {
+    const index = checkedFilters.value.stockLevel.indexOf(value);
+    if (index > -1) {
+        checkedFilters.value.stockLevel.splice(index, 1);
+    } else {
+        checkedFilters.value.stockLevel.push(value);
+    }
 };
 
 </script>
@@ -103,52 +138,6 @@ const handleLinkClick = (event) => {
 <template>
     <div class="flex flex-col">
         <div class="flex flex-col gap-4 justify-center">
-            <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-6 rounded-[5px]">
-                <SearchBar
-                    placeholder="Search"
-                    :show-filter="true"
-                    v-model="inputValue"
-                >
-                </SearchBar>
-                <div class="w-full flex flex-wrap sm:flex-nowrap items-center justify-center gap-3">
-                    <Button
-                        :type="'button'"
-                        :variant="'tertiary'"
-                        :size="'lg'"
-                        :iconPosition="'left'"
-                        class="w-full"
-                        @click="showCreateForm"
-                    >
-                        <template #icon>
-                            <svg 
-                                width="20" 
-                                height="20" 
-                                viewBox="0 0 20 20" 
-                                fill="none" 
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="w-6 h-6"
-                            >
-                                <path d="M10.8333 2.91667V5.16667C10.8333 6.5668 10.8333 7.26686 11.1058 7.80164C11.3455 8.27205 11.728 8.6545 12.1984 8.89418C12.7331 9.16667 13.4332 9.16667 14.8333 9.16667H17.0833M17.5 10.8235V13.5C17.5 14.9001 17.5 15.6002 17.2275 16.135C16.9878 16.6054 16.6054 16.9878 16.135 17.2275C15.6002 17.5 14.9001 17.5 13.5 17.5H6.5C5.09987 17.5 4.3998 17.5 3.86502 17.2275C3.39462 16.9878 3.01217 16.6054 2.77248 16.135C2.5 15.6002 2.5 14.9001 2.5 13.5V6.5C2.5 5.09987 2.5 4.3998 2.77248 3.86502C3.01217 3.39462 3.39462 3.01217 3.86502 2.77248C4.3998 2.5 5.09987 2.5 6.5 2.5H9.17648C9.78796 2.5 10.0937 2.5 10.3814 2.56908C10.6365 2.63032 10.8804 2.73133 11.104 2.8684C11.3563 3.023 11.5725 3.23919 12.0049 3.67157L16.3284 7.9951C16.7608 8.42747 16.977 8.64366 17.1316 8.89595C17.2687 9.11963 17.3697 9.3635 17.4309 9.61859C17.5 9.90631 17.5 10.212 17.5 10.8235Z" stroke="#7E171B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </template>
-                        View Stock History
-                    </Button>
-                    <Button
-                        :type="'button'"
-                        :size="'lg'"
-                        :iconPosition="'left'"
-                        class="w-full"
-                        @click="showCreateForm"
-                    >
-                        <template #icon>
-                            <PlusIcon
-                                class="w-6 h-6"
-                            />
-                        </template>
-                        New Group
-                    </Button>
-                </div>
-            </div>
             <Table 
                 :variant="'list'"
                 :rows="rows"
@@ -157,8 +146,99 @@ const handleLinkClick = (event) => {
                 :rowsPerPage="rowsPerPage"
                 :rowType="rowType"
                 :actions="actions"
+                :searchFilter="true"
+                :filters="filters"
             >
-                <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
+                <template #header>
+                    <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-6 rounded-[5px]">
+                        <SearchBar
+                            placeholder="Search"
+                            :showFilter="true"
+                            v-model="filters['global'].value"
+                        >
+                            <template #filterOverlayContent>
+                                <div class="flex flex-col self-stretch gap-4 items-center">
+                                    <span class="text-grey-900 text-base font-semibold">Unit Type</span>
+                                    <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
+                                        <div class="flex py-2 px-3 gap-2 items-center" v-for="(category, index) in itemCategoryArr" :key="index">
+                                            <Checkbox 
+                                                :checked="checkedFilters.itemCategory.includes(category.value)"
+                                                @click="toggleItemCategory(category.value)"
+                                            />
+                                            <span class="text-grey-700 text-sm font-medium">{{ category.text }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col self-stretch gap-4 items-center">
+                                    <span class="text-grey-900 text-base font-semibold">Stock Level</span>
+                                    <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
+                                        <div class="flex py-2 px-3 gap-2 items-center" v-for="(level, index) in stockLevels">
+                                            <Checkbox 
+                                                :checked="checkedFilters.stockLevel.includes(stockLevels[index])"
+                                                @click="toggleStockLevel(stockLevels[index]); console.log('level: ' + level); console.log('index: ' + index)"
+                                            />
+                                            <span class="text-grey-700 text-sm font-medium">{{ level }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
+                                    <Button
+                                        :type="'button'"
+                                        :variant="'tertiary'"
+                                        :size="'lg'"
+                                        @click="clearFilters"
+                                    >
+                                        Clear All
+                                    </Button>
+                                    <Button
+                                        :size="'lg'"
+                                        @click="emit('applyFilters', checkedFilters)"
+                                    >
+                                        Apply
+                                    </Button>
+                                </div>
+                            </template>
+                        </SearchBar>
+                        <div class="w-full flex flex-wrap sm:flex-nowrap items-center justify-center gap-3">
+                            <Button
+                                :type="'button'"
+                                :variant="'tertiary'"
+                                :size="'lg'"
+                                :iconPosition="'left'"
+                                class="w-full"
+                                @click="showCreateForm"
+                            >
+                                <template #icon>
+                                    <svg 
+                                        width="20" 
+                                        height="20" 
+                                        viewBox="0 0 20 20" 
+                                        fill="none" 
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="w-6 h-6"
+                                    >
+                                        <path d="M10.8333 2.91667V5.16667C10.8333 6.5668 10.8333 7.26686 11.1058 7.80164C11.3455 8.27205 11.728 8.6545 12.1984 8.89418C12.7331 9.16667 13.4332 9.16667 14.8333 9.16667H17.0833M17.5 10.8235V13.5C17.5 14.9001 17.5 15.6002 17.2275 16.135C16.9878 16.6054 16.6054 16.9878 16.135 17.2275C15.6002 17.5 14.9001 17.5 13.5 17.5H6.5C5.09987 17.5 4.3998 17.5 3.86502 17.2275C3.39462 16.9878 3.01217 16.6054 2.77248 16.135C2.5 15.6002 2.5 14.9001 2.5 13.5V6.5C2.5 5.09987 2.5 4.3998 2.77248 3.86502C3.01217 3.39462 3.39462 3.01217 3.86502 2.77248C4.3998 2.5 5.09987 2.5 6.5 2.5H9.17648C9.78796 2.5 10.0937 2.5 10.3814 2.56908C10.6365 2.63032 10.8804 2.73133 11.104 2.8684C11.3563 3.023 11.5725 3.23919 12.0049 3.67157L16.3284 7.9951C16.7608 8.42747 16.977 8.64366 17.1316 8.89595C17.2687 9.11963 17.3697 9.3635 17.4309 9.61859C17.5 9.90631 17.5 10.212 17.5 10.8235Z" stroke="#7E171B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </template>
+                                View Stock History
+                            </Button>
+                            <Button
+                                :type="'button'"
+                                :size="'lg'"
+                                :iconPosition="'left'"
+                                class="w-full"
+                                @click="showCreateForm"
+                            >
+                                <template #icon>
+                                    <PlusIcon
+                                        class="w-6 h-6"
+                                    />
+                                </template>
+                                New Group
+                            </Button>
+                        </div>
+                    </div>
+                </template>
                 <template #empty>
                     <div>
                         <svg width="186" height="180" viewBox="0 0 186 180" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -259,6 +339,7 @@ const handleLinkClick = (event) => {
                         </div>
                     </div>
                 </template>
+                <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                 <template #item_cat_id="row">
                     {{ itemCategoryArr.find((category) => category.value === row.item_cat_id).text }}
                 </template>

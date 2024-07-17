@@ -82,7 +82,7 @@ onMounted(() => {
                     'text-grey-500': disabled === true,
                 },
             ]"
-            v-if="labelText !== ''"
+            v-if="labelText"
         >
         </Label>
         <div class="relative">
@@ -119,17 +119,17 @@ onMounted(() => {
                     </svg>
                 </slot>
                 <input
-                 :name="inputName"
-                    :class="[
-                        'w-full border-none text-base font-normal',
-                        'text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
-                    ]"
-                :type="inputType"
-                :value="modelValue"
-                @input="$emit('update:modelValue', $event.target.value)"
-                ref="input"
-                :disabled="disabled"
-                :placeholder="placeholder"
+                    :name="inputName"
+                        :class="[
+                            'w-full border-none text-base font-normal',
+                            'text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
+                        ]"
+                    :type="inputType"
+                    :value="modelValue"
+                    @input="$emit('update:modelValue', $event.target.value)"
+                    ref="input"
+                    :disabled="disabled"
+                    :placeholder="placeholder"
                 >
                
                 <button
@@ -145,7 +145,11 @@ onMounted(() => {
                 </button>
                 </input>
              
-                <Filter v-if="showFilter" class="absolute top-0 right-0 h-full" />
+                <Filter v-if="showFilter">
+                    <template #overlayContent>
+                        <slot name="filterOverlayContent"></slot>
+                    </template>
+                </Filter>
             </div>
         
 

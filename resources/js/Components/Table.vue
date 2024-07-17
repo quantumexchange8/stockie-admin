@@ -36,7 +36,15 @@ const props = defineProps({
     actions: {
         type: Object,
         default: () => ({})
-    }
+    },
+    searchFilter: {
+        type: Boolean,
+        default: false
+    },
+    filters: {
+        type: Object,
+        default: () => ({})
+    },
 });
 
 const dt = ref();
@@ -162,6 +170,7 @@ onMounted(() => {
             v-bind="computedProps"
             selectionMode="single"
             dataKey="id"
+            :filters="searchFilter ? filters : {}"
             tableStyle="min-width: 50rem"
             stripedRows
             @rowSelect="onRowSelect"
@@ -179,7 +188,7 @@ onMounted(() => {
                 }),
                 paginator: {
                     root: {
-                        class: 'flex justify-center items-center flex-wrap bg-white text-grey-500 py-3'
+                        class: 'flex justify-center items-center flex-wrap bg-white text-grey-500 pt-5 pb-3'
                     },
                     start: {
                         class: 'mr-auto'
@@ -246,6 +255,11 @@ onMounted(() => {
                 },
             }"
         >
+            <template #header>
+                <slot name="header">
+                </slot>
+            </template>
+
             <template #empty>
                 <slot name="empty">
                     <div>
