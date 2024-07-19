@@ -1584,3 +1584,59 @@ export const EmptyStockIcon = defineComponent({
         );
     },
 });
+
+export const CircledMinusIcon = defineComponent({
+    setup() {
+        return () => (
+            <svg 
+                width="20" 
+                height="20" 
+                viewBox="0 0 20 20" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg" 
+            >
+                <rect 
+                    width="20" 
+                    height="20" 
+                    rx="10" 
+                    fill="fill-current"
+                />
+                <path 
+                    d="M7 10.0834H13.1667" 
+                    stroke="currentColor"
+                    stroke-width="1.48002" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"
+                />
+            </svg>
+        );
+    },
+});
+
+export const CircledPlusIcon = defineComponent({
+    setup() {
+        return () => (
+            <svg 
+                width="20" 
+                height="20" 
+                viewBox="0 0 20 20" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg" 
+            >
+                <rect 
+                    width="20" 
+                    height="20" 
+                    rx="10" 
+                    fill="fill-current"
+                />
+                <path 
+                    d="M10.0834 7V13.1667M7 10.0834H13.1667" 
+                    stroke="currentColor"
+                    stroke-width="1.48002" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"
+                />
+            </svg>
+        );
+    },
+});

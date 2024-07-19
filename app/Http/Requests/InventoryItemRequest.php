@@ -23,7 +23,7 @@ class InventoryItemRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'inventory_id' => 'required|integer',
+            // 'inventory_id' => 'required|integer',
             'item_name' => 'required|string|max:255',
             'item_cat_id' => 'required|integer',
             'stock_qty' => 'required|decimal:0,2',

@@ -58,7 +58,7 @@ const formSubmit = () => {
 
     let hasAddValue = false;
     form.items.forEach(item => {
-        if (item.add_stock_qty > 0) {
+        if (item.add_stock_qty > 0 || item.add_stock_qty < 0) {
             hasAddValue = true;
         }
     });
@@ -88,7 +88,7 @@ const isFormValid = computed(() => {
 
     let hasAddValue = false;
     form.items.forEach(item => {
-        if (item.add_stock_qty > 0) {
+        if (item.add_stock_qty > 0 || item.add_stock_qty < 0) {
             hasAddValue = true;
         }
     });
@@ -120,6 +120,7 @@ const isFormValid = computed(() => {
                     <NumberCounter
                         :inputName="'item_'+ i +'add_stock_qty'"
                         :errorMessage="(form.errors) ? form.errors['items.' + i + '.add_stock_qty']  : ''"
+                        :minValue="item.stock_qty"
                         v-model="item.add_stock_qty"
                         class="items-end justify-center"
                     />

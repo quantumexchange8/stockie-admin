@@ -157,10 +157,10 @@ const toggleStockLevel = (value) => {
                             v-model="filters['global'].value"
                         >
                             <template #filterOverlayContent>
-                                <div class="flex flex-col self-stretch gap-4 items-center">
+                                <div class="flex flex-col self-stretch gap-4 items-start">
                                     <span class="text-grey-900 text-base font-semibold">Unit Type</span>
                                     <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                        <div class="flex py-2 px-3 gap-2 items-center" v-for="(category, index) in itemCategoryArr" :key="index">
+                                        <div class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" v-for="(category, index) in itemCategoryArr" :key="index">
                                             <Checkbox 
                                                 :checked="checkedFilters.itemCategory.includes(category.value)"
                                                 @click="toggleItemCategory(category.value)"
@@ -169,10 +169,10 @@ const toggleStockLevel = (value) => {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex flex-col self-stretch gap-4 items-center">
+                                <div class="flex flex-col self-stretch gap-4 items-start">
                                     <span class="text-grey-900 text-base font-semibold">Stock Level</span>
                                     <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                        <div class="flex py-2 px-3 gap-2 items-center" v-for="(level, index) in stockLevels">
+                                        <div class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" v-for="(level, index) in stockLevels">
                                             <Checkbox 
                                                 :checked="checkedFilters.stockLevel.includes(stockLevels[index])"
                                                 @click="toggleStockLevel(stockLevels[index]); console.log('level: ' + level); console.log('index: ' + index)"
@@ -360,7 +360,10 @@ const toggleStockLevel = (value) => {
                 :closeable="true" 
                 @close="hideCreateForm"
             >
-                <CreateInventoryForm @close="hideCreateForm" />
+                <CreateInventoryForm 
+                    :itemCategoryArr="itemCategoryArr"
+                    @close="hideCreateForm" 
+                />
             </Modal>
             <Modal 
                 :title="'Add New Stock'"

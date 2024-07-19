@@ -9,6 +9,7 @@ use App\Models\IventoryItem;
 use App\Http\Requests\InventoryItemRequest;
 use App\Http\Requests\InventoryRequest;
 use App\Models\KeepHistory;
+use App\Models\StockHistory;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -26,32 +27,79 @@ class InventoryController extends Controller
     
     public function store(InventoryRequest $request)
     {
-        $data = $request->all();
+        // Get validated inventory data
+        $validatedData = $request->validated();
 
-        if (count($data['items']) > 0) {
-            $inventoryItemRequest = new InventoryItemRequest();
-            $request->validate($inventoryItemRequest->rules(), $inventoryItemRequest->messages(), $inventoryItemRequest->attributes());
+        // Get inventory items
+        $inventoryItemData = $request->input('items');
+        
+        $inventoryItemRequest = new InventoryItemRequest();
+        $validatedInventoryItems = [];
+        $allItemErrors = [];
+
+        foreach ($inventoryItemData as $index => $item) {
+            $rules = $inventoryItemRequest->rules();
+            $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
+
+            // Validate inventory items data
+            $inventoryItemValidator = Validator::make(
+                $item,
+                $rules,
+                $inventoryItemRequest->messages(),
+                $inventoryItemRequest->attributes()
+            );
+            
+            if ($inventoryItemValidator->fails()) {
+                // Collect the errors for each item and add to the array with item index
+                foreach ($inventoryItemValidator->errors()->messages() as $field => $messages) {
+                    $allItemErrors["items.$index.$field"] = $messages;
+                }
+            } else {
+                // Collect the validated item and manually add the 'id' field back
+                $validatedItem = $inventoryItemValidator->validated();
+                if (isset($item['id'])) {
+                    $validatedItem['id'] = $item['id'];
+                }
+                $validatedInventoryItems[] = $validatedItem;
+            }
+        }
+
+        // If there are any item validation errors, return them
+        if (!empty($allItemErrors)) {
+            return redirect()->back()->withErrors($allItemErrors)->withInput();
         }
 
         // dd($data);
         $image = $request->hasFile('image') ? $request->file('image')->getClientOriginalName() : '';
 
         $newGroup = Iventory::create([
-            'name' => $data['name'],
-            'category_id' => $data['category_id'],
+            'name' => $validatedData['name'],
+            'category_id' => $validatedData['category_id'],
             'image' => $image,
         ]);
 
-        if (count($data['items']) > 0) {
-            foreach ($data['items'] as $key => $value) {
+        if (count($validatedInventoryItems) > 0) {
+            foreach ($validatedInventoryItems as $key => $value) {
                 IventoryItem::create([
                     'inventory_id' => $newGroup->id,
                     'item_name' => $value['item_name'],
                     'item_code' => $value['item_code'],
-                    'item_cat_id' => 0,
+                    'item_cat_id' => $value['item_cat_id'],
                     'stock_qty' => $value['stock_qty'],
                     'status' => $value['status'],
                 ]);    
+
+                if ($value['stock_qty'] > 0) {
+                    StockHistory::create([
+                        'inventory_id' => $newGroup->id,
+                        'inventory_item' => $value['item_name'],
+                        'old_stock' => 0,
+                        'in' => $value['stock_qty'],
+                        'out' => 0,
+                        'current_stock' => $value['stock_qty'],
+                        'date' => $newGroup->created_at,
+                    ]);
+                }
             }
         }
         return Redirect::route('inventory');
@@ -77,15 +125,15 @@ class InventoryController extends Controller
                     foreach ($request['checkedFilters']['stockLevel'] as $key => $value) {
                         switch ($value) {
                             case 'In Stock':
-                                $query->where('stock_qty', '>', 0);
+                                $query->orWhere('stock_qty', '>', 0);
                                 break;
                                 
                             case 'Low Stock':
-                                $query->whereBetween('stock_qty', [0, 26]);
+                                $query->orWhereBetween('stock_qty', [0, 26]);
                                 break;
 
                             case 'Out of Stock':
-                                $query->where('stock_qty', 0);
+                                $query->orWhere('stock_qty', 0);
                                 break;
                         }
                     }
@@ -157,11 +205,25 @@ class InventoryController extends Controller
 
         if (isset($id) && count($data['items']) > 0) {
             foreach ($data['items'] as $key => $value) {
+                $calculatedStock = $value['stock_qty'] + $value['add_stock_qty'];
+
                 $existingItem = IventoryItem::find($value['id']);
 
                 $existingItem->update([
-                    'stock_qty' => $value['stock_qty'] + $value['add_stock_qty'],
+                    'stock_qty' => $calculatedStock >= 0 ? $calculatedStock : 0,
                 ]);    
+
+                if ($value['add_stock_qty'] !== 0 && $value['stock_qty'] > 0 && $calculatedStock >= 0) {
+                    StockHistory::create([
+                        'inventory_id' => $existingItem->inventory_id,
+                        'inventory_item' => $value['item_name'],
+                        'old_stock' => $value['stock_qty'],
+                        'in' => $value['add_stock_qty'] > 0 ? $value['add_stock_qty'] : 0,
+                        'out' => $value['add_stock_qty'] < 0 ? abs($value['add_stock_qty']) : 0,
+                        'current_stock' => $existingItem->stock_qty,
+                        'date' => $existingItem->created_at,
+                    ]);
+                }
             }
         }
         return Redirect::route('inventory');
@@ -184,19 +246,29 @@ class InventoryController extends Controller
 
         foreach ($inventoryItemData as $index => $item) {
             $rules = $inventoryItemRequest->rules();
-
-            if (isset($item['id'])) {
-                // Add unique rule while igoring self
-                $rules['item_code'] = [
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique('iventory_items')->ignore($item['id'], 'id'),
-                ];
-            } else {
-                // Add unique rule 
-                $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
-            }
+            
+            $rules['inventory_id'] = 'required|integer';
+            
+            $rules['item_code'] = isset($item['id']) 
+                                    ?   [
+                                            'required',
+                                            'string',
+                                            'max:255',
+                                            Rule::unique('iventory_items')->ignore($item['id'], 'id'),
+                                        ]
+                                    : $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
+            // if (isset($item['id'])) {
+            //     // Add unique rule while igoring self
+            //     $rules['item_code'] = [
+            //         'required',
+            //         'string',
+            //         'max:255',
+            //         Rule::unique('iventory_items')->ignore($item['id'], 'id'),
+            //     ];
+            // } else {
+            //     // Add unique rule 
+            //     $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
+            // }
 
             // Validate inventory items data
             $inventoryItemValidator = Validator::make(

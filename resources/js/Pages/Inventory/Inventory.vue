@@ -241,7 +241,7 @@ const hideAddStockForm = () => {
                     class="col-span-full md:col-span-4"
                 />
                     
-                <div class="col-span-full md:col-span-8 flex flex-col p-6 gap-6 items-center rounded-[5px] border border-red-100 overflow-y-auto">
+                <div class="col-span-full md:col-span-8 flex flex-col p-6 gap-6 items-center rounded-[5px] border border-red-100 overflow-x-auto">
                     <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Out of Stock Item</span>
                     <div class="flex items-start justify-between self-stretch gap-6">
                         <div class="flex flex-col gap-4 p-3 min-w-48 rounded-[5px] border border-primary-50" v-for="(item, index) in outOfStockItems" :key="index">

@@ -88,20 +88,22 @@ onMounted(() => {
         <div class="relative">
             <div
                 :class="[
-                    'w-full max-h-[44px] pl-4 py-3 flex justify-between items-center hover:text-red-300 active:text-primary-200 focus:text-primary-300',
-                    'rounded-[5px] text-primary-900 active:ring-0 border border-primary-900',
-                    'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                    'w-full max-h-[44px] pl-4 py-3 flex justify-between items-center hover:text-primary-300 active:text-primary-200 focus:text-primary-300',
+                    'rounded-[5px] text-primary-900 active:ring-0 border-y border-l border-primary-900',
+                    'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                     'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                    'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
+                    'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
+                    '[&>button]:hover:border-primary-100',
                     {
+                        'border-r': !showFilter,
                         'border-grey-100': props.disabled === true,
                         'border-grey-300': props.disabled === false,
-                        'border-red-500 focus:border-red-500 hover:border-red-500':
+                        'border-primary-500 focus:border-primary-500 hover:border-primary-500':
                             errorMessage,
                     },
                 ]"
             >
-            <slot name="prefix">
+                <slot name="prefix">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="20"
@@ -120,10 +122,10 @@ onMounted(() => {
                 </slot>
                 <input
                     :name="inputName"
-                        :class="[
-                            'w-full border-none text-base font-normal',
-                            'text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
-                        ]"
+                    :class="[
+                        'w-full border-none text-base font-normal',
+                        'text-base text-grey-700 active:ring-0 focus:ring-0 placeholder:text-grey-200',
+                    ]"
                     :type="inputType"
                     :value="modelValue"
                     @input="$emit('update:modelValue', $event.target.value)"
@@ -131,18 +133,17 @@ onMounted(() => {
                     :disabled="disabled"
                     :placeholder="placeholder"
                 >
-               
-                <button
-                    type="button"
-                    v-if="modelValue && !disabled"
-                    class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 focus:outline-none"
-                    @click="clearInput"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <rect width="16" height="16" rx="8" fill="#ECEFF2"/>
-                        <path d="M10 6L6 10M6 6L10 10" stroke="#546775" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
+                    <button
+                        type="button"
+                        v-if="modelValue && !disabled"
+                        class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        @click="clearInput"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <rect width="16" height="16" rx="8" fill="#ECEFF2"/>
+                            <path d="M10 6L6 10M6 6L10 10" stroke="#546775" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </input>
              
                 <Filter v-if="showFilter">

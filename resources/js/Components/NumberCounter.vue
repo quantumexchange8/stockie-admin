@@ -1,9 +1,8 @@
 <script setup>
 import { onMounted, ref, watch } from "vue";
 import Label from "@/Components/Label.vue";
-import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
-import { EyeIcon, EyeOffIcon } from "./Icons/solid";
+import { CircledMinusIcon, CircledPlusIcon } from "./Icons/solid";
 const props = defineProps({
     inputName: String,
     modelValue: Number,
@@ -12,6 +11,10 @@ const props = defineProps({
     placeholder: {
         type: String,
         default: "",
+    },
+    minValue: {
+        type: Number,
+        default: 0,
     },
     disabled: {
         type: Boolean,
@@ -45,21 +48,26 @@ watch(() => props.modelValue, (newVal) => {
 });
 
 const increment = () => {
-    inputValue.value += 1;
-    updateState();
-    emit('update:modelValue', inputValue.value);
+    if (!props.disabled) {
+        inputValue.value += 1;
+        updateState();
+        emit('update:modelValue', inputValue.value);
+    }
 }
 
 const decrement = () => {
-    inputValue.value = inputValue.value > 0 ? inputValue.value - 1 : 0;
-    updateState();
-    emit('update:modelValue', inputValue.value);
+    if (!props.disabled && inputValue.value > -(props.minValue)) {
+        inputValue.value -= 1;
+        updateState();
+        emit('update:modelValue', inputValue.value);
+    }
 }
 
 const updateValue = (event) => {
     const value = parseInt(event.target.value) || 0;
-    inputValue.value = value;
-    emit('update:modelValue', value);
+    inputValue.value = value < -(props.minValue) ? -(props.minValue) : value;
+    event.target.value = inputValue.value;
+    emit('update:modelValue', inputValue.value);
 }
 
 const updateState = () => {
@@ -88,35 +96,18 @@ const updateState = () => {
         >
         </Label>
         <div class="flex items-center justify-center flex-row gap-4">
-            <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 20 20" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg" 
+            <CircledMinusIcon
                 :class="[
-                    'w-6 h-6 [&>rect]:hover:fill-primary-200 hover:text-primary-900',
+                    'w-6 h-6',
                     {
-                        '[&>rect]:fill-primary-900 text-primary-50': isTypingState,
-                        '[&>rect]:fill-grey-100 text-grey-300': !isTypingState,
+                        '[&>rect]:fill-primary-900 text-primary-50': isTypingState && !disabled && inputValue !== 0,
+                        '[&>rect]:fill-grey-100 text-grey-300': !isTypingState || disabled || inputValue === 0 || inputValue <= -(minValue),
+                        '[&>rect]:hover:fill-primary-200 hover:text-primary-900': !disabled && inputValue !== 0 && inputValue > -(minValue),
+                        'pointer-events-none': disabled || inputValue <= -(minValue),
                     }
                 ]"
                 @click="decrement"
-            >
-                <rect 
-                    width="20" 
-                    height="20" 
-                    rx="10" 
-                    fill="fill-current"
-                />
-                <path 
-                    d="M7 10.0834H13.1667" 
-                    stroke="currentColor"
-                    stroke-width="1.48002" 
-                    stroke-linecap="round" 
-                    stroke-linejoin="round"
-                />
-            </svg>
+            />
             <input
                 :name="inputName"
                 :class="[
@@ -141,32 +132,16 @@ const updateState = () => {
                 :disabled="disabled"
                 :placeholder="placeholder"
             />
-            <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 20 20" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg" 
+            <CircledPlusIcon
                 :class="[
-                    'w-6 h-6 [&>rect]:fill-primary-900 text-primary-50 [&>rect]:hover:fill-primary-200 hover:text-primary-900',
+                    'w-6 h-6',
+                    {
+                        '[&>rect]:fill-primary-900 text-primary-50 [&>rect]:hover:fill-primary-200 hover:text-primary-900': !disabled,
+                        '[&>rect]:fill-grey-100 text-grey-300 pointer-events-none': disabled,
+                    }
                 ]"
                 @click="increment"
-            >
-                <rect 
-                    width="20" 
-                    height="20" 
-                    rx="10" 
-                    fill="fill-current"
-                />
-                <path 
-                    d="M10.0834 7V13.1667M7 10.0834H13.1667" 
-                    stroke="currentColor"
-                    stroke-width="1.48002" 
-                    stroke-linecap="round" 
-                    stroke-linejoin="round"
-                />
-            </svg>
-
+            />
         </div>
         <InputError :message="props.errorMessage" v-if="props.errorMessage" />
     </div>

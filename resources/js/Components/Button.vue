@@ -67,7 +67,7 @@ const baseClasses = [
 const variantClasses = (variant) => ({
     'bg-primary-900 text-white hover:bg-primary-800': variant == 'primary',
     'bg-primary-50 text-primary-900 hover:bg-primary-25 hover:text-primary-700': variant == 'secondary',
-    'bg-white text-primary-900 hover:text-primary-800 border border-primary-800': variant == 'tertiary',
+    'bg-transparent text-primary-900 hover:text-primary-800 border border-primary-800': variant == 'tertiary',
     'bg-primary-600 text-white hover:bg-primary-500': variant == 'red',
 })
 

@@ -1,75 +1,23 @@
 <script setup>
 import axios from 'axios';
 import { ref, computed, onMounted } from 'vue'
-import { Link, useForm, usePage } from '@inertiajs/vue3';
-import Checkbox from '@/Components/Checkbox.vue'
+import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
-// import Dropdown from 'primevue/dropdown';
 import DragDropImage from '@/Components/DragDropImage.vue'
 import { PlusIcon } from '@/Components/Icons/solid';
 
 const props = defineProps({
     errors: Object,
+    itemCategoryArr: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const categoryArr = ref([]);
-const unitArr = ref([
-    {
-        'text': 'Bottle',
-        'value': 'Bottle'
-    },
-    {
-        'text': 'Can',
-        'value': 'Can'
-    },
-    {
-        'text': 'Pint',
-        'value': 'Pint'
-    },
-    {
-        'text': 'Tower',
-        'value': 'Tower'
-    },
-    {
-        'text': 'Jug',
-        'value': 'Jug'
-    },
-]);
-const unitArrs = ref([
-    {
-        'group_name': 'Carslberg',
-        'items': [
-            {
-                'text': 'Bottle',
-                'value': 'Bottle'
-            },
-            {
-                'text': 'Can',
-                'value': 'Can'
-            },
-            {
-                'text': 'Bottle',
-                'value': 'Bottle'
-            }
-        ],
-    }, 
-    {
-        'group_name': 'Heineken',
-        'items': [
-            {
-                'text': 'Bottle',
-                'value': 'Bottle'
-            },
-            {
-                'text': 'Can',
-                'value': 'Can'
-            }
-        ],
-    }, 
-]);
 
 const getAllCategories = async () => {
     try {
@@ -191,7 +139,7 @@ const addItem = () => {
                         <Dropdown
                             :inputName="'item_'+ i +'_cat_id'"
                             :labelText="'Unit'"
-                            :inputArray="unitArr"
+                            :inputArray="props.itemCategoryArr"
                             :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_cat_id']  : ''"
                             v-model="item.item_cat_id"
                             class="col-span-full md:col-span-2"

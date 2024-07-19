@@ -37,4 +37,13 @@ class Iventory extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+
+    /**
+     * StockHistory Model
+     * Get the stock histories of the inventory..
+     */
+    public function stockHistories(): HasMany
+    {
+        return $this->hasMany(StockHistory::class, 'inventory_id', 'id');
+    }
 }
