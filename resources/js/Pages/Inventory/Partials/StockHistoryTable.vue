@@ -1,16 +1,7 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon, TimesIcon } from '@/Components/Icons/solid';
-import Tag from '@/Components/Tag.vue';
-import Modal from '@/Components/Modal.vue'
+import dayjs from 'dayjs';
+import { computed } from 'vue'
 import Table from '@/Components/Table.vue'
-import Button from '@/Components/Button.vue'
-import AddStockForm from './AddStockForm.vue'
-import EditInventoryForm from './EditInventoryForm.vue'
-import CreateInventoryForm from './CreateInventoryForm.vue'
-import SearchBar from "@/Components/SearchBar.vue";
-import Checkbox from '@/Components/Checkbox.vue'
-import { FilterMatchMode } from 'primevue/api';
 
 const props = defineProps({
     errors: Object,
@@ -22,116 +13,92 @@ const props = defineProps({
         type: Array,
         required: true,
     },
-    itemCategoryArr: {
-        type: Array,
-        default: () => [],
-    },
     rowType: {
         type: Object,
         required: true,
     },
-    actions: {
+    filters: {
         type: Object,
         default: () => {},
     },
-    totalPages: {
-        type: Number,
-        required: true,
-    },
-    rowsPerPage: {
-        type: Number,
-        required: true,
+    category: {
+        type: String,
+        default: 'All',
     },
 })
 
-const emit = defineEmits(["applyFilters", "clearFilters"]);
+// Group the rows by the unique created date
+const rowGroupedByDates = computed(() => {
+    const dateGroups = {};
 
-const createFormIsOpen = ref(false);
-const addStockFormIsOpen = ref(false);
-const editGroupFormIsOpen = ref(false);
-const deleteGroupFormIsOpen = ref(false);
-const selectedGroup = ref(null);
+    props.rows.forEach(row => {
+        const formattedDate = dayjs(row.created_at).format('DD/MM/YYYY');
+        
+        // If the date key doesn't exist in the object, create an array for it
+        if (!dateGroups[formattedDate]) {
+            dateGroups[formattedDate] = [];
+        }
 
-const checkedFilters = ref({
-    itemCategory: [],
-    stockLevel: [],
+        // Push the row into the corresponding date group
+        dateGroups[formattedDate].push(row);
+    });
+
+    // Step 2: Group rows by inventory_item within each date group and merge `in` and `out` values
+    const result = Object.keys(dateGroups).map(date => {
+        const inventoryGroups = {};
+
+        dateGroups[date].forEach(row => {
+            const itemName = row.inventory_item;
+
+            if (!inventoryGroups[itemName]) {
+                // Initialize the grouped object with the first row's values
+                inventoryGroups[itemName] = {
+                    ...row,
+                    min_created_at: row.created_at,
+                    max_created_at: row.created_at,
+                };
+            } else {
+                // Sum the `in` and `out` values if the item already exists
+                inventoryGroups[itemName].in += row.in;
+                inventoryGroups[itemName].out += row.out;
+
+                // Update the old_stock and current_stock based on created_at dates
+                if (dayjs(row.created_at).isBefore(inventoryGroups[itemName].min_created_at)) {
+                    inventoryGroups[itemName].old_stock = row.old_stock;
+                    inventoryGroups[itemName].min_created_at = row.created_at;
+                }
+
+                if (dayjs(row.created_at).isAfter(inventoryGroups[itemName].max_created_at)) {
+                    inventoryGroups[itemName].current_stock = row.current_stock;
+                    inventoryGroups[itemName].max_created_at = row.created_at;
+                }
+            }
+        });
+
+        // Convert inventoryGroups to an array
+        const mergedRows = Object.values(inventoryGroups).map(item => {
+            // Remove temporary min_created_at and max_created_at properties
+            delete item.min_created_at;
+            delete item.max_created_at;
+            
+            return item;
+        });
+
+        const filteredRows = mergedRows.filter(row => {
+            if (props.category === 'All') return true;
+            if (props.category === 'In' && row.in > 0) return true;
+            if (props.category === 'Out' && row.out > 0) return true;
+            return false;
+        });
+
+        return {
+            date,
+            rows: filteredRows,
+        };
+    });
+
+    return result;
 });
-
-const stockLevels = ref(['In Stock', 'Low Stock', 'Out of Stock']);
-
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
-
-const showCreateForm = () => {
-    createFormIsOpen.value = true;
-}
-
-const hideCreateForm = () => {
-    createFormIsOpen.value = false;
-}
-
-const showAddStockForm = (group) => {
-    selectedGroup.value = group;
-    addStockFormIsOpen.value = true;
-}
-
-const hideAddStockForm = () => {
-    addStockFormIsOpen.value = false;
-    setTimeout(() => {
-        selectedGroup.value = null;
-    }, 300);
-}
-
-const showEditGroupForm = (group) => {
-    selectedGroup.value = group;
-    editGroupFormIsOpen.value = true;
-}
-
-const hideEditGroupForm = () => {
-    editGroupFormIsOpen.value = false;
-    setTimeout(() => {
-        selectedGroup.value = null;
-    }, 300);
-}
-
-const showDeleteGroupForm = (group) => {
-    selectedGroup.value = group;
-    deleteGroupFormIsOpen.value = true;
-}
-
-const hideDeleteGroupForm = () => {
-    deleteGroupFormIsOpen.value = false;
-    setTimeout(() => {
-        selectedGroup.value = null;
-    }, 300);
-}
-
-const clearFilters = () => {
-    checkedFilters.value = {
-        itemCategory: [],
-        stockLevel: [],
-    };
-    emit('applyFilters', checkedFilters.value);
-};
-
-const toggleItemCategory = (value) => {
-    const index = checkedFilters.value.itemCategory.indexOf(value);
-    if (index > -1) {
-        checkedFilters.value.itemCategory.splice(index, 1);
-    } else {
-        checkedFilters.value.itemCategory.push(value);
-    }
-};
-
-const toggleStockLevel = (value) => {
-    const index = checkedFilters.value.stockLevel.indexOf(value);
-    if (index > -1) {
-        checkedFilters.value.stockLevel.splice(index, 1);
-    } else {
-        checkedFilters.value.stockLevel.push(value);
-    }
-};
 
 </script>
 
@@ -140,103 +107,18 @@ const toggleStockLevel = (value) => {
         <div class="flex flex-col gap-4 justify-center">
             <Table 
                 :variant="'list'"
-                :rows="rows"
-                :totalPages="totalPages"
+                :rows="group.rows"
+                :paginator="false"
                 :columns="columns"
-                :rowsPerPage="rowsPerPage"
                 :rowType="rowType"
-                :actions="actions"
                 :searchFilter="true"
                 :filters="filters"
+                v-for="(group, index) in rowGroupedByDates" 
+                :key="index"
             >
                 <template #header>
-                    <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-6 rounded-[5px]">
-                        <SearchBar
-                            placeholder="Search"
-                            :showFilter="true"
-                            v-model="filters['global'].value"
-                        >
-                            <template #filterOverlayContent>
-                                <div class="flex flex-col self-stretch gap-4 items-start">
-                                    <span class="text-grey-900 text-base font-semibold">Unit Type</span>
-                                    <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                        <div class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" v-for="(category, index) in itemCategoryArr" :key="index">
-                                            <Checkbox 
-                                                :checked="checkedFilters.itemCategory.includes(category.value)"
-                                                @click="toggleItemCategory(category.value)"
-                                            />
-                                            <span class="text-grey-700 text-sm font-medium">{{ category.text }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col self-stretch gap-4 items-start">
-                                    <span class="text-grey-900 text-base font-semibold">Stock Level</span>
-                                    <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                        <div class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" v-for="(level, index) in stockLevels">
-                                            <Checkbox 
-                                                :checked="checkedFilters.stockLevel.includes(stockLevels[index])"
-                                                @click="toggleStockLevel(stockLevels[index]); console.log('level: ' + level); console.log('index: ' + index)"
-                                            />
-                                            <span class="text-grey-700 text-sm font-medium">{{ level }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
-                                    <Button
-                                        :type="'button'"
-                                        :variant="'tertiary'"
-                                        :size="'lg'"
-                                        @click="clearFilters"
-                                    >
-                                        Clear All
-                                    </Button>
-                                    <Button
-                                        :size="'lg'"
-                                        @click="emit('applyFilters', checkedFilters)"
-                                    >
-                                        Apply
-                                    </Button>
-                                </div>
-                            </template>
-                        </SearchBar>
-                        <div class="w-full flex flex-wrap sm:flex-nowrap items-center justify-center gap-3">
-                            <Button
-                                :type="'button'"
-                                :variant="'tertiary'"
-                                :size="'lg'"
-                                :iconPosition="'left'"
-                                :href="route('inventory.viewStockHistories')"
-                                class="w-full"
-                            >
-                                <template #icon>
-                                    <svg 
-                                        width="20" 
-                                        height="20" 
-                                        viewBox="0 0 20 20" 
-                                        fill="none" 
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-6 h-6"
-                                    >
-                                        <path d="M10.8333 2.91667V5.16667C10.8333 6.5668 10.8333 7.26686 11.1058 7.80164C11.3455 8.27205 11.728 8.6545 12.1984 8.89418C12.7331 9.16667 13.4332 9.16667 14.8333 9.16667H17.0833M17.5 10.8235V13.5C17.5 14.9001 17.5 15.6002 17.2275 16.135C16.9878 16.6054 16.6054 16.9878 16.135 17.2275C15.6002 17.5 14.9001 17.5 13.5 17.5H6.5C5.09987 17.5 4.3998 17.5 3.86502 17.2275C3.39462 16.9878 3.01217 16.6054 2.77248 16.135C2.5 15.6002 2.5 14.9001 2.5 13.5V6.5C2.5 5.09987 2.5 4.3998 2.77248 3.86502C3.01217 3.39462 3.39462 3.01217 3.86502 2.77248C4.3998 2.5 5.09987 2.5 6.5 2.5H9.17648C9.78796 2.5 10.0937 2.5 10.3814 2.56908C10.6365 2.63032 10.8804 2.73133 11.104 2.8684C11.3563 3.023 11.5725 3.23919 12.0049 3.67157L16.3284 7.9951C16.7608 8.42747 16.977 8.64366 17.1316 8.89595C17.2687 9.11963 17.3697 9.3635 17.4309 9.61859C17.5 9.90631 17.5 10.212 17.5 10.8235Z" stroke="#7E171B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </template>
-                                View Stock History
-                            </Button>
-                            <Button
-                                :type="'button'"
-                                :size="'lg'"
-                                :iconPosition="'left'"
-                                class="w-full"
-                                @click="showCreateForm"
-                            >
-                                <template #icon>
-                                    <PlusIcon
-                                        class="w-6 h-6"
-                                    />
-                                </template>
-                                New Group
-                            </Button>
-                        </div>
+                    <div class="flex items-center justify-between gap-2.5 rounded-sm bg-grey-50 border-t border-grey-200 py-1 px-2.5">
+                        <span class="text-grey-900 text-sm font-medium">{{ group.date }}</span>
                     </div>
                 </template>
                 <template #empty>
@@ -318,91 +200,33 @@ const toggleStockLevel = (value) => {
                     <span class="text-primary-900 text-sm font-medium">You haven't added any group yet...</span>
                 </template>
                 <template #groupheader="row">
-                    <div class="flex justify-between items-center w-full">
+                    <div class="flex justify-start items-center w-full">
                         <div class="flex items-center gap-3">
                             <span class="w-[60px] h-[60px] flex-shrink-0 rounded-full bg-primary-700"></span>
                             <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ row.inventory.name }}</span>
                         </div>
-                        <div class="flex justify-end items-start gap-2">
-                            <ReplenishIcon
-                                class="w-6 h-6 block transition duration-150 ease-in-out text-primary-900 hover:text-primary-800 cursor-pointer"
-                                @click="() => showAddStockForm(row.inventory)"
-                            />
-                            <EditIcon
-                                class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                                @click="() => showEditGroupForm(row.inventory)"
-                            />
-                            <DeleteIcon
-                                class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click="() => showDeleteGroupForm(row.inventory)"
-                            />
-                        </div>
                     </div>
                 </template>
+                <template #groupfooter="row">
+                    <div></div>
+                </template>
                 <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
-                <template #item_cat_id="row">
-                    {{ itemCategoryArr.find((category) => category.value === row.item_cat_id).text }}
+                <template #in="row">
+                    <span class="text-green-600 text-sm font-medium" v-if="row.in">+ {{ row.in }}</span>
+                    <span class="text-grey-300 text-sm font-medium" v-else>-</span>
                 </template>
-                <template #keep="row">
-                    {{ row.keep ? row.keep : 0 }}
+                <template #out="row">
+                    <span class="text-primary-600 text-sm font-medium" v-if="row.out">- {{ row.out }}</span>
+                    <span class="text-grey-300 text-sm font-medium" v-else>-</span>
                 </template>
-                <template #status="row">
-                    <Tag
-                        :variant="'green'"
-                        :value="row.status"
-                    />
+                <template #current_stock="row">
+                    <span class="text-grey-900 text-sm font-medium">
+                        {{ row.current_stock }}
+                        <span class="text-primary-600 text-sm font-medium" v-if="category === 'In' && row.out > 0"> (- {{ row.out }})</span>
+                        <span class="text-green-600 text-sm font-medium" v-else-if="category === 'Out' && row.in > 0"> (+ {{ row.in }})</span>
+                    </span>
                 </template>
             </Table>
-            <Modal 
-                :title="'Add New Group'"
-                :show="createFormIsOpen" 
-                :maxWidth="'lg'" 
-                :closeable="true" 
-                @close="hideCreateForm"
-            >
-                <CreateInventoryForm 
-                    :itemCategoryArr="itemCategoryArr"
-                    @close="hideCreateForm" 
-                />
-            </Modal>
-            <Modal 
-                :title="'Add New Stock'"
-                :show="addStockFormIsOpen" 
-                :maxWidth="'lg'" 
-                :closeable="true" 
-                @close="hideAddStockForm"
-            >
-                <template v-if="selectedGroup">
-                    <AddStockForm :group="selectedGroup" @close="hideAddStockForm"/>
-                </template>
-            </Modal>
-            <Modal 
-                :title="'Edit Group'"
-                :show="editGroupFormIsOpen" 
-                :maxWidth="'lg'" 
-                :closeable="true" 
-                @close="hideEditGroupForm"
-            >
-                <template v-if="selectedGroup">
-                    <!-- {{ console.log('Rendered component') }} -->
-                    <EditInventoryForm 
-                        :group="selectedGroup" 
-                        :itemCategoryArr="itemCategoryArr"
-                        @close="hideEditGroupForm"
-                    />
-                </template>
-            </Modal>
-            <Modal 
-                :show="deleteGroupFormIsOpen" 
-                :maxWidth="'2xs'" 
-                :closeable="true" 
-                :deleteConfirmation="true"
-                :deleteUrl="`/inventory/inventory/deleteInventory/${selectedGroup.id}`"
-                :confirmationTitle="'Delete this group?'"
-                :confirmationMessage="'All the item inside this group will be deleted altogether. Are you sure you want to delete this group?'"
-                @close="hideDeleteGroupForm"
-                v-if="selectedGroup"
-            />
         </div>
     </div>
 </template>

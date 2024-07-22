@@ -61,42 +61,41 @@ const { type, variant, size, squared, pill, href, iconOnly, iconPosition, srText
 const { disabled } = toRefs(props)
 
 const baseClasses = [
-    'flex w-full items-end justify-center self-center whitespace-nowrap transition-colors font-medium select-none disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none',
+    'flex w-full items-center justify-center whitespace-nowrap transition-colors font-medium select-none disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none',
 ]
 
-const variantClasses = (variant) => ({
-    'bg-primary-900 text-white hover:bg-primary-800': variant == 'primary',
-    'bg-primary-50 text-primary-900 hover:bg-primary-25 hover:text-primary-700': variant == 'secondary',
-    'bg-transparent text-primary-900 hover:text-primary-800 border border-primary-800': variant == 'tertiary',
-    'bg-primary-600 text-white hover:bg-primary-500': variant == 'red',
-})
+const variantClasses = computed(() => ({
+    'primary': 'bg-primary-900 text-white hover:bg-primary-800',
+    'secondary': 'bg-primary-50 text-primary-900 hover:bg-primary-25 hover:text-primary-700',
+    'tertiary': 'bg-transparent text-primary-900 hover:text-primary-800 border border-primary-800',
+    'red': 'bg-primary-600 text-white hover:bg-primary-500',
+}[variant]));
+
+const sizeClasses = computed(() => ({
+    'md': iconOnly ? 'p-2' : 'px-4 py-2 text-sm',
+    'lg': iconOnly ? 'p-3' : 'px-6 py-3 text-base',
+}[size]));
+
+const shapeClasses = computed(() => ({
+    'rounded-md': !squared && !pill,
+    'rounded-full': pill,
+}));
+
+const disabledClasses = computed(() => ({
+    'pointer-events-none': href && disabled.value === true,
+    '!bg-grey-100 !text-grey-200': disabled.value === true && variant === 'primary',
+    '!bg-primary-100': disabled.value === true && variant === 'secondary',
+    '!bg-primary-200': disabled.value === true && variant === 'tertiary',
+    '!bg-primary-300': disabled.value === true && variant === 'red',
+}));
 
 const classes = computed(() => [
-    ...baseClasses,
-    iconOnly
-        ? {
-                'p-2': size == 'md',
-                'p-3': size == 'lg',
-            }
-        : {
-                'px-4 py-2 text-sm': size == 'md',
-                'px-6 py-3 text-base': size == 'lg',
-            },
-    variantClasses(variant),
-    {
-        'rounded-md': !squared && !pill,
-        'rounded-full': pill,
-    },
-    {
-        'pointer-events-none': href && disabled.value,
-    },
-    {
-        '!bg-grey-100 !text-grey-200': disabled.value === true && variant === 'primary',
-        '!bg-primary-100': disabled.value === true && variant === 'secondary',
-        '!bg-primary-200': disabled.value === true && variant === 'tertiary',
-        '!bg-primary-300': disabled.value === true && variant === 'red',
-    },
-])
+    baseClasses,
+    variantClasses.value,
+    sizeClasses.value,
+    shapeClasses.value,
+    disabledClasses.value,
+]);
 
 const iconSizeClasses = [
     {
@@ -104,7 +103,6 @@ const iconSizeClasses = [
         'h-[20px]': size == 'lg',
     },
 ]
-
 
 const handleClick = (e) => {
     if (disabled.value) {
@@ -115,7 +113,12 @@ const handleClick = (e) => {
     emit('click', e)
 }
 
-const Tag = external ?  'a' : Link
+const Tag = computed(() => {
+    if (href) {
+        return external ? 'a' : Link;
+    }
+    return 'button';
+});
 </script>
 
 <style scoped>
@@ -139,27 +142,12 @@ const Tag = external ?  'a' : Link
 </style>
 
 <template>
-    <component
+     <component
         :is="Tag"
-        v-if="href"
-        :href="!disabled ? href : null"
+        :href="!disabled && href ? href : null"
         :class="classes"
         :aria-disabled="disabled.toString()"
-    >
-        <span
-            v-if="srText"
-            class="sr-only"
-        >
-            {{ srText }}
-        </span>
-
-        <slot :iconSizeClasses="iconSizeClasses" />
-    </component>
-
-    <button
-        v-else
-        :type="type"
-        :class="classes"
+        :type="href ? null : type"
         @click="handleClick"
         :disabled="disabled"
     >
@@ -267,5 +255,5 @@ const Tag = external ?  'a' : Link
         >
             <slot :iconSizeClasses="iconSizeClasses" />
         </span>
-    </button>
+    </component>
 </template>

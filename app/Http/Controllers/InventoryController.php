@@ -378,6 +378,45 @@ class InventoryController extends Controller
     }
 
     /**
+     * View inventory stock histories.
+     */
+    public function viewStockHistories()
+    {
+        return Inertia::render('Inventory/Partials/StockHistory');
+    }
+
+    /**
+     * Get all inventory stock histories.
+     */
+    public function getAllStockHistory(Request $request)
+    {
+        $dateFilter = $request->input('dateFilter');
+        $query = StockHistory::query();
+
+        if ($dateFilter && gettype($dateFilter) === 'array') {
+            // Single date filter
+            if (count($dateFilter) === 1) {
+                $date = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $query->whereDate('created_at', $date);
+            }
+            // Range date filter
+            if (count($dateFilter) > 1) {
+                $startDate = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $endDate = (new \DateTime($dateFilter[1]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $query->whereDate('created_at', '>=', $startDate)
+                        ->whereDate('created_at', '<=', $endDate);
+            }
+        }
+
+        $data = $query->with('inventory:id,name')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+                        
+        return response()->json($data);
+    }
+
+
+    /**
      * Testing get data for dropdown grouped option.
      */
     public function getDropdownValue()

@@ -45,6 +45,10 @@ const props = defineProps({
         type: Object,
         default: () => ({})
     },
+    paginator: {
+        type: Boolean,
+        default: true
+    },
 });
 
 const dt = ref();
@@ -98,11 +102,11 @@ const handleLinkClick = (event) => {
 };
 
 const redirectAction = (url) => {
-    window.location.href = url;
+    window.location.href = Object.keys(props.actions) > 0 ? url : '#';
 }
 
 const onRowSelect = (event) => {
-    window.location.href = props.actions.view(event.data.id);
+    window.location.href = Object.keys(props.actions) > 0 ? props.actions.view(event.data.id) : '#';
 };
 
 const groupedByColumnWidth = computed(() => {
@@ -160,7 +164,7 @@ onMounted(() => {
         <DataTable 
             ref="dt"
             :value="props.rows" 
-            :paginator="props.rows.length > 0 ? true : false" 
+            :paginator="props.rows.length > 0 && props.paginator ? true : false" 
             :rows="props.rowsPerPage" 
             :loading="loading" 
             :first="(currentPage - 1) * props.rowsPerPage"
@@ -311,7 +315,7 @@ onMounted(() => {
                 :field="''"
                 :header="''"
                 :style="{ width: groupedByColumnWidth + '%' }"
-                v-if="mergedRowType.rowGroups"
+                v-if="mergedRowType.rowGroups && mergedRowType.expandable"
             ></Column>
 
             <Column 

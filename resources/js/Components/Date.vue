@@ -126,7 +126,7 @@ const setDateLastMonth = () => {
                     'text-grey-500': disabled === true,
                 },
             ]"
-            v-if="labelText !== ''"
+            v-if="labelText"
         >
         </Label>
         <Calendar
