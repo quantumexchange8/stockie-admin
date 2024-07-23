@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/inventory/getDropdownValue', [InventoryController::class, 'getDropdownValue']);
         Route::get('/inventory/getInventoryItems/{id}', [InventoryController::class, 'getInventoryItems']);
         Route::get('/inventory/getRecentKeepHistory', [InventoryController::class, 'getRecentKeepHistory']);
+        Route::get('/inventory/keep_history', [InventoryController::class, 'viewKeepHistories'])->name('inventory.viewKeepHistories');
         Route::get('/inventory/stock_history', [InventoryController::class, 'viewStockHistories'])->name('inventory.viewStockHistories');
         Route::get('/inventory/getAllStockHistory', [InventoryController::class, 'getAllStockHistory']);
         Route::post('/inventory/store', [InventoryController::class, 'store'])->name('inventory.store');

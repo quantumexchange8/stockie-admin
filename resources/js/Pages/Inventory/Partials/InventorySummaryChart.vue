@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import Chart from 'primevue/chart';
+import { UndetectableIllus } from '@/Components/Icons/illus.jsx';
 
 const props = defineProps({
     inventories: {
@@ -202,7 +203,7 @@ onMounted(() => {
 <template>
     <div class="flex flex-col p-6 gap-12 items-center rounded-[5px] border border-red-100 overflow-y-auto">
         <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Inventory Summary</span>
-        <div class="flex justify-content-center">
+        <div class="flex justify-content-center" v-if="allInventories.length > 0">
             <Chart 
                 type="doughnut" 
                 :data="chartData" 
@@ -210,6 +211,11 @@ onMounted(() => {
                 class="w-full md:w-60" 
                 :plugins="[statusTextPlugin, percentageTextPlugin]"
             />
+        </div>
+        
+        <div v-else>
+            <UndetectableIllus class="w-44 h-44" />
+            <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
         </div>
     </div>
 </template>

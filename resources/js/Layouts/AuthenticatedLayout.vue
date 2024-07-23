@@ -79,9 +79,7 @@ onMounted(() => {
                                         />
                                     </svg>
                                 </button>
-                                <p class="font-medium text-lg text-primary-800 leading-tight">
-                                    <slot name="header"/>
-                                </p>
+                                <slot name="header"/>
                             </div>
                             <div class="flex items-start gap-3">
                                 <NumberedNotificationIcon 

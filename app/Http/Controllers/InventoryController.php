@@ -129,7 +129,10 @@ class InventoryController extends Controller
                                 break;
                                 
                             case 'Low Stock':
-                                $query->orWhereBetween('stock_qty', [0, 26]);
+                                $query->orWhere(function ($subQuery) {
+                                    $subQuery->where('stock_qty', '>', 0)
+                                                ->whereRaw('`stock_qty` <= (SELECT `low_stock_qty` FROM `item_categories` WHERE `item_categories`.`id` = `item_cat_id`)');
+                                });
                                 break;
 
                             case 'Out of Stock':
@@ -375,6 +378,14 @@ class InventoryController extends Controller
         // dd($data);
 
         return response()->json($data);
+    }
+    
+    /**
+     * View inventory keep histories.
+     */
+    public function viewKeepHistories()
+    {
+        return Inertia::render('Inventory/Partials/KeepHistory');
     }
 
     /**

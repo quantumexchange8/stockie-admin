@@ -1,11 +1,10 @@
 <script setup>
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { ref, onMounted, computed, watch } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StockHistoryTable from './StockHistoryTable.vue'
-import TabView from "@/Components/TabView.vue";
 import { FilterMatchMode } from 'primevue/api';
 import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';
@@ -16,37 +15,15 @@ const home = ref({
     route: '/inventory/inventory'
 });
 const items = ref([
-    { label: 'Stock History' },
+    { label: 'Keep History' },
 ]);
-
-const tabs = ref(['All', 'In', 'Out']);
-
 // only for 'list' variant of table component
 const allStockHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'inventory.name', header: '', width: '0', sortable: false},
     {field: 'inventory_item', header: 'Item Name', width: '40', sortable: true},
     {field: 'old_stock', header: 'Previous Stock', width: '20', sortable: true},
     {field: 'in', header: 'In', width: '10', sortable: true},
     {field: 'out', header: 'Out', width: '10', sortable: true},
-    {field: 'current_stock', header: 'Current Stock', width: '20', sortable: true},
-]);
-
-const allInStockHistoryColumns = ref([
-    // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'inventory.name', header: '', width: '0', sortable: false},
-    {field: 'inventory_item', header: 'Item Name', width: '40', sortable: true},
-    {field: 'old_stock', header: 'Previous Stock', width: '20', sortable: true},
-    {field: 'in', header: 'In', width: '20', sortable: true},
-    {field: 'current_stock', header: 'Current Stock', width: '20', sortable: true},
-]);
-
-const allOutStockHistoryColumns = ref([
-    // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'inventory.name', header: '', width: '0', sortable: false},
-    {field: 'inventory_item', header: 'Item Name', width: '40', sortable: true},
-    {field: 'old_stock', header: 'Previous Stock', width: '20', sortable: true},
-    {field: 'out', header: 'Out', width: '20', sortable: true},
     {field: 'current_stock', header: 'Current Stock', width: '20', sortable: true},
 ]);
 
@@ -67,9 +44,9 @@ const date_filter = ref(defaultLatest7Days.value);
 
 // Define row type with its options for 'list' variant
 const rowType = {
-    rowGroups: true,
+    rowGroups: false,
     expandable: false,
-    groupRowsBy: 'inventory.name',
+    groupRowsBy: '',
 }
 
 // Get filtered inventories
@@ -125,41 +102,14 @@ watch(() => date_filter.value, () => {
                 v-model="date_filter"
             />
         </div>
-        <TabView :tabs="tabs">
-            <template #tab-0>
-                <div class="flex flex-col justify-center gap-5">
-                    <StockHistoryTable
-                        :columns="allStockHistoryColumns"
-                        :rows="stockHistories"
-                        :rowType="rowType"
-                        :filters="filters"
-                    />
-                </div>
-            </template>
-
-            <template #tab-1>
-                <div class="flex flex-col justify-center gap-5">
-                    <StockHistoryTable
-                        :columns="allInStockHistoryColumns"
-                        :rows="stockHistories"
-                        :rowType="rowType"
-                        :filters="filters"
-                        :category="'In'"
-                    />
-                </div>
-            </template>
-
-            <template #tab-2>
-                <div class="flex flex-col justify-center gap-5">
-                    <StockHistoryTable
-                        :columns="allOutStockHistoryColumns"
-                        :rows="stockHistories"
-                        :rowType="rowType"
-                        :filters="filters"
-                        :category="'Out'"
-                    />
-                </div>
-            </template>
-        </TabView>
+        
+        <div class="flex flex-col justify-center gap-5">
+            <StockHistoryTable
+                :columns="allStockHistoryColumns"
+                :rows="stockHistories"
+                :rowType="rowType"
+                :filters="filters"
+            />
+        </div>
     </AuthenticatedLayout>
 </template>

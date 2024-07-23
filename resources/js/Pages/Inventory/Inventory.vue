@@ -11,7 +11,12 @@ import InventorySummaryChart from './Partials/InventorySummaryChart.vue'
 import RecentKeepHistoryTable from './Partials/RecentKeepHistoryTable.vue'
 import TotalStockChart from './Partials/TotalStockChart.vue'
 import AddStockForm from './Partials/AddStockForm.vue'
+import Breadcrumb from '@/Components/Breadcrumb.vue';
+import { OrderDeliveredIllus } from '@/Components/Icons/illus'
 
+const home = ref({
+    label: 'Inventory',
+});
 // only for 'list' variant of table component
 const inventoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
@@ -175,7 +180,9 @@ const hideAddStockForm = () => {
 
     <AuthenticatedLayout>
         <template #header>
-            Inventory
+            <Breadcrumb 
+                :home="home" 
+            />
         </template>
 
         <div class="flex flex-col justify-center gap-5">
@@ -243,7 +250,7 @@ const hideAddStockForm = () => {
                     
                 <div class="col-span-full md:col-span-8 flex flex-col p-6 gap-6 items-center rounded-[5px] border border-red-100 overflow-x-auto">
                     <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Out of Stock Item</span>
-                    <div class="flex items-start justify-between self-stretch gap-6">
+                    <div class="flex items-start justify-between self-stretch gap-6" v-if="outOfStockItems.length > 0">
                         <div class="flex flex-col gap-4 p-3 min-w-48 rounded-[5px] border border-primary-50" v-for="(item, index) in outOfStockItems" :key="index">
                             <div class="flex flex-col items-start self-stretch gap-2">
                                 <span class="text-base font-medium text-grey-900">{{ item.item_name }}</span>
@@ -273,6 +280,10 @@ const hideAddStockForm = () => {
                                 </template>
                             </Modal>
                         </div>
+                    </div>
+                    <div class="flex justify-center items-center gap-2" v-else>
+                        <span class="text-sm font-medium text-primary-900">Seems like everything is in stock!</span>
+                        <OrderDeliveredIllus />
                     </div>
                 </div>
             </div>
