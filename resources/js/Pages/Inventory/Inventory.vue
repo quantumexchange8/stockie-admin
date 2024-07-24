@@ -44,6 +44,7 @@ const recentKeepHistories = ref([]);
 const inventoriesTotalPages = ref(1);
 const recentKeepHistoriesTotalPages = ref(1);
 const rowsPerPage = ref(8);
+const categoryArr = ref([]);
 const itemCategoryArr = ref([]);
 const addStockFormIsOpen = ref(false);
 const selectedGroup = ref(null);
@@ -80,12 +81,13 @@ const actions = [
 ];
 
 // Get filtered inventories
-const getInventories = async (filters = {}) => {
+const getInventories = async (filters = {}, selectedCategory = 0) => {
     try {
         const inventoriesResponse = await axios.get('/inventory/inventory/getInventories', {
             method: 'GET',
             params: {
                 checkedFilters: filters,
+                selectedCategory: selectedCategory,
             }
         });
         inventories.value = inventoriesResponse.data;
@@ -97,8 +99,8 @@ const getInventories = async (filters = {}) => {
     }
 }
 
-const applyFilters = (filters) => {
-    getInventories(filters);
+const applyFilters = (filters = {}, selectedCategory = 0) => {
+    getInventories(filters, selectedCategory);
 };
 
 onMounted(async () => {
@@ -113,6 +115,9 @@ onMounted(async () => {
         recentKeepHistories.value = recentKeepHistoryResponse.data;
         recentKeepHistoriesTotalPages.value = Math.ceil(recentKeepHistories.value.length / rowsPerPage.value);
 
+        const categoryResponse = await axios.get('/inventory/inventory/getAllCategories');
+        categoryArr.value = categoryResponse.data;
+        
         const itemCategoryResponse = await axios.get('/inventory/inventory/getAllItemCategories');
         itemCategoryArr.value = itemCategoryResponse.data;
     } catch (error) {
@@ -290,6 +295,7 @@ const hideAddStockForm = () => {
             <InventoryTable
                 :columns="inventoryColumns"
                 :rows="inventories"
+                :categoryArr="categoryArr"
                 :itemCategoryArr="itemCategoryArr"
                 :rowType="rowType[0]"
                 :actions="actions[0]"

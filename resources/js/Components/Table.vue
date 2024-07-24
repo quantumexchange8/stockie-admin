@@ -57,6 +57,8 @@ const loading = ref(false);
 const selectedProduct = ref();
 const expandedRowGroups = ref();
 
+// const emit = defineEmits(["updateFilteredRowsCount"]);
+
 const defaultActions = {
     view: () => '#',
     replenish: () => '#',
@@ -95,6 +97,10 @@ const goToPage = (event) => {
     }
 }
 
+// const onFilter = (event) => {
+//     emit('updateFilteredRowsCount', event.filteredValue);
+// };
+
 const handleLinkClick = (event) => {
     event.stopPropagation();  // Prevent the row selection event
     event.preventDefault();   // Prevent the default link action
@@ -102,11 +108,15 @@ const handleLinkClick = (event) => {
 };
 
 const redirectAction = (url) => {
-    window.location.href = Object.keys(props.actions) > 0 ? url : '#';
+    if (Object.keys(props.actions) > 0 ) {
+        window.location.href = url;
+    }
 }
 
 const onRowSelect = (event) => {
-    window.location.href = Object.keys(props.actions) > 0 ? props.actions.view(event.data.id) : '#';
+    if (Object.keys(props.actions) > 0 ) {
+        window.location.href = props.actions.view(event.data.id);
+    }
 };
 
 const groupedByColumnWidth = computed(() => {
@@ -259,6 +269,7 @@ onMounted(() => {
                 },
             }"
         >
+            <!-- @filter="onFilter" -->
             <template #header>
                 <slot name="header">
                 </slot>

@@ -62,6 +62,7 @@ const handleLinkClick = (event) => {
         </div>
         <div class="flex flex-col gap-4 justify-center overflow-y-auto w-full">
             <Table 
+                v-if="rows.length > 0"
                 :variant="'list'"
                 :rows="rows"
                 :totalPages="totalPages"
@@ -88,6 +89,11 @@ const handleLinkClick = (event) => {
                     />
                 </template>
             </Table>
+            
+            <div class="flex flex-col items-center justify-center" v-else>
+                <UndetectableIllus class="w-56 h-56" />
+                <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+            </div>
         </div>
     </div>
 </template>

@@ -112,6 +112,16 @@ class InventoryController extends Controller
     {
         $queries = IventoryItem::query();
 
+        $allCategories = Category::select(['id'])
+                                ->orderBy('id')
+                                ->get();
+
+        $selectedCategory = (int) $request['selectedCategory'];
+
+        // Join with inventory table
+        // $queries->join('iventory', 'iventory.id', '=', 'iventory_items.inventory_id')
+        //         ->select('iventory_items.*');
+
         // Check if there are any filters selected
         if (isset($request['checkedFilters'])) {
             $queries->where(function (Builder $query) use ($request) {
@@ -122,27 +132,44 @@ class InventoryController extends Controller
     
                 // Check if there are any stock level filter option selected
                 if (isset($request['checkedFilters']['stockLevel']) && count($request['checkedFilters']['stockLevel']) > 0) {
-                    foreach ($request['checkedFilters']['stockLevel'] as $key => $value) {
-                        switch ($value) {
-                            case 'In Stock':
-                                $query->orWhere('stock_qty', '>', 0);
-                                break;
-                                
-                            case 'Low Stock':
-                                $query->orWhere(function ($subQuery) {
-                                    $subQuery->where('stock_qty', '>', 0)
-                                                ->whereRaw('`stock_qty` <= (SELECT `low_stock_qty` FROM `item_categories` WHERE `item_categories`.`id` = `item_cat_id`)');
-                                });
-                                break;
-
-                            case 'Out of Stock':
-                                $query->orWhere('stock_qty', 0);
-                                break;
+                    $query->where(function ($subQuery) use ($request) {
+                        foreach ($request['checkedFilters']['stockLevel'] as $value) {
+                            switch ($value) {
+                                case 'In Stock':
+                                    $subQuery->orWhere('stock_qty', '>', 0);
+                                    break;
+    
+                                case 'Low Stock':
+                                    $subQuery->orWhere(function ($lowStockQuery) {
+                                        $lowStockQuery->where('stock_qty', '>', 0)
+                                                        ->whereRaw('`stock_qty` <= (SELECT `low_stock_qty` FROM `item_categories` WHERE `item_categories`.`id` = `item_cat_id`)');
+                                    });
+                                    break;
+    
+                                case 'Out of Stock':
+                                    $subQuery->orWhere('stock_qty', 0);
+                                    break;
+                            }
                         }
-                    }
+                    });
                 }
             });
         }
+
+        if (isset($selectedCategory)) {
+            // dd($selectedCategory);
+            $queries->whereHas('inventory', function (Builder $query) use ($request, $selectedCategory, $allCategories) {
+                if ($selectedCategory === 0) {
+                    $query->whereIn('category_id', $allCategories);
+                } else {
+                    $query->where('category_id', $selectedCategory);
+                }
+            });
+        }
+
+        // if (isset($selectedCategory)) {
+        //     $queries->where('(SELECT `category_id` FROM `iventories` WHERE `iventories`.`id` = `category_id`) = `');
+        // }
 
         $queries->with(['inventory', 'itemCategory:id,low_stock_qty']);
         $data = $queries->orderBy('inventory_id')
