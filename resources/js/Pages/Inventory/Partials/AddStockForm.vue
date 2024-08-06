@@ -120,7 +120,7 @@ const isFormValid = computed(() => {
                     <NumberCounter
                         :inputName="'item_'+ i +'add_stock_qty'"
                         :errorMessage="(form.errors) ? form.errors['items.' + i + '.add_stock_qty']  : ''"
-                        :minValue="item.stock_qty"
+                        :minValue="-(item.stock_qty)"
                         v-model="item.add_stock_qty"
                         class="items-end justify-center"
                     />

@@ -1,18 +1,18 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon } from '@/Components/Icons/solid';
-import { EmptyIllus } from '@/Components/Icons/illus.jsx';
-import Tag from '@/Components/Tag.vue';
-import Modal from '@/Components/Modal.vue'
-import Table from '@/Components/Table.vue'
-import Button from '@/Components/Button.vue'
-import AddStockForm from './AddStockForm.vue'
-import EditInventoryForm from './EditInventoryForm.vue'
-import CreateInventoryForm from './CreateInventoryForm.vue'
-import SearchBar from "@/Components/SearchBar.vue";
-import Checkbox from '@/Components/Checkbox.vue'
+import { ref, watch, onMounted } from 'vue';
 import { FilterMatchMode } from 'primevue/api';
+import Tag from '@/Components/Tag.vue';
+import Modal from '@/Components/Modal.vue';
+import Table from '@/Components/Table.vue';
+import Button from '@/Components/Button.vue';
 import Tapbar from '@/Components/Tapbar.vue';
+import AddStockForm from './AddStockForm.vue';
+import Checkbox from '@/Components/Checkbox.vue';
+import SearchBar from "@/Components/SearchBar.vue";
+import { EmptyIllus } from '@/Components/Icons/illus.jsx';
+import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon } from '@/Components/Icons/solid';
+import EditInventoryForm from './EditInventoryForm.vue';
+import CreateInventoryForm from './CreateInventoryForm.vue';
 
 const props = defineProps({
     errors: Object,
@@ -50,7 +50,7 @@ const props = defineProps({
     },
 })
 
-const emit = defineEmits(["applyFilters", "clearFilters"]);
+const emit = defineEmits(["applyCategoryFilter", "applyCheckedFilters"]);
 
 const createFormIsOpen = ref(false);
 const addStockFormIsOpen = ref(false);
@@ -115,12 +115,23 @@ const hideDeleteGroupForm = () => {
     }, 300);
 }
 
-const clearFilters = () => {
-    checkedFilters.value = {
+const resetFilters = () => {
+    return {
         itemCategory: [],
         stockLevel: [],
     };
+};
+
+const clearFilters = (close) => {
+    checkedFilters.value = resetFilters();
+    emit('applyCategoryFilter', selectedCategory.value);
     emit('applyFilters', checkedFilters.value);
+    close();
+};
+
+const applyCheckedFilters = (close) => {
+    emit('applyCheckedFilters', checkedFilters.value);
+    close();
 };
 
 const toggleItemCategory = (value) => {
@@ -142,9 +153,8 @@ const toggleStockLevel = (value) => {
 };
 
 const handleFilterChange = (newFilter) => {
-    console.log(newFilter);
     selectedCategory.value = newFilter;
-    emit('applyFilters', {}, newFilter);
+    emit('applyCategoryFilter', newFilter);
 };
 
 watch(
@@ -170,7 +180,6 @@ onMounted(() => {
 
 <template>
     <div class="flex flex-col p-6 gap-6 justify-center rounded-[5px] border border-red-100">
-        <!-- {{ console.log(categories) }} -->
         <Tapbar
             :optionArr="categories"
             :checked="selectedCategory"
@@ -194,11 +203,15 @@ onMounted(() => {
                         :showFilter="true"
                         v-model="filters['global'].value"
                     >
-                        <template #filterOverlayContent>
+                        <template #default="{ hideOverlay }">
                             <div class="flex flex-col self-stretch gap-4 items-start">
                                 <span class="text-grey-900 text-base font-semibold">Unit Type</span>
                                 <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                    <div class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" v-for="(category, index) in itemCategoryArr" :key="index">
+                                    <div 
+                                        v-for="(category, index) in itemCategoryArr" 
+                                        :key="index"
+                                        class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
+                                    >
                                         <Checkbox 
                                             :checked="checkedFilters.itemCategory.includes(category.value)"
                                             @click="toggleItemCategory(category.value)"
@@ -210,10 +223,14 @@ onMounted(() => {
                             <div class="flex flex-col self-stretch gap-4 items-start">
                                 <span class="text-grey-900 text-base font-semibold">Stock Level</span>
                                 <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                    <div class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" v-for="(level, index) in stockLevels">
+                                    <div 
+                                        v-for="(level, index) in stockLevels"
+                                        :key="index"
+                                        class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" 
+                                    >
                                         <Checkbox 
-                                            :checked="checkedFilters.stockLevel.includes(stockLevels[index])"
-                                            @click="toggleStockLevel(stockLevels[index])"
+                                            :checked="checkedFilters.stockLevel.includes(level)"
+                                            @click="toggleStockLevel(level)"
                                         />
                                         <span class="text-grey-700 text-sm font-medium">{{ level }}</span>
                                     </div>
@@ -224,13 +241,13 @@ onMounted(() => {
                                     :type="'button'"
                                     :variant="'tertiary'"
                                     :size="'lg'"
-                                    @click="clearFilters"
+                                    @click="clearFilters(hideOverlay)"
                                 >
                                     Clear All
                                 </Button>
                                 <Button
                                     :size="'lg'"
-                                    @click="emit('applyFilters', checkedFilters)"
+                                    @click="applyCheckedFilters(hideOverlay)"
                                 >
                                     Apply
                                 </Button>

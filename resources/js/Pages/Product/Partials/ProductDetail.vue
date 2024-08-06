@@ -1,6 +1,17 @@
 <script setup>
+import { ref } from 'vue'
 import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Breadcrumb from '@/Components/Breadcrumb.vue';
+
+const home = ref({
+    label: 'Menu Management',
+    route: '/menu-management/products'
+});
+const items = ref([
+    { label: 'Product Detail' },
+]);
+
 const props = defineProps({
     id: String,
 })
@@ -12,7 +23,10 @@ const props = defineProps({
 
     <AuthenticatedLayout>
         <template #header>
-            Menu Management > Product Detail
+            <Breadcrumb 
+                :home="home" 
+                :items="items"
+            />
         </template>
 
         <div class="grid grid-cols-1 md:grid-cols-12 justify-center gap-5">

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class IventoryItem extends Model
 {
@@ -38,5 +39,14 @@ class IventoryItem extends Model
     public function itemCategory(): BelongsTo
     {
         return $this->belongsTo(ItemCategory::class, 'item_cat_id');
+    }
+    
+    /**
+     * ProductItem Model
+     * Get the product items of the inventory item.
+     */
+    public function productItems(): HasMany
+    {
+        return $this->hasMany(ProductItem::class, 'inventory_item_id');
     }
 }

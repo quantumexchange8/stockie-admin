@@ -7,6 +7,12 @@ import AddWaiter from "./Partials/AddWaiter.vue";
 import { PlusIcon } from "@/Components/Icons/solid";
 import { ref } from "vue";
 import Modal from "@/Components/Modal.vue";
+import Breadcrumb from '@/Components/Breadcrumb.vue';
+
+const home = ref({
+    label: 'Waiter',
+});
+
 const isModalOpen = ref(false);
 const openModal = () => {
     isModalOpen.value = true;
@@ -22,7 +28,11 @@ const inputValue = ref("");
     <!-- <Head title="Waiter"></Head> -->
 
     <AuthenticatedLayout>
-        <template #header> Waiter </template>
+        <template #header>
+            <Breadcrumb 
+                :home="home" 
+            />
+        </template>
 
         <div class="w-full py-6">
             <div class="w-full flex flex-col gap-5 justify-center items-center">

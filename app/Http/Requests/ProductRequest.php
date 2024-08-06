@@ -22,6 +22,7 @@ class ProductRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'bucket' => 'required|boolean',
             'product_name' => 'required|string|max:255',
             'price' => 'required|string|max:255',
             'point' => 'required|string|max:255',

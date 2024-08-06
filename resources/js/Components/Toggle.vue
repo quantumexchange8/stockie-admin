@@ -34,12 +34,13 @@ const proxyChecked = computed({
 <template>
     <label class="relative inline-flex cursor-pointer items-center">
         <input
-            :name="props.inputName"
             type="checkbox"
+            :name="props.inputName"
             :value="props.value"
             :checked="proxyChecked"
-            class="peer sr-only"
             :disabled="props.disabled"
+            @change="proxyChecked = $event.target.checked"
+            class="peer sr-only"
         />
         <label :for="props.inputName" class="hidden"></label>
         <div 

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useForm } from '@inertiajs/vue3';
+import { Link, useForm, usePage, router } from '@inertiajs/vue3';
+import Checkbox from '@/Components/Checkbox.vue'
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
@@ -11,10 +12,13 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultProductItem } from '@/Composables/constants';
-import Label from '@/Components/Label.vue';
 
 const props = defineProps({
     errors: Object,
+    product: {
+        type: Object,
+        default: () => {},
+    },
     categoryArr: {
         type: Array,
         default: () => [],
@@ -29,21 +33,20 @@ const emit = defineEmits(['close']);
 
 const categoryArr = ref(props.categoryArr);
 const inventoriesArr = ref(props.inventoriesArr);
-const open = ref(false);
 
 const form = useForm({
     image:'',
-    bucket: false,
-    product_name: '',
-    price: '',
-    point: '',
-    category_id: '',
-    keep: '',
-    items: [{ ...defaultProductItem }],
+    bucket: props.product.bucket === 'set' ? true : false,
+    product_name: props.product.product_name,
+    price: props.product.price,
+    point: props.product.point,
+    category_id: 1,
+    keep: props.product.keep,
+    items: props.product.product_items ? props.product.product_items : [],
 });
 
 const formSubmit = () => { 
-    form.post(route('products.store'), {
+    form.put(route('products.updateProduct', props.product.id), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
@@ -59,16 +62,13 @@ const cancelForm = () => {
     emit('close');
 }
 
-const addItem = () => {
-    form.items.push({ ...defaultProductItem, qty: 2 });
-}
-
-const removeItem = (index) => {
-    if (form.items.length === 1) {
-        Object.assign(form.items[0], { ...defaultProductItem, qty: 2 });
-    } else {
-        form.items.splice(index, 1);
-    }
+// need to update this to delete the actual item from db
+const deleteItem = (id) => {
+    router.delete(`/menu-management/products/deleteProductItem/${id}`, {
+        preserveScroll: true,
+        preserveState: 'errors',
+        onSuccess: () => close(),
+    });
 }
 
 const updateInventoryStockCount = async (index, id) => {
@@ -96,32 +96,30 @@ const isFormValid = computed(() => {
     return ['product_name', 'price', 'point', 'category_id', 'keep'].every(field => form[field]) && form.items.length > 0;
 });
 
-watch(() => form.bucket, (newValue) => {
-    form.items = [newValue ? { ...defaultProductItem, qty: 2 } : { ...defaultProductItem }];
+watch(() => form.items, (newValue) => {
+    newValue.forEach(item => {
+        item.inventory_stock_qty = item.inventory_item.stock_qty;
+        item.qty = parseInt(item.qty);
+    });
 }, { immediate: true });
-
 </script>
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[650px] pl-1 pr-2 py-1 overflow-y-scroll scrollbar-thin scrollbar-webkit">
-            <DragDropImage
-                :inputName="'image'"
-                :errorMessage="form.errors.image"
-                v-model="form.image"
-                class="col-span-full md:col-span-4 h-[372px]"
-            />
+            <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div>
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                 <div class="flex items-start gap-6 self-stretch">
                     <p class="text-grey-900 font-normal text-base">This product comes in a set (Bucket Product)</p>
                     <Toggle
                         :inputName="'bucket'"
                         :checked="form.bucket"
+                        :disabled="true"
                         v-model:checked="form.bucket"
                         class="col-span-full xl:col-span-2"
                     />
                 </div>
-                <div class="flex flex-col items-start self-stretch" :class="form.bucket ? 'gap-12' : 'gap-4'">
+                <div class="flex flex-col items-start self-stretch gap-4">
                     <div class="flex flex-col items-start gap-6 self-stretch">
                         <div 
                             v-for="(item, i) in form.items" :key="i"
@@ -134,17 +132,10 @@ watch(() => form.bucket, (newValue) => {
                                     :inputArray="inventoriesArr"
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"
-                                    :dataValue="parseInt(item.inventory_item_id)"
+                                    :dataValue="1"
                                     v-model="item.inventory_item_id"
                                     @onChange="updateInventoryStockCount(i, $event)"
-                                >
-                                    <template #optionGroup="group">
-                                        <div class="flex flex-nowrap items-center gap-3">
-                                            <div class="bg-grey-50 border border-grey-200 h-6 w-6"></div>
-                                            <span class="text-grey-400 text-base font-bold">{{ group.group_name }}</span>
-                                        </div>
-                                    </template>
-                                </Dropdown>
+                                />
                                 <InputError :message="form.errors ? form.errors['items.' + i + '.qty']  : ''" v-if="form.errors" />
                             </div>
                             <NumberCounter
@@ -159,30 +150,14 @@ watch(() => form.bucket, (newValue) => {
                             <DeleteIcon
                                 v-if="form.bucket"
                                 class="w-6 h-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click="removeItem(i)"
+                                @click="deleteItem(item.id)"
                             />
                         </div>
-                        <Button
-                            v-if="form.bucket"
-                            :type="'button'"
-                            :variant="'secondary'"
-                            :iconPosition="'left'"
-                            :size="'lg'"
-                            class="col-span-full"
-                            @click="addItem"
-                            >
-                            <template #icon>
-                                <PlusIcon
-                                    class="w-6 h-6"
-                                />
-                            </template>
-                            Another Item
-                        </Button>
                     </div>
                     <div class="flex flex-col items-start gap-4 self-stretch">
                         <TextInput
                             :inputId="'product_name'"
-                            :labelText="form.items.length > 1 ? 'Set name' : 'Product name'"
+                            :labelText="form.items.length > 1 ? 'Set Name' : 'Product Name'"
                             :placeholder="'eg: Heineken Light 500ml'"
                             :errorMessage="form.errors?.product_name || ''"
                             v-model="form.product_name"
@@ -217,25 +192,10 @@ watch(() => form.bucket, (newValue) => {
                                 :labelText="'Select category'"
                                 :inputArray="categoryArr"
                                 :errorMessage="form.errors?.category_id || ''"
+                                :dataValue="form.category_id"
                                 v-model="form.category_id"
                                 class="col-span-full sm:col-span-4"
                             />
-                            <!-- <Dropdown
-                                :inputName="'category_id'"
-                                :labelText="'Select category'"
-                                :inputArray="categoryArr"
-                                :errorMessage="form.errors?.category_id || ''"
-                                variant="new"
-                                v-model="form.category_id"
-                                class="col-span-full sm:col-span-4"
-                            /> -->
-                            <!-- <div class="w-full col-span-full sm:col-span-3">
-                                <Label
-                                    :value="'Select category'"
-                                    class="mb-1 text-xs !font-medium text-grey-900 whitespace-nowrap"
-                                >
-                                </Label>
-                            </div> -->
                         </div>
                         <div class="flex items-start gap-10">
                             <RadioButton
@@ -261,7 +221,7 @@ watch(() => form.bucket, (newValue) => {
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Add
+                Save Changes
             </Button>
         </div>
     </form>

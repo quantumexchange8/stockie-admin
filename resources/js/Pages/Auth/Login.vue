@@ -30,35 +30,33 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="flex min-h-screen">
-        <div
-            class="w-full bg-primary-900 flex flex-col pt-[99px] pr-[56px] gap-[94px]"
-        >
-            <div class="flex flex-col pl-[45px]">
-                <div class="w-full flex flex-col gap-[7px]">
-                    <div class="text-white font-black text-[40px]">
+    <div class="grid grid-cols-1 lg:grid-cols-12 min-h-screen max-h-screen overflow-hidden">
+        <div class="w-full col-span-full lg:col-span-6 lg:bg-primary-900 flex flex-col justify-between pt-[99px] pr-12 xl:pr-12 gap-20">
+            <div class="flex flex-col pl-11">
+                <div class="w-full flex flex-col gap-2 max-w-[450px]">
+                    <div class="text-primary-900 lg:text-white font-black text-[40px]">
                         Welcome to
-                        <span class="bg-primary-800 pl-2 pr-3">Stockie!</span>
+                        <span class="text-white bg-primary-800 pl-2 pr-3">Stockie!</span>
                     </div>
-                    <div class="w-[434px] text-md text-white">
+                    <div class="text-md text-primary-900 lg:text-white">
                         Experience the ease of a hassle-free inventory
                         management system today.
                     </div>
                 </div>
             </div>
-            <div><img :src="Main" alt="Stockie" /></div>
+            <img :src="Main" alt="Stockie" width="1050" height="920" class="hidden lg:block flex-shrink w-full"/>
+            <!-- <div class="">
+            </div> -->
         </div>
 
-        <div
-            class="w-full bg-white flex flex-col justify-center items-center pl-[113px] pr-[106px]"
-        >
+        <div class="w-full col-span-full lg:col-span-6 bg-white flex flex-col justify-start lg:pt-60 px-28 xl:px-32 2xl:px-40">
             <form @submit.prevent="submit">
-                <div class="w-[421px] flex flex-col gap-[73px]">
-                    <div class="flex flex-col gap-[10px]">
+                <div class="flex flex-col gap-12">
+                    <div class="flex flex-col gap-2">
                         <img
                             :src="StockieLogo"
                             alt="Stockie"
-                            class="w-[80px] h-[80px]"
+                            class="size-20"
                         />
                         <div class="flex flex-col gap-1">
                             <div class="font-black text-xl text-primary-900">
@@ -80,11 +78,8 @@ const submit = () => {
                                 required
                                 autofocus
                                 autocomplete="role_id"
-                            >
-                            </TextInput>
-                            <InputError
-                                :message="form.errors.role_id"
-                            ></InputError>
+                            />
+                            <InputError :message="form.errors.role_id"/>
                         </div>
                         <div class="flex flex-col gap-2">
                             <div>
@@ -95,19 +90,16 @@ const submit = () => {
                                     :inputType="'password'"
                                     v-model="form.password"
                                 />
-
                                 <InputError :message="form.errors.password" />
                             </div>
 
-                            <div class="flex items-center gap-[9px]">
+                            <div class="flex items-center gap-2">
                                 <Checkbox
                                     name="remember"
                                     id="remember"
                                     v-model:checked="form.remember"
                                 />
-                                <span class="text-xs text-gray-900"
-                                    >Remember me</span
-                                >
+                                <span class="text-xs text-gray-900">Remember me</span>
                             </div>
                         </div>
                     </div>
@@ -117,8 +109,9 @@ const submit = () => {
                         :size="'lg'"
                         :class="{ 'opacity-25': form.processing }"
                         :disabled="form.processing"
-                        >Log in</Button
                     >
+                        Log in
+                    </Button>
                 </div>
             </form>
         </div>

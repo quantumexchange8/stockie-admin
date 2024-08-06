@@ -104,7 +104,7 @@ export default {
                 { 'sticky box-border border-b': parent.instance.frozenRow },
                 { 'sticky box-border border-b z-20': props.frozen || props.frozen === '' },
                 // Alignment
-                'text-left',
+                'text-left flex items-center',
                 // Shape
                 { 'first:border-l border-r border-b': context == null ? void 0 : context.showGridlines },
                 { 'bg-primary-0': parent.instance.frozenRow || props.frozen || props.frozen === '' },

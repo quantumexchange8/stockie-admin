@@ -17,6 +17,7 @@ class Product extends Model
     protected $fillable = [
         'product_name',
         'price',
+        'bucket',
         'point',
         'category_id',
         'keep',
@@ -26,10 +27,10 @@ class Product extends Model
     //  * Category Model
     //  * Get the category of the product.
     //  */
-    // public function category(): BelongsTo
-    // {
-    //     return $this->belongsTo(Category::class, 'category_id');
-    // }
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
     
     /**
      * ProductItem Model

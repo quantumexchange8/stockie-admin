@@ -1133,7 +1133,7 @@ export const GridViewIcon = defineComponent({
                 width="44"
                 height="44"
                 viewBox="0 0 44 44"
-                fill="currentColor"
+                fill="fill-current"
                 xmlns="http://www.w3.org/2000/svg"
             >
                 <rect
@@ -1142,7 +1142,7 @@ export const GridViewIcon = defineComponent({
                     width="43"
                     height="43"
                     rx="4.5"
-                    fill="white"
+                    fill="stroke-current"
                 />
                 <rect
                     x="0.5"
@@ -1150,7 +1150,7 @@ export const GridViewIcon = defineComponent({
                     width="43"
                     height="43"
                     rx="4.5"
-                    stroke="currentColor"
+                    stroke="stroke-current"
                 />
                 <path
                     d="M8 10C8 8.89543 8.89543 8 10 8H18C19.1046 8 20 8.89543 20 10V20H10C8.89543 20 8 19.1046 8 18V10Z"
@@ -1180,7 +1180,7 @@ export const ListViewIcon = defineComponent({
                 width="44"
                 height="44"
                 viewBox="0 0 44 44"
-                fill="none"
+                fill="fill-current"
                 xmlns="http://www.w3.org/2000/svg"
             >
                 <rect
@@ -1189,7 +1189,7 @@ export const ListViewIcon = defineComponent({
                     width="43"
                     height="43"
                     rx="4.5"
-                    fill="#FFF9F9"
+                    fill="stroke-current"
                 />
                 <rect
                     x="0.5"
@@ -1197,7 +1197,7 @@ export const ListViewIcon = defineComponent({
                     width="43"
                     height="43"
                     rx="4.5"
-                    stroke="currentColor"
+                    stroke="stroke-current"
                 />
                 <path
                     d="M34 22L18 22M34 14L18 14M34 30L18 30M12.6667 22C12.6667 22.7363 12.0697 23.3333 11.3333 23.3333C10.597 

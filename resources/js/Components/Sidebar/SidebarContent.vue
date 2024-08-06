@@ -51,7 +51,11 @@ import {
                         <OrderIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink title="Menu Management" :href="route('products.index')">
+                <SidebarLink 
+                    title="Menu Management" 
+                    :href="route('products.index')"
+                    :active="route().current('products.index')"
+                >
                     <template #icon>
                         <MenuIcon aria-hidden="true" />
                     </template>
@@ -64,12 +68,20 @@ import {
                 Operation
             </p>
             <div class="flex flex-col">
-                <SidebarLink title="Inventory" :href="route('inventory')">
+                <SidebarLink 
+                    title="Inventory" 
+                    :href="route('inventory')"
+                    :active="route().current('inventory')"
+                >
                     <template #icon>
                         <InventoryIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink title="Waiter" :href="route('waiter')">
+                <SidebarLink 
+                    title="Waiter" 
+                    :href="route('waiter')"
+                    :active="route().current('waiter')"
+                >
                     <template #icon>
                         <WaiterIcon aria-hidden="true" />
                     </template>
@@ -94,7 +106,8 @@ import {
             <div class="flex flex-col">
                 <SidebarLink
                     title="Loyalty Programme"
-                    :href="route('dashboard')"
+                    :href="route('loyalty-program')"
+                    :active="route().current('loyalty-program')"
                 >
                     <template #icon>
                         <LoyaltyIcon aria-hidden="true" />

@@ -1,0 +1,108 @@
+<script setup>
+import { ref } from 'vue'
+import { Link } from '@inertiajs/vue3';
+import { CircledArrowHeadRightIcon2 } from '@/Components/Icons/solid';
+import { UndetectableIllus } from '@/Components/Icons/illus';
+import Tag from '@/Components/Tag.vue';
+import Modal from '@/Components/Modal.vue'
+import Table from '@/Components/Table.vue'
+import Button from '@/Components/Button.vue'
+
+const props = defineProps({
+    errors: Object,
+    columns: {
+        type: Array,
+        required: true,
+    },
+    rows: {
+        type: Array,
+        required: true,
+    },
+    itemCategoryArr: {
+        type: Array,
+        default: () => [],
+    },
+    rowType: {
+        type: Object,
+        required: true,
+    },
+    actions: {
+        type: Object,
+        default: () => {},
+    },
+    totalPages: {
+        type: Number,
+        required: true,
+    },
+    rowsPerPage: {
+        type: Number,
+        required: true,
+    },
+})
+
+const selectedGroup = ref(null);
+
+const handleLinkClick = (event) => {
+    event.stopPropagation();  // Prevent the row selection event
+    event.preventDefault();   // Prevent the default link action
+    window.location.href = event.currentTarget.href;  // Manually handle the link navigation
+};
+
+</script>
+
+<template>
+    <div class="flex flex-col w-full p-6 gap-6 items-center rounded-[5px] border border-primary-100">
+        <div class="flex items-center justify-between w-full">
+            <span class="w-full text-start text-md font-medium text-primary-900 whitespace-nowrap">Top Selling Product</span>
+        </div>
+        <div class="flex flex-col gap-4 justify-center overflow-y-auto w-full">
+            <Table 
+                v-if="rows.length > 0"
+                :variant="'list'"
+                :rows="rows"
+                :totalPages="totalPages"
+                :columns="columns"
+                :rowsPerPage="rowsPerPage"
+                :rowType="rowType"
+                :actions="actions"
+                :paginator="false"
+            >
+                <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
+                <template #empty>
+                    <UndetectableIllus class="w-44 h-44"/>
+                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                </template>
+                <template #product="row">
+                    <div class="flex flex-nowrap items-start gap-4">
+                        <div class="bg-grey-50 border border-grey-200 h-10 w-10"></div>
+                        <div class="flex flex-col flex-nowrap items-start justify-center gap-1">
+                            <span class="text-grey-900 text-sm font-medium overflow-hidden text-ellipsis">{{ row.product_name }}</span>
+                            <span class="text-grey-500 text-xs font-medium">RM {{ row.price }}</span>
+                        </div>
+                    </div>
+                </template>
+                <template #category="row">
+                    <span class="text-grey-900 text-sm font-medium">{{ row['category']['name'] }}</span>
+                </template>
+                <template #sold="row">
+                    <span class="text-grey-900 text-sm font-medium">{{ row.price }}</span>
+                </template>
+                <template #stock_status="row">
+                    <Tag
+                        :variant="row.stock_status === 'Out of stock' 
+                                        ? 'red' 
+                                        : row.stock_status === 'Low in stock' 
+                                            ? 'yellow' 
+                                            : 'green'"
+                        :value="row.stock_status"
+                    />
+                </template>
+            </Table>
+            
+            <div class="flex flex-col items-center justify-center" v-else>
+                <UndetectableIllus class="w-56 h-56" />
+                <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+            </div>
+        </div>
+    </div>
+</template>

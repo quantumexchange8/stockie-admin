@@ -69,20 +69,6 @@ const calculateArrowPosition = (event) => {
 const Tag = external ? "a" : Link;
 </script>
 
-<style scoped>
-/* button:hover svg,
-button:hover span,
-button:active span,
-button:focus span {
-    color: #9f151a;
-}
-button:active svg,
-button:active svg {
-    color: #7e171b;
-    fill: #7e171b;
-} */
-</style>
-
 <template>
     <component
         :is="Tag"
@@ -139,7 +125,7 @@ button:active svg {
                     'z-40 transform origin-center',
 
                     // Color
-                    'bg-white opacity-95',
+                    'bg-grey-100 opacity-100',
                     // 'bg-grey-200',
 
                     // Dynamic Positioning
@@ -184,7 +170,7 @@ button:active svg {
                     @click="hideOverlay"
                 />
             </div>
-            <slot name="overlayContent"></slot>
+            <slot :hideOverlay="hideOverlay"></slot>
         </div>
     </OverlayPanel>
 </template>

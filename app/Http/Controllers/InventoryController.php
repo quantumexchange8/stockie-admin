@@ -118,10 +118,6 @@ class InventoryController extends Controller
 
         $selectedCategory = (int) $request['selectedCategory'];
 
-        // Join with inventory table
-        // $queries->join('iventory', 'iventory.id', '=', 'iventory_items.inventory_id')
-        //         ->select('iventory_items.*');
-
         // Check if there are any filters selected
         if (isset($request['checkedFilters'])) {
             $queries->where(function (Builder $query) use ($request) {
@@ -157,7 +153,6 @@ class InventoryController extends Controller
         }
 
         if (isset($selectedCategory)) {
-            // dd($selectedCategory);
             $queries->whereHas('inventory', function (Builder $query) use ($request, $selectedCategory, $allCategories) {
                 if ($selectedCategory === 0) {
                     $query->whereIn('category_id', $allCategories);
@@ -166,10 +161,6 @@ class InventoryController extends Controller
                 }
             });
         }
-
-        // if (isset($selectedCategory)) {
-        //     $queries->where('(SELECT `category_id` FROM `iventories` WHERE `iventories`.`id` = `category_id`) = `');
-        // }
 
         $queries->with(['inventory', 'itemCategory:id,low_stock_qty']);
         $data = $queries->orderBy('inventory_id')

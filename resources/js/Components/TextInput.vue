@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
@@ -7,7 +7,10 @@ import { EyeIcon, EyeOffIcon } from "./Icons/solid";
 const props = defineProps({
     inputName: String,
     modelValue: String,
-    labelText: String,
+    labelText: {
+        type: String,
+        default: "",
+    },
     errorMessage: String,
     inputType: {
         type: String,
@@ -45,6 +48,7 @@ const {
 defineEmits(["update:modelValue"]);
 
 const input = ref(null);
+const inputLabel = ref('');
 
 const focus = () => input.value?.focus();
 
@@ -59,6 +63,29 @@ const toggleShow = () => {
     showPassword.value = !showPassword.value;
 };
 
+// Check and allows only the following keypressed
+const isNumber = (e, withDot = true) => {
+    if (props.inputType === 'number') {
+        const keysAllowed = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        if (withDot) {
+            keysAllowed.push('.');
+        }
+        const keyPressed = e.key;
+        
+        if (!keysAllowed.includes(keyPressed)) {
+            e.preventDefault();
+        }
+    }
+};
+
+watch(
+    () => props.labelText,
+    (newValue) => {
+        inputLabel.value = newValue;
+    },
+    { immediate: true }
+);
+
 onMounted(() => {
     if (input.value.hasAttribute("autofocus")) {
         input.value.focus();
@@ -69,7 +96,6 @@ onMounted(() => {
 <template>
     <div class="w-full">
         <Label
-            :value="labelText"
             :for="inputName"
             :class="[
                 'mb-1 text-xs !font-medium',
@@ -80,6 +106,7 @@ onMounted(() => {
             ]"
             v-if="labelText !== ''"
         >
+            {{ inputLabel }}
         </Label>
         <div class="relative">
             <div
@@ -108,6 +135,8 @@ onMounted(() => {
                         'pl-12 pr-12': $slots.prefix,
                         'pl-4 pr-4': !$slots.prefix,
                         'text-center': iconPosition === 'right',
+                        '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none':
+                            inputType === 'number',
                     },
                 ]"
                 :type="
@@ -119,6 +148,7 @@ onMounted(() => {
                 "
                 :value="modelValue"
                 @input="$emit('update:modelValue', $event.target.value)"
+                @keypress="isNumber($event)"
                 ref="input"
                 :autocomplete="inputType === 'password' ? 'current-password' : ''"
                 :disabled="disabled"

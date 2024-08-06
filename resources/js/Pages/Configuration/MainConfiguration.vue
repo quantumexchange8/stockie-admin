@@ -6,6 +6,12 @@ import Commision from "./EmployeeCommission/EmployeeCommision.vue";
 import IncentiveProg from "./IncentiveProgram/IncentiveProgram.vue";
 import TabView from "@/Components/TabView.vue";
 import { ref } from "vue";
+import Breadcrumb from '@/Components/Breadcrumb.vue';
+
+const home = ref({
+    label: 'Configuration',
+});
+
 const tabs = ref([
     "Stock",
     "Employee Commission",
@@ -17,7 +23,11 @@ const tabs = ref([
 
 <template>
     <AuthenticatedLayout>
-        <template #header> Configuration </template>
+        <template #header>
+            <Breadcrumb 
+                :home="home" 
+            />
+        </template>
 
         <TabView :tabs="tabs">
             <template #tab-0>

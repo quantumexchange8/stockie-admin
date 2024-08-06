@@ -147,8 +147,8 @@ onMounted(() => {
                 </input>
              
                 <Filter v-if="showFilter">
-                    <template #overlayContent>
-                        <slot name="filterOverlayContent"></slot>
+                    <template #default="{ hideOverlay }">
+                        <slot :hideOverlay="hideOverlay"></slot>
                     </template>
                 </Filter>
             </div>

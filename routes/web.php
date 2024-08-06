@@ -41,10 +41,17 @@ Route::middleware('auth')->group(function () {
  
     /********* Menu Management **********/
     Route::prefix('menu-management')->group(function () {
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products/getProducts', [ProductController::class, 'getProducts'])->name('products.getProducts');
+        Route::get('/products/getAllCategories', [ProductController::class, 'getAllCategories']);
+        Route::get('/products/getAllInventories', [ProductController::class, 'getAllInventories'])->name('products.getAllInventories');
         Route::get('/products/getTestingRecords', [ProductController::class, 'getTestingRecords'])->name('products.getTestingRecords');
         Route::get('/products_details/{id}', [ProductController::class, 'showProductDetails'])->name('products.showProductDetails');
-        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products/getInventoryItemStock/{id}', [ProductController::class, 'getInventoryItemStock'])->name('products.getInventoryItemStock');
+        Route::put('/products/updateProduct/{id}', [ProductController::class, 'updateProduct'])->name('products.updateProduct');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::delete('/products/deleteProduct/{id}', [ProductController::class, 'deleteProduct'])->name('products.deleteProduct');
+        Route::delete('/products/deleteProductItem/{id}', [ProductController::class, 'deleteProductItem'])->name('products.deleteProductItem');
     });
 
      /********* Inventory **********/

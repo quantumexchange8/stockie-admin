@@ -17,6 +17,7 @@ import { OrderDeliveredIllus } from '@/Components/Icons/illus'
 const home = ref({
     label: 'Inventory',
 });
+
 // only for 'list' variant of table component
 const inventoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
@@ -48,6 +49,12 @@ const categoryArr = ref([]);
 const itemCategoryArr = ref([]);
 const addStockFormIsOpen = ref(false);
 const selectedGroup = ref(null);
+const selectedCategory = ref(0);
+
+const checkedFilters = ref({
+    itemCategory: [],
+    stockLevel: [],
+});
 
 // Define row type with its options for 'list' variant
 const rowType = [
@@ -73,10 +80,10 @@ const actions = [
         delete: (productId) => `/menu-management/products/${productId}/delete`,
     },
     {
-        view: (userId) => ``,
-        replenish: (userId) => ``,
-        edit: (userId) => ``,
-        delete: (userId) => ``,
+        view: () => ``,
+        replenish: () => ``,
+        edit: () => ``,
+        delete: () => ``,
     }
 ];
 
@@ -99,8 +106,14 @@ const getInventories = async (filters = {}, selectedCategory = 0) => {
     }
 }
 
-const applyFilters = (filters = {}, selectedCategory = 0) => {
-    getInventories(filters, selectedCategory);
+const applyCategoryFilter = (category) => {
+    selectedCategory.value = category;
+    getInventories(checkedFilters.value, category);
+};
+
+const applyCheckedFilters = (filters) => {
+    checkedFilters.value = filters;
+    getInventories(filters, selectedCategory.value);
 };
 
 onMounted(async () => {
@@ -256,34 +269,23 @@ const hideAddStockForm = () => {
                 <div class="col-span-full md:col-span-8 flex flex-col p-6 gap-6 items-center rounded-[5px] border border-red-100 overflow-x-auto">
                     <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Out of Stock Item</span>
                     <div class="flex items-start justify-between self-stretch gap-6" v-if="outOfStockItems.length > 0">
-                        <div class="flex flex-col gap-4 p-3 min-w-48 rounded-[5px] border border-primary-50" v-for="(item, index) in outOfStockItems" :key="index">
+                        <div class="flex flex-col justify-between gap-4 p-3 min-w-48 rounded-[5px] border self-stretch border-primary-50" v-for="(item, index) in outOfStockItems" :key="index">
+                            <span class="text-base font-medium text-grey-900">{{ item.item_name }}</span>
                             <div class="flex flex-col items-start self-stretch gap-2">
-                                <span class="text-base font-medium text-grey-900">{{ item.item_name }}</span>
                                 <div class="flex flex-col gap-2 p-3">
                                     <span class="text-sm font-medium text-primary-900">Product affected</span>
                                     <div class="flex items-center gap-3">
                                         <div class="w-10 h-10 rounded-sm border border-grey-100 bg-white"></div>
                                     </div>
                                 </div>
+                                <Button
+                                    :type="'button'"
+                                    :size="'md'"
+                                    @click="showAddStockForm(item.inventory)"
+                                >
+                                    Replenish
+                                </Button>
                             </div>
-                            <Button
-                                :type="'button'"
-                                :size="'md'"
-                                @click="showAddStockForm(item.inventory)"
-                            >
-                                Replenish
-                            </Button>
-                            <Modal 
-                                :title="'Add New Stock'"
-                                :show="addStockFormIsOpen" 
-                                :maxWidth="'lg'" 
-                                :closeable="true" 
-                                @close="hideAddStockForm"
-                            >
-                                <template v-if="selectedGroup">
-                                    <AddStockForm :group="selectedGroup" @close="hideAddStockForm"/>
-                                </template>
-                            </Modal>
                         </div>
                     </div>
                     <div class="flex justify-center items-center gap-2" v-else>
@@ -291,6 +293,17 @@ const hideAddStockForm = () => {
                         <OrderDeliveredIllus />
                     </div>
                 </div>
+                <Modal 
+                    :title="'Add New Stock'"
+                    :show="addStockFormIsOpen" 
+                    :maxWidth="'lg'" 
+                    :closeable="true" 
+                    @close="hideAddStockForm"
+                >
+                    <template v-if="selectedGroup">
+                        <AddStockForm :group="selectedGroup" @close="hideAddStockForm"/>
+                    </template>
+                </Modal>
             </div>
             <InventoryTable
                 :columns="inventoryColumns"
@@ -301,7 +314,8 @@ const hideAddStockForm = () => {
                 :actions="actions[0]"
                 :totalPages="inventoriesTotalPages"
                 :rowsPerPage="rowsPerPage"
-                @applyFilters="applyFilters"
+                @applyCategoryFilter="applyCategoryFilter"
+                @applyCheckedFilters="applyCheckedFilters"
             />
         </div>
     </AuthenticatedLayout>

@@ -3,18 +3,19 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import InputError from "./InputError.vue";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
+import Dropdown from 'primevue/dropdown';
 
 const props = defineProps({
+    dataValue: {
+        type: [String, Number],
+        default: ''
+    },
     labelText: String,
     errorMessage: String,
     inputName: String,
     inputArray: {
         type: [Array, Object],
         default: () => [],
-    },
-    dataValue: {
-        type: [String, Number],
-        default: "",
     },
     hintText: {
         type: String,
@@ -32,105 +33,56 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
-    // New prop for grouped options
     grouped: {
         type: Boolean,
         default: false,
     },
 });
 
-const emits = defineEmits(["update:modelValue"]);
+const emits = defineEmits(["update:modelValue", "onChange"]);
 
 const open = ref(false);
-const selectedOption = ref("");
-const selectedValue = ref("");
+const localValue = ref(props.dataValue);
 
-// Method to update the selected option
-const updateSelectedOption = (inputArray, dataValue) => {
-    let selectedText = '';
+// Reactive options based on props
+const options = ref(props.inputArray);
 
-    if (props.grouped) {
-        inputArray.forEach(group => {
-            group.items.forEach(item => {
-                if (item.value === dataValue) {
-                    selectedText = item.text;
-                }
-            });
-        });
-        if (!selectedText) {
-            selectedText = props.placeholder;
-        }
-    } else {
-        const foundItem = inputArray.find(option => option.value === dataValue);
-        selectedText = foundItem ? foundItem.text : props.placeholder;
-    }
+watch(
+  () => props.inputArray,
+  (newValue) => {
+    options.value = newValue;
+  },
+  { immediate: true }
+);
 
-    // inputArray.find((option) => option.value === dataValue)?.text ||
-    // props.placeholder;
-    // if (props.grouped) {
-    //     inputArray.forEach(el => {
-    //         el.items.forEach(item => {
-    //             console.log(item.value);
-    //         });
-            
-    //     });
-    // }
-    selectedValue.value = dataValue;
-    selectedOption.value = selectedText;
-};
+watch(
+  () => props.dataValue,
+  (newValue) => {
+    localValue.value = newValue;
+  },
+  { immediate: true }
+);
 
-const choose = (option) => {
-    selectedOption.value = option.text;
-    selectedValue.value = option.value;
+const updateSelectedOption = (option) => {
+    emits('update:modelValue', option.value);
+    emits("onChange", option.value);
+}
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event) => {
+  if (!event.target.closest('.p-dropdown')) {
     open.value = false;
-    emits("update:modelValue", option.value);
-};
-
-const closeDropdown = (event) => {
-    if (!event.target.closest("#dropdown")) {
-        open.value = false;
-    }
-};
-
-// v-directive for when user clicked on the outside of the declared element, it will execute the applied callback function
-const vClickOutside = {
-    mounted(el, binding) {
-        el.__clickOutsideHandler__ = (event) => {
-            if (!(el === event.target || el.contains(event.target))) {
-                binding.value(event);
-            }
-        };
-        document.addEventListener("click", el.__clickOutsideHandler__);
-    },
-    unmounted(el) {
-        document.removeEventListener("click", el.__clickOutsideHandler__);
-    },
+  }
 };
 
 onMounted(() => {
-    // console.log(props.dataValue);
-    updateSelectedOption(props.inputArray, props.dataValue);
-    document.addEventListener("click", closeDropdown);
+    // localValue.value = props.modelValue;
+    document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
-    document.removeEventListener("click", closeDropdown);
+    document.removeEventListener('click', handleClickOutside);
 });
-
-// Watchers
-watch(
-    () => props.inputArray,
-    (newValue) => {
-        updateSelectedOption(newValue, props.dataValue);
-    }
-);
-
-watch(
-    () => props.dataValue,
-    (newValue) => {
-        updateSelectedOption(props.inputArray, newValue);
-    }
-);
 </script>
 
 <template>
@@ -139,162 +91,146 @@ watch(
             :value="props.labelText"
             :for="props.inputName"
             :class="[
-                'mb-1 text-xs font-medium',
+                'mb-1 text-xs !font-medium',
                 {
-                    'text-grey-900': props.disabled === false,
-                    'text-grey-500': props.disabled === true,
+                    'text-grey-900': !props.disabled,
+                    'text-grey-500': props.disabled,
                 },
             ]"
-            v-if="labelText !== ''"
+            v-if="labelText"
         >
         </Label>
-        <div class="relative" id="dropdown" v-click-outside="closeDropdown">
-            <span class="w-full rounded-md shadow-sm mb-1">
-                <!-- The dropdown input field as a button -->
-                <button
-                    type="button"
-                    @click="open = !open"
-                    aria-haspopup="listbox"
-                    :aria-expanded="open"
-                    :disabled="props.disabled"
-                    :class="[
-                        'w-full max-h-[44px] px-4 py-3 flex justify-between items-center',
-                        'rounded-[5px] text-grey-500 border',
-                        open ? 'border-red-500' : 'border-grey-300',
-                        props.disabled
-                            ? 'border-grey-100'
-                            : 'hover:border-red-100 active:border-red-300 focus:border-red-300',
-                        props.errorMessage &&
-                            'border-red-500 focus:border-red-500 hover:border-red-500',
-                    ]"
+        <Dropdown 
+            v-model="localValue" 
+            :options="options" 
+            :placeholder="placeholder" 
+            :ariaLabelledby="inputName"
+            :disabled="disabled"
+            :optionGroupLabel="grouped ? 'group_name' : null"
+            :optionGroupChildren="grouped ? 'items' : null"
+            optionLabel="text"
+            optionValue='value'
+            @change="updateSelectedOption"
+            @click="open = !open"
+            :pt="{
+                root: ({ props, state, parent }) => {
+                    open = state.overlayVisible ? true : false;
+                    state.overlayVisible = !open || !state.focused || !state.clicked ? false : true;
+                    return {
+                        class: [
+                            'inline-flex relative w-full max-h-[44px]',
+                            'bg-white border border-grey-300',
+                            'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                            'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                            'cursor-pointer select-none',
+                            { 
+                                'rounded-md': parent.instance.$name !== 'InputGroup',
+                                'first:rounded-l-md rounded-none last:rounded-r-md': parent.instance.$name == 'InputGroup',
+                                'border-0 border-y border-l last:border-r': parent.instance.$name == 'InputGroup',
+                                'first:ml-0 ml-[-1px]': parent.instance.$name == 'InputGroup' && !props.showButtons,
+                                'border-grey-300': !props.invalid,
+                                'border-primary-500': props.invalid,
+                                'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !state.focused,
+                                'border-primary-500 focus:border-primary-500 hover:border-primary-500': props.errorMessage,
+                                'outline-none border-primary-300 shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': state.focused,
+                                'border-grey-100 opacity-60 pointer-events-none cursor-default': props.disabled 
+                            }
+                            // Transitions
+                            // 'transition-all',
+                            // 'duration-200',
+                        ]
+                    }
+                },
+                input: ({ props, parent }) => {
+                    var _a;
+                    return {
+                        class: [
+                            'block relative flex items-center w-full px-4 py-3 rounded-none',
+                            'text-grey-200 text-base font-normal bg-transparent border-0',
+                            'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
+                            'transition duration-200',
+                            'focus:outline-none focus:shadow-none',
+                            { 
+                                'text-grey-700 ': props.modelValue != null && props.modelValue !== '', 
+                                'text-grey-200': props.modelValue == null || props.modelValue !== '',
+                                'pr-7': props.showClear,
+                                // Filled State *for FloatLabel
+                                filled: ((_a = parent.instance) == null ? void 0 : _a.$name) == 'FloatLabel' && props.modelValue !== null 
+                            },
+                        ]
+                    };
+                },
+                item: ({ context }) => {
+                    return {
+                        class: [
+                            'relative rounded-none m-0 py-3 px-5',
+                            'font-normal leading-none border-0',
+                            'overflow-hidden whitespace-nowrap',
+                            'transition-shadow duration-200',
+                            'focus-visible:outline-none focus-visible:outline-offset-0 focus-visible:ring focus-visible:ring-inset focus-visible:ring-primary-400/50',
+                            {
+                                'text-grey-700': !context.focused && !context.selected,
+                                'bg-grey-50': context.focused && !context.selected,
+                                'text-grey-800': context.focused && !context.selected,
+                                'text-primary-900': context.selected,
+                                'bg-primary-50': context.selected ,
+                                'hover:bg-grey-100': !context.focused && !context.selected,
+                                'hover:bg-primary-highlight-hover': context.selected,
+                                'pointer-events-none cursor-default': context.disabled,
+                                'cursor-pointer': !context.disabled 
+                            },
+                        ]
+                    }
+                },
+            }"
+        >
+            <template #dropdownicon>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    :class="open ? 'rotate-270' : 'rotate-180'"
+                    class="transition-all duration-200 transform self-center"
                 >
-                    <!-- The text to be displayed along with dropdown icons -->
-                    <span
-                        :class="[
-                            'text-base font-normal',
-                            selectedOption === props.placeholder
-                                ? 'text-grey-200'
-                                : 'text-grey-700',
-                        ]"
-                    >
-                        {{ selectedOption || props.placeholder }}
-                    </span>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
+                    <path
+                        d="M12 10L8 6L4 10"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+            </template>
+            <template #optiongroup="slotProps" v-if="grouped">
+                <slot name="optionGroup" :="slotProps.option">
+                </slot>
+            </template>
+            <template #option="slotProps">
+                <span>{{ slotProps.option.text }}</span>
+                <span
+                    class="absolute right-0 pr-4"
+                    v-if="props.iconOptions"
+                >
+                    <component
+                        :is="props.iconOptions[slotProps.option.text]"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
                         fill="none"
-                        :class="open ? 'rotate-270' : 'rotate-180'"
-                        class="transition-all duration-200 transform self-center"
-                    >
-                        <path
-                            d="M12 10L8 6L4 10"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                    </svg>
-                </button>
-
-                <!-- The list of options for the dropdown field -->
-                <ul
-                    class="z-50 absolute mt-1 p-1 bg-white rounded-[5px] border-2 border-red-50 gap-0.5 items-start flex flex-col shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]"
-                    :class="{
-                        'w-fit': props.grouped,
-                        'w-full': !props.grouped,
-                    }"
-                    v-show="open"
-                >
-                    <!-- Grouped option: group by group name and list of its options -->
-                    <div
-                        v-for="(group, index) in props.inputArray"
-                        :key="index"
-                        v-if="grouped"
-                    >
-                        <div
-                            class="py-2 px-4 text-base text-grey-400 flex items-center bg-grey-25"
-                        >
-                            <div
-                                class="flex gap-[10px] items-center justify-center"
-                            >
-                                <slot name="grouped_header">
-                                    <span>
-                                        <img
-                                            v-if="group.image"
-                                            :src="group.image"
-                                            alt=""
-                                            class="w-6 h-6 flex-shrink-0 rounded-full"
-                                        />
-                                    </span>
-                                    <span class="text-base font-bold">{{
-                                        group.group_name
-                                    }}</span>
-                                </slot>
-                            </div>
-                        </div>
-                        <li
-                            v-for="(item, optionIndex) in group.items"
-                            :key="optionIndex"
-                            @click="choose(item)"
-                            :class="[
-                                'cursor-pointer select-none py-2 px-4 self-stretch items-center flex rounded-[5px] hover:bg-grey-50 active:bg-red-50',
-                                selectedOption === item.text && 'bg-red-50',
-                            ]"
-                        >
-                            {{ item.text }}
-                            <!-- Optional for including an icon to the right of the text of a specified option -->
-                            <span
-                                class="absolute right-0 pr-4"
-                                v-if="props.iconOptions"
-                            >
-                                <component
-                                    :is="props.iconOptions[item.text]"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                />
-                            </span>
-                        </li>
-                    </div>
-                    <!-- Default option: directly displays options -->
-                    <li
-                        v-for="(option, ix) in props.inputArray"
-                        :key="ix"
-                        @click="choose(option)"
-                        v-else
-                        :class="[
-                            'cursor-pointer select-none py-2 px-4 self-stretch items-center flex rounded-[5px] hover:bg-grey-50 active:bg-red-50',
-                            selectedOption === option.text && 'bg-red-50',
-                        ]"
-                    >
-                        {{ option.text }}
-                        <!-- Optional for including an icon to the right of the text of a specified option -->
-                        <span
-                            class="absolute right-0 pr-4"
-                            v-if="props.iconOptions"
-                        >
-                            <component
-                                :is="props.iconOptions[option.text]"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                            />
-                        </span>
-                    </li>
-                </ul>
-            </span>
-        </div>
+                    />
+                </span>
+                <!-- <slot name="option" :="slotProps.option">
+                </slot> -->
+            </template>
+        </Dropdown>
         <HintText v-if="hintText !== ''" :hintText="hintText" />
         <InputError :message="errorMessage" v-if="errorMessage" />
     </div>
 </template>
 
-<!-- group option should pass this format of json data -->
-<!-- 
+<!-- group option should pass this format of json data
 const unitArrs = ref([
     {
         'group_name': 'Heineken',
@@ -309,5 +245,4 @@ const unitArrs = ref([
             }
         ],
     }, 
-]);
- -->
+]); -->

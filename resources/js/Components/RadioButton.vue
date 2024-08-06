@@ -1,76 +1,176 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import RadioButton from 'primevue/radiobutton';
+
+const props = defineProps({
+    optionArr: {
+        type: Array,
+        default: () => [],
+    },
+    checked:  {
+        type: String,
+        default: ''
+    },
+    disabled:  {
+        type: Boolean,
+        default: false
+    }
+})
 
 const emit = defineEmits(['update:checked']);
 
-const props = defineProps({
-    checked: {
-        type: [Array, Boolean],
-        required: true,
+const selected = ref(props.checked);
+const optionListArr = ref([]);
+
+watch(
+    () => props.optionArr,
+    (newValue) => {
+    optionListArr.value = [...newValue];
     },
-    value: {
-        default: null,
-    },
-	inputName: {
-		type: String,
-	},
-    disabled: {
-        type: Boolean,
-        default: false,
-    },
-});
+    { immediate: true }
+);
+
+onMounted(() => {
+    optionListArr.value = [...props.optionArr];
+})
 
 const proxyChecked = computed({
     get() {
-        return props.checked;
+        return selected.value;
     },
-
     set(val) {
+        selected.value = val;
         emit('update:checked', val);
-    },
+    }
 });
 </script>
 
-<style scoped>
-    .radio {
-        background-color: #FFFFFF;
-    }
-    .radio:checked {
-        background-color: rgb(127 29 29 / 1);
-        background-size: auto;
-        background-repeat: no-repeat;
-    }
-    .radio:checked:hover {
-        background-color: rgb(153 27 27 / 1);
-    }
-    .radio:disabled {
-        border-width: 1px;
-        border-color: rgb(214 220 225 / 1);
-        background-color: rgb(236 239 242 / 1);
-        opacity: unset;
-    }
-    .radio:checked:disabled {
-        border-width: 1px;
-        border-color: transparent;
-        background-color: #FFC7C9;
-        opacity: unset;
-    }
-</style>
-
 <template>
-    <input
-        type="radio"
-        :name="props.inputName"
-        :value="props.value"
-        :checked="proxyChecked"
-        :disabled="props.disabled"
-        :class="[
-            'radio rounded-[100px] border flex items-center justify-center hover:border-red-100',
-            '',
-            {
-                'bg-grey-100 border-grey-200': props.disabled === true,
-                'bg-white border-grey-300': props.disabled === false,
-            }
-        ]"
-    />
+    <div 
+        v-for="(option, index) in optionListArr" 
+        :key="index" 
+        class="flex align-items-center"
+    >
+        <RadioButton 
+            v-model="proxyChecked" 
+            :inputId="option.text" 
+            name="dynamic" 
+            :value="option.value" 
+            :disabled="disabled"
+            :pt="{
+                root: {
+                    class: [
+                        'relative',
+
+                        // Flexbox & Alignment
+                        'inline-flex',
+                        'align-bottom',
+
+                        // Size
+                        'w-[1.571rem] h-[1.571rem]',
+
+                        // Misc
+                        'cursor-pointer',
+                        'select-none'
+                    ]
+                },
+                box: ({ props }) => ({
+                    class: [
+                        // Flexbox
+                        'flex justify-center items-center',
+
+                        // Size
+                        'w-[1.571rem] h-[1.571rem]',
+
+                        // Shape
+                        'border-2',
+                        'rounded-full',
+
+                        // Transition
+                        'transition duration-200 ease-in-out',
+
+                        // Colors
+                        {
+                            'text-grey-700': props.value !== props.modelValue && props.value !== undefined,
+                            'bg-grey-0': props.value !== props.modelValue && props.value !== undefined,
+                            'border-grey-300': props.value !== props.modelValue && props.value !== undefined && !props.invalid,
+                            'border-primary-900': props.value == props.modelValue && props.value !== undefined,
+                            'bg-primary-50': props.value == props.modelValue && props.value !== undefined
+                        },
+                        // Invalid State
+                        { 'border-primary-500': props.invalid },
+
+                        // States
+                        {
+                            'peer-hover:border-primary-100': !props.disabled && !props.invalid && props.value !== props.modelValue && props.value !== undefined,
+                            'peer-hover:border-primary-800 peer-hover:[&>div]:bg-primary-800': !props.disabled && props.value == props.modelValue && props.value !== undefined,
+                            'peer-focus-visible:border-primary-500 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-400': !props.disabled,
+                            'border-grey-200 bg-grey-100 cursor-default': props.disabled && props.value !== props.modelValue && props.value !== undefined,
+                            '!border-primary-200 cursor-default': props.disabled && props.value == props.modelValue && props.value !== undefined,
+                        }
+                    ]
+                }),
+                input: {
+                    class: [
+                        'peer',
+
+                        // Size
+                        'w-full ',
+                        'h-full',
+
+                        // Position
+                        'absolute',
+                        'top-0 left-0',
+                        'z-10',
+
+                        // Spacing
+                        'p-0',
+                        'm-0',
+
+                        // Shape
+                        'opacity-0',
+                        'rounded-md',
+                        'outline-none',
+                        'border border-grey-300',
+
+                        // Misc
+                        'appearance-none',
+                        'cursor-pointer'
+                    ]
+                },
+                icon: ({ props }) => ({
+                    class: [
+                        'block',
+
+                        // Shape
+                        'rounded-full',
+
+                        // Size
+                        'size-2.5',
+
+                        // Colors
+                        {
+                            'bg-primary-900': !props.disabled,
+                            'bg-primary-200': props.disabled,
+                        },
+
+                        // Conditions
+                        {
+                            'backface-hidden scale-10 invisible': props.value !== props.modelValue,
+                            'transform visible scale-[1.1]': props.value == props.modelValue
+                        },
+
+                        // Transition
+                        'transition duration-200',
+                    ]
+                })
+            }"
+        />
+        <label 
+            :for="option.text" 
+            class="ml-2"
+        >
+            {{ option.text }}
+        </label>
+    </div>
 </template>

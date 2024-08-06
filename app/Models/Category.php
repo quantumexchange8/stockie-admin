@@ -18,11 +18,20 @@ class Category extends Model
     ];
     
     /**
-     * IventoryModel
+     * Iventory Model
      * Get the inventories of the category.
      */
     public function inventories(): HasMany
     {
         return $this->hasMany(Iventory::class, 'category_id');
+    }
+    
+    /**
+     * Product Model
+     * Get the products of the category.
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class, 'category_id');
     }
 }

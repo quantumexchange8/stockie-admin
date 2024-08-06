@@ -16,6 +16,7 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    maxValue: Number,
     disabled: {
         type: Boolean,
         default: false,
@@ -49,6 +50,8 @@ watch(() => props.modelValue, (newVal) => {
 
 const increment = () => {
     if (!props.disabled) {
+        if (props.maxValue !== undefined && inputValue.value >= props.maxValue) return;
+        
         inputValue.value += 1;
         updateState();
         emit('update:modelValue', inputValue.value);
@@ -56,7 +59,7 @@ const increment = () => {
 }
 
 const decrement = () => {
-    if (!props.disabled && inputValue.value > -(props.minValue)) {
+    if (!props.disabled && inputValue.value > props.minValue) {
         inputValue.value -= 1;
         updateState();
         emit('update:modelValue', inputValue.value);
@@ -65,7 +68,22 @@ const decrement = () => {
 
 const updateValue = (event) => {
     const value = parseInt(event.target.value) || 0;
-    inputValue.value = value < -(props.minValue) ? -(props.minValue) : value;
+
+    // isOverMin = value < -(props.minValue);
+    // isOverMax = inputValue.value > props.maxValue && props.maxValue;
+
+    inputValue.value = value < props.minValue 
+                            ? props.minValue 
+                            : (value >= props.maxValue && props.maxValue !== undefined)
+                                ? props.maxValue 
+                                : value;
+
+    // inputValue.value = value < -(props.minValue) 
+    //                         ? -(props.minValue) 
+    //                         : (inputValue.value > props.maxValue && props.maxValue)
+    //                             ? props.maxValue 
+    //                             : value;
+
     event.target.value = inputValue.value;
     emit('update:modelValue', inputValue.value);
 }
@@ -100,10 +118,10 @@ const updateState = () => {
                 :class="[
                     'w-6 h-6',
                     {
-                        '[&>rect]:fill-primary-900 text-primary-50': isTypingState && !disabled && inputValue !== 0,
-                        '[&>rect]:fill-grey-100 text-grey-300': !isTypingState || disabled || inputValue === 0 || inputValue <= -(minValue),
-                        '[&>rect]:hover:fill-primary-200 hover:text-primary-900': !disabled && inputValue !== 0 && inputValue > -(minValue),
-                        'pointer-events-none': disabled || inputValue <= -(minValue),
+                        '[&>rect]:fill-primary-900 text-primary-50': (isTypingState || inputValue !== 0) && !disabled,
+                        '[&>rect]:fill-grey-100 text-grey-300': !isTypingState || disabled || inputValue === 0 || inputValue <= minValue,
+                        '[&>rect]:hover:fill-primary-200 hover:text-primary-900': !disabled && inputValue !== 0 && inputValue > minValue,
+                        'pointer-events-none': disabled || inputValue <= minValue,
                     }
                 ]"
                 @click="decrement"
@@ -136,8 +154,8 @@ const updateState = () => {
                 :class="[
                     'w-6 h-6',
                     {
-                        '[&>rect]:fill-primary-900 text-primary-50 [&>rect]:hover:fill-primary-200 hover:text-primary-900': !disabled,
-                        '[&>rect]:fill-grey-100 text-grey-300 pointer-events-none': disabled,
+                        '[&>rect]:fill-primary-900 text-primary-50 [&>rect]:hover:fill-primary-200 hover:text-primary-900': !disabled || ((maxValue && inputValue < maxValue)),
+                        '[&>rect]:fill-grey-100 text-grey-300 pointer-events-none': disabled || (maxValue && inputValue >= maxValue),
                     }
                 ]"
                 @click="increment"
