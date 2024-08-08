@@ -40,4 +40,13 @@ class Product extends Model
     {
         return $this->hasMany(ProductItem::class, 'product_id');
     }
+    
+    /**
+     * SaleHistory Model
+     * Get the sale histories of the product.
+     */
+    public function saleHistories(): HasMany
+    {
+        return $this->hasMany(SaleHistory::class, 'product_id');
+    }
 }

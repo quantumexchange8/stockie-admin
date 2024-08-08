@@ -44,10 +44,16 @@ const props = defineProps({
 });
 
 const modelValue = ref(props.modelValue);
+const initialModelValue = ref(props.modelValue);
 
 const emit = defineEmits(["update:modelValue"]);
 
 function updateValue(value) {
+    modelValue.value = value;
+    emit("update:modelValue", value);
+}
+
+function resetValue(value) {
     modelValue.value = value;
     emit("update:modelValue", value);
 }
@@ -143,6 +149,16 @@ const setDateLastMonth = () => {
             :placeholder="props.placeholder"
             :disabled="disabled"
             :pt="{
+                root: ({ props }) => ({
+                    class: [
+                    // Display and Position
+                    'inline-flex items-center',
+                    'w-full',
+                    'relative',
+                    // Misc
+                    { 'select-none pointer-events-none cursor-default': props.disabled }
+                    ]
+                }),
                 input: ({ props, parent }) => {
                     var _a;
                     return {
@@ -173,7 +189,7 @@ const setDateLastMonth = () => {
                             // Shape
                             'rounded-[5px] flex-1',
                             //Sizing
-                            'max-h-[44px] min-h-[44px]',
+                            'min-w-60 max-h-[44px] min-h-[44px]',
                             // States
                             {
                                 'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]':
@@ -194,6 +210,7 @@ const setDateLastMonth = () => {
                                         : _a.$name) == 'FloatLabel' &&
                                     props.modelValue !== null,
                             },
+                            'relative'
                         ],
                     };
                 },
@@ -290,12 +307,21 @@ const setDateLastMonth = () => {
                         { 'overflow-x-auto': props.inline },
                     ],
                 }),
+                inputicon: ({ state }) => ({
+                    class: [
+                        'fill-primary-50',
+                        {
+                            'text-primary-200': state.focused,
+                            'text-primary-900': !state.focused,
+                        }
+                    ]
+                }),
             }"
         >
             <template #inputicon>
                 <CircledTimesIcon
-                    class="w-4 h-4 fill-primary-50 text-primary-900 hover:text-primary-900 cursor-pointer right-4 absolute top-1/2 -mt-2"
-                    @click="modelValue = ''"
+                    class="w-4 h-4 flex-shrink-0 fill-primary-50 text-primary-900 hover:text-primary-900 cursor-pointer transform -translate-x-[170%]"
+                    @click="resetValue(initialModelValue)"
                     v-if="modelValue !== ''"
                 />
             </template>

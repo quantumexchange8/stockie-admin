@@ -1,12 +1,7 @@
 <script setup>
-import { ref } from 'vue'
-import { Link } from '@inertiajs/vue3';
-import { CircledArrowHeadRightIcon2 } from '@/Components/Icons/solid';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import Tag from '@/Components/Tag.vue';
-import Modal from '@/Components/Modal.vue'
 import Table from '@/Components/Table.vue'
-import Button from '@/Components/Button.vue'
 
 const props = defineProps({
     errors: Object,
@@ -30,23 +25,7 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
-    totalPages: {
-        type: Number,
-        required: true,
-    },
-    rowsPerPage: {
-        type: Number,
-        required: true,
-    },
 })
-
-const selectedGroup = ref(null);
-
-const handleLinkClick = (event) => {
-    event.stopPropagation();  // Prevent the row selection event
-    event.preventDefault();   // Prevent the default link action
-    window.location.href = event.currentTarget.href;  // Manually handle the link navigation
-};
 
 </script>
 
@@ -60,9 +39,7 @@ const handleLinkClick = (event) => {
                 v-if="rows.length > 0"
                 :variant="'list'"
                 :rows="rows"
-                :totalPages="totalPages"
                 :columns="columns"
-                :rowsPerPage="rowsPerPage"
                 :rowType="rowType"
                 :actions="actions"
                 :paginator="false"
@@ -85,7 +62,7 @@ const handleLinkClick = (event) => {
                     <span class="text-grey-900 text-sm font-medium">{{ row['category']['name'] }}</span>
                 </template>
                 <template #sold="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.price }}</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ row.totalProductSaleQty }}</span>
                 </template>
                 <template #stock_status="row">
                     <Tag

@@ -29,7 +29,7 @@ export default {
     },
     thead: ({ context }) => ({
         class: [
-            'w-full self-stretch',
+            'w-full self-stretch rounded-[5px]',
         {
             'bg-primary-50 top-0 z-40 sticky': context.scrollable
         }

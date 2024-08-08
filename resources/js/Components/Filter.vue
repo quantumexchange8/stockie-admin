@@ -139,16 +139,16 @@ const Tag = external ? "a" : Link;
                     'before:border-transparent before:border-solid',
                     'before:border-x-[8px] before:border-[8px]',
                     arrowPosition === 'top'
-                        ? 'before:border-t-0 before:border-b-white'
-                        : 'before:border-b-0 before:border-t-white',
+                        ? 'before:border-t-0 before:border-b-grey-100'
+                        : 'before:border-b-0 before:border-t-grey-100',
 
                     'after:absolute after:-ml-[8px] after:left-[calc(var(--overlayArrowLeft,0)+1.25rem)]',
                     'after:w-0 after:h-0 after:shadow-inner',
                     'after:border-transparent after:border-solid',
                     'after:border-x-[0.5rem] after:border-[0.5rem]',
                     arrowPosition === 'top'
-                        ? 'after:border-t-0 after:border-b-white after:opacity-95'
-                        : 'after:border-b-0 after:border-t-white after:opacity-95'
+                        ? 'after:border-t-0 after:border-b-grey-100 after:opacity-95'
+                        : 'after:border-b-0 after:border-t-grey-100 after:opacity-95'
                 ]
             },
             content: {

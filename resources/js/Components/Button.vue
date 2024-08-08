@@ -159,14 +159,14 @@ const Tag = computed(() => {
         </span>
 
         <span 
-            class="flex items-center"
+            class="flex items-center gap-2"
             :class="{
                 'min-h-[18px] max-h-[18px]': size === 'md',
                 'min-h-[20px] max-h-[20px]': size === 'lg',
             }"
             v-if="iconPosition === 'left'"
         >
-            <span class="icon-slot-container margin-right">
+            <span class="inline-flex items-center justify-center size-[18px]">
                 <slot name="icon">
                     <svg 
                         xmlns="http://www.w3.org/2000/svg" 
@@ -202,7 +202,7 @@ const Tag = computed(() => {
             <slot :iconSizeClasses="iconSizeClasses" />
         </span>
         <span 
-            class="flex items-center"
+            class="flex items-center gap-2"
             :class="{
                 'min-h-[18px] max-h-[18px]': size === 'md',
                 'min-h-[20px] max-h-[20px]': size === 'lg',
@@ -211,7 +211,7 @@ const Tag = computed(() => {
         >
             <slot :iconSizeClasses="iconSizeClasses" />
         
-            <span class="icon-slot-container margin-left">
+            <span class="inline-flex items-center justify-center size-[18px]">
                 <slot name="icon">
                     <svg 
                         xmlns="http://www.w3.org/2000/svg" 

@@ -1,6 +1,6 @@
 <script setup>
 import axios from 'axios';
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Head,Link } from '@inertiajs/vue3';
 import ProductTable from './Partials/ProductTable.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -33,14 +33,10 @@ const topSellingProductColumns = ref([
 
 const initialProducts = ref([]);
 const products = ref([]);
-const topSellingProducts = ref([]);
 const categoryArr = ref([]);
 const inventoriesArr = ref([]);
 const productsTotalPages = ref(1);
-const topSellingProductsTotalPages = ref(1);
 const productRowsPerPage = ref(8);
-const topSellingProductRowsPerPage = ref(4);
-const selectedGroup = ref(null);
 const selectedCategory = ref(0);
 const checkedFilters = ref({
     itemCategory: [],
@@ -64,7 +60,7 @@ const actions = [
         delete: (productId) => `/menu-management/deleteProduct/${productId}`,
     },
     {
-        view: () => ``,
+        view: (productId) => `/menu-management/products_details/${productId}`,
         replenish: () => ``,
         edit: () => ``,
         delete: () => ``,
@@ -107,15 +103,28 @@ onMounted(async () => {
     products.value = response.data;
     productsTotalPages.value = Math.ceil(products.value.length / productRowsPerPage.value);
 
-    const topSellingProductResponse = await axios.get('/menu-management/products/getProducts');
-    topSellingProducts.value = topSellingProductResponse.data;
-    topSellingProductsTotalPages.value = Math.ceil(topSellingProducts.value.length / topSellingProductRowsPerPage.value);
-    
     const categoryResponse = await axios.get('/menu-management/products/getAllCategories');
     categoryArr.value = categoryResponse.data;
 
     const inventoriesResponse = await axios.get('/menu-management/products/getAllInventories');
     inventoriesArr.value = inventoriesResponse.data;
+});
+
+const calcTotalProductSaleQty = (saleHistories) => {
+    return saleHistories.reduce((total, sale) => total + sale.qty, 0);
+};
+
+// Get the top 4 selling products
+const topSellingProducts = computed(() => {
+    return initialProducts.value
+        .map(product => {
+            return {
+                ...product,
+                totalProductSaleQty: calcTotalProductSaleQty(product.sale_histories)
+            };
+        })
+        .sort((a, b) => b.totalProductSaleQty - a.totalProductSaleQty)
+        .slice(0, 4);
 });
 
 </script>
@@ -141,8 +150,6 @@ onMounted(async () => {
                     :rows="topSellingProducts"
                     :rowType="rowType"
                     :actions="actions[1]"
-                    :totalPages="topSellingProductsTotalPages"
-                    :rowsPerPage="topSellingProductRowsPerPage"
                     class="col-span-full md:col-span-8"
                 />
             </div>

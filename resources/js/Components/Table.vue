@@ -115,7 +115,6 @@ const redirectAction = (url) => {
 
 const onRowSelect = (event) => {
     if (Object.keys(props.actions).length > 0 ) {
-        // console.log(Object.keys(props.actions));
         window.location.href = props.actions.view(event.data.id);
     }
 };
@@ -186,7 +185,6 @@ onMounted(() => {
             selectionMode="single"
             dataKey="id"
             :filters="searchFilter ? filters : {}"
-            tableStyle="min-width: 50rem"
             stripedRows
             @rowSelect="onRowSelect"
             @page="onPageChange"
@@ -565,7 +563,12 @@ onMounted(() => {
                                 }
                             ]"
                         >
-                            <div class="w-full h-[168px]"></div>
+                            <div 
+                                class="w-full h-[168px] cursor-pointer"
+                                :class="{'hover:bg-primary-50': item.stock_left !== 0 }"
+                                @click="redirectAction(mergedActions.view(item.id))"
+                            >
+                            </div>
                             <span class="absolute top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.stock_left === 0">Out of Stock</span>
                             <div class="flex p-[2px] items-start flex-shrink-0 gap-0.5" v-if="item.stock_left > 0">
                                 <slot name="editAction" :="item">

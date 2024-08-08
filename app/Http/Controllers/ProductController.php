@@ -238,7 +238,8 @@ class ProductController extends Controller
             'productItems:id,product_id,inventory_item_id,qty', 
             'category:id,name', 
             'productItems.inventoryItem:id,stock_qty,item_cat_id',
-            'productItems.inventoryItem.itemCategory:id,low_stock_qty'
+            'productItems.inventoryItem.itemCategory:id,low_stock_qty',
+            'saleHistories'
         ]);
         $data = $queries->orderBy('id')
                         ->get()
@@ -452,6 +453,63 @@ class ProductController extends Controller
         $existingProductItem = ProductItem::find($id);
 
         $existingProductItem->delete();
+    }
+
+    /**
+     * Get product sale histories.
+     */
+    public function getProductSaleHistories(Request $request)
+    {
+        $dateFilter = $request->input('dateFilter');
+
+        $query = Product::query();
+
+        if ($dateFilter && gettype($dateFilter) === 'array') {
+            // Single date filter
+            if (count($dateFilter) === 1) {
+                $date = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $query->whereDate('created_at', $date);
+            }
+            // Range date filter
+            if (count($dateFilter) > 1) {
+                $startDate = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $endDate = (new \DateTime($dateFilter[1]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $query->whereDate('created_at', '>=', $startDate)
+                        ->whereDate('created_at', '<=', $endDate);
+            }
+        }
+
+        $product = $query->with('saleHistories')
+                            ->orderBy('created_at', 'desc')
+                            ->find($request['id']);
+
+                            
+        $data = $product->saleHistories ?? [];
+        
+        return response()->json($data);
+    }
+
+    /**
+     * Get product details and its items.
+     */
+    public function getProductWithItems(string $id)
+    {
+        $product = Product::with([
+                                'category:id,name',
+                                'productItems',
+                                'productItems.inventoryItem:id,item_name,stock_qty'
+                            ])
+                            ->orderBy('created_at', 'desc')
+                            ->find($id);
+
+        $productItems = $product->productItems;
+        
+        $data = [
+            'product' => $product,
+            'productItems' => $productItems,
+        ];
+        
+        return response()->json($data);
     }
 
     /**
