@@ -4,21 +4,21 @@ import Stock from "./Stock/Stock.vue";
 import MerchantDetail from "./MerchantDetail/MerchantDetail.vue";
 import Commision from "./EmployeeCommission/EmployeeCommision.vue";
 import IncentiveProg from "./IncentiveProgram/IncentiveProgram.vue";
-import TabView from "@/Components/TabView.vue";
-import { ref } from "vue";
+import Promotion from "@/Pages/Configuration/Promotion/Promotion.vue";
+import { ref } from 'vue'
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 
 const home = ref({
     label: 'Configuration',
 });
 
-const tabs = ref([
-    "Stock",
-    "Employee Commission",
-    "Employee Incentive Programme",
-    "Promotion",
-    "Merchant Detail",
-]);
+const props = defineProps({
+    ActivePromotions: Array,
+    InactivePromotions: Array,
+    merchant: Object,
+})
+
 </script>
 
 <template>
@@ -29,32 +29,139 @@ const tabs = ref([
             />
         </template>
 
-        <TabView :tabs="tabs">
-            <template #tab-0>
-                <Stock></Stock>
-            </template>
-            <template #tab-1>
-                <Commision />
-            </template>
-            <template #tab-2>
-                <IncentiveProg />
-            </template>
-            <template #tab-3>
-                <p class="m-0">
-                    At vero eos et accusamus et iusto odio dignissimos ducimus
-                    qui blanditiis praesentium voluptatum deleniti atque
-                    corrupti quos dolores et quas molestias excepturi sint
-                    occaecati cupiditate non provident, similique sunt in culpa
-                    qui officia deserunt mollitia animi, id est laborum et
-                    dolorum fuga. Et harum quidem rerum facilis est et expedita
-                    distinctio. Nam libero tempore, cum soluta nobis est
-                    eligendi optio cumque nihil impedit quo minus.
-                </p>
-            </template>
-            <template #tab-4> <MerchantDetail /> </template>
-            <template #tab-5>
-                <MerchantDetail></MerchantDetail>
-            </template>
-        </TabView>
+        <TabGroup>
+            <TabList class="flex border-b border-gray-200">
+                <Tab
+                    as="template"
+                    v-slot="{ selected }"
+                >
+                    <button
+                        :class="[
+                        'p-3 text-sm font-medium leading-none',
+                        'focus:outline-none',
+                        selected
+                            ? 'text-primary-900 border-b-2 border-primary-900'
+                            : 'text-grey-200 hover:bg-white/[0.12] hover:text-primary-800',
+                        ]"
+                    >
+                        Stock
+                    </button>
+                </Tab>
+                <Tab
+                    as="template"
+                    v-slot="{ selected }"
+                >
+                    <button
+                        :class="[
+                        'p-3 text-sm font-medium leading-none',
+                        'focus:outline-none',
+                        selected
+                            ? 'text-primary-900 border-b-2 border-primary-900'
+                            : 'text-grey-200 hover:bg-white/[0.12] hover:text-primary-800',
+                        ]"
+                    >
+                        Employee Commission
+                    </button>
+                </Tab>
+                
+                <Tab
+                    as="template"
+                    v-slot="{ selected }"
+                >
+                    <button
+                        :class="[
+                        'p-3 text-sm font-medium leading-none',
+                        'focus:outline-none',
+                        selected
+                            ? 'text-primary-900 border-b-2 border-primary-900'
+                            : 'text-grey-200 hover:bg-white/[0.12] hover:text-primary-800',
+                        ]"
+                    >
+                        Employee Incentive Programme
+                    </button>
+                </Tab>
+                <Tab
+                    as="template"
+                    v-slot="{ selected }"
+                >
+                    <button
+                        :class="[
+                        'p-3 text-sm font-medium leading-none',
+                        'focus:outline-none',
+                        selected
+                            ? 'text-primary-900 border-b-2 border-primary-900'
+                            : 'text-grey-200 hover:bg-white/[0.12] hover:text-primary-800',
+                        ]"
+                    >
+                        Promotion
+                    </button>
+                </Tab>
+                <Tab
+                    as="template"
+                    v-slot="{ selected }"
+                >
+                    <button
+                        :class="[
+                        'p-3 text-sm font-medium leading-none',
+                        'focus:outline-none',
+                        selected
+                            ? 'text-primary-900 border-b-2 border-primary-900'
+                            : 'text-grey-200 hover:bg-white/[0.12] hover:text-primary-800',
+                        ]"
+                    >
+                        Invoice Setting
+                    </button>
+                </Tab>
+            </TabList>
+
+            <TabPanels class="mt-2">
+                <TabPanel
+                    :class="[
+                        'rounded-xl bg-white p-3',
+                        'focus:outline-none',
+                    ]"
+                >
+                    <Stock />
+                </TabPanel>
+                <TabPanel
+                    :class="[
+                        'rounded-xl bg-white p-3',
+                        'focus:outline-none',
+                    ]"
+                >
+                    <Commision />
+                </TabPanel>
+                <TabPanel
+                    :class="[
+                        'rounded-xl bg-white p-3',
+                        'focus:outline-none',
+                    ]"
+                >
+                    <IncentiveProg />
+                </TabPanel>
+                <TabPanel
+                    :class="[
+                        'rounded-xl bg-white p-3',
+                        'focus:outline-none',
+                    ]"
+                >
+                    <Promotion 
+                        :ActivePromotions="ActivePromotions"
+                        :InactivePromotions="InactivePromotions"
+                    />
+                </TabPanel>
+                <TabPanel
+                    :class="[
+                        'rounded-xl bg-white p-3',
+                        'focus:outline-none',
+                    ]"
+                >
+                    <MerchantDetail 
+                        :merchant="merchant"
+                    />
+                </TabPanel>
+            </TabPanels>
+        </TabGroup>
     </AuthenticatedLayout>
+
 </template>

@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('config_merchants', function (Blueprint $table) {
+        Schema::create('tax_settings', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('merchant_name');
-            $table->string('merchant_contact');
-            $table->string('merchant_address');
+            $table->integer('percentage');
             $table->softDeletes();
             $table->timestamps();
         });
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('config_merchants');
+        Schema::dropIfExists('tax_settings');
     }
 };

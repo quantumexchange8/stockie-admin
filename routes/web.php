@@ -82,12 +82,20 @@ Route::middleware('auth')->group(function () {
 
     /******* Configuration ********/
     Route::prefix('configurations')->group(function () {
-        Route::get('/configurations', function () {
-            return Inertia::render('Configuration/MainConfiguration');
-        })->name('configurations');
-        
+        Route::get('/configurations', [ConfigPromotionController::class, 'index'])->name('configurations');
+
+        Route::get('/getStock', [ConfigPromotionController::class, 'getStock'])->name('configurations.getStock');
+
+        /******* Promotion ********/
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');
         Route::post('/promotions/store', [ConfigPromotionController::class, 'store'])->name('configurations.promotions.store');
+        Route::post('/edit', [ConfigPromotionController::class, 'edit'])->name('configurations.promotion.edit');
+        Route::post('/delete', [ConfigPromotionController::class, 'delete'])->name('configurations.promotion.delete');
+        
+        Route::post('/updateMerchant', [ConfigPromotionController::class, 'updateMerchant'])->name('configurations.updateMerchant');
+        Route::post('/addTax', [ConfigPromotionController::class, 'addTax'])->name('configurations.addTax');
+        Route::get('/getTax', [ConfigPromotionController::class, 'getTax'])->name('configurations.getTax');
+
     });
 
     /********Loyalty Programme **********/

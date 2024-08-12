@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class ConfigPromotion extends Model
+class ConfigPromotion extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, InteractsWithMedia;
 
     protected $table = "config_promotions";
 
@@ -18,5 +20,6 @@ class ConfigPromotion extends Model
         'promotion_from',
         'promotion_to',
         'image',
+        'status'
     ];
 }
