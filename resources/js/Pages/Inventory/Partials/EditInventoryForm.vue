@@ -17,14 +17,22 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    selectedGroup: {
+        type: Array,
+        default: () => [],
+    },
+    categoryArr: {
+        type: Array,
+        default: () => [],
+    },
     itemCategoryArr: {
         type: Array,
         default: () => [],
     },
 });
 
-const inventoryItemsArr = reactive([]);
-const categoryArr = reactive([]);
+// const inventoryItemsArr = reactive([]);
+// const categoryArr = reactive([]);
 // const itemCategoryArr = reactive([]);
 
 const emit = defineEmits(['close'])
@@ -34,27 +42,31 @@ onMounted(async () => {
         // const itemCategoryResponse = await axios.get('/inventory/inventory/getAllItemCategories');
         // itemCategoryArr.value = itemCategoryResponse.data;
 
-        const categoryResponse = await axios.get('/inventory/inventory/getAllCategories');
-        categoryArr.value = categoryResponse.data;
+        // const categoryResponse = await axios.get('/inventory/inventory/getAllCategories');
+        // categoryArr.value = categoryResponse.data;
 
-        const inventoryItemsResponse = await axios.get(`/inventory/inventory/getInventoryItems/${props.group.id}`);
-        inventoryItemsArr.value = inventoryItemsResponse.data.inventory_items;
+        // categories.value = [...props.categoryArr];
+        // const inventoryItemsResponse = await axios.get(`/inventory/inventory/getInventoryItems/${props.group.id}`);
+        // inventoryItemsArr.value = inventoryItemsResponse.data.inventory_items;
     } catch (error) {
         console.error('Error fetching data:', error);
     }
 });
 
+// watch(() => props.categoryArr, (newValue) => {
+//     categories.value = [...newValue];
+// }, { immediate: true });
 
 const form = useForm({
     id: props.group.id,
     name: props.group.name,
     category_id: parseInt(props.group.category_id),
     image: props.group.image,
-    items: inventoryItemsArr.value ? inventoryItemsArr.value : [],
+    items: props.selectedGroup ? props.selectedGroup : [],
 });
 
 const updatedInventoryItemsArr = computed(() => {
-  return form.items = inventoryItemsArr.value;
+  return form.items = props.selectedGroup;
 })
 
 const formSubmit = () => { 
@@ -111,7 +123,7 @@ const addItem = () => {
                     <Dropdown
                         :inputName="'category_id'"
                         :labelText="'Category'"
-                        :inputArray="categoryArr.value"
+                        :inputArray="categoryArr"
                         :dataValue="parseInt(props.group.category_id)"
                         :errorMessage="form.errors?.category_id || ''"
                         v-model="form.category_id"

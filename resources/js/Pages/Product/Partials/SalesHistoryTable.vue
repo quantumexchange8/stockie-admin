@@ -38,6 +38,7 @@ const props = defineProps({
                 :columns="columns"
                 :rowsPerPage="rowsPerPage"
                 :rowType="rowType"
+                minWidth="min-w-[465px]"
             >
                 <template #date="row">
                     <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.created_at).format('DD/MM/YYYY') }}</span>

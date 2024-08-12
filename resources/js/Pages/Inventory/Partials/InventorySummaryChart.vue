@@ -201,7 +201,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col p-6 gap-12 items-center rounded-[5px] border border-red-100 overflow-y-auto">
+    <div class="flex flex-col p-6 gap-12 items-center rounded-[5px] border border-red-100 overflow-hidden">
         <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Inventory Summary</span>
         <div class="flex justify-content-center" v-if="allInventories.length > 0">
             <Chart 

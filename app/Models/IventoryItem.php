@@ -49,4 +49,13 @@ class IventoryItem extends Model
     {
         return $this->hasMany(ProductItem::class, 'inventory_item_id');
     }
+    
+    /**
+     * RankingReward Model
+     * Get the product items of the inventory item.
+     */
+    public function rankingRewards(): HasMany
+    {
+        return $this->hasMany(RankingReward::class, 'free_item');
+    }
 }

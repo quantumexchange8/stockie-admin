@@ -43,6 +43,7 @@ const props = defineProps({
                 :rowType="rowType"
                 :actions="actions"
                 :paginator="false"
+                minWidth="min-w-[560px]"
             >
                 <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                 <template #empty>

@@ -13,6 +13,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    selectedGroup: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const inventoryItemsArr = ref([]);
@@ -21,12 +25,12 @@ const emit = defineEmits(['close'])
 
 const getInventoryItems = async () => {
     try {
-        const response = await axios.get(`/inventory/inventory/getInventoryItems/${props.group.id}`);
-        inventoryItemsArr.value = response.data.inventory_items;
+        // const response = await axios.get(`/inventory/inventory/getInventoryItems/${props.group.id}`);
+        // inventoryItemsArr.value = response.data.inventory_items;
         
-        inventoryItemsArr.value.forEach((item) => {
-            item.add_stock_qty = 0;
-        });
+        // inventoryItemsArr.value.forEach((item) => {
+        //     item.add_stock_qty = 0;
+        // });
     } catch (error) {
         console.error(error);
     } finally {
@@ -49,8 +53,8 @@ const form = useForm({
     items: [],
 });
 
-watch(() => inventoryItemsArr.value, () => {
-    form.items = inventoryItemsArr.value.map((item) => reactive({ ...item, add_stock_qty: 0 }));
+watch(() => props.selectedGroup, () => {
+    form.items = props.selectedGroup.map((item) => reactive({ ...item, add_stock_qty: 0 }));
 }, { immediate: true });
 
 const formSubmit = () => { 

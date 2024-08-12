@@ -21,13 +21,13 @@ const home = ref({
 // only for 'list' variant of table component
 const inventoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'inventory.name', header: '', width: '9', sortable: false},
-    {field: 'item_name', header: 'Item Name', width: '38', sortable: true},
-    {field: 'item_code', header: 'Code', width: '7', sortable: true},
-    {field: 'item_cat_id', header: 'Unit', width: '7', sortable: true},
-    {field: 'stock_qty', header: 'Stock', width: '7', sortable: true},
-    {field: 'keep', header: 'Keep', width: '7', sortable: true},
-    {field: 'status', header: 'Status', width: '10', sortable: true},
+    {field: 'inventory.name', header: '', width: '0', sortable: false},
+    {field: 'item_name', header: 'Item Name', width: '29', sortable: true},
+    {field: 'item_code', header: 'Code', width: '11', sortable: true},
+    {field: 'item_cat_id', header: 'Unit', width: '10', sortable: true},
+    {field: 'stock_qty', header: 'Stock', width: '11', sortable: true},
+    {field: 'keep', header: 'Keep', width: '12', sortable: true},
+    {field: 'status', header: 'Status', width: '12', sortable: true},
     {field: 'action', header: '', width: '15', sortable: false}
 ]);
 

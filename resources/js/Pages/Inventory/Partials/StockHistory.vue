@@ -115,13 +115,13 @@ watch(() => date_filter.value, () => {
                 placeholder="Search"
                 :showFilter="false"
                 v-model="filters['global'].value"
-                class="col-span-full sm:col-span-8"
+                class="col-span-full md:col-span-7"
             />
             <DateInput
                 :inputName="'date_filter'"
                 :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                 :range="true"
-                class="col-span-full sm:col-span-4"
+                class="col-span-full md:col-span-5"
                 v-model="date_filter"
             />
         </div>

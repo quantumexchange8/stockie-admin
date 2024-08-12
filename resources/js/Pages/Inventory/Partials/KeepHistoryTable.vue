@@ -212,12 +212,12 @@ const rowGroupedByDates = computed(() => {
                 </template>
                 <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                 <template #in="row">
-                    <span class="text-green-600 text-sm font-medium" v-if="row.in">+ {{ row.in }}</span>
-                    <span class="text-grey-300 text-sm font-medium" v-else>-</span>
+                    <span class="text-green-600 text-sm font-medium !whitespace-nowrap" v-if="row.in">+ {{ row.in }}</span>
+                    <span class="text-grey-300 text-sm font-medium whitespace-nowrap" v-else>-</span>
                 </template>
                 <template #out="row">
-                    <span class="text-primary-600 text-sm font-medium" v-if="row.out">- {{ row.out }}</span>
-                    <span class="text-grey-300 text-sm font-medium" v-else>-</span>
+                    <span class="text-primary-600 text-sm font-medium !whitespace-nowrap" v-if="row.out">- {{ row.out }}</span>
+                    <span class="text-grey-300 text-sm font-medium whitespace-nowrap" v-else>-</span>
                 </template>
                 <template #current_stock="row">
                     <span class="text-grey-900 text-sm font-medium">

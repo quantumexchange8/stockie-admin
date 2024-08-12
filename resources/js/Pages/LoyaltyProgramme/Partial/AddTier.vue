@@ -1,4 +1,5 @@
 <script setup>
+import dayjs from 'dayjs';
 import TextInput from "@/Components/TextInput.vue";
 import Toggle from "@/Components/Toggle.vue";
 import Button from "@/Components/Button.vue";
@@ -8,147 +9,52 @@ import NumberCounter from "@/Components/NumberCounter.vue";
 import { Calendar } from "@/Components/Icons/solid";
 import { useForm } from "@inertiajs/vue3";
 import { ref, computed, onMounted } from "vue";
-import axios from "axios";
 import Carlsbeg from "../../../../assets/images/Loyalty/Carlsbeg.svg";
 import Tiger from "../../../../assets/images/Loyalty/Tiger.svg";
+import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
+
+const props = defineProps({
+    inventoryItems: {
+        type: Array,
+        default: [],
+    },
+});
 
 const emit = defineEmits(["close"]);
 
-const rewardOption = ref([
-    {
-        text: "Discount (Amount)",
-        value: "Discount (Amount)",
-    },
-    {
-        text: "Discount (Percentage)",
-        value: "Discount (Percentage)",
-    },
-    {
-        text: "Bonus Point",
-        value: "Bonus Point",
-    },
-    {
-        text: "Free Item",
-        value: "Free Item",
-    },
-]);
+const rewardList = ref([]);
 
-const periodOption = ref([
-    { text: "1 month starting from entry date", value: 1 },
-    { text: "3 months starting from entry date", value: 3 },
-    { text: "6 months starting from entry date", value: 6 },
-    { text: "12 months starting from entry date", value: 12 },
-    { text: "Customise range...", value: 0 },
-]);
+// const validateAmount = (reward) => {
+//     const isNumeric = (field) => /^\d+(\.\d+)?$/.test(field);
 
-const groupedItem = ref([
-    {
-        group_name: "Carlsberg",
-        image: Carlsbeg,
-        items: [
-            {
-                text: "Carlsberg bottle 500ml",
-                value: "Carlsberg bottle 500ml",
-            },
-            { text: "Carlsberg can 300ml", value: "Carlsberg can 300ml" },
-            { text: "Carlsberg pint 500ml", value: "Carlsberg pint 500ml" },
-            { text: "Carlsberg tower", value: "Carlsberg bucket" },
-        ],
-    },
-    {
-        group_name: "Tiger",
-        image: Tiger,
-        items: [
-            { text: "Tiger bottle 500ml", value: "Tiger bottle 500ml" },
-            { text: "Tiger can 300ml", value: "Tiger can 300ml" },
-            { text: "Tiger pint 500ml", value: "Tiger pint 500ml" },
-        ],
-    },
-]);
-
-const rewardList = ref([
-    {
-        type: "",
-        min_purchase: "inactive",
-        min_purchase_amount: "",
-        amount: "",
-        valid_period: "",
-        date_range: "",
-        valid_period_from: "",
-        valid_period_to: "",
-        bonus_point: "",
-        free_item: "",
-        item_qty: 0,
-        error: "",
-    },
-]);
-
-const validateAmount = (reward) => {
-    const value = reward.amount;
-    const value2 = reward.min_purchase_amount;
-    const value3 = reward.bonus_point;
-    const isNumeric = /^\d+(\.\d+)?$/.test(value);
-    const isNumeric2 = /^\d+(\.\d+)?$/.test(value2);
-    const isNumeric3 = /^\d+(\.\d+)?$/.test(value3);
-    if (!isNumeric) {
-        reward.error = "Invalid Value";
-    } else {
-        reward.error = "";
-    }
-
-    if (!isNumeric2) {
-        reward.minPurchaseAmountError = "Invalid Value"; // Adjust error property name as needed
-    } else {
-        reward.minPurchaseAmountError = "";
-    }
-
-    if (!isNumeric3) {
-        reward.bonuspoint = "Invalid Value"; // Adjust error property name as needed
-    } else {
-        reward.bonuspoint = "";
-    }
-};
+//     reward.error = isNumeric(reward.amount) ? "" : reward.amount === "" ? "Please enter the minimum amount" : "This field must be a numeric.";
+//     reward.minPurchaseAmountError = isNumeric(reward.min_purchase_amount) ? "" : reward.min_purchase_amount === "" ? "Please enter the minimum amount" : "Please enter the minimum amount";
+//     reward.bonuspoint = isNumeric(reward.bonus_point) ? "" : reward.bonus_point === "" ? "Please enter amount" : "Please enter amount";
+// };
 
 const toggleMinPurchase = (index) => {
-    rewardList.value[index].min_purchase =
-        rewardList.value[index].min_purchase === "active"
-            ? "inactive"
-            : "active";
+    const reward = rewardList.value[index];
+    reward.min_purchase = reward.min_purchase === "active" ? "inactive" : "active";
 };
 
 const addReward = () => {
-    rewardList.value.push({
-        type: "",
-        min_purchase: "inactive",
-        min_purchase_amount: "",
-        amount: "",
-        valid_period: "",
-        date_range: "",
-        valid_period_from: "",
-        valid_period_to: "",
-        bonus_point: "",
-        free_item: "",
-        item_qty: 0,
-    });
+    rewardList.value.push(emptyReward());
 };
 
 const toggleReward = () => {
-    if (form.reward === "active") {
-        rewardList.value.forEach((reward) => {
-            reward.type = "";
-            reward.min_purchase = "inactive";
-            reward.min_purchase_amount = "";
-            reward.amount = "";
-            reward.valid_period = "";
-            reward.date_range = "";
-            reward.valid_period_from = "";
-            reward.valid_period_to = "";
-            reward.bonus_point = "";
-            reward.free_item = "";
-            reward.item_qty = 0;
-        });
+    const isActive = form.reward === "active";
+    form.reward = isActive ? "inactive" : "active";
+    
+    if (isActive) {
+        rewardList.value = [];
+        return;
     }
-    form.reward = form.reward === "active" ? "inactive" : "active";
+    
+    addReward();
+    // rewardList.value = rewardList.value.slice(0, 1);
+    // rewardList.value.forEach((reward) => {
+    //     Object.assign(reward, emptyReward());
+    // });
 };
 
 const form = useForm({
@@ -163,60 +69,12 @@ const form = useForm({
 const submit = () => {
     rewardList.value.forEach((reward) => {
         if (reward.valid_period === 0 && reward.date_range !== "") {
-            const startDate = new Date(reward.date_range[0]);
-            const endDate = new Date(reward.date_range[1]);
+            reward.valid_period_from = dayjs(reward.date_range[0]).format('YYYY/MM/DD');
+            reward.valid_period_to = dayjs(reward.date_range[1]).format('YYYY/MM/DD');
 
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(0, 0, 0, 0);
-
-            reward.valid_period_from =
-                (startDate.getFullYear() < 10
-                    ? "0" + startDate.getFullYear()
-                    : startDate.getFullYear()) +
-                "/" +
-                (startDate.getMonth() + 1 < 10
-                    ? "0" + (startDate.getMonth() + 1)
-                    : startDate.getMonth() + 1) +
-                "/" +
-                (startDate.getDate() < 10
-                    ? "0" + startDate.getDate()
-                    : startDate.getDate());
-            reward.valid_period_to =
-                (endDate.getFullYear() < 10
-                    ? "0" + endDate.getFullYear()
-                    : endDate.getFullYear()) +
-                "/" +
-                (endDate.getMonth() + 1 < 10
-                    ? "0" + (endDate.getMonth() + 1)
-                    : endDate.getMonth() + 1) +
-                "/" +
-                (endDate.getDate() < 10
-                    ? "0" + endDate.getDate()
-                    : endDate.getDate());
         } else if (reward.valid_period) {
-            const startDate = new Date();
-            startDate.setHours(0, 0, 0, 0);
-
-            const endDate = new Date(startDate);
-            endDate.setMonth(endDate.getMonth() + reward.valid_period);
-            endDate.setHours(23, 59, 59, 999); // Include the entire end day
-
-            reward.valid_period_from = `${startDate.getFullYear()}-${(
-                startDate.getMonth() + 1
-            )
-                .toString()
-                .padStart(2, "0")}-${startDate
-                .getDate()
-                .toString()
-                .padStart(2, "0")}`;
-            reward.valid_period_to = `${endDate.getFullYear()}-${(
-                endDate.getMonth() + 1
-            )
-                .toString()
-                .padStart(2, "0")}-${endDate
-                .getDate()
-                .toString()
-                .padStart(2, "0")}`;
+            reward.valid_period_from = dayjs().format('YYYY-MM-DD');
+            reward.valid_period_to = dayjs().add(reward.valid_period, 'month').endOf('month').format('YYYY-MM-DD');
         }
     });
 
@@ -224,11 +82,8 @@ const submit = () => {
 
     form.post(route("loyalty.create-tier"), {
         onSuccess: () => {
-            console.log("Form submitted successfully!");
+            form.reset();
             closeModal();
-        },
-        onError: (error) => {
-            console.error(error);
         },
     });
 };
@@ -239,60 +94,53 @@ const closeModal = () => {
     emit("close");
 };
 
-//Function to change the text when reward type is selected
-const getDropdownLabel = (type, index) => {
-    if (type !== null) {
-        return `Reward Type ${index + 1}`;
-    } else {
-        return "Select Reward Type";
-    }
+//Function to disabled button unless all field is fill
+const isAddButtonDisabled = computed(() => {
+    if (rewardList.value.length === 0) { return false };
+
+    return rewardList.value.some((reward) => {
+        if (form.reward !== "active" || !reward.type) return true;
+
+        switch (reward.type) {
+            case "Discount (Amount)":
+            case "Discount (Percentage)":
+                return !reward.amount ||
+                    (reward.min_purchase === "active" && !reward.min_purchase_amount) ||
+                    reward.valid_period === "" ||
+                    (reward.valid_period === 0 && !reward.date_range);
+            case "Bonus Point":
+                return !reward.bonus_point;
+            case "Free Item":
+                return !reward.free_item ||
+                    reward.valid_period === "" ||
+                    (reward.valid_period === 0 && !reward.date_range);
+            default:
+                return true;
+        }
+    });
+});
+
+// Validate input to only allow numeric value to be entered
+const isNumber = (e, withDot = true) => {
+    const { key, target: { value } } = e;
+    
+    if (/^\d$/.test(key)) return;
+
+    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
+    
+    e.preventDefault();
 };
 
-//Function to disabled button  unless all field is fill
-const isAddButtonDisabled = computed(() => {
-    for (const reward of rewardList.value) {
-        if (form.reward === "active" && reward.type === "") {
-            return true;
-        } else if (
-            reward.type === "Discount (Amount)" ||
-            reward.type === "Discount (Percentage)"
-        ) {
-            if (
-                !reward.amount ||
-                (reward.min_purchase === "active" &&
-                    !reward.min_purchase_amount) ||
-                reward.valid_period === "" ||
-                (reward.valid_period === 0 && !reward.date_range)
-            ) {
-                return true;
-            }
-        } else if (reward.type === "Bonus Point" && !reward.bonus_point) {
-            return true;
-        } else if (reward.type === "Free Item") {
-            if (
-                reward.free_item === "" ||
-                reward.valid_period === "" ||
-                (reward.valid_period === 0 && !reward.date_range)
-            ) {
-                return true;
-            }
-        }
-    }
-    return false; // Enable button if all required fields are filled
-});
-</script>
-
-<style>
-.text-center-input input[type="text"] {
-    text-align: center;
+const resetReward = (value, index) => {
+    rewardList.value[index] = emptyReward();
+    rewardList.value[index].type = value;
 }
-</style>
+
+</script>
 
 <template>
     <form @submit.prevent="submit">
-        <div
-            class="max-h-[773px] overflow-y-scroll scrollbar-webkit scrollbar-thin p-2"
-        >
+        <div class="max-h-[773px] overflow-y-scroll scrollbar-webkit scrollbar-thin p-2">
             <div class="w-full flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <TextInput
@@ -302,22 +150,17 @@ const isAddButtonDisabled = computed(() => {
                         type="'text'"
                         v-model="form.name"
                         :errorMessage="form.errors.name"
-                    ></TextInput>
+                    />
 
                     <div class="w-full flex gap-6">
                         <div class="flex flex-col gap-1">
                             <p class="text-xs">Select an icon</p>
-
-                            <div
-                                class="w-[308px] flex flex-wrap gap-4 items-center"
-                            >
+                            <div class="w-[308px] flex flex-wrap gap-4 items-center">
                                 <!-- Existing icons from database -->
 
                                 <!-- Icons  -->
                                 <div class="flex flex-col gap-4 items-center">
-                                    <div
-                                        class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center"
-                                    >
+                                    <div  class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center">
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
                                             width="24"
@@ -339,13 +182,13 @@ const isAddButtonDisabled = computed(() => {
                         </div>
 
                         <TextInput
-                            class="w-[366px] text-center-input"
                             :labelText="'Amount spend to achieve this tier'"
                             inputId="min_amount"
                             type="'text'"
                             v-model="form.min_amount"
                             :iconPosition="'left'"
                             :errorMessage="form.errors.min_amount"
+                            @keypress="isNumber($event)"
                         >
                             <template #prefix> RM </template>
                         </TextInput>
@@ -366,10 +209,7 @@ const isAddButtonDisabled = computed(() => {
                 </div>
 
                 <!-- Rewards section -->
-                <div
-                    class="flex flex-col gap-6"
-                    v-if="form.reward === 'active'"
-                >
+                <div class="flex flex-col gap-6" v-if="form.reward === 'active'">
                     <div
                         v-for="(reward, index) in rewardList"
                         :key="index"
@@ -383,208 +223,88 @@ const isAddButtonDisabled = computed(() => {
 
                         <!-- Reward type selection -->
                         <Dropdown
-                            :labelText="getDropdownLabel(reward.type, index)"
+                            :labelText="rewardList[index].type !== '' ? `Reward Type ${index + 1}` : 'Select Reward Type'"
                             :placeholder="'Select'"
                             :inputArray="rewardOption"
-                            inputId="type"
                             :inputName="'type'"
                             :hint-text="'The reward can only be redeemed once.'"
                             :dataValue="reward.type"
                             v-model="reward.type"
                             :errorMessage="form.errors.type"
+                            @onChange="resetReward($event, index)"
                         />
 
-                        <div
-                            v-if="
-                                reward.type !== null &&
-                                reward.type !== undefined
-                            "
-                        >
-                            <!-- Discount Amount -->
-                            <template
-                                v-if="reward.type === 'Discount (Amount)'"
-                            >
-                                <div class="flex flex-col gap-3">
+                        <div v-if="reward.type !== null && reward.type !== undefined">
+                            <div class="flex flex-col gap-3">
+                                <!--Discount Amount & Discount Percent -->
+                                <template v-if="reward.type === 'Discount (Amount)' || reward.type === 'Discount (Percentage)'">
                                     <div class="flex gap-3">
                                         <TextInput
-                                            :labelText="'Discount Amount'"
-                                            :iconPosition="'left'"
-                                            v-model="reward.amount"
-                                            inputId="amount"
-                                            :errorMessage="reward.error"
-                                            @input="validateAmount(reward)"
-                                        >
-                                            <template #prefix>RM</template>
-                                        </TextInput>
-                                        <TextInput
-                                            v-if="
-                                                reward.min_purchase === 'active'
-                                            "
-                                            :labelText="'Minimum purchase amount'"
-                                            :iconPosition="'left'"
-                                            inputId="min_purchase_amount"
-                                            :inputName="'min_purchase_amount'"
-                                            v-model="reward.min_purchase_amount"
-                                            :errorMessage="
-                                                reward.minPurchaseAmountError
-                                            "
-                                            @input="validateAmount(reward)"
-                                        >
-                                            <template #prefix>RM</template>
-                                        </TextInput>
-                                    </div>
-                                    <div class="justify-end flex gap-3">
-                                        <p class="font-normal">
-                                            With minimum purchase
-                                        </p>
-                                        <Toggle
-                                            :checked="
-                                                form.min_purchase === 'active'
-                                            "
-                                            :inputName="'min_purchase'"
-                                            inputId="min_purchase"
-                                            v-model="reward.min_purchase"
-                                            @change="
-                                                () => toggleMinPurchase(index)
-                                            "
-                                        />
-                                    </div>
-                                    <div class="flex gap-3 items-end">
-                                        <Dropdown
-                                            :labelText="'Valid Period'"
-                                            :placeholder="'Select'"
-                                            :inputArray="periodOption"
-                                            :dataValue="reward.valid_period"
-                                            inputId="valid_period"
-                                            :inputName="'valid_period'"
-                                            v-model="reward.valid_period"
-                                            :iconOptions="{
-                                                'Customise range...': Calendar,
-                                            }"
-                                        ></Dropdown>
-
-                                        <DateInput
-                                            v-if="reward.valid_period === 0"
-                                            :labelText="''"
-                                            :inputName="'date_range'"
-                                            :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
-                                            :range="true"
-                                            v-model="reward.date_range"
-                                        ></DateInput>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <!--Discount Percent -->
-                            <template
-                                v-if="reward.type === 'Discount (Percentage)'"
-                            >
-                                <div class="flex flex-col gap-3">
-                                    <div class="flex gap-3">
-                                        <TextInput
-                                            labelText="Discount Percentage"
-                                            :iconPosition="'right'"
-                                            v-model="reward.amount"
-                                            inputId="amount"
+                                            :iconPosition="reward.type === 'Discount (Amount)' ? 'left' : 'right'"
                                             :inputName="'amount'"
                                             :errorMessage="reward.error"
-                                            @input="validateAmount(reward)"
+                                            :labelText="reward.type === 'Discount (Amount)' ? 'Discount Amount' : 'Discount Percentage'"
+                                            inputId="amount"
+                                            v-model="reward.amount"
+                                            @keypress="isNumber($event)"
                                         >
-                                            <template #prefix>%</template>
+                                            <template #prefix>{{ reward.type === 'Discount (Amount)' ? 'RM' : '%' }}</template>
                                         </TextInput>
                                         <TextInput
+                                            v-if="reward.min_purchase === 'active'"
+                                            :inputName="'min_purchase_amount'"
+                                            :iconPosition="'left'"
+                                            :errorMessage="reward.minPurchaseAmountError"
                                             labelText="Minimum purchase amount"
                                             inputId="min_purchase_amount"
-                                            :inputName="'min_purchase_amount'"
                                             v-model="reward.min_purchase_amount"
-                                            :iconPosition="'left'"
-                                            v-if="
-                                                reward.min_purchase === 'active'
-                                            "
-                                            :errorMessage="
-                                                reward.minPurchaseAmountError
-                                            "
-                                            @input="validateAmount(reward)"
+                                            @keypress="isNumber($event)"
                                         >
                                             <template #prefix>RM</template>
                                         </TextInput>
                                     </div>
                                     <div class="justify-end flex gap-3">
-                                        <p class="font-normal">
-                                            With minimum purchase
-                                        </p>
+                                        <p class="font-normal">With minimum purchase</p>
                                         <Toggle
                                             class="xl:col-span-2"
-                                            :checked="
-                                                form.min_purchase === 'active'
-                                            "
+                                            :checked="reward.min_purchase === 'active'"
                                             :inputName="'min_purchase'"
                                             inputId="min_purchase"
                                             v-model="reward.min_purchase"
-                                            @change="
-                                                () => toggleMinPurchase(index)
-                                            "
+                                            @change="() => toggleMinPurchase(index)"
                                         />
                                     </div>
-                                    <div class="flex gap-3 items-end">
-                                        <Dropdown
-                                            labelText="Valid Period"
-                                            :placeholder="'Select'"
-                                            :inputArray="periodOption"
-                                            :dataValue="reward.valid_period"
-                                            inputId="valid_period"
-                                            :inputName="'valid_period'"
-                                            v-model="reward.valid_period"
-                                            :iconOptions="{
-                                                'Customise range...': Calendar,
-                                            }"
-                                        ></Dropdown>
+                                </template>
+                                
+                                <!--Bonus Point -->
+                                <template v-if="reward.type === 'Bonus Point'">
+                                    <TextInput
+                                        :labelText="'Bonus point get'"
+                                        :placeholder="'10'"
+                                        :iconPosition="'right'"
+                                        v-model="reward.bonus_point"
+                                        inputId="bonus_point"
+                                        :inputName="'bonus_point'"
+                                        :errorMessage="reward.bonuspoint"
+                                        @keypress="isNumber($event)"
+                                    >
+                                        <template #prefix>pts</template>
+                                    </TextInput>
+                                </template>
 
-                                        <DateInput
-                                            v-if="reward.valid_period === 0"
-                                            :labelText="''"
-                                            :inputName="'date_range'"
-                                            :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
-                                            :range="true"
-                                            v-model="reward.date_range"
-                                        ></DateInput>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <!--Bonus Point -->
-                            <template v-if="reward.type === 'Bonus Point'">
-                                <TextInput
-                                    :labelText="'Bonus point get'"
-                                    :placeholder="'10'"
-                                    :iconPosition="'right'"
-                                    v-model="reward.bonus_point"
-                                    inputId="bonus_point"
-                                    :inputName="'bonus_point'"
-                                    :errorMessage="reward.bonuspoint"
-                                    @input="validateAmount(reward)"
-                                >
-                                    <template #prefix>pts</template>
-                                </TextInput>
-                            </template>
-
-                            <!--Free Item-->
-                            <template v-if="reward.type === 'Free Item'">
-                                <div class="flex flex-col gap-3">
+                                <!--Free Item-->
+                                <template v-if="reward.type === 'Free Item'">
                                     <div class="flex gap-4 items-end">
                                         <Dropdown
                                             :labelText="'Select an item'"
-                                            :inputArray="groupedItem"
+                                            :inputArray="inventoryItems"
                                             grouped
                                             :inputName="'free_item'"
                                             v-model="reward.free_item"
                                             placeholder="Select"
                                             class="w-full"
                                         />
-                                        <div
-                                            class="w-fit flex max-h-[44px]"
-                                            v-if="reward.free_item !== ''"
-                                        >
+                                        <div class="w-fit flex max-h-[44px]" v-if="reward.free_item !== ''">
                                             <NumberCounter
                                                 :labelText="''"
                                                 :inputName="'item_qty'"
@@ -592,32 +312,35 @@ const isAddButtonDisabled = computed(() => {
                                             />
                                         </div>
                                     </div>
+                                </template>
 
+                                <!-- All except Bonus Point -->
+                                <template v-if="reward.type !== 'Bonus Point'">
                                     <div class="flex gap-3 items-end">
-                                        <Dropdown
-                                            labelText="Valid Period"
-                                            :placeholder="'Select'"
-                                            :inputArray="periodOption"
-                                            :dataValue="reward.valid_period"
-                                            inputId="valid_period"
-                                            :inputName="'valid_period'"
-                                            v-model="reward.valid_period"
-                                            :iconOptions="{
-                                                'Customise range...': Calendar,
-                                            }"
-                                        ></Dropdown>
+                                    <Dropdown
+                                        labelText="Valid Period"
+                                        :placeholder="'Select'"
+                                        :inputArray="periodOption"
+                                        :dataValue="reward.valid_period"
+                                        inputId="valid_period"
+                                        :inputName="'valid_period'"
+                                        v-model="reward.valid_period"
+                                        :iconOptions="{
+                                            'Customise range...': Calendar,
+                                        }"
+                                    />
 
-                                        <DateInput
-                                            v-if="reward.valid_period === 0"
-                                            :labelText="''"
-                                            :inputName="'date_range'"
-                                            :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
-                                            :range="true"
-                                            v-model="reward.date_range"
-                                        ></DateInput>
+                                    <DateInput
+                                        v-if="reward.valid_period === 0"
+                                        :labelText="''"
+                                        :inputName="'date_range'"
+                                        :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                                        :range="true"
+                                        v-model="reward.date_range"
+                                    />
                                     </div>
-                                </div>
-                            </template>
+                                </template>
+                            </div>
                         </div>
                     </div>
 
@@ -627,15 +350,17 @@ const isAddButtonDisabled = computed(() => {
                         :size="'lg'"
                         @click="addReward"
                         :type="'button'"
-                        >Another Reward</Button
                     >
+                        Another Reward
+                    </Button>
                 </div>
 
                 <div class="flex gap-4 pt-3">
                     <Button
+                        type="button"
                         variant="tertiary"
                         :size="'lg'"
-                        @click="form.reset()"
+                        @click="console.log(rewardList)"
                     >
                         Cancel
                     </Button>
@@ -644,8 +369,9 @@ const isAddButtonDisabled = computed(() => {
                         :size="'lg'"
                         :type="'submit'"
                         :disabled="isAddButtonDisabled"
-                        >Add</Button
                     >
+                        Add
+                    </Button>
                 </div>
             </div>
         </div>

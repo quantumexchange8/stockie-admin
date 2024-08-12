@@ -140,6 +140,7 @@ watch( () => props.product, (newValue) => {
                         :rowType="rowType"
                         :paginator="false"
                         class="w-full"
+                        minWidth="min-w-64"
                     >
                         <template #item="row">
                             <span class="text-grey-900 text-sm font-medium">{{ row.qty + ' x ' + row.inventory_item.item_name}}</span>

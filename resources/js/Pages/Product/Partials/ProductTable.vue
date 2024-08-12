@@ -185,111 +185,113 @@ onMounted(() => {
 </script>
 <template>
     <div class="flex flex-col p-6 gap-6 justify-center rounded-[5px] border border-red-100">
-        <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-6 rounded-[5px]">
-            <div class="w-full flex flex-wrap sm:flex-nowrap items-center justify-center gap-3">
-                <SearchBar
-                    placeholder="Search"
-                    :showFilter="true"
-                    v-model="filters['global'].value"
-                >
-                    <template #default="{ hideOverlay }">
-                        <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Keep</span>
-                            <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                <div 
-                                    v-for="(status, index) in keepStatusArr" 
-                                    :key="index"
-                                    class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
-                                >
-                                    <Checkbox 
-                                        :checked="checkedFilters.keepStatus.includes(status)"
-                                        @click="toggleKeepStatus(status)"
-                                    />
-                                    <span class="text-grey-700 text-sm font-medium">{{ status }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Stock Level</span>
-                            <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                <div 
-                                    v-for="(level, index) in stockLevels"
-                                    :key="index"
-                                    class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" 
-                                >
-                                    <Checkbox 
-                                        :checked="checkedFilters.stockLevel.includes(level)"
-                                        @click="toggleStockLevel(level)"
-                                    />
-                                    <span class="text-grey-700 text-sm font-medium">{{ level }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Price Range</span>
-                            <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                                <div class="flex items-center w-full">
-                                    <Slider 
-                                        :minValue="0"
-                                        :maxValue="5000"
-                                        v-model="checkedFilters.priceRange"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
-                            <Button
-                                :type="'button'"
-                                :variant="'tertiary'"
-                                :size="'lg'"
-                                @click="clearFilters(hideOverlay)"
-                            >
-                                Clear All
-                            </Button>
-                            <Button
-                                :size="'lg'"
-                                @click="applyCheckedFilters(hideOverlay)"
-                            >
-                                Apply
-                            </Button>
-                        </div>
-                    </template>
-                </SearchBar>
-                <GridViewIcon
-                    :class="[
-                        baselayoutIconClasses,
-                        {
-                            'text-primary-100 fill-primary-900 [&>rect]:stroke-primary-900' : selectedLayout === 'grid',
-                            'text-primary-900 fill-white [&>rect]:stroke-primary-900 hover:text-primary-800 hover:fill-primary-25 [&>rect]:hover:stroke-primary-800' : selectedLayout === 'list',
-                        }
-                    ]"
-                    @click="handleLayoutChange('grid')"
-                />
-                <ListViewIcon
-                    :class="[
-                        baselayoutIconClasses,
-                        {
-                            'text-primary-100 fill-primary-900 [&>rect]:stroke-primary-900' : selectedLayout === 'list',
-                            'text-primary-900 fill-white [&>rect]:stroke-primary-900 hover:text-primary-800 hover:fill-primary-25 [&>rect]:hover:stroke-primary-800' : selectedLayout === 'grid',
-                        }
-                    ]"
-                    @click="handleLayoutChange('list')"
-                />
-            </div>
-            <Button
-                :type="'button'"
-                :size="'lg'"
-                :iconPosition="'left'"
-                class="!w-fit"
-                @click="showCreateForm"
+        <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 rounded-[5px]">
+            <SearchBar
+                placeholder="Search"
+                :showFilter="true"
+                v-model="filters['global'].value"
             >
-                <template #icon>
-                    <PlusIcon
-                        class="w-6 h-6"
-                    />
+                <template #default="{ hideOverlay }">
+                    <div class="flex flex-col self-stretch gap-4 items-start">
+                        <span class="text-grey-900 text-base font-semibold">Keep</span>
+                        <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
+                            <div 
+                                v-for="(status, index) in keepStatusArr" 
+                                :key="index"
+                                class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
+                            >
+                                <Checkbox 
+                                    :checked="checkedFilters.keepStatus.includes(status)"
+                                    @click="toggleKeepStatus(status)"
+                                />
+                                <span class="text-grey-700 text-sm font-medium">{{ status }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col self-stretch gap-4 items-start">
+                        <span class="text-grey-900 text-base font-semibold">Stock Level</span>
+                        <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
+                            <div 
+                                v-for="(level, index) in stockLevels"
+                                :key="index"
+                                class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" 
+                            >
+                                <Checkbox 
+                                    :checked="checkedFilters.stockLevel.includes(level)"
+                                    @click="toggleStockLevel(level)"
+                                />
+                                <span class="text-grey-700 text-sm font-medium">{{ level }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col self-stretch gap-4 items-start">
+                        <span class="text-grey-900 text-base font-semibold">Price Range</span>
+                        <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
+                            <div class="flex items-center w-full">
+                                <Slider 
+                                    :minValue="0"
+                                    :maxValue="5000"
+                                    v-model="checkedFilters.priceRange"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
+                        <Button
+                            :type="'button'"
+                            :variant="'tertiary'"
+                            :size="'lg'"
+                            @click="clearFilters(hideOverlay)"
+                        >
+                            Clear All
+                        </Button>
+                        <Button
+                            :size="'lg'"
+                            @click="applyCheckedFilters(hideOverlay)"
+                        >
+                            Apply
+                        </Button>
+                    </div>
                 </template>
-                New Product
-            </Button>
+            </SearchBar>
+            <div class="flex items-center max-md:w-full md:justify-center gap-6">
+                <div class="flex items-center justify-center gap-2">
+                    <GridViewIcon
+                        :class="[
+                            baselayoutIconClasses,
+                            {
+                                'text-primary-100 fill-primary-900 [&>rect]:stroke-primary-900' : selectedLayout === 'grid',
+                                'text-primary-900 fill-white [&>rect]:stroke-primary-900 hover:text-primary-800 hover:fill-primary-25 [&>rect]:hover:stroke-primary-800' : selectedLayout === 'list',
+                            }
+                        ]"
+                        @click="handleLayoutChange('grid')"
+                    />
+                    <ListViewIcon
+                        :class="[
+                            baselayoutIconClasses,
+                            {
+                                'text-primary-100 fill-primary-900 [&>rect]:stroke-primary-900' : selectedLayout === 'list',
+                                'text-primary-900 fill-white [&>rect]:stroke-primary-900 hover:text-primary-800 hover:fill-primary-25 [&>rect]:hover:stroke-primary-800' : selectedLayout === 'grid',
+                            }
+                        ]"
+                        @click="handleLayoutChange('list')"
+                    />
+                </div>
+                <Button
+                    :type="'button'"
+                    :size="'lg'"
+                    :iconPosition="'left'"
+                    class="md:!w-fit"
+                    @click="showCreateForm"
+                >
+                    <template #icon>
+                        <PlusIcon
+                            class="w-6 h-6"
+                        />
+                    </template>
+                    New Product
+                </Button>
+            </div>
         </div>
         <div class="flex flex-col gap-4">
             <Tapbar
@@ -351,6 +353,7 @@ onMounted(() => {
                 :actions="actions"
                 :searchFilter="true"
                 :filters="filters"
+                minWidth="min-w-[878px]"
             >
                 <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                 <template #empty>

@@ -25,4 +25,13 @@ class RankingReward extends Model
     {
         return $this->belongsTo(Ranking::class, 'ranking_id');
     }
+
+    /**
+     * IventoryItem Model
+     * Get the inventory item of the ranking reward.
+     */
+    public function inventoryItem(): BelongsTo
+    {
+        return $this->belongsTo(IventoryItem::class, 'free_item');
+    }
 }

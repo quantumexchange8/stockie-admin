@@ -151,12 +151,9 @@ const setDateLastMonth = () => {
             :pt="{
                 root: ({ props }) => ({
                     class: [
-                    // Display and Position
-                    'inline-flex items-center',
-                    'w-full',
-                    'relative',
-                    // Misc
-                    { 'select-none pointer-events-none cursor-default': props.disabled }
+                        'inline-flex items-center w-full relative',
+                        '[&>svg]:hover:text-primary-800',
+                        { 'select-none pointer-events-none cursor-default': props.disabled }
                     ]
                 }),
                 input: ({ props, parent }) => {
@@ -185,7 +182,7 @@ const setDateLastMonth = () => {
                             // Invalid State
                             { 'border-primary-950': props.invalid },
                             // Spacing
-                            'm-0 py-3 px-4',
+                            'my-0 ml-0 -mr-4 py-3 px-4',
                             // Shape
                             'rounded-[5px] flex-1',
                             //Sizing
@@ -309,7 +306,7 @@ const setDateLastMonth = () => {
                 }),
                 inputicon: ({ state }) => ({
                     class: [
-                        'fill-primary-50',
+                        'w-4 h-4 flex-shrink-0 bg-white fill-primary-50 cursor-pointer transform !-translate-x-[90%]',
                         {
                             'text-primary-200': state.focused,
                             'text-primary-900': !state.focused,
@@ -320,7 +317,7 @@ const setDateLastMonth = () => {
         >
             <template #inputicon>
                 <CircledTimesIcon
-                    class="w-4 h-4 flex-shrink-0 fill-primary-50 text-primary-900 hover:text-primary-900 cursor-pointer transform -translate-x-[170%]"
+                    class="w-4 h-4 flex-shrink-0 fill-primary-50 text-primary-900 hover:text-primary-900 cursor-pointer transform !-translate-x-[90%]"
                     @click="resetValue(initialModelValue)"
                     v-if="modelValue !== ''"
                 />

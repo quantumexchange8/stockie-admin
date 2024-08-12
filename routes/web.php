@@ -107,8 +107,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/tier_details/{id}', [LoyaltyController::class, 'showTierDetails'])->name('products.showTierDetails');
         Route::get('/getMemberList', [LoyaltyController::class, 'showMemberList'])->name('loyalty-programme.getMemberList');
         Route::get('/getTierData', [LoyaltyController::class, 'showTierData'])->name('loyalty-programme.getTierData');
-    
-
+        Route::get('/getAllInventoryWithItems', [LoyaltyController::class, 'getAllInventoryWithItems'])->name('loyalty-programme.getAllInventoryWithItems');
+        Route::delete('/loyalty-programme/deleteTier/{id}', [LoyaltyController::class, 'deleteTier'])->name('loyalty-programme.deleteTier');
     });
 
 });

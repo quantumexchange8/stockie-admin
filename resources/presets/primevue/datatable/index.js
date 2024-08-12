@@ -95,9 +95,9 @@ export default {
         headercontent: {
             class: 'flex items-center justify-between'
         },
-        sort: ({ context }) => ({
-            class: [context.sorted ? 'text-primary-500' : 'text-primary-700']
-        }),
+        // sort: ({ context }) => ({
+        //     class: [context.sorted ? 'text-primary-500' : 'text-primary-700']
+        // }),
         bodycell: ({ props, context, state, parent }) => ({
             class: [
                 //Position
@@ -172,7 +172,7 @@ export default {
         class: 'bg-primary-0 text-primary-600'
     },
     rowgroupheader: {
-        class: ['sticky z-20', 'odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900 hover:bg-primary-50 w-full']
+        class: ['sticky', 'odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900 hover:bg-primary-50 w-full']
     },
     rowgroupheadercell: {
         class: ['w-full flex items-center pr-3'],
