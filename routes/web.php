@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\ConfigPromotionController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\TableRoomController;
 
 
 Route::get('/', function () {
@@ -111,6 +112,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('/loyalty-programme/deleteTier/{id}', [LoyaltyController::class, 'deleteTier'])->name('loyalty-programme.deleteTier');
     });
 
+     /********Table and room **********/
+     Route::prefix('table-room')->group(function(){
+        Route::get('/table-room', [TableRoomController::class, 'index'])->name('table-room');
+        Route::post('/add-zones', [TableRoomController::class,'addZone'])->name('tableroom.add-zone');
+     });
 });
 
 require __DIR__.'/auth.php';

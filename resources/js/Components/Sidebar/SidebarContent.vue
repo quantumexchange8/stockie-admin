@@ -91,7 +91,11 @@ import {
                         <CustomerIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink title="Table & Room" :href="route('dashboard')">
+                <SidebarLink 
+                    title="Table & Room" 
+                    :href="route('table-room')"
+                    :active="route().current('table-room')"
+                >
                     <template #icon>
                         <TableRoomIcon aria-hidden="true" />
                     </template>
