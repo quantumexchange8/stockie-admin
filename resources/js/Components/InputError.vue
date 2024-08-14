@@ -17,7 +17,7 @@ defineProps({
             height="13" 
             viewBox="0 0 12 13" 
             fill="none"
-            class="mr-1"
+            class="mr-1 flex-shrink-0"
         >
             <g clip-path="url(#clip0_16_2484)">
                 <path 

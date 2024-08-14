@@ -46,17 +46,16 @@ export const rewardOption = [
 
 export const emptyReward = () => {
     return {    
-        type: "",
+        reward_type: "",
         min_purchase: "inactive",
+        discount: "",
         min_purchase_amount: "",
-        amount: "",
-        valid_period: "",
-        date_range: "",
-        valid_period_from: "",
-        valid_period_to: "",
         bonus_point: "",
         free_item: "",
-        item_qty: 0,
-        error: "",
+        item_qty: '',
+        date_range: "",
+        valid_period: "",
+        valid_period_from: "",
+        valid_period_to: "",
     }
 };

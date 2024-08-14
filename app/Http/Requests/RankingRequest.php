@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RankingRequest extends FormRequest
 {
@@ -21,12 +22,22 @@ class RankingRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'name' => 'required|string|max:255|unique:rankings',
+        $rules = [
             'min_amount' => 'required|integer',
             'reward' => 'required|string|max:255',
             // 'icon' => 'required|string|max:255',
         ];
+
+        $rules['name'] = $this->input('id') 
+                        ?   [
+                                'required',
+                                'string',
+                                'max:255',
+                                Rule::unique('rankings')->ignore($this->input('id')),
+                            ]
+                        : 'required|string|max:255|unique:rankings';
+
+        return $rules;
     }
 
     public function attributes(): array
@@ -44,6 +55,7 @@ class RankingRequest extends FormRequest
             'name.required' => 'This field is required.',
             'name.string' => 'This field must be a string.',
             'name.max' => 'This field must not exceed 255 characters.',
+            'name.unique' => 'This field must be unique.',
             'min_amount.required' => 'This field is required.',
             'min_amount.integer' => 'This field must be an integer.',
             'reward.required' => 'This field is required.',

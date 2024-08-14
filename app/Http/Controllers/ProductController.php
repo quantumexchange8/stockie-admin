@@ -391,7 +391,6 @@ class ProductController extends Controller
         if (!empty($allItemErrors)) {
             return redirect()->back()->withErrors($allItemErrors)->withInput();
         }
-
         
         if (isset($id)) {
             $existingProduct = Product::find($id);

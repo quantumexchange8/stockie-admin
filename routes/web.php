@@ -80,7 +80,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-
     /******* Configuration ********/
     Route::prefix('configurations')->group(function () {
         Route::get('/configurations', [ConfigPromotionController::class, 'index'])->name('configurations');
@@ -102,13 +101,14 @@ Route::middleware('auth')->group(function () {
     /********Loyalty Programme **********/
     Route::prefix('loyalty-programme')->group(function(){
         Route::get('/loyalty-programme', [LoyaltyController::class, 'index'])->name('loyalty-program');
-        Route::post('/create-tier', [LoyaltyController::class, 'store'])->name('loyalty.create-tier');
         Route::get('/getShowRecords', [LoyaltyController::class, 'showRecord'])->name('loyalty-program.show');
         Route::get('/getIcons', [LoyaltyController::class, 'showIcons'])->name('loyalty-program.showIcons');
         Route::get('/tier_details/{id}', [LoyaltyController::class, 'showTierDetails'])->name('products.showTierDetails');
         Route::get('/getMemberList', [LoyaltyController::class, 'showMemberList'])->name('loyalty-programme.getMemberList');
         Route::get('/getTierData', [LoyaltyController::class, 'showTierData'])->name('loyalty-programme.getTierData');
         Route::get('/getAllInventoryWithItems', [LoyaltyController::class, 'getAllInventoryWithItems'])->name('loyalty-programme.getAllInventoryWithItems');
+        Route::post('/create-tier', [LoyaltyController::class, 'store'])->name('loyalty.create-tier');
+        Route::put('/loyalty-programme/updateTier/{id}', [LoyaltyController::class, 'updateTier'])->name('loyalty-programme.updateTier');
         Route::delete('/loyalty-programme/deleteTier/{id}', [LoyaltyController::class, 'deleteTier'])->name('loyalty-programme.deleteTier');
     });
 

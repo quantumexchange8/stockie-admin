@@ -5,7 +5,7 @@ import InputError from "@/Components/InputError.vue";
 import { CircledMinusIcon, CircledPlusIcon } from "./Icons/solid";
 const props = defineProps({
     inputName: String,
-    modelValue: Number,
+    modelValue: [Number, String],
     labelText: String,
     errorMessage: String,
     placeholder: {
@@ -45,7 +45,7 @@ onMounted(() => {
 
 // Watch the prop to update local state when parent changes it
 watch(() => props.modelValue, (newVal) => {
-    inputValue.value = newVal;
+    inputValue.value = parseInt(newVal);
 });
 
 const increment = () => {

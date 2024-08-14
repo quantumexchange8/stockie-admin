@@ -92,7 +92,7 @@ const hideDeleteTierForm = () => {
 const formatAmount = (num) => {
     var str = num.toString().split('.');
 
-    if (str[0].length >= 5) {
+    if (str[0].length >= 4) {
         str[0] = str[0].replace(/(\d)(?=(\d{3})+$)/g, '$1,');
     }
 
@@ -128,14 +128,6 @@ const formatAmount = (num) => {
                     </template>
                     New Tier
                 </Button>
-                <Modal
-                    :show="isModalOpen"
-                    @close="closeModal"
-                    :title="'Add New Tier'"
-                    :maxWidth="'md'"
-                >
-                    <AddTier :inventoryItems="inventoryItems" @close="closeModal" />
-                </Modal>
             </div>
             <!--CurrentTierTable-->
             <Table
@@ -157,16 +149,14 @@ const formatAmount = (num) => {
                 <template #editAction="row">
                     <EditIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="handleDefaultClick"
+                        @click="showEditTierForm($event, row)"
                     />
-                        <!-- @click="showEditTierForm($event, row)" -->
                 </template>
                 <template #deleteAction="row">
                     <DeleteIcon
                         class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                            @click="handleDefaultClick"
+                            @click="showDeleteTierForm($event, row.id)"
                     />
-                        <!-- @click="showDeleteTierForm($event, row.id)" -->
                 </template>
                 <template #icon="row">
                     <div class="w-6 h-6 rounded-full bg-gray-500"></div>
@@ -174,23 +164,34 @@ const formatAmount = (num) => {
                 <template #min_amount="row">
                     <span class="text-primary-900 text-sm font-medium">RM {{ formatAmount(row.min_amount) }}</span>
                 </template>
-                <template #type_all="row">
-                    <span class="text-primary-900 text-sm font-medium overflow-hidden text-ellipsis">{{ row.type_all || '-' }}</span>
+                <template #merged_reward_type="row">
+                    <span class="text-primary-900 text-sm font-medium overflow-hidden text-ellipsis">{{ row.merged_reward_type || '-' }}</span>
                 </template>
                 <template #member="row">
                     <span class="">{{ row.member ?? 0 }}</span>
                 </template>
             </Table>
+            <Modal
+                :show="isModalOpen"
+                :title="'Add New Tier'"
+                :maxWidth="'md'"
+                @close="closeModal"
+            >
+                <AddTier 
+                    :inventoryItems="inventoryItems" 
+                    @close="closeModal" 
+                />
+            </Modal>
             <Modal 
                 :title="'Edit Tier'"
                 :show="editTierFormIsOpen" 
-                :maxWidth="'lg'" 
-                :closeable="true" 
+                :maxWidth="'md'" 
                 @close="hideEditTierForm"
             >
                 <template v-if="selectedTier">
                     <EditTier
                         :tier="selectedTier"
+                        :inventoryItems="inventoryItems" 
                         @close="hideEditTierForm"
                     />
                 </template>
@@ -200,7 +201,7 @@ const formatAmount = (num) => {
                 :maxWidth="'2xs'" 
                 :closeable="true" 
                 :deleteConfirmation="true"
-                :deleteUrl="`/menu-management/products/deleteProduct/${selectedTier}`"
+                :deleteUrl="`/loyalty-programme/loyalty-programme/deleteTier/${selectedTier}`"
                 :confirmationTitle="'Delete this tier?'"
                 :confirmationMessage="'All the member in this tier will not be entitled to any tier. Are you sure you want to delete this tier?'"
                 @close="hideDeleteTierForm"

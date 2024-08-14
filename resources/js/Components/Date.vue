@@ -46,11 +46,12 @@ const props = defineProps({
 const modelValue = ref(props.modelValue);
 const initialModelValue = ref(props.modelValue);
 
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:modelValue", "onChange"]);
 
 function updateValue(value) {
     modelValue.value = value;
     emit("update:modelValue", value);
+    emit("onChange", value);
 }
 
 function resetValue(value) {
