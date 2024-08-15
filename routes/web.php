@@ -116,6 +116,11 @@ Route::middleware('auth')->group(function () {
      Route::prefix('table-room')->group(function(){
         Route::get('/table-room', [TableRoomController::class, 'index'])->name('table-room');
         Route::post('/add-zones', [TableRoomController::class,'addZone'])->name('tableroom.add-zone');
+        Route::delete('/table-room/deleteZone/{id}', [TableRoomController::class, 'deleteZone'])->name('tableroom.delete-zone');
+        Route::delete('/table-room/deleteTable/{id}', [TableRoomController::class,'deleteTable'])->name('tableroom.delete-table');
+        Route::post('/add-table', [TableRoomController::class,'addTable'])->name('tableroom.add-table');
+        Route::get('/get-tabledetails', [TableRoomController::class,'getTableDetails'])->name('tableroom.getTableDetails');
+        Route::post('/edit-table', [TableRoomController::class,'editTable'])->name('tableroom.edit-table');
      });
 });
 
