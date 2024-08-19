@@ -111,7 +111,7 @@ const isFormValid = computed(() => {
             </template>
 
             <template #body>
-                <div class="grid grid-cols-4 gap-[24px]">
+                <div class="grid grid-cols-4 gap-6">
                     <div v-for="table in zone.tables" :key="table.id">
                         <Card style="overflow: hidden;" class="border rounded-[5px]">
                             <template #title>
@@ -169,7 +169,6 @@ const isFormValid = computed(() => {
                 <div class="grid grid-cols-2 md:grid-cols-12 gap-3 self-stretch">
                 <TextInput
                     :inputName="'seat'"
-                    inputType="number"
                     :labelText="'No. of Seats Available'"
                     :placeholder="'number only (eg: 6)'"
                     :errorMessage="form.errors?.seat || ''"

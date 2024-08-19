@@ -22,6 +22,7 @@ watch(() => props.zonesArr, (newValue) => {
 const deleteProductFormIsOpen = ref(false);
 const selectedZone = ref(null);
 const isTextInputVisible = ref(false);
+const turnToTextField = ref(false);
 const form = useForm({
     name: "",
 });
@@ -29,7 +30,6 @@ const form = useForm({
 const addZone = () => {
     isTextInputVisible.value = true;
 }
-
 const submit = () => {
     form.post(route("tableroom.add-zone"), {
         onSuccess: () => {
@@ -64,11 +64,11 @@ const hideDeleteProductForm = () => {
         <div class="max-h-[454px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
             <div class="w-full flex flex-col gap-[16px]">
                 <div>
-                    <div v-for="zonesArr in zones" :key="zonesArr.id" class="w-full flex flex-row justify-between text-grey-600 h-[49px]">
+                    <div v-for="zonesArr in zones" :key="zonesArr.id" class="w-full flex flex-row justify-between text-grey-600 h-[49px] px-[12px] gap-4">
                         <div class="flex flex-row gap-[12px] justify-content">
                             <!-- <Menu2Icon
                             class="size-5 text-grey-600"
-                        /> -->
+                            /> -->
                             <svg width="25" height="25" viewBox="0 0 25 25" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path 
@@ -78,15 +78,16 @@ const hideDeleteProductForm = () => {
                                     stroke-linecap="round"
                                     stroke-linejoin="round" />
                             </svg>
-                            <span>
+                            <div
+                            >
                                 {{ zonesArr.text }}
-                            </span>
+                            </div>
                         </div>
                         <DeleteIcon class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
                             @click="showDeleteGroupForm($event, zonesArr.value)" />
                     </div>
                 </div>
-                <div v-if="isTextInputVisible" class="flex flex-col gap-4" >
+                <div v-if="isTextInputVisible" class="flex flex-col gap-4 px-[12px]" >
                     <TextInput 
                         :placeholder="'eg: Main Area'" 
                         inputId="name" 
@@ -100,6 +101,8 @@ const hideDeleteProductForm = () => {
                         :variant="'secondary'" 
                         :size="'lg'" 
                         :iconPosition="'left'"
+                        :class="{ 'opacity-25': form.processing }"
+                        :disabled="form.processing"
                         @click="addZone"
                     >
                         <template #icon>

@@ -121,6 +121,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/add-table', [TableRoomController::class,'addTable'])->name('tableroom.add-table');
         Route::get('/get-tabledetails', [TableRoomController::class,'getTableDetails'])->name('tableroom.getTableDetails');
         Route::post('/edit-table', [TableRoomController::class,'editTable'])->name('tableroom.edit-table');
+        Route::post('/edit-zone', [TableRoomController::class,'editZone'])->name('tableroom.edit-zone');
      });
 });
 
