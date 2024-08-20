@@ -534,16 +534,25 @@ class LoyaltyController extends Controller
         if (!empty($allItemErrors)) {
             return redirect()->back()->withErrors($allItemErrors)->withInput();
         }
+        
+        $existingPoint = isset($id) ? Point::with('pointItems')->find($id) : null;
 
-        if (isset($id)) {
-            $existingPoint = Point::find($id);
+        // Delete point items
+        if (count($request->itemsDeletedBasket) > 0 && !is_null($existingPoint)) {
+            $existingPoint->pointItems()
+                            ->whereIn('id', $request->itemsDeletedBasket)
+                            ->delete();
+        }
 
+        // Update point details
+        if (!is_null($existingPoint)) {
             $existingPoint->update([
                 'name'=>$validatedData['name'],
                 'point' => $validatedData['point'],
             ]);
         }
 
+        // Update point item(s) details
         if(count($validatedItems) > 0) {
             foreach ($validatedItems as $value) {
                 if (isset($value['id'])) {
@@ -554,18 +563,11 @@ class LoyaltyController extends Controller
                         'inventory_item_id' => $value['inventory_item_id'],
                         'item_qty' => $value['item_qty'],
                     ]);
-                } else {
-                    PointItem::create([
-                        'point_id' => $request->id,
-                        'inventory_item_id' => $value['inventory_item_id'],
-                        'item_qty' => $value['item_qty'],
-                    ]);
                 }
             }
         }
 
         return redirect()->back()->with('Updated point successfully');
-        // return response()->json(['message' => 'Tier data updated successfully']);
     }
     
     /**
@@ -575,16 +577,6 @@ class LoyaltyController extends Controller
     public function deletePoint(Request $request, string $id)
     {
         $existingPoint = Point::with('pointItems')->find($id);
-        if ($request->has('itemId')) {
-            $itemId = $request->input('itemId');
-            $pointItem = $existingPoint->pointItems()->find($itemId);
-    
-            if ($pointItem) {
-                $pointItem->delete();
-            }
-
-            return redirect()->back()->with('Point item deleted successfully');
-        }
 
         if ($existingPoint) {
             // Soft delete all related items in bulk
@@ -594,9 +586,11 @@ class LoyaltyController extends Controller
     
             // Soft delete the point
             $existingPoint->delete();
+
+            return Redirect::route('loyalty-programme')->with('Deleted point and its items successfully');
         }
         
-        return Redirect::route('loyalty-programme')->with('Deleted point and its items successfully');
+        return Redirect::route('loyalty-programme')->with('Error deleting point');
     }
     
     /**

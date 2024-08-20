@@ -1,17 +1,13 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useForm, router } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
 import DragDropImage from '@/Components/DragDropImage.vue'
-import RadioButton from '@/Components/RadioButton.vue'
-import Toggle from '@/Components/Toggle.vue'
 import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
-import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
-import { keepOptions, defaultPointItem } from '@/Composables/constants';
-import Label from '@/Components/Label.vue';
+import { DeleteIcon } from '@/Components/Icons/solid';
 
 const props = defineProps({
     point: {
@@ -33,15 +29,17 @@ const form = useForm({
     image: props.point.image,
     name: props.point.name,
     point: props.point.point.toString(),
+    itemsDeletedBasket: [],
     items: props.point.point_items.map((item) => {
         return {
             ...item,
-            // item_qty: item.item_qty.toString()
         }
     }) ?? [],
 });
 
 const formSubmit = () => { 
+    console.log(form);
+
     form.put(route('loyalty-programme.points.update', form.id), {
         preserveScroll: true,
         preserveState: 'errors',
@@ -55,15 +53,10 @@ const cancelForm = () => {
 }
 
 // need to update this to delete the actual item from db
-const deleteItem = (pointId, itemId) => {
-    router.delete(`/loyalty-programme/points/${pointId}`, {
-        data: {
-            itemId: itemId
-        },
-        preserveScroll: true,
-        preserveState: 'errors',
-        onSuccess: () => cancelForm(),
-    });
+const deleteItem = (index, itemId) => {
+    form.itemsDeletedBasket.push(itemId);
+
+    form.items.splice(index, 1);
 }
 
 const updateInventoryStockCount = async (index, id) => {
@@ -164,7 +157,8 @@ const isFormValid = computed(() => {
                             />
                             <DeleteIcon
                                 class="w-6 h-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click="deleteItem(form.id, item.id)"
+                                @click="deleteItem(i, item.id)"
+                                v-if="form.items.length > 1"
                             />
                         </div>
                     </div>

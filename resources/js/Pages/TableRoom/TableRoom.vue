@@ -84,7 +84,7 @@ const closeModal = () => {
 // Transform the zones instance's zone text to be lower case and separated by hyphens (-) instead
 const tranformedZones = computed(() => {
     return zones.value.map((zone) => {
-        zone.text = zone.text.toLowerCase().replace(/ /g,"-");
+        zone.name = zone.text.toLowerCase().replace(/ /g,"-");
         
         return zone;
     });
@@ -192,7 +192,7 @@ const filteredZones = computed(() => {
             <template 
                 v-for="zone in tranformedZones" 
                 :key="zone.id" 
-                v-slot:[`${zone.text}`]
+                v-slot:[`${zone.name}`]
             >
                 <ZoneTabs 
                     :zones="zones" 
