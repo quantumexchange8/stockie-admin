@@ -81,6 +81,15 @@ const closeModal = () => {
     isModalOpen.value = false;
 };
 
+// Transform the zones instance's zone text to be lower case and separated by hyphens (-) instead
+const tranformedZones = computed(() => {
+    return zones.value.map((zone) => {
+        zone.text = zone.text.toLowerCase().replace(/ /g,"-");
+        
+        return zone;
+    });
+});
+
 const filteredZones = computed(() => {
     // If search is empty then return initial zones
     if (!filters.value['global'].value) {
@@ -150,107 +159,9 @@ const filteredZones = computed(() => {
                 />
             </Modal>
         </div>
-
-            <TabGroup>
-                <TabList class="flex border-b border-gray-200 pt-[20px]">
-                    <Tab
-                        as="template"
-                        v-slot="{ selected }"
-                    >
-                        <button
-                            :class="[
-                            'p-3 text-sm font-medium leading-none',
-                            'focus:outline-none',
-                            selected
-                                ? 'text-primary-900 border-b-2 border-primary-900'
-                                : 'text-grey-200 hover:bg-white/[0.12] hover:text-primary-800',
-                            ]"
-                        >
-                            All
-                        </button>
-                    </Tab>
-                    <template v-for="zone in zones" :key="zone.id">
-                        <Tab
-                            as="template"
-                            v-slot="{ selected }"
-                        >
-                            <button
-                                :class="[
-                                'p-3 text-sm font-medium leading-none',
-                                'focus:outline-none',
-                                selected
-                                    ? 'text-primary-900 border-b-2 border-primary-900'
-                                    : 'text-grey-200 hover:bg-white/[0.12] hover:text-primary-800',
-                                ]"
-                            >
-                                {{ zone.text }}
-                            </button>
-                        </Tab>
-                    </template>
-                        <Button
-                            :type="'button'"
-                            :size="'lg'"
-                            :iconPosition="'left'"
-                            @click="openModal"
-                            variant="tertiary"
-                            class="md:!w-fit !border-0"
-                        >
-                            <template #icon>
-                                <GearIcon
-                                    class="w-[20px] h-[20px]"
-                                />
-                            </template>
-                            Manage Zone
-                        </Button>
-                        <Modal
-                            :show="isModalOpen"
-                            @close="closeModal"
-                            :title="'Manage Zone'"
-                            :maxWidth="'md'"
-                        >
-                            <AddManageZone @close="closeModal" :zonesArr="zones"/>
-                        </Modal>
-                </TabList>
-
-                <TabPanels class="mt-2">
-                    <TabPanel
-                        :class="[
-                            'rounded-xl bg-white p-3',
-                            'focus:outline-none',
-                        ]"
-                    >
-                        <ZoneAll :zones="filteredZones"/>
-                    </TabPanel>
-                    <template v-for="zone in zones" :key="zone.id">
-                        <TabPanel
-                            :class="[
-                                'rounded-xl bg-white p-3',
-                                'focus:outline-none',
-                            ]"
-                        >
-                        <div v-if="zone.tables.length > 0">
-                            <ZoneTabs :zones="zones" :activeTab="zone.value"/>
-                        </div>
-                        <div v-else>
-                            <div class="flex flex-col items-center text-center ">
-                                <EmptyTableIllus />
-                                <span class="text-primary-900 text-sm font-medium">You haven’t added any table / room yet...</span>
-                        </div>
-                        </div>
-                        </TabPanel>
-                    </template>
-                </TabPanels>
-            </TabGroup>
-            <!-- <TabView :tabs="tabs">
-                <template v-for="(tab, index) in tabs" :key="index" #[`tab-${index}`]>
-                    
-                    <div v-if="tab === 'All'">
-                        <ZoneAll :zones="zones" :tabs="tabs"/>
-                    </div>
-                    <div v-else>
-                        Tier
-                    </div>
-                </template>
+        <!-- {{ console.log(tranformedZones) }} -->
+        <TabView :tabs="tabs">
+            <template #endheader>
                 <Button
                     :type="'button'"
                     :size="'lg'"
@@ -259,21 +170,42 @@ const filteredZones = computed(() => {
                     variant="tertiary"
                     class="md:!w-fit !border-0"
                 >
-                        <template #icon>
-                            <GearIcon
-                                class="w-[20px] h-[20px]"
-                            />
-                        </template>
+                    <template #icon>
+                        <GearIcon
+                            class="w-[20px] h-[20px]"
+                        />
+                    </template>
                     Manage Zone
-                    </Button>
-            </TabView> -->
-                <!-- <Modal
+                </Button>
+                <Modal
                     :show="isModalOpen"
                     @close="closeModal"
                     :title="'Manage Zone'"
                     :maxWidth="'md'"
                 >
                     <AddManageZone @close="closeModal" :zonesArr="zones"/>
-                </Modal> -->
+                </Modal>
+            </template>
+            <template #all>
+                <ZoneAll :zones="filteredZones"/>
+            </template>
+            <template 
+                v-for="zone in tranformedZones" 
+                :key="zone.id" 
+                v-slot:[`${zone.text}`]
+            >
+                <ZoneTabs 
+                    :zones="zones" 
+                    :activeTab="zone.value" 
+                    v-if="zone.tables.length > 0"
+                />
+                <div class="flex flex-col items-center text-center" v-else>
+                    <EmptyTableIllus />
+                    <span class="text-primary-900 text-sm font-medium">
+                        You haven't added any table/room yet...
+                    </span>
+                </div>
+            </template>
+        </TabView>
     </AuthenticatedLayout>
 </template>

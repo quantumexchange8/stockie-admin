@@ -77,7 +77,7 @@ const redeemableItemsTotalPages = computed(() => {
         </template>
 
         <TabView :tabs="tabs">
-            <template #tab-0>
+            <template #points>
                 <Point
                     :inventoryItems="inventoryItems"
                     :totalPointsGivenAway="totalPointsGivenAway"
@@ -89,7 +89,7 @@ const redeemableItemsTotalPages = computed(() => {
                     :rowsPerPage="redeemableItemsRowsPerPage"
                 />
             </template>
-            <template #tab-1>
+            <template #tier>
                 <Tier 
                     :inventoryItems="inventoryItems"
                     :columns="tiersColumns"

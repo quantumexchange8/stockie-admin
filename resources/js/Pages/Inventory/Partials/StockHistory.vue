@@ -126,7 +126,7 @@ watch(() => date_filter.value, () => {
             />
         </div>
         <TabView :tabs="tabs">
-            <template #tab-0>
+            <template #all>
                 <div class="flex flex-col justify-center gap-5">
                     <StockHistoryTable
                         :columns="allStockHistoryColumns"
@@ -137,7 +137,7 @@ watch(() => date_filter.value, () => {
                 </div>
             </template>
 
-            <template #tab-1>
+            <template #in>
                 <div class="flex flex-col justify-center gap-5">
                     <StockHistoryTable
                         :columns="allInStockHistoryColumns"
@@ -149,7 +149,7 @@ watch(() => date_filter.value, () => {
                 </div>
             </template>
 
-            <template #tab-2>
+            <template #out>
                 <div class="flex flex-col justify-center gap-5">
                     <StockHistoryTable
                         :columns="allOutStockHistoryColumns"
