@@ -1,19 +1,25 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Tier from "./Partial/Tier.vue";
 import TabView from "@/Components/TabView.vue";
 import Breadcrumb from '@/Components/Breadcrumb.vue';
+import Point from "./Partial/Point.vue";
+
+const props = defineProps({
+    tiers: Array,
+    redeemableItems: Array,
+    inventoryItems: Array,
+    totalPointsGivenAway: Number
+});
 
 const home = ref({
     label: 'Loyalty Programme',
 });
 
 const tabs = ref(["Points", "Tier"]);
-const inventoryItems = ref([]);
-const tiers = ref([]);
-const tiersTotalPages = ref(1);
 const tiersRowsPerPage = ref(8);
+const redeemableItemsRowsPerPage = ref(8);
 
 const tiersColumns = ref([
     { field: "icon", header: "Icon", width: "9", sortable: false },
@@ -24,6 +30,13 @@ const tiersColumns = ref([
     { field: "action", header: "", width: "10", sortable: false, edit: true, delete: true },
 ]);
 
+const redeemableItemsColumns = ref([
+    { field: "name", header: "Product Name", width: "45", sortable: true },
+    { field: "point", header: "Redeemed with", width: "25", sortable: true },
+    { field: "stock_left", header: "Left", width: "15", sortable: true },
+    { field: "action", header: "", width: "15", sortable: false, edit: true, delete: true },
+]);
+
 const rowType = {
     rowGroups: false,
     expandable: false,
@@ -32,40 +45,26 @@ const rowType = {
 
 const actions = [
     {
+        view: (id) => `/loyalty-programme/point_details/${id}`,
+        replenish: () => '',
+        edit: () => '',
+        delete: (id) => `/loyalty-programme/points/${id}`,
+    },
+    {
         view: (id) => `/loyalty-programme/tier_details/${id}`,
         replenish: () => '',
         edit: () => '',
-        delete: (id) => `/loyalty-programme/products/${id}/delete`,
+        delete: (id) => `/loyalty-programme/tiers/destroy/${id}`,
     }
 ];
 
-const getAllTiers = async () => {
-    try {
-        const tiersResponse = await axios.get('/loyalty-programme/getShowRecords');
-        tiers.value = tiersResponse.data;
-        tiersTotalPages.value = Math.ceil(tiers.value.length / tiersRowsPerPage.value);
-    } catch (error) {
-        console.log("Error fetching data:", error);
-    } finally {
+const tiersTotalPages = computed(() => {
+    return Math.ceil(props.tiers.length / tiersRowsPerPage.value);
+})
 
-    }
-};
-
-const getAllInventoryItems = async () => {
-    try {
-        const inventoryItemsResponse = await axios.get('/loyalty-programme/getAllInventoryWithItems');
-        inventoryItems.value = inventoryItemsResponse.data;
-    } catch (error) {
-        console.log("Error fetching data:", error);
-    } finally {
-
-    }
-};
-
-onMounted(() => {
-    getAllTiers();
-    getAllInventoryItems();
-});
+const redeemableItemsTotalPages = computed(() => {
+    return Math.ceil(props.redeemableItems.length / redeemableItemsRowsPerPage.value);
+})
 
 </script>
 
@@ -79,7 +78,16 @@ onMounted(() => {
 
         <TabView :tabs="tabs">
             <template #tab-0>
-                Points
+                <Point
+                    :inventoryItems="inventoryItems"
+                    :totalPointsGivenAway="totalPointsGivenAway"
+                    :columns="redeemableItemsColumns"
+                    :rows="redeemableItems"
+                    :rowType="rowType"
+                    :actions="actions[0]"
+                    :totalPages="redeemableItemsTotalPages"
+                    :rowsPerPage="redeemableItemsRowsPerPage"
+                />
             </template>
             <template #tab-1>
                 <Tier 
@@ -87,7 +95,7 @@ onMounted(() => {
                     :columns="tiersColumns"
                     :rows="tiers"
                     :rowType="rowType"
-                    :actions="actions[0]"
+                    :actions="actions[1]"
                     :totalPages="tiersTotalPages"
                     :rowsPerPage="tiersRowsPerPage"
                 />

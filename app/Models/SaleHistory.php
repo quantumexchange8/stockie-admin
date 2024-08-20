@@ -20,8 +20,8 @@ class SaleHistory extends Model
     ];
 
     /**
-     * SaleHistory Model
-     * Get the sale histories of the product.
+     * Product Model
+     * Get the product of the sale histories.
      */
     public function product(): BelongsTo
     {

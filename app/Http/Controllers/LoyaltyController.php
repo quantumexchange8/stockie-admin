@@ -1,13 +1,21 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Http\Requests\PointItemRequest;
+use App\Http\Requests\PointRequest;
 use App\Http\Requests\RankingRequest;
 use App\Http\Requests\RankingRewardRequest;
 use App\Models\Iventory;
+use App\Models\IventoryItem;
+use App\Models\PointItem;
+use App\Models\SaleHistory;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use App\Models\Ranking;
 use App\Models\RankingReward;
 use App\Models\Customer;
+use App\Models\Point;
+use App\Models\PointHistory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -18,11 +26,95 @@ use Illuminate\Support\Facades\Redirect;
 class LoyaltyController extends Controller
 {
     public function index(){
-        return Inertia::render('LoyaltyProgramme/LoyaltyProgramme');
+        $tiers = Ranking::with([
+                                'rankingRewards', 
+                                'rankingRewards.inventoryItem',
+                                'customers'
+                            ])
+                            ->orderBy('id')
+                            ->get()
+                            ->map(function ($rank) {
+                                $rank['merged_reward_type'] = $rank->rankingRewards
+                                                                    ->pluck('reward_type')
+                                                                    ->unique()
+                                                                    ->implode(', ');
+
+                                $rank['member'] = $rank->customers->count();
+                                
+                                return $rank;
+                            }); 
+
+        $redeemableItems = Point::with([
+                                    'pointItems',
+                                    'pointItems.inventoryItem:id,stock_qty',
+                                    'pointHistories',
+                                    'pointHistories.user:id,name'
+                                ])
+                                ->orderBy('id')
+                                ->get()
+                                ->map(function ($point) {
+                                    $pointItems = $point->pointItems;
+                                    $minStockCount = 0;
+
+                                    if (count($pointItems) > 0) {
+                                        $stockCountArr = [];
+
+                                        foreach ($pointItems as $key => $value) {
+                                            $inventory_item = IventoryItem::select('stock_qty')
+                                                                                ->find($value['inventory_item_id']);
+
+                                            $stockQty = $inventory_item->stock_qty;
+                                            
+                                            $stockCount = (int)round($stockQty / $value['item_qty']);
+                                            array_push($stockCountArr, $stockCount);
+                                        }
+                                        $minStockCount = min($stockCountArr);
+                                    }
+                                    $point['stock_left'] = $minStockCount; 
+
+                                    return $point;
+                                }); 
+
+        $inventoryItems = Iventory::withWhereHas('inventoryItems')
+                                    ->select(['id', 'name'])
+                                    ->orderBy('id')
+                                    ->get()
+                                    ->map(function ($group) {
+                                        $group_items = $group->inventoryItems->map(function ($item) {
+                                            return [
+                                                'text' => $item->item_name,
+                                                'value' => $item->id,
+                                            ];
+                                        });
+
+                                        return [
+                                            'group_name' => $group->name,
+                                            'items' => $group_items
+                                        ];
+                                    });
+
+        $totalPointsGivenAway = SaleHistory::with('product:id,point')
+                                            ->orderBy('id')
+                                            ->get()
+                                            ->map(function ($sale) {
+                                                $product = $sale->product;
+                                                $totalPointsGivenAway = 0;
+
+                                                $totalPointsGivenAway += $sale['qty'] * (int)$product['point'];
+
+                                                return $totalPointsGivenAway;
+                                            });
+
+        return Inertia::render('LoyaltyProgramme/LoyaltyProgramme', [
+            'tiers' => $tiers,
+            'redeemableItems' => $redeemableItems,
+            'inventoryItems' => $inventoryItems,
+            'totalPointsGivenAway' => $totalPointsGivenAway[0],
+        ]);
     }
 
 
-    public function store(RankingRequest $request)
+    public function storeTier(RankingRequest $request)
     {   
         // Get validated tier data
         $validatedData = $request->validated();
@@ -118,7 +210,7 @@ class LoyaltyController extends Controller
             }
         }
 
-        return redirect()->back()->with('Created Successfully');
+        return redirect()->back()->with('Tier created successfully');
     }
 
     public function showRecord()
@@ -195,8 +287,6 @@ class LoyaltyController extends Controller
 
         foreach ($rewardsData as $index => $reward) {
             $rules = $rankingRewardRequest->rules();
-
-            if (isset($reward['id'])) {}
 
             switch ($reward['reward_type']) {
                 case 'Discount (Amount)':
@@ -298,7 +388,7 @@ class LoyaltyController extends Controller
             }
         }
 
-        return redirect()->back()->with('Updated Successfully');
+        return redirect()->back()->with('Updated tier successfully');
         // return response()->json(['message' => 'Tier data updated successfully']);
     }
 
@@ -307,7 +397,7 @@ class LoyaltyController extends Controller
      */
     public function getAllInventoryWithItems()
     {
-        $data = Iventory::withWhereHas('inventoryItems')
+        return Iventory::withWhereHas('inventoryItems')
                         ->select(['id', 'name'])
                         ->orderBy('id')
                         ->get()
@@ -324,8 +414,6 @@ class LoyaltyController extends Controller
                                 'items' => $group_items
                             ];
                         });
-        
-        return response()->json($data);
     }
      
     /**
@@ -337,13 +425,254 @@ class LoyaltyController extends Controller
 
         if ($existingRanking) {
             // Soft delete all related ranking rewards in bulk
-            $existingRanking->rankingRewards()->delete();
+            if ($existingRanking->rankingRewards()->count() > 0) {
+                $existingRanking->rankingRewards()->delete();
+            }
     
             // Soft delete the ranking
             $existingRanking->delete();
         }
 
-        return redirect()->back();
+        return Redirect::route('loyalty-programme');
+    }
+
+    /**
+     * Store point and its items.
+     */
+    public function storePoint(PointRequest $request)
+    {   
+        $validatedData = $request->validated();
+        $items = $request->input('items');
+        
+        $pointItemRequest = new PointItemRequest();
+        $validatedItems = [];
+        $allItemErrors = [];
+
+        foreach ($items as $index => $item) {
+            // Validate point items data
+            $pointItemsValidator = Validator::make(
+                $item,
+                $pointItemRequest->rules(),
+                $pointItemRequest->messages(),
+                $pointItemRequest->attributes()
+            );
+            
+            if ($pointItemsValidator->fails()) {
+                // Collect the errors for each item and add to the array with item index
+                foreach ($pointItemsValidator->errors()->messages() as $field => $messages) {
+                    $allItemErrors["items.$index.$field"] = $messages;
+                }
+            } else {
+                // Collect the validated item and manually add the 'id' field back
+                $validatedItem = $pointItemsValidator->validated();
+                if (isset($item['id'])) {
+                    $validatedItem['id'] = $item['id'];
+                }
+                $validatedItems[] = $validatedItem;
+            }
+        }
+
+        // If there are any item validation errors, return them
+        if (!empty($allItemErrors)) {
+            return redirect()->back()->withErrors($allItemErrors)->withInput();
+        }
+
+        $point = Point::create([
+            'name'=>$validatedData['name'],
+            'point' => (int) $validatedData['point'],
+        ]);
+
+        if(count($validatedItems) > 0) {
+            foreach ($validatedItems as $value) {
+                PointItem::create([
+                    'point_id' => $point->id,
+                    'inventory_item_id' => $value['inventory_item_id'],
+                    'item_qty' => $value['item_qty'],
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('Point created successfully');
+    }
+
+    /**
+     * Update point details and its items.
+     */
+    public function updatePoint(PointRequest $request, string $id)
+    {        
+        $validatedData = $request->validated();
+        $items = $request->input('items');
+        
+        $pointItemRequest = new PointItemRequest();
+        $validatedItems = [];
+        $allItemErrors = [];
+
+        foreach ($items as $index => $item) {
+            $pointItemsValidator = Validator::make(
+                $item,
+                $pointItemRequest->rules(),
+                $pointItemRequest->messages(),
+                $pointItemRequest->attributes()
+            );
+            
+            if ($pointItemsValidator->fails()) {
+                // Collect the errors for each item and add to the array with item index
+                foreach ($pointItemsValidator->errors()->messages() as $field => $messages) {
+                    $allItemErrors["items.$index.$field"] = $messages;
+                }
+            } else {
+                // Collect the validated item and manually add the 'id' field back
+                $validatedItem = $pointItemsValidator->validated();
+                if (isset($item['id'])) {
+                    $validatedItem['id'] = $item['id'];
+                }
+                $validatedItems[] = $validatedItem;
+            }
+        }
+
+        // If there are any item validation errors, return them
+        if (!empty($allItemErrors)) {
+            return redirect()->back()->withErrors($allItemErrors)->withInput();
+        }
+
+        if (isset($id)) {
+            $existingPoint = Point::find($id);
+
+            $existingPoint->update([
+                'name'=>$validatedData['name'],
+                'point' => $validatedData['point'],
+            ]);
+        }
+
+        if(count($validatedItems) > 0) {
+            foreach ($validatedItems as $value) {
+                if (isset($value['id'])) {
+                    $existingPointItem = PointItem::find($value['id']);
+
+                    $existingPointItem->update([
+                        'point_id' => $request->id,
+                        'inventory_item_id' => $value['inventory_item_id'],
+                        'item_qty' => $value['item_qty'],
+                    ]);
+                } else {
+                    PointItem::create([
+                        'point_id' => $request->id,
+                        'inventory_item_id' => $value['inventory_item_id'],
+                        'item_qty' => $value['item_qty'],
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->back()->with('Updated point successfully');
+        // return response()->json(['message' => 'Tier data updated successfully']);
+    }
+    
+    /**
+     * Delete point and its items.
+     * Or if deleted from edit form, will be deleting only the item.
+     */
+    public function deletePoint(Request $request, string $id)
+    {
+        $existingPoint = Point::with('pointItems')->find($id);
+        if ($request->has('itemId')) {
+            $itemId = $request->input('itemId');
+            $pointItem = $existingPoint->pointItems()->find($itemId);
+    
+            if ($pointItem) {
+                $pointItem->delete();
+            }
+
+            return redirect()->back()->with('Point item deleted successfully');
+        }
+
+        if ($existingPoint) {
+            // Soft delete all related items in bulk
+            if ($existingPoint->pointItems()->count() > 0) {
+                $existingPoint->pointItems()->delete();
+            }
+    
+            // Soft delete the point
+            $existingPoint->delete();
+        }
+        
+        return Redirect::route('loyalty-programme')->with('Deleted point and its items successfully');
+    }
+    
+    /**
+     * Show Recent Redemptions page.
+     */
+    public function showRecentRedemptions(Request $request)
+    {
+        $dateFilter = [
+            now()->subDays(30)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
+            now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d')
+        ];
+
+        // Apply the date filter (single date or date range)
+        $redemptionHistories = PointHistory::whereDate('created_at', '>=', $dateFilter[0])
+                                            ->whereDate('created_at', '<=', $dateFilter[1])
+                                            ->with(['point:id,name', 'user:id,name'])
+                                            ->orderBy('created_at', 'desc')
+                                            ->get();
+
+
+        return Inertia::render('LoyaltyProgramme/Partial/RecentRedemptionHistory', [
+            'redemptionHistories' => $redemptionHistories,
+            'defaultDateFilter' => $dateFilter
+        ]);
+    }
+
+    public function showPointDetails(Request $request, string $id)
+    {   
+        $dateFilter = [
+            now()->subDays(30)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
+            now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d')
+        ];
+
+        // Apply the date filter (single date or date range)
+        $redemptionHistories = PointHistory::where('point_id', $id)
+                                            ->whereDate('created_at', '>=', $dateFilter[0])
+                                            ->whereDate('created_at', '<=', $dateFilter[1])
+                                            ->with(['point:id,name,point', 'user:id,name'])
+                                            ->orderBy('created_at', 'desc')
+                                            ->get();
+
+        $redeemableItem = Point::with(['pointItems', 'pointItems.inventoryItem'])->find($id);
+
+        // dd($dateFilter);
+
+        return Inertia::render('LoyaltyProgramme/Partial/PointDetail', [
+            'redemptionHistories' => $redemptionHistories,
+            'defaultDateFilter' => $dateFilter,
+            'redeemableItem' => $redeemableItem,
+            'inventoryItems' => $this->getAllInventoryWithItems(),
+        ]);
+    }
+
+    public function getPointHistories(Request $request, string $id = null)
+    {
+        $dateFilter = $request->input('dateFilter');
+        
+        $dateFilter = array_map(function ($date) {
+                            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                        }, $dateFilter);
+
+        // Apply the date filter (single date or date range)
+        $query = PointHistory::whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
+                                ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
+                                    $subQuery->whereDate('created_at', '<=', $dateFilter[1]);
+                                });
+
+        if ($id !== null) {
+            $query->where('point_id', $id);
+        }
+
+        $data = $query->with(['point:id,name', 'user:id,name'])
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+        return response()->json($data);
     }
 }
     

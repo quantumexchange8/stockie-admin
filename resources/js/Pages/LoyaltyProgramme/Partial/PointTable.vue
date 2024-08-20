@@ -1,15 +1,15 @@
 <script setup>
-import axios from "axios";
-import { ref, onMounted } from "vue";
-import { EmptyTierIllus } from "@/Components/Icons/illus.jsx";
+import { ref } from "vue";
+import { EmptyIllus } from "@/Components/Icons/illus.jsx";
 import Modal from "@/Components/Modal.vue";
 import Table from "@/Components/Table.vue";
 import Button from "@/Components/Button.vue";
 import SearchBar from "@/Components/SearchBar.vue";
-import AddTier from "./AddTier.vue";
 import { FilterMatchMode } from 'primevue/api';
 import { PlusIcon, EditIcon, DeleteIcon } from '@/Components/Icons/solid';
 import EditTier from "./EditTier.vue";
+import CreatePointForm from "./CreatePointForm.vue";
+import EditPointForm from "./EditPointForm.vue";
 
 const props = defineProps({
     columns: {
@@ -41,10 +41,10 @@ const props = defineProps({
     },
 });
 
-const isModalOpen = ref(false);
-const editTierFormIsOpen = ref(false);
-const deleteTierFormIsOpen = ref(false);
-const selectedTier = ref(null);
+const isPointFormOpen = ref(false);
+const editPointFormIsOpen = ref(false);
+const deletePointFormIsOpen = ref(false);
+const selectedPoint = ref(null);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -55,59 +55,44 @@ const handleDefaultClick = (event) => {
     event.preventDefault();
 };
 
-const openModal = () => {
-    isModalOpen.value = true;
+const showAddPointForm = () => {
+    isPointFormOpen.value = true;
 };
 
-const closeModal = () => {
-    isModalOpen.value = false;
+const hidePointForm = () => {
+    isPointFormOpen.value = false;
 };
 
-const showEditTierForm = (event, tier) => {
+const showEditPointForm = (event, tier) => {
     handleDefaultClick(event);
-    selectedTier.value = tier;
-    editTierFormIsOpen.value = true;
+    selectedPoint.value = tier;
+    editPointFormIsOpen.value = true;
 }
 
-const hideEditTierForm = () => {
-    editTierFormIsOpen.value = false;
+const hideEditPointForm = () => {
+    editPointFormIsOpen.value = false;
     setTimeout(() => {
-        selectedTier.value = null;
+        selectedPoint.value = null;
     }, 300);
 }
 
-const showDeleteTierForm = (event, id) => {
+const showDeletePointForm = (event, id) => {
     handleDefaultClick(event);
-    selectedTier.value = id;
-    deleteTierFormIsOpen.value = true;
+    selectedPoint.value = id;
+    deletePointFormIsOpen.value = true;
 }
 
-const hideDeleteTierForm = () => {
-    deleteTierFormIsOpen.value = false;
+const hideDeletePointForm = () => {
+    deletePointFormIsOpen.value = false;
     setTimeout(() => {
-        selectedTier.value = null;
+        selectedPoint.value = null;
     }, 300);
 }
-
-const formatAmount = (num) => {
-    var str = num.toString().split('.');
-
-    if (str[0].length >= 4) {
-        str[0] = str[0].replace(/(\d)(?=(\d{3})+$)/g, '$1,');
-    }
-
-    if (str[1] && str[1].length >= 5) {
-        str[1] = str[1].replace(/(\d{3})/g, '$1 ');
-    }
-
-    return str.join('.');
-}
-
 </script>
 
 <template>
     <div class="flex flex-col p-6 gap-5 rounded-[5px] border border-red-100 overflow-y-auto">
-        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Current Tier List</span>
+        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Redeemable Item List</span>
         <div class="flex flex-col gap-1">
             <div class="flex gap-5 flex-wrap sm:flex-nowrap">
                 <SearchBar 
@@ -120,13 +105,13 @@ const formatAmount = (num) => {
                     :type="'button'"
                     :size="'lg'"
                     :iconPosition="'left'"
-                    class="md:w-[144px] flex items-center gap-2"
-                    @click="openModal"
+                    class="!w-fit flex items-center gap-2"
+                    @click="showAddPointForm"
                 >
                     <template #icon>
                         <PlusIcon />
                     </template>
-                    New Tier
+                    Redeemable Item
                 </Button>
             </div>
             <!--CurrentTierTable-->
@@ -140,74 +125,74 @@ const formatAmount = (num) => {
                 :actions="actions"
                 :rowType="rowType"
                 :filters="filters"
-                minWidth="min-w-[1020px]"
+                minWidth="min-w-[700px]"
             >
                 <template #empty>
                     <div class="flex flex-col gap-5 items-center">
-                        <EmptyTierIllus/>
-                        <span class="text-primary-900 text-sm font-medium">You haven't added any tier yet...</span>
+                        <EmptyIllus/>
+                        <span class="text-primary-900 text-sm font-medium">You haven't added any redeemable item yet...</span>
                     </div>
                 </template>
                 <template #editAction="row">
                     <EditIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="showEditTierForm($event, row)"
+                        @click="showEditPointForm($event, row)"
                     />
                 </template>
                 <template #deleteAction="row">
                     <DeleteIcon
                         class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                            @click="showDeleteTierForm($event, row.id)"
+                            @click="showDeletePointForm($event, row.id)"
                     />
                 </template>
-                <template #icon="row">
-                    <div class="w-6 h-6 rounded-full bg-gray-500"></div>
+                <template #name="row">
+                    <div class="flex flex-nowrap items-center gap-3">
+                        <div class="bg-grey-50 border border-grey-200 h-14 w-14"></div>
+                        <span class="text-grey-900 text-sm font-medium">{{ row.name }}</span>
+                    </div>
                 </template>
-                <template #min_amount="row">
-                    <span class="text-primary-900 text-sm font-medium">RM {{ formatAmount(row.min_amount) }}</span>
+                <template #point="row">
+                    <span class="text-grey-900 text-sm font-medium">{{ row.point || 0 }} pts</span>
                 </template>
-                <template #merged_reward_type="row">
-                    <span class="text-primary-900 text-sm font-medium overflow-hidden text-ellipsis">{{ row.merged_reward_type || '-' }}</span>
-                </template>
-                <template #member="row">
-                    <span class="">{{ row.member ?? 0 }}</span>
+                <template #stock_left="row">
+                    <span class="text-primary-600 inline-block align-middle">{{ row.stock_left }}</span>
                 </template>
             </Table>
             <Modal
-                :show="isModalOpen"
-                :title="'Add New Tier'"
-                :maxWidth="'md'"
-                @close="closeModal"
+                :show="isPointFormOpen"
+                :title="'Add Redeemable Item'"
+                :maxWidth="'lg'"
+                @close="hidePointForm"
             >
-                <AddTier 
-                    :inventoryItems="inventoryItems" 
-                    @close="closeModal" 
+                <CreatePointForm
+                    :inventoriesArr="inventoryItems" 
+                    @close="hidePointForm" 
                 />
             </Modal>
             <Modal 
-                :title="'Edit Tier'"
-                :show="editTierFormIsOpen" 
-                :maxWidth="'md'" 
-                @close="hideEditTierForm"
+                :title="'Edit Redeemable Item'"
+                :show="editPointFormIsOpen" 
+                :maxWidth="'lg'" 
+                @close="hideEditPointForm"
             >
-                <template v-if="selectedTier">
-                    <EditTier
-                        :tier="selectedTier"
-                        :inventoryItems="inventoryItems" 
-                        @close="hideEditTierForm"
+                <template v-if="selectedPoint">
+                    <EditPointForm
+                        :point="selectedPoint"
+                        :inventoriesArr="inventoryItems" 
+                        @close="hideEditPointForm"
                     />
                 </template>
             </Modal>
             <Modal 
-                :show="deleteTierFormIsOpen" 
+                :show="deletePointFormIsOpen" 
                 :maxWidth="'2xs'" 
                 :closeable="true" 
                 :deleteConfirmation="true"
-                :deleteUrl="actions.delete(selectedTier)"
-                :confirmationTitle="'Delete this tier?'"
-                :confirmationMessage="'All the member in this tier will not be entitled to any tier. Are you sure you want to delete this tier?'"
-                @close="hideDeleteTierForm"
-                v-if="selectedTier"
+                :deleteUrl="actions.delete(selectedPoint)"
+                :confirmationTitle="'Delete this item?'"
+                :confirmationMessage="'Are you sure you want to delete the selected redeemable item? This action cannot be undone.'"
+                @close="hideDeletePointForm"
+                v-if="selectedPoint"
             />
         </div>
     </div>

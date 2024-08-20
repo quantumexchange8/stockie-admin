@@ -52,10 +52,19 @@ class IventoryItem extends Model
     
     /**
      * RankingReward Model
-     * Get the product items of the inventory item.
+     * Get the ranking rewards of the inventory item.
      */
     public function rankingRewards(): HasMany
     {
         return $this->hasMany(RankingReward::class, 'free_item');
+    }
+    
+    /**
+     * PointItem Model
+     * Get the point items of the inventory item.
+     */
+    public function pointItems(): HasMany
+    {
+        return $this->hasMany(PointItem::class, 'inventory_item_id');
     }
 }

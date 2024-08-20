@@ -189,8 +189,10 @@ watch(() => date_filter.value, () => {
                                         type="button"
                                         :class="[
                                             { 'bg-primary-100': active },
+                                            { 'bg-grey-50 pointer-events-none': saleHistories.length === 0 },
                                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                         ]"
+                                        :disabled="saleHistories.length === 0"
                                         @click="exportToCSV"
                                     >
                                         CSV
@@ -201,9 +203,11 @@ watch(() => date_filter.value, () => {
                                     <button
                                         type="button"
                                         :class="[
-                                            { 'bg-primary-100': active },
-                                            'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                                            // { 'bg-primary-100': active },
+                                            { 'bg-grey-50 pointer-events-none': saleHistories.length === 0 },
+                                            'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                         ]"
+                                        :disabled="saleHistories.length === 0"
                                     >
                                         PDF
                                     </button>

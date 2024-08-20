@@ -110,8 +110,8 @@ import {
             <div class="flex flex-col">
                 <SidebarLink
                     title="Loyalty Programme"
-                    :href="route('loyalty-program')"
-                    :active="route().current('loyalty-program')"
+                    :href="route('loyalty-programme')"
+                    :active="route().current('loyalty-programme')"
                 >
                     <template #icon>
                         <LoyaltyIcon aria-hidden="true" />

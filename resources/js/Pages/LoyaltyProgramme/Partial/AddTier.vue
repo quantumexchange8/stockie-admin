@@ -62,7 +62,7 @@ const submit = () => {
         item.free_item = item.free_item.toString();
     });
 
-    form.post(route("loyalty.create-tier"), {
+    form.post(route("loyalty-programme.tiers.store"), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {

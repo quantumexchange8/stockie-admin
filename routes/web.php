@@ -98,18 +98,33 @@ Route::middleware('auth')->group(function () {
 
     });
 
-    /********Loyalty Programme **********/
+    /******** Loyalty Programme **********/
     Route::prefix('loyalty-programme')->group(function(){
-        Route::get('/loyalty-programme', [LoyaltyController::class, 'index'])->name('loyalty-program');
+        Route::get('/loyalty-programme', [LoyaltyController::class, 'index'])->name('loyalty-programme');
+        
+        /******* Tier ********/
+        Route::get('/tiers', [LoyaltyController::class, 'index'])->name('loyalty-programme.tiers');
+        Route::get('/tier_details/{id}', [LoyaltyController::class, 'showTierDetails'])->name('loyalty-programme.tiers.show');
+        Route::post('/tiers/store', [LoyaltyController::class, 'storeTier'])->name('loyalty-programme.tiers.store');
+        Route::put('/tiers/update/{id}', [LoyaltyController::class, 'updateTier'])->name('loyalty-programme.tiers.update');
+        Route::delete('/tiers/destroy/{id}', [LoyaltyController::class, 'deleteTier'])->name('loyalty-programme.tiers.destroy');
+
         Route::get('/getShowRecords', [LoyaltyController::class, 'showRecord'])->name('loyalty-program.show');
-        Route::get('/getIcons', [LoyaltyController::class, 'showIcons'])->name('loyalty-program.showIcons');
-        Route::get('/tier_details/{id}', [LoyaltyController::class, 'showTierDetails'])->name('products.showTierDetails');
+        // Route::get('/getIcons', [LoyaltyController::class, 'showIcons'])->name('loyalty-program.showIcons');
         Route::get('/getMemberList', [LoyaltyController::class, 'showMemberList'])->name('loyalty-programme.getMemberList');
         Route::get('/getTierData', [LoyaltyController::class, 'showTierData'])->name('loyalty-programme.getTierData');
         Route::get('/getAllInventoryWithItems', [LoyaltyController::class, 'getAllInventoryWithItems'])->name('loyalty-programme.getAllInventoryWithItems');
-        Route::post('/create-tier', [LoyaltyController::class, 'store'])->name('loyalty.create-tier');
-        Route::put('/loyalty-programme/updateTier/{id}', [LoyaltyController::class, 'updateTier'])->name('loyalty-programme.updateTier');
-        Route::delete('/loyalty-programme/deleteTier/{id}', [LoyaltyController::class, 'deleteTier'])->name('loyalty-programme.deleteTier');
+        
+        /******* Point ********/
+        Route::get('/points', [LoyaltyController::class, 'index'])->name('loyalty-programme.points');
+        Route::get('/point_details/{id}', [LoyaltyController::class, 'showPointDetails'])->name('loyalty-programme.points.show');
+        Route::get('/points/recent_redemptions', [LoyaltyController::class, 'showRecentRedemptions'])->name('loyalty-programme.points.showRecentRedemptions');
+        Route::post('/points', [LoyaltyController::class, 'storePoint'])->name('loyalty-programme.points.store');
+        Route::put('/points/{id}', [LoyaltyController::class, 'updatePoint'])->name('loyalty-programme.points.update');
+        Route::delete('/points/{id}', [LoyaltyController::class, 'deletePoint'])->name('loyalty-programme.points.deletePoint');
+        
+        Route::get('/getPointHistories/{id?}', [LoyaltyController::class, 'getPointHistories'])->name('loyalty-programme.getPointHistories');
+        
     });
 
      /********Table and room **********/

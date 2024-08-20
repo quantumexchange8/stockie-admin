@@ -308,7 +308,7 @@ const hideDeleteTierForm = () => {
                 :maxWidth="'2xs'" 
                 :closeable="true" 
                 :deleteConfirmation="true"
-                :deleteUrl="`/loyalty-programme/loyalty-programme/deleteTier/${props.id}`"
+                :deleteUrl="`/loyalty-programme/tiers/destroy/${props.id}`"
                 :confirmationTitle="'Delete this tier?'"
                 :confirmationMessage="'All the member in this tier will not be entitled to any tier. Are you sure you want to delete this tier?'"
                 @close="hideDeleteTierForm"

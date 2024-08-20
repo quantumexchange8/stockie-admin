@@ -65,10 +65,10 @@ const expandedRowGroups = ref();
 // const emit = defineEmits(["updateFilteredRowsCount"]);
 
 const defaultActions = {
-    view: () => '#',
-    replenish: () => '#',
-    edit: () => '#',
-    delete: () => '#'
+    view: () => '',
+    replenish: () => '',
+    edit: () => '',
+    delete: () => ''
 };
 
 const mergedActions = computed(() => {
@@ -113,14 +113,20 @@ const handleLinkClick = (event) => {
 };
 
 const redirectAction = (url) => {
-    if (Object.keys(props.actions).length > 0 ) {
-        window.location.href = url;
+    if (typeof props.actions.view === 'function' && url) {
+        if (url) {
+            window.location.href = url;
+        }
     }
 }
 
 const onRowSelect = (event) => {
-    if (Object.keys(props.actions).length > 0 ) {
-        window.location.href = props.actions.view(event.data.id);
+    const url = mergedActions.value.view(event.data.id);
+
+    if (typeof props.actions.view === 'function' && url) {
+        if (url) {
+            window.location.href = url;
+        }
     }
 };
 

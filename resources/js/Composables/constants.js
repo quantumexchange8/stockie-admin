@@ -15,7 +15,7 @@ export const defaultProductItem = {
 };
 
 // ----------------------------------------------------------------------------------
-//                                  MENU MANAGEMENT
+//                                  LOYALTY PROGRAMME
 // ----------------------------------------------------------------------------------
 export const periodOption = [
     { text: "1 month starting from entry date", value: 1 },
@@ -58,6 +58,12 @@ export const emptyReward = () => {
         valid_period_from: "",
         valid_period_to: "",
     }
+};
+
+export const defaultPointItem = {
+    inventory_item_id: null,
+    item_qty: 1,
+    inventory_stock_qty: 0,
 };
 
 // ----------------------------------------------------------------------------------

@@ -132,7 +132,7 @@ watch(() => form.items, (newValue) => {
                                     :inputArray="inventoriesArr"
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"
-                                    :dataValue="1"
+                                    :dataValue="item.inventory_item_id"
                                     v-model="item.inventory_item_id"
                                     @onChange="updateInventoryStockCount(i, $event)"
                                 />

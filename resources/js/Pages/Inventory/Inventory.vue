@@ -71,21 +71,12 @@ const rowType = [
 ]
 
 // When declaring the actions, make sure to set the column property with the same action name to true to display the action button ('list' variant) 
-const actions = [
-    {
-        view: (productId) => `/menu-management/products_details/${productId}`,
-        replenish: (productId) => `/menu-management/products_details/${productId}`,
-        // For 'grid' variant only has below two
-        edit: (productId) => `/menu-management/products/${productId}/edit`,
-        delete: (productId) => `/menu-management/products/${productId}/delete`,
-    },
-    {
-        view: () => ``,
-        replenish: () => ``,
-        edit: () => ``,
-        delete: () => ``,
-    }
-];
+const actions = {
+    view: () => ``,
+    replenish: () => ``,
+    edit: () => ``,
+    delete: () => ``,
+};
 
 // Get filtered inventories
 const getInventories = async (filters = {}, selectedCategory = 0) => {
@@ -248,7 +239,7 @@ const hideAddStockForm = () => {
                     :columns="keepHistoryColumns"
                     :rows="recentKeepHistories"
                     :rowType="rowType[1]"
-                    :actions="actions[1]"
+                    :actions="actions"
                     :totalPages="recentKeepHistoriesTotalPages"
                     :rowsPerPage="rowsPerPage"
                     class="col-span-full md:col-span-8"
@@ -311,7 +302,7 @@ const hideAddStockForm = () => {
                 :categoryArr="categoryArr"
                 :itemCategoryArr="itemCategoryArr"
                 :rowType="rowType[0]"
-                :actions="actions[0]"
+                :actions="actions"
                 :totalPages="inventoriesTotalPages"
                 :rowsPerPage="rowsPerPage"
                 @applyCategoryFilter="applyCategoryFilter"

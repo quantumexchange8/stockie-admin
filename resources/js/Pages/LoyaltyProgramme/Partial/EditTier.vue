@@ -187,7 +187,7 @@ const submit = () => {
         item.free_item = item.free_item ? item.free_item.toString() : '';
     });
     
-    form.put(`/loyalty-programme/loyalty-programme/updateTier/${props.tier.id}`, {
+    form.put(`/loyalty-programme/tiers/update/${props.tier.id}`, {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {

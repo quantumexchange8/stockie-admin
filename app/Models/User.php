@@ -6,8 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -46,4 +45,12 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * PointHistory Model
+     * Get the histories of the point(redeemable item) redeemed by the user.
+     */
+    public function pointHistories(): HasMany
+    {
+        return $this->hasMany(PointHistory::class, 'redeem_by');
+    }
 }

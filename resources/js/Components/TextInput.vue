@@ -132,7 +132,7 @@ onMounted(() => {
                         'border-grey-300': disabled === false,
                         'border-red-500 focus:border-red-500 hover:border-red-500':
                             errorMessage,
-                        'pl-12 pr-12 text-center': $slots.prefix,
+                        'pl-4 pr-11 text-center': $slots.prefix,
                         'pl-4 pr-4': !$slots.prefix,
                         'text-center': iconPosition === 'right',
                         '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none':
