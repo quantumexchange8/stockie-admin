@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { Head } from '@inertiajs/vue3';
 import RightSidebar from '@/Components/RightSidebar/RightSidebar.vue'
 import Breadcrumb from '@/Components/Breadcrumb.vue';
@@ -29,22 +29,26 @@ const props = defineProps({
   },
 });
 
+const zones = ref(props.zones);
 const tables = ref([]);
 const tabs = ref([]);
+const isModalOpen = ref(false);
+const createFormIsOpen = ref(false);
+
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
 
 const populateTabs = () => {
-tabs.value = ['All'];
-  for (const zone of props.zones) {
-    if (zone.text) { 
-      tabs.value.push(zone.text);
+    tabs.value = ['All'];
+    for (const zone of zones.value) {
+        if (zone.text) { 
+            tabs.value.push(zone.text);
+        }
     }
-  }
 };
 
-watch(() => props.zones, populateTabs, {immediate: true});
+watch(() => zones.value, populateTabs, {immediate: true});
 
 const getTableDetails = async () => {
     try {
@@ -61,9 +65,6 @@ onMounted(() => {
     getTableDetails();
 });
 
-const isModalOpen = ref(false);
-const createFormIsOpen = ref(false);
-
 const showCreateForm = () => {
     createFormIsOpen.value = true;
 }
@@ -79,6 +80,25 @@ const openModal = () => {
 const closeModal = () => {
     isModalOpen.value = false;
 };
+
+const filteredZones = computed(() => {
+    // If search is empty then return initial zones
+    if (!filters.value['global'].value) {
+        return zones.value;
+    }
+
+    const searchValue = filters.value['global'].value.toLowerCase();
+    
+    // Filter by zone tables' table_no
+    return zones.value
+        .map(zone => {
+            const matchingTables = zone.tables.filter(table => 
+                table.table_no.toLowerCase().includes(searchValue)
+            );
+            return matchingTables.length > 0 ? { ...zone, tables: matchingTables } : null;
+        })
+        .filter(zone => zone !== null);
+});
 
 </script>
 
@@ -149,7 +169,7 @@ const closeModal = () => {
                             All
                         </button>
                     </Tab>
-                    <div v-for="zone in zones" :key="zone.id">
+                    <template v-for="zone in zones" :key="zone.id">
                         <Tab
                             as="template"
                             v-slot="{ selected }"
@@ -166,7 +186,7 @@ const closeModal = () => {
                                 {{ zone.text }}
                             </button>
                         </Tab>
-                    </div>
+                    </template>
                         <Button
                             :type="'button'"
                             :size="'lg'"
@@ -199,7 +219,7 @@ const closeModal = () => {
                             'focus:outline-none',
                         ]"
                     >
-                        <ZoneAll :zones="zones"/>
+                        <ZoneAll :zones="filteredZones"/>
                     </TabPanel>
                     <template v-for="zone in zones" :key="zone.id">
                         <TabPanel
