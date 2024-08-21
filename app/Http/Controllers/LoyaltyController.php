@@ -109,7 +109,7 @@ class LoyaltyController extends Controller
             'tiers' => $tiers,
             'redeemableItems' => $redeemableItems,
             'inventoryItems' => $inventoryItems,
-            'totalPointsGivenAway' => $totalPointsGivenAway[0],
+            'totalPointsGivenAway' => $totalPointsGivenAway[0] ?? 0,
         ]);
     }
 

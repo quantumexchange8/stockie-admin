@@ -48,6 +48,16 @@ const cancelForm = () => {
     emit('close');
 }
 
+const isNumber = (e, withDot = true) => {
+    const { key, target: { value } } = e;
+    
+    if (/^\d$/.test(key)) return;
+
+    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
+    
+    e.preventDefault();
+};
+
 const requiredFields = ['type', 'table_no', 'seat', 'zone_id'];
 
 const isFormValid = computed(() => {
@@ -82,6 +92,7 @@ const isFormValid = computed(() => {
                         :labelText="'No. of Seats Available'"
                         :placeholder="'number only (eg: 6)'"
                         :errorMessage="form.errors?.seat || ''"
+                        @keypress="isNumber($event)"
                         v-model="form.seat"
                         class="col-span-full md:col-span-6"
                     />
@@ -107,8 +118,9 @@ const isFormValid = computed(() => {
             </Button>
             <Button
                 :size="'lg'"
-                :disabled="!isFormValid"
+                :disabled="!isFormValid || form.processing"
                 :type="'submit'"
+                :class="{ 'opacity-25': form.processing }"
             >
                 Add
             </Button>

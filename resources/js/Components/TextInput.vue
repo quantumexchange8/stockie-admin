@@ -45,7 +45,7 @@ const {
     disabled,
 } = props;
 
-defineEmits(["update:modelValue"]);
+defineEmits(["update:modelValue", "blur"]);
 
 const input = ref(null);
 const inputLabel = ref('');
@@ -149,6 +149,7 @@ onMounted(() => {
                 :value="modelValue"
                 @input="$emit('update:modelValue', $event.target.value)"
                 @keypress="isNumber($event)"
+                @blur="$emit('blur', $event)"
                 ref="input"
                 :autocomplete="inputType === 'password' ? 'current-password' : ''"
                 :disabled="disabled"

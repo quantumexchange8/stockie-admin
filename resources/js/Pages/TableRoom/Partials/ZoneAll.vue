@@ -48,12 +48,13 @@ const capitalize = (str) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-const openEditModal = (table) => {
+const openEditModal = (table, zone) => {
     form.id = table.id,
     form.type = table.type,
     form.table_no = table.table_no,
-    form.seat = table.seat,
+    form.seat = table.seat.toString(),
     form.zone_id = table.zone_id,
+    form.zone_name = zone.text,
     editModal.value = true
 };
 
@@ -99,6 +100,7 @@ const isFormValid = computed(() => {
     const valid = requiredFields.every(field => Boolean(form[field]));
     return valid;
 });
+
 </script>
 
 <template>
@@ -111,7 +113,7 @@ const isFormValid = computed(() => {
             </template>
 
             <template #body>
-                <div class="grid grid-cols-4 gap-6">
+                <div class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-6">
                     <div v-for="table in zone.tables" :key="table.id">
                         <Card style="overflow: hidden;" class="border rounded-[5px]">
                             <template #title>
@@ -125,7 +127,7 @@ const isFormValid = computed(() => {
                                     <Button 
                                         :type="'button'" 
                                         :size="'md'"
-                                        @click="openEditModal(table)"
+                                        @click="openEditModal(table, zone)"
                                         class="!bg-primary-100 hover:!bg-primary-200 rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[5px]">
                                         <EditIcon 
                                             class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer" />
@@ -179,7 +181,9 @@ const isFormValid = computed(() => {
                 <Dropdown
                     :inputName="'zone_id'"
                     :labelText="'Select Zone'"
+                    :placeholder="form.zone_name"
                     :inputArray="zones"
+                    :dataValue="form.zone_id"
                     :errorMessage="form.errors?.zone_id || ''"
                     v-model="form.zone_id"
                     class="col-span-full md:col-span-6"
@@ -198,8 +202,9 @@ const isFormValid = computed(() => {
             </Button>
             <Button
                 :size="'lg'"
-                :disabled="!isFormValid"
+                :disabled="!isFormValid || form.processing"
                 :type="'submit'"
+                :class="{ 'opacity-25': form.processing }"
             >
                 Save Changes
             </Button>

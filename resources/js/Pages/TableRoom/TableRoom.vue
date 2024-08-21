@@ -7,9 +7,8 @@ import Breadcrumb from '@/Components/Breadcrumb.vue';
 import SearchBar from '@/Components/SearchBar.vue';
 import Button from '@/Components/Button.vue';
 import { GearIcon, PlusIcon } from '@/Components/Icons/solid';
-import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
 import Modal from '@/Components/Modal.vue';
-import AddManageZone from './Partials/AddManageZone.vue';
+import AddManageZone from './Partials/ManageZone.vue';
 import AddTable from './Partials/AddTable.vue';
 import ZoneAll from './Partials/ZoneAll.vue';
 import axios from 'axios';
@@ -112,7 +111,6 @@ const filteredZones = computed(() => {
 </script>
 
 <template>
-
     <Head title="Table & Room" />
 
     <AuthenticatedLayout>
@@ -168,14 +166,14 @@ const filteredZones = computed(() => {
                     :iconPosition="'left'"
                     @click="openModal"
                     variant="tertiary"
-                    class="md:!w-fit !border-0"
+                    class="md:!w-fit !border-0 text-wrap"
                 >
                     <template #icon>
                         <GearIcon
                             class="w-[20px] h-[20px]"
                         />
                     </template>
-                    Manage Zone
+                    <span class="hidden sm:flex">Manage Zone</span>
                 </Button>
                 <Modal
                     :show="isModalOpen"
@@ -195,7 +193,7 @@ const filteredZones = computed(() => {
                 v-slot:[`${zone.name}`]
             >
                 <ZoneTabs 
-                    :zones="zones" 
+                    :zones="filteredZones" 
                     :activeTab="zone.value" 
                     v-if="zone.tables.length > 0"
                 />

@@ -44,6 +44,7 @@ class TableRoomController extends Controller
 
     public function addZone(Request $request)
     {
+        // dd($request->all());
         $validatedData = $request->validate([
             'name' => ['required','string','max:255',
             Rule::unique('zones', 'name')->whereNull('deleted_at'),]
@@ -71,7 +72,8 @@ class TableRoomController extends Controller
             'table_no' => $validatedData['table_no'],
             'seat' => $validatedData['seat'],
             'zone_id' => $validatedData['zone_id'],
-            'status' => 'empty'
+            'status' => 'empty',
+            'order_id' => '1',
         ]);
 
         return redirect()->route('table-room')->with('success','Table created');
@@ -120,16 +122,16 @@ class TableRoomController extends Controller
 
     public function editZone(Request $request)
     {
+        // dd($request->all());
         $validatedData = $request->validate([
-            'name' => ['required','string','max:255',
+            'edit_name' => ['required','string','max:255',
             Rule::unique('zones','name')->ignore($request->id)->whereNull('deleted_at')],
         ]);
 
         $editZone = Zone::find($request->id);
         $editZone->update([
-            'name' => $validatedData['name'],
+            'name' => $validatedData['edit_name'],
         ]);
 
-        return redirect()->route('tableroom-getTableDetails')->with('success','Zone updated');
     }
 }

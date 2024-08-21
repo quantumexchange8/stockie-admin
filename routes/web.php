@@ -35,9 +35,8 @@ Route::middleware('auth')->group(function () {
 
     /********* Waiter **********/
     Route::prefix('waiter')->group(function(){
-       Route::get('/waiter', [WaiterController::class, 'waiter'])->name('waiter');
-    Route::post('/waiter-create', [WaiterController::class, 'store'])->name('waiter.add-waiter');
-    
+        Route::get('/waiter', [WaiterController::class, 'waiter'])->name('waiter');
+        Route::post('/waiter-create', [WaiterController::class, 'store'])->name('waiter.add-waiter');
     });
  
     /********* Menu Management **********/

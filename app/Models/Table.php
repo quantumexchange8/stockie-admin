@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Table extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['type', 'table_no', 'seat', 'zone_id', 'status'];
+    protected $fillable = ['type', 'table_no', 'seat', 'zone_id', 'status', 'order_id'];
     
     public function zones(): BelongsTo
     {

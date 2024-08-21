@@ -67,7 +67,7 @@ const openEditModal = (table) => {
     form.id = table.id,
     form.type = table.type,
     form.table_no = table.table_no,
-    form.seat = table.seat,
+    form.seat = table.seat.toString(),
     form.zone_id = table.zone_id,
     editModal.value = true
 };
@@ -120,12 +120,12 @@ const isFormValid = computed(() => {
 <template>
     <div class="flex flex-col">
         <div v-for="zone in zones" :key="zone.value">
-            <div class="grid grid-cols-4 gap-x-6">
+            <div class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-x-6">
                 <div v-for="table in zone.tables" :key="table.id">
                     <div v-if="table.zone_id === activeTab">
                         <Card 
                             style="overflow: hidden;" 
-                            class="border rounded-[5px] gap-6">
+                            class="border rounded-[5px] gap-6 mb-6">
                                 <template #title>
                                     <div class="flex flex-col text-center items-center p-6 gap-2">
                                         <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
@@ -193,6 +193,7 @@ const isFormValid = computed(() => {
                     :inputName="'zone_id'"
                     :labelText="'Select Zone'"
                     :inputArray="zones"
+                    :dataValue="form.zone_id"
                     :errorMessage="form.errors?.zone_id || ''"
                     v-model="form.zone_id"
                     class="col-span-full md:col-span-6"
