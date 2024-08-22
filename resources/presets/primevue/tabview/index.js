@@ -32,7 +32,7 @@ export default {
             "rounded-none",
 
             // Colors
-            "bg-surface-0 dark:bg-surface-800",
+            "bg-grey-0 dark:bg-grey-800",
             "text-primary",
             "shadow-md",
         ],
@@ -52,7 +52,7 @@ export default {
             "rounded-none",
 
             // Colors
-            "bg-surface-0 dark:bg-surface-800",
+            "bg-grey-0 dark:bg-grey-800",
             "text-primary",
             "shadow-md",
         ],
@@ -67,9 +67,9 @@ export default {
             "p-0 m-0",
 
             // Colors
-            "bg-surface-0 dark:bg-surface-800",
-            "border-b-1 border-surface-200 dark:border-surface-700",
-            "text-surface-900 dark:text-surface-0/80",
+            "bg-grey-0 dark:bg-grey-800",
+            "border-b-1 border-grey-200 dark:border-grey-700",
+            "text-grey-900 dark:text-grey-0/80",
         ],
     },
     tabpanel: {
@@ -105,14 +105,14 @@ export default {
 
                 // Colors and Conditions
                 {
-                    "border-surface-200 dark:border-surface-700":
+                    "border-grey-200 dark:border-grey-700":
                         parent.state.d_activeIndex !== context.index,
-                    "bg-surface-0 dark:bg-surface-800":
+                    "bg-grey-0 dark:bg-grey-800":
                         parent.state.d_activeIndex !== context.index,
                     "text-grey-200":
                         parent.state.d_activeIndex !== context.index,
 
-                    "bg-surface-0 dark:bg-surface-800":
+                    "bg-grey-0 dark:bg-grey-800":
                         parent.state.d_activeIndex === context.index,
                     "border-primary":
                         parent.state.d_activeIndex === context.index,
@@ -124,11 +124,7 @@ export default {
                 "focus-visible:outline-none focus-visible:outline-offset-0 focus-visible:ring focus-visible:ring-inset",
                 "focus-visible:ring-primary-400/50 dark:focus-visible:ring-primary-300/50",
                 {
-                    "hover:bg-surface-0":
-                        parent.state.d_activeIndex !== context.index,
-                    "hover:border-surface-400":
-                        parent.state.d_activeIndex !== context.index,
-                    "hover:text-surface-900 ":
+                    "hover:bg-grey-0 hover:border-grey-400 hover:text-primary-900 ":
                         parent.state.d_activeIndex !== context.index,
                 },
 
@@ -157,8 +153,8 @@ export default {
                 "rounded-b-md",
 
                 // Colors
-                "bg-surface-0 dark:bg-surface-800",
-                "text-surface-700 dark:text-surface-0/80",
+                "bg-grey-0 dark:bg-grey-800",
+                "text-grey-700 dark:text-grey-0/80",
                 "border-0",
             ],
         },

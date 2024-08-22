@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Redirect;
 
 class LoyaltyController extends Controller
 {
-    public function index(){
+    public function index(Request $request){
         $tiers = Ranking::with([
                                 'rankingRewards', 
                                 'rankingRewards.inventoryItem',
@@ -105,7 +105,15 @@ class LoyaltyController extends Controller
                                                 return $totalPointsGivenAway;
                                             });
 
+        // Get the flashed messages from the session
+        $message = $request->session()->get('message');
+
+        // Clear the flashed messages from the session
+        $request->session()->forget('message');
+        $request->session()->save();
+
         return Inertia::render('LoyaltyProgramme/LoyaltyProgramme', [
+            'message' => $message ?? [],
             'tiers' => $tiers,
             'redeemableItems' => $redeemableItems,
             'inventoryItems' => $inventoryItems,
@@ -210,7 +218,12 @@ class LoyaltyController extends Controller
             }
         }
 
-        return redirect()->back()->with('Tier created successfully');
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'New tier has been added successfully.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
 
     public function showRecord()
@@ -236,9 +249,19 @@ class LoyaltyController extends Controller
         return response()->json($data);
     }
 
-    public function showTierDetails(string $id)
+    public function showTierDetails(Request $request, string $id)
     {
-        return Inertia::render('LoyaltyProgramme/Partial/TierDetail', ['id' => $id]);
+        // Get the flashed messages from the session
+        $message = $request->session()->get('message');
+
+        // Clear the flashed messages from the session
+        $request->session()->forget('message');
+        $request->session()->save();
+
+        return Inertia::render('LoyaltyProgramme/Partial/TierDetail', [
+            'id' => $id,
+            'message' => $message ?? []
+        ]);
     }
 
     public function showMemberList(Request $request)
@@ -388,8 +411,12 @@ class LoyaltyController extends Controller
             }
         }
 
-        return redirect()->back()->with('Updated tier successfully');
-        // return response()->json(['message' => 'Tier data updated successfully']);
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Changes saved.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
 
     /**
@@ -423,17 +450,26 @@ class LoyaltyController extends Controller
     {
         $existingRanking = Ranking::with('rankingRewards')->find($id);
 
+        $message = [ 
+            'severity' => 'error', 
+            'summary' => 'Error deleting redeemable item.'
+        ];
+
         if ($existingRanking) {
             // Soft delete all related ranking rewards in bulk
-            if ($existingRanking->rankingRewards()->count() > 0) {
-                $existingRanking->rankingRewards()->delete();
-            }
+            $existingRanking->rankingRewards()->delete();
     
             // Soft delete the ranking
             $existingRanking->delete();
+
+            $message = [ 
+                'severity' => 'success', 
+                'summary' => 'Selected tier has been deleted successfully.'
+            ];
         }
 
-        return Redirect::route('loyalty-programme');
+        
+        return Redirect::route('loyalty-programme')->with(['message' => $message]);
     }
 
     /**
@@ -492,7 +528,12 @@ class LoyaltyController extends Controller
             }
         }
 
-        return redirect()->back()->with('Point created successfully');
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'New redeemable item has been added successfully.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
 
     /**
@@ -567,7 +608,12 @@ class LoyaltyController extends Controller
             }
         }
 
-        return redirect()->back()->with('Updated point successfully');
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Changes saved.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
     
     /**
@@ -578,19 +624,25 @@ class LoyaltyController extends Controller
     {
         $existingPoint = Point::with('pointItems')->find($id);
 
+        $message = [
+            'severity' => 'error',
+            'summary' => 'Error deleting redeemable item.',
+        ];
+        
         if ($existingPoint) {
             // Soft delete all related items in bulk
-            if ($existingPoint->pointItems()->count() > 0) {
-                $existingPoint->pointItems()->delete();
-            }
-    
+            $existingPoint->pointItems()->delete();
+        
             // Soft delete the point
             $existingPoint->delete();
-
-            return Redirect::route('loyalty-programme')->with('Deleted point and its items successfully');
+        
+            $message = [
+                'severity' => 'success',
+                'summary' => 'Selected redeemable item has been deleted successfully.',
+            ];
         }
         
-        return Redirect::route('loyalty-programme')->with('Error deleting point');
+        return Redirect::route('loyalty-programme')->with(['message' => $message]);
     }
     
     /**
@@ -634,13 +686,19 @@ class LoyaltyController extends Controller
 
         $redeemableItem = Point::with(['pointItems', 'pointItems.inventoryItem'])->find($id);
 
-        // dd($dateFilter);
+        // Get the flashed messages from the session
+        $message = $request->session()->get('message');
 
+        // Clear the flashed messages from the session
+        $request->session()->forget('message');
+        $request->session()->save();
+        
         return Inertia::render('LoyaltyProgramme/Partial/PointDetail', [
             'redemptionHistories' => $redemptionHistories,
             'defaultDateFilter' => $dateFilter,
             'redeemableItem' => $redeemableItem,
             'inventoryItems' => $this->getAllInventoryWithItems(),
+            'message' => $message ?? []
         ]);
     }
 

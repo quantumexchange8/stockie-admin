@@ -38,8 +38,6 @@ const form = useForm({
 });
 
 const formSubmit = () => { 
-    console.log(form);
-
     form.put(route('loyalty-programme.points.update', form.id), {
         preserveScroll: true,
         preserveState: 'errors',

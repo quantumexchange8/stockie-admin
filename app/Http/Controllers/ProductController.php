@@ -9,6 +9,7 @@ use App\Models\Iventory;
 use App\Models\IventoryItem;
 use App\Models\Product;
 use App\Models\ProductItem;
+use App\Models\SaleHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
@@ -23,15 +24,66 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Product/Product');
-    }
+        $products = Product::with([
+                                'productItems:id,product_id,inventory_item_id,qty', 
+                                'category:id,name', 
+                                'productItems.inventoryItem:id,stock_qty,item_cat_id',
+                                'productItems.inventoryItem.itemCategory:id,low_stock_qty',
+                                'saleHistories'
+                            ])
+                            ->orderBy('id')
+                            ->get()
+                            ->map(function ($product) {
+                                $product_items = $product->productItems;
+                                $minStockCount = 0;
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+                                if (count($product_items) > 0) {
+                                    $stockCountArr = [];
+                                    $lowInStockArr = [];
+
+                                    foreach ($product_items as $key => $value) {
+                                        $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])
+                                                                            ->with('itemCategory:id,low_stock_qty')
+                                                                            ->find($value['inventory_item_id']);
+
+                                        $stockQty = $inventory_item->stock_qty;
+                                        
+                                        $stockCount = (int)round($stockQty / (int)$value['qty']);
+                                        array_push($stockCountArr, $stockCount);
+
+                                        $lowStockQtyLimit = $inventory_item->itemCategory->low_stock_qty;
+                                        if ((int)$stockQty <= $lowStockQtyLimit && (int)$stockQty > 1) {
+                                            array_push($lowInStockArr, 'Limited');
+                                        }
+                                        
+                                        if ((int)$stockQty > $lowStockQtyLimit) {
+                                            array_push($lowInStockArr, 'Available');
+                                        } 
+                                        
+                                        if ((int)$stockQty === 0) {
+                                            array_push($lowInStockArr, 'Unavailable');
+                                        }
+                                    }
+                                    $minStockCount = min($stockCountArr);
+                                }
+                                $product['stock_left'] = $minStockCount; 
+
+                                if (in_array('Unavailable', $lowInStockArr)) {
+                                    $product['stock_status'] = 'Out of stock';
+                                } elseif (in_array('Limited', $lowInStockArr)) {
+                                    $product['stock_status'] = 'Low in stock';
+                                } else {
+                                    $product['stock_status'] = 'In stock';
+                                }
+
+                                return $product;
+                            });
+
+        return Inertia::render('Product/Product', [
+            'products' => $products,
+            'inventories' => $this->getAllInventories(),
+            'categories' => $this->getAllCategories(),
+        ]);
     }
 
     /**
@@ -114,43 +166,36 @@ class ProductController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
-
-    /**
      * Show product details.
      */
     public function showProductDetails(string $id)
     {
-        return Inertia::render('Product/Partials/ProductDetail', ['id' => $id]);
+        $dateFilter = [
+            now()->subDays(30)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
+            now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d')
+        ];
+
+        $product = Product::with([
+                                'category:id,name',
+                                'productItems',
+                                'productItems.inventoryItem:id,item_name,stock_qty',
+                                'saleHistories'
+                            ])
+                            ->orderBy('created_at', 'desc')
+                            ->find($id);
+        
+        $saleHistories = $product->saleHistories()->whereDate('created_at', '>=', $dateFilter[0])
+                                                ->whereDate('created_at', '<=', $dateFilter[1])
+                                                ->orderBy('created_at', 'desc')
+                                                ->get();
+
+        return Inertia::render('Product/Partials/ProductDetail', [
+            'product' => $product,
+            'saleHistories' => $saleHistories,
+            'defaultDateFilter' => $dateFilter,
+            'inventories' => $this->getAllInventories(),
+            'categories' => $this->getAllCategories(),
+        ]);
     }
 
     /**
@@ -158,7 +203,7 @@ class ProductController extends Controller
      */
     public function getAllCategories()
     {
-        $data = Category::select(['id', 'name'])
+        return Category::select(['id', 'name'])
                         ->orderBy('id')
                         ->get()
                         ->map(function ($category) {
@@ -167,8 +212,6 @@ class ProductController extends Controller
                                 'value' => $category->id
                             ];
                         });
-
-        return response()->json($data);
     }
 
     /**
@@ -183,9 +226,6 @@ class ProductController extends Controller
                                 ->get();
 
         $selectedCategory = (int) $request['selectedCategory'];
-
-        // Join with product item table
-        // $queries->join('product_items', 'product_items.product_id', '=', 'products.id');
 
         // Check if there are any filters selected
         if (isset($request['checkedFilters'])) {
@@ -297,7 +337,7 @@ class ProductController extends Controller
      */
     public function getAllInventories()
     {
-        $data = Iventory::withWhereHas('inventoryItems')
+        return Iventory::withWhereHas('inventoryItems')
                         ->select(['id', 'name'])
                         ->orderBy('id')
                         ->get()
@@ -314,8 +354,6 @@ class ProductController extends Controller
                                 'items' => $group_items
                             ];
                         });
-        
-        return response()->json($data);
     }
 
     /**
@@ -391,10 +429,17 @@ class ProductController extends Controller
         if (!empty($allItemErrors)) {
             return redirect()->back()->withErrors($allItemErrors)->withInput();
         }
-        
-        if (isset($id)) {
-            $existingProduct = Product::find($id);
 
+        $existingProduct = isset($id) ? Product::with('productItems')->find($id) : null;
+        
+        // Delete product items
+        if (count($request->itemsDeletedBasket) > 0 && !is_null($existingProduct)) {
+            $existingProduct->productItems()
+                            ->whereIn('id', $request->itemsDeletedBasket)
+                            ->delete();
+        }
+
+        if (!is_null($existingProduct)) {
             $existingProduct->update([
                 'product_name' => $validatedData['product_name'],
                 'bucket' => $validatedData['bucket'] ? 'set' : 'single',
@@ -426,22 +471,21 @@ class ProductController extends Controller
      */
     public function deleteProduct(Request $request, string $id)
     {
-        $existingProduct = Product::with('productItems')
-                                    ->find($id);
+        $existingProduct = Product::with('productItems')->find($id);
 
-        $existingProductItems = $existingProduct->productItems ?? [];
-        
-        if (count($existingProductItems) > 0) {
-            foreach ($existingProductItems as $key => $value) {
-                if (isset($value['id'])) {
-                    $existingItem = ProductItem::find($value['id']);
-    
-                    $existingItem->delete();
-                }
+        if ($existingProduct) {
+            // Soft delete all related items in bulk
+            if ($existingProduct->productItems()->count() > 0) {
+                $existingProduct->productItems()->delete();
             }
-        }
+    
+            // Soft delete the product
+            $existingProduct->delete();
 
-        $existingProduct->delete();
+            return Redirect::route('products.index')->with('Deleted product and its items successfully');
+        }
+        
+        return Redirect::route('products.index')->with('Error deleting product');
     }
      
     /**
@@ -457,57 +501,23 @@ class ProductController extends Controller
     /**
      * Get product sale histories.
      */
-    public function getProductSaleHistories(Request $request)
+    public function getProductSaleHistories(Request $request, string $id)
     {
         $dateFilter = $request->input('dateFilter');
-
-        $query = Product::query();
-
-        if ($dateFilter && gettype($dateFilter) === 'array') {
-            // Single date filter
-            if (count($dateFilter) === 1) {
-                $date = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-                $query->whereDate('created_at', $date);
-            }
-            // Range date filter
-            if (count($dateFilter) > 1) {
-                $startDate = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-                $endDate = (new \DateTime($dateFilter[1]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-                $query->whereDate('created_at', '>=', $startDate)
-                        ->whereDate('created_at', '<=', $endDate);
-            }
-        }
-
-        $product = $query->with('saleHistories')
-                            ->orderBy('created_at', 'desc')
-                            ->find($request['id']);
-
-                            
-        $data = $product->saleHistories ?? [];
         
-        return response()->json($data);
-    }
+        $dateFilter = array_map(function ($date) {
+                            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                        }, $dateFilter);
 
-    /**
-     * Get product details and its items.
-     */
-    public function getProductWithItems(string $id)
-    {
-        $product = Product::with([
-                                'category:id,name',
-                                'productItems',
-                                'productItems.inventoryItem:id,item_name,stock_qty'
-                            ])
-                            ->orderBy('created_at', 'desc')
-                            ->find($id);
+        // Apply the date filter (single date or date range)
+        $data = SaleHistory::whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
+                                ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
+                                    $subQuery->whereDate('created_at', '<=', $dateFilter[1]);
+                                })
+                                ->where('product_id', $id)
+                                ->orderBy('created_at', 'desc')
+                                ->get();
 
-        $productItems = $product->productItems;
-        
-        $data = [
-            'product' => $product,
-            'productItems' => $productItems,
-        ];
-        
         return response()->json($data);
     }
 

@@ -7,6 +7,7 @@ import breadcrumb from './breadcrumb';
 import radiobutton from './radiobutton';
 import slider from './slider';
 import dropdown from './dropdown';
+import toast from './toast';
 
 export default {
     global,
@@ -18,4 +19,5 @@ export default {
     radiobutton,
     slider,
     dropdown,
+    toast
 };

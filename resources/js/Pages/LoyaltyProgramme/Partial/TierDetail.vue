@@ -8,6 +8,9 @@ import Breadcrumb from '@/Components/Breadcrumb.vue';
 import { EditIcon, DeleteIcon, CouponIcon, PointsIcon, ProductQualityIcon} from "@/Components/Icons/solid";
 import EditTier from "./EditTier.vue";
 import MemberList from "./MemberList.vue";
+import Toast from '@/Components/Toast.vue'
+import { useCustomToast } from '@/Composables/index.js';
+import { UndetectableIllus } from "@/Components/Icons/illus";
 
 const props = defineProps({
     id: String,
@@ -27,6 +30,8 @@ const columns = ref([
     { field: "created_at", header: "Joined on", width: "26", sortable: true },
     { field: "total_spend", header: "Total spent",  width: "28", sortable: true },
 ]);
+
+const { flashMessage } = useCustomToast();
 
 const customers = ref([]);
 const ranking = ref([]);
@@ -53,6 +58,8 @@ const actions = {
 const emit = defineEmits(["close"]);
 
 onMounted(async() => {
+    flashMessage();
+    
     try {
         const response = await axios.get(`/loyalty-programme/getMemberList?id=${props.id}`);
         
@@ -133,10 +140,13 @@ const hideDeleteTierForm = () => {
             />
         </template>
 
+        <Toast />
+
         <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-5">
             <div class="w-full col-span-full lg:col-span-7 flex flex-col p-6 gap-6 rounded-[5px] border border-red-100">
-                <div class="flex flex-col p-6 gap-6 rounded-[5px] border border-red-100">
+                <div class="flex flex-col p-6 gap-6 items-center rounded-[5px] border border-red-100">
                     <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Member Spending</span>
+                    <UndetectableIllus />
                 </div>
                 <MemberList 
                     :id="id" 

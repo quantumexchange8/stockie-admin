@@ -1,4 +1,6 @@
-import { reactive, watchEffect } from 'vue'
+import { reactive, watchEffect, watch } from 'vue'
+import { useToast } from 'primevue/usetoast';
+import { usePage } from '@inertiajs/vue3';
 
 export const sidebarState = reactive({
     isOpen: window.innerWidth > 1024,
@@ -124,5 +126,37 @@ export function transactionFormat() {
         formatAmount,
         formatType,
         formatTime
+    };
+}
+
+export function useCustomToast() {
+    const toast = useToast();
+    const { props } = usePage();
+
+    const flashMessage = (options = {}) => {
+        const message = Object.keys(props.message).length !== 0 ? props.message : null;
+        // console.log(props);
+
+        if (message) {
+            const { 
+                severity = message.severity ?? 'warn',
+                summary = message.summary ?? '',
+                detail = message.detail ?? '',
+                life = 3000,
+                closable = false,
+            } = options;
+
+            toast.add({
+                severity: severity,
+                summary: summary,
+                detail: detail,
+                life: life,
+                closable: closable,
+            });
+        }
+    };
+
+    return {
+        flashMessage,
     };
 }

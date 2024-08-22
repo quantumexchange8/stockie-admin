@@ -16,6 +16,7 @@ import Carlsbeg from "../../../../assets/images/Loyalty/Carlsbeg.svg";
 import Tiger from "../../../../assets/images/Loyalty/Tiger.svg";
 // import DiscountAmount from "@/Pages/LoyaltyProgramme/Partial/DiscountAmount.vue";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
+import Toast from '@/Components/Toast.vue'
 
 const props = defineProps({
     tier: {
@@ -154,6 +155,10 @@ const resetReward = (value, index) => {
     form.rewards[index].reward_type = value;
 }
 
+const initializeMinItemQty = (value, index) => {
+    form.rewards[index].item_qty = value !== '' ? 1 : '';
+}
+
 const updateValidPeriod = (reward, option) => {
     reward.valid_period_from = '';
     reward.valid_period_to = '';
@@ -265,6 +270,16 @@ const submit = () => {
                         @change="toggleReward(form.reward)"
                     />
                 </div>
+                
+                <Toast 
+                    inline
+                    severity="info"
+                    summary="Edit entry reward for this tier"
+                    detail="The changes will only be applied to new entry member only."
+                    actionLabel="OK"
+                    :closable="false"
+                    class="xl:col-span-10"
+                />
 
                 <div class="flex flex-col gap-6" v-if="form.reward === 'active'">
                     <Accordion
@@ -370,6 +385,7 @@ const submit = () => {
                                                     v-model="reward.free_item"
                                                     placeholder="Select"
                                                     class="w-full"
+                                                    @onChange="initializeMinItemQty($event, index)"
                                                 />
                                                 <div 
                                                     v-if="reward.free_item !== ''"
@@ -379,7 +395,8 @@ const submit = () => {
                                                         :labelText="''"
                                                         :inputName="'item_qty_' + index"
                                                         :errorMessage="form.errors ? form.errors['items.' + index + '.item_qty']  : ''"
-                                                        :dataValue="reward.item_qty ?? 1"
+                                                        :dataValue="reward.item_qty || 1"
+                                                        :minValue="1"
                                                         v-model="reward.item_qty"
                                                     />
                                                 </div>

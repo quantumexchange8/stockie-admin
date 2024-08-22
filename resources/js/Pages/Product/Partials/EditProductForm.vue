@@ -1,17 +1,15 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
-import { Link, useForm, usePage, router } from '@inertiajs/vue3';
-import Checkbox from '@/Components/Checkbox.vue'
+import { ref, computed, watch } from 'vue'
+import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
-import DragDropImage from '@/Components/DragDropImage.vue'
 import RadioButton from '@/Components/RadioButton.vue'
 import Toggle from '@/Components/Toggle.vue'
 import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
-import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
-import { keepOptions, defaultProductItem } from '@/Composables/constants';
+import { DeleteIcon } from '@/Components/Icons/solid';
+import { keepOptions } from '@/Composables/constants';
 
 const props = defineProps({
     errors: Object,
@@ -42,6 +40,7 @@ const form = useForm({
     point: props.product.point,
     category_id: 1,
     keep: props.product.keep,
+    itemsDeletedBasket: [],
     items: props.product.product_items ? props.product.product_items : [],
 });
 
@@ -63,12 +62,10 @@ const cancelForm = () => {
 }
 
 // need to update this to delete the actual item from db
-const deleteItem = (id) => {
-    router.delete(`/menu-management/products/deleteProductItem/${id}`, {
-        preserveScroll: true,
-        preserveState: 'errors',
-        onSuccess: () => close(),
-    });
+const deleteItem = (index, itemId) => {
+    form.itemsDeletedBasket.push(itemId);
+
+    form.items.splice(index, 1);
 }
 
 const updateInventoryStockCount = async (index, id) => {
@@ -148,9 +145,9 @@ watch(() => form.items, (newValue) => {
                                 class="!w-fit whitespace-nowrap"
                             />
                             <DeleteIcon
-                                v-if="form.bucket"
+                                v-if="form.bucket && form.items.length > 1"
                                 class="w-6 h-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click="deleteItem(item.id)"
+                                @click="deleteItem(i, item.id)"
                             />
                         </div>
                     </div>

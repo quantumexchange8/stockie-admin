@@ -1,10 +1,12 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Tier from "./Partial/Tier.vue";
 import TabView from "@/Components/TabView.vue";
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import Point from "./Partial/Point.vue";
+import Toast from '@/Components/Toast.vue'
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     tiers: Array,
@@ -16,6 +18,8 @@ const props = defineProps({
 const home = ref({
     label: 'Loyalty Programme',
 });
+
+const { flashMessage } = useCustomToast();
 
 const tabs = ref(["Points", "Tier"]);
 const tiersRowsPerPage = ref(8);
@@ -66,6 +70,10 @@ const redeemableItemsTotalPages = computed(() => {
     return Math.ceil(props.redeemableItems.length / redeemableItemsRowsPerPage.value);
 })
 
+onMounted(() => {
+    flashMessage();
+});
+
 </script>
 
 <template>
@@ -75,6 +83,8 @@ const redeemableItemsTotalPages = computed(() => {
                 :home="home" 
             />
         </template>
+
+        <Toast />
 
         <TabView :tabs="tabs">
             <template #points>

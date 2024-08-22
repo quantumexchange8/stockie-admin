@@ -437,7 +437,7 @@ onMounted(() => {
 
             <template #paginatorstart>
                 <div class="text-xs font-medium text-grey-500">
-                    Showing: <span class="text-grey-900">{{ currentPage }} of {{ props.totalPages }}</span>
+                    Showing: <span class="text-grey-900">{{ props.totalPages === 0 ? 0 : currentPage }} of {{ props.totalPages }}</span>
                 </div>
             </template>
             <template #paginatorend>
@@ -623,7 +623,10 @@ onMounted(() => {
                 </div>
             </div>
             <div v-if="$slots.empty && paginatedRows.length === 0" class="col-span-full">
-                <slot name="empty"></slot>
+                <slot name="empty">
+                    <UndetectableIllus/>
+                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                </slot>
             </div>
         </div>
         <Paginator 
@@ -631,7 +634,7 @@ onMounted(() => {
             :totalRecords="props.rows.length"
             template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
             @page="onPageChange"
-            v-if="props.variant === 'grid'"
+            v-if="props.variant === 'grid' && paginatedRows.length > 0"
             :pt="{
                 root: {
                     class: 'flex justify-center items-center flex-wrap bg-white text-grey-500 py-3'
@@ -702,7 +705,7 @@ onMounted(() => {
         >
             <template #start>
                 <div class="text-xs font-medium text-grey-500">
-                    Showing: <span class="text-grey-900">{{ currentPage }} of {{ props.totalPages }}</span>
+                    Showing: <span class="text-grey-900">{{ props.totalPages === 0 ? 0 : currentPage }} of {{ props.totalPages }}</span>
                 </div>
             </template>
             <template #end>

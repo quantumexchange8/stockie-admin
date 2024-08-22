@@ -1,12 +1,18 @@
 <script setup>
 import axios from 'axios';
-import { ref, onMounted, computed } from 'vue'
-import { Head,Link } from '@inertiajs/vue3';
+import { ref, computed } from 'vue'
+import { Head } from '@inertiajs/vue3';
 import ProductTable from './Partials/ProductTable.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import TotalProductChart from './Partials/TotalProductChart.vue';
 import TopSellingProductTable from './Partials/TopSellingProductTable.vue';
+
+const props = defineProps({
+    products: Array,
+    inventories: Array,
+    categories: Array,
+});
 
 const home = ref({
     label: 'Menu Management',
@@ -31,11 +37,10 @@ const topSellingProductColumns = ref([
     {field: 'stock_status', header: 'Status', width: '22', sortable: false},
 ]);
 
-const initialProducts = ref([]);
-const products = ref([]);
-const categoryArr = ref([]);
-const inventoriesArr = ref([]);
-const productsTotalPages = ref(1);
+const initialProducts = ref(props.products);
+const products = ref(props.products);
+const categoryArr = ref(props.categories);
+const inventoriesArr = ref(props.inventories);
 const productRowsPerPage = ref(8);
 const selectedCategory = ref(0);
 const checkedFilters = ref({
@@ -78,7 +83,6 @@ const getProducts = async (filters = {}, selectedCategory = 0) => {
             }
         });
         products.value = response.data;
-        productsTotalPages.value = Math.ceil(products.value.length / productRowsPerPage.value);
     } catch (error) {
         console.error(error);
     } finally {
@@ -96,19 +100,9 @@ const applyCheckedFilters = (filters) => {
     getProducts(filters, selectedCategory.value);
 };
 
-onMounted(async () => {
-    // Get initial inventories
-    const response = await axios.get('/menu-management/products/getProducts');
-    initialProducts.value = response.data;
-    products.value = response.data;
-    productsTotalPages.value = Math.ceil(products.value.length / productRowsPerPage.value);
-
-    const categoryResponse = await axios.get('/menu-management/products/getAllCategories');
-    categoryArr.value = categoryResponse.data;
-
-    const inventoriesResponse = await axios.get('/menu-management/products/getAllInventories');
-    inventoriesArr.value = inventoriesResponse.data;
-});
+const productsTotalPages = computed(() => {
+    return Math.ceil(products.value.length / productRowsPerPage.value);
+})
 
 const calcTotalProductSaleQty = (saleHistories) => {
     return saleHistories.reduce((total, sale) => total + sale.qty, 0);

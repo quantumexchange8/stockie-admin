@@ -12,7 +12,11 @@ import ProductInfoSection from './ProductInfoSection.vue';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 
 const props = defineProps({
-    id: [Number, String],
+    product: Object,
+    saleHistories: Array,
+    defaultDateFilter: Array,
+    inventories: Array,
+    categories: Array,
 })
 
 const home = ref({
@@ -43,17 +47,14 @@ const defaultLatest30Days = computed(() => {
     return [last30Days.toDate(), currentDate.toDate()];
 });
 
-const product = ref();
-const saleHistories = ref([]);
-const saleHistoriesTotalPages = ref(1);
+const product = ref(props.product);
+const saleHistories = ref(props.saleHistories);
 const saleHistoriesRowsPerPage = ref(16);
-const productItems = ref([]);
-const productItemsTotalPages = ref(1);
+const productItems = ref(props.product.product_items);
 const productItemsRowsPerPage = ref(4);
-const categoryArr = ref([]);
-const inventoriesArr = ref([]);
+const categoryArr = ref(props.categories);
+const inventoriesArr = ref(props.inventories);
 const date_filter = ref(defaultLatest30Days.value);  
-const op = ref();
 
 const rowType = {
     rowGroups: false,
@@ -64,16 +65,14 @@ const rowType = {
 // Get filtered sale histories
 const getSaleHistories = async (filters = {}, id) => {
     try {
-        const saleHistoriesResponse = await axios.get('/menu-management/products/getProductSaleHistories', {
+        const saleHistoriesResponse = await axios.get(`/menu-management/products/getProductSaleHistories/${id}`, {
             method: 'GET',
             params: {
-                id: id,
                 dateFilter: filters,
             }
         });
 
         saleHistories.value = saleHistoriesResponse.data;
-        saleHistoriesTotalPages.value = Math.ceil(saleHistories.value.length / saleHistoriesRowsPerPage.value);
     } catch (error) {
         console.error(error);
     } finally {
@@ -104,7 +103,7 @@ const downloadBlob = (content, filename, contentType) => {
 const exportToCSV = () => { 
     const saleHistoriesArr = [];
     const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const fileName = `Product_${props.id}_Sale History_${currentDateTime}.csv`;
+    const fileName = `Product_${props.product.id}_Sale History_${currentDateTime}.csv`;
     const contentType = 'text/csv;charset=utf-8;';
 
     if (saleHistories.value && saleHistories.value.length > 0) {
@@ -124,27 +123,16 @@ const exportToCSV = () => {
     }
 }
 
-onMounted(async () => {
-    try {
-        const productItemsResponse = await axios.get(`/menu-management/products/getProductWithItems/${props.id}`);
-        product.value = productItemsResponse.data.product;
-        productItems.value = productItemsResponse.data.productItems;
-        productItemsTotalPages.value = Math.ceil(productItems.value.length / productItemsRowsPerPage.value);
-        
-        const categoryResponse = await axios.get('/menu-management/products/getAllCategories');
-        categoryArr.value = categoryResponse.data;
+const productItemsTotalPages = computed(() => {
+    return Math.ceil(product.value.length / productItemsRowsPerPage.value);
+})
 
-        const inventoriesResponse = await axios.get('/menu-management/products/getAllInventories');
-        inventoriesArr.value = inventoriesResponse.data;
-    } catch (error) {
-        console.error(error);
-    } finally {
-        getSaleHistories(date_filter.value, props.id);
-    }
-});
+const saleHistoriesTotalPages = computed(() => {
+    return Math.ceil(saleHistories.value.length / saleHistoriesRowsPerPage.value);
+})
 
 watch(() => date_filter.value, () => {
-    getSaleHistories(date_filter.value, props.id);
+    getSaleHistories(date_filter.value, props.product.id);
 })
 
 </script>
@@ -227,6 +215,7 @@ watch(() => date_filter.value, () => {
                 </div>
 
                 <SaleHistoryTable
+                    :dateFilter="defaultDateFilter.map((date) => { return new Date(date) })"
                     :columns="saleHistoriesColumns"
                     :rows="saleHistories"
                     :totalPages="saleHistoriesTotalPages"

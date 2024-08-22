@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
@@ -11,7 +11,6 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultProductItem } from '@/Composables/constants';
-import Label from '@/Components/Label.vue';
 
 const props = defineProps({
     errors: Object,
@@ -134,7 +133,6 @@ watch(() => form.bucket, (newValue) => {
                                     :inputArray="inventoriesArr"
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"
-                                    :dataValue="parseInt(item.inventory_item_id)"
                                     v-model="item.inventory_item_id"
                                     @onChange="updateInventoryStockCount(i, $event)"
                                 >
@@ -220,22 +218,6 @@ watch(() => form.bucket, (newValue) => {
                                 v-model="form.category_id"
                                 class="col-span-full sm:col-span-4"
                             />
-                            <!-- <Dropdown
-                                :inputName="'category_id'"
-                                :labelText="'Select category'"
-                                :inputArray="categoryArr"
-                                :errorMessage="form.errors?.category_id || ''"
-                                variant="new"
-                                v-model="form.category_id"
-                                class="col-span-full sm:col-span-4"
-                            /> -->
-                            <!-- <div class="w-full col-span-full sm:col-span-3">
-                                <Label
-                                    :value="'Select category'"
-                                    class="mb-1 text-xs !font-medium text-grey-900 whitespace-nowrap"
-                                >
-                                </Label>
-                            </div> -->
                         </div>
                         <div class="flex items-start gap-10">
                             <RadioButton

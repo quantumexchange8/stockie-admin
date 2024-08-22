@@ -1,7 +1,7 @@
 <script setup>
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
@@ -9,6 +9,8 @@ import { UploadIcon } from '@/Components/Icons/solid.jsx';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import RedemptionHistoryTable from './RedemptionHistoryTable.vue';
 import PointInfoSection from './PointInfoSection.vue';
+import Toast from '@/Components/Toast.vue'
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     redemptionHistories: Array,
@@ -37,6 +39,8 @@ const pointItemsColumns = ref([
     {field: 'item', header: 'Item', width: '70', sortable: false},
     {field: 'inventory_item.stock_qty', header: 'Stock', width: '30', sortable: false},
 ]);
+
+const { flashMessage } = useCustomToast();
 
 const redemptionHistories = ref(props.redemptionHistories);
 const redemptionHistoriesRowsPerPage = ref(16);
@@ -121,6 +125,10 @@ const redemptionHistoriesTotalPages = computed(() => {
 const pointItemsTotalPages = computed(() => {
     return Math.ceil(props.redeemableItem.point_items.length / pointItemsRowsPerPage.value);
 });
+
+onMounted(async() => {
+    flashMessage();
+});
 </script>
 
 <template>
@@ -133,6 +141,9 @@ const pointItemsTotalPages = computed(() => {
                 :items="items"
             />
         </template>
+
+        <Toast />
+
         <div class="grid grid-cols-1 lg:grid-cols-12 justify-center gap-5 w-full">
             <div class="col-span-full lg:col-span-8 flex flex-col p-6 gap-2.5 items-center rounded-[5px] border border-red-100">
                 <div class="flex items-center justify-between w-full">
