@@ -4,37 +4,57 @@ import TextInput from "@/Components/TextInput.vue";
 import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
+import { computed } from "vue";
 
 const props = defineProps({
     waiters: {
-        type: Array,
+        type: Object,
         required: true
     },
 })
 
 const emit = defineEmits(["close"]);
 const closeModal = () => {
-    form.reset(); //Reset form field
-    form.errors = {}; // Clear all errors
+    form.reset(); 
+    form.errors = {}; 
     emit("close");
 };
 
+function formatPhone(phone) {
+    if (!phone || phone.length < 10) 
+        return phone; 
+    
+
+    if (phone.startsWith('+6')) 
+        phone = phone.slice(3);
+      
+
+    return phone;
+}
+
+function formatSalary(salary) {
+    if(salary.endsWith('.00'))
+        salary = salary.slice(0, -3);
+
+    return salary;
+}
+
 const form = useForm({
-    name: "",
-    phone: "",
-    email: "",
-    staffid: "",
-    salary: "",
-    stockie_email: "",
-    stockie_password: "",
+    id: props.waiters.id,
+    name: props.waiters.name,
+    phone: formatPhone(props.waiters.phone),
+    email: props.waiters.email,
+    staffid: props.waiters.staffid,
+    salary: formatSalary(props.waiters.salary),
+    stockie_email: props.waiters.stockie_email,
+    stockie_password: '',
 });
 
 const submit = () => {
-    form.post(route("waiter.add-waiter"), {
+    form.post(route("waiter.edit-waiter"), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
-            form.reset();
             closeModal();
         },
         onError: (error) => {
@@ -43,22 +63,15 @@ const submit = () => {
     });
 };
 
-const isFormIncomplete = () => {
-    return (
-        !form.name ||
-        !form.phone ||
-        !form.email ||
-        !form.staffid ||
-        !form.salary ||
-        !form.stockie_email ||
-        !form.stockie_password
-    );
-};
+const requiredFields = ['name', 'phone', 'email', 'staffid', 'salary', 'stockie_email', 'stockie_password'];
+
+const isFormValid = computed(() => {
+    return requiredFields.every(field => form[field]);
+})
 </script>
 <template>
-    <!-- {{ waiters }} -->
     <div class="w-full flex flex-col">
-        <form @submit.prevent="submit">
+        <form novalidate @submit.prevent="submit">
             <div class="w-full flex flex-col md:gap-9">
                 <div class="w-full flex md:gap-6">
                     <DragDropImage
@@ -192,20 +205,15 @@ const isFormIncomplete = () => {
                         type="button"
                         @click="form.reset()"
                         :size="'lg'"
-                        >Cancel</Button
+                        >Discard</Button
                     >
                     <Button
                         variant="primary"
                         type="submit"
                         :size="'lg'"
-                        :disabled="isFormIncomplete() && form.processing"
+                        :disabled="!isFormValid || form.processing"
                         :class="{ 'opacity-25': form.processing }"
-                        v-bind:class="[
-                            isFormIncomplete()
-                                ? 'disabled-class'
-                                : 'enabled-class',
-                        ]"
-                        >Add</Button
+                        >Save Changes</Button
                     >
                 </div>
             </div>

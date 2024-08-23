@@ -11,17 +11,23 @@ class WaiterRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'phone' => preg_replace('/\s+/', '', $this->phone),
+        ]);
+    }
+
     public function rules()
     {
         return [
-            'full_name'=>'required|string|max:255',
             'name'=>'required|string|max:255',
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
-            'email' => 'required|email|unique:users,email',
-            'role_id' => 'required|string|unique:users,role_id',
+            'email' => 'required|email|unique:waiters,email',
+            'staffid' => 'required|string|unique:waiters,staffid',
             'salary' => 'required|integer|min:0',
-            'worker_email' => 'required|email',
-            'password' => 'required|string',
+            'stockie_email' => 'required|email',
+            'stockie_password' => 'required|string',
         ];
     }
 

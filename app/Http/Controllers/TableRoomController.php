@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 class TableRoomController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $zones = Zone::with('tables')
                         ->select('id', 'name')
@@ -32,7 +32,14 @@ class TableRoomController extends Controller
                             ];
                         });
                         // dd($zones);
+
+        $message = $request->session()->get('message');
+
+        $request->session()->forget('message');
+        $request->session()->save();
+
         return Inertia::render('TableRoom/TableRoom', [
+            'message' => $message ?? [],
             'zones' => $zones
         ]);
     }
@@ -54,7 +61,12 @@ class TableRoomController extends Controller
             'name' => $validatedData['name'],
         ]);
 
-        return redirect()->route('table-room')->with('success','Zone created successfully');
+        $message = [
+            'severity' => 'success',
+            'summary' => 'New Zone has been added successfully.'
+        ];
+
+        return redirect()->route('table-room')->with(['message' => $message]);
     }
 
     public function addTable(Request $request)
@@ -76,7 +88,12 @@ class TableRoomController extends Controller
             'order_id' => '1',
         ]);
 
-        return redirect()->route('table-room')->with('success','Table created');
+        $message = [
+            'severity' => 'success',
+            'summary' => 'New table has been successfully added.'
+            ];
+
+        return redirect()->route('table-room')->with(['message' => $message]);
     }
 
     public function deleteZone($id)
@@ -84,15 +101,27 @@ class TableRoomController extends Controller
         $deleteZone = Zone::where('id', $id)->delete();
         $deleteTable = Table::where('zone_id', $id)->delete();
 
-        return redirect()->route('table-room')->with('success','Zone deleted');
+        $message = [
+            'severity' => 'success',
+            'summary' => "Selected zone has been deleted successfully."
+        ];
+
+        return redirect()->route('table-room')->with(['message' => $message]);
     }
 
     public function deleteTable(Request $request)
     {
+        
+        $deleteType = Table::where('id', $request->id)->value('type');
         $deleteTable = Table::where('id', $request->id);
         $deleteTable->delete();
 
-        // return redirect()->route('table-room')->with('success','Table deleted');
+        $message = [
+            'severity' => 'success',
+            'summary' => "Selected $deleteType has been deleted successfully."
+        ];
+
+        return redirect()->route('table-room')->with(['message' => $message]);
     }
 
     public function editTable(Request $request)
@@ -115,9 +144,14 @@ class TableRoomController extends Controller
             'table_no' => $validatedData['table_no'],
             'seat' => $validatedData['seat'],
             'zone_id' => $validatedData['zone_id'],
-            ]);
+        ]);
 
-        return redirect()->route('tableroom.getTableDetails')->with('success','Table updated');
+        $message = [
+            'severity' => 'success',
+            'summary' => 'Changes saved.'
+        ];
+
+        return redirect()->route('table-room')->with(['message' => $message]);
     }
 
     public function editZone(Request $request)

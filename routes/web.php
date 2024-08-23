@@ -36,7 +36,11 @@ Route::middleware('auth')->group(function () {
     /********* Waiter **********/
     Route::prefix('waiter')->group(function(){
         Route::get('/waiter', [WaiterController::class, 'waiter'])->name('waiter');
-        Route::post('/waiter-create', [WaiterController::class, 'store'])->name('waiter.add-waiter');
+        Route::post('/waiter/createWaiter', [WaiterController::class, 'store'])->name('waiter.add-waiter');
+        Route::delete('/waiter/deleteWaiter/{id}', [WaiterController::class, 'deleteWaiter'])->name('waiter.delete-waiter');
+        Route::post('/waiter/editWaiter', [WaiterController::class,'editWaiter'])->name('waiter.edit-waiter');
+        Route::get('/waiter/waiterDetails/{id}', [WaiterController::class,'showWaiterDetails'])->name('waiter.waiter-details');
+        Route::get('/waiter/waiterDetailsWithId/{id}', [WaiterController::class,'getWaiterDetailsWithId'])->name('waiter.waiter-details-withId');
     });
  
     /********* Menu Management **********/

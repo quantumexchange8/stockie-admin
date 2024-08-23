@@ -5,15 +5,43 @@ import SearchBar from "@/Components/SearchBar.vue";
 import SalesPerformance from "./Partials/SalesPerformance.vue";
 import AddWaiter from "./Partials/AddWaiter.vue";
 import { PlusIcon } from "@/Components/Icons/solid";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import Modal from "@/Components/Modal.vue";
 import Breadcrumb from '@/Components/Breadcrumb.vue';
+import WaiterTable from "./Partials/WaiterTable.vue";
+import CommissionEarned from "./Partials/CommissionEarned.vue";
+import Toast from "@/Components/Toast.vue";
+import { useCustomToast } from "@/Composables";
 
 const home = ref({
     label: 'Waiter',
 });
 
+const props = defineProps({
+    waiters: {
+        type: Object,
+        required: true
+    },
+})
+
+const { flashMessage } = useCustomToast();
+
+const waiterColumns = ref([
+    {field: 'staffid', header: 'ID', width: '11.5', sortable: true},
+    {field: 'name', header: 'Waiter', width: '21.5', sortable: true},
+    {field: 'phone', header: 'Phone', width: '20', sortable: true},
+    {field: 'stockie_email', header: 'Email', width: '35', sortable: true},
+    {field: 'action', header: '', width: '20', sortable: false},
+]);
+
+const actions = {
+    view: (waiterId) => `/waiter/waiter/waiterDetails/${waiterId}`,
+    edit: () => ``,
+    delete: () => ``,
+};
+
 const isModalOpen = ref(false);
+
 const openModal = () => {
     isModalOpen.value = true;
 };
@@ -21,18 +49,23 @@ const openModal = () => {
 const closeModal = () => {
     isModalOpen.value = false;
 };
+
+onMounted(() => {
+    flashMessage();
+});
+
 const inputValue = ref("");
 </script>
 
 <template>
-    <!-- <Head title="Waiter"></Head> -->
-
     <AuthenticatedLayout>
         <template #header>
             <Breadcrumb 
                 :home="home" 
             />
         </template>
+
+        <Toast />
 
         <div class="w-full py-6">
             <div class="w-full flex flex-col gap-5 justify-center items-center">
@@ -47,7 +80,7 @@ const inputValue = ref("");
                         class="w-full p-4 sm:p-8 bg-white sm:rounded-lg"
                         style="border: 1px solid #ffe1e2"
                     >
-                        <SalesPerformance />
+                        <CommissionEarned />
                     </div>
                 </div>
 
@@ -80,13 +113,17 @@ const inputValue = ref("");
                                 :title="'Add New Waiter'"
                                 :maxWidth="'lg'"
                             >
-                                <AddWaiter @close="closeModal" />
+                                <AddWaiter @close="closeModal" :waiters="waiters" />
                             </Modal>
                         </Button>
                     </div>
 
                     <div>
-                        <!-- <WaiterTable/> -->
+                        <WaiterTable 
+                            :rows="waiters"
+                            :columns="waiterColumns"
+                            :actions="actions"
+                        />
                     </div>
                 </div>
             </div>

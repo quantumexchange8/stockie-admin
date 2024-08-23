@@ -16,6 +16,8 @@ import ZoneTabs from './Partials/ZoneTabs.vue';
 import { EmptyTableIllus } from '@/Components/Icons/illus.jsx';
 import TabView from '@/Components/TabView.vue';
 import { FilterMatchMode } from 'primevue/api';
+import Toast from '@/Components/Toast.vue';
+import { useCustomToast } from '@/Composables';
 
 const home = ref({
     label: 'Table & Room',
@@ -27,6 +29,8 @@ const props = defineProps({
     required: true
   },
 });
+
+const { flashMessage } = useCustomToast();
 
 const zones = ref(props.zones);
 const tables = ref([]);
@@ -62,6 +66,7 @@ const getTableDetails = async () => {
 
 onMounted(() => {
     getTableDetails();
+    flashMessage();
 });
 
 const showCreateForm = () => {
@@ -122,6 +127,8 @@ const filteredZones = computed(() => {
             :title="'Title'" 
             :previousTab="true">
         </RightSidebar>
+
+        <Toast />
 
         <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 rounded-[5px]">
             <SearchBar 
