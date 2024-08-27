@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('salary', 10, 2); 
             $table->string('stockie_email');
             $table->string('stockie_password');
+            $table->softDeletes();
         });
     }
 
