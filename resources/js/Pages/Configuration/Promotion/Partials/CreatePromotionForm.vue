@@ -48,7 +48,7 @@ const closeForm = () => {
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
-        <div class="flex flex-col items-start self-stretch gap-6 max-h-[650px] pl-1 pr-2 py-1 overflow-y-scroll scrollbar-thin scrollbar-webkit">
+        <div class="flex flex-col items-start self-stretch gap-6 max-h-[450px] pl-1 pr-2 py-1 overflow-auto scrollbar-thin scrollbar-webkit">
             <DragDropImage
                 :inputName="'image'"
                 :errorMessage="form.errors.image"
