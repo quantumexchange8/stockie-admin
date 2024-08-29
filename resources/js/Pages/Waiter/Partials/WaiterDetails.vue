@@ -1,10 +1,9 @@
 <script setup>
-import axios from 'axios';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import TabView from '@/Components/TabView.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import EntitledIncentive from './EntitledIncentive.vue';
 import WaiterDetailCard from './WaiterDetailCard.vue';
 import Commission from './Commission.vue';
@@ -16,34 +15,76 @@ const props = defineProps({
     id: [Number, String],
     defaultDateFilter: Array,
     order: Array,
+    waiter: {
+        type: Object,
+        required: true,
+    },
+    attendance: Array,
+    incentiveData: Object,
+    configIncentive: Object,
 })
 
 const home = ref({
     label: 'Waiter',
-    route: '/waiter/waiter'
+    route: '/waiter'
 });
 
 const items = ref([
     { label: 'Waiter Detail'},
 ]);
 
-const waiter = ref(null);
+const waiter = ref(props.waiter);
+const attendance = ref(props.attendance);
+const data = ref(props.incentiveData);
+const salesRowsPerPage = ref(11);
+const commissionRowsPerPage = ref(11);
+const attendanceRowsPerPage = ref(11);
 const tabs = ref(['Sales', 'Commission', 'Attendance']);
 const salesColumn = ref([
-    {field: '', header: 'Date', width: '11.5', sortable: true},
-    {field: 'order', header: 'Order', width: '21.5', sortable: true},
-    {field: 'sales', header: 'Sales', width: '20', sortable: true},
-    {field: 'commission', header: 'Commission', width: '35', sortable: true},
-    {field: 'action', header: '', width: '20', sortable: false},
+    {field: 'created_at', header: 'Date', sortable: true},
+    {field: 'order_no', header: 'Order',sortable: true},
+    {field: 'total_amount', header: 'Sales', sortable: true},
+    {field: 'commission', header: 'Commission', sortable: true},
+    {field: 'action', header: '',  sortable: false},
 ]);
 
-onMounted(async () => {
-    try{
-    const response = await axios.get(`/waiter/waiter/waiterDetailsWithId/${props.id}`);
-    waiter.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
+const commissionColumn = ref([
+    {field: 'created_by', header: 'Month', width: '15', sortable: true},
+    {field: 'total_sales', header: 'Total', width: '12', sortable: true},
+    {field: 'commission', header: 'Commission', width: '18', sortable: true},
+    {field: 'incentive', header: 'Incentive', width: '27', sortable: true},
+    {field: 'total_commission', header: 'Total Commission', width: '18', sortable: true},
+    {field: 'status', header: 'Status', width: '10', sortable: true},
+]);
+
+const attendanceColumn = ref([
+    {field: 'check_in', header: 'Check in', width: '35', sortable: true},
+    {field: 'check_out', header: 'Check out', width: '35', sortable: true},
+    {field: 'duration', header: 'Duration', width: '30', sortable: true},
+]);
+
+const rowType = {
+    rowGroups: false,
+    expandable: false,
+    groupRowsBy: "",
+};
+
+const actions = {
+    view: () => ``,
+    edit: () => ``,
+    delete: () => ``,
+};
+
+const salesTotalPages = computed(() => {
+    return Math.ceil(props.order.length / salesRowsPerPage.value);
+})
+
+const commissionTotalPages = computed(() => {
+    return Math.ceil(props.incentiveData.length / commissionRowsPerPage.value);
+})
+
+const attendanceTotalPages = computed(() => {
+    return Math.ceil(props.attendance.length / attendanceRowsPerPage.value);
 })
 
 </script>
@@ -61,9 +102,9 @@ onMounted(async () => {
 
         <div class="w-full">
             <div class="w-full flex flex-col gap-5 justify-center">
-                <div class="w-full flex flex-row gap-5">
+                <div class="w-full flex md:flex-row gap-5 flex-col">
                     <!-- sales and commission -->
-                    <div class="flex flex-col gap-6">
+                    <div class="flex md:flex-col gap-6 flex-row">
                         <div 
                             class="w-full flex p-5 flex-col items-start gap-2.5 
                             grow shrink-0 basis-0 self-stretch rounded-[5px] border border-solid border-primary-100
@@ -72,7 +113,7 @@ onMounted(async () => {
                             <div class="flex flex-col gap-1 self-stretch"> 
                                 <GrowthIcon />
                                 <span class="text-primary-100 text-sm font-medium whitespace-nowrap w-full">Total sales this month</span>
-                                <span class="text-primary-25 text-lg font-medium ">RM 13,200.23</span>
+                                <span class="text-primary-25 text-lg font-medium ">RM {{ incentiveData.length ? incentiveData.slice(-1)[0].total_sales : 0 }}</span>
                             </div>
                             <div class="absolute bottom-0 right-0">
                                 <WaiterSalesIcon />
@@ -85,8 +126,8 @@ onMounted(async () => {
                             <div class="flex flex-col gap-1 self-stretch">
                                 <CommissionIcon />
                                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Commission in this month</span>
-                                <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM 2,923.98</span>
-                                <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM 2,423.98 + RM500)</span>
+                                <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ incentiveData.length ? incentiveData.slice(-1)[0].total_commission : 0 }}</span>
+                                <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ incentiveData.length ? incentiveData.slice(-1)[0].commission : 0 }} + RM {{ incentiveData.length ? incentiveData.slice(-1)[0].incentive : 0 }})</span>
                             </div>
                         </div>
                     </div>
@@ -95,35 +136,58 @@ onMounted(async () => {
                     <div 
                         class="w-full p-4 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100"
                     >
-                        <EntitledIncentive />
+                        <EntitledIncentive :data="incentiveData" :configIncentive="configIncentive"/>
                     </div>
 
                     <!-- waiter detail -->
                     <div 
-                        class="w-full p-6 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100"
+                        class="w-full p-6 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 min-w-[315px]"
                     >
                         <WaiterDetailCard :waiter="waiter" />
                     </div>
                 </div>
                 
                 <!-- Daily Sales Report -->
-                <div class="">
+                <div class="w-full">
                     <TabView :tabs="tabs">
+
                         <template #sales>
-                            <div>
-                                <Sales :order="order" :dateFilter="defaultDateFilter"/>
-                            </div>
+                            <Sales 
+                                :order="order" 
+                                :waiter="waiter" 
+                                :dateFilter="defaultDateFilter" 
+                                :columns="salesColumn" 
+                                :actions="actions"
+                                :rowType="rowType"
+                                :totalPages="salesTotalPages"
+                                :rowsPerPage="salesRowsPerPage"
+                            />
                         </template>
+
                         <template #commission>
-                            <div>
-                                <Commission />
-                            </div>
+                            <Commission 
+                                :order="order" 
+                                :data="incentiveData" 
+                                :columns="commissionColumn"
+                                :waiter="waiter"
+                                :rowType="rowType"
+                                :totalPages="commissionTotalPages"
+                                :rowsPerPage="commissionRowsPerPage"
+                            />
                         </template>
+
                         <template #attendance>
-                            <div>
-                                <Attendance />
-                            </div>
+                            <Attendance 
+                                :waiter="waiter" 
+                                :columns="attendanceColumn" 
+                                :dateFilter="defaultDateFilter" 
+                                :attendance="attendance"
+                                :rowType="rowType"
+                                :totalPages="attendanceTotalPages"
+                                :rowsPerPage="attendanceRowsPerPage"
+                            />
                         </template>
+
                     </TabView>
                 </div>
             </div>

@@ -35,9 +35,6 @@ class TableRoomController extends Controller
 
         $message = $request->session()->get('message');
 
-        $request->session()->forget('message');
-        $request->session()->save();
-
         return Inertia::render('TableRoom/TableRoom', [
             'message' => $message ?? [],
             'zones' => $zones

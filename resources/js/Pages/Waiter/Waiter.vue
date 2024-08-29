@@ -5,7 +5,7 @@ import SearchBar from "@/Components/SearchBar.vue";
 import SalesPerformance from "./Partials/SalesPerformance.vue";
 import AddWaiter from "./Partials/AddWaiter.vue";
 import { PlusIcon } from "@/Components/Icons/solid";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import Modal from "@/Components/Modal.vue";
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import WaiterTable from "./Partials/WaiterTable.vue";
@@ -22,6 +22,19 @@ const props = defineProps({
         type: Object,
         required: true
     },
+
+})
+
+const rowType = {
+    rowGroups: false,
+    expandable: false,
+    groupRowsBy: "",
+};
+
+const waitersRowsPerPage = ref(6);
+
+const waitersTotalPages = computed(() => {
+    return Math.ceil(props.waiters.length / waitersRowsPerPage.value);
 })
 
 const { flashMessage } = useCustomToast();
@@ -35,7 +48,7 @@ const waiterColumns = ref([
 ]);
 
 const actions = {
-    view: (waiterId) => `/waiter/waiter/waiterDetails/${waiterId}`,
+    view: (waiterId) => `/waiter/waiterDetails/${waiterId}`,
     edit: () => ``,
     delete: () => ``,
 };
@@ -69,16 +82,14 @@ const inputValue = ref("");
 
         <div class="w-full py-6">
             <div class="w-full flex flex-col gap-5 justify-center items-center">
-                <div class="w-full flex md:gap-[21px] justify-center">
+                <div class="w-full flex gap-[21px] flex-col md:flex-row justify-center">
                     <div
-                        class="w-full p-4 sm:p-8 bg-white sm:rounded-lg"
-                        style="border: 1px solid #ffe1e2"
+                        class="w-full p-4 sm:p-8 bg-white sm:rounded-lg border border-solid border-primary-100 min-w-[360px]"
                     >
                         <SalesPerformance class="w-full" />
                     </div>
                     <div
-                        class="w-full p-4 sm:p-8 bg-white sm:rounded-lg"
-                        style="border: 1px solid #ffe1e2"
+                        class="w-full p-4 sm:p-8 bg-white sm:rounded-lg border border-solid border-primary-100 min-w-[360px]"
                     >
                         <CommissionEarned />
                     </div>
@@ -88,7 +99,6 @@ const inputValue = ref("");
                     class="w-full flex flex-col gap-4 p-4 sm:p-6 bg-white sm:rounded-lg border-[#ffe1e2] border-solid border-[1px]"
                 >
                     <div class="w-full flex items-center gap-5">
-                        <!-- Search Bar -->
                         <SearchBar
                             placeholder="Search"
                             :show-filter="false"
@@ -123,6 +133,9 @@ const inputValue = ref("");
                             :rows="waiters"
                             :columns="waiterColumns"
                             :actions="actions"
+                            :rowType="rowType"
+                            :totalPages="waitersTotalPages"
+                            :rowsPerPage="waitersRowsPerPage"
                         />
                     </div>
                 </div>

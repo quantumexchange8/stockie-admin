@@ -5,6 +5,19 @@ import { CircledArrowHeadRightIcon2, TargetIcon } from '@/Components/Icons/solid
 import { Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
+const props = defineProps({
+    data: Object,
+    configIncentive: Array,
+});
+
+function formatMonthlySale (monthly_sale){
+    return monthly_sale.substring(0, monthly_sale.length-3);
+}
+
+function formatPercentageRate (rate){
+    return rate * 100 + '%';
+}
+
 </script>
 
 <template>
@@ -17,29 +30,22 @@ import { ref } from 'vue';
                     />
             </Link>
         </div>
-        <div class="flex flex-col px-0.5 items-start gap-4 self-stretch">
+        <div class="flex flex-col px-0.5 items-start gap-4 self-stretch" v-if="configIncentive" v-for="data in configIncentive">
             <Link 
             :href="route('configurations')"
             class="w-full flex p-3 flex-col items-start gap-0.5 self-strech rounded-[5px] bg-primary-25">
-                <span class="text-primary-900 text-md font-semibold">RM 500</span>
+                <span v-if="data.type === 'fixed'" class="text-primary-900 text-md font-semibold">RM {{ data.rate }}</span>
+                <span v-if="data.type === 'percentage'" class="text-primary-900 text-md font-semibold">{{ formatPercentageRate(data.rate) }}</span>
                 <span class="text-grey-900 text-sm font-normal">of total monthly sales</span>
                 <div class="flex items-center gap-1">
                     <TargetIcon />
-                    <span class="text-2xs font-normal text-primary-800">RM 10,000</span>
+                    <span class="text-2xs font-normal text-primary-800">RM {{ formatMonthlySale(data.monthly_sale) }}</span>
                 </div>
             </Link>
-            <div class="w-full flex p-3 flex-col items-start gap-0.5 self-strech rounded-[5px] bg-primary-25">
-                <span class="text-primary-900 text-md font-semibold">15%</span>
-                <span class="text-grey-900 text-sm font-normal">of total monthly sales</span>
-                <div class="flex items-center gap-1">
-                    <TargetIcon />
-                    <span class="text-2xs font-normal text-primary-800">RM 15,000</span>
-                </div>
-            </div>
         </div>
 
         <!-- blank state -->
-        <!-- <div class="p-2 flex flex-col items-center text-center h-full justify-between self-stretch">
+        <div class="p-2 flex flex-col items-center text-center h-full justify-between self-stretch" v-else>
             <EmptyEntitledIncentive />
             <div class="flex flex-col gap-4 items-center text-center">
                 <span class="text-sm font-medium text-primary-900 text-balance">This employee does not entitled to any incentive commission yet.</span>
@@ -50,6 +56,6 @@ import { ref } from 'vue';
                 >Go to Add
                 </Button>
             </div>
-        </div> -->
+        </div>
     </div>
 </template>

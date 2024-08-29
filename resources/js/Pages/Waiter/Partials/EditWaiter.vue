@@ -70,23 +70,23 @@ const isFormValid = computed(() => {
 })
 </script>
 <template>
-    <div class="w-full flex flex-col">
+    <div class="w-full flex flex-col overflow-x-auto">
         <form novalidate @submit.prevent="submit">
             <div class="w-full flex flex-col md:gap-9">
-                <div class="w-full flex md:gap-6">
+                <div class="w-full flex flex-col gap-6 md:flex-row justify-center">
                     <DragDropImage
                         :inputName="'image'"
                         :errorMessage="form.errors.image"
                         v-model="form.image"
-                        class="col-span-full md:col-span-4 !h-[373px] !w-[373px]"
+                        class="!h-[373px] !w-[373px] !md:w-full "
                     />
-                    <div class="flex flex-grow flex-col md:gap-[48px]">
+                    <div class="flex flex-grow flex-col gap-[48px]">
                         <div class="flex flex-col md:gap-6">
                             <div class="md:text-[20px] text-[#48070A]">
                                 Personal Detail
                             </div>
 
-                            <div class="flex flex-col md:gap-4">
+                            <div class="flex flex-col gap-4">
                                 <div class="flex md:gap-4">
                                     <TextInput
                                         label-text="Full name"
@@ -99,7 +99,7 @@ const isFormValid = computed(() => {
                                     </TextInput>
                                 </div>
 
-                                <div class="flex md:gap-4">
+                                <div class="flex gap-4">
                                     <div class="w-full flex flex-col">
                                         <TextInput
                                             label-text="Phone number"
@@ -135,7 +135,7 @@ const isFormValid = computed(() => {
                             <div class="md:text-[20px] text-[#48070A]">
                                 Work Detail
                             </div>
-                            <div class="flex md:gap-4">
+                            <div class="flex gap-4">
                                 <div class="w-full flex flex-col">
                                     <TextInput
                                         label-text="Staff ID"
@@ -170,7 +170,7 @@ const isFormValid = computed(() => {
                             <div class="md:text-[20px] text-[#48070A]">
                                 Account Detail
                             </div>
-                            <div class="flex md:gap-4">
+                            <div class="flex gap-4">
                                 <div class="w-full flex flex-col">
                                     <TextInput
                                         label-text="Email address"

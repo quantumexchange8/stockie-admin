@@ -35,12 +35,14 @@ Route::middleware('auth')->group(function () {
 
     /********* Waiter **********/
     Route::prefix('waiter')->group(function(){
-        Route::get('/waiter', [WaiterController::class, 'waiter'])->name('waiter');
-        Route::post('/waiter/createWaiter', [WaiterController::class, 'store'])->name('waiter.add-waiter');
-        Route::delete('/waiter/deleteWaiter/{id}', [WaiterController::class, 'deleteWaiter'])->name('waiter.delete-waiter');
-        Route::post('/waiter/editWaiter', [WaiterController::class,'editWaiter'])->name('waiter.edit-waiter');
-        Route::get('/waiter/waiterDetails/{id}', [WaiterController::class,'showWaiterDetails'])->name('waiter.waiter-details');
-        Route::get('/waiter/waiterDetailsWithId/{id}', [WaiterController::class,'getWaiterDetailsWithId'])->name('waiter.waiter-details-withId');
+        Route::get('/', [WaiterController::class, 'waiter'])->name('waiter');
+        Route::post('/createWaiter', [WaiterController::class, 'store'])->name('waiter.add-waiter');
+        Route::delete('/deleteWaiter/{id}', [WaiterController::class, 'deleteWaiter'])->name('waiter.delete-waiter');
+        Route::post('/editWaiter', [WaiterController::class,'editWaiter'])->name('waiter.edit-waiter');
+        Route::get('/waiterDetails/{id}', [WaiterController::class,'showWaiterDetails'])->name('waiter.waiter-details');
+        Route::get('/orderDetails/{id}',[WaiterController::class,'orderDetails'])->name('waiter.order-details');
+        Route::get('/salesReport/{id}', [WaiterController::class,'salesReport'])->name('waiter.sales-report');
+        Route::get('/viewAttendance/{id}', [WaiterController::class,'viewAttendance'])->name('waiter.view-attendance');
     });
  
     /********* Menu Management **********/

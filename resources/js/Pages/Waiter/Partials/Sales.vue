@@ -1,17 +1,44 @@
 <script setup>
 import Button from '@/Components/Button.vue';
-import { UploadIcon } from '@/Components/Icons/solid';
+import { DetailIcon, UploadIcon } from '@/Components/Icons/solid';
 import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { FilterMatchMode } from 'primevue/api';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import dayjs from 'dayjs';
+import Table from '@/Components/Table.vue';
+import { UndetectableIllus } from '@/Components/Icons/illus';
+import Modal from '@/Components/Modal.vue';
+import axios from 'axios';
 
 const props = defineProps({
     dateFilter: Array,
-    order: Array,
+    order: { 
+        type:Array,
+        required: true,
+    },
+    columns: { 
+        type:Array,
+        required: true,
+    },
+    actions: { 
+        type:Object,
+        default: () => {},
+    },
+    waiter: {
+        type: Object,
+        required: true,
+    },
+    rowType: Object,
+    totalPages: Number,
+    rowsPerPage: Number,
 })
+
+const isDetailModalOpen = ref(false);
+const selectedOrder = ref(null);
+const order = ref(props.order);
+const waiter = ref(props.waiter);
 
 const defaultLatest7Days = computed(() => {
     let currentDate = dayjs();
@@ -19,11 +46,97 @@ const defaultLatest7Days = computed(() => {
 
     return [last7Days.toDate(), currentDate.toDate()];
 });
+
+
+const viewOrderDetail = async (id) => {
+    try {
+        const response = await axios.get(`/waiter/orderDetails/${id}`);
+        selectedOrder.value = response.data;
+        isDetailModalOpen.value = true;
+    } catch(error) {
+        console.error('Something went wrong.', error);
+    }
+}
+
+const viewSalesReport = async (filters = {}, id) => {
+    try {
+        const salesReportResponse = await axios.get(`/waiter/salesReport/${id}`, {
+            method: 'GET',
+            params: {
+                dateFilter: filters,
+            }
+        });
+
+        order.value = salesReportResponse.data;
+    } catch (error) {
+        console.error(error);
+    } finally {
+        
+    }
+}
+
 const date_filter = ref(defaultLatest7Days.value);
+
+watch(() => date_filter.value, () => {
+    viewSalesReport(date_filter.value, props.waiter.id);
+})
+
+const orderColumn = ref([
+    {field: 'product_name', header: 'Product Name', width: '42', sortable: true},
+    {field: 'serve_qty', header: 'Quantity', width: '18', sortable: true},
+    {field: 'price', header: 'Price', width: '17', sortable: true},
+    {field: 'commission', header: 'Commission', width: '23', sortable: true},
+])
+
+const closeModal = () => {
+    isDetailModalOpen.value = false;
+}
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
+
+const arrayToCsv = (data) => {
+    const array = [Object.keys(data[0])].concat(data)
+
+    return array.map(it => {
+        return Object.values(it).toString()
+    }).join('\n');
+};
+
+const downloadBlob = (content, filename, contentType) => {
+    // Create a blob
+    var blob = new Blob([content], { type: contentType });
+    var url = URL.createObjectURL(blob);
+
+    // Create a link to download it
+    var pom = document.createElement('a');
+    pom.href = url;
+    pom.setAttribute('download', filename);
+    pom.click();
+};
+
+const exportToCSV = () => { 
+    const orderArr = [];
+    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
+    const waiterName = waiter.value?.name || 'Unknown_Waiter';
+    const fileName = `Waiter_${waiterName}_Daily Sales Report_${currentDateTime}.csv`;
+    const contentType = 'text/csv;charset=utf-8;';
+
+    if (order.value && order.value.length > 0) {
+        order.value.forEach(row => {
+            orderArr.push({
+                'Date': row.created_at,
+                'Amount': 'RM ' + row.total_amount.toFixed(2),
+                'Commission': 'RM ' + row.commission,
+            })
+        });
+
+        const myLogs = arrayToCsv(orderArr);
+        
+        downloadBlob(myLogs, fileName, contentType);
+    }
+}
 
 
 </script>
@@ -55,9 +168,9 @@ const filters = ref({
                         <MenuItem v-slot="{ active }">
                         <button type="button" :class="[
                             { 'bg-primary-100': active },
-                            { 'bg-grey-50 pointer-events-none': saleHistories.length === 0 },
+                            { 'bg-grey-50 pointer-events-none': order.length === 0 },
                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="saleHistories.length === 0" @click="exportToCSV">
+                        ]" :disabled="order.length === 0" @click="exportToCSV">
                             CSV
                         </button>
                         </MenuItem>
@@ -65,9 +178,9 @@ const filters = ref({
                         <MenuItem v-slot="{ active }">
                         <button type="button" :class="[
                             // { 'bg-primary-100': active },
-                            { 'bg-grey-50 pointer-events-none': saleHistories.length === 0 },
+                            { 'bg-grey-50 pointer-events-none': order.length === 0 },
                             'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="saleHistories.length === 0">
+                        ]" :disabled="order.length === 0">
                             PDF
                         </button>
                         </MenuItem>
@@ -75,26 +188,91 @@ const filters = ref({
                 </transition>
             </Menu>
         </div>
-            <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap">
+            <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">
                 <SearchBar 
                     placeholder="Search"
                     :showFilter="false"
                     v-model="filters['global'].value"
                 />
                 <DateInput
-                :inputName="'date_filter'"
-                :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
-                :range="true"
-                class="col-span-full md:col-span-5"
-                v-model="date_filter"
+                    :inputName="'date_filter'"
+                    :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                    :range="true"
+                    class="!w-max"
+                    v-model="date_filter"
             />
             </div>
-        <div class="" v-if="!dateFilter">
-            asd
-        </div>
 
-        <div class="" v-if="dateFilter">
-            das
+        <div class="w-full flex justify-between" v-if="order">
+            <Table
+                :columns="columns"
+                :rows="order"
+                :actions="actions"
+                :variant="'list'"
+                :searchFilter="true"
+                :filters="filters"
+                :rowType="rowType"
+                :totalPages="totalPages"
+                :rowsPerPage="rowsPerPage"
+            >
+                <template #empty>
+                    <UndetectableIllus class="w-44 h-44"/>
+                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                </template>
+                <template #created_at="order">
+                    <span class="text-grey-900 text-sm font-medium">{{ order.created_at }}</span>
+                </template>
+                <template #order_no="order">
+                    <span class="text-primary-900 text-sm font-medium">{{ order.order_no }}</span>
+                </template>
+                <template #total_amount="order">
+                    <span class="text-grey-900 text-sm font-medium">RM {{ order.total_amount }}</span>
+                </template>
+                <template #commission="order">
+                    <span class="text-grey-900 text-sm font-medium">RM {{ order.commission }}</span>
+                </template>
+                <template #action="order">
+                    <DetailIcon 
+                        class="text-primary-900 hover:text-primary-800 cursor-pointer"
+                        @click="viewOrderDetail(order.order_id)"
+                    />
+                </template>
+            </Table>
         </div>
     </div>
+
+    <!-- detail modal -->
+     <Modal
+        :title="'View Detail'"
+        :max-width="'md'"
+        :closeable="true"
+        :show="isDetailModalOpen"
+        @close="closeModal"
+        v-if="isDetailModalOpen" 
+     >
+     <div v-if="selectedOrder">
+        <Table
+            :columns="orderColumn"
+            :rows="selectedOrder"
+            :variant="'list'"
+            :paginator="false"
+        >
+            <template #product_name="selectedOrder">
+                <div class="flex gap-3 items-center">
+                    <div class="w-[40px] h-[40px] bg-primary-300"></div>
+                    <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ selectedOrder.product_name }}</span>
+                </div>
+            </template>
+            <template #serve_qty="selectedOrder">
+                <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ selectedOrder.serve_qty }}</span>
+            </template>
+            <template #price="selectedOrder">
+                <span class="text-grey-900 text-sm font-medium line-clamp-1">RM {{ selectedOrder.price }}</span>
+            </template>
+            <template #commission="selectedOrder">
+                <span class="text-grey-900 text-sm font-medium line-clamp-1">RM {{ selectedOrder.commission }}</span>
+            </template>
+        </Table>
+    </div>
+     </Modal>
 </template>

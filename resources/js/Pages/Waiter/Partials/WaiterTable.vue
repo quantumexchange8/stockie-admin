@@ -20,7 +20,10 @@ const props = defineProps({
     actions: {
         type: Object,
         default: () => {},
-    }
+    },
+    rowType: Object,
+    totalPages: Number,
+    rowsPerPage: Number,
 })
 
 const form = useForm({
@@ -84,6 +87,10 @@ const handleDefaultClick = (event) => {
         :rows="rows"
         :actions="actions"
         :variant="'list'"
+        :rowType="rowType"
+        :totalPages="totalPages"
+        :rowsPerPage="rowsPerPage"
+        minWidth="min-w-[860px]"
     >
         <template #empty>
             <EmptyWaiterIllus />
@@ -106,8 +113,9 @@ const handleDefaultClick = (event) => {
         </template>
         <template #name="rows">
             <template class="flex flex-row gap-[10px] items-center">
-            <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700 pr-[20px]"></span>
-            <span class="text-grey-900 text-sm font-medium">{{ rows.name }}</span></template>
+                <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700 pr-[20px]"></span>
+                <span class="text-grey-900 text-sm font-medium">{{ rows.name }}</span>
+            </template>
         </template>
         <template #phone="rows">
             <span class="text-grey-900 text-sm font-medium">{{ formatPhone(rows.phone) }}</span>   
@@ -139,7 +147,7 @@ const handleDefaultClick = (event) => {
     :closeable="true"
     :show="isDeleteWaiterOpen"
     :deleteConfirmation="true"
-    :deleteUrl="`/waiter/waiter/deleteWaiter/${form.id}`"
+    :deleteUrl="`/waiter/deleteWaiter/${form.id}`"
     :confirmationTitle="`Delete this waiter?`"
     :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
     @close="closeModal"

@@ -149,7 +149,7 @@ watch( () => props.waiter, (newValue) => {
     :closeable="true"
     :show="isDeleteWaiterOpen"
     :deleteConfirmation="true"
-    :deleteUrl="`/waiter/waiter/deleteWaiter/${selectedWaiter}`"
+    :deleteUrl="`/waiter/deleteWaiter/${selectedWaiter}`"
     :confirmationTitle="`Delete this waiter?`"
     :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
     @close="hideForm"

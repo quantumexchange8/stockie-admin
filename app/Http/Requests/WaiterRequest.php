@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class WaiterRequest extends FormRequest
 {
@@ -20,15 +21,36 @@ class WaiterRequest extends FormRequest
 
     public function rules()
     {
-        return [
+        $rules = [
             'name'=>'required|string|max:255',
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
-            'email' => 'required|email|unique:waiters,email',
-            'staffid' => 'required|string|unique:waiters,staffid',
+            // 'email' => 'required|email|unique:waiters',
+            // 'staffid' => 'required|string|unique:waiters,staffid',
             'salary' => 'required|integer|min:0',
             'stockie_email' => 'required|email',
             'stockie_password' => 'required|string',
         ];
+
+        $rules['email'] = $this->input('id') 
+                ?
+                    [
+                        'required',
+                        'email',
+                        Rule::unique('waiters')->ignore($this->input('id')),
+                    ]
+                : 'required|email|unique:waiters';
+
+
+        $rules['staffid'] = $this->input('id') 
+                ?    
+                    [
+                        'required',
+                        'string',
+                        Rule::unique('waiters')->ignore($this->input('id')),
+                    ]
+                : 'required|string|unique:waiters';
+
+        return $rules;
     }
 
 

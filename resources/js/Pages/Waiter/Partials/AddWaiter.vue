@@ -4,6 +4,7 @@ import TextInput from "@/Components/TextInput.vue";
 import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
+import { computed } from "vue";
 
 const props = defineProps({
     waiters: {
@@ -34,7 +35,6 @@ const submit = () => {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
-            form.reset();
             closeModal();
         },
         onError: (error) => {
@@ -43,20 +43,13 @@ const submit = () => {
     });
 };
 
-const isFormIncomplete = () => {
-    return (
-        !form.name ||
-        !form.phone ||
-        !form.email ||
-        !form.staffid ||
-        !form.salary ||
-        !form.stockie_email ||
-        !form.stockie_password
-    );
-};
+const requiredFields = ['name', 'phone', 'email', 'staffid', 'salary', 'stockie_email', 'stockie_password'];
+
+const isFormValid = computed(() => {
+    return requiredFields.every(field => form[field]);
+})
 </script>
 <template>
-    <!-- {{ waiters }} -->
     <div class="w-full flex flex-col">
         <form @submit.prevent="submit">
             <div class="w-full flex flex-col md:gap-9">
@@ -198,13 +191,8 @@ const isFormIncomplete = () => {
                         variant="primary"
                         type="submit"
                         :size="'lg'"
-                        :disabled="isFormIncomplete() && form.processing"
+                        :disabled="!isFormValid || form.processing"
                         :class="{ 'opacity-25': form.processing }"
-                        v-bind:class="[
-                            isFormIncomplete()
-                                ? 'disabled-class'
-                                : 'enabled-class',
-                        ]"
                         >Add</Button
                     >
                 </div>
