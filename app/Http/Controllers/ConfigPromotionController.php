@@ -48,6 +48,7 @@ class ConfigPromotionController extends Controller
      */
     public function store(Request $request)
     {
+        
         $data = $request->all();
         $todayDate = new DateTime();
         if (($todayDate >= $request->promotion_from) && ($todayDate < $request->todayDate)) {
@@ -104,6 +105,11 @@ class ConfigPromotionController extends Controller
             'promotion_to' => $request->promotion_to,
             'status' => $status,
         ]);
+
+        if($request->hasfile('image')) {
+            $editPromotion->clearMediaCollection('promotion');
+            $editPromotion->addMedia($request->image)->toMediaCollection('promotion');
+        }
     }
 
     public function delete(Request $request)
