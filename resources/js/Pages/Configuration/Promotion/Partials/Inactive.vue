@@ -94,7 +94,7 @@ const submit = () => {
         <div v-for="promotion in InactivePromotions" >
             <div class="flex flex-col" >
                 <div class="p-3">
-                    <img src="https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png" alt="">
+                    <img :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
                 </div>
                 <div class="pb-2 px-3 flex flex-col gap-1">
                     <div class="text-gray-500 text-2xs font-medium leading-tight" >

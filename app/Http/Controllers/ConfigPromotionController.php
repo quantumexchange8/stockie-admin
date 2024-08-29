@@ -25,6 +25,14 @@ class ConfigPromotionController extends Controller
         $nowDate = Carbon::now();
         $ActivePromotions = ConfigPromotion::where('status', 'Active')->get();
         $InactivePromotions = ConfigPromotion::where('status', 'Inactive')->get();
+        
+        $ActivePromotions->each(function ($active) {
+            $active->promotion_image = $active->getFirstMediaUrl('promotion');
+        });
+
+        $InactivePromotions->each(function ($inactive) {
+            $inactive->promotion_image = $inactive->getFirstMediaUrl('promotion');
+        });
 
         $merchant = ConfigMerchant::first();
 
