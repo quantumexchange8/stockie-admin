@@ -37,6 +37,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    imageOption: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emits = defineEmits(["update:modelValue", "onChange"]);
@@ -208,19 +212,22 @@ onUnmounted(() => {
                 </slot>
             </template>
             <template #option="slotProps">
-                <span>{{ slotProps.option.text }}</span>
-                <span
-                    class="absolute right-0 pr-4"
-                    v-if="props.iconOptions"
-                >
-                    <component
-                        :is="props.iconOptions[slotProps.option.text]"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                    />
-                </span>
+                <div class="flex flex-nowrap items-center gap-2">
+                    <div class="size-5 bg-primary-100 rounded-full" v-if="imageOption"></div>
+                    <span>{{ slotProps.option.text }}</span>
+                    <span
+                        class="absolute right-0 pr-4"
+                        v-if="props.iconOptions"
+                    >
+                        <component
+                            :is="props.iconOptions[slotProps.option.text]"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                        />
+                    </span>
+                </div>
                 <!-- <slot name="option" :="slotProps.option">
                 </slot> -->
             </template>

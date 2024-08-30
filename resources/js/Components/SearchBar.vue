@@ -34,7 +34,6 @@ const props = defineProps({
 });
 
 const {
-    inputId,
     inputName,
     labelText,
     errorMessage,
@@ -49,9 +48,11 @@ const {
 
 
 const input = ref(null);
-//defineEmits(["update:modelValue"]);
+
 const focus = () => input.value?.focus();
+
 const emit = defineEmits(["update:modelValue"]);
+
 defineExpose({
     input,
     focus,
@@ -89,7 +90,7 @@ onMounted(() => {
             <div
                 :class="[
                     'w-full max-h-[44px] pl-4 py-3 flex justify-between items-center hover:text-primary-300 active:text-primary-200 focus:text-primary-300',
-                    'rounded-[5px] text-primary-900 active:ring-0 border-y border-l border-primary-900',
+                    'rounded-[5px] text-primary-900 active:ring-0 border-y border-l border-primary-900 bg-transparent',
                     'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                     'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                     'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
@@ -124,7 +125,7 @@ onMounted(() => {
                 <input
                     :name="inputName"
                     :class="[
-                        'w-full border-none text-base font-normal',
+                        'w-full border-none text-base font-normal bg-transparent',
                         'text-base text-grey-700 active:ring-0 focus:ring-0 placeholder:text-grey-200',
                     ]"
                     :type="inputType"

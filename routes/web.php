@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -142,6 +143,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/edit-table', [TableRoomController::class,'editTable'])->name('tableroom.edit-table');
         Route::post('/edit-zone', [TableRoomController::class,'editZone'])->name('tableroom.edit-zone');
      });
+     
+    /******** Loyalty Programme **********/
+    Route::prefix('order-management')->group(function(){
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders');
+        Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');
+        Route::put('/orders/reservation/{id}', [OrderController::class, 'updateReservation'])->name('orders.reservations.update');
+        Route::delete('/orders/reservation/{id}', [OrderController::class, 'deleteReservation'])->name('orders.reservations.destroy');
+
+        Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');
+    });
 });
 
 require __DIR__.'/auth.php';

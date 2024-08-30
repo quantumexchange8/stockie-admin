@@ -2,8 +2,6 @@
 import { watch, onMounted, onUnmounted, ref } from 'vue'
 import Sidebar from 'primevue/sidebar';
 import { ArrowLeftIcon, TimesIcon } from '../Icons/solid';
-// import { rightSidebarState } from '@/Composables'
-// import RightSidebarHeader from '@/Components/RightSidebar/RightSidebarHeader.vue'
 
 const props = defineProps({
     title: String,
@@ -51,10 +49,6 @@ onMounted(() => document.addEventListener('keydown', closeOnEscape));
 onUnmounted(() => {
     document.removeEventListener('keydown', closeOnEscape);
 });
-
-// onMounted(() => {
-//     // rightSidebarState.isOpen = true
-// })
 </script>
 
 <template>
@@ -93,9 +87,7 @@ onUnmounted(() => {
             }),
             mask: ({ props }) => ({
                 class: [
-                    // Transitions
-                    'transition-all',
-                    'duration-300',
+                    'transition-all duration-300',
                     { 'p-5': !props.position == 'full' },
 
                     // Background and Effects
@@ -106,13 +98,22 @@ onUnmounted(() => {
     >
         <template #container="{ closeCallback }">
             <div class="flex flex-col justify-center">
-                <div class="flex items-center justify-between px-6 pt-6 pb-3">
+                <div 
+                    class="flex items-center px-6 pt-6 pb-3"
+                    :class="{
+                        'justify-between':!previousTab,
+                        '': previousTab
+                    }"
+                >
                     <ArrowLeftIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" 
                         @click="closeCallback" 
                         v-if="previousTab"
                     />
-                    <span class="text-primary-950 text-center text-md font-medium">{{ header }}</span>
+                    <div class="flex items-center justify-center w-full" v-if="previousTab">
+                        <span class="text-primary-950 text-center text-md font-medium">{{ header }}</span>
+                    </div>
+                    <span class="text-primary-950 text-center text-md font-medium" v-else>{{ header }}</span>
                     <TimesIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                         @click="closeCallback" 
@@ -123,27 +124,4 @@ onUnmounted(() => {
             </div>
         </template>
     </Sidebar>
-    <!-- <Teleport to="body">
-        <aside
-            style="
-                transition-property: width, transform;
-                transition-duration: 1150ms;
-            "
-            :class="[
-                'fixed inset-y-0 right-0 flex flex-col items-start gap-[8px] w-[507px] max-h-[1024px] bg-[#FFF] self-stretch',
-                {
-                    'translate-x-0 w-[283px] z-20':
-                        rightSidebarState.isOpen,
-                    'translate-x-full -right-10 w-0 md:translate-x-0 hidden':
-                        !rightSidebarState.isOpen,
-                },
-            ]"
-        >
-            <RightSidebarHeader
-                :title="title"
-                :previousTab="previousTab"
-             />
-            <slot></slot>
-        </aside>
-    </Teleport> -->
 </template>

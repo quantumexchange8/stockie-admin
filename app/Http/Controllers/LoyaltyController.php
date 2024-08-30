@@ -109,8 +109,8 @@ class LoyaltyController extends Controller
         $message = $request->session()->get('message');
 
         // Clear the flashed messages from the session
-        $request->session()->forget('message');
-        $request->session()->save();
+        // $request->session()->forget('message');
+        // $request->session()->save();
 
         return Inertia::render('LoyaltyProgramme/LoyaltyProgramme', [
             'message' => $message ?? [],
@@ -255,8 +255,8 @@ class LoyaltyController extends Controller
         $message = $request->session()->get('message');
 
         // Clear the flashed messages from the session
-        $request->session()->forget('message');
-        $request->session()->save();
+        // $request->session()->forget('message');
+        // $request->session()->save();
 
         return Inertia::render('LoyaltyProgramme/Partial/TierDetail', [
             'id' => $id,
@@ -508,32 +508,34 @@ class LoyaltyController extends Controller
             }
         }
 
+        
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) {
+            // dd($request);
             return redirect()->back()->withErrors($allItemErrors)->withInput();
-        }
-
-        $point = Point::create([
-            'name'=>$validatedData['name'],
-            'point' => (int) $validatedData['point'],
-        ]);
-
-        if(count($validatedItems) > 0) {
-            foreach ($validatedItems as $value) {
-                PointItem::create([
-                    'point_id' => $point->id,
-                    'inventory_item_id' => $value['inventory_item_id'],
-                    'item_qty' => $value['item_qty'],
-                ]);
+        } else {
+            $point = Point::create([
+                'name'=>$validatedData['name'],
+                'point' => (int) $validatedData['point'],
+            ]);
+    
+            if(count($validatedItems) > 0) {
+                foreach ($validatedItems as $value) {
+                    PointItem::create([
+                        'point_id' => $point->id,
+                        'inventory_item_id' => $value['inventory_item_id'],
+                        'item_qty' => $value['item_qty'],
+                    ]);
+                }
             }
+    
+            $message = [ 
+                'severity' => 'success', 
+                'summary' => 'New redeemable item has been added successfully.'
+            ];
+    
+            return redirect()->back()->with(['message' => $message]);
         }
-
-        $message = [ 
-            'severity' => 'success', 
-            'summary' => 'New redeemable item has been added successfully.'
-        ];
-
-        return redirect()->back()->with(['message' => $message]);
     }
 
     /**
@@ -690,8 +692,8 @@ class LoyaltyController extends Controller
         $message = $request->session()->get('message');
 
         // Clear the flashed messages from the session
-        $request->session()->forget('message');
-        $request->session()->save();
+        // $request->session()->forget('message');
+        // $request->session()->save();
         
         return Inertia::render('LoyaltyProgramme/Partial/PointDetail', [
             'redemptionHistories' => $redemptionHistories,

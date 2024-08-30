@@ -45,7 +45,8 @@ import {
             <div class="flex flex-col">
                 <SidebarLink
                     title="Order Management"
-                    :href="route('dashboard')"
+                    :href="route('orders')"
+                    :active="route().current('orders')"
                 >
                     <template #icon>
                         <OrderIcon aria-hidden="true" />

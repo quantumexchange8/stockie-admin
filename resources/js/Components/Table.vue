@@ -294,7 +294,7 @@ onMounted(() => {
             }"
         >
             <!-- @filter="onFilter" -->
-            <template #header>
+            <template #header v-if="$slots.header">
                 <slot name="header">
                 </slot>
             </template>

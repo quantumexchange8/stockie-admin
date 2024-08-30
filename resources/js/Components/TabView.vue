@@ -17,10 +17,10 @@ const tranformedTabs = computed(() => {
 
 <template>
     <TabGroup>
-        <TabList class="flex border-b border-gray-200">
+        <TabList class="flex">
             <slot name="startheader"></slot> 
             <template v-for="(tab, index) in tabs" :key="index">
-                <Tab as="template" v-slot="{ selected }">
+                <Tab as="template" v-slot="{ selected }" class="border-b border-grey-200">
                     <button
                         :class="[
                             'p-3 text-sm font-medium leading-none',
@@ -42,7 +42,7 @@ const tranformedTabs = computed(() => {
             <template v-for="(tab, index) in tranformedTabs" :key="index">
                 <TabPanel
                     :class="[
-                        'rounded-xl bg-white p-3',
+                        'rounded-xl',
                         'focus:outline-none',
                     ]"
                 >

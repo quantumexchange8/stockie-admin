@@ -81,7 +81,7 @@ class TableRoomController extends Controller
             'table_no' => $validatedData['table_no'],
             'seat' => $validatedData['seat'],
             'zone_id' => $validatedData['zone_id'],
-            'status' => 'empty',
+            'status' => 'Empty Seat',
             'order_id' => '1',
         ]);
 

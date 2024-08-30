@@ -10,7 +10,7 @@ import AddStockForm from './AddStockForm.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import SearchBar from "@/Components/SearchBar.vue";
 import { EmptyIllus } from '@/Components/Icons/illus.jsx';
-import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon } from '@/Components/Icons/solid';
+import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon, SquareStickerIcon } from '@/Components/Icons/solid';
 import EditInventoryForm from './EditInventoryForm.vue';
 import CreateInventoryForm from './CreateInventoryForm.vue';
 
@@ -264,16 +264,7 @@ onMounted(() => {
                         class="w-full"
                     >
                         <template #icon>
-                            <svg 
-                                width="20" 
-                                height="20" 
-                                viewBox="0 0 20 20" 
-                                fill="none" 
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="w-6 h-6"
-                            >
-                                <path d="M10.8333 2.91667V5.16667C10.8333 6.5668 10.8333 7.26686 11.1058 7.80164C11.3455 8.27205 11.728 8.6545 12.1984 8.89418C12.7331 9.16667 13.4332 9.16667 14.8333 9.16667H17.0833M17.5 10.8235V13.5C17.5 14.9001 17.5 15.6002 17.2275 16.135C16.9878 16.6054 16.6054 16.9878 16.135 17.2275C15.6002 17.5 14.9001 17.5 13.5 17.5H6.5C5.09987 17.5 4.3998 17.5 3.86502 17.2275C3.39462 16.9878 3.01217 16.6054 2.77248 16.135C2.5 15.6002 2.5 14.9001 2.5 13.5V6.5C2.5 5.09987 2.5 4.3998 2.77248 3.86502C3.01217 3.39462 3.39462 3.01217 3.86502 2.77248C4.3998 2.5 5.09987 2.5 6.5 2.5H9.17648C9.78796 2.5 10.0937 2.5 10.3814 2.56908C10.6365 2.63032 10.8804 2.73133 11.104 2.8684C11.3563 3.023 11.5725 3.23919 12.0049 3.67157L16.3284 7.9951C16.7608 8.42747 16.977 8.64366 17.1316 8.89595C17.2687 9.11963 17.3697 9.3635 17.4309 9.61859C17.5 9.90631 17.5 10.212 17.5 10.8235Z" stroke="#7E171B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <SquareStickerIcon class="w-6 h-6" />
                         </template>
                         View Stock History
                     </Button>
@@ -306,8 +297,10 @@ onMounted(() => {
                 minWidth="min-w-[755px]"
             >
                 <template #empty>
-                    <EmptyIllus />
-                    <span class="text-primary-900 text-sm font-medium">We couldn't find any result...</span>
+                    <div class="flex flex-col items-center justify-center gap-5">
+                        <EmptyIllus />
+                        <span class="text-primary-900 text-sm font-medium">We couldn't find any result...</span>
+                    </div>
                 </template>
                 <template #groupheader="row">
                     <div class="flex justify-between items-center w-full !z-0">

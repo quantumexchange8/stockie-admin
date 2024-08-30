@@ -22,20 +22,12 @@ onMounted(() => {
         <!-- Sidebar Menu -->
         <Sidebar />
 
-        <!-- Blur Overlay -->
-        <div
-            v-show="rightSidebarState.isOpen"
-            class="fixed inset-0 transform transition-all z-10"
-            @click="rightSidebarState.isOpen = !rightSidebarState.isOpen"
-        >
-            <div class="absolute inset-0 bg-[linear-gradient(0deg,rgba(0,0,0,0.20)_0%,rgba(0,0,0,0.20)_100%)] bg-cover bg-no-repeat bg-center"></div>
-        </div>
         <div
             style="transition-property: margin; transition-duration: 150ms"
             :class="[
                 'flex flex-col',
                 'flex-shrink-0',
-                'min-h-screen py-8 pr-6',
+                'min-h-screen py-8 px-6',
                 {
                     'lg:ml-[283px]': sidebarState.isOpen,
                     'md:ml-0': !sidebarState.isOpen,

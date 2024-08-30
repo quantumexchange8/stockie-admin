@@ -2,7 +2,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { onMounted, ref, watch, computed } from 'vue'
 import { Head } from '@inertiajs/vue3';
-import RightSidebar from '@/Components/RightSidebar/RightSidebar.vue'
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import SearchBar from '@/Components/SearchBar.vue';
 import Button from '@/Components/Button.vue';
@@ -123,11 +122,6 @@ const filteredZones = computed(() => {
             <Breadcrumb :home="home" />
         </template>
 
-        <RightSidebar 
-            :title="'Title'" 
-            :previousTab="true">
-        </RightSidebar>
-
         <Toast />
 
         <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 rounded-[5px]">
@@ -164,7 +158,7 @@ const filteredZones = computed(() => {
                 />
             </Modal>
         </div>
-        <!-- {{ console.log(tranformedZones) }} -->
+        
         <TabView :tabs="tabs">
             <template #endheader>
                 <Button

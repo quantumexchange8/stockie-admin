@@ -98,26 +98,31 @@ export default {
         // sort: ({ context }) => ({
         //     class: [context.sorted ? 'text-primary-500' : 'text-primary-700']
         // }),
-        bodycell: ({ props, context, state, parent }) => ({
-            class: [
-                //Position
-                { 'sticky box-border border-b': parent.instance.frozenRow },
-                { 'sticky box-border border-b z-20': props.frozen || props.frozen === '' },
-                // Alignment
-                'text-left flex items-center',
-                // Shape
-                { 'first:border-l border-r border-b': context == null ? void 0 : context.showGridlines },
-                { 'bg-primary-0': parent.instance.frozenRow || props.frozen || props.frozen === '' },
-                // Spacing
-                'w-full',
-                { 'p-2': (context == null ? void 0 : context.size) === 'small' && !state.d_editing },
-                { 'p-5': (context == null ? void 0 : context.size) === 'large' && !state.d_editing },
-                { 'p-3': (context == null ? void 0 : context.size) !== 'large' && (context == null ? void 0 : context.size) !== 'small' && !state.d_editing },
-                { 'py-[0.6rem] px-2': state.d_editing },
-                // Color
-                'border-primary-200'
-            ]
-        }),
+        bodycell: ({ props, context, state, parent }) => {
+            return {
+                class: [
+                    //Position
+                    { 'sticky box-border border-b': parent.instance.frozenRow },
+                    { 'sticky box-border border-b z-20': props.frozen || props.frozen === '' },
+                    // Alignment
+                    'text-left flex items-center',
+                    {
+                        'justify-end': props.field === "action"
+                    },
+                    // Shape
+                    { 'first:border-l border-r border-b': context == null ? void 0 : context.showGridlines },
+                    { 'bg-primary-0': parent.instance.frozenRow || props.frozen || props.frozen === '' },
+                    // Spacing
+                    'w-full',
+                    { 'p-2': (context == null ? void 0 : context.size) === 'small' && !state.d_editing },
+                    { 'p-5': (context == null ? void 0 : context.size) === 'large' && !state.d_editing },
+                    { 'p-3': (context == null ? void 0 : context.size) !== 'large' && (context == null ? void 0 : context.size) !== 'small' && !state.d_editing },
+                    { 'py-[0.6rem] px-2': state.d_editing },
+                    // Color
+                    'border-primary-200'
+                ]
+            }
+        },
         footercell: ({ context }) => ({
             class: [
                 // Font

@@ -1,5 +1,5 @@
 <script setup>
-import { useForm, router } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { TimesIcon } from '@/Components/Icons/solid';
 import { DeleteIllus } from '@/Components/Icons/illus';
@@ -151,7 +151,9 @@ const deleteRecord = () => {
                             </template>
                             <template v-else>
                                 <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
-                                    <DeleteIllus/>
+                                    <slot name="deleteimage">
+                                        <DeleteIllus/>
+                                    </slot>
                                 </div>
                                 <DialogTitle
                                     :as="'div'"

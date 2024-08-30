@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from "vue";
+import dayjs from "dayjs";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
@@ -165,6 +166,9 @@ const setDateLastMonth = () => {
                             'flex flex-auto',
                             // Font
                             'leading-normal text-base font-normal',
+                            {
+                                'uppercase': !props.disabled && !props.invalid && props.modelValue !== ''
+                            },
                             // Colors
                             'text-primary-900',
                             'placeholder:text-grey-200',
@@ -178,7 +182,7 @@ const setDateLastMonth = () => {
                                 'border-primry-900':
                                     !props.disabled &&
                                     !props.invalid &&
-                                    props.modelValue !== '',
+                                    (props.modelValue !== '' || (!range && withTime)),
                             },
                             // Invalid State
                             { 'border-primary-950': props.invalid },
@@ -316,7 +320,20 @@ const setDateLastMonth = () => {
                 }),
             }"
         >
-            <template #inputicon>
+            <template #inputicon="{ clickCallback }">
+                <template v-if="!range && withTime && modelValue === ''">
+                    <svg 
+                        width="20" 
+                        height="20" 
+                        viewBox="0 0 20 20" 
+                        fill="none" 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        class="w-4 h-4 flex-shrink-0 text-primary-800 cursor-pointer transform !-translate-x-[90%]" 
+                        @click="clickCallback"
+                    >
+                        <path d="M5.83301 12.5L9.99967 16.6667L14.1663 12.5M5.83301 7.50004L9.99967 3.33337L14.1663 7.50004" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>  
+                </template>
                 <CircledTimesIcon
                     class="w-4 h-4 flex-shrink-0 fill-primary-50 text-primary-900 hover:text-primary-900 cursor-pointer transform !-translate-x-[90%]"
                     @click="resetValue(initialModelValue)"

@@ -2,7 +2,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref } from 'vue'
 import { Head } from '@inertiajs/vue3';
-import RightSidebar from '@/Components/RightSidebar/RightSidebar.vue'
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 
 const home = ref({
@@ -19,12 +18,6 @@ const home = ref({
                 :home="home" 
             />
         </template>
-        
-        <RightSidebar
-            :title="'Title'"
-            :previousTab="true"
-        >
-        </RightSidebar>
 
         <div></div>
     </AuthenticatedLayout>

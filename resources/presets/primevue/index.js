@@ -9,7 +9,7 @@ import slider from './slider';
 import dropdown from './dropdown';
 import toast from './toast';
 import sidebar from './sidebar';
-// import tooltip from './tooltip';
+import tooltip from './tooltip';
 
 export default {
     global,
@@ -23,7 +23,7 @@ export default {
     dropdown,
     toast,
     sidebar,
-    // directives: {
-    //     tooltip
-    // }
+    directives: {
+        tooltip
+    }
 };

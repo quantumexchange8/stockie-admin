@@ -2,7 +2,7 @@
 import { toRefs, ref, computed } from "vue";
 import { Link } from "@inertiajs/vue3";
 import { FilterIcon, TimesIcon } from "./Icons/solid";
-import OverlayPanel from 'primevue/overlaypanel';
+import OverlayPanel from '@/Components/OverlayPanel.vue';
 
 const props = defineProps({
     type: {
@@ -33,17 +33,15 @@ const { type, href, srText, external } = props;
 
 const { disabled } = toRefs(props);
 
-const op = ref();
-const arrowPosition = ref('top');
+const op = ref(null);
 
-const toggle = (event) => {
-    calculateArrowPosition(event);
-    op.value.toggle(event);
-}
+const openOverlay = (event) => {
+    op.value.show(event);
+};
 
-const hideOverlay = () => {
+const closeOverlay = () => {
     op.value.hide();
-}
+};
 
 const handleClick = (event) => {
     if (disabled.value) {
@@ -52,18 +50,7 @@ const handleClick = (event) => {
         return;
     }
     emit("click", event);
-    toggle(event);
-};
-
-const calculateArrowPosition = (event) => {
-    const buttonRect = event.target.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
-
-    if (buttonRect.top > windowHeight / 2) {
-        arrowPosition.value = 'bottom';
-    } else {
-        arrowPosition.value = 'top';
-    }
+    openOverlay(event);
 };
 
 const Tag = external ? "a" : Link;
@@ -110,67 +97,17 @@ const Tag = external ? "a" : Link;
         </div>
     </button>
 
-    <OverlayPanel 
-        ref="op" 
-        appendTo="body"
-        :pt="{
-            root: {
-                class: [
-                    // Shape
-                    'rounded-[5px] shadow-lg',
-                    'border-0',
-
-                    // Position
-                    'absolute left-0 top-0 mt-2',
-                    'z-40 transform origin-center',
-
-                    // Color
-                    'bg-grey-100 opacity-100',
-                    // 'bg-grey-200',
-
-                    // Dynamic Positioning
-                    arrowPosition === 'top' 
-                        ? 'top-0 before:-top-[8px] after:-top-2'
-                        : 'before:-bottom-[8px] after:-bottom-2',
-
-                    // Before: Triangle
-                    'before:absolute before:-ml-[9px] before:left-[calc(var(--overlayArrowLeft,0)+1.25rem)] z-0',
-                    'before:w-0 before:h-0 before:shadow-inner',
-                    'before:border-transparent before:border-solid',
-                    'before:border-x-[8px] before:border-[8px]',
-                    arrowPosition === 'top'
-                        ? 'before:border-t-0 before:border-b-grey-100'
-                        : 'before:border-b-0 before:border-t-grey-100',
-
-                    'after:absolute after:-ml-[8px] after:left-[calc(var(--overlayArrowLeft,0)+1.25rem)]',
-                    'after:w-0 after:h-0 after:shadow-inner',
-                    'after:border-transparent after:border-solid',
-                    'after:border-x-[0.5rem] after:border-[0.5rem]',
-                    arrowPosition === 'top'
-                        ? 'after:border-t-0 after:border-b-grey-100 after:opacity-95'
-                        : 'after:border-b-0 after:border-t-grey-100 after:opacity-95'
-                ]
-            },
-            content: {
-                class: 'p-6'
-            },
-            transition: {
-                enterFromClass: 'opacity-0 scale-y-[0.8]',
-                enterActiveClass: 'transition-[transform,opacity] duration-[120ms] ease-[cubic-bezier(0,0,0.2,1)]',
-                leaveActiveClass: 'transition-opacity duration-100 ease-linear',
-                leaveToClass: 'opacity-0'
-            }
-        }"
-    >
+    <!-- Assign Seat -->
+    <OverlayPanel ref="op" withArrow bgColor="bg-grey-100">
         <div class="flex flex-col gap-6 max-w-80">
             <div class="flex items-center justify-between">
                 <span class="text-primary-950 text-center text-md font-medium">Filter by</span>
                 <TimesIcon
                     class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                    @click="hideOverlay"
+                    @click="closeOverlay"
                 />
             </div>
-            <slot :hideOverlay="hideOverlay"></slot>
+            <slot :hideOverlay="closeOverlay"></slot>
         </div>
     </OverlayPanel>
 </template>
