@@ -73,7 +73,7 @@ onUnmounted(() => {
                     },
 
                     // Shape
-                    'border-0 shadow-lg rounded-l-[5px]',
+                    'border-0 rounded-l-[5px]',
 
                     // Colors
                     'bg-white/90 text-grey-700 shadow-[0px_24px_40px_0px_rgba(0,0,0,0.25)]',
@@ -91,9 +91,37 @@ onUnmounted(() => {
                     { 'p-5': !props.position == 'full' },
 
                     // Background and Effects
-                    { 'has-[.mask-active]:bg-transparent bg-black/40': props.modal, 'has-[.mask-active]:backdrop-blur-none': props.modal }
+                    { 'has-[.mask-active]:bg-transparent bg-black/40': props.modal }
                 ]
             }),
+            transition: ({ props }) => {
+                return props.position === 'top'
+                    ? {
+                        enterFromClass: 'translate-x-0 -translate-y-full translate-z-0 mask-active',
+                        leaveToClass: 'translate-x-0 -translate-y-full translate-z-0 mask-active'
+                    }
+                    : props.position === 'bottom'
+                    ? {
+                        enterFromClass: 'translate-x-0 translate-y-full translate-z-0 mask-active',
+                        leaveToClass: 'translate-x-0 translate-y-full translate-z-0 mask-active'
+                    }
+                    : props.position === 'left'
+                    ? {
+                        enterFromClass: '-translate-x-full translate-y-0 translate-z-0 mask-active',
+                        leaveToClass: '-translate-x-full translate-y-0 translate-z-0 mask-active'
+                    }
+                    : props.position === 'right'
+                    ? {
+                        enterFromClass: 'translate-x-full translate-y-0 translate-z-0 mask-active',
+                        leaveToClass: 'translate-x-full translate-y-0 translate-z-0 mask-active'
+                    }
+                    : {
+                        enterFromClass: 'opacity-0 mask-active',
+                        enterActiveClass: 'transition-opacity duration-400 ease-in',
+                        leaveActiveClass: 'transition-opacity duration-400 ease-in',
+                        leaveToClass: 'opacity-0 mask-active'
+                    };
+            }
         }"
     >
         <template #container="{ closeCallback }">
