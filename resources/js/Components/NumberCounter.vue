@@ -116,7 +116,7 @@ const updateState = () => {
         <div class="flex items-center justify-center flex-row gap-4">
             <CircledMinusIcon
                 :class="[
-                    'w-6 h-6',
+                    'w-6 h-6 flex-shrink-0',
                     {
                         '[&>rect]:fill-primary-900 text-primary-50': (isTypingState || inputValue !== 0) && !disabled,
                         '[&>rect]:fill-grey-100 text-grey-300': !isTypingState || disabled || inputValue === 0 || inputValue <= minValue,
@@ -129,7 +129,7 @@ const updateState = () => {
             <input
                 :name="inputName"
                 :class="[
-                    'w-16 min-h-[44px] max-h-[44px] py-3 px-4 mb-1 text-center',
+                    'w-full min-w-16 min-h-[44px] max-h-[44px] py-3 px-4 mb-1 text-center',
                     'rounded-[5px] text-base text-grey-700 active:ring-0 placeholder:text-grey-200',
                     'hover:border-red-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                     'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
@@ -152,7 +152,7 @@ const updateState = () => {
             />
             <CircledPlusIcon
                 :class="[
-                    'w-6 h-6',
+                    'w-6 h-6 flex-shrink-0',
                     {
                         '[&>rect]:fill-primary-900 text-primary-50 [&>rect]:hover:fill-primary-200 hover:text-primary-900': !disabled || ((maxValue && inputValue < maxValue)),
                         '[&>rect]:fill-grey-100 text-grey-300 pointer-events-none': disabled || (maxValue && inputValue >= maxValue),
