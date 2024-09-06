@@ -22,7 +22,7 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $products = Product::with([
                                 'productItems:id,product_id,inventory_item_id,qty', 
@@ -79,7 +79,11 @@ class ProductController extends Controller
                                 return $product;
                             });
 
+        // Get the flashed messages from the session
+        $message = $request->session()->get('message');
+
         return Inertia::render('Product/Product', [
+            'message' => $message ?? [],
             'products' => $products,
             'inventories' => $this->getAllInventories(),
             'categories' => $this->getAllCategories(),
@@ -140,8 +144,6 @@ class ProductController extends Controller
         if (!empty($allItemErrors)) {
             return redirect()->back()->withErrors($allItemErrors)->withInput();
         }
-
-        // dd($validatedProductItems);
         
         $newProduct = Product::create([
             'product_name' => $validatedData['product_name'],
@@ -161,14 +163,19 @@ class ProductController extends Controller
                 ]);
             }
         }
-        
-        return Redirect::route('products.index');
+
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Product has been successfully added to your menu.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
 
     /**
      * Show product details.
      */
-    public function showProductDetails(string $id)
+    public function showProductDetails(Request $request, string $id)
     {
         $dateFilter = [
             now()->subDays(30)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
@@ -189,7 +196,12 @@ class ProductController extends Controller
                                                 ->orderBy('created_at', 'desc')
                                                 ->get();
 
+        
+        // Get the flashed messages from the session
+        $message = $request->session()->get('message');
+
         return Inertia::render('Product/Partials/ProductDetail', [
+            'message' => $message ?? [],
             'product' => $product,
             'saleHistories' => $saleHistories,
             'defaultDateFilter' => $dateFilter,
@@ -367,7 +379,7 @@ class ProductController extends Controller
     }
     
     /**
-     * Testing get table records.
+     * Update product details.
      */
     public function updateProduct(ProductRequest $request, string $id)
     {
@@ -461,8 +473,13 @@ class ProductController extends Controller
                 }
             }
         }
-        
-        return Redirect::route('products.index');
+
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Changes saved.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
      
     /**
@@ -471,6 +488,9 @@ class ProductController extends Controller
     public function deleteProduct(Request $request, string $id)
     {
         $existingProduct = Product::with('productItems')->find($id);
+
+        $severity = 'error';
+        $summary = 'Selected product unable to be deleted.';
 
         if ($existingProduct) {
             // Soft delete all related items in bulk
@@ -481,10 +501,16 @@ class ProductController extends Controller
             // Soft delete the product
             $existingProduct->delete();
 
-            return Redirect::route('products.index')->with('Deleted product and its items successfully');
+            $severity = 'success';
+            $summary = 'Selected product has been successfully deleted.';
         }
-        
-        return Redirect::route('products.index')->with('Error deleting product');
+
+        $message = [ 
+            'severity' => $severity, 
+            'summary' => $summary
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
      
     /**
@@ -495,6 +521,13 @@ class ProductController extends Controller
         $existingProductItem = ProductItem::find($id);
 
         $existingProductItem->delete();
+
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Selected product item has been successfully deleted.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
 
     /**
@@ -520,35 +553,35 @@ class ProductController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * Testing get table records.
-     */
-    public function getTestingRecords()
-    {
+    // /**
+    //  * Testing get table records.
+    //  */
+    // public function getTestingRecords()
+    // {
 
-        $data = Product::with('productItems:id,product_id,qty')
-                        ->orderBy('id')
-                        ->get()
-                        ->map(function ($product) {
-                            $totalQty = 0;
+    //     $data = Product::with('productItems:id,product_id,qty')
+    //                     ->orderBy('id')
+    //                     ->get()
+    //                     ->map(function ($product) {
+    //                         $totalQty = 0;
 
-                            foreach ($product->productItems as $key => $value) {
-                                $totalQty += $value->qty;
-                            }
+    //                         foreach ($product->productItems as $key => $value) {
+    //                             $totalQty += $value->qty;
+    //                         }
 
-                            return [
-                                'id' => $product->id,
-                                'product_name' => $product->product_name,
-                                'price' => $product->price,
-                                'point' => $product->point,
-                                'keep' => $product->keep,
-                                'qty' => $totalQty,
-                                'stock_qty' => $totalQty,
-                            ];
-                        });
+    //                         return [
+    //                             'id' => $product->id,
+    //                             'product_name' => $product->product_name,
+    //                             'price' => $product->price,
+    //                             'point' => $product->point,
+    //                             'keep' => $product->keep,
+    //                             'qty' => $totalQty,
+    //                             'stock_qty' => $totalQty,
+    //                         ];
+    //                     });
 
-        // dd($data);
+    //     // dd($data);
 
-        return response()->json($data);
-    }
+    //     return response()->json($data);
+    // }
 }

@@ -10,6 +10,8 @@ import { UploadIcon } from '@/Components/Icons/solid.jsx';
 import SaleHistoryTable from './SalesHistoryTable.vue'
 import ProductInfoSection from './ProductInfoSection.vue';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
+import Toast from '@/Components/Toast.vue';
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     product: Object,
@@ -46,6 +48,8 @@ const defaultLatest30Days = computed(() => {
 
     return [last30Days.toDate(), currentDate.toDate()];
 });
+
+const { flashMessage } = useCustomToast();
 
 const product = ref(props.product);
 const saleHistories = ref(props.saleHistories);
@@ -135,6 +139,10 @@ watch(() => date_filter.value, () => {
     getSaleHistories(date_filter.value, props.product.id);
 })
 
+onMounted(() => {
+    flashMessage();
+});
+
 </script>
 
 <template>
@@ -147,8 +155,11 @@ watch(() => date_filter.value, () => {
                 :items="items"
             />
         </template>
+
+        <Toast />
+
         <div class="grid grid-cols-1 lg:grid-cols-12 justify-center gap-5 w-full">
-            <div class="col-span-full lg:col-span-8 flex flex-col p-6 gap-2.5 items-center rounded-[5px] border border-red-100">
+            <div class="col-span-full lg:col-span-8 flex flex-col p-6 gap-6 items-center rounded-[5px] border border-red-100">
                 <div class="flex items-center justify-between w-full">
                     <span class="w-full text-start text-md font-medium text-primary-900 whitespace-nowrap">Sale Histories</span>
                     <Menu as="div" class="relative inline-block text-left">
@@ -234,42 +245,5 @@ watch(() => date_filter.value, () => {
                 :inventoriesArr="inventoriesArr"
             />
         </div>
-
-        
-
-        <!-- <OverlayPanel 
-            ref="op" 
-            appendTo="body"
-        :pt="{
-            root: {
-                class: [
-                    // Shape
-                    'rounded-[5px] shadow-lg border-0',
-
-                    // Position
-                    'absolute left-0 top-0 mt-2',
-                    'z-40 transform origin-center',
-
-                    // Color
-                    'bg-white',
-                ]
-            },
-            content: {
-                class: 'p-1 w-full gap-0.5 min-w-24'
-            },
-            transition: {
-                enterFromClass: 'opacity-0 scale-y-[0.8]',
-                enterActiveClass: 'transition-[transform,opacity] duration-[120ms] ease-[cubic-bezier(0,0,0.2,1)]',
-                leaveActiveClass: 'transition-opacity duration-100 ease-linear',
-                leaveToClass: 'opacity-0'
-            }
-        }"
-        >
-            <div class="flex flex-col items-center justify-start">
-                <span class="text-grey-700 text-sm font-normal" @click="exportToCSV">CSV</span>
-                <span class="text-grey-700 text-sm font-normal">PDF</span>
-                <span class="text-grey-700 text-sm font-normal">Print</span>
-            </div>
-        </OverlayPanel> -->
     </AuthenticatedLayout>
 </template>

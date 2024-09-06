@@ -107,8 +107,8 @@ const isFormValid = computed(() => {
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
             <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div>
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
-                <div class="flex justify-between items-center self-stretch" v-for="(item, i) in form.items" :key="i">
-                    <div class="flex flex-col justify-between items-start">
+                <div class="grid grid-cols-12 items-center self-stretch" v-for="(item, i) in form.items" :key="i">
+                    <div class="col-span-10 flex flex-col justify-between items-start">
                         <Label
                             :value="item.item_name"
                             :for="'item_'+ i +'_stock_qty'"
@@ -126,7 +126,7 @@ const isFormValid = computed(() => {
                         :errorMessage="(form.errors) ? form.errors['items.' + i + '.add_stock_qty']  : ''"
                         :minValue="-(item.stock_qty)"
                         v-model="item.add_stock_qty"
-                        class="items-end justify-center"
+                        class="col-span-2 items-end justify-center"
                     />
                 </div>
             </div>

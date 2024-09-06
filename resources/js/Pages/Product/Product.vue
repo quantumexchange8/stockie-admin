@@ -1,12 +1,14 @@
 <script setup>
 import axios from 'axios';
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3';
 import ProductTable from './Partials/ProductTable.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import TotalProductChart from './Partials/TotalProductChart.vue';
 import TopSellingProductTable from './Partials/TopSellingProductTable.vue';
+import Toast from '@/Components/Toast.vue';
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     products: Array,
@@ -36,6 +38,8 @@ const topSellingProductColumns = ref([
     {field: 'sold', header: 'Sold', width: '15', sortable: false},
     {field: 'stock_status', header: 'Status', width: '22', sortable: false},
 ]);
+
+const { flashMessage } = useCustomToast();
 
 const initialProducts = ref(props.products);
 const products = ref(props.products);
@@ -121,6 +125,10 @@ const topSellingProducts = computed(() => {
         .slice(0, 4);
 });
 
+onMounted(() => {
+    flashMessage();
+});
+
 </script>
 
 <template>
@@ -132,6 +140,8 @@ const topSellingProducts = computed(() => {
                 :home="home" 
             />
         </template>
+
+        <Toast />
         
         <div class="flex flex-col justify-center gap-5">
             <div class="grid grid-cols-1 md:grid-cols-12 justify-center gap-5">

@@ -150,14 +150,24 @@ Route::middleware('auth')->group(function () {
         Route::post('/edit-zone', [TableRoomController::class,'editZone'])->name('tableroom.edit-zone');
      });
      
-    /******** Loyalty Programme **********/
+    /******** Order Management **********/
     Route::prefix('order-management')->group(function(){
         Route::get('/orders', [OrderController::class, 'index'])->name('orders');
+        Route::put('/orders/cancelOrder/{id}', [OrderController::class, 'cancelOrder'])->name('orders.cancel');
+        Route::put('/orders/updateOrderStatus/{id}', [OrderController::class, 'updateOrderStatus'])->name('orders.complete');
+
+        // Order tables
         Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');
         Route::put('/orders/reservation/{id}', [OrderController::class, 'updateReservation'])->name('orders.reservations.update');
         Route::delete('/orders/reservation/{id}', [OrderController::class, 'deleteReservation'])->name('orders.reservations.destroy');
+        
+        // Order items
+        Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');
+        Route::put('/orders/updateOrderItem/{id}', [OrderController::class, 'updateOrderItem'])->name('orders.items.update');
 
+        Route::get('/getAllZones', [OrderController::class, 'getAllZones'])->name('orders.getAllZones');
         Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');
+        Route::get('/getOrderWithItems/{id}', [OrderController::class, 'getOrderWithItems'])->name('orders.getOrderWithItems');
     });
 
      /********* Customer **********/

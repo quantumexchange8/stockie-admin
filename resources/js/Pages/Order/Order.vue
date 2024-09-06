@@ -32,6 +32,17 @@ const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
 
+const fetchZones = async () => {
+    try {
+        const zonesResponse = await axios.get(route('orders.getAllZones'));
+        zones.value = zonesResponse.data;
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+}
+
 const populateTabs = () => {
     tabs.value = ['All'];
     for (const zone of zones.value) {
@@ -108,7 +119,7 @@ const filteredZones = computed(() => {
                     :size="'lg'"
                     :iconPosition="'left'"
                     class="md:!w-fit"
-                    @click="showCreateForm"
+                    @click=""
                 >
                     <template #icon>
                         <SquareStickerIcon class="w-6 h-6" />
@@ -123,6 +134,7 @@ const filteredZones = computed(() => {
                         isMainTab 
                         :zones="filteredZones" 
                         :waiters="waiters"
+                        @fetchZones="fetchZones"
                     />
                 </template>
                 <template 
@@ -135,6 +147,7 @@ const filteredZones = computed(() => {
                         :activeTab="zone.value" 
                         :zoneName="zone.text"
                         :waiters="waiters"
+                        @fetchZones="fetchZones"
                     />
                 </template>
             </TabView>

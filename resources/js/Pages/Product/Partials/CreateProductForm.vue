@@ -76,7 +76,10 @@ const updateInventoryStockCount = async (index, id) => {
             const { data } = await axios.get(`/menu-management/products/getInventoryItemStock/${id}`);
             const item = form.items[index];
             item.inventory_stock_qty = data.stock_qty;
-            item.qty = data.stock_qty >= 2 ? 2 : 0;
+            
+            if (item.bucket === true) {
+                item.qty = data.stock_qty >= 2 ? 2 : 0;
+            }
         } catch (error) {
             console.error(error);
         }
@@ -96,7 +99,14 @@ const isFormValid = computed(() => {
 });
 
 watch(() => form.bucket, (newValue) => {
-    form.items = [newValue ? { ...defaultProductItem, qty: 2 } : { ...defaultProductItem }];
+    if (newValue === false) {
+        if (form.items.length > 1) {
+            form.items.splice(0, 1);
+        }
+        form.items[0].qty = 1;
+    } else {
+        form.items[0].qty = 2;
+    }
 }, { immediate: true });
 
 </script>
@@ -149,7 +159,7 @@ watch(() => form.bucket, (newValue) => {
                                 v-if="form.bucket"
                                 :labelText="'Quantity of item in this set'"
                                 :inputName="'qty_' + i"
-                                :minValue="form.bucket ? 2 : 1"
+                                :minValue="form.bucket === true ? 2 : 1"
                                 :maxValue="item.inventory_stock_qty"
                                 v-model="item.qty"
                                 class="!w-fit whitespace-nowrap"

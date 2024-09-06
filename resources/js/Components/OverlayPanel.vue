@@ -10,12 +10,17 @@ const props = defineProps({
     bgColor: {
         type: String,
         default: 'bg-white'
+    },
+    disabled: {
+        type: Boolean,
+        default: false
     }
 });
 
-const emit = defineEmits(["click"]);
+const emit = defineEmits(["click", 'close']);
 
 const op = ref();
+const opVisible = ref(false);
 const arrowPosition = ref('top');
 
 const calculateArrowPosition = (event) => {
@@ -28,6 +33,7 @@ const calculateArrowPosition = (event) => {
 const toggle = (event) => {
     if (!props.disabled) {
         calculateArrowPosition(event);
+        opVisible.value = !opVisible.value;
         op.value.toggle(event);
     }
 }
@@ -72,6 +78,7 @@ const overlayPanelRootClasses = computed(() => [
     <OverlayPanel 
         ref="op" 
         appendTo="body"
+        @hide="$emit('close')"
         :pt="{
             root: {
                 class: overlayPanelRootClasses 

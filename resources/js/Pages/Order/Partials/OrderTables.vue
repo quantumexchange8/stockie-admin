@@ -31,7 +31,10 @@ const props = defineProps({
     },
 });
 
+const emit = defineEmits(['fetchZones']);
+
 const op = ref(null);
+const zones = ref(props.zones);
 const selectedTable = ref(null);
 const reservationListIsOpen = ref(false);
 const reservationsRowsPerPage = ref(6);
@@ -88,7 +91,7 @@ const getTableClasses = (table) => ({
             'bg-grey-50': !table.order_table,
             'bg-primary-900': table.order_table && table.order_table.status === 'Pending Order',
             'bg-yellow-500': table.order_table && table.order_table.status === 'Order Placed',
-            'bg-green-600': table.order_table && table.order_table.status === 'Order Served',
+            'bg-green-600': table.order_table && table.order_table.status === 'All Order Served',
         }
     ]),
     text: computed(() => [
@@ -97,7 +100,7 @@ const getTableClasses = (table) => ({
             'text-grey-200': !table.order_table,
             'text-primary-25': table.order_table && table.order_table.status === 'Pending Order',
             'text-yellow-25': table.order_table && table.order_table.status === 'Order Placed',
-            'text-green-50': table.order_table && table.order_table.status === 'Order Served',
+            'text-green-50': table.order_table && table.order_table.status === 'All Order Served',
         }
     ])
 });
@@ -145,7 +148,7 @@ const setupDuration = (created_at) => {
 };
 
 const filteredZones = computed(() => {
-    let tempZones = props.zones.map(zone => ({
+    let tempZones = zones.value.map(zone => ({
         ...zone,
         tables: zone.tables.map(table => {
             return table;
@@ -183,7 +186,11 @@ const hideReservationList = () => {
             v-model:show="drawerIsVisible"
             @close="drawerIsVisible = false"
         >
-            <OrderInfo :selectedTable="selectedTable" @close="drawerIsVisible = false"/>
+            <OrderInfo 
+                :selectedTable="selectedTable" 
+                @close="drawerIsVisible = false"
+                @fetchZones="$emit('fetchZones')"
+            />
         </RightDrawer>
     </template>
     

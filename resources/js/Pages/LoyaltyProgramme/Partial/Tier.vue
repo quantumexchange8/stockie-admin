@@ -108,7 +108,7 @@ const formatAmount = (num) => {
 <template>
     <div class="flex flex-col p-6 gap-5 rounded-[5px] border border-red-100 overflow-y-auto">
         <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Current Tier List</span>
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-5">
             <div class="flex gap-5 flex-wrap sm:flex-nowrap">
                 <SearchBar 
                     placeholder="Search"

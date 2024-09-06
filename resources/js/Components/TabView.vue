@@ -11,7 +11,9 @@ const props = defineProps({
 });
 
 const tranformedTabs = computed(() => {
-    return props.tabs.map((tab) => tab.toLowerCase().replace(/ /g,"-"))
+    return props.tabs.map((tab) => 
+        tab.toLowerCase().replace(/[^a-z0-9]+|^-+|-+$/g, "-").replace(/^-+|-+$/g, "")
+    )
 });
 </script>
 

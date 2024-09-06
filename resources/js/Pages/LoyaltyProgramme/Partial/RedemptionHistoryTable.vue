@@ -49,7 +49,7 @@ watch(() => date_filter.value, (newValue) => {
 </script>
 
 <template>
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-6">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
             <SearchBar
                 placeholder="Search"

@@ -278,7 +278,6 @@ const submit = () => {
                     detail="The changes will only be applied to new entry member only."
                     actionLabel="OK"
                     :closable="false"
-                    class="xl:col-span-10"
                 />
 
                 <div class="flex flex-col gap-6" v-if="form.reward === 'active'">

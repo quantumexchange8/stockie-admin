@@ -196,7 +196,7 @@ onMounted(() => {
             :checked="selectedCategory"
             @update:checked="handleFilterChange"
         />
-        <div>
+        <div class="flex flex-col justify-center gap-4">
             <div class="flex flex-wrap lg:flex-nowrap items-center justify-between gap-6 rounded-[5px]">
                 <SearchBar
                     placeholder="Search"

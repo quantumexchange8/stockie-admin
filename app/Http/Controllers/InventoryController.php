@@ -20,9 +20,14 @@ use Illuminate\Database\Eloquent\Builder;
 
 class InventoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('Inventory/Inventory');
+        // Get the flashed messages from the session
+        $message = $request->session()->get('message');
+
+        return Inertia::render('Inventory/Inventory', [
+            'message' => $message ?? [],
+        ]);
     }
     
     public function store(InventoryRequest $request)
@@ -102,7 +107,14 @@ class InventoryController extends Controller
                 }
             }
         }
-        return Redirect::route('inventory');
+
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Group added successfully.',
+            'detail' => 'You can always add new stock to this group.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
     
     /**
@@ -212,7 +224,6 @@ class InventoryController extends Controller
     {
         $data = Iventory::with('inventoryItems')
                         ->find($id);
-        // dd($data);
 
         return response()->json($data);
     }
@@ -223,16 +234,20 @@ class InventoryController extends Controller
     public function updateInventoryItemStock(Request $request, string $id)
     {
         $data = $request->all();
+        
+        $replenishedItem = [];
 
         if (isset($id) && count($data['items']) > 0) {
             foreach ($data['items'] as $key => $value) {
+                if ($value['add_stock_qty'] > 0) array_push($replenishedItem, '\'' . $value['item_name'] . '\'');
+
                 $calculatedStock = $value['stock_qty'] + $value['add_stock_qty'];
 
                 $existingItem = IventoryItem::find($value['id']);
 
                 $existingItem->update([
                     'stock_qty' => $calculatedStock >= 0 ? $calculatedStock : 0,
-                ]);    
+                ]);
 
                 if ($value['add_stock_qty'] !== 0 && $value['stock_qty'] > 0 && $calculatedStock >= 0) {
                     StockHistory::create([
@@ -247,11 +262,20 @@ class InventoryController extends Controller
                 }
             }
         }
-        return Redirect::route('inventory');
+        
+        $replenishedItem = implode(', ', $replenishedItem);
+        
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Stock replenished successfully.',
+            'detail' => "You've replenished stock for $replenishedItem."
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
 
     /**
-     * Update inventory item's stock.
+     * Update inventory group and items' details.
      */
     public function updateInventoryAndItems(InventoryRequest $request, string $id)
     {
@@ -355,7 +379,12 @@ class InventoryController extends Controller
             }
         }
 
-        return Redirect::route('inventory');
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Changes saved.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
 
     /**
@@ -381,6 +410,13 @@ class InventoryController extends Controller
         }
 
         $existingGroup->delete();
+
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Selected group has been deleted successfully.',
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
     }
     
     /**
@@ -393,7 +429,6 @@ class InventoryController extends Controller
 
         $data = KeepHistory::whereBetween('created_at', [$startDate, $endDate])
                             ->get();
-        // dd($data);
 
         return response()->json($data);
     }
@@ -401,17 +436,27 @@ class InventoryController extends Controller
     /**
      * View inventory keep histories.
      */
-    public function viewKeepHistories()
+    public function viewKeepHistories(Request $request)
     {
-        return Inertia::render('Inventory/Partials/KeepHistory');
+        // Get the flashed messages from the session
+        $message = $request->session()->get('message');
+
+        return Inertia::render('Inventory/Partials/KeepHistory', [
+            'message' => $message ?? [],
+        ]);
     }
 
     /**
      * View inventory stock histories.
      */
-    public function viewStockHistories()
+    public function viewStockHistories(Request $request)
     {
-        return Inertia::render('Inventory/Partials/StockHistory');
+        // Get the flashed messages from the session
+        $message = $request->session()->get('message');
+
+        return Inertia::render('Inventory/Partials/StockHistory', [
+            'message' => $message ?? [],
+        ]);
     }
 
     /**

@@ -124,7 +124,7 @@ const rowGroupedByDates = computed(() => {
             as="div" 
             :defaultOpen="true"
             v-slot="{ open }" 
-            class="flex flex-col justify-center" 
+            class="flex flex-col justify-center gap-4" 
         >
             <DisclosureButton
                 class="flex items-center justify-between gap-2.5 rounded-sm bg-grey-50 border-t border-grey-200 py-1 px-2.5"

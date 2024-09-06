@@ -1,8 +1,11 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import TabView from '@/Components/TabView.vue';
 import OrderDetail from './OrderDetail.vue';
 import Button from '@/Components/Button.vue';
+import Modal from '@/Components/Modal.vue';
+import { CancelIllus, OrderCompleteIllus } from '@/Components/Icons/illus';
+import { useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
     errors: Object,
@@ -12,10 +15,93 @@ const props = defineProps({
     },
 })
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'fetchZones']);
 
-const tabs = ref(['Order Detail', 'Customer Detail']);
+const tabs = ref(['Order Detail', 'Customer/Detail']);
+const order = ref({});
+const cancelOrderFormIsOpen = ref(false);
+const orderCompleteModalIsOpen = ref(false);
 
+onMounted(async() => {
+    try {
+        const orderResponse = await axios.get(route('orders.getOrderWithItems', props.selectedTable.order_table.order_id));
+        order.value = orderResponse.data;
+
+        if (order.value) form.order_id = order.value.id;
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+});
+
+const form = useForm({
+    order_id: order.value.id,
+});
+
+const closeDrawer = () => {
+    emit('close');
+    setTimeout(() => {
+        emit('fetchZones');
+    }, 200)
+}
+
+const showOrderCompleteModal = () => {
+    orderCompleteModalIsOpen.value = true;
+}
+
+const hideOrderCompleteModal = () => {
+    orderCompleteModalIsOpen.value = false;
+}
+
+const showCancelOrderForm = () => {
+    cancelOrderFormIsOpen.value = true;
+}
+
+const hideCancelOrderForm = () => {
+    cancelOrderFormIsOpen.value = false;
+}
+
+const submit = (action) => { 
+    if (order.value.id) {
+        if (action === 'complete') {
+            form.put(route('orders.complete', order.value.id), {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    form.reset();
+                    orderCompleteModalIsOpen.value = true;
+                },
+            })
+        } else {
+            form.put(route('orders.cancel', order.value.id), {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    form.reset();
+                    closeDrawer();
+                },
+            })
+        }
+    }
+};
+
+const isOrderCompleted = computed(() => {
+    if (!order.value || !order.value.order_items) return false;
+
+    const mappedOrder = order.value.order_items 
+                            ? order.value.order_items
+                                    .map((item) => {
+                                        return {
+                                            ...item,
+                                            total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
+                                            total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
+                                        };
+                                    })
+                            : [];
+    
+    return mappedOrder.every((item) => item.total_served_qty === item.total_qty);
+})
 </script>
 
 <template>
@@ -23,7 +109,7 @@ const tabs = ref(['Order Detail', 'Customer Detail']);
         <div class="px-6 py-2 w-full">
             <TabView :tabs="tabs">
                 <template #order-detail>
-                    <OrderDetail :selectedTable="selectedTable" />
+                    <OrderDetail :selectedTable="selectedTable" :order="order" @close="closeDrawer" />
                 </template>
                 <template #customer-detail>
                     cuscus
@@ -31,24 +117,106 @@ const tabs = ref(['Order Detail', 'Customer Detail']);
             </TabView>
         </div>
 
-        <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
-            <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: RM{{ '223' }}</p>
-            <div class="flex flex-col gap-3">
+        <form @submit.prevent="submit('complete')">
+            <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
+                <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: RM{{ order.total_amount }}</p>
+                <div class="flex flex-col gap-3">
+                    <Button
+                        size="lg"
+                        :disabled="!isOrderCompleted"
+                    >
+                        Complete Order
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        size="lg"
+                        @click="showCancelOrderForm"
+                    >
+                        Cancel Order
+                    </Button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="orderCompleteModalIsOpen"
+        @close="hideOrderCompleteModal"
+        :withHeader="false"
+    >
+        <div class="flex flex-col gap-9 pt-36">
+            <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] fixed top-0 w-full left-0">
+                <OrderCompleteIllus class="mt-2.5"/>
+            </div>
+            <div class="flex flex-col gap-1" >
+                <div class="text-primary-900 text-2xl font-medium text-center">
+                    Order Completed
+                </div>
+                <div class="text-gray-900 text-base font-medium text-center leading-tight" >
+                    A PDF will be sent to customer account. 
+                </div>
+            </div>
+            <div class="flex item-center gap-3">
                 <Button
-                    size="lg"
-                    @click="$emit('close')"
-                >
-                    Complete Order
-                </Button>
-                <Button
-                    type="button"
                     variant="tertiary"
                     size="lg"
-                    @click="$emit('close')"
+                    type="button"
+                    @click="closeDrawer"
                 >
-                    Cancel Order
+                    Close
+                </Button>
+                <Button
+                    size="lg"
+                    type="button"
+                    @click="closeDrawer"
+                >
+                    View Invoice
                 </Button>
             </div>
         </div>
-    </div>
+    </Modal>
+
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="cancelOrderFormIsOpen"
+        @close="hideCancelOrderForm"
+        :withHeader="false"
+        v-if="order"
+    >
+        <form @submit.prevent="submit('cancel')">
+            <div class="flex flex-col gap-9 pt-36">
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] fixed top-0 w-full left-0">
+                    <CancelIllus class="mt-2.5"/>
+                </div>
+                <div class="flex flex-col gap-1" >
+                    <div class="text-primary-900 text-2xl font-medium text-center">
+                        Cancel Order
+                    </div>
+                    <div class="text-gray-900 text-base font-medium text-center leading-tight" >
+                        Are you sure you want to cancel all the existing and pending order in this table / room? The action cannot be undone.
+                    </div>
+                </div>
+                <div class="flex item-center gap-3">
+                    <Button
+                        variant="tertiary"
+                        size="lg"
+                        type="button"
+                        @click="hideCancelOrderForm"
+                    >
+                        Keep
+                    </Button>
+                    <Button
+                        variant="red"
+                        size="lg"
+                    >
+                        Cancel
+                    </Button>
+                </div>
+            </div>
+        </form>
+    </Modal>
 </template>

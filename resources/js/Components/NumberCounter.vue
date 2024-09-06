@@ -23,7 +23,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:modelValue", "onChange"]);
 
 const input = ref(null);
 const inputValue = ref(props.modelValue);
@@ -55,6 +55,7 @@ const increment = () => {
         inputValue.value += 1;
         updateState();
         emit('update:modelValue', inputValue.value);
+        emit("onChange", inputValue.value);
     }
 }
 
@@ -63,6 +64,7 @@ const decrement = () => {
         inputValue.value -= 1;
         updateState();
         emit('update:modelValue', inputValue.value);
+        emit("onChange", inputValue.value);
     }
 }
 
@@ -86,6 +88,8 @@ const updateValue = (event) => {
 
     event.target.value = inputValue.value;
     emit('update:modelValue', inputValue.value);
+    emit("onChange", inputValue.value);
+
 }
 
 const updateState = () => {

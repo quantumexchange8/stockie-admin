@@ -38,7 +38,7 @@ const form = useForm({
     product_name: props.product.product_name,
     price: props.product.price,
     point: props.product.point,
-    category_id: 1,
+    category_id: props.product.category_id,
     keep: props.product.keep,
     itemsDeletedBasket: [],
     items: props.product.product_items ? props.product.product_items : [],

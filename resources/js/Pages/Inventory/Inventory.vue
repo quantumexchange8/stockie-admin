@@ -13,6 +13,8 @@ import TotalStockChart from './Partials/TotalStockChart.vue'
 import AddStockForm from './Partials/AddStockForm.vue'
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import { OrderDeliveredIllus } from '@/Components/Icons/illus'
+import Toast from '@/Components/Toast.vue';
+import { useCustomToast } from '@/Composables/index.js';
 
 const home = ref({
     label: 'Inventory',
@@ -38,6 +40,8 @@ const keepHistoryColumns = ref([
     {field: 'keep_date', header: 'Date', width: '20', sortable: true},
     {field: 'keep_for', header: 'Keep For', width: '30', sortable: true},
 ]);
+
+const { flashMessage } = useCustomToast();
 
 const inventories = ref([]);
 const initialInventories = ref([]);
@@ -108,6 +112,8 @@ const applyCheckedFilters = (filters) => {
 };
 
 onMounted(async () => {
+    flashMessage();
+
     try {
         // Get initial inventories
         const inventoriesResponse = await axios.get('/inventory/inventory/getInventories');
@@ -193,6 +199,8 @@ const hideAddStockForm = () => {
                 :home="home" 
             />
         </template>
+
+        <Toast />
 
         <div class="flex flex-col justify-center gap-5">
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-5">
