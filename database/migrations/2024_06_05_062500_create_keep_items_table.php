@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('keep_items', function (Blueprint $table) {
             $table->id();
-            $table->string('customer_id');
-            $table->string('item');
+            $table->unsignedBigInteger('customer_id');
+            $table->unsignedBigInteger('order_item_id');
             $table->double('qty')->nullable();
             $table->decimal('cm', 13, 2)->nullable();
             $table->string('remark');
-            $table->unsignedInteger('waiter_id')->nullable();
+            $table->unsignedBigInteger('waiter_id')->nullable();
             $table->string('status');
-            $table->dateTime('expired_date');
+            $table->dateTime('expired_from')->nullable();
+            $table->dateTime('expired_to')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

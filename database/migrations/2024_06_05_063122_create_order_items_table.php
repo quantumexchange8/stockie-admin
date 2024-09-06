@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('order_id');
+            $table->unsignedBigInteger('order_id');
+            $table->unsignedBigInteger('user_id')->nullable()->default(NULL);
+            $table->unsignedBigInteger('waiter_id')->nullable()->default(NULL);
             $table->string('type');
-            $table->unsignedBigInteger('item_id');
+            $table->unsignedBigInteger('product_id');
             $table->double('item_qty');
-            $table->double('serve_qty');
             $table->double('amount');
-            $table->string('point');
+            $table->integer('point_earned')->nullable()->default(0);
+            $table->integer('point_redeemed')->nullable()->default(0);
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

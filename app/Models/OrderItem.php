@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrderItem extends Model
@@ -15,12 +17,14 @@ class OrderItem extends Model
 
     protected $fillable = [
         'order_id',
+        'user_id',
+        'waiter_id',
         'type',
-        'item_id',
+        'product_id',
         'item_qty',
-        'serve_qty',
         'amount',
-        'point',
+        'point_earned',
+        'point_redeemed',
         'status',
     ];
 
@@ -31,5 +35,50 @@ class OrderItem extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class, 'order_id');
+    }
+
+    /**
+     * KeepItem Model
+     * Get the keep item of the order item.
+     */
+    public function keepItem(): HasOne
+    {
+        return $this->hasOne(KeepItem::class, 'order_item_id');
+    }
+
+    /**
+     * KeepHistory Model
+     * Get the keep history of the order item.
+     */
+    public function keepHistory(): HasOne
+    {
+        return $this->hasOne(KeepHistory::class, 'order_item_id');
+    }
+    
+    /**
+     * Product Model
+     * Get the product of the order item.
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+    
+    /**
+     * OrderItemSubitem Model
+     * Get the sub items of the order item.
+     */
+    public function subItems(): HasMany
+    {
+        return $this->hasMany(OrderItemSubitem::class, 'order_item_id');
+    }
+    
+    /**
+     * User Model
+     * Get the user who ordered the item.
+     */
+    public function orderedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

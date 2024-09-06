@@ -53,4 +53,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(PointHistory::class, 'redeem_by');
     }
+
+    /**
+     * OrderItem Model
+     * Get the order items ordered by the user.
+     */
+    public function orderedItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'user_id');
+    }
 }

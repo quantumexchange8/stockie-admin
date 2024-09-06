@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('order_no');
             $table->string('pax');
-            $table->string('waiter_id');
-            $table->string('total_amount');
-            $table->string('voucher');
+            $table->unsignedBigInteger('waiter_id');
+            $table->unsignedBigInteger('customer_id')->nullable()->default(NULL);
+            $table->decimal('amount', 13, 2)->nullable()->default(NULL);
+            $table->mediumInteger('voucher_id')->nullable()->default(NULL);
+            $table->decimal('total_amount', 13, 2);
+            $table->decimal('discount_amount', 13, 2)->nullable()->default(NULL);
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

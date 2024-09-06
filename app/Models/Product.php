@@ -49,4 +49,13 @@ class Product extends Model
     {
         return $this->hasMany(SaleHistory::class, 'product_id');
     }
+    
+    /**
+     * OrderItem Model
+     * Get the order items of the product.
+     */
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'product_id');
+    }
 }

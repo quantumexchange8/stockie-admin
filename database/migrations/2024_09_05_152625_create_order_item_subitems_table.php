@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('keep_histories', function (Blueprint $table) {
+        Schema::create('order_item_subitems', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('keep_item_id');
             $table->unsignedBigInteger('order_item_id');
-            $table->string('qty');
-            $table->string('cm');
-            $table->dateTime('keep_date');
-            $table->dateTime('status');
+            $table->unsignedBigInteger('product_item_id');
+            $table->double('item_qty');
+            $table->double('serve_qty');
             $table->softDeletes();
             $table->timestamps();
         });
@@ -29,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('keep_histories');
+        Schema::dropIfExists('order_item_subitems');
     }
 };

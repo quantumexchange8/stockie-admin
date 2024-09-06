@@ -19,8 +19,10 @@ class Order extends Model
         'pax',
         'waiter_id',
         'customer_id',
+        'amount',
+        'voucher_id',
         'total_amount',
-        'voucher',
+        'discount_amount',
         'status',
     ];
 
