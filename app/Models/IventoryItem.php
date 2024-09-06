@@ -29,7 +29,7 @@ class IventoryItem extends Model
      */
     public function inventory(): BelongsTo
     {
-        return $this->belongsTo(Iventory::class);
+        return $this->belongsTo(Iventory::class, 'inventory_id');
     }
     
     /**

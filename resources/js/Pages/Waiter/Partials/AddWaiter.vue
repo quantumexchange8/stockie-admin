@@ -50,7 +50,7 @@ const isFormValid = computed(() => {
 })
 </script>
 <template>
-    <div class="w-full flex flex-col">
+    <div class="w-full flex flex-col max-h-[650px] overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
         <form @submit.prevent="submit">
             <div class="w-full flex flex-col md:gap-9">
                 <div class="w-full flex md:gap-6">
@@ -58,7 +58,7 @@ const isFormValid = computed(() => {
                         :inputName="'image'"
                         :errorMessage="form.errors.image"
                         v-model="form.image"
-                        class="col-span-full md:col-span-4 !h-[373px] !w-[373px]"
+                        class="!h-[373px] !w-[373px] "
                     />
                     <div class="flex flex-grow flex-col md:gap-[48px]">
                         <div class="flex flex-col md:gap-6">

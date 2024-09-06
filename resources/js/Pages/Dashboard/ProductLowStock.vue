@@ -1,0 +1,65 @@
+<script setup>
+import { UndetectableIllus } from '@/Components/Icons/illus';
+import { CircledArrowHeadRightIcon2 } from '@/Components/Icons/solid';
+import Table from '@/Components/Table.vue';
+import { Link } from '@inertiajs/vue3';
+
+const props = defineProps({
+    columns: {
+        type: Array,
+        required: true,
+    },
+    rows: {
+        type: Object,
+        required: true,
+    },
+    rowType: Object,
+})
+
+</script>
+
+<template>
+    <div class="flex flex-col py-6 gap-6 items-end shrink-0 rounded-[5px] border border-solid border-primary-100">
+        <div class="flex flex-col pl-3 items-start gap-[10px] self-stretch">
+            <div class="flex pl-3 pr-6 justify-between items-center self-stretch">
+                <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Product Low at Stock</span>
+                <Link :href="route('inventory')">
+                    <CircledArrowHeadRightIcon2  
+                        class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
+                    />
+                </Link>
+            </div>
+        </div>
+        
+        <Table
+            :columns="columns"
+            :rows="rows"
+            :variant="'list'"
+            :rowType="rowType"
+            :paginator="false"
+            class="px-6 min-h-[330px]"
+        >
+            <template #empty>
+                <UndetectableIllus class="w-44 h-44"/>
+                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            </template>
+            <template #product_name="rows">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 bg-primary-900"></div>
+                    <span class="self-center overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ rows.product_name }}</span>                    
+                </div>
+            </template>
+            <template #category="rows">
+                <span class="text-grey-900 text-sm font-medium">{{ rows.category }}</span>
+            </template>
+            <template #item_name="rows">
+                <span class="text-grey-900 text-sm font-medium">{{ rows.item_name }}</span>
+            </template>
+            <template #stock_qty="rows">
+                <span class="text-primary-700 text-sm font-medium">{{ rows.stock_qty }}</span>
+            </template>
+        </Table>
+    </div>
+
+</template>
+

@@ -1,13 +1,43 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
-import { onMounted } from 'vue'
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { onMounted, ref } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
 import { sidebarState, rightSidebarState } from '@/Composables'
 import { NumberedNotificationIcon, LanguageIcon, LogOutIcon } from '@/Components/Icons/solid';
+import Button from '@/Components/Button.vue';
+import Modal from '@/Components/Modal.vue';
+import { LogoutIllust } from '@/Components/Icons/illus';
 
 defineProps({
     title: String
 })
+
+const form = useForm({
+
+});
+
+const submit = () => {
+    form.post(route('logout'), {
+        preserveScroll: true,
+        preserveState: 'errors',
+        onSuccess: () => {
+            closeModal();
+        },
+        onError: (error) => {
+            console.error(error);
+        }
+    })
+}
+
+const isLogoutModal = ref(false);
+
+const logout = () => {
+    isLogoutModal.value = true;
+};
+
+const closeModal = () => {
+    isLogoutModal.value = false;
+}
 
 onMounted(() => {
     rightSidebarState.isOpen = false
@@ -83,16 +113,19 @@ onMounted(() => {
                                     class="text-primary-900 hover:text-primary-800"
                                     aria-hidden="true" 
                                 />
-                                <Link 
+                                <!-- <Link 
                                     :href="route('logout')" 
                                     method="post"
                                     as="button"
-                                >
+                                > -->
+                                <!-- <Button> -->
                                     <LogOutIcon 
                                         class="text-primary-900 hover:text-primary-800"
                                         aria-hidden="true" 
+                                        @click="logout()"
                                     />
-                                </Link>
+                                <!-- </Link> -->
+                                <!-- </Button> -->
                             </div>
                         </div>
                         <div class="bg-primary-900 w-full h-[0.5px]"></div>
@@ -108,5 +141,48 @@ onMounted(() => {
             </div>
         </div>
     </div>
+
+    <Modal
+        :maxWidth="'2xs'"
+        :closeable="true"
+        :show="isLogoutModal"
+        @close="closeModal"
+        v-if="isLogoutModal"
+        :withHeader="false"
+    >
+        <form @submit.prevent="submit">
+            <div class="inline-flex flex-col items-center gap-9" >
+                <div class="bg-primary-50 flex flex-col items-center gap-[10px] rounded-t-[5px] m-[-24px] pt-6 px-3">
+                    <div class="w-full shrink-0">
+                        <LogoutIllust />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-5 pt-6">
+                    <div class="flex flex-col gap-1 text-center self-stretch">
+                        <span class="text-primary-900 text-lg font-medium self-stretch">You’re leaving...</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">Are you sure you want to log out this account?</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-center items-start self-stretch gap-3">
+                    <Button
+                        variant="tertiary"
+                        size="lg"
+                        type="button"
+                        @click="closeModal"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        type="submit"
+                    >
+                        Log out
+                    </Button>
+                </div>
+            </div>
+        </form>
+    </Modal>
     
 </template>

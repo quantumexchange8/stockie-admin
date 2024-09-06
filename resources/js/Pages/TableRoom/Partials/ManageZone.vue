@@ -99,7 +99,6 @@ function startEditing(zonesArr) {
         const inputElement = document.getElementById('edit_zone_name');
         if(inputElement){
             // inputElement.focus();
-            console.log(inputElement);
         }
     })
 }
@@ -108,7 +107,6 @@ watch(isEditing, (newVal) => {
     if(newVal) {
         nextTick(() => {
             const inputElement = document.getElementById('edit_zone_name');
-            console.log('tick')
             if(inputElement){
                 inputElement.focus();
             }

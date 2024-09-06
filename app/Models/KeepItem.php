@@ -21,26 +21,27 @@ class KeepItem extends Model
         'cm',
         'remark',
         'waiter_id',
-        'status',
-        'expired_from',
-        'expired_to',
+        'status'
     ];
+    
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
 
-    /**
-     * KeepHistory Model
-     * Get the keep histories of the keep.
-     */
+    public function waiters(): BelongsTo
+    {
+        return $this->belongsTo(Waiter::class,'waiter_id');
+    }
+    
+    public function orderItems(): BelongsTo
+    {
+        return $this->belongsTo(OrderItem::class,'order_item_id');
+    }
+
     public function keepHistories(): HasMany
     {
-        return $this->hasMany(KeepHistory::class, 'keep_item_id');
+        return $this->hasMany(KeepHistory::class,'keep_items_id');
     }
 
-    /**
-     * OrderItem Model
-     * Get the order item of the keep item.
-     */
-    public function orderItem(): BelongsTo
-    {
-        return $this->belongsTo(OrderItem::class, 'order_item_id');
-    }
 }

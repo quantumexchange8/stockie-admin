@@ -70,7 +70,7 @@ const isFormValid = computed(() => {
 })
 </script>
 <template>
-    <div class="w-full flex flex-col overflow-x-auto">
+    <div class="w-full flex flex-col max-h-[650px] overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
         <form novalidate @submit.prevent="submit">
             <div class="w-full flex flex-col md:gap-9">
                 <div class="w-full flex flex-col gap-6 md:flex-row justify-center">
@@ -78,7 +78,7 @@ const isFormValid = computed(() => {
                         :inputName="'image'"
                         :errorMessage="form.errors.image"
                         v-model="form.image"
-                        class="!h-[373px] !w-[373px] !md:w-full "
+                        class="h-[373px] !w-[373px] !md:w-full "
                     />
                     <div class="flex flex-grow flex-col gap-[48px]">
                         <div class="flex flex-col md:gap-6">

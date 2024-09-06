@@ -1,5 +1,4 @@
 <script setup>
-import Button from '@/Components/Button.vue';
 import { DetailIcon, UploadIcon } from '@/Components/Icons/solid';
 import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';

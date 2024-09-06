@@ -7,7 +7,6 @@ use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\Zone;
 use App\Models\Table;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class TableRoomController extends Controller

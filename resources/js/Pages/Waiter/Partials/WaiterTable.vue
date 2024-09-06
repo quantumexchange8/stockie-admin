@@ -24,6 +24,8 @@ const props = defineProps({
     rowType: Object,
     totalPages: Number,
     rowsPerPage: Number,
+    searchFilter: Boolean,
+    filters: Object,
 })
 
 const form = useForm({
@@ -45,14 +47,15 @@ const selectedWaiter = ref(null);
 function formatPhone(phone) {
     if (!phone || phone.length < 10) 
         return phone; 
-    
 
     if (phone.startsWith('+6')) 
         phone = phone.slice(2);
+    const totalLength = phone.length;
+    const cutPosition = totalLength - 4;
 
     const firstPart = phone.slice(0, 3);
-    const middlePart = phone.slice(3, 7);
-    const lastPart = phone.slice(7);         
+    const middlePart = phone.slice(3, cutPosition)
+    const lastPart = phone.slice(cutPosition);       
 
     return `${firstPart} ${middlePart} ${lastPart}`;
 }
@@ -90,6 +93,8 @@ const handleDefaultClick = (event) => {
         :rowType="rowType"
         :totalPages="totalPages"
         :rowsPerPage="rowsPerPage"
+        :searchFilter="true"
+        :filters="filters"
         minWidth="min-w-[860px]"
     >
         <template #empty>
@@ -113,7 +118,7 @@ const handleDefaultClick = (event) => {
         </template>
         <template #name="rows">
             <template class="flex flex-row gap-[10px] items-center">
-                <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700 pr-[20px]"></span>
+                <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"></span>
                 <span class="text-grey-900 text-sm font-medium">{{ rows.name }}</span>
             </template>
         </template>
@@ -132,6 +137,7 @@ const handleDefaultClick = (event) => {
         :closeable="true"
         :show="isEditWaiterOpen"
         @close="closeModal"
+        class="!h-[373px]"
         v-if="isEditWaiterOpen"
     >
         <template v-if="selectedWaiter">

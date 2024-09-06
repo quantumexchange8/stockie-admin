@@ -12,6 +12,7 @@ import WaiterTable from "./Partials/WaiterTable.vue";
 import CommissionEarned from "./Partials/CommissionEarned.vue";
 import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables";
+import { FilterMatchMode } from "primevue/api";
 
 const home = ref({
     label: 'Waiter',
@@ -67,7 +68,9 @@ onMounted(() => {
     flashMessage();
 });
 
-const inputValue = ref("");
+const filters = ref({
+    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
+});
 </script>
 
 <template>
@@ -102,7 +105,7 @@ const inputValue = ref("");
                         <SearchBar
                             placeholder="Search"
                             :show-filter="false"
-                            v-model="inputValue"
+                            v-model="filters['global'].value"
                         >
                         </SearchBar>
 
@@ -136,6 +139,8 @@ const inputValue = ref("");
                             :rowType="rowType"
                             :totalPages="waitersTotalPages"
                             :rowsPerPage="waitersRowsPerPage"
+                            :searchFilter="true"
+                            :filters="filters"
                         />
                     </div>
                 </div>

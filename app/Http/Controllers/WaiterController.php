@@ -159,12 +159,11 @@ class WaiterController extends Controller
         $incentiveTypes = ConfigIncentive::whereIn('id', $incentiveIds)->get();
         
         $incentiveData = $incentive->map(function ($incentive) use ($totalSales, $incentiveTypes) {
-
             $salesForMonth = $totalSales->firstWhere('month_num', $incentive->created_at->month);
             $incentiveType = $incentiveTypes->firstWhere('id', $incentive->incentive_id);
             $incentiveAmount = 0;
             $incentiveRate = null;
-            if($salesForMonth->total_sales > $incentiveType->monthly_sale){
+            if ($salesForMonth && $salesForMonth->total_sales > $incentiveType->monthly_sale) {
                 switch ($incentiveType->type) {
                     case 'fixed':
                         $incentiveAmount = $incentiveType->rate;
@@ -172,9 +171,9 @@ class WaiterController extends Controller
                         break;
                     case 'percentage':
                         $incentiveAmount = $incentiveType->rate * $salesForMonth->total_sales;
-                        $incentiveRate = round($incentiveType->rate * 100, 0) . '%'; 
+                        $incentiveRate = round($incentiveType->rate * 100, 0) . '%';
                         break;
-                    }
+                }
             }
 
             $totalCommission = round($incentiveAmount + ($salesForMonth ? $salesForMonth->commission : 0), 2);
@@ -237,13 +236,13 @@ class WaiterController extends Controller
    {
         try {
             $orderItems = OrderItem::where('order_id', $id)
-                                    ->get(['item_id', 'serve_qty', 'amount']);
+                                    ->get(['product_id', 'serve_qty', 'amount']);
             if ($orderItems->isEmpty()) {
                 return response()->json(['message' => 'No order items found.'], 404);
             }
 
             $orderDetails = $orderItems->map(function ($item) {
-                $product = Product::where('id', $item->item_id)
+                $product = Product::where('id', $item->product_id)
                                     ->first(['product_name', 'price']);
 
             if (!$product) {
@@ -251,12 +250,12 @@ class WaiterController extends Controller
             }
 
                 return [
-                    'item_id' => $item->item_id,
+                    'item_id' => $item->product_id,
                     'product_name' => $product->product_name,
                     'serve_qty' => $item->serve_qty,
                     'amount' => $item->amount,
                     'price' => $item->serve_qty * $product->price,
-                    'commission' => ceil($product->price * $item->serve_qty  * 0.15),
+                    'commission' => ceil($product->price * $item->serve_qty * 0.15),
                 ];
             })->filter();
 

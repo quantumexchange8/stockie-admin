@@ -1,6 +1,4 @@
 <script setup>
-import Button from "@/Components/Button.vue";
-import Chart from "primevue/chart";
 </script>
 
 <template>

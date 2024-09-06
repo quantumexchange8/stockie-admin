@@ -14,8 +14,7 @@ class KeepHistory extends Model
     protected $table = "keep_histories";
 
     protected $fillable = [
-        'keep_item_id',
-        'order_item_id',
+        'keep_items_id',
         'qty',
         'cm',
         'keep_date',

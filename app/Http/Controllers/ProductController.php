@@ -328,7 +328,6 @@ class ProductController extends Controller
 
                             return $product;
                         });
-
         return response()->json($data);
     }
 

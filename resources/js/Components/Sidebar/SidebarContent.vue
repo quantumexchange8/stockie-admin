@@ -87,7 +87,10 @@ import {
                         <WaiterIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink title="Customer" :href="route('dashboard')">
+                <SidebarLink 
+                    title="Customer" 
+                    :href="route('customer')"
+                    :active="route().current('customer')">
                     <template #icon>
                         <CustomerIcon aria-hidden="true" />
                     </template>

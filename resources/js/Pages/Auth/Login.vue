@@ -5,7 +5,10 @@ import Button from "@/Components/Button.vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import InputError from "@/Components/InputError.vue";
 import TextInput from "@/Components/TextInput.vue";
+import Toast from "@/Components/Toast.vue";
+import { useCustomToast } from "@/Composables";
 import { useForm } from "@inertiajs/vue3";
+import { onMounted } from "vue";
 
 defineProps({
     canResetPassword: {
@@ -15,6 +18,8 @@ defineProps({
         type: String,
     },
 });
+
+const { flashMessage } = useCustomToast();
 
 const form = useForm({
     role_id: "",
@@ -27,6 +32,10 @@ const submit = () => {
         onFinish: () => form.reset("password"),
     });
 };
+
+onMounted(() => {
+    flashMessage();
+});
 </script>
 
 <template>
@@ -49,6 +58,8 @@ const submit = () => {
             </div> -->
         </div>
 
+        <Toast />
+        
         <div class="w-full col-span-full lg:col-span-6 bg-white flex flex-col justify-start lg:pt-60 px-28 xl:px-32 2xl:px-40">
             <form @submit.prevent="submit">
                 <div class="flex flex-col gap-12">

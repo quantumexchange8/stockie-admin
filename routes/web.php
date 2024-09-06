@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
@@ -8,6 +9,7 @@ use App\Http\Controllers\WaiterController;
 use App\Http\Controllers\LoyaltyController;
 use Inertia\Inertia;
 use App\Http\Controllers\ConfigPromotionController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TableRoomController;
@@ -25,9 +27,13 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
 
    /********* Dashboard **********/
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    // Route::get('/dashboard', function () {
+    //     return Inertia::render('Dashboard/Dashboard');
+    // })->name('dashboard');
+
+    Route::prefix('dashboard')->group(function(){
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    });
 
     /********* Components **********/
     Route::get('/components', function () {
@@ -153,6 +159,18 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');
     });
+
+     /********* Customer **********/
+     Route::prefix('customer')->group(function(){
+        Route::get('/',[CustomerController::class,'index'])->name('customer');
+        Route::delete('/deleteCustomer/{id}', [CustomerController::class, 'deleteCustomer'])->name('customer.delete-customer');
+        Route::get('/filterCustomer', [CustomerController::class,'getFilteredCustomers'])->name('customer.filter-customer');
+        Route::post('/returnItems', [CustomerController::class,'returnItem'])->name('customer.return-item');
+        Route::get('/points', [CustomerController::class,'customerPoints'])->name('customer.point');
+        Route::get('/keepHistory/{id}', [CustomerController::class,'keepHistory'])->name('customer.keep-history');
+        Route::get('/redeemHistory/{id}', [CustomerController::class,'redeemHistory'])->name('customer.redeem-history');
+        Route::get('/tierRewards/{id}', [CustomerController::class,'tierRewards'])->name('customer.tier-rewards');
+     });
 });
 
 require __DIR__.'/auth.php';

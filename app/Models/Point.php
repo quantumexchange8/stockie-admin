@@ -35,4 +35,9 @@ class Point extends Model
     {
         return $this->hasMany(PointHistory::class, 'point_id');
     }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class,'product_id');
+    }
 }

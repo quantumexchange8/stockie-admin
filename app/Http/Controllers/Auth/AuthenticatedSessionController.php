@@ -16,11 +16,14 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $message = $request->session()->get('message');
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'message' => $message ?? [],
         ]);
     }
 
@@ -47,6 +50,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'You’ve logged out your Stockie account.'
+        ];
+
+        return redirect('login')->with(['message' => $message]);
     }
 }

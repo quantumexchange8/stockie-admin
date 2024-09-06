@@ -184,13 +184,13 @@ const exportToCSV = () => {
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
                 <template #check_in="attendance">
-                    <span>{{ attendance.check_in }}</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ attendance.check_in }}</span>
                 </template>
                 <template #check_out="attendance">
-                    <span>{{ attendance.check_out }}</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ attendance.check_out }}</span>
                 </template>
                 <template #duration="attendance">
-                    <span>{{ attendance.duration }}</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ attendance.duration }}</span>
                 </template>
             </Table>
         </div>
