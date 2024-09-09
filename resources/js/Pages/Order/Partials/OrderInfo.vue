@@ -15,7 +15,7 @@ const props = defineProps({
     },
 })
 
-const emit = defineEmits(['close', 'fetchZones']);
+const emit = defineEmits(['close',]);
 
 const tabs = ref(['Order Detail', 'Customer/Detail']);
 const order = ref({});
@@ -37,13 +37,11 @@ onMounted(async() => {
 
 const form = useForm({
     order_id: order.value.id,
+    action_type: ''
 });
 
 const closeDrawer = () => {
     emit('close');
-    setTimeout(() => {
-        emit('fetchZones');
-    }, 200)
 }
 
 const showOrderCompleteModal = () => {
@@ -69,8 +67,8 @@ const submit = (action) => {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
+                    if (form.action_type === 'complete') showOrderCompleteModal();
                     form.reset();
-                    orderCompleteModalIsOpen.value = true;
                 },
             })
         } else {
@@ -124,14 +122,25 @@ const isOrderCompleted = computed(() => {
                     <Button
                         size="lg"
                         :disabled="!isOrderCompleted"
+                        v-if="selectedTable.status !== 'Pending Clearance'"
+                        @click="form.action_type = 'complete'"
                     >
                         Complete Order
+                    </Button>
+                    <Button
+                        size="lg"
+                        :disabled="!isOrderCompleted"
+                        @click="form.action_type = 'clear'"
+                        v-else
+                    >
+                        Clear Table
                     </Button>
                     <Button
                         type="button"
                         variant="tertiary"
                         size="lg"
                         @click="showCancelOrderForm"
+                        v-if="selectedTable.status !== 'Pending Clearance'"
                     >
                         Cancel Order
                     </Button>

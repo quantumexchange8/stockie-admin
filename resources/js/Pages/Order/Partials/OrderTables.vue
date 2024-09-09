@@ -34,7 +34,7 @@ const props = defineProps({
 const emit = defineEmits(['fetchZones']);
 
 const op = ref(null);
-const zones = ref(props.zones);
+// const zones = ref(props.zones);
 const selectedTable = ref(null);
 const reservationListIsOpen = ref(false);
 const reservationsRowsPerPage = ref(6);
@@ -77,30 +77,40 @@ const closeOverlay = () => {
     op.value.hide();
 };
 
+const closeDrawer = () => {
+    drawerIsVisible.value = false;
+    setTimeout(() => {
+        emit('fetchZones');
+    }, 200)
+};
+
 const getTableClasses = (table) => ({
+    
     card: computed(() => [
         'border rounded-[5px] gap-6 mb-6 hover:cursor-pointer',
         {
-            'bg-white border-grey-100': !table.order_table,
-            'bg-primary-50 border-primary-50': table.order_table && table.order_table.status !== 'Empty Seat'
+            'bg-white border-grey-100': table.status === 'Empty Seat',
+            'bg-primary-50 border-primary-50': table.status !== 'Empty Seat'
         }
     ]),
     state: computed(() => [
         'w-full flex justify-center py-1.5 px-6',
         {
-            'bg-grey-50': !table.order_table,
-            'bg-primary-900': table.order_table && table.order_table.status === 'Pending Order',
-            'bg-yellow-500': table.order_table && table.order_table.status === 'Order Placed',
-            'bg-green-600': table.order_table && table.order_table.status === 'All Order Served',
+            'bg-grey-50': table.status === 'Empty Seat',
+            'bg-primary-900': table.status === 'Pending Order',
+            'bg-yellow-500': table.status === 'Order Placed',
+            'bg-green-600': table.status === 'All Order Served',
+            'bg-yellow-700': table.status === 'Pending Clearance',
         }
     ]),
     text: computed(() => [
         'text-sm font-medium',
         {
-            'text-grey-200': !table.order_table,
-            'text-primary-25': table.order_table && table.order_table.status === 'Pending Order',
-            'text-yellow-25': table.order_table && table.order_table.status === 'Order Placed',
-            'text-green-50': table.order_table && table.order_table.status === 'All Order Served',
+            'text-grey-200': table.status === 'Empty Seat',
+            'text-primary-25': table.status === 'Pending Order',
+            'text-yellow-25': table.status === 'Order Placed',
+            'text-green-50': table.status === 'All Order Served',
+            'text-white': table.status === 'Pending Clearance',
         }
     ])
 });
@@ -148,7 +158,7 @@ const setupDuration = (created_at) => {
 };
 
 const filteredZones = computed(() => {
-    let tempZones = zones.value.map(zone => ({
+    let tempZones = props.zones.map(zone => ({
         ...zone,
         tables: zone.tables.map(table => {
             return table;
@@ -175,7 +185,7 @@ const hideReservationList = () => {
     reservationListIsOpen.value = false;
     setTimeout(() => {
         selectedTable.value = null;
-    }, 300);
+    }, 200);
 }
 </script>
 
@@ -184,19 +194,18 @@ const hideReservationList = () => {
         <RightDrawer 
             :header="'Detail - ' + selectedTable.table_no" 
             v-model:show="drawerIsVisible"
-            @close="drawerIsVisible = false"
+            @close="closeDrawer"
         >
             <OrderInfo 
                 :selectedTable="selectedTable" 
-                @close="drawerIsVisible = false"
-                @fetchZones="$emit('fetchZones')"
+                @close="closeDrawer"
             />
         </RightDrawer>
     </template>
     
     <div class="flex flex-col gap-6">
         <!-- Display all zones along with their table(s) -->
-        <template v-if="isMainTab">
+        <template v-if="isMainTab"> 
             <Accordion v-for="zone in filteredZones" :key="zone.value" accordionClasses="gap-[24px]">
                 <template #head>
                     <span class="text-sm text-grey-900 font-medium">{{ zone.text }}</span>
@@ -208,7 +217,7 @@ const hideReservationList = () => {
                                 <template #title>
                                     <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
                                         <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
-                                        <div class="text-base text-grey-900 font-medium" v-if="table.order_table && table.order_table.status !== 'Empty Seat'">
+                                        <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
                                             {{ setupDuration(table.order_table.created_at) }}
                                         </div>
                                         <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
@@ -216,7 +225,7 @@ const hideReservationList = () => {
                                 </template>
                                 <template #footer>
                                     <div :class="getTableClasses(table).state.value">
-                                        <p :class="getTableClasses(table).text.value">{{ table.order_table ? table.order_table.status : table.status }}</p>
+                                        <p :class="getTableClasses(table).text.value">{{ table.status }}</p>
                                     </div>
                                 </template>
                             </Card>
@@ -245,7 +254,7 @@ const hideReservationList = () => {
                                     <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                                 </div>
                                 <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
-                                <div class="text-base text-grey-900 font-medium" v-if="table.order_table && table.order_table.status !== 'Empty Seat'">
+                                <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
                                     {{ setupDuration(table.order_table.created_at) }}
                                 </div>
                                 <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>

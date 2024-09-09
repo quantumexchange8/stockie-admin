@@ -18,4 +18,12 @@ class Waiter extends Model
     {
         return $this->hasMany(KeepItem::class);
     }
+    
+    /**
+     * Get the orders served by the waiter.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'waiter_id');
+    }
 }

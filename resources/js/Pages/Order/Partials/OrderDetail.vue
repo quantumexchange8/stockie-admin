@@ -167,8 +167,8 @@ const isFormValid = computed(() => {
             <AddOrderItems 
                 :categoryArr="categoryArr" 
                 :order="order" 
-                :selectedTable="selectedTable.table_no"
-                @close="closeDrawer();closeOrderDetails()" 
+                :selectedTable="selectedTable"
+                @close="closeDrawer();closeOrderDetails()"
             />
         </template>
     </RightDrawer>

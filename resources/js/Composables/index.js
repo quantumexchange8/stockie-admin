@@ -134,7 +134,7 @@ export function useCustomToast() {
     const { props } = usePage();
 
     const flashMessage = (options = {}) => {
-        const message = Object.keys(props.message).length !== 0 ? props.message : null;
+        const message = props.message && Object.keys(props.message).length !== 0 ? props.message : null;
 
         if (message) {
             const { 

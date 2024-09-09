@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\OrderItemSubitem;
 use App\Models\OrderTable;
 use App\Models\Product;
+use App\Models\Table;
 use App\Models\Waiter;
 use Illuminate\Http\Request;
 use App\Models\Zone;
@@ -26,9 +27,9 @@ class OrderController extends Controller
                         ->get()
                         ->map(function ($zone) {
                             $zone->tables->map(function ($table) {
-                                // Find the first order table with a status that is not 'Order Served'
+                                // Find the first order table with a status that is not 'Order Completed'
                                 $orderTable = $table->orderTables->first(function ($orderTable) {
-                                    return $orderTable->status !== 'Order Served' && $orderTable->status !== 'Empty Seat';
+                                    return $orderTable->status !== 'Order Completed' && $orderTable->status !== 'Empty Seat';
                                 });
 
                                 // Filter order tables with the 'reserved' status
@@ -64,6 +65,14 @@ class OrderController extends Controller
 
         $waiters = Waiter::orderBy('id')->get();
 
+        $orders = Order::with(['orderTable:id,table_id', 'orderTable.table:id,table_no', 'waiter:id,name'])
+                        ->orderByDesc('id')
+                        ->get()
+                        ->filter(function ($order) {
+                            return $order->status === 'Order Completed' || $order->status === 'Order Cancelled';
+                        })
+                        ->values();
+
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
 
@@ -71,6 +80,7 @@ class OrderController extends Controller
             'message' => $message ?? [],
             'zones' => $zones,
             'waiters' => $waiters,
+            'orders' => $orders,
         ]);
     }
 
@@ -81,16 +91,19 @@ class OrderController extends Controller
     {
         $validatedData = $request->validated();
 
-
         $latestOrderId = Order::latest()->first();
-        
+
         $newOrder = Order::create([
-            'order_no' => str_pad(((int)$latestOrderId + 1), 3, "0", STR_PAD_LEFT),
+            'order_no' => str_pad((int)$latestOrderId->order_no + 1, 3, "0", STR_PAD_LEFT),
             'pax' => $validatedData['pax'],
             'waiter_id' => $validatedData['waiter_id'],
             'total_amount' => 0.00,
             'status' => 'Pending Serve',
         ]);
+
+        $table = Table::find($validatedData['table_id']);
+
+        $table->update(['status' => $validatedData['status']]);
 
         OrderTable::create([
             'table_id' => $validatedData['table_id'],
@@ -101,7 +114,7 @@ class OrderController extends Controller
             'reservation_date' => $validatedData['reservation_date'],
             'order_id' => $newOrder->id
         ]);
-
+        
         $summary = $request->reservation 
             ? "Reservation has been made to '$request->table_no'."
             : "You've successfully check in customer to '$request->table_no'.";
@@ -262,6 +275,9 @@ class OrderController extends Controller
                 'total_amount' => $order->total_amount + $temp,
             ]);
 
+            $table = Table::find($request->table_id);
+            $table->update(['status' => $orderItems > 0 ? 'Order Placed' : 'Pending Order']);
+
             $order->orderTable->update(['status' => $orderItems > 0 ? 'Order Placed' : 'Pending Order']);
         }
 
@@ -333,6 +349,7 @@ class OrderController extends Controller
     public function cancelOrder(string $id)
     {
         $existingOrder = Order::with(['orderItems', 'orderTable'])->find($id);
+        $table = Table::find($existingOrder->orderTable['table_id']);
 
         $message = [ 
             'severity' => 'error', 
@@ -355,7 +372,8 @@ class OrderController extends Controller
                 'summary' => 'Selected order has been cancelled successfully.'
             ];
 
-            $existingOrder->orderTable->update(['status' => 'Empty Seat']);
+            $table->update(['status' => 'Empty Seat']);
+            $existingOrder->orderTable->update(['status' => 'Order Cancelled']);
         }
 
         return redirect()->back()->with(['message' => $message]);
@@ -402,7 +420,9 @@ class OrderController extends Controller
             }
             
             $orderItem->refresh();
+
             $order = Order::with(['orderTable', 'orderItems'])->find($orderItem->order_id);
+            $table = Table::find($order->orderTable['table_id']);
             $orderTable = $order->orderTable;
             $allOrderItems = $order->orderItems;
             
@@ -430,6 +450,7 @@ class OrderController extends Controller
                 }
                 
                 $order->update(['status' => $orderStatus]);
+                $table->update(['status' => $orderTableStatus]);
                 $orderTable->update(['status' => $orderTableStatus]);
             }
         }
@@ -447,9 +468,9 @@ class OrderController extends Controller
                         ->get()
                         ->map(function ($zone) {
                             $zone->tables->map(function ($table) {
-                                // Find the first order table with a status that is not 'Order Served'
+                                // Find the first order table with a status that is not 'Order Completed'
                                 $orderTable = $table->orderTables->first(function ($orderTable) {
-                                    return $orderTable->status !== 'Order Served' && $orderTable->status !== 'Empty Seat';
+                                    return $orderTable->status !== 'Order Completed' && $orderTable->status !== 'Empty Seat';
                                 });
 
                                 // Filter order tables with the 'reserved' status
@@ -493,14 +514,59 @@ class OrderController extends Controller
     {
         if (isset($id)) {
             $order = Order::with('orderTable')->find($id);
+            $table = Table::find($order->orderTable['table_id']);
 
-            if ($order->status === 'Order Served') {
-                $order->update(['status' => 'Order Completed']);
+            // dd($order->status === 'Order Served' && $order->orderTable['status'] === 'All Order Served', $order->orderTable['status']);
+            if ($request->action_type === 'complete') {
+                if ($order->status === 'Order Served') {
+                    $order->update(['status' => 'Order Completed']);
+                }
+    
+                if ($order->status === 'Order Completed' && $order->orderTable['status'] === 'All Order Served') {
+                    $table->update(['status' => 'Pending Clearance']);
+                    $order->orderTable->update(['status' => 'Pending Clearance']);
+                }
+            } 
+            
+            if ($request->action_type === 'clear') {
+                $table->update(['status' => 'Empty Seat']);
+                $order->orderTable->update(['status' => 'Order Completed']);
             }
-
-            $order->orderTable->update(['status' => 'Empty Seat']);
         }
 
         return redirect()->back();
+    }
+    
+    /**
+     * Get date filtered order histories.
+     */
+    public function getOrderHistories(Request $request)
+    {
+        $dateFilter = $request->input('dateFilter');
+        
+        if ($dateFilter) {
+            $dateFilter = array_map(function ($date) {
+                                return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                            }, $dateFilter);
+
+            // Apply the date filter (single date or date range)
+            $query = Order::whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
+                                    ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
+                                        $subQuery->whereDate('created_at', '<=', $dateFilter[1]);
+                                    });
+        } else {
+            $query = Order::query();
+        }
+
+
+        $data = $query->with(['orderTable:id,table_id', 'orderTable.table:id,table_no', 'waiter:id,name'])
+                        ->orderBy('id', 'desc')
+                        ->get()
+                        ->filter(function ($order) {
+                            return $order->status === 'Order Completed' || $order->status === 'Order Cancelled';
+                        })
+                        ->values();
+
+        return response()->json($data);
     }
 }

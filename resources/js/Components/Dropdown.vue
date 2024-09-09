@@ -186,6 +186,17 @@ onUnmounted(() => {
                         ]
                     }
                 },
+                panel: {
+                    class: [
+                        'absolute top-0 left-0 !z-[1110]', 
+                        '!mt-1 p-1', 
+                        'border-2 border-red-50', 
+                        'rounded-[5px]', 
+                        'shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]', 
+                        'bg-white', 
+                        'text-grey-800'
+                    ]
+                },
             }"
         >
             <template #dropdownicon>

@@ -11,7 +11,10 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 const props = defineProps({
     errors: Object,
     categoryArr: Array,
-    selectedTable: String,
+    selectedTable: {
+        type: Object,
+        default: () => {}
+    },
     order: {
         type: Object,
         default: () => {}
@@ -37,7 +40,8 @@ const categories = ref(props.categoryArr.map((cat) => {
 const form = useForm({
     user_id: userId.value,
     order_id: props.order.id,
-    table_no: props.selectedTable,
+    table_id: props.selectedTable.id,
+    table_no: props.selectedTable.table_no,
     items: [],
 });
 

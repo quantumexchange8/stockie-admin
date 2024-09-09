@@ -69,7 +69,7 @@ export default {
     },
     panel: {
         class: [
-            'absolute top-0 left-0', 
+            'absolute top-0 left-0 !z-[1103]', 
             '!mt-1 p-1', 
             'border-2 border-red-50', 
             'rounded-[5px]', 
