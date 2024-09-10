@@ -1,10 +1,294 @@
 <script setup>
+import Button from "@/Components/Button.vue";
+import Chart from "primevue/chart";
+import { ref, onMounted, watch } from "vue";
+
+const props = defineProps ({
+    salesGraph: {
+        type: Array,
+        required: true,
+    },
+    monthly: {
+        type: Array,
+        required: true,
+    }
+})
+
+
+const chartData = ref();
+const chartOptions = ref();
+const salesGraph = ref(props.salesGraph);
+const monthly = ref(props.monthly);
+const emit = defineEmits(["applyTimeFilter"]);
+        
+const setChartData = () => {
+    const salesData = props.salesGraph.map(value => parseFloat(value));
+    const monthLabels = props.monthly;
+
+    return {
+        labels: monthLabels,
+        datasets: [
+  {
+    label: '',
+    data: salesData,
+    fill: true,
+    borderColor: '#7E171B',
+    tension: 0.4,
+    borderWidth: 2.5,
+    pointStyle: 'circle',
+    pointRadius: 0,
+    pointHoverRadius: 10,
+    pointHitRadius: 10,
+    pointBorderWidth: 6,
+    pointHoverBackgroundColor: '#FFF9F9',
+    pointHoverBorderWidth: 5,
+    backgroundColor: (context) => {
+      if (!context.chart.chartArea) {
+        return;
+      }
+
+      const { ctx, chartArea: { top, bottom } } = context.chart;
+
+      const gradientBg = ctx.createLinearGradient(0, top, 0, bottom);
+
+      gradientBg.addColorStop(0, '#FFA1A5'); 
+      gradientBg.addColorStop(0.525, 'rgba(234, 193, 194, 0.436872)');
+      gradientBg.addColorStop(0.932292, 'rgba(217, 217, 217, 0)'); 
+
+      return gradientBg;
+    },
+  }
+]
+    };
+};
+const setChartOptions = () => {
+
+    return {
+        maintainAspectRatio: false,
+        aspectRatio: 0.6,
+        responsive: true,
+        plugins: {
+            hoverLabelColorChange: customPlugin, 
+            point: {
+                display: false
+            },
+            legend: {
+                display: false,
+            },
+            tooltip: {
+                enabled: false,
+                external: customTooltipHandler,
+                titleColor: '#FFF9F9',
+                titleFont: {
+                    family: 'Lexend',
+                    size: 16,
+                    style: 'normal',
+                    weight: 600,
+                    lineHeight: 'normal',
+                },
+                backgroundColor: '#7E171B',
+                titleAlign: 'center',
+                bodyColor: '#FFF9F9',
+                position: 'average',
+                displayColors: false,
+                textDirection: 'ltr'
+            },
+            hover: {
+                mode: 'nearest',
+                animationDuration: 400,
+            },
+        },
+        scales: {
+            x: {
+                ticks: {
+                    color: (context) => {
+                        const index = context.index;
+                        return context.chart.hoveredIndex === index ? '#D6DCE1' : '#7E171B'; 
+                    },
+                    font: {
+                        family: 'Lexend',
+                        size: 14,
+                        style: 'normal',
+                        weight: 500,
+                        lineHeight: 'normal',
+                    }
+                },
+                grid: {
+                    display: false,
+                },
+            },
+            y: {
+                ticks: {
+                    color: '#7E171B',
+                    font: {
+                        family: 'Lexend',
+                        size: 14,
+                        style: 'normal',
+                        weight: 500,
+                        lineHeight: 'normal',
+                    }
+                },
+                grid: {
+                    color: '#FFE1E2',
+                    drawTicks: true,
+                    offset: false,
+                },
+                border: {
+                    dash: [5, 5]
+                },
+                beginAtZero: true,
+            }
+        }
+    };
+};
+function customTooltipHandler(context) {
+    // Tooltip element creation or selection
+    let tooltipEl = document.getElementById('chartjs-tooltip');
+
+    if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.innerHTML = '<div></div>';
+        document.body.appendChild(tooltipEl);
+    }
+
+    // Hide if no tooltip
+    const tooltipModel = context.tooltip;
+    if (tooltipModel.opacity === 0) {
+        tooltipEl.style.opacity = 0;
+        return;
+    }
+
+    // Set custom content
+    if (tooltipModel.body) {
+        const title = tooltipModel.title || [];
+        const body = tooltipModel.body.map(item => item.lines);
+
+        let innerHtml = `<div style="
+            display: flex; 
+            flex-direction: column;  
+            background: #7E171B; 
+            border-radius: 10px; 
+            color: #FFF9F9; 
+            padding: 12px 24px; 
+            gap: 4px;
+            align-items: center; 
+            pointer-events: none;
+        ">`;
+
+        // Add title at the bottom of the body (customized position)
+        innerHtml += `<div style="
+            font-size: 14px; 
+            font-weight: bold; 
+            margin-top: 5px;
+        ">RM ${body}</div>`;
+        innerHtml += `<div style="
+            margin-bottom: 5px;
+            color: #FFC7C9;
+            text-align:right;
+            font-size: 12px;
+            font-weight: 400;
+            line-height: normal;
+        ">Lowest sales in Nov</div>`;
+        innerHtml += '</div>';
+
+        tooltipEl.querySelector('div').innerHTML = innerHtml;
+    }
+
+    // Positioning the tooltip
+    const position = context.chart.canvas.getBoundingClientRect();
+    tooltipEl.style.opacity = 1;
+    tooltipEl.style.position = 'absolute';
+    tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+    tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
+    tooltipEl.style.padding = tooltipModel.padding + 'px ' + tooltipModel.padding + 'px';
+};
+const customPlugin = {
+  id: 'hoverLabelColorChange',
+  beforeEvent(chart, args) {
+        const { event } = args;
+        const { x, y } = event;
+        const hoveredElements = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+        
+        if (hoveredElements.length > 0) {
+            const index = hoveredElements[0].index;
+            chart.hoveredIndex = index;
+        } else {
+            chart.hoveredIndex = null;
+        }
+    },
+    afterDraw(chart) {
+        // Ensure chart.hoveredIndex is defined
+        if (chart.hoveredIndex === undefined) {
+            chart.hoveredIndex = null;
+        }
+
+        chart.update();
+    }
+};
+
+const activeFilter = ref('month');
+
+const setActive = (button) => {
+    activeFilter.value = button;
+    emit('applyTimeFilter', activeFilter.value);
+};
+
+const updateChart = () => {
+    chartData.value = setChartData();
+    chartOptions.value = setChartOptions(); 
+};
+
+watch(
+    [() => props.salesGraph.value, () => props.monthly.value],
+    () => {
+        updateChart();
+    },
+    { deep: true }
+);
+
+onMounted(() => {
+    updateChart();
+});
+
 
 </script>
 
 <template>
-    <div class="flex p-6 flex-col items-start gap-6 rounded-[5px] border border-solid border-primary-100 h-full">
-        <span>Sales graph</span>
+    <div class="flex flex-col p-6 items-start gap-8 rounded-[5px] border border-red-100 overflow-hidden h-full">
+        <div class="w-full flex justify-center items-center">
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Sales</span>
+            <div class="card flex flex-row flex-start gap-3">
+                <Button
+                    :type="'button'"
+                    :variant="'secondary'"
+                    :size="'md'"
+                    :class="{'bg-primary-50 hover:bg-primary-100': activeFilter === 'month', 'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'month'}"
+                    @click="setActive('month')"
+                >
+                Month
+                </Button>
+                <Button
+                    :type="'button'"
+                    :variant="'secondary'"
+                    :size="'md'"
+                    :class="{'bg-primary-50 hover:bg-primary-100': activeFilter === 'year', 'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'year'}"
+                    @click="setActive('year')"
+                >
+                Year
+                </Button>
+            </div>
+        </div>
+        <div class="flex justify-content-center h-full w-full">
+            <Chart 
+                type="line" 
+                :data="chartData" 
+                :options="chartOptions" 
+                class="h-full w-full"
+                :plugins="[customPlugin]"
+            />
+        </div>
     </div>
 </template>
+
 

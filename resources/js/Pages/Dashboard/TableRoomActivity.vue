@@ -12,8 +12,8 @@ const activeTable = (n) => {
     <div class="w-full flex flex-col py-6 item-start gap-6 shrink-0 rounded-[5px] border border-solid border-primary-100">
         <div class="w-full flex flex-col items-start gap-[10px] self-stretch">
             <div class="w-full flex justify-between px-6 items-center self-stretch ">
-                <span class="flex flex-col justify-center flex-[1_0_0] text-md font-medium text-primary-900 whitespace-nowrap w-full">Table / Room Activity</span>
-                <Link :href="route('configurations')">
+                <span class="flex flex-col justify-between flex-[1_0_0] text-md font-medium text-primary-900 w-full">Table / Room Activity</span>
+                <Link :href="route('orders')">
                         <CircledArrowHeadRightIcon2  
                             class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
                         />

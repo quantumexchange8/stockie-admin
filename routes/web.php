@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
@@ -30,9 +31,11 @@ Route::middleware('auth')->group(function () {
     // Route::get('/dashboard', function () {
     //     return Inertia::render('Dashboard/Dashboard');
     // })->name('dashboard');
+    Route::get('/userDetails', [RegisteredUserController::class, 'getUser'])->name('user-details');
 
     Route::prefix('dashboard')->group(function(){
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/filterSale', [DashboardController::class, 'filterSales'])->name('dashboard.filter-sales');
     });
 
     /********* Components **********/

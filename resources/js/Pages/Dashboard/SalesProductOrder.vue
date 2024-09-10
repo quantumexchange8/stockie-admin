@@ -46,7 +46,7 @@ const props = defineProps({
                         <ArrowDownIcon />
                         <span class="text-primary-400 text-[13.333px] font-normal">{{ props.compareSale }}%</span>
                     </template>
-                    <template v-else>
+                    <template v-if="props.compareSale > 0">
                         <ArrowUpIcon />
                         <span class="text-green-600 text-[13.333px] font-normal">{{ props.compareSale }}%</span>
                     </template>
@@ -70,7 +70,7 @@ const props = defineProps({
                         <ArrowDownIcon />
                         <span class="text-primary-400 text-[13.333px] font-normal">{{ props.compareSold }}%</span>
                     </template>
-                    <template v-else>
+                    <template v-if="props.compareSold > 0">
                         <ArrowUpIcon />
                         <span class="text-green-600 text-[13.333px] font-normal">{{ props.compareSold }}%</span>
                     </template>
@@ -94,7 +94,7 @@ const props = defineProps({
                         <ArrowDownIcon />
                         <span class="text-primary-400 text-[13.333px] font-normal">{{ props.compareOrder }}%</span>
                     </template>
-                    <template v-else>
+                    <template v-if="props.compareOrder > 0 ">
                         <ArrowUpIcon />
                         <span class="text-green-600 text-[13.333px] font-normal">{{ props.compareOrder }}%</span>
                     </template>

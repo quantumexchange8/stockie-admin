@@ -41,6 +41,18 @@ const props = defineProps({
     compareOrder: {
         type: Number,
         required: true,
+    },
+    onDuty: {
+        type: Array,
+        required: true,
+    },
+    salesGraph: {
+        type: Array,
+        required: true,
+    },
+    monthly: {
+        type: Array,
+        required: true,
     }
 })
 const stockColumn = ref([
@@ -55,6 +67,34 @@ const rowType = {
     expandable: false, 
     groupRowsBy: "",
 };
+const activeFilter = ref('month');
+const salesGraph = ref(props.salesGraph);
+const monthly = ref(props.monthly);
+
+const filterSales = async (filters = {}) => {
+    try {
+        const response = await axios.get('/dashboard/filterSale', {
+            method: 'GET',
+            params: {
+                activeFilter: filters,
+            }
+        });
+        const totalSales = response.data.totalSales;
+        const labelData = response.data.labels;
+
+        salesGraph.value = totalSales;  
+        monthly.value = labelData;
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+};
+
+const applyTimeFilter = (filter) => {
+    activeFilter.value = filter;
+    filterSales(activeFilter.value);
+}
 
 </script>
 
@@ -81,7 +121,7 @@ const rowType = {
                     />
 
                     <!-- sales graph -->
-                    <SalesGraph />
+                    <SalesGraph :salesGraph="salesGraph" :monthly="monthly" @applyTimeFilter="applyTimeFilter"/>
                 </div>
                 <div class="flex col-span-4">
                 <!-- table / room activity -->
@@ -99,7 +139,7 @@ const rowType = {
 
                 <!-- on duty today -->
                  <div class="col-span-4">
-                    <OnDutyToday />
+                    <OnDutyToday :onDuty="onDuty"/>
                 </div>
             </div>
         </div>

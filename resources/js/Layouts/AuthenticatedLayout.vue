@@ -113,19 +113,11 @@ onMounted(() => {
                                     class="text-primary-900 hover:text-primary-800"
                                     aria-hidden="true" 
                                 />
-                                <!-- <Link 
-                                    :href="route('logout')" 
-                                    method="post"
-                                    as="button"
-                                > -->
-                                <!-- <Button> -->
-                                    <LogOutIcon 
-                                        class="text-primary-900 hover:text-primary-800"
-                                        aria-hidden="true" 
-                                        @click="logout()"
-                                    />
-                                <!-- </Link> -->
-                                <!-- </Button> -->
+                                <LogOutIcon 
+                                    class="text-primary-900 cursor-pointer hover:text-primary-800"
+                                    aria-hidden="true" 
+                                    @click="logout()"
+                                />
                             </div>
                         </div>
                         <div class="bg-primary-900 w-full h-[0.5px]"></div>

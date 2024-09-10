@@ -236,7 +236,7 @@ class WaiterController extends Controller
    {
         try {
             $orderItems = OrderItem::where('order_id', $id)
-                                    ->get(['product_id', 'serve_qty', 'amount']);
+                                    ->get(['product_id', 'item_qty', 'amount']);
             if ($orderItems->isEmpty()) {
                 return response()->json(['message' => 'No order items found.'], 404);
             }
@@ -252,10 +252,10 @@ class WaiterController extends Controller
                 return [
                     'item_id' => $item->product_id,
                     'product_name' => $product->product_name,
-                    'serve_qty' => $item->serve_qty,
+                    'serve_qty' => $item->item_qty,
                     'amount' => $item->amount,
-                    'price' => $item->serve_qty * $product->price,
-                    'commission' => ceil($product->price * $item->serve_qty * 0.15),
+                    'price' => $item->item_qty * $product->price,
+                    'commission' => ceil($product->price * $item->item_qty * 0.15),
                 ];
             })->filter();
 

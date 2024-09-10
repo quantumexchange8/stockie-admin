@@ -1,6 +1,13 @@
 <script setup>
+import { UndetectableIllus } from '@/Components/Icons/illus';
 import Tag from '@/Components/Tag.vue';
 
+const props = defineProps ({
+    onDuty: {
+        type: Array,
+        default: () => [],
+    }
+})
 
 </script>
 
@@ -14,19 +21,32 @@ import Tag from '@/Components/Tag.vue';
         <div class="flex pl-6 justify-end items-center gap-[10px] self-stretch">
             <div class="flex flex-col px-4 py-3 items-start flex-[1_0_0] rounded-tl-[5px] rounded-bl-[5px] bg-white shadow-[0_10px_11.2px_0px_rgba(75,12,14,0.52)]">
                 <div class="flex flex-col items-start self-stretch rounded-[5px]">
-                    <template v-for="n in 5" :key="n">
-                        <div class="flex py-2 justify-between items-center self-stretch">
-                            <div class="flex items-center gap-[10px]">
-                                <div class="w-10 h-10 shrink-0 rounded-full bg-primary-900"></div>
-                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                    <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">Adeline Watson</span>
-                                    <span class="text-grey-500 text-sm font-medium">at Today, 16:33</span>
+                    <template v-if="props.onDuty.length > 0">
+                        <template v-for="waiter in props.onDuty.slice(0, 5)" :key="waiter.id">
+                            <div class="flex py-2 justify-between items-center self-stretch">
+                                <div class="flex items-center gap-[10px]">
+                                    <div class="w-10 h-10 shrink-0 rounded-full bg-primary-900"></div>
+                                    <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                        <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ waiter.waiter_name }}</span>
+                                        <template v-if="waiter.status !== 'No Record'">
+                                            <span class="text-grey-500 text-xs font-medium">at Today, {{ waiter.time }}</span>
+                                        </template>
+                                        <template v-else>
+                                            <span class="text-grey-500 text-xs font-medium">N/A</span>
+                                        </template>
+                                    </div>
                                 </div>
+                                <Tag
+                                    :variant="waiter.status === 'Checked in' ? 'green' : waiter.status === 'Checked out' ? 'red' : 'grey'"
+                                    :value= waiter.status 
+                                ></Tag>
                             </div>
-                            <Tag
-                                :variant="'green'"
-                                :value="'Checked in'"
-                            ></Tag>
+                        </template>
+                    </template>
+                    <template v-else>
+                        <div class="flex w-full flex-col items-center justify-center gap-5">
+                            <UndetectableIllus />
+                            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                         </div>
                     </template>
                 </div>

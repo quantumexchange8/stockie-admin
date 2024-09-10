@@ -50,9 +50,9 @@ const isFormValid = computed(() => {
 })
 </script>
 <template>
-    <div class="w-full flex flex-col max-h-[650px] overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
+    <div class="w-full flex flex-col overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
         <form @submit.prevent="submit">
-            <div class="w-full flex flex-col md:gap-9">
+            <div class="w-full flex flex-col max-h-[500px] md:gap-9">
                 <div class="w-full flex md:gap-6">
                     <DragDropImage
                         :inputName="'image'"

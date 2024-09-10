@@ -26,4 +26,9 @@ class Waiter extends Model
     {
         return $this->hasMany(Order::class, 'waiter_id');
     }
+
+    public function attendances () : HasMany
+    {
+        return $this->hasMany(WaiterAttendance::class, 'user_id');
+    }
 }

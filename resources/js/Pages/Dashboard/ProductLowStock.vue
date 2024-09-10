@@ -11,7 +11,7 @@ const props = defineProps({
     },
     rows: {
         type: Object,
-        required: true,
+        default: () => [],
     },
     rowType: Object,
 })
@@ -31,34 +31,42 @@ const props = defineProps({
             </div>
         </div>
         
-        <Table
-            :columns="columns"
-            :rows="rows"
-            :variant="'list'"
-            :rowType="rowType"
-            :paginator="false"
-            class="px-6 min-h-[330px]"
-        >
-            <template #empty>
-                <UndetectableIllus class="w-44 h-44"/>
+        <template v-if="props.rows.length > 0">
+            <Table
+                :columns="columns"
+                :rows="rows"
+                :variant="'list'"
+                :rowType="rowType"
+                :paginator="false"
+                class="px-6 min-h-[330px]"
+            >
+                <template #empty>
+                    <UndetectableIllus class="w-44 h-44"/>
+                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                </template>
+                <template #product_name="rows">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-primary-900"></div>
+                        <span class="self-center overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ rows.product_name }}</span>                    
+                    </div>
+                </template>
+                <template #category="rows">
+                    <span class="text-grey-900 text-sm font-medium">{{ rows.category }}</span>
+                </template>
+                <template #item_name="rows">
+                    <span class="text-grey-900 text-sm font-medium">{{ rows.item_name }}</span>
+                </template>
+                <template #stock_qty="rows">
+                    <span class="text-primary-700 text-sm font-medium">{{ rows.stock_qty }}</span>
+                </template>
+            </Table>
+        </template>
+        <template v-else>
+            <div class="flex w-full flex-col items-center justify-center gap-5">
+                <UndetectableIllus />
                 <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
-            </template>
-            <template #product_name="rows">
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 bg-primary-900"></div>
-                    <span class="self-center overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ rows.product_name }}</span>                    
-                </div>
-            </template>
-            <template #category="rows">
-                <span class="text-grey-900 text-sm font-medium">{{ rows.category }}</span>
-            </template>
-            <template #item_name="rows">
-                <span class="text-grey-900 text-sm font-medium">{{ rows.item_name }}</span>
-            </template>
-            <template #stock_qty="rows">
-                <span class="text-primary-700 text-sm font-medium">{{ rows.stock_qty }}</span>
-            </template>
-        </Table>
+            </div>
+        </template>
     </div>
 
 </template>

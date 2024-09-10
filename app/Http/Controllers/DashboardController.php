@@ -8,9 +8,12 @@ use App\Models\IventoryItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Waiter;
+use App\Models\WaiterAttendance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Log;
 
 class DashboardController extends Controller
 {
@@ -73,7 +76,63 @@ class DashboardController extends Controller
             });
 
         //on duty today
+        $waiters = Waiter::all();
+        $onDuty = [];
+        $today = Carbon::today();
 
+        foreach ($waiters as $waiter) {
+            $attendance = WaiterAttendance::where('user_id', $waiter->id)
+                ->whereDate('check_in', $today)
+                ->first();
+            
+            $status = 'No Record';
+            $time = null;
+        
+            if ($attendance !== null) {
+                $check_in = $attendance->check_in;
+                $check_out = $attendance->check_out;
+        
+                switch (true) {
+                    case $check_in !== null && $check_out === null:
+                        $status = 'Checked in';
+                        $time = Carbon::parse($check_in)->format('H:i');
+                        break;
+                    case $check_in !== null && $check_out !== null:
+                        $status = 'Checked out';
+                        $time = Carbon::parse($check_out)->format('H:i');
+                        break;
+                }
+            };
+        
+            $onDuty[] = [
+                'id' => $waiter->id,
+                'waiter_name' => $waiter->name,
+                'time' => $time,
+                'status' => $status,
+            ];
+        }
+        usort($onDuty, function($a, $b) {
+            $timeA = $a['time'] ? Carbon::parse($a['time']) : Carbon::parse('00:00');
+            $timeB = $b['time'] ? Carbon::parse($b['time']) : Carbon::parse('00:00');
+            return $timeB <=> $timeA;
+        });
+
+        //sales graph
+        $salesEachMonth = Order::selectRaw('MONTHNAME(created_at) as month, MONTH(created_at) as month_num, SUM(total_amount) as total_sales')
+                                ->whereYear('created_at', Carbon::now()->year)
+                                ->groupBy('month', 'month_num')
+                                ->orderBy('month_num')
+                                ->get();
+                                
+        $months = $salesEachMonth->pluck('month')->map(function ($month) {
+            return Carbon::parse($month)->format('M'); 
+        })->toArray();
+
+        $totalSalesArray = $salesEachMonth->pluck('total_sales')->map(function ($value) {
+            return (float) $value;
+        })->toArray();
+
+        
         $products = collect($allProducts)->sortByDesc('stock_qty')->values()->all();
 
         return Inertia::render('Dashboard/Dashboard', [
@@ -84,6 +143,61 @@ class DashboardController extends Controller
             'compareSold' => (int) round($comparedSold),
             'compareSale' => (int) round($comparedSale),
             'compareOrder' => (int) round($comparedOrder),
+            'onDuty' => $onDuty,
+            'salesGraph' => $totalSalesArray,
+            'monthly' => $months,
         ]);
     }
+
+    public function filterSales(Request $request)
+    {
+        $filterType = $request->input('activeFilter');
+
+        $salesQuery = Order::query();
+
+        switch ($filterType) {
+            case 'month':
+                $salesEachPeriod = Order::selectRaw('MONTHNAME(created_at) as month, MONTH(created_at) as month_num, YEAR(created_at) as year, SUM(total_amount) as total_sales')
+                                            ->whereYear('created_at', Carbon::now()->year)                  
+                                            ->groupBy('month', 'month_num', 'year')
+                                            ->orderBy('year')
+                                            ->orderBy('month_num')
+                                            ->get();
+                $labels = $salesEachPeriod->pluck('month')->map(function ($item) {
+                    return Carbon::parse($item)->format('M');
+                })->toArray();
+                break;
+
+            case 'year':
+                $salesEachPeriod = $salesQuery->selectRaw('YEAR(created_at) as period, SUM(total_amount) as total_sales')
+                                            ->groupBy('period')
+                                            ->orderBy('period')
+                                            ->get();
+
+                $labels = $salesEachPeriod->pluck('period')->toArray();
+                break;
+
+            default:
+                $salesEachPeriod = Order::selectRaw('MONTHNAME(created_at) as month, MONTH(created_at) as month_num, YEAR(created_at) as year, SUM(total_amount) as total_sales')
+                                            ->whereYear('created_at', Carbon::now()->year)                  
+                                            ->groupBy('month', 'month_num', 'year')
+                                            ->orderBy('year')
+                                            ->orderBy('month_num')
+                                            ->get();
+                $labels = $salesEachPeriod->pluck('month')->map(function ($item) {
+                    return Carbon::parse($item)->format('M');
+                })->toArray();
+                break;
+        }
+
+        $totalSalesArray = $salesEachPeriod->pluck('total_sales')->map(function ($value) {
+            return (float) $value;
+        })->toArray();
+
+        return response()->json([
+            'totalSales' => $totalSalesArray,
+            'labels' => $labels
+        ]);
+    }
+
 }
