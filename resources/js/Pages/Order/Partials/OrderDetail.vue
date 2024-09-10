@@ -99,7 +99,7 @@ const formSubmit = () => {
 
 onMounted(async() => {
     try {
-        const categoryResponse = await axios.get('/inventory/inventory/getAllCategories');
+        const categoryResponse = await axios.get(route('orders.getAllCategories'));
         categoryArr.value = categoryResponse.data;
     } catch (error) {
         console.error(error);
@@ -210,7 +210,7 @@ const isFormValid = computed(() => {
                                     </p>
                                     <div class="flex flex-nowrap gap-2 items-center">
                                         <Tag value="Set" v-if="item.product.bucket === 'set'"/>
-                                        <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ item.amount }}</p>
+                                        <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ parseFloat(item.amount).toFixed(2) }}</p>
                                         <Tag :value="item.type" variant="blue" v-else/>
                                     </div>
                                 </div>
@@ -248,7 +248,7 @@ const isFormValid = computed(() => {
                                     </p>
                                     <div class="flex flex-nowrap gap-2 items-center">
                                         <Tag value="Set" v-if="item.product.bucket === 'set'"/>
-                                        <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ item.amount }}</p>
+                                        <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ parseFloat(item.amount).toFixed(2) }}</p>
                                         <Tag :value="item.type" variant="blue" v-else/>
                                     </div>
                                 </div>

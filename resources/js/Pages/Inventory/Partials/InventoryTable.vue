@@ -333,7 +333,11 @@ onMounted(() => {
                 </template>
                 <template #status="row">
                     <Tag
-                        :variant="'green'"
+                        :variant="row.status === 'In stock' 
+                                        ? 'green'
+                                        : row.status === 'Low in stock'
+                                            ? 'yellow'
+                                            : 'red'"
                         :value="row.status"
                     />
                 </template>
@@ -348,6 +352,7 @@ onMounted(() => {
         >
             <CreateInventoryForm 
                 :itemCategoryArr="itemCategoryArr"
+                :categoryArr="categoryArr"
                 @close="hideCreateForm" 
             />
         </Modal>

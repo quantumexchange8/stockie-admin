@@ -16,6 +16,13 @@ import { OrderDeliveredIllus } from '@/Components/Icons/illus'
 import Toast from '@/Components/Toast.vue';
 import { useCustomToast } from '@/Composables/index.js';
 
+const props = defineProps({
+    inventories: Array,
+    recentKeepHistories: Array,
+    categories: Array,
+    itemCategories: Array
+});
+
 const home = ref({
     label: 'Inventory',
 });
@@ -43,15 +50,14 @@ const keepHistoryColumns = ref([
 
 const { flashMessage } = useCustomToast();
 
-const inventories = ref([]);
-const initialInventories = ref([]);
-const recentKeepHistories = ref([]);
-const inventoriesTotalPages = ref(1);
-const recentKeepHistoriesTotalPages = ref(1);
+const inventories = ref(props.inventories);
+const initialInventories = ref(props.inventories);
 const rowsPerPage = ref(8);
-const categoryArr = ref([]);
-const itemCategoryArr = ref([]);
+const inventoriesTotalPages = ref(Math.ceil(props.inventories.length / rowsPerPage.value));
+const categoryArr = ref(props.categories);
+const itemCategoryArr = ref(props.itemCategories);
 const addStockFormIsOpen = ref(false);
+const selectedGroupId = ref(null);
 const selectedGroup = ref(null);
 const selectedCategory = ref(0);
 
@@ -113,29 +119,11 @@ const applyCheckedFilters = (filters) => {
 
 onMounted(async () => {
     flashMessage();
-
-    try {
-        // Get initial inventories
-        const inventoriesResponse = await axios.get('/inventory/inventory/getInventories');
-        initialInventories.value = inventoriesResponse.data;
-        inventories.value = inventoriesResponse.data;
-        inventoriesTotalPages.value = Math.ceil(inventories.value.length / rowsPerPage.value);
-
-        const recentKeepHistoryResponse = await axios.get('/inventory/inventory/getRecentKeepHistory');
-        recentKeepHistories.value = recentKeepHistoryResponse.data;
-        recentKeepHistoriesTotalPages.value = Math.ceil(recentKeepHistories.value.length / rowsPerPage.value);
-
-        const categoryResponse = await axios.get('/inventory/inventory/getAllCategories');
-        categoryArr.value = categoryResponse.data;
-        
-        const itemCategoryResponse = await axios.get('/inventory/inventory/getAllItemCategories');
-        itemCategoryArr.value = itemCategoryResponse.data;
-    } catch (error) {
-        console.error(error);
-    } finally {
-
-    }
 });
+
+const recentKeepHistoriesTotalPages = computed(() => {
+    return Math.ceil(props.recentKeepHistories.length / rowsPerPage.value);
+})
 
 const totalGroups = computed(() => {
     var groups = [];
@@ -178,7 +166,12 @@ const outOfStockItems = computed(() => {
 })
 
 const showAddStockForm = (group) => {
-    selectedGroup.value = group;
+    selectedGroupId.value = group;
+
+    selectedGroup.value = inventories.value.filter((row) => {
+        if (row.inventory_id === selectedGroupId.value.id) return row;
+    });
+
     addStockFormIsOpen.value = true;
 }
 
@@ -186,6 +179,7 @@ const hideAddStockForm = () => {
     addStockFormIsOpen.value = false;
     setTimeout(() => {
         selectedGroup.value = null;
+        selectedGroupId.value = null;
     }, 300);
 }
 </script>
@@ -267,7 +261,7 @@ const hideAddStockForm = () => {
                     
                 <div class="col-span-full md:col-span-8 flex flex-col p-6 gap-6 items-center rounded-[5px] border border-red-100 overflow-x-auto">
                     <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Out of Stock Item</span>
-                    <div class="flex items-start justify-between self-stretch gap-6" v-if="outOfStockItems.length > 0">
+                    <div class="flex items-start justify-start self-stretch gap-6" v-if="outOfStockItems.length > 0">
                         <div class="flex flex-col justify-between gap-4 p-3 min-w-48 rounded-[5px] border self-stretch border-primary-50" v-for="(item, index) in outOfStockItems" :key="index">
                             <span class="text-base font-medium text-grey-900">{{ item.item_name }}</span>
                             <div class="flex flex-col items-start self-stretch gap-2">
@@ -299,8 +293,12 @@ const hideAddStockForm = () => {
                     :closeable="true" 
                     @close="hideAddStockForm"
                 >
-                    <template v-if="selectedGroup">
-                        <AddStockForm :group="selectedGroup" @close="hideAddStockForm"/>
+                    <template v-if="selectedGroupId">
+                        <AddStockForm 
+                            :group="selectedGroupId" 
+                            :selectedGroup="selectedGroup"
+                            @close="hideAddStockForm"
+                        />
                     </template>
                 </Modal>
             </div>

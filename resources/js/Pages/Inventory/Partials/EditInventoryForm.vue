@@ -1,13 +1,9 @@
 <script setup>
-import axios from 'axios';
-import { ref, computed, onMounted, watch, reactive } from 'vue'
-import { Link, useForm, usePage } from '@inertiajs/vue3';
-import Checkbox from '@/Components/Checkbox.vue'
+import { computed } from 'vue'
+import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
-import NumberCounter from '@/Components/NumberCounter.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
-// import Dropdown from 'primevue/dropdown';
 import DragDropImage from '@/Components/DragDropImage.vue'
 import { PlusIcon } from '@/Components/Icons/solid';
 
@@ -31,31 +27,7 @@ const props = defineProps({
     },
 });
 
-// const inventoryItemsArr = reactive([]);
-// const categoryArr = reactive([]);
-// const itemCategoryArr = reactive([]);
-
 const emit = defineEmits(['close'])
-
-onMounted(async () => {
-    try {
-        // const itemCategoryResponse = await axios.get('/inventory/inventory/getAllItemCategories');
-        // itemCategoryArr.value = itemCategoryResponse.data;
-
-        // const categoryResponse = await axios.get('/inventory/inventory/getAllCategories');
-        // categoryArr.value = categoryResponse.data;
-
-        // categories.value = [...props.categoryArr];
-        // const inventoryItemsResponse = await axios.get(`/inventory/inventory/getInventoryItems/${props.group.id}`);
-        // inventoryItemsArr.value = inventoryItemsResponse.data.inventory_items;
-    } catch (error) {
-        console.error('Error fetching data:', error);
-    }
-});
-
-// watch(() => props.categoryArr, (newValue) => {
-//     categories.value = [...newValue];
-// }, { immediate: true });
 
 const form = useForm({
     id: props.group.id,

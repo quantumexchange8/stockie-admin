@@ -15,23 +15,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-});
-
-const categoryArr = ref([]);
-
-const getAllCategories = async () => {
-    try {
-        const response = await axios.get('/inventory/inventory/getAllCategories');
-        categoryArr.value = response.data;
-    } catch (error) {
-        console.error(error);
-    } finally {
-
-    }
-}
-
-onMounted(() => {
-    getAllCategories()
+    categoryArr: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const emit = defineEmits(['close'])

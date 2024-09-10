@@ -71,19 +71,17 @@ Route::middleware('auth')->group(function () {
      /********* Inventory **********/
      Route::prefix('inventory')->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
-        Route::get('/inventory/getInventories', [InventoryController::class, 'getInventories']);
-        Route::get('/inventory/getAllCategories', [InventoryController::class, 'getAllCategories']);
-        Route::get('/inventory/getAllItemCategories', [InventoryController::class, 'getAllItemCategories']);
-        Route::get('/inventory/getDropdownValue', [InventoryController::class, 'getDropdownValue']);
-        Route::get('/inventory/getInventoryItems/{id}', [InventoryController::class, 'getInventoryItems']);
-        Route::get('/inventory/getRecentKeepHistory', [InventoryController::class, 'getRecentKeepHistory']);
-        Route::get('/inventory/keep_history', [InventoryController::class, 'viewKeepHistories'])->name('inventory.viewKeepHistories');
-        Route::get('/inventory/stock_history', [InventoryController::class, 'viewStockHistories'])->name('inventory.viewStockHistories');
-        Route::get('/inventory/getAllStockHistory', [InventoryController::class, 'getAllStockHistory']);
         Route::post('/inventory/store', [InventoryController::class, 'store'])->name('inventory.store');
         Route::put('/inventory/updateInventoryItemStock/{id}', [InventoryController::class, 'updateInventoryItemStock'])->name('inventory.updateInventoryItemStock');
         Route::put('/inventory/updateInventoryAndItems/{id}', [InventoryController::class, 'updateInventoryAndItems'])->name('inventory.updateInventoryAndItems');
         Route::delete('/inventory/deleteInventory/{id}', [InventoryController::class, 'deleteInventory'])->name('inventory.deleteInventory');
+        
+        Route::get('/inventory/keep_history', [InventoryController::class, 'viewKeepHistories'])->name('inventory.viewKeepHistories');
+        Route::get('/inventory/stock_history', [InventoryController::class, 'viewStockHistories'])->name('inventory.viewStockHistories');
+        // Route::get('/inventory/getDropdownValue', [InventoryController::class, 'getDropdownValue']);
+        Route::get('/inventory/getInventories', [InventoryController::class, 'getInventories']);
+        Route::get('/inventory/getInventoryItems/{id}', [InventoryController::class, 'getInventoryItems']);
+        Route::get('/inventory/getAllStockHistory', [InventoryController::class, 'getAllStockHistory']);
     });
 
     /******* Profile ********/
@@ -168,6 +166,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/getAllZones', [OrderController::class, 'getAllZones'])->name('orders.getAllZones');
         Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');
         Route::get('/getOrderWithItems/{id}', [OrderController::class, 'getOrderWithItems'])->name('orders.getOrderWithItems');
+        Route::get('/getOrderHistories', [OrderController::class, 'getOrderHistories'])->name('orders.getOrderHistories');
+        Route::get('/getAllCategories', [OrderController::class, 'getAllCategories'])->name('orders.getAllCategories');
     });
 
      /********* Customer **********/

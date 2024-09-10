@@ -39,30 +39,30 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="grid grid-cols-1 lg:grid-cols-12 min-h-screen max-h-screen overflow-hidden">
-        <div class="w-full col-span-full lg:col-span-6 lg:bg-primary-900 flex flex-col justify-between pt-[99px] pr-12 xl:pr-12 gap-20">
+    <div class="flex w-full min-h-screen max-h-screen overflow-hidden">
+        <div class="w-1/2 md:bg-primary-900 flex flex-col justify-between pt-[99px] pr-12 xl:pr-12 gap-20">
             <div class="flex flex-col pl-11">
                 <div class="w-full flex flex-col gap-2 max-w-[450px]">
-                    <div class="text-primary-900 lg:text-white font-black text-[40px]">
+                    <div class="text-primary-900 md:text-white font-black text-[40px]">
                         Welcome to
                         <span class="text-white bg-primary-800 pl-2 pr-3">Stockie!</span>
                     </div>
-                    <div class="text-md text-primary-900 lg:text-white">
+                    <div class="text-md text-primary-900 md:text-white">
                         Experience the ease of a hassle-free inventory
                         management system today.
                     </div>
                 </div>
             </div>
-            <img :src="Main" alt="Stockie" width="1050" height="920" class="hidden lg:block flex-shrink w-full"/>
+            <img :src="Main" alt="Stockie" width="1050" height="920" class="hidden md:block flex-shrink w-full"/>
             <!-- <div class="">
             </div> -->
         </div>
 
         <Toast />
         
-        <div class="w-full col-span-full lg:col-span-6 bg-white flex flex-col justify-start lg:pt-60 px-28 xl:px-32 2xl:px-40">
-            <form @submit.prevent="submit">
-                <div class="flex flex-col gap-12">
+        <div class="w-1/2 bg-white flex flex-col justify-center items-center">
+            <form @submit.prevent="submit" class="max-w-[421px] w-full px-6">
+                <div class="flex flex-col gap-12 w-full">
                     <div class="flex flex-col gap-2">
                         <img
                             :src="StockieLogo"

@@ -67,7 +67,11 @@ const submit = (action) => {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
-                    if (form.action_type === 'complete') showOrderCompleteModal();
+                    if (form.action_type === 'complete') {
+                        showOrderCompleteModal(); 
+                    } else {
+                        closeDrawer();
+                    }
                     form.reset();
                 },
             })
@@ -133,7 +137,7 @@ const isOrderCompleted = computed(() => {
                         @click="form.action_type = 'clear'"
                         v-else
                     >
-                        Clear Table
+                        Free Up Table
                     </Button>
                     <Button
                         type="button"

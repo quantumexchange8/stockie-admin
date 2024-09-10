@@ -16,10 +16,10 @@ return new class extends Migration
             $table->unsignedBigInteger('table_id');
             $table->string('reservation');
             $table->string('pax');
-            $table->string('waiter_id');
+            $table->unsignedBigInteger('waiter_id')->nullable()->default(NULL);;
             $table->string('status');
             $table->dateTime('reservation_date');
-            $table->unsignedInteger('order_id');
+            $table->unsignedBigInteger('order_id')->nullable()->default(NULL);
             $table->softDeletes();
             $table->timestamps();
         });

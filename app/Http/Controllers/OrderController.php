@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\OrderTableRequest;
+use App\Models\Category;
 use App\Models\IventoryItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemSubitem;
 use App\Models\OrderTable;
 use App\Models\Product;
+use App\Models\ProductItem;
+use App\Models\StockHistory;
 use App\Models\Table;
 use App\Models\Waiter;
 use Illuminate\Http\Request;
@@ -29,7 +32,7 @@ class OrderController extends Controller
                             $zone->tables->map(function ($table) {
                                 // Find the first order table with a status that is not 'Order Completed'
                                 $orderTable = $table->orderTables->first(function ($orderTable) {
-                                    return $orderTable->status !== 'Order Completed' && $orderTable->status !== 'Empty Seat';
+                                    return $orderTable->status !== 'Order Completed' && $orderTable->status !== 'Empty Seat' && $orderTable->status !== 'Order Cancelled';
                                 });
 
                                 // Filter order tables with the 'reserved' status
@@ -91,19 +94,24 @@ class OrderController extends Controller
     {
         $validatedData = $request->validated();
 
-        $latestOrderId = Order::latest()->first();
-
-        $newOrder = Order::create([
-            'order_no' => str_pad((int)$latestOrderId->order_no + 1, 3, "0", STR_PAD_LEFT),
-            'pax' => $validatedData['pax'],
-            'waiter_id' => $validatedData['waiter_id'],
-            'total_amount' => 0.00,
-            'status' => 'Pending Serve',
-        ]);
-
-        $table = Table::find($validatedData['table_id']);
-
-        $table->update(['status' => $validatedData['status']]);
+        if (!$request->reservation) {
+            $latestOrderId = Order::latest()->first();
+    
+            $newOrder = Order::create([
+                'order_no' => $latestOrderId ? str_pad((int)$latestOrderId->order_no + 1, 3, "0", STR_PAD_LEFT) : '000',
+                'pax' => $validatedData['pax'],
+                'waiter_id' => $validatedData['waiter_id'],
+                'total_amount' => 0.00,
+                'status' => 'Pending Serve',
+            ]);
+    
+            $table = Table::find($validatedData['table_id']);
+    
+            $table->update([
+                'status' => $validatedData['status'],
+                'order_id' => $newOrder->id
+            ]);
+        }
 
         OrderTable::create([
             'table_id' => $validatedData['table_id'],
@@ -112,16 +120,14 @@ class OrderController extends Controller
             'waiter_id' => $validatedData['waiter_id'],
             'status' => $validatedData['status'],
             'reservation_date' => $validatedData['reservation_date'],
-            'order_id' => $newOrder->id
+            'order_id' => $request->reservation ? null : $newOrder->id
         ]);
-        
-        $summary = $request->reservation 
-            ? "Reservation has been made to '$request->table_no'."
-            : "You've successfully check in customer to '$request->table_no'.";
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => $summary
+            'summary' => $request->reservation 
+                            ? "Reservation has been made to '$request->table_no'."
+                            : "You've successfully check in customer to '$request->table_no'."
         ];
 
         return redirect()->back()->with(['message' => $message]);
@@ -372,7 +378,10 @@ class OrderController extends Controller
                 'summary' => 'Selected order has been cancelled successfully.'
             ];
 
-            $table->update(['status' => 'Empty Seat']);
+            $table->update([
+                'status' => 'Empty Seat',
+                'order_id' => null
+            ]);
             $existingOrder->orderTable->update(['status' => 'Order Cancelled']);
         }
 
@@ -405,6 +414,40 @@ class OrderController extends Controller
                             $totalItemQty += $item['item_qty'] * $orderItem->item_qty;
                             $totalServedQty += $item['serve_qty'];
                             $hasServeQty = $updated_item['serving_qty'] > 0 ? true : false;
+
+                            $product_item = ProductItem::with(['inventoryItem:id,item_name,stock_qty,item_cat_id', 'inventoryItem.itemCategory:id,low_stock_qty'])->find($item['product_item_id']);
+
+                            if ($product_item) {
+                                $inventoryItem = $product_item->inventoryItem;
+                                $oldStockQty = $inventoryItem['stock_qty'];
+                                $newStockQty = $inventoryItem['stock_qty'] - $updated_item['serving_qty'];
+
+                                if ($newStockQty === 0) {
+                                    $newStatus = 'Out of stock';
+                                } elseif ($newStockQty <= $inventoryItem->itemCategory['low_stock_qty']) {
+                                    $newStatus = 'Low in stock';
+                                } else {
+                                    $newStatus = 'In stock';
+                                }
+
+                                $inventoryItem->update([
+                                    'stock_qty' => $newStockQty,
+                                    'status' => $newStatus
+                                ]);
+
+                                $inventoryItem->refresh();
+
+                                if ($updated_item['serving_qty'] && $updated_item['serving_qty'] > 0) {
+                                    StockHistory::create([
+                                        'inventory_id' => $inventoryItem['id'],
+                                        'inventory_item' => $inventoryItem['item_name'],
+                                        'old_stock' => $oldStockQty,
+                                        'in' => 0,
+                                        'out' => $updated_item['serving_qty'],
+                                        'current_stock' => $inventoryItem['stock_qty'],
+                                    ]);
+                                }
+                            }
                         }
                     }
                 }
@@ -422,11 +465,12 @@ class OrderController extends Controller
             $orderItem->refresh();
 
             $order = Order::with(['orderTable', 'orderItems'])->find($orderItem->order_id);
-            $table = Table::find($order->orderTable['table_id']);
-            $orderTable = $order->orderTable;
-            $allOrderItems = $order->orderItems;
             
             if ($order) {
+                $table = Table::find($order->orderTable['table_id']);
+                $orderTable = $order->orderTable;
+                $allOrderItems = $order->orderItems;
+
                 $statusArr = [];
                 $orderStatus = 'Pending Serve';
                 $orderTableStatus = 'Pending Order';
@@ -529,7 +573,10 @@ class OrderController extends Controller
             } 
             
             if ($request->action_type === 'clear') {
-                $table->update(['status' => 'Empty Seat']);
+                $table->update([
+                    'status' => 'Empty Seat',
+                    'order_id' => null
+                ]);
                 $order->orderTable->update(['status' => 'Order Completed']);
             }
         }
@@ -566,6 +613,24 @@ class OrderController extends Controller
                             return $order->status === 'Order Completed' || $order->status === 'Order Cancelled';
                         })
                         ->values();
+
+        return response()->json($data);
+    }
+    
+    /**
+     * Get all categories.
+     */
+    public function getAllCategories()
+    {
+        $data = Category::select(['id', 'name'])
+                        ->orderBy('id')
+                        ->get()
+                        ->map(function ($category) {
+                            return [
+                                'text' => $category->name,
+                                'value' => $category->id
+                            ];
+                        });
 
         return response()->json($data);
     }

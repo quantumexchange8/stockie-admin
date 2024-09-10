@@ -1,5 +1,4 @@
 <script setup>
-import axios from 'axios';
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3';
 import NumberCounter from '@/Components/NumberCounter.vue';
@@ -19,32 +18,7 @@ const props = defineProps({
     },
 });
 
-const inventoryItemsArr = ref([]);
-
 const emit = defineEmits(['close'])
-
-const getInventoryItems = async () => {
-    try {
-        // const response = await axios.get(`/inventory/inventory/getInventoryItems/${props.group.id}`);
-        // inventoryItemsArr.value = response.data.inventory_items;
-        
-        // inventoryItemsArr.value.forEach((item) => {
-        //     item.add_stock_qty = 0;
-        // });
-    } catch (error) {
-        console.error(error);
-    } finally {
-
-    }
-}
-
-onMounted(() => {
-    getInventoryItems();
-});
-
-// const updatedInventoryItemsArr = computed(() => {
-//     return inventoryItemsArr.value;
-// });
 
 const form = useForm({
     name: props.group.name,
@@ -124,7 +98,6 @@ const isFormValid = computed(() => {
                     <NumberCounter
                         :inputName="'item_'+ i +'add_stock_qty'"
                         :errorMessage="(form.errors) ? form.errors['items.' + i + '.add_stock_qty']  : ''"
-                        :minValue="-(item.stock_qty)"
                         v-model="item.add_stock_qty"
                         class="col-span-2 items-end justify-center"
                     />

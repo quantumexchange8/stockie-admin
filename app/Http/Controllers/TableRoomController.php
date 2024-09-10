@@ -81,13 +81,12 @@ class TableRoomController extends Controller
             'seat' => $validatedData['seat'],
             'zone_id' => $validatedData['zone_id'],
             'status' => 'Empty Seat',
-            'order_id' => '1',
         ]);
 
         $message = [
             'severity' => 'success',
             'summary' => 'New table has been successfully added.'
-            ];
+        ];
 
         return redirect()->route('table-room')->with(['message' => $message]);
     }
