@@ -27,19 +27,6 @@ const home = ref({
     label: 'Inventory',
 });
 
-// only for 'list' variant of table component
-const inventoryColumns = ref([
-    // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'inventory.name', header: '', width: '0', sortable: false},
-    {field: 'item_name', header: 'Item Name', width: '29', sortable: true},
-    {field: 'item_code', header: 'Code', width: '11', sortable: true},
-    {field: 'item_cat_id', header: 'Unit', width: '10', sortable: true},
-    {field: 'stock_qty', header: 'Stock', width: '11', sortable: true},
-    {field: 'keep', header: 'Keep', width: '12', sortable: true},
-    {field: 'status', header: 'Status', width: '12', sortable: true},
-    {field: 'action', header: '', width: '15', sortable: false}
-]);
-
 const keepHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
     {field: 'item', header: 'Item Name', width: '35', sortable: false},
@@ -53,12 +40,12 @@ const { flashMessage } = useCustomToast();
 const inventories = ref(props.inventories);
 const initialInventories = ref(props.inventories);
 const rowsPerPage = ref(8);
-const inventoriesTotalPages = ref(Math.ceil(props.inventories.length / rowsPerPage.value));
+const inventoriesTotalPages = ref(Math.ceil(props.inventories.length / 4));
 const categoryArr = ref(props.categories);
 const itemCategoryArr = ref(props.itemCategories);
 const addStockFormIsOpen = ref(false);
-const selectedGroupId = ref(null);
 const selectedGroup = ref(null);
+const selectedGroupItems = ref(null);
 const selectedCategory = ref(0);
 
 const checkedFilters = ref({
@@ -67,18 +54,11 @@ const checkedFilters = ref({
 });
 
 // Define row type with its options for 'list' variant
-const rowType = [
-    {
-        rowGroups: true,
-        expandable: true,
-        groupRowsBy: 'inventory.name',
-    },
-    {
-        rowGroups: false,
-        expandable: false,
-        groupRowsBy: '',
-    }
-]
+const rowType = {
+    rowGroups: false,
+    expandable: false,
+    groupRowsBy: '',
+};
 
 // When declaring the actions, make sure to set the column property with the same action name to true to display the action button ('list' variant) 
 const actions = {
@@ -99,7 +79,7 @@ const getInventories = async (filters = {}, selectedCategory = 0) => {
             }
         });
         inventories.value = inventoriesResponse.data;
-        inventoriesTotalPages.value = Math.ceil(inventories.value.length / rowsPerPage.value);
+        inventoriesTotalPages.value = Math.ceil(inventories.value.length / 4);
     } catch (error) {
         console.error(error);
     } finally {
@@ -125,61 +105,40 @@ const recentKeepHistoriesTotalPages = computed(() => {
     return Math.ceil(props.recentKeepHistories.length / rowsPerPage.value);
 })
 
-const totalGroups = computed(() => {
-    var groups = [];
-
-    initialInventories.value.forEach(item => {
-        groups.push(item.inventory.id);
-    });
-
-    return [...new Set(groups)].length;
-})
-
-const totalItems = computed(() => {
-    return initialInventories.value.length;
+const allInventoryItems = computed(() => {
+    return initialInventories.value.flatMap(group => group.inventory_items);
+    // return initialInventories.value.reduce((total, group) => total + group.inventory_items.length, 0);
 })
 
 const totalStock = computed(() => {
-    var stock = 0;
-
-    initialInventories.value.forEach(item => {
-        stock += item.stock_qty;
-    });
-
-    return stock;
+    return initialInventories.value.reduce((overallTotal, group) => {
+        return overallTotal + group.inventory_items.reduce((totalStock, item) => totalStock + item.stock_qty, 0);
+    }, 0);
 })
 
-const totalEmptyStockGroups = computed(() => {
-    var groups = [];
-
-    initialInventories.value.forEach(item => {
-        if (item.stock_qty === 0) {
-            groups.push(item.id);
-        }
-    });
-
-    return groups.length;
+const totalOutofStockItems = computed(() => {
+    return initialInventories.value.reduce((total, group) => {
+        return total + group.inventory_items.filter((item) => item.status === 'Out of stock').length;
+    }, 0);
 })
 
 const outOfStockItems = computed(() => {
-    return initialInventories.value.filter(item => item.stock_qty < 1);
+    return initialInventories.value.flatMap(group =>
+        group.inventory_items.filter(item => item.status === 'Out of stock')
+    );
 })
 
-const showAddStockForm = (group) => {
-    selectedGroupId.value = group;
-
-    selectedGroup.value = inventories.value.filter((row) => {
-        if (row.inventory_id === selectedGroupId.value.id) return row;
-    });
-
+const showAddStockForm = (id) => {
+    selectedGroup.value = initialInventories.value.find((group) => group.id === id);
+    selectedGroupItems.value = selectedGroup.value.inventory_items;
     addStockFormIsOpen.value = true;
 }
 
 const hideAddStockForm = () => {
     addStockFormIsOpen.value = false;
     setTimeout(() => {
+        selectedGroupItems.value = null;
         selectedGroup.value = null;
-        selectedGroupId.value = null;
     }, 300);
 }
 </script>
@@ -201,7 +160,7 @@ const hideAddStockForm = () => {
                 <div class="col-span-full sm:col-span-3 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
                     <div class="flex flex-col gap-2 items-center md:items-start">
                         <span class="text-sm font-medium text-grey-900 whitespace-nowrap">Total Group</span>
-                        <span class="text-lg font-medium text-primary-900">{{ totalGroups }}</span>
+                        <span class="text-lg font-medium text-primary-900">{{ initialInventories.length }}</span>
                     </div>
                     <div class="hidden bg-primary-50 rounded-[5px] md:flex items-center justify-center gap-2.5 w-16 h-16">
                         <TotalGroupsIcon class="text-primary-900"/>
@@ -210,7 +169,7 @@ const hideAddStockForm = () => {
                 <div class="col-span-full sm:col-span-3 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
                     <div class="flex flex-col gap-2 items-center md:items-start">
                         <span class="text-sm font-medium text-grey-900 whitespace-nowrap">Total Item</span>
-                        <span class="text-lg font-medium text-primary-900">{{ totalItems }}</span>
+                        <span class="text-lg font-medium text-primary-900">{{ allInventoryItems.length }}</span>
                     </div>
                     <div class="hidden bg-primary-50 rounded-[5px] md:flex items-center justify-center gap-2.5 w-16 h-16">
                         <TotalItemsIcon class="text-primary-900"/>
@@ -228,7 +187,7 @@ const hideAddStockForm = () => {
                 <div class="col-span-full sm:col-span-3 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
                     <div class="flex flex-col gap-2 items-center md:items-start">
                         <span class="text-sm font-medium text-grey-900 whitespace-nowrap">Out of Stock</span>
-                        <span class="text-lg font-medium text-primary-600">{{ totalEmptyStockGroups }}</span>
+                        <span class="text-lg font-medium text-primary-600">{{ totalOutofStockItems }}</span>
                     </div>
                     <div class="hidden bg-primary-50 rounded-[5px] md:flex items-center justify-center gap-2.5 w-16 h-16">
                         <EmptyStockIcon class="text-primary-900"/>
@@ -240,7 +199,7 @@ const hideAddStockForm = () => {
                 <RecentKeepHistoryTable
                     :columns="keepHistoryColumns"
                     :rows="recentKeepHistories"
-                    :rowType="rowType[1]"
+                    :rowType="rowType"
                     :actions="actions"
                     :totalPages="recentKeepHistoriesTotalPages"
                     :rowsPerPage="rowsPerPage"
@@ -248,14 +207,14 @@ const hideAddStockForm = () => {
                 />
     
                 <InventorySummaryChart
-                    :inventories="initialInventories"
+                    :inventories="allInventoryItems"
                     class="col-span-full md:col-span-4"
                 />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                 <TotalStockChart
-                    :inventories="initialInventories"
+                    :inventories="allInventoryItems"
                     class="col-span-full md:col-span-4"
                 />
                     
@@ -274,7 +233,7 @@ const hideAddStockForm = () => {
                                 <Button
                                     :type="'button'"
                                     :size="'md'"
-                                    @click="showAddStockForm(item.inventory)"
+                                    @click="showAddStockForm(item.inventory_id)"
                                 >
                                     Replenish
                                 </Button>
@@ -293,24 +252,20 @@ const hideAddStockForm = () => {
                     :closeable="true" 
                     @close="hideAddStockForm"
                 >
-                    <template v-if="selectedGroupId">
+                    <template v-if="selectedGroup">
                         <AddStockForm 
-                            :group="selectedGroupId" 
-                            :selectedGroup="selectedGroup"
+                            :selectedGroup="selectedGroup" 
+                            :selectedGroupItems="selectedGroupItems"
                             @close="hideAddStockForm"
                         />
                     </template>
                 </Modal>
             </div>
             <InventoryTable
-                :columns="inventoryColumns"
                 :rows="inventories"
                 :categoryArr="categoryArr"
                 :itemCategoryArr="itemCategoryArr"
-                :rowType="rowType[0]"
-                :actions="actions"
                 :totalPages="inventoriesTotalPages"
-                :rowsPerPage="rowsPerPage"
                 @applyCategoryFilter="applyCategoryFilter"
                 @applyCheckedFilters="applyCheckedFilters"
             />

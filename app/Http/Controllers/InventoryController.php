@@ -22,8 +22,8 @@ class InventoryController extends Controller
 {
     public function index(Request $request)
     {
-        $inventories = IventoryItem::with(['inventory', 'itemCategory:id,low_stock_qty'])
-                                ->orderBy('inventory_id')
+        $inventories = Iventory::with(['inventoryItems', 'inventoryItems.itemCategory:id,name,low_stock_qty'])
+                                ->orderBy('id')
                                 ->get();
 
         $endDate = Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
@@ -164,61 +164,69 @@ class InventoryController extends Controller
      */
     public function getInventories(Request $request)
     {
-        $queries = IventoryItem::query();
+        $filters = $request->input('checkedFilters', []);
+        $itemQuery = IventoryItem::query();
+
+        $selectedCategory = (int) $request->input('selectedCategory', 0);
 
         $allCategories = Category::select(['id'])
                                 ->orderBy('id')
                                 ->get();
 
-        $selectedCategory = (int) $request['selectedCategory'];
+        // Base query for filtering inventory items
+        $itemQuery = IventoryItem::query();
 
-        // Check if there are any filters selected
-        if (isset($request['checkedFilters'])) {
-            $queries->where(function (Builder $query) use ($request) {
-                // Check if there are any item category filter option selected
-                if (isset($request['checkedFilters']['itemCategory']) && count($request['checkedFilters']['itemCategory']) > 0) {
-                    $query->whereIn('item_cat_id', $request['checkedFilters']['itemCategory']);
-                }
-    
-                // Check if there are any stock level filter option selected
-                if (isset($request['checkedFilters']['stockLevel']) && count($request['checkedFilters']['stockLevel']) > 0) {
-                    $query->where(function ($subQuery) use ($request) {
-                        foreach ($request['checkedFilters']['stockLevel'] as $value) {
-                            switch ($value) {
-                                case 'In Stock':
-                                    $subQuery->orWhere('stock_qty', '>', 0);
-                                    break;
-    
-                                case 'Low Stock':
-                                    $subQuery->orWhere(function ($lowStockQuery) {
-                                        $lowStockQuery->where('stock_qty', '>', 0)
-                                                        ->whereRaw('`stock_qty` <= (SELECT `low_stock_qty` FROM `item_categories` WHERE `item_categories`.`id` = `item_cat_id`)');
-                                    });
-                                    break;
-    
-                                case 'Out of Stock':
-                                    $subQuery->orWhere('stock_qty', 0);
-                                    break;
-                            }
-                        }
-                    });
+        // Apply item category filters if present
+        if (!empty($filters['itemCategory'])) {
+            $itemQuery->whereIn('item_cat_id', $filters['itemCategory']);
+        }
+
+        // Apply stock level filters if present
+        if (!empty($filters['stockLevel'])) {
+            $itemQuery->where(function ($subQuery) use ($filters) {
+                foreach ($filters['stockLevel'] as $level) {
+                    switch ($level) {
+                        case 'In Stock':
+                            $subQuery->orWhere('stock_qty', '>', 0);
+                            break;
+                        case 'Low Stock':
+                            $subQuery->orWhere(function ($lowStockQuery) {
+                                $lowStockQuery->where('stock_qty', '>', 0)
+                                            ->whereRaw('stock_qty <= (SELECT low_stock_qty FROM item_categories WHERE item_categories.id = item_cat_id)');
+                            });
+                            break;
+                        case 'Out of Stock':
+                            $subQuery->orWhere('stock_qty', 0);
+                            break;
+                    }
                 }
             });
         }
 
-        if (isset($selectedCategory)) {
-            $queries->whereHas('inventory', function (Builder $query) use ($request, $selectedCategory, $allCategories) {
-                if ($selectedCategory === 0) {
-                    $query->whereIn('category_id', $allCategories);
-                } else {
-                    $query->where('category_id', $selectedCategory);
-                }
-            });
-        }
+        // Get filtered inventory items with their item category
+        $filteredItems = $itemQuery->with('itemCategory:id,name,low_stock_qty')->get();
 
-        $queries->with(['inventory', 'itemCategory:id,low_stock_qty']);
-        $data = $queries->orderBy('inventory_id')
-                        ->get();
+        // Get inventory IDs with matching items
+        $inventoryIds = $filteredItems->pluck('inventory_id')->unique();
+    
+        // Get inventories with matching items
+        $inventoryQuery  = Iventory::query();
+
+        if ($selectedCategory) {
+            if ($selectedCategory === 0) {
+                $inventoryQuery->whereIn('category_id', $allCategories);
+            } else {
+                $inventoryQuery->where('category_id', $selectedCategory);
+            }
+        }
+    
+        // Get inventories with filtered items
+        $data = $inventoryQuery->whereIn('id', $inventoryIds)
+                                ->with(['inventoryItems' => function ($query) use ($filteredItems) {
+                                    $query->whereIn('id', $filteredItems->pluck('id'));
+                                }, 'inventoryItems.itemCategory:id,name,low_stock_qty'])
+                                ->orderBy('id')
+                                ->get();
 
         return response()->json($data);
     }

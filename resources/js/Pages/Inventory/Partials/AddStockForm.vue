@@ -8,11 +8,11 @@ import Label from '@/Components/Label.vue';
 
 const props = defineProps({
     errors: Object,
-    group: {
+    selectedGroup: {
         type: Object,
         required: true,
     },
-    selectedGroup: {
+    selectedGroupItems: {
         type: Array,
         default: () => [],
     },
@@ -21,14 +21,14 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const form = useForm({
-    name: props.group.name,
-    category_id: props.group.category_id,
-    image: props.group.image,
+    name: props.selectedGroup.name,
+    category_id: props.selectedGroup.category_id,
+    image: props.selectedGroup.image,
     items: [],
 });
 
-watch(() => props.selectedGroup, () => {
-    form.items = props.selectedGroup.map((item) => reactive({ ...item, add_stock_qty: 0 }));
+watch(() => props.selectedGroupItems, () => {
+    form.items = props.selectedGroupItems.map((item) => reactive({ ...item, add_stock_qty: 0 }));
 }, { immediate: true });
 
 const formSubmit = () => { 
@@ -42,7 +42,7 @@ const formSubmit = () => {
     });
 
     if (hasAddValue === true) {
-        form.put(route('inventory.updateInventoryItemStock', props.group.id), {
+        form.put(route('inventory.updateInventoryItemStock', props.selectedGroup.id), {
             preserveScroll: true,
             preserveState: 'errors',
             onSuccess: () => {

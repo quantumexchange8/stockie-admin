@@ -2482,3 +2482,43 @@ export const OrderToday = defineComponent({
         )
     }
 })
+
+
+export const TableSortIcon = defineComponent({
+    setup() {
+        return () => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="17" 
+                height="16" 
+                viewBox="0 0 17 16" 
+                fill="none"
+            >
+                <g clip-path="url(#clip0_393_6137)">
+                    <path 
+                        fill-rule="evenodd" 
+                        clip-rule="evenodd" 
+                        d="M11.5068 14.4768C12.2441 14.4768 12.8418 13.8792 12.8418 13.1419V7.92675C12.8418 7.8822 12.8957 7.8599 12.9272 7.89145L14.0162 8.9821C14.5418 9.5084 15.3946 9.5087 15.9205 8.9828C16.4398 8.46355 16.447 7.624 15.9369 7.09585L11.1908 2.1821C10.8205 1.79875 10.1719 2.0609 10.1719 2.59385V5.1321V13.1419C10.1719 13.8792 10.7696 14.4768 11.5068 14.4768Z" 
+                        fill="currentColor"
+                    />
+                    <path 
+                        fill-rule="evenodd" 
+                        clip-rule="evenodd" 
+                        d="M6.04791 2C5.32236 2 4.73416 2.5882 4.73416 3.31375V8.54865C4.73416 8.59345 4.67986 8.61565 4.64851 8.5837L3.57841 7.49475C3.06121 6.9684 2.22196 6.9681 1.70439 7.49405C1.19342 8.01325 1.18625 8.8528 1.68828 9.381L6.35891 14.2947C6.72326 14.6781 7.36161 14.416 7.36161 13.883L7.36166 11.3448V3.31375C7.36166 2.5882 6.77346 2 6.04791 2Z" 
+                        fill="currentColor"
+                    />
+                </g>
+                <defs>
+                    <clipPath id="clip0_393_6137">
+                        <rect 
+                            width="16" 
+                            height="16" 
+                            fill="white" 
+                            transform="translate(0.601562)"
+                        />
+                    </clipPath>
+                </defs>
+            </svg>
+        )
+    }
+})

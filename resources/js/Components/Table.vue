@@ -455,7 +455,7 @@ onMounted(() => {
                         :placeholder="'eg: 12'"
                         class="!w-20"
                         :disabled="false"
-                        @change="goToPage($event)"
+                        @input="goToPage($event)"
                         v-else
                     />
                 </div>
@@ -723,7 +723,7 @@ onMounted(() => {
                         :placeholder="'eg: 12'"
                         class="!w-20"
                         :disabled="false"
-                        @change="goToPage($event)"
+                        @input="goToPage($event)"
                         v-else
                     />
                 </div>
