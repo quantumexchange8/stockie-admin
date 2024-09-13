@@ -48,7 +48,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="w-full p-6 overflow-y-auto">
+    <div class="w-full p-6 h-[800px] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <TabView :tabs="tabs">
             <template #all>         
                 <div class="w-full flex flex-col items-start py-6 self-stretch rounded-[5px]">

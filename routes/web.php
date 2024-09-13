@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SummaryReportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WaiterController;
@@ -89,7 +90,7 @@ Route::middleware('auth')->group(function () {
 
     /******* Profile ********/
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     /******* Configuration ********/
@@ -183,6 +184,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/keepHistory/{id}', [CustomerController::class,'keepHistory'])->name('customer.keep-history');
         Route::get('/redeemHistory/{id}', [CustomerController::class,'redeemHistory'])->name('customer.redeem-history');
         Route::get('/tierRewards/{id}', [CustomerController::class,'tierRewards'])->name('customer.tier-rewards');
+     });
+
+     /********* Summary Report **********/
+     Route::prefix('summary-report')->group(function(){
+        Route::get('/', [SummaryReportController::class, 'index'])->name('summary.report');
+        Route::get('/filterOrder', [SummaryReportController::class, 'filterOrder'])->name('summary-report.filter-order');
+        Route::get('/filterSales', [SummaryReportController::class, 'filterSales'])->name('summary-report.filter-sales');
      });
 });
 

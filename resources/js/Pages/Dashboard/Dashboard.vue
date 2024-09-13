@@ -1,13 +1,15 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { Head } from '@inertiajs/vue3';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
-import SalesProductOrder from './SalesProductOrder.vue';
-import SalesGraph from './SalesGraph.vue';
-import TableRoomActivity from './TableRoomActivity.vue';
-import ProductLowStock from './ProductLowStock.vue';
-import OnDutyToday from './OnDutyToday.vue';
+import SalesProductOrder from './Partials/SalesProductOrder.vue';
+import SalesGraph from './Partials/SalesGraph.vue';
+import TableRoomActivity from './Partials/TableRoomActivity.vue';
+import ProductLowStock from './Partials/ProductLowStock.vue';
+import OnDutyToday from './Partials/OnDutyToday.vue';
+import Toast from '@/Components/Toast.vue';
+import { useCustomToast } from '@/Composables';
 
 const home = ref({
     label: 'Dashboard',
@@ -70,6 +72,8 @@ const rowType = {
 const activeFilter = ref('month');
 const salesGraph = ref(props.salesGraph);
 const monthly = ref(props.monthly);
+const { flashMessage } = useCustomToast();
+
 
 const filterSales = async (filters = {}) => {
     try {
@@ -96,6 +100,9 @@ const applyTimeFilter = (filter) => {
     filterSales(activeFilter.value);
 }
 
+onMounted(async()=> {
+    flashMessage();
+})
 </script>
 
 <template>
@@ -106,6 +113,8 @@ const applyTimeFilter = (filter) => {
         <template #header>
             <Breadcrumb :home="home" />
         </template>
+
+        <Toast />
 
         <div class="w-full flex flex-col gap-[20px] p-[20px]">
             <div class="gap-[20px] grid grid-cols-12 ">
@@ -121,7 +130,11 @@ const applyTimeFilter = (filter) => {
                     />
 
                     <!-- sales graph -->
-                    <SalesGraph :salesGraph="salesGraph" :monthly="monthly" @applyTimeFilter="applyTimeFilter"/>
+                    <SalesGraph 
+                        :salesGraph="salesGraph" 
+                        :monthly="monthly" 
+                        @applyTimeFilter="applyTimeFilter"
+                    />
                 </div>
                 <div class="flex col-span-4">
                 <!-- table / room activity -->

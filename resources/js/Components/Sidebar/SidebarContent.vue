@@ -121,7 +121,11 @@ import {
                         <LoyaltyIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarLink title="Summary Reports" :href="route('dashboard')">
+                <SidebarLink 
+                    title="Summary Reports" 
+                    :href="route('summary.report')" 
+                    :active="route().current('summary.report')"
+                >
                     <template #icon>
                         <SummaryReportIcon aria-hidden="true" />
                     </template>

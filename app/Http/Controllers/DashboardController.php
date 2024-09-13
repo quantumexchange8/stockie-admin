@@ -17,7 +17,9 @@ use Log;
 
 class DashboardController extends Controller
 {
-    public function index (){
+    public function index (Request $request){
+
+        $message = $request->session()->get('message');
 
         //sales today
         $sales = Order::whereDate('created_at', Carbon::today())->where('status', 'Order Served')->sum('total_amount');
@@ -25,10 +27,10 @@ class DashboardController extends Controller
             $sales = '0';
         }
 
-        $salesYesterday = Order::whereDate('created_at', Carbon::yesterday())->where('status','Served')->sum('total_amount');
+        $salesYesterday = Order::whereDate('created_at', Carbon::yesterday())->where('status','Order Served')->sum('total_amount');
         $comparedSale = 0;
         if($salesYesterday !== 0){
-            $comparedSale = ($sales/$salesYesterday)*100; 
+            $comparedSale = ($sales - $salesYesterday) / $salesYesterday*100; 
         };
 
         //product sold today
@@ -37,16 +39,17 @@ class DashboardController extends Controller
         $productSoldYesterday = OrderItem::whereDate('created_at', Carbon::yesterday())->where('status','Served')->sum('item_qty');
         $comparedSold = 0;
         if($productSoldYesterday !== 0){
-            $comparedSold = ($productSold/$productSoldYesterday)*100; 
+            $comparedSold = ($productSold - $productSoldYesterday) / $productSoldYesterday*100; 
         };
+
 
         //order today
         $order = Order::whereDate('created_at', Carbon::today())->where('status', 'Order Served')->count();
 
-        $orderYesterday = Order::whereDate('created_at', Carbon::yesterday())->where('status','Served')->sum('total_amount');
+        $orderYesterday = Order::whereDate('created_at', Carbon::yesterday())->where('status','Order Served')->count();
         $comparedOrder = 0;
         if($orderYesterday !== 0){
-            $comparedOrder = ($order/$orderYesterday)*100; 
+            $comparedOrder = ($order - $orderYesterday)/$orderYesterday*100; 
         };
 
         //table room activity
@@ -118,7 +121,9 @@ class DashboardController extends Controller
         });
 
         //sales graph
-        $salesEachMonth = Order::selectRaw('MONTHNAME(created_at) as month, MONTH(created_at) as month_num, SUM(total_amount) as total_sales')
+        $salesEachMonth = Order::selectRaw('MONTHNAME(created_at) as month, 
+                                                        MONTH(created_at) as month_num, 
+                                                        SUM(total_amount) as total_sales')
                                 ->whereYear('created_at', Carbon::now()->year)
                                 ->groupBy('month', 'month_num')
                                 ->orderBy('month_num')
@@ -136,6 +141,7 @@ class DashboardController extends Controller
         $products = collect($allProducts)->sortByDesc('stock_qty')->values()->all();
 
         return Inertia::render('Dashboard/Dashboard', [
+            'message' => $message ?? [],
             'products' => $products,
             'sales' => $sales,
             'productSold' => $productSold,

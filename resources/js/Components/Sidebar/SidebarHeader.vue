@@ -1,21 +1,162 @@
 <script setup>
-import { Link } from '@inertiajs/vue3'
-import { sidebarState, rightSidebarState } from '@/Composables'
+import { Link, useForm } from '@inertiajs/vue3'
+import { sidebarState, rightSidebarState, useCustomToast } from '@/Composables'
+import Modal from "@/Components/Modal.vue";
+import { onMounted, ref } from 'vue';
+import DragDropImage from '../DragDropImage.vue';
+import { EditIcon } from '../Icons/solid';
+import TextInput from '../TextInput.vue';
+import Button from '../Button.vue';
+import Toast from '../Toast.vue';
+
+
+const props = defineProps ({
+    user: {
+        type: Object,
+        required: true,
+    }
+})
+const emit = defineEmits(['close']);
+const isAccountDetailOpen = ref(false);
+const isEditModalOpen = ref(false);
+const { flashMessage } = useCustomToast();
+
+
+const showAccountDetail = () => {
+    isAccountDetailOpen.value = true;
+}
+
+const showEditModal = (name, id) => {
+    isEditModalOpen.value = true;
+    isAccountDetailOpen.value = false;
+    form.name = name;
+    form.id = id;
+}
+
+const closeEditModal = () => {
+    isAccountDetailOpen.value = true;
+    isEditModalOpen.value = false;
+}
+
+const closeModal = () => {
+    isAccountDetailOpen.value = false;
+}
+
+const form = useForm({
+    id: props.user.id,
+    name: props.user.name,
+})
+
+const submit = () => {
+    form.post(route('profile.update'), {
+        preserveScroll: true,
+        preserveState: 'errors',
+        onSuccess: () => {
+            form.reset();
+            emit('close');
+        },
+        onError: (errors) => {
+            console.error('Form submission error. ', errors);
+        }
+    })
+};
+
+const changeImage = () => {
+    console.log('change image');
+}
+
+onMounted(async()=> {
+    flashMessage();
+})
 </script>
 
 <template>
-    <div class="flex items-center justify-between flex-shrink-0 p-4" v-show="sidebarState.isOpen">
+    <div class="flex items-center justify-between flex-shrink-0 p-4 hover:bg-[#ffe1e261] hover:shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] group cursor-pointer" v-show="sidebarState.isOpen" @click="showAccountDetail()">
         <div class="flex gap-[16px]">
             <div 
                 class="rounded-[100px] bg-primary-900 shadow-[0px_0px_24.2px_0px_rgba(203,60,60,0.30)] 
                         flex w-[46px] pt-[7px] pr-[1.38px] pl-[2px] justify-center items-center"
             >
-            <!-- hover:cursor-pointer @click="rightSidebarState.isOpen = !rightSidebarState.isOpen" -->
             </div>
-            <div class="flex flex-col">
-                <p class="self-stretch text-primary-900 text-md font-medium">Bar Admin 1</p>
-                <p class="self-stretch text-primary-950 text-xs">Bar Admin 1</p>
+            <div class="flex flex-col" v-if="props.user">
+                <p class="self-stretch text-primary-900 text-md font-medium  group-hover:text-primary-700">{{ props.user.full_name }}</p>
+                <p class="self-stretch text-primary-950 text-xs font-normal  group-hover:text-primary-800">ID: {{ props.user.role_id }}</p>
             </div>
         </div>
     </div>
+
+    <!-- <Toast /> -->
+
+    <Modal
+        :maxWidth="'md'"
+        :closeable="true"
+        :show="isAccountDetailOpen"
+        :title="'Account Detail'"
+        @close="closeModal"
+    >
+        <div class="flex items-start gap-6 self-stretch">
+            <DragDropImage
+                :inputName="'image'"
+                :errorMessage="form.errors.image"
+                v-model="form.image"
+                class="!size-[373px]"
+            />
+            <div class="flex flex-col items-start flex-[1_0_0] divide-y divide-grey-100">
+                <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
+                    <span class="text-grey-600 items-center text-sm font-medium">ID</span>
+                    <span class="text-grey-900 items-center text-md font-medium">{{ props.user.role_id }}</span>
+                </div>
+                <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
+                    <span class="text-grey-600 items-center text-sm font-medium">Password</span>
+                    <div class="flex items-center gap-[5px]">
+                        <template v-for="n in 8" :key="n">
+                            <div class="size-2 bg-grey-900 rounded-full"></div>
+                        </template> 
+                    </div>
+                </div>
+                <div class="flex items-center gap-6 self-stretch">
+                    <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
+                        <span class="text-grey-600 items-center text-sm font-medium">Display name</span>
+                        <span class="text-grey-900 items-center text-md font-medium">{{ props.user.name }}</span>
+                    </div>
+                    <EditIcon 
+                        class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
+                        @click="showEditModal(props.user.name, props.user.id)"
+                    />
+                </div>
+            </div>
+        </div>
+    </Modal>
+
+    <Modal
+        :title="'Edit display name'"
+        :show="isEditModalOpen"
+        :maxWidth="'xs'"
+        @close="closeEditModal"
+    >
+    <form class="flex flex-col gap-6" @submit.prevent="submit">
+        <TextInput
+            :inputName="'name'"
+            :labelText="'Display name'"
+            :errorMessage="form.errors?.name || ''"
+            v-model="form.name"
+        />
+        <div class="flex pt-4 justify-center items-end gap-4 self-stretch">
+            <Button
+                :type="'button'"
+                :variant="'tertiary'"
+                :size="'lg'"
+                @click="closeEditModal"
+            >
+                Cancel
+            </Button>
+            <Button
+                :size="'lg'"
+                :type="'submit'"
+            >
+                Save
+            </Button>
+        </div>
+    </form>
+    </Modal>
 </template>

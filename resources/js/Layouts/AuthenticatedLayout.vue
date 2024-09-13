@@ -3,10 +3,11 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
 import { sidebarState, rightSidebarState } from '@/Composables'
-import { NumberedNotificationIcon, LanguageIcon, LogOutIcon } from '@/Components/Icons/solid';
+import { NumberedNotificationIcon, LanguageIcon, LogOutIcon, CheckIcon } from '@/Components/Icons/solid';
 import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
 import { LogoutIllust } from '@/Components/Icons/illus';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 
 defineProps({
     title: String
@@ -15,6 +16,22 @@ defineProps({
 const form = useForm({
 
 });
+
+const languages = [ 
+    { name: 'Bahasa Melayu', language: 'ms' },
+    { name: 'English', language: 'en' },
+    { name: '中文', language: 'zh' },
+];
+
+const selected = ref(languages[1]);
+
+const changeLanguage = (lang) => {
+    selected.value = languages.find(language => language.language === lang);
+    console.log(lang)
+};
+const isSelected = (language) => {
+    return selected.value && language.language === selected.value.language;
+};
 
 const submit = () => {
     form.post(route('logout'), {
@@ -109,10 +126,55 @@ onMounted(() => {
                                     :notificationValue="10"
                                     aria-hidden="true" 
                                 />
-                                <LanguageIcon 
-                                    class="text-primary-900 hover:text-primary-800"
-                                    aria-hidden="true" 
-                                />
+                                <Menu as="div" class="relative inline-block text-left">
+                                    <div>
+                                        <MenuButton>
+                                            <LanguageIcon class="text-primary-900 hover:text-primary-800"/>
+                                        </MenuButton>
+                                    </div>
+
+                                    <transition 
+                                        enter-active-class="transition duration-100 ease-out"
+                                        enter-from-class="transform scale-95 opacity-0" 
+                                        enter-to-class="transform scale-100 opacity-100"
+                                        leave-active-class="transition duration-75 ease-in"
+                                        leave-from-class="transform scale-100 opacity-100" 
+                                        leave-to-class="transform scale-95 opacity-0"
+                                    >
+                                        <MenuItems
+                                            class="absolute z-20 right-0 min-w-[370px] p-6 flex flex-col origin-top-right whitespace-nowrap rounded-md bg-white shadow-lg"
+                                        >
+                                            <span class="text-primary-950 text-start text-md font-medium pb-6">Change Language</span>
+                                            <MenuItem
+                                                v-slot="{ active }"
+                                                v-for="language in languages"
+                                                :key="language.language"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    :class="[
+                                                        { 'bg-primary-25 flex justify-between': isSelected(language) },
+                                                        { 'bg-white hover:bg-[#fff9f980]': !isSelected(language) },
+                                                        'group flex w-full items-center rounded-md px-6 py-3 text-base text-gray-900',
+                                                    ]"
+                                                    @click="changeLanguage(language.language)"
+                                                >
+                                                    <span
+                                                        :class="[
+                                                            { 'text-primary-900 text-center text-base font-medium': isSelected(language) },
+                                                            { 'text-grey-900 text-center text-base font-medium group-hover:text-primary-800': !isSelected(language) },
+                                                        ]"
+                                                    >
+                                                        {{ language.name }}
+                                                    </span>
+                                                    <div v-show="isSelected(language)" class="shrink-0 text-white">
+                                                        <CheckIcon />
+                                                    </div>
+                                                </button>
+                                            </MenuItem>
+                                        </MenuItems>
+                                    </transition>
+                                </Menu>
                                 <LogOutIcon 
                                     class="text-primary-900 cursor-pointer hover:text-primary-800"
                                     aria-hidden="true" 

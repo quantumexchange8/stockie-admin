@@ -84,7 +84,7 @@ const formatPoints = (points) => {
 </script>
 
 <template>
-    <div class="flex flex-col items-center gap-3 self-stretch max-h-[750px] p-6 overflow-y-scroll scrollbar-thin scrollbar-webkit">
+    <div class="flex flex-col items-center gap-3 self-stretch max-h-[800px] p-6 overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col py-6 gap-6 self-stretch rounded-[5px]">
             <!-- avatar -->
             <div class="w-full flex flex-col items-center gap-3">

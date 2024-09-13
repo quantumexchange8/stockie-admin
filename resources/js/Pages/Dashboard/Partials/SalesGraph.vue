@@ -14,11 +14,8 @@ const props = defineProps ({
     }
 })
 
-
 const chartData = ref();
 const chartOptions = ref();
-const salesGraph = ref(props.salesGraph);
-const monthly = ref(props.monthly);
 const emit = defineEmits(["applyTimeFilter"]);
         
 const setChartData = () => {
@@ -28,39 +25,40 @@ const setChartData = () => {
     return {
         labels: monthLabels,
         datasets: [
-  {
-    label: '',
-    data: salesData,
-    fill: true,
-    borderColor: '#7E171B',
-    tension: 0.4,
-    borderWidth: 2.5,
-    pointStyle: 'circle',
-    pointRadius: 0,
-    pointHoverRadius: 10,
-    pointHitRadius: 10,
-    pointBorderWidth: 6,
-    pointHoverBackgroundColor: '#FFF9F9',
-    pointHoverBorderWidth: 5,
-    backgroundColor: (context) => {
-      if (!context.chart.chartArea) {
-        return;
-      }
+            {
+                label: '',
+                data: salesData,
+                fill: true,
+                borderColor: '#7E171B',
+                tension: 0.4,
+                borderWidth: 2.5,
+                pointStyle: 'circle',
+                pointRadius: 0,
+                pointHoverRadius: 10,
+                pointHitRadius: 10,
+                pointBorderWidth: 3,
+                pointHoverBackgroundColor: '#FFF9F9',
+                pointHoverBorderWidth: 5,
+                backgroundColor: (context) => {
+                if (!context.chart.chartArea) {
+                    return;
+                }
 
-      const { ctx, chartArea: { top, bottom } } = context.chart;
+                const { ctx, chartArea: { top, bottom } } = context.chart;
 
-      const gradientBg = ctx.createLinearGradient(0, top, 0, bottom);
+                const gradientBg = ctx.createLinearGradient(0, top, 0, bottom);
 
-      gradientBg.addColorStop(0, '#FFA1A5'); 
-      gradientBg.addColorStop(0.525, 'rgba(234, 193, 194, 0.436872)');
-      gradientBg.addColorStop(0.932292, 'rgba(217, 217, 217, 0)'); 
+                gradientBg.addColorStop(0, '#FFA1A5'); 
+                gradientBg.addColorStop(0.525, 'rgba(234, 193, 194, 0.436872)');
+                gradientBg.addColorStop(0.932292, 'rgba(217, 217, 217, 0)'); 
 
-      return gradientBg;
-    },
-  }
-]
+                return gradientBg;
+                },
+            }
+        ]
     };
 };
+
 const setChartOptions = () => {
 
     return {
@@ -68,7 +66,7 @@ const setChartOptions = () => {
         aspectRatio: 0.6,
         responsive: true,
         plugins: {
-            hoverLabelColorChange: customPlugin, 
+            hoverLabelColorChange: [customPlugin], 
             point: {
                 display: false
             },
@@ -78,20 +76,6 @@ const setChartOptions = () => {
             tooltip: {
                 enabled: false,
                 external: customTooltipHandler,
-                titleColor: '#FFF9F9',
-                titleFont: {
-                    family: 'Lexend',
-                    size: 16,
-                    style: 'normal',
-                    weight: 600,
-                    lineHeight: 'normal',
-                },
-                backgroundColor: '#7E171B',
-                titleAlign: 'center',
-                bodyColor: '#FFF9F9',
-                position: 'average',
-                displayColors: false,
-                textDirection: 'ltr'
             },
             hover: {
                 mode: 'nearest',
@@ -102,8 +86,13 @@ const setChartOptions = () => {
             x: {
                 ticks: {
                     color: (context) => {
+                        const hoveredIndex = context.chart.hoveredIndex;
                         const index = context.index;
-                        return context.chart.hoveredIndex === index ? '#D6DCE1' : '#7E171B'; 
+
+                        if (hoveredIndex === null) {
+                            return '#7E171B';
+                        }
+                        return hoveredIndex === index ? '#7E171B' : '#D6DCE1';
                     },
                     font: {
                         family: 'Lexend',
@@ -141,6 +130,7 @@ const setChartOptions = () => {
         }
     };
 };
+
 function customTooltipHandler(context) {
     // Tooltip element creation or selection
     let tooltipEl = document.getElementById('chartjs-tooltip');
@@ -159,9 +149,7 @@ function customTooltipHandler(context) {
         return;
     }
 
-    // Set custom content
     if (tooltipModel.body) {
-        const title = tooltipModel.title || [];
         const body = tooltipModel.body.map(item => item.lines);
 
         let innerHtml = `<div style="
@@ -195,7 +183,6 @@ function customTooltipHandler(context) {
         tooltipEl.querySelector('div').innerHTML = innerHtml;
     }
 
-    // Positioning the tooltip
     const position = context.chart.canvas.getBoundingClientRect();
     tooltipEl.style.opacity = 1;
     tooltipEl.style.position = 'absolute';
@@ -203,6 +190,7 @@ function customTooltipHandler(context) {
     tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
     tooltipEl.style.padding = tooltipModel.padding + 'px ' + tooltipModel.padding + 'px';
 };
+
 const customPlugin = {
   id: 'hoverLabelColorChange',
   beforeEvent(chart, args) {
@@ -263,7 +251,10 @@ onMounted(() => {
                     :type="'button'"
                     :variant="'secondary'"
                     :size="'md'"
-                    :class="{'bg-primary-50 hover:bg-primary-100': activeFilter === 'month', 'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'month'}"
+                    :class="
+                        {'bg-primary-50 hover:bg-primary-100': activeFilter === 'month', 
+                        'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'month'}
+                        "
                     @click="setActive('month')"
                 >
                 Month
@@ -272,7 +263,10 @@ onMounted(() => {
                     :type="'button'"
                     :variant="'secondary'"
                     :size="'md'"
-                    :class="{'bg-primary-50 hover:bg-primary-100': activeFilter === 'year', 'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'year'}"
+                    :class="
+                        {'bg-primary-50 hover:bg-primary-100': activeFilter === 'year', 
+                        'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'year'}
+                        "
                     @click="setActive('year')"
                 >
                 Year

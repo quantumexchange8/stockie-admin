@@ -48,4 +48,9 @@ class RegisteredUserController extends Controller
 
         return redirect(route('dashboard', absolute: false));
     }
+
+    public function getUser()
+    {
+        return response()->json(Auth::user());
+    }
 }
