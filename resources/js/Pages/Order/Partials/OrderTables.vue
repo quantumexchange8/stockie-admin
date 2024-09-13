@@ -211,7 +211,7 @@ const hideReservationList = () => {
                     <span class="text-sm text-grey-900 font-medium">{{ zone.text }}</span>
                 </template>
                 <template #body>
-                    <div class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-6">
+                    <div class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-x-6">
                         <div class="relative" v-for="table in zone.tables" :key="table.id">
                             <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
                                 <template #title>
@@ -245,7 +245,7 @@ const hideReservationList = () => {
         
         <!-- Display specified zone along with its table(s) -->
         <template v-else>
-            <div v-if="filteredZones.tables.length > 0" class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-6">
+            <div v-if="filteredZones.tables.length > 0" class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-x-6">
                 <div v-for="table in filteredZones.tables" :key="table.id">
                     <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
                         <template #title>

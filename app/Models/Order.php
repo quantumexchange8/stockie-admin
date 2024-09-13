@@ -57,4 +57,12 @@ class Order extends Model
     {
         return $this->hasMany(PointHistory::class, 'redeem_by', 'customer_id');
     }
+
+    /**
+     * Get the customer of the order.
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
 }

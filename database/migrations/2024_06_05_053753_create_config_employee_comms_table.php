@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('config_employee_comms', function (Blueprint $table) {
             $table->id();
-            $table->string('comm_rate');
+            $table->string('comm_type');
             $table->string('rate');
             $table->softDeletes();
             $table->timestamps();

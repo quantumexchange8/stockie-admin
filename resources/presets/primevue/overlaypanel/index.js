@@ -3,9 +3,11 @@ export default {
         class: 'p-6'
     },
     transition: {
-        enterFromClass: 'opacity-0 scale-y-[0.8]',
-        enterActiveClass: 'transition-[transform,opacity] duration-[120ms] ease-[cubic-bezier(0,0,0.2,1)]',
-        leaveActiveClass: 'transition-opacity duration-100 ease-linear',
-        leaveToClass: 'opacity-0'
+        enterActiveClass: "transition duration-200 ease-in-out",
+        enterFromClass: "translate-y-1 opacity-0",
+        enterToClass: "translate-y-0 opacity-100",
+        leaveActiveClass: "transition duration-150 ease-in-out",
+        leaveFromClass: "translate-y-0 opacity-100",
+        leaveToClass: "translate-y-1 opacity-0"
     }
 };

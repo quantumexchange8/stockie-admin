@@ -33,7 +33,7 @@ const orderHistoriesRowsPerPage = ref(10);
 
 const orderHistoryColumns = ref([
     {field: 'created_at', header: 'Date & Time', width: '15', sortable: false},
-    {field: 'order_table.table.table_no', header: 'Table / Room', width: '14', sortable: false},
+    {field: 'table_no', header: 'Table / Room', width: '14', sortable: false},
     {field: 'order_no', header: 'Order No.', width: '11', sortable: false},
     {field: 'total_amount', header: 'Total', width: '14', sortable: false},
     {field: 'waiter', header: 'Order Completed By', width: '21', sortable: false},

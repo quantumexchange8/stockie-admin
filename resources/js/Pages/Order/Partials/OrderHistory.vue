@@ -9,6 +9,10 @@ import Table from '@/Components/Table.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import Tag from '@/Components/Tag.vue';
 import Dropdown from '@/Components/Dropdown.vue';
+import Button from '@/Components/Button.vue';
+import Modal from '@/Components/Modal.vue';
+import OrderInvoice from './OrderInvoice.vue';
+import OverlayPanel from '@/Components/OverlayPanel.vue';
 
 const props = defineProps({
     errors: Object,
@@ -38,6 +42,9 @@ const props = defineProps({
 const rows = ref(props.rows);  
 const date_filter = ref('');  
 const status = ref('');
+const selectedOrder = ref(null);
+const orderInvoiceModalIsOpen = ref(false);
+const op = ref(null);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -73,6 +80,33 @@ watch(() => date_filter.value, () => {
     getOrderHistories(date_filter.value);
 })
 
+const openOverlay = (event, item) => {
+    selectedOrder.value = item;
+    
+    if (selectedOrder.value) {
+        op.value.show(event);
+    }
+};
+
+const closeOverlay = () => {
+    selectedOrder.value = null;
+    if (op.value) {
+        op.value.hide();  // Ensure op.value is not null before calling hide
+    }
+};
+
+const showOrderInvoiceModal = () => {
+    setTimeout(() => {
+        orderInvoiceModalIsOpen.value = true;
+    }, 100);
+};
+
+const hideOrderInvoiceModal = () => {
+    setTimeout(() => {
+        selectedOrder.value = null;
+    }, 200);
+    orderInvoiceModalIsOpen.value = false;
+};
 </script>
 
 <template>
@@ -105,7 +139,8 @@ watch(() => date_filter.value, () => {
             :variant="'list'"
             :rows="rows"
             :columns="columns"
-            :rowType="rowType"
+            :rowsPerPage="rowsPerPage"
+            :totalPages="totalPages"
             :searchFilter="true"
             :filters="filters"
             minWidth="min-w-[965px]"
@@ -116,6 +151,9 @@ watch(() => date_filter.value, () => {
             </template>
             <template #created_at="row">
                 <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.created_at).format('DD/MM/YYYY, HH:mm') }}</span>
+            </template>
+            <template #table_no="row">
+                <span class="text-grey-900 text-sm font-medium">{{ row.order_table.table.table_no }}</span>
             </template>
             <template #order_no="row">
                 <span class="text-grey-900 text-sm font-medium">#{{ row.order_no }}</span>
@@ -135,9 +173,53 @@ watch(() => date_filter.value, () => {
                     :value="row.status"
                 />
             </template>
-            <!-- <template #action="row">
-                <span class="text-grey-900 text-sm font-medium">{{ row.action }}</span>
-            </template> -->
+            <template #action="row">
+                <Button
+                    type="button"
+                    variant="tertiary"
+                    class="!w-fit col-span-3 hover:bg-primary-50"
+                    @click="openOverlay($event, row)"
+                >
+                    Serve Now
+                </Button>
+            </template>
         </Table>
     </div>
+
+    <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">
+        <template v-if="selectedOrder">
+            <div class="flex flex-col items-center border-2 border-primary-50 rounded-md">
+                <Button
+                    type="button"
+                    variant="tertiary"
+                    class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                    @click="showOrderInvoiceModal"
+                >
+                    <span class="text-grey-700 font-normal">View</span>
+                </Button>
+                <Button
+                    type="button"
+                    variant="tertiary"
+                    class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                    @click=""
+                >
+                    <span class="text-grey-700 font-normal">Download</span>
+                </Button>
+            </div>
+        </template>
+    </OverlayPanel>
+
+    <Modal
+        maxWidth="sm" 
+        closeable
+        title="Order History"
+        class="[&>div:nth-child(2)>div>div]:p-1 [&>div:nth-child(2)>div>div]:sm:max-w-[420px]"
+        :withHeader="false"
+        :show="orderInvoiceModalIsOpen"
+        @close="hideOrderInvoiceModal"
+    >
+        <template v-if="selectedOrder">
+            <OrderInvoice :order="selectedOrder" />
+        </template>
+    </Modal>
 </template>

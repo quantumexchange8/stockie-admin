@@ -106,7 +106,7 @@ watch(() => date_filter.value, () => {
         <div class="flex flex-col justify-center gap-5">
             <StockHistoryTable
                 :columns="allStockHistoryColumns"
-                :rows="stockHistories"
+                :rows="[]"
                 :rowType="rowType"
                 :filters="filters"
             />

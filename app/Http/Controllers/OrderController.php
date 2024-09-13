@@ -68,14 +68,21 @@ class OrderController extends Controller
 
         $waiters = Waiter::orderBy('id')->get();
 
-        $orders = Order::with(['orderTable:id,table_id', 'orderTable.table:id,table_no', 'waiter:id,name'])
+        $orders = Order::with([
+                            'orderItems:id,order_id,product_id,item_qty,amount,point_earned', 
+                            'orderItems.product:id,product_name', 
+                            'orderTable:id,table_id,order_id', 
+                            'orderTable.table:id,table_no', 
+                            'waiter:id,name',
+                            'customer:id,point'
+                        ])
                         ->orderByDesc('id')
                         ->get()
                         ->filter(function ($order) {
                             return $order->status === 'Order Completed' || $order->status === 'Order Cancelled';
                         })
                         ->values();
-
+        
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
 
@@ -514,7 +521,7 @@ class OrderController extends Controller
                             $zone->tables->map(function ($table) {
                                 // Find the first order table with a status that is not 'Order Completed'
                                 $orderTable = $table->orderTables->first(function ($orderTable) {
-                                    return $orderTable->status !== 'Order Completed' && $orderTable->status !== 'Empty Seat';
+                                    return $orderTable->status !== 'Order Completed' && $orderTable->status !== 'Empty Seat' && $orderTable->status !== 'Order Cancelled';
                                 });
 
                                 // Filter order tables with the 'reserved' status
@@ -590,6 +597,7 @@ class OrderController extends Controller
     public function getOrderHistories(Request $request)
     {
         $dateFilter = $request->input('dateFilter');
+        $query = Order::query();
         
         if ($dateFilter) {
             $dateFilter = array_map(function ($date) {
@@ -597,16 +605,20 @@ class OrderController extends Controller
                             }, $dateFilter);
 
             // Apply the date filter (single date or date range)
-            $query = Order::whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
+            $query->whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
                                     ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
                                         $subQuery->whereDate('created_at', '<=', $dateFilter[1]);
                                     });
-        } else {
-            $query = Order::query();
         }
 
-
-        $data = $query->with(['orderTable:id,table_id', 'orderTable.table:id,table_no', 'waiter:id,name'])
+        $data = $query->with([
+                            'orderItems:id,order_id,product_id,item_qty,amount,point_earned', 
+                            'orderItems.product:id,product_name', 
+                            'orderTable:id,table_id,order_id', 
+                            'orderTable.table:id,table_no', 
+                            'waiter:id,name',
+                            'customer:id,point'
+                        ])
                         ->orderBy('id', 'desc')
                         ->get()
                         ->filter(function ($order) {

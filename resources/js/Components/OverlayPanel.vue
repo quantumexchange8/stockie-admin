@@ -67,7 +67,7 @@ const overlayPanelRootWithArrowClasses = computed(() => [
 ])
 
 const overlayPanelRootClasses = computed(() => [
-    'rounded-[5px] shadow-[0px_24px_40px_0px_rgba(0,0,0,0.25)] border-0 absolute left-0 top-10 mt-4 z-40 transform origin-center opacity-100',
+    'rounded-[5px] shadow-[0px_24px_40px_0px_rgba(0,0,0,0.25)] border-0 absolute left-0 top-10 mt-2 !z-[1105] transform origin-center opacity-100',
     props.bgColor,
     props.withArrow ? overlayPanelRootWithArrowClasses.value : ''
 ])
@@ -78,6 +78,7 @@ const overlayPanelRootClasses = computed(() => [
     <OverlayPanel 
         ref="op" 
         appendTo="body"
+        dismissable
         @hide="$emit('close')"
         :pt="{
             root: {
