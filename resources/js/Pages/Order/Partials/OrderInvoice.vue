@@ -9,10 +9,6 @@ import StockieLogo from "../../../../../public/favicon.ico";
 const props = defineProps({
     errors: Object,
     order: Object,
-    columns: Array,
-    rowType: Object,
-    totalPages: Number,
-    rowsPerPage: Number,
 });
 
 const invoiceOrderItemsColumns = ref([
@@ -28,24 +24,24 @@ const rowType = {
 };
 
 const sstAmount = computed(() => {
-    return (parseFloat(props.order.amount) * (6 / 100));
+    return (parseFloat(props.order.amount ?? 0) * (6 / 100));
 })
 
 const serviceChargeAmount = computed(() => {
-    return (parseFloat(props.order.amount) * (10 / 100));
+    return (parseFloat(props.order.amount ?? 0) * (10 / 100)) ?? 0.00;
 })
 
 const grandTotal = computed(() => {
-    return (parseFloat(props.order.total_amount) + sstAmount.value + serviceChargeAmount.value);
+    return (parseFloat(props.order.total_amount ?? 0) + sstAmount.value + serviceChargeAmount.value) ?? 0.00;
 })
 
 const totalEarnedPoints = computed(() => {
-    return props.order.order_items.reduce((total, item) => total + item.point_earned, 0);
+    return props.order.order_items.reduce((total, item) => total + item.point_earned, 0) ?? 0.00;
 })
 </script>
 
 <template>
-    <div class="w-full relative flex flex-col max-h-[calc(100dvh-6rem)] overflow-auto scrollbar-thin scrollbar-webkit gap-[120px]"> {{ console.log(order.order_items) }}
+    <div class="w-full relative flex flex-col max-h-[calc(100dvh-6rem)] overflow-auto scrollbar-thin scrollbar-webkit gap-[120px]">
         <WineBackgroundIllus1 class="absolute top-0 right-0 w-full z-0"/>
         <div class="relative z-10 flex flex-col pl-5 pr-6 pt-6 gap-y-8">
             <div class="flex flex-col gap-y-10 justify-center">
@@ -84,7 +80,7 @@ const totalEarnedPoints = computed(() => {
 
             <Table 
                 :variant="'list'"
-                :rows="order.order_items"
+                :rows="order.order_items.filter((item) => item.status === 'Served')"
                 :columns="invoiceOrderItemsColumns"
                 :rowType="rowType"
                 :paginator="false"
@@ -103,7 +99,7 @@ const totalEarnedPoints = computed(() => {
             <div class="flex flex-col gap-4 items-center self-stretch">
                 <div class="flex items-start justify-between self-stretch">
                     <p class="text-primary-950 text-md font-light">Subtotal</p>
-                    <p class="text-primary-950 text-md font-normal">{{ parseFloat(order.amount).toFixed(2) }}</p>
+                    <p class="text-primary-950 text-md font-normal">{{ parseFloat(order.amount ?? 0).toFixed(2) }}</p>
                 </div>
                 <div class="flex items-start justify-between self-stretch">
                     <p class="text-primary-950 text-md font-light">Service Charge (10%)</p>

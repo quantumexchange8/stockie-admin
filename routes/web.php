@@ -170,6 +170,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders');
         Route::put('/orders/cancelOrder/{id}', [OrderController::class, 'cancelOrder'])->name('orders.cancel');
         Route::put('/orders/updateOrderStatus/{id}', [OrderController::class, 'updateOrderStatus'])->name('orders.complete');
+        Route::put('/orders/removeOrderItem/{id}', [OrderController::class, 'removeOrderItem'])->name('orders.removeOrderItem');
 
         // Order tables
         Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');

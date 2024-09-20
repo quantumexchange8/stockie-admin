@@ -165,7 +165,6 @@ class InventoryController extends Controller
     public function getInventories(Request $request)
     {
         $filters = $request->input('checkedFilters', []);
-        $itemQuery = IventoryItem::query();
 
         $selectedCategory = (int) $request->input('selectedCategory', 0);
 

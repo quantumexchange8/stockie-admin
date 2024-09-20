@@ -246,13 +246,10 @@ const hideReservationList = () => {
         <!-- Display specified zone along with its table(s) -->
         <template v-else>
             <div v-if="filteredZones.tables.length > 0" class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-x-6">
-                <div v-for="table in filteredZones.tables" :key="table.id">
+                <div class="relative" v-for="table in filteredZones.tables" :key="table.id">
                     <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
                         <template #title>
-                            <div class="relative flex flex-col text-center items-center p-6 gap-2">
-                                <div class="absolute size-6 bg-primary-200 rounded-r-[5px] flex justify-center items-center gap-2.5 py-1 px-2 top-[5px] left-0 w-fit" v-if="table.reservations && table.reservations.length > 0">
-                                    <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
-                                </div>
+                            <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
                                 <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
                                 <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
                                     {{ setupDuration(table.order_table.created_at) }}
@@ -262,10 +259,18 @@ const hideReservationList = () => {
                         </template>
                         <template #footer>
                             <div :class="getTableClasses(table).state.value">
-                                <p :class="getTableClasses(table).text.value">{{ table.order_table ? table.order_table.status : table.status }}</p>
+                                <p :class="getTableClasses(table).text.value">{{ table.status }}</p>
                             </div>
                         </template>
                     </Card>
+                    <div 
+                        v-if="table.reservations && table.reservations.length > 0"
+                        v-tooltip.top="{ value: getTooltipMessage(table) }"
+                        class="absolute top-[5px] left-0 size-6 bg-primary-200 rounded-r-[5px] flex justify-center items-center gap-2.5 py-1 px-2 w-fit cursor-pointer" 
+                        @click="showReservationList($event, table)"
+                    >
+                        <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
+                    </div>
                 </div>
             </div>
             <div class="flex flex-col items-center text-center gap-5" v-else>

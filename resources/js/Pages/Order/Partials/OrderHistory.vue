@@ -180,7 +180,7 @@ const hideOrderInvoiceModal = () => {
                     class="!w-fit col-span-3 hover:bg-primary-50"
                     @click="openOverlay($event, row)"
                 >
-                    Serve Now
+                    Invoice
                 </Button>
             </template>
         </Table>

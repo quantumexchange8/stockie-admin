@@ -11,6 +11,42 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Customer extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $table = "customers";
+
+    protected $fillable = [
+        'name',
+        'full_name',
+        'email',
+        'phone',
+        'password',
+        'ranking',
+        'role',
+        'point',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
     public function rankings(): BelongsTo
     {
         return $this->belongsTo(Ranking::class,'ranking', 'id');

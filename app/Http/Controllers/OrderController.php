@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\OrderTableRequest;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\IventoryItem;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -69,7 +70,7 @@ class OrderController extends Controller
         $waiters = Waiter::orderBy('id')->get();
 
         $orders = Order::with([
-                            'orderItems:id,order_id,product_id,item_qty,amount,point_earned', 
+                            'orderItems:id,order_id,product_id,item_qty,amount,point_earned,status', 
                             'orderItems.product:id,product_name', 
                             'orderTable:id,table_id,order_id', 
                             'orderTable.table:id,table_no', 
@@ -396,13 +397,12 @@ class OrderController extends Controller
     }
 
     /**
-     * Update order item's and its sub items' details.
-     * Update order table's status.
+     * Serve order item.
      */
     public function updateOrderItem(Request $request, string $id)
     {        
         if (isset($id)) {
-            $orderItem = OrderItem::with(['subItems'])->find($id);
+            $orderItem = OrderItem::with(['subItems', 'product'])->find($id);
             $subItems = $orderItem->subItems;
             
             if ($subItems) {
@@ -417,10 +417,12 @@ class OrderController extends Controller
                                 'serve_qty' => $item['serve_qty'] + $updated_item['serving_qty'],
                             ]);
                             $item->save();
+                            $item->refresh();
 
                             $totalItemQty += $item['item_qty'] * $orderItem->item_qty;
                             $totalServedQty += $item['serve_qty'];
-                            $hasServeQty = $updated_item['serving_qty'] > 0 ? true : false;
+                            $hasServeQty = $updated_item['serving_qty'] > 0 || $hasServeQty ? true : false;
+                            // dd($updated_item['serving_qty'], $hasServeQty);
 
                             $product_item = ProductItem::with(['inventoryItem:id,item_name,stock_qty,item_cat_id', 'inventoryItem.itemCategory:id,low_stock_qty'])->find($item['product_item_id']);
 
@@ -459,13 +461,20 @@ class OrderController extends Controller
                     }
                 }
 
+                
                 if ($hasServeQty) {
+                    // dd($totalServedQty, $totalItemQty, $totalServedQty === $totalItemQty);
                     $orderItem->update([
                         'point_earned' => $request->point,
                         'status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve',
                     ]);
 
                     $orderItem->save();
+
+                    if ($totalServedQty === $totalItemQty) {
+                        $customer = Customer::first();
+                        $customer->update(['point' => $customer['point'] + $request->point]);
+                    }
                 }
             }
             
@@ -494,7 +503,12 @@ class OrderController extends Controller
                 }
     
                 if (count($uniqueStatuses) === 1) {
-                    if ($uniqueStatuses[0] === 'Served') {
+                    if ($uniqueStatuses[0] === 'Served' || $uniqueStatuses[0] === 'Cancelled') {
+                        $orderStatus = 'Order Served';
+                        $orderTableStatus = 'All Order Served';
+                    }
+                } else if (count($uniqueStatuses) === 2) {
+                    if (in_array('Served', $uniqueStatuses) && in_array('Cancelled', $uniqueStatuses)) {
                         $orderStatus = 'Order Served';
                         $orderTableStatus = 'All Order Served';
                     }
@@ -612,7 +626,7 @@ class OrderController extends Controller
         }
 
         $data = $query->with([
-                            'orderItems:id,order_id,product_id,item_qty,amount,point_earned', 
+                            'orderItems:id,order_id,product_id,item_qty,amount,point_earned,status', 
                             'orderItems.product:id,product_name', 
                             'orderTable:id,table_id,order_id', 
                             'orderTable.table:id,table_no', 
@@ -645,5 +659,101 @@ class OrderController extends Controller
                         });
 
         return response()->json($data);
+    }
+
+    /**
+     * Update order item's status and/or quantity.
+     */
+    public function removeOrderItem(Request $request, string $id)
+    {        
+        if (isset($id)) {
+            $customer = Customer::first();
+            $order = Order::with(['orderItems', 'orderItems.product', 'orderTable', 'orderTable.table'])->find($id);
+            $orderItems = $order->orderItems;
+            $orderTable = $order->orderTable;
+            $table = $orderTable->table;
+            $altServedItemsArr = [];
+            
+            if ($orderItems) {
+                $cancelledAmount = 0;
+
+                foreach ($orderItems as $key => $item) {
+                    foreach ($request->items as $key => $updated_item) {
+                        if ($item['id'] === $updated_item['order_item_id']) {
+                            $balanceQty = $item['item_qty'] - $updated_item['remove_qty'];
+                            $cancelledPoints = $updated_item['remove_qty'] * $item->product['point'];
+
+                            if ((int)$balanceQty > 0) {
+                                $cancelledAmount += ($item['amount'] / $item['item_qty']) * $updated_item['remove_qty'];
+                                
+                                $item->update([
+                                    'item_qty' => $balanceQty,
+                                    'amount' => ($item['amount'] / $item['item_qty']) * $balanceQty,
+                                    'point_earned' => $item['point_earned'] > 0 ? $item['point_earned'] - $cancelledPoints : 0,
+                                    'status' => $updated_item['has_products_left'] ? 'Pending Serve' : 'Served'
+                                ]);
+                            } else {
+                                $cancelledAmount += $item['amount'];
+                                $item->update(['status' => 'Cancelled']);
+                            }
+                            $item->save();
+                            $item->refresh();
+
+                            if ($item['status'] === 'Served') {
+                                array_push($altServedItemsArr, $item);
+                            }
+                        }
+                    }
+                }
+
+                $order->update([
+                    'amount' => $order['amount'] - $cancelledAmount,
+                    'total_amount' => $order['total_amount'] - $cancelledAmount,
+                ]);
+
+            }
+            
+            $order->refresh();
+
+            $totalPointsEarned = array_reduce($altServedItemsArr, fn($totalPoint, $item) => $totalPoint + $item['point_earned'], 0);
+            // dd($totalPointsEarned);
+
+            $customer->update(['point' => $customer['point'] + $totalPointsEarned]);
+            
+            if ($order) {
+                $statusArr = [];
+                $orderStatus = 'Pending Serve';
+                $orderTableStatus = 'Pending Order';
+    
+                foreach ($orderItems as $key => $item) {
+                    array_push($statusArr, $item['status']);
+                }
+    
+                $uniqueStatuses = array_unique($statusArr);
+    
+                if (in_array("Pending Serve", $uniqueStatuses)) {
+                    $orderStatus = 'Pending Serve';
+                    $orderTableStatus = 'Order Placed';
+                }
+    
+                if (count($uniqueStatuses) === 1) {
+                    if ($uniqueStatuses[0] === 'Served' || $uniqueStatuses[0] === 'Cancelled') {
+                        $orderStatus = 'Order Served';
+                        $orderTableStatus = 'All Order Served';
+                    }
+                } else if (count($uniqueStatuses) === 2) {
+                    if (in_array('Served', $uniqueStatuses) && in_array('Cancelled', $uniqueStatuses)) {
+                        $orderStatus = 'Order Served';
+                        $orderTableStatus = 'All Order Served';
+                    }
+                }
+
+                $order->update(['status' => $orderStatus]);
+                $table->update(['status' => $orderTableStatus]);
+                $orderTable->update(['status' => $orderTableStatus]);
+            }
+        }
+
+        return redirect()->back();
     }
 }

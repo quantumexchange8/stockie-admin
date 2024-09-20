@@ -6,6 +6,7 @@ import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
 import { CancelIllus, OrderCompleteIllus } from '@/Components/Icons/illus';
 import { useForm } from '@inertiajs/vue3';
+import OrderInvoice from './OrderInvoice.vue';
 
 const props = defineProps({
     errors: Object,
@@ -15,12 +16,13 @@ const props = defineProps({
     },
 })
 
-const emit = defineEmits(['close',]);
+const emit = defineEmits(['close']);
 
 const tabs = ref(['Order Detail', 'Customer/Detail']);
 const order = ref({});
 const cancelOrderFormIsOpen = ref(false);
 const orderCompleteModalIsOpen = ref(false);
+const orderInvoiceModalIsOpen = ref(false);
 
 onMounted(async() => {
     try {
@@ -59,6 +61,19 @@ const showCancelOrderForm = () => {
 const hideCancelOrderForm = () => {
     cancelOrderFormIsOpen.value = false;
 }
+
+const showOrderInvoiceModal = () => {
+    hideOrderCompleteModal();
+
+    setTimeout(() => {
+        orderInvoiceModalIsOpen.value = true;
+    }, 100);
+};
+
+const hideOrderInvoiceModal = () => {
+    closeDrawer();
+    orderInvoiceModalIsOpen.value = false;
+};
 
 const submit = (action) => { 
     if (order.value.id) {
@@ -101,9 +116,23 @@ const isOrderCompleted = computed(() => {
                                         };
                                     })
                             : [];
-    
-    return mappedOrder.every((item) => item.total_served_qty === item.total_qty);
+
+    return mappedOrder.every((item) => item.status === 'Served' || item.status === 'Cancelled');
 })
+
+const formattedOrder = computed(() => {
+    order.value['order_table'] = {
+        id: props.selectedTable.order_table.id,
+        order_id: props.selectedTable.order_table.order_id,
+        table: {
+            id: props.selectedTable.id,
+            table_no: props.selectedTable.table_no
+        },
+        table_id: props.selectedTable.order_table.table_id
+    };
+
+    return order.value;
+});
 </script>
 
 <template>
@@ -184,7 +213,7 @@ const isOrderCompleted = computed(() => {
                 <Button
                     size="lg"
                     type="button"
-                    @click="closeDrawer"
+                    @click="showOrderInvoiceModal"
                 >
                     View Invoice
                 </Button>
@@ -231,5 +260,18 @@ const isOrderCompleted = computed(() => {
                 </div>
             </div>
         </form>
+    </Modal>
+    
+    <Modal
+        maxWidth="sm" 
+        closeable
+        class="[&>div:nth-child(2)>div>div]:p-1 [&>div:nth-child(2)>div>div]:sm:max-w-[420px]"
+        :withHeader="false"
+        :show="orderInvoiceModalIsOpen"
+        @close="hideOrderInvoiceModal"
+    >
+        <template v-if="selectedTable">
+            <OrderInvoice :order="formattedOrder" />
+        </template>
     </Modal>
 </template>

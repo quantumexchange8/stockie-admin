@@ -9,6 +9,8 @@ import axios from 'axios';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm } from '@inertiajs/vue3';
+import Modal from '@/Components/Modal.vue';
+import RemoveOrderItem from './RemoveOrderItem.vue';
 
 const props = defineProps({
     errors: Object,
@@ -28,6 +30,7 @@ const drawerIsVisible = ref(false);
 const actionType = ref(null);
 const categoryArr = ref([]);
 const op = ref(null);
+const op2 = ref(null);
 const selectedItem = ref();
 
 const form = useForm({
@@ -60,7 +63,6 @@ const openOverlay = (event, item) => {
         selectedItem.value.sub_items.forEach(sub_item => {
             form.items.push({ 
                 sub_item_id: sub_item.id,
-                product_id: sub_item.product_id, 
                 serving_qty: 0,
             })
         });
@@ -84,6 +86,16 @@ const closeOrderDetails = () => {
     setTimeout(() => {
         emit('close');
     }, 300);
+}
+
+const showDeleteOrderItemOverlay = (event) => {
+    op2.value.show(event);
+}
+
+const hideDeleteOrderItemOverlay = () => {
+    if (op2.value) {
+        op2.value.hide();
+    }
 }
 
 const formSubmit = () => { 
@@ -121,7 +133,7 @@ const pendingServeItems = computed(() => {
                         total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
                         total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
                     };
-                }).filter((item) => item.total_served_qty < item.total_qty) 
+                }).filter((item) => item.status === 'Pending Serve') 
         : [];
 });
 
@@ -138,7 +150,7 @@ const servedItems = computed(() => {
                         total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
                         total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
                     };
-                }).filter((item) => item.total_served_qty === item.total_qty) 
+                }).filter((item) => item.status === 'Served') 
         : [];
 });
 
@@ -172,7 +184,6 @@ const isFormValid = computed(() => {
             />
         </template>
     </RightDrawer>
-
     <div class="w-full flex flex-col gap-6 items-start rounded-[5px] pr-1 max-h-[calc(100dvh-23rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col items-start gap-4 self-stretch">
             <div class="flex gap-3 py-3 items-start justify-between self-stretch">
@@ -194,10 +205,9 @@ const isFormValid = computed(() => {
                 <div class="flex flex-col gap-2 justify-start self-stretch">
                     <div class="flex items-center justify-between">
                         <p class="text-primary-950 text-md font-medium">Pending Serve</p>
-                        <DeleteIcon
-                            class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click=""
-                        />
+                        <button @click="showDeleteOrderItemOverlay" v-if="pendingServeItems.length > 0">
+                            <DeleteIcon class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"/>
+                        </button>
                     </div>
                     <template v-if="pendingServeItems.length > 0">
                         <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in pendingServeItems" :key="index">
@@ -232,10 +242,6 @@ const isFormValid = computed(() => {
                 <div class="flex flex-col gap-2 justify-start self-stretch">
                     <div class="flex items-center justify-between">
                         <p class="text-primary-950 text-md font-medium">Served</p>
-                        <DeleteIcon
-                            class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click=""
-                        />
                     </div>
                     <template v-if="servedItems.length > 0">
                         <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in servedItems" :key="index">
@@ -267,7 +273,7 @@ const isFormValid = computed(() => {
                     </template>
                 </div>
 
-                <div class="flex gap-2.5 items-center self-stretch">
+                <div class="flex gap-2.5 items-center self-stretch" v-if="selectedTable.status !== 'Pending Clearance'">
                     <Button
                         type="button"
                         variant="tertiary"
@@ -292,6 +298,18 @@ const isFormValid = computed(() => {
             </div>
         </div>
     </div>
+
+    <!-- Remove order item -->
+    <OverlayPanel ref="op2" @close="hideDeleteOrderItemOverlay">
+        <template v-if="pendingServeItems">
+            <RemoveOrderItem 
+                :order="order" 
+                :orderItems="pendingServeItems" 
+                @close="hideDeleteOrderItemOverlay" 
+                @closeDrawer="closeOrderDetails"
+            />
+        </template>
+    </OverlayPanel>
     
     <!-- Serve order item -->
     <OverlayPanel ref="op" @close="closeOverlay">
