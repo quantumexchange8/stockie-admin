@@ -36,10 +36,10 @@ class ProductController extends Controller
                             ->map(function ($product) {
                                 $product_items = $product->productItems;
                                 $minStockCount = 0;
+                                $lowInStockArr = [];
 
                                 if (count($product_items) > 0) {
                                     $stockCountArr = [];
-                                    $lowInStockArr = [];
 
                                     foreach ($product_items as $key => $value) {
                                         $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])
@@ -298,10 +298,10 @@ class ProductController extends Controller
                         ->map(function ($product) {
                             $product_items = $product->productItems;
                             $minStockCount = 0;
+                            $lowInStockArr = [];
 
                             if (count($product_items) > 0) {
                                 $stockCountArr = [];
-                                $lowInStockArr = [];
 
                                 foreach ($product_items as $key => $value) {
                                     $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])

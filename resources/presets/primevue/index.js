@@ -10,6 +10,7 @@ import dropdown from './dropdown';
 import toast from './toast';
 import sidebar from './sidebar';
 import tooltip from './tooltip';
+// import multiselect from './multiselect';
 
 export default {
     global,
@@ -23,6 +24,7 @@ export default {
     dropdown,
     toast,
     sidebar,
+    // multiselect,
     directives: {
         tooltip
     }

@@ -20,8 +20,10 @@ class ConfigPromotionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $message = $request->session()->get('message');
+
         $nowDate = Carbon::now();
         $ActivePromotions = ConfigPromotion::where('status', 'Active')->get();
         $InactivePromotions = ConfigPromotion::where('status', 'Inactive')->get();
@@ -40,6 +42,7 @@ class ConfigPromotionController extends Controller
             'ActivePromotions' => $ActivePromotions,
             'InactivePromotions' => $InactivePromotions,
             'merchant' => $merchant,
+            'message' => $message ?? [],
         ]);
     }
 
@@ -132,9 +135,16 @@ class ConfigPromotionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request)
     {
-        //
+        $updateStock = ItemCategory::where('id', $request->id);
+        if($updateStock){
+            $updateStock->update([
+                'low_stock_qty' => $request->low_stock_qty,
+            ]);
+        }
+
+
     }
 
     /**

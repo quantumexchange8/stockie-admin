@@ -133,6 +133,7 @@ import {
                 <SidebarLink
                     title="Configuration"
                     :href="route('configurations')"
+                    :active="route().current('configurations')"
                 >
                     <template #icon>
                         <ConfigurationIcon aria-hidden="true" />

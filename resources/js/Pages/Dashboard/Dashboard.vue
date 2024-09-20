@@ -137,8 +137,9 @@ onMounted(async()=> {
                     />
                 </div>
                 <div class="flex col-span-4">
-                <!-- table / room activity -->
-                <TableRoomActivity /></div>
+                    <!-- table / room activity -->
+                    <TableRoomActivity />
+                </div>
             </div>
             <div class="grid grid-cols-12 gap-[20px]">
                 <!-- product low at stock -->

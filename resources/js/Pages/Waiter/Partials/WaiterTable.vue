@@ -106,7 +106,7 @@ const handleDefaultClick = (event) => {
                 class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                 @click="showEditWaiterForm($event, rows)"
             />
-            </template>
+        </template>
         <template #deleteAction="rows">
             <DeleteIcon
                 class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"

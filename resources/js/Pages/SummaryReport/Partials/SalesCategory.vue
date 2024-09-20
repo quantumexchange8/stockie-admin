@@ -1,5 +1,6 @@
 <script setup>
 import Button from '@/Components/Button.vue';
+import { UndetectableIllus } from '@/Components/Icons/illus';
 import { DropdownIcon, UploadIcon } from '@/Components/Icons/solid';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import Chart from 'primevue/chart';
@@ -480,50 +481,59 @@ onMounted(() => {
         </div>
 
         <!-- chart, category filters and label here -->
-        <div class="flex flex-col items-center gap-4 self-stretch">
-            <!-- category filters + label -->
-            <div class="w-full flex px-6 justify-between items-center self-stretch">
-                <div class="flex justify-between items-center">
-                    <template v-for="category in categories" :key="category">
-                        <div class="card flex flex-row flex-start gap-3">
-                            <Button
-                                :type="'button'"
-                                :variant="'secondary'"
-                                :size="'md'"
-                                :class="
-                                    {'bg-primary-50 hover:bg-primary-100 !px-6': selectedCategory === category, 
-                                    'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800 !px-6': selectedCategory !== category}
-                                    "
-                                @click="setActive(category, selectedYear)"
-                            >
-                            <span class="text-base font-medium">{{ category }}</span>
-                            </Button>
+        <template v-if="props.salesCategory.value !== 0 || props.lastPeriodSales.value !== 0">
+            <div class="flex flex-col items-center gap-4 self-stretch">
+                <!-- category filters + label -->
+                <div class="w-full flex px-6 justify-between items-center self-stretch">
+                    <div class="flex justify-between items-center">
+                        <template v-for="category in categories" :key="category">
+                            <div class="card flex flex-row flex-start gap-3">
+                                <Button
+                                    :type="'button'"
+                                    :variant="'secondary'"
+                                    :size="'md'"
+                                    :class="
+                                        {'bg-primary-50 hover:bg-primary-100 !px-6': selectedCategory === category, 
+                                        'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800 !px-6': selectedCategory !== category}
+                                        "
+                                    @click="setActive(category, selectedYear)"
+                                >
+                                <span class="text-base font-medium">{{ category }}</span>
+                                </Button>
+                            </div>
+                        </template>
+                    </div>
+                    <!-- labels -->
+                    <div class="flex justify-center items-start gap-4">
+                        <div class="flex items-center gap-2">
+                            <div class="size-4 bg-primary-900 rounded-full"></div>
+                            <span class="text-grey-700 text-sm font-medium">Current Period</span>
                         </div>
-                    </template>
-                </div>
-                <!-- labels -->
-                <div class="flex justify-center items-start gap-4">
-                    <div class="flex items-center gap-2">
-                        <div class="size-4 bg-primary-900 rounded-full"></div>
-                        <span class="text-grey-700 text-sm font-medium">Current Period</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="size-4 bg-primary-200 rounded-full"></div>
-                        <span class="text-grey-700 text-sm font-medium">Last Period</span>
+                        <div class="flex items-center gap-2">
+                            <div class="size-4 bg-primary-200 rounded-full"></div>
+                            <span class="text-grey-700 text-sm font-medium">Last Period</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- chart -->
-            <div class="flex flex-col items-center gap-4 self-stretch w-full h-full">
-                <Chart 
-                    type="line"
-                    :data="chartData"
-                    :options="chartOptions"
-                    :plugins="[customPlugin]"
-                    class="w-full h-full min-h-[430px] px-6"
-                />
+                <!-- chart -->
+                <div class="flex flex-col items-center gap-4 self-stretch w-full h-full">
+                    <Chart 
+                        type="line"
+                        :data="chartData"
+                        :options="chartOptions"
+                        :plugins="[customPlugin]"
+                        class="w-full h-full min-h-[430px] px-6"
+                    />
+                </div>
             </div>
-        </div>
+        </template>
+        
+        <template v-else>
+            <div class="flex w-full flex-col items-center justify-center gap-5">
+                <UndetectableIllus />
+                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            </div>
+        </template>
     </div>
 </template>

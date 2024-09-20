@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\ConfigCommissionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
@@ -97,7 +98,19 @@ Route::middleware('auth')->group(function () {
     Route::prefix('configurations')->group(function () {
         Route::get('/configurations', [ConfigPromotionController::class, 'index'])->name('configurations');
 
+        /******* Stock ********/
         Route::get('/getStock', [ConfigPromotionController::class, 'getStock'])->name('configurations.getStock');
+        Route::post('/updateStock', [ConfigPromotionController::class, 'update'])->name('configurations.updateStock');
+
+        /******* Employee Commission ********/
+        Route::get('/configurations', [ConfigCommissionController::class, 'index'])->name('configurations');
+        Route::post('/addCommission', [ConfigCommissionController::class, 'addCommission'])->name('configurations.addCommission');
+        Route::delete('/deleteCommission/{id}', [ConfigCommissionController::class, 'deleteCommission'])->name('configurations.deleteCommission');
+        Route::post('/editCommission', [ConfigCommissionController::class, 'editCommission'])->name('configurations.editCommission');
+        Route::get('/productDetails/{id}', [ConfigCommissionController::class, 'productDetails'])->name('configurations.productDetails');
+        Route::delete('/deleteProduct', [ConfigCommissionController::class, 'deleteProduct'])->name('configurations.deleteProduct');
+        Route::post('/addProducts', [ConfigCommissionController::class, 'addProducts'])->name('configurations.addProducts');
+        Route::post('/updateCommission', [ConfigCommissionController::class, 'updateCommission'])->name('configurations.updateCommission');
 
         /******* Promotion ********/
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');
