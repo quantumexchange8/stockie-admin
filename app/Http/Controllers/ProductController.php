@@ -27,7 +27,7 @@ class ProductController extends Controller
         $products = Product::with([
                                 'productItems:id,product_id,inventory_item_id,qty', 
                                 'category:id,name', 
-                                'productItems.inventoryItem:id,stock_qty,item_cat_id',
+                                'productItems.inventoryItem:id,stock_qty,item_cat_id,status',
                                 'productItems.inventoryItem.itemCategory:id,low_stock_qty',
                                 'saleHistories'
                             ])
@@ -36,7 +36,6 @@ class ProductController extends Controller
                             ->map(function ($product) {
                                 $product_items = $product->productItems;
                                 $minStockCount = 0;
-                                $lowInStockArr = [];
 
                                 if (count($product_items) > 0) {
                                     $stockCountArr = [];
@@ -47,34 +46,13 @@ class ProductController extends Controller
                                                                             ->find($value['inventory_item_id']);
 
                                         $stockQty = $inventory_item->stock_qty;
-                                        
                                         $stockCount = (int)round($stockQty / (int)$value['qty']);
-                                        array_push($stockCountArr, $stockCount);
 
-                                        $lowStockQtyLimit = $inventory_item->itemCategory->low_stock_qty;
-                                        if ((int)$stockQty <= $lowStockQtyLimit && (int)$stockQty > 1) {
-                                            array_push($lowInStockArr, 'Limited');
-                                        }
-                                        
-                                        if ((int)$stockQty > $lowStockQtyLimit) {
-                                            array_push($lowInStockArr, 'Available');
-                                        } 
-                                        
-                                        if ((int)$stockQty === 0) {
-                                            array_push($lowInStockArr, 'Unavailable');
-                                        }
+                                        array_push($stockCountArr, $stockCount);
                                     }
                                     $minStockCount = min($stockCountArr);
                                 }
-                                $product['stock_left'] = $minStockCount; 
-
-                                if (in_array('Unavailable', $lowInStockArr)) {
-                                    $product['stock_status'] = 'Out of stock';
-                                } elseif (in_array('Limited', $lowInStockArr)) {
-                                    $product['stock_status'] = 'Low in stock';
-                                } else {
-                                    $product['stock_status'] = 'In stock';
-                                }
+                                $product['stock_left'] = $minStockCount;
 
                                 return $product;
                             });
@@ -144,6 +122,8 @@ class ProductController extends Controller
         if (!empty($allItemErrors)) {
             return redirect()->back()->withErrors($allItemErrors)->withInput();
         }
+
+
         
         $newProduct = Product::create([
             'product_name' => $validatedData['product_name'],
@@ -152,6 +132,7 @@ class ProductController extends Controller
             'point' => $validatedData['point'],
             'category_id' => $validatedData['category_id'],
             'keep' => $validatedData['keep'],
+            'status' => $this->getProductStatus($validatedProductItems),
         ]);
 
         if (count($validatedProductItems) > 0) {
@@ -170,6 +151,41 @@ class ProductController extends Controller
         ];
 
         return redirect()->back()->with(['message' => $message]);
+    }
+
+    private function getProductStatus(array $product_items)
+    {
+        // Get inventory items with required stock quantities
+        $inventoryItems = IventoryItem::whereIn('id', array_column($product_items, 'inventory_item_id'))
+            ->get(['id', 'stock_qty'])
+            ->keyBy('id');
+    
+        // Calculate stock status for each item
+        $stockStatuses = collect($product_items)->map(function ($item) use ($inventoryItems) {
+            $inventoryItem = $inventoryItems->get($item['inventory_item_id']);
+    
+            if ($inventoryItem) {
+                // Determine stock status
+                if ($inventoryItem->stock_qty == 0) {
+                    return 'Out of Stock';
+                } elseif ($inventoryItem->stock_qty < $item['qty']) {
+                    return 'Low Stock';
+                } else {
+                    return 'In Stock';
+                }
+            }
+    
+            return null; // Handle case where inventory item is not found (optional)
+        });
+    
+        // Determine overall product status
+        if ($stockStatuses->contains('Out of Stock')) {
+            return 'Out of Stock';
+        } elseif ($stockStatuses->contains('Low Stock')) {
+            return 'Low Stock';
+        }
+    
+        return 'In Stock';
     }
 
     /**
@@ -233,9 +249,7 @@ class ProductController extends Controller
     {
         $queries = Product::query();
 
-        $allCategories = Category::select(['id'])
-                                ->orderBy('id')
-                                ->get();
+        $allCategories = Category::select(['id'])->orderBy('id')->get();
 
         $selectedCategory = (int) $request['selectedCategory'];
 
@@ -246,30 +260,16 @@ class ProductController extends Controller
                 if (isset($request['checkedFilters']['keepStatus']) && count($request['checkedFilters']['keepStatus']) > 0) {
                     $query->whereIn('keep', $request['checkedFilters']['keepStatus']);
                 }
-    
+                
                 // Check if there are any stock level filter option selected
                 if (isset($request['checkedFilters']['stockLevel']) && count($request['checkedFilters']['stockLevel']) > 0) {
-                    $stockLevelsQuery = ProductItem::select('product_id')
-                                                    ->join('iventory_items', 'product_items.inventory_item_id', '=', 'iventory_items.id')
-                                                    ->join('item_categories', 'iventory_items.item_cat_id', '=', 'item_categories.id')
-                                                    ->groupBy('product_id');
-
                     foreach ($request['checkedFilters']['stockLevel'] as $value) {
-                        switch ($value) {
-                            case 'In Stock':
-                                $stockLevelsQuery->orHavingRaw('MIN(iventory_items.stock_qty) > MIN(item_categories.low_stock_qty)');
-                                break;
-                            case 'Low Stock':
-                                $stockLevelsQuery->orHavingRaw('MIN(iventory_items.stock_qty) <= MIN(item_categories.low_stock_qty) AND MIN(iventory_items.stock_qty) >= 1');
-                                break;
-                            case 'Out of Stock':
-                                $stockLevelsQuery->orHavingRaw('MIN(iventory_items.stock_qty) = 0');
-                                break;
-                        }
+                        match ($value) {
+                            'In stock' => $query->orWhere('status', 'In stock'),
+                            'Low in stock' => $query->orWhere('status', 'Low in stock'),
+                            'Out of stock' => $query->orWhere('status', 'Out of stock'),
+                        };
                     }
-
-                    $productIdsWithStockLevel = $stockLevelsQuery->pluck('product_id');
-                    $query->whereIn('id', $productIdsWithStockLevel);
                 }
 
                 if (isset($request['checkedFilters']['priceRange']) && count($request['checkedFilters']['priceRange']) > 0) {
@@ -286,19 +286,18 @@ class ProductController extends Controller
             }
         }
 
-        $queries->with([
-            'productItems:id,product_id,inventory_item_id,qty', 
-            'category:id,name', 
-            'productItems.inventoryItem:id,stock_qty,item_cat_id',
-            'productItems.inventoryItem.itemCategory:id,low_stock_qty',
-            'saleHistories'
-        ]);
-        $data = $queries->orderBy('id')
+        $data = $queries->with([
+                            'productItems:id,product_id,inventory_item_id,qty', 
+                            'category:id,name', 
+                            'productItems.inventoryItem:id,stock_qty,item_cat_id,status',
+                            'productItems.inventoryItem.itemCategory:id,low_stock_qty',
+                            'saleHistories'
+                        ])
+                        ->orderBy('id')
                         ->get()
                         ->map(function ($product) {
                             $product_items = $product->productItems;
                             $minStockCount = 0;
-                            $lowInStockArr = [];
 
                             if (count($product_items) > 0) {
                                 $stockCountArr = [];
@@ -309,37 +308,17 @@ class ProductController extends Controller
                                                                         ->find($value['inventory_item_id']);
 
                                     $stockQty = $inventory_item->stock_qty;
-                                    
                                     $stockCount = (int)round($stockQty / (int)$value['qty']);
-                                    array_push($stockCountArr, $stockCount);
 
-                                    $lowStockQtyLimit = $inventory_item->itemCategory->low_stock_qty;
-                                    if ((int)$stockQty <= $lowStockQtyLimit && (int)$stockQty > 1) {
-                                        array_push($lowInStockArr, 'Limited');
-                                    }
-                                    
-                                    if ((int)$stockQty > $lowStockQtyLimit) {
-                                        array_push($lowInStockArr, 'Available');
-                                    } 
-                                    
-                                    if ((int)$stockQty === 0) {
-                                        array_push($lowInStockArr, 'Unavailable');
-                                    }
+                                    array_push($stockCountArr, $stockCount);
                                 }
                                 $minStockCount = min($stockCountArr);
                             }
-                            $product['stock_left'] = $minStockCount; 
-
-                            if (in_array('Unavailable', $lowInStockArr)) {
-                                $product['stock_status'] = 'Out of stock';
-                            } elseif (in_array('Limited', $lowInStockArr)) {
-                                $product['stock_status'] = 'Low in stock';
-                            } else {
-                                $product['stock_status'] = 'In stock';
-                            }
+                            $product['stock_left'] = $minStockCount;
 
                             return $product;
                         });
+                        
         return response()->json($data);
     }
 
@@ -372,7 +351,7 @@ class ProductController extends Controller
      */
     public function getInventoryItemStock(string $id)
     {
-        $data = IventoryItem::select('stock_qty')
+        $data = IventoryItem::select(['stock_qty', 'status'])
                                 ->find($id);
         
         return response()->json($data);

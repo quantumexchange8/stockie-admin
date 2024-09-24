@@ -34,7 +34,6 @@ const props = defineProps({
 const emit = defineEmits(['fetchZones']);
 
 const op = ref(null);
-// const zones = ref(props.zones);
 const selectedTable = ref(null);
 const reservationListIsOpen = ref(false);
 const reservationsRowsPerPage = ref(6);
@@ -178,6 +177,9 @@ const showReservationList = (event, table) => {
     event.stopPropagation();
     
     selectedTable.value = table;
+    selectedTable.value.reservations.forEach(res => {
+        res['table_no'] = selectedTable.value.table_no;
+    });
     reservationListIsOpen.value = true;
 }
 

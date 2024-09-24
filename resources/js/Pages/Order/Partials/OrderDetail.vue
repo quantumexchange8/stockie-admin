@@ -278,6 +278,7 @@ const isFormValid = computed(() => {
                         type="button"
                         variant="tertiary"
                         size="lg"
+                        :disabled="!order.id"
                         @click=""
                     >
                         Keep Item
@@ -287,6 +288,7 @@ const isFormValid = computed(() => {
                         variant="secondary"
                         iconPosition="left"
                         size="lg"
+                        :disabled="!order.id"
                         @click="openDrawer('add')"
                     >
                         <template #icon>

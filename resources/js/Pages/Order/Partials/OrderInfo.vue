@@ -7,6 +7,7 @@ import Modal from '@/Components/Modal.vue';
 import { CancelIllus, OrderCompleteIllus } from '@/Components/Icons/illus';
 import { useForm } from '@inertiajs/vue3';
 import OrderInvoice from './OrderInvoice.vue';
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     errors: Object,
@@ -15,6 +16,8 @@ const props = defineProps({
         default: () => {},
     },
 })
+
+const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close']);
 
@@ -51,6 +54,13 @@ const showOrderCompleteModal = () => {
 }
 
 const hideOrderCompleteModal = () => {
+    setTimeout(() => {
+        showMessage({ 
+            severity: 'success',
+            summary: 'Selected order has been completed successfully.',
+        });
+    }, 200);
+    closeDrawer();
     orderCompleteModalIsOpen.value = false;
 }
 
@@ -63,7 +73,7 @@ const hideCancelOrderForm = () => {
 }
 
 const showOrderInvoiceModal = () => {
-    hideOrderCompleteModal();
+    orderCompleteModalIsOpen.value = false;
 
     setTimeout(() => {
         orderInvoiceModalIsOpen.value = true;
@@ -71,6 +81,12 @@ const showOrderInvoiceModal = () => {
 };
 
 const hideOrderInvoiceModal = () => {
+    setTimeout(() => {
+        showMessage({ 
+            severity: 'success',
+            summary: 'Selected order has been completed successfully.',
+        });
+    }, 200);
     closeDrawer();
     orderInvoiceModalIsOpen.value = false;
 };
@@ -85,6 +101,12 @@ const submit = (action) => {
                     if (form.action_type === 'complete') {
                         showOrderCompleteModal(); 
                     } else {
+                        setTimeout(() => {
+                            showMessage({ 
+                                severity: 'success',
+                                summary: 'Selected table is now available for next customers.',
+                            });
+                        }, 200);
                         closeDrawer();
                     }
                     form.reset();
@@ -95,6 +117,12 @@ const submit = (action) => {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
+                    setTimeout(() => {
+                        showMessage({ 
+                            severity: 'success',
+                            summary: 'Selected order has been cancelled successfully.',
+                        });
+                    }, 200);
                     form.reset();
                     closeDrawer();
                 },
@@ -104,7 +132,7 @@ const submit = (action) => {
 };
 
 const isOrderCompleted = computed(() => {
-    if (!order.value || !order.value.order_items) return false;
+    if (!order.value || !order.value.order_items || order.value.order_items.length === 0) return false;
 
     const mappedOrder = order.value.order_items 
                             ? order.value.order_items
@@ -118,7 +146,7 @@ const isOrderCompleted = computed(() => {
                             : [];
 
     return mappedOrder.every((item) => item.status === 'Served' || item.status === 'Cancelled');
-})
+});
 
 const formattedOrder = computed(() => {
     order.value['order_table'] = {
@@ -172,6 +200,7 @@ const formattedOrder = computed(() => {
                         type="button"
                         variant="tertiary"
                         size="lg"
+                        :disabled="!order.id"
                         @click="showCancelOrderForm"
                         v-if="selectedTable.status !== 'Pending Clearance'"
                     >
@@ -206,7 +235,7 @@ const formattedOrder = computed(() => {
                     variant="tertiary"
                     size="lg"
                     type="button"
-                    @click="closeDrawer"
+                    @click="hideOrderCompleteModal"
                 >
                     Close
                 </Button>

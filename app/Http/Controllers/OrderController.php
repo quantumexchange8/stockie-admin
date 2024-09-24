@@ -12,6 +12,7 @@ use App\Models\OrderItemSubitem;
 use App\Models\OrderTable;
 use App\Models\Product;
 use App\Models\ProductItem;
+use App\Models\SaleHistory;
 use App\Models\StockHistory;
 use App\Models\Table;
 use App\Models\Waiter;
@@ -85,10 +86,10 @@ class OrderController extends Controller
                         ->values();
         
         // Get the flashed messages from the session
-        $message = $request->session()->get('message');
+        // $message = $request->session()->get('message');
 
         return Inertia::render('Order/Order', [
-            'message' => $message ?? [],
+            // 'message' => $message ?? [],
             'zones' => $zones,
             'waiters' => $waiters,
             'orders' => $orders,
@@ -131,14 +132,14 @@ class OrderController extends Controller
             'order_id' => $request->reservation ? null : $newOrder->id
         ]);
 
-        $message = [ 
-            'severity' => 'success', 
-            'summary' => $request->reservation 
-                            ? "Reservation has been made to '$request->table_no'."
-                            : "You've successfully check in customer to '$request->table_no'."
-        ];
+        // $message = [ 
+        //     'severity' => 'success', 
+        //     'summary' => $request->reservation 
+        //                     ? "Reservation has been made to '$request->table_no'."
+        //                     : "You've successfully check in customer to '$request->table_no'."
+        // ];
 
-        return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
     }
 
     /**
@@ -149,8 +150,8 @@ class OrderController extends Controller
         $validatedData = $request->validated();
         
         if (!isset($id)) {
-            $severity = 'error';
-            $summary = "No reservation id found.";
+            // $severity = 'error';
+            // $summary = "No reservation id found.";
         }
 
         if (isset($id)) {
@@ -167,20 +168,20 @@ class OrderController extends Controller
                     'order_id' => $validatedData['order_id']
                 ]);
 
-                $severity = 'success';
-                $summary = "Changes saved";
+                // $severity = 'success';
+                // $summary = "Changes saved";
             } else {
-                $severity = 'error';
-                $summary = "No reservation found.";
+                // $severity = 'error';
+                // $summary = "No reservation found.";
             }
         }
 
-        $message = [ 
-            'severity' => $severity, 
-            'summary' => $summary
-        ];
+        // $message = [ 
+        //     'severity' => $severity, 
+        //     'summary' => $summary
+        // ];
 
-        return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
     }
 
     /**
@@ -190,21 +191,21 @@ class OrderController extends Controller
     {
         $existingReservation = OrderTable::find($id);
 
-        $message = [ 
-            'severity' => 'error', 
-            'summary' => 'No reservation found.'
-        ];
+        // $message = [ 
+        //     'severity' => 'error', 
+        //     'summary' => 'No reservation found.'
+        // ];
 
         if ($existingReservation) {
             $existingReservation->delete();
 
-            $message = [ 
-                'severity' => 'success', 
-                'summary' => 'Selected reservation has been deleted successfully.'
-            ];
+            // $message = [ 
+            //     'severity' => 'success', 
+            //     'summary' => 'Selected reservation has been deleted successfully.'
+            // ];
         }
         
-        return Redirect::route('orders')->with(['message' => $message]);
+        return Redirect::route('orders');
     }
 
     /**
@@ -247,8 +248,8 @@ class OrderController extends Controller
             return redirect()->back()->withErrors($allItemErrors)->withInput();
         }
 
-        $severity = 'warn';
-        $summary = "No product has been added to $request->table_no order.";
+        // $severity = 'warn';
+        // $summary = "No product has been added to $request->table_no order.";
 
         if (count($validatedOrderItems) > 0) {
             $temp = 0;
@@ -269,6 +270,35 @@ class OrderController extends Controller
                     $temp += round($item['price'] * $item['item_qty'], 2);
                     
                     foreach ($item['product_items'] as $key => $value) {
+                        $productItem = ProductItem::with(['inventoryItem:id,item_name,stock_qty,item_cat_id', 'inventoryItem.itemCategory:id,low_stock_qty'])->find($value['id']);
+                        $inventoryItem = $productItem->inventoryItem;
+    
+                        // Deduct stock
+                        $stockToBeSold = $value['qty'] * $item['item_qty'];
+                        $oldStockQty = $inventoryItem->stock_qty;
+                        $newStockQty = $oldStockQty - $stockToBeSold;
+
+                        $newStatus = match(true) {
+                            $newStockQty === 0 => 'Out of stock',
+                            $newStockQty <= $inventoryItem->itemCategory['low_stock_qty'] => 'Low in stock',
+                            default => 'In stock'
+                        };
+    
+                        $inventoryItem->update([
+                            'stock_qty' => $newStockQty,
+                            'status' => $newStatus
+                        ]);
+                        $inventoryItem->refresh();
+    
+                        StockHistory::create([
+                            'inventory_id' => $inventoryItem->id,
+                            'inventory_item' => $inventoryItem->item_name,
+                            'old_stock' => $oldStockQty,
+                            'in' => 0,
+                            'out' => $stockToBeSold,
+                            'current_stock' => $inventoryItem->stock_qty,
+                        ]);
+                        
                         OrderItemSubitem::create([
                             'order_item_id' => $new_order_item->id,
                             'product_item_id' => $value['id'],
@@ -279,8 +309,8 @@ class OrderController extends Controller
                 }
             }
 
-            $severity = 'success';
-            $summary = "Product has been added to $request->table_no order.";
+            // $severity = 'success';
+            // $summary = "Product has been added to $request->table_no order.";
 
             $order = Order::with('orderTable')->find($request->order_id);
 
@@ -291,16 +321,15 @@ class OrderController extends Controller
 
             $table = Table::find($request->table_id);
             $table->update(['status' => $orderItems > 0 ? 'Order Placed' : 'Pending Order']);
-
             $order->orderTable->update(['status' => $orderItems > 0 ? 'Order Placed' : 'Pending Order']);
         }
 
-        $message = [ 
-            'severity' => $severity, 
-            'summary' => $summary
-        ];
+        // $message = [ 
+        //     'severity' => $severity, 
+        //     'summary' => $summary
+        // ];
 
-        return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
     }
 
     /**
@@ -362,29 +391,71 @@ class OrderController extends Controller
      */
     public function cancelOrder(string $id)
     {
-        $existingOrder = Order::with(['orderItems', 'orderTable'])->find($id);
-        $table = Table::find($existingOrder->orderTable['table_id']);
+        $existingOrder = Order::with([
+                                    'orderItems', 
+                                    'orderItems.subItems', 
+                                    'orderItems.subItems.productItem', 
+                                    'orderItems.subItems.productItem.inventoryItem', 
+                                    'orderItems.subItems.productItem.inventoryItem.itemCategory', 
+                                    'orderTable',
+                                    'orderTable.table',
+                                ])
+                                ->find($id);
 
-        $message = [ 
-            'severity' => 'error', 
-            'summary' => 'Error cancelling order.'
-        ];
+        $table = $existingOrder->orderTable->table;
+
+        // $message = [ 
+        //     'severity' => 'error', 
+        //     'summary' => 'Error cancelling order.'
+        // ];
 
         if ($existingOrder) {
-            foreach ($existingOrder->orderItems() as $key => $item) {
-                $item->update([
-                    'status' => 'Cancelled'
-                ]);
+            foreach ($existingOrder->orderItems as $item) {
+                if ($item['status'] === 'Pending Serve') {
+                    foreach ($item->subItems as $subItem) {
+                        $inventoryItem = $subItem->productItem->inventoryItem;
+                        $itemCategory = $inventoryItem->itemCategory;
+                        
+                        $qtySold = $subItem['serve_qty'];
+                        $restoredQty = $item['item_qty'] * $subItem['item_qty'] - $qtySold;
+                        $oldStockQty = $inventoryItem->stock_qty;
+                        $newStockQty = $oldStockQty + $restoredQty;
+    
+                        // Update inventory with restored stock
+                        $newStatus = match(true) {
+                            $newStockQty === 0 => 'Out of stock',
+                            $newStockQty <= $itemCategory['low_stock_qty'] => 'Low in stock',
+                            default => 'In stock'
+                        };
+
+                        $inventoryItem->update([
+                            'stock_qty' => $newStockQty,
+                            'status' => $newStatus
+                        ]);
+                        $inventoryItem->refresh();
+    
+                        if ($restoredQty > 0) {
+                            StockHistory::create([
+                                'inventory_id' => $inventoryItem->id,
+                                'inventory_item' => $inventoryItem->item_name,
+                                'old_stock' => $oldStockQty,
+                                'in' => $restoredQty,
+                                'out' => 0,
+                                'current_stock' => $inventoryItem->stock_qty,
+                            ]);
+                        }
+                    }
+                }
+
+                $item->update(['status' => 'Cancelled']);
             }
 
-            $existingOrder->update([
-                'status' => 'Order Cancelled'
-            ]);
+            $existingOrder->update(['status' => 'Order Cancelled']);
 
-            $message = [ 
-                'severity' => 'success', 
-                'summary' => 'Selected order has been cancelled successfully.'
-            ];
+            // $message = [ 
+            //     'severity' => 'success', 
+            //     'summary' => 'Selected order has been cancelled successfully.'
+            // ];
 
             $table->update([
                 'status' => 'Empty Seat',
@@ -393,7 +464,7 @@ class OrderController extends Controller
             $existingOrder->orderTable->update(['status' => 'Order Cancelled']);
         }
 
-        return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
     }
 
     /**
@@ -422,48 +493,12 @@ class OrderController extends Controller
                             $totalItemQty += $item['item_qty'] * $orderItem->item_qty;
                             $totalServedQty += $item['serve_qty'];
                             $hasServeQty = $updated_item['serving_qty'] > 0 || $hasServeQty ? true : false;
-                            // dd($updated_item['serving_qty'], $hasServeQty);
-
-                            $product_item = ProductItem::with(['inventoryItem:id,item_name,stock_qty,item_cat_id', 'inventoryItem.itemCategory:id,low_stock_qty'])->find($item['product_item_id']);
-
-                            if ($product_item) {
-                                $inventoryItem = $product_item->inventoryItem;
-                                $oldStockQty = $inventoryItem['stock_qty'];
-                                $newStockQty = $inventoryItem['stock_qty'] - $updated_item['serving_qty'];
-
-                                if ($newStockQty === 0) {
-                                    $newStatus = 'Out of stock';
-                                } elseif ($newStockQty <= $inventoryItem->itemCategory['low_stock_qty']) {
-                                    $newStatus = 'Low in stock';
-                                } else {
-                                    $newStatus = 'In stock';
-                                }
-
-                                $inventoryItem->update([
-                                    'stock_qty' => $newStockQty,
-                                    'status' => $newStatus
-                                ]);
-
-                                $inventoryItem->refresh();
-
-                                if ($updated_item['serving_qty'] && $updated_item['serving_qty'] > 0) {
-                                    StockHistory::create([
-                                        'inventory_id' => $inventoryItem['id'],
-                                        'inventory_item' => $inventoryItem['item_name'],
-                                        'old_stock' => $oldStockQty,
-                                        'in' => 0,
-                                        'out' => $updated_item['serving_qty'],
-                                        'current_stock' => $inventoryItem['stock_qty'],
-                                    ]);
-                                }
-                            }
                         }
                     }
                 }
 
                 
                 if ($hasServeQty) {
-                    // dd($totalServedQty, $totalItemQty, $totalServedQty === $totalItemQty);
                     $orderItem->update([
                         'point_earned' => $request->point,
                         'status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve',
@@ -578,7 +613,7 @@ class OrderController extends Controller
     public function updateOrderStatus(Request $request, string $id)
     {
         if (isset($id)) {
-            $order = Order::with('orderTable')->find($id);
+            $order = Order::with(['orderTable', 'orderItems'])->find($id);
             $table = Table::find($order->orderTable['table_id']);
 
             // dd($order->status === 'Order Served' && $order->orderTable['status'] === 'All Order Served', $order->orderTable['status']);
@@ -588,6 +623,16 @@ class OrderController extends Controller
                 }
     
                 if ($order->status === 'Order Completed' && $order->orderTable['status'] === 'All Order Served') {
+                    if (count($order->orderItems) > 0) {
+                        foreach ($order->orderItems as $item) {
+                            SaleHistory::create([
+                                'product_id' => $item['product_id'],
+                                'total_price' => $item['amount'],
+                                'qty' => (int) $item['item_qty']
+                            ]);
+                        }
+                    }
+
                     $table->update(['status' => 'Pending Clearance']);
                     $order->orderTable->update(['status' => 'Pending Clearance']);
                 }
@@ -680,6 +725,43 @@ class OrderController extends Controller
                 foreach ($orderItems as $key => $item) {
                     foreach ($request->items as $key => $updated_item) {
                         if ($item['id'] === $updated_item['order_item_id']) {
+                            // Restore stock for each product item
+                            $subItems = OrderItemSubitem::where('order_item_id', $item['id'])->get();
+                                                
+                            foreach ($subItems as $subItem) {
+                                $productItem = ProductItem::with(['inventoryItem', 'inventoryItem.itemCategory'])->find($subItem->product_item_id);
+                                $inventoryItem = $productItem->inventoryItem;
+                                
+                                // $qtySold = $subItem['serve_qty'];
+                                $restoredQty = $updated_item['remove_qty'] * $subItem['item_qty'];
+                                $oldStockQty = $inventoryItem->stock_qty;
+                                $newStockQty = $oldStockQty + $restoredQty;
+
+                                // dd($updated_item['remove_qty'], $oldStockQty, $newStockQty);
+
+                                // Update inventory with restored stock
+                                $newStatus = match(true) {
+                                    $newStockQty === 0 => 'Out of stock',
+                                    $newStockQty <= $inventoryItem->itemCategory['low_stock_qty'] => 'Low in stock',
+                                    default => 'In stock'
+                                };
+            
+                                $inventoryItem->update([
+                                    'stock_qty' => $newStockQty,
+                                    'status' => $newStatus
+                                ]);
+                                $inventoryItem->refresh();
+
+                                StockHistory::create([
+                                    'inventory_id' => $inventoryItem->id,
+                                    'inventory_item' => $inventoryItem->item_name,
+                                    'old_stock' => $oldStockQty,
+                                    'in' => $restoredQty,
+                                    'out' => 0,
+                                    'current_stock' => $inventoryItem->stock_qty,
+                                ]);
+                            }
+
                             $balanceQty = $item['item_qty'] - $updated_item['remove_qty'];
                             $cancelledPoints = $updated_item['remove_qty'] * $item->product['point'];
 
@@ -716,7 +798,6 @@ class OrderController extends Controller
             $order->refresh();
 
             $totalPointsEarned = array_reduce($altServedItemsArr, fn($totalPoint, $item) => $totalPoint + $item['point_earned'], 0);
-            // dd($totalPointsEarned);
 
             $customer->update(['point' => $customer['point'] + $totalPointsEarned]);
             
@@ -737,7 +818,7 @@ class OrderController extends Controller
                 }
     
                 if (count($uniqueStatuses) === 1) {
-                    if ($uniqueStatuses[0] === 'Served' || $uniqueStatuses[0] === 'Cancelled') {
+                    if ($uniqueStatuses[0] === 'Served') {
                         $orderStatus = 'Order Served';
                         $orderTableStatus = 'All Order Served';
                     }

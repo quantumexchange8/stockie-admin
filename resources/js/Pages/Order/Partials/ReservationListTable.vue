@@ -101,6 +101,7 @@ const hideDeleteReservationForm = () => {
                 />
             </template>
         </Table>
+        
         <Modal 
             :title="'Edit Reservation Detail'"
             :show="editReservationFormIsOpen" 
@@ -116,12 +117,13 @@ const hideDeleteReservationForm = () => {
         </Modal>
         <Modal 
             :show="deleteReservationFormIsOpen" 
-            :maxWidth="'2xs'" 
             :closeable="true" 
             :deleteConfirmation="true"
             :deleteUrl="actions.delete(selectedReservation)"
-            :confirmationTitle="'Delete Reservation'"
-            :confirmationMessage="'Are you sure you want to delete this reservation? The action cannot be undone.'"
+            maxWidth="2xs" 
+            confirmationTitle="Delete Reservation"
+            confirmationMessage="Are you sure you want to delete this reservation? The action cannot be undone."
+            toastMessage="Selected reservation has been deleted successfully."
             @close="hideDeleteReservationForm"
             v-if="selectedReservation"
         />

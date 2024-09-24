@@ -12,6 +12,7 @@ import { useForm } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import { DeleteIllus } from '@/Components/Icons/illus';
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     order: {
@@ -23,6 +24,8 @@ const props = defineProps({
         default: () => []
     },
 })
+
+const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close', 'closeDrawer']);
 
@@ -101,6 +104,12 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'The selected order item has been deleted.',
+                });
+            }, 200);
             form.reset();
             close(true);
         },

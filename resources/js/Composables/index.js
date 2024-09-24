@@ -154,8 +154,21 @@ export function useCustomToast() {
             });
         }
     };
+    
+    const showMessage = (message) => {
+        if (message && message.summary) {
+            toast.add({
+                severity: message.severity ?? 'info',
+                summary: message.summary,
+                detail: message.detail ?? '',
+                life: message.life ?? 3000,
+                closable: message.closable ?? false,
+            });
+        }
+    };
 
     return {
         flashMessage,
+        showMessage,
     };
 }

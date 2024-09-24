@@ -8,6 +8,7 @@ import Dropdown from '@/Components/Dropdown.vue'
 import TextInput from '@/Components/TextInput.vue';
 import { TimesIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     waiters: {
@@ -16,6 +17,8 @@ const props = defineProps({
     },
     table: Object,
 });
+
+const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close']);
 
@@ -34,12 +37,17 @@ const formSubmit = () => {
     form.reservation_date = form.reservation_date ? dayjs(form.reservation_date).format('YYYY-MM-DD HH:mm:ss') : '';
     form.status = form.reservation ? 'Empty Seat' : 'Pending Order';
 
-    // console.log(form.reservation_date);
     form.post(route('orders.tables.store'), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
-            form.reset();
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: form.reservation ? `Reservation has been made to '${props.table.table_no}'.` : `You've successfully check in customer to '${props.table.table_no}'.`,
+                });
+                form.reset();
+            }, 200);
             emit('close');
         },
     })

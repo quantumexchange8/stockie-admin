@@ -5,10 +5,13 @@ import Button from '@/Components/Button.vue';
 import DateInput from "@/Components/Date.vue";
 import TextInput from '@/Components/TextInput.vue';
 import dayjs from 'dayjs';
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     reservationTable: Object
 });
+
+const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close']);
 
@@ -27,10 +30,16 @@ const form = useForm({
 const formSubmit = () => { 
     form.reservation_date = reserved_date.value;
 
-    form.put(route('orders.reservations.update', form.table_id), {
+    form.put(route('orders.reservations.update', props.reservationTable.id), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Changes saved',
+                });
+            }, 200);
             form.reset();
             emit('close');
         },

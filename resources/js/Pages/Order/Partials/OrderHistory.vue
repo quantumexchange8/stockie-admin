@@ -218,8 +218,6 @@ const hideOrderInvoiceModal = () => {
         :show="orderInvoiceModalIsOpen"
         @close="hideOrderInvoiceModal"
     >
-        <template v-if="selectedOrder">
-            <OrderInvoice :order="selectedOrder" />
-        </template>
+        <OrderInvoice :order="selectedOrder" />
     </Modal>
 </template>

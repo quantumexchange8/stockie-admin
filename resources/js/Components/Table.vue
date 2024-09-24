@@ -570,9 +570,7 @@ onMounted(() => {
                                         @click="redirectAction(mergedActions.view(item.id))"
                                         class="!bg-primary-100 hover:!bg-primary-200 rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[5px]"
                                     >
-                                        <EditIcon
-                                            class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer"
-                                        />
+                                        <EditIcon class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer" />
                                     </Button>
                                 </slot>
                                 <slot name="deleteAction" :="item">
@@ -582,9 +580,7 @@ onMounted(() => {
                                         @click="redirectAction(mergedActions.delete(item.id))"
                                         class="!bg-primary-600 hover:!bg-primary-700 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[5px]"
                                     >
-                                        <DeleteIcon
-                                            class="w-5 h-5 text-primary-100 hover:text-primary-50 cursor-pointer pointer-events-none"
-                                        />
+                                        <DeleteIcon class="w-5 h-5 text-primary-100 hover:text-primary-50 cursor-pointer pointer-events-none" />
                                     </Button>
                                 </slot>
                             </div>
@@ -613,10 +609,7 @@ onMounted(() => {
                             <span class="text-base font-medium text-primary-600">{{ item.stock_left }} left</span>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <!-- Awaiting addition of 'set' column in product table to determine if its set or not -->
-                            <!-- <Tag
-                                :value="'Set'"
-                            /> -->
+                            <Tag value="Set" v-if="item.bucket === 'set'"/>
                             <span class="text-sm font-medium text-grey-900 overflow-hidden text-ellipsis">{{ item.product_name }}</span>
                         </div>
                     </slot>

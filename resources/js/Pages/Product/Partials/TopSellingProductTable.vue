@@ -65,14 +65,14 @@ const props = defineProps({
                 <template #sold="row">
                     <span class="text-grey-900 text-sm font-medium">{{ row.totalProductSaleQty }}</span>
                 </template>
-                <template #stock_status="row">
+                <template #status="row">
                     <Tag
-                        :variant="row.stock_status === 'Out of stock' 
+                        :variant="row.status === 'Out of stock' 
                                         ? 'red' 
-                                        : row.stock_status === 'Low in stock' 
+                                        : row.status === 'Low in stock' 
                                             ? 'yellow' 
                                             : 'green'"
-                        :value="row.stock_status"
+                        :value="row.status"
                     />
                 </template>
             </Table>

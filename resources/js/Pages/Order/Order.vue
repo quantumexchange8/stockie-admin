@@ -9,7 +9,6 @@ import Button from '@/Components/Button.vue';
 import TabView from '@/Components/TabView.vue';
 import SearchBar from '@/Components/SearchBar.vue';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
-import { useCustomToast } from '@/Composables/index.js';
 import { SquareStickerIcon } from '@/Components/Icons/solid';
 import OrderTables from './Partials/OrderTables.vue';
 import OrderHistory from './Partials/OrderHistory.vue';
@@ -23,8 +22,6 @@ const props = defineProps({
     waiters: Array,
     orders: Array,
 });
-
-const { flashMessage } = useCustomToast();
 
 const zones = ref(props.zones);
 const tabs = ref([]);
@@ -61,6 +58,7 @@ const filters = ref({
 
 const fetchZones = async () => {
     try {
+        flashMessage(props.message);
         const zonesResponse = await axios.get(route('orders.getAllZones'));
         zones.value = zonesResponse.data;
     } catch (error) {
@@ -80,10 +78,6 @@ const populateTabs = () => {
 };
 
 watch(() => zones.value, populateTabs, { immediate: true });
-
-onMounted(() => {
-    flashMessage();
-});
 
 const orderHistoriesTotalPages = computed(() => {
     return Math.ceil(props.orders.length / orderHistoriesRowsPerPage.value);

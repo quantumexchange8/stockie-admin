@@ -21,6 +21,7 @@ class Product extends Model
         'point',
         'category_id',
         'keep',
+        'status',
     ];
     
     // /**
@@ -57,5 +58,59 @@ class Product extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'product_id');
+    }
+
+    // Register the model event
+    protected static function booted()
+    {
+        static::updated(function ($product) {
+            // Check if the status is dirty before calling updateStatus
+            if ($product->isDirty('status')) {
+                return;
+            }
+            // Update the product status
+            $product->updateStatus();
+        });
+    }
+
+    // Define the method to update the product status
+    public function updateStatus()
+    {
+        $stockStatuses = [];
+        $productItem = [];
+
+        // Eager load the product items and their inventory item for performance
+        $productItems = $this->productItems()->with(['inventoryItem', 'inventoryItem.itemCategory'])->get();
+
+        foreach ($productItems  as $item) {
+            // Check the inventory stock level for each product item
+            $inventoryItem = $item->inventoryItem;
+            $threshold = $inventoryItem->itemCategory->low_stock_qty;
+            $requiredQuantity = (int) $item->qty;
+            $availableStock = (int) $inventoryItem->stock_qty;
+
+            // Determine the stock status based on the available stock and required quantity
+            $stockStatuses[] = match (true) {
+                $availableStock == 0 || $availableStock < $requiredQuantity => 'Out of stock',
+                $availableStock <= $threshold => 'Low in stock',
+                default => 'In stock',
+            };
+
+            array_push($productItem, $item);
+        }
+
+        // Determine the overall product status
+        $newStatus = match (true) {
+            in_array('Out of stock', $stockStatuses) => 'Out of stock',
+            in_array('Low in stock', $stockStatuses) => 'Low in stock',
+            default => 'In stock',
+        };
+
+        // Save only if the status has changed
+        if ($this->status !== $newStatus) {
+            $this->status = $newStatus;
+            $this->saveQuietly(); // Prevent triggering the updated event again
+        }
+
     }
 }

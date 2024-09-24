@@ -67,4 +67,29 @@ class IventoryItem extends Model
     {
         return $this->hasMany(PointItem::class, 'inventory_item_id');
     }
+
+
+    // Register the model event
+    protected static function booted()
+    {
+        static::updated(function ($inventoryItem) {
+            // Only trigger the event if stock_qty has changed
+            if ($inventoryItem->isDirty('stock_qty')) {
+                // When stock quantity is updated, update the status of related products
+                $inventoryItem->updateProductStatus();
+            }
+        });
+    }
+
+    // Define the method to update the product status
+    public function updateProductStatus()
+    {
+        // Get all product items related to this inventory item
+        $productItems = $this->productItems()->with('product')->get();
+
+        foreach ($productItems as $productItem) {
+            // Update the status of the related product based on its product items
+            $productItem->product->updateStatus();
+        }
+    }
 }

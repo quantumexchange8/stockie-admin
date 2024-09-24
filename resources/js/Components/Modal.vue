@@ -3,6 +3,7 @@ import { router } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { TimesIcon } from '@/Components/Icons/solid';
 import { DeleteIllus } from '@/Components/Icons/illus';
+import { useCustomToast } from '@/Composables/index.js';
 import Button from './Button.vue';
 import {
   TransitionRoot,
@@ -46,7 +47,13 @@ const props = defineProps({
         type: Boolean,
         default: true,
     },
+    toastMessage: {
+        type: String,
+        default: '',
+    },
 });
+
+const { flashMessage } = useCustomToast();
 
 const emit = defineEmits(['close']);
 
@@ -94,7 +101,15 @@ const deleteRecord = () => {
     router.delete(props.deleteUrl, {
         preserveScroll: true,
         preserveState: 'errors',
-        onSuccess: () => close(),
+        onSuccess: () => {
+            setTimeout(() => {
+                flashMessage({ 
+                    severity: 'success',
+                    summary: props.toastMessage,
+                });
+            }, 200);
+            close();
+        }
     });
 };
 
@@ -102,7 +117,7 @@ const deleteRecord = () => {
 
 <template>
     <TransitionRoot appear :show="show" as="template">
-        <Dialog as="div" @close="close" class="relative z-[1102]">
+        <Dialog as="div" @close="close" class="relative z-[1106]">
             <TransitionChild
                 as="template"
                 enter="duration-300 ease-out"

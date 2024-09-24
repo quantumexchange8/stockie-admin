@@ -76,6 +76,7 @@ const updateInventoryStockCount = async (index, id) => {
             const { data } = await axios.get(`/menu-management/products/getInventoryItemStock/${id}`);
             const item = form.items[index];
             item.inventory_stock_qty = data.stock_qty;
+            item.status = data.status;
             
             if (item.bucket === true) {
                 item.qty = data.stock_qty >= 2 ? 2 : 0;
@@ -143,7 +144,9 @@ watch(() => form.bucket, (newValue) => {
                                     :inputArray="inventoriesArr"
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"
+                                    :hintText="item.status !== 'In stock' ? item.status : ''"
                                     v-model="item.inventory_item_id"
+                                    class="[&>div:nth-child(3)]:!text-primary-700"
                                     @onChange="updateInventoryStockCount(i, $event)"
                                 >
                                     <template #optionGroup="group">

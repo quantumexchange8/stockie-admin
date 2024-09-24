@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('point');
             $table->unsignedInteger('category_id');
             $table->string('keep');
+            $table->string('status');
             $table->softDeletes();
             $table->timestamps();
         });

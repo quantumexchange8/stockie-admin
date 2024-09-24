@@ -7,6 +7,7 @@ import TabView from '@/Components/TabView.vue';
 import SearchBar from '@/Components/SearchBar.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     errors: Object,
@@ -23,6 +24,8 @@ const props = defineProps({
 
 const page = usePage();
 const userId = computed(() => page.props.auth.user.id)
+
+const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close']);
 
@@ -50,6 +53,12 @@ const formSubmit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: `Product has been added to ${props.selectedTable.table_no} order.`,
+                });
+            }, 200);
             form.reset();
             emit('close');
         },
@@ -160,7 +169,7 @@ const quantityComputed = (productId) => {
                                                 <div class="flex items-center gap-2">
                                                     <p class="text-primary-950 text-base font-medium">RM {{ product.price }}</p>
                                                     <span class="text-grey-200">&#x2022;</span>
-                                                    <p class="text-green-700 text-base font-normal">{{ product.stock_left }} left</p>
+                                                    <p class="text-green-700 text-base font-normal">{{ product.stock_left > 0 ? `${product.stock_left} left` : product.status }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -169,6 +178,7 @@ const quantityComputed = (productId) => {
                                             :inputName="`item_${product.id}_item_qty`"
                                             :errorMessage="(form.errors) ? form.errors[`item_${product.id}.item_qty`] : ''"
                                             :maxValue="product.stock_left"
+                                            :disabled="product.stock_left === 0"
                                             v-model="quantityComputed(product.id).value"
                                             @onChange="updateProductQuantity(product.id, $event)"
                                             class="col-span-full sm:col-span-4"
@@ -203,7 +213,7 @@ const quantityComputed = (productId) => {
                                                 <div class="flex items-center gap-2">
                                                     <p class="text-primary-950 text-base font-medium">RM {{ product.price }}</p>
                                                     <span class="text-grey-200">&#x2022;</span>
-                                                    <p class="text-green-700 text-base font-normal">{{ product.stock_left }} left</p>
+                                                    <p class="text-green-700 text-base font-normal">{{ product.stock_left > 0 ? `${product.stock_left} left` : product.status }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -212,6 +222,7 @@ const quantityComputed = (productId) => {
                                             :inputName="`item_${product.id}_item_qty`"
                                             :errorMessage="(form.errors) ? form.errors[`item_${product.id}.item_qty`] : ''"
                                             :maxValue="product.stock_left"
+                                            :disabled="product.stock_left === 0"
                                             v-model="quantityComputed(product.id).value"
                                             @onChange="updateProductQuantity(product.id, $event)"
                                             class="col-span-full sm:col-span-4"

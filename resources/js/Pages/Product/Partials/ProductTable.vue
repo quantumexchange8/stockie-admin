@@ -65,7 +65,7 @@ const checkedFilters = ref({
     priceRange: [0, 5000],
 });
 
-const stockLevels = ref(['In Stock', 'Low Stock', 'Out of Stock']);
+const stockLevels = ref(['In stock', 'Low in stock', 'Out of stock']);
 const keepStatusArr = ref(['Active', 'Inactive']);
 
 const filters = ref({
@@ -391,7 +391,11 @@ onMounted(() => {
                     />
                 </template>
                 <template #stock_left="row">
-                    <span class="text-primary-600 inline-block align-middle">{{ row.stock_left }}</span>
+                    <span class="text-primary-600 inline-block align-middle">
+                        <p v-if="row.status === 'Out of stock'">{{ row.status }}</p>
+                        <p v-else>{{ row.bucket === 'set' ? `${row.stock_left} set` : row.stock_left }}</p>
+                        
+                    </span>
                 </template>
             </Table>
         </div>

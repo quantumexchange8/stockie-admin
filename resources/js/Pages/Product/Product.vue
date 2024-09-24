@@ -36,7 +36,7 @@ const topSellingProductColumns = ref([
     {field: 'product', header: 'Product', width: '45', sortable: false},
     {field: 'category', header: 'Category', width: '18', sortable: false},
     {field: 'sold', header: 'Sold', width: '15', sortable: false},
-    {field: 'stock_status', header: 'Status', width: '22', sortable: false},
+    {field: 'status', header: 'Status', width: '22', sortable: false},
 ]);
 
 const { flashMessage } = useCustomToast();

@@ -130,7 +130,9 @@ watch(() => form.items, (newValue) => {
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"
                                     :dataValue="item.inventory_item_id"
+                                    :hintText="item.inventory_item.status !== 'In stock' ? item.inventory_item.status : ''"
                                     v-model="item.inventory_item_id"
+                                    class="[&>div:nth-child(3)]:!text-primary-700"
                                     @onChange="updateInventoryStockCount(i, $event)"
                                 />
                                 <InputError :message="form.errors ? form.errors['items.' + i + '.qty']  : ''" v-if="form.errors" />
