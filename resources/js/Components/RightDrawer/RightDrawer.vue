@@ -38,7 +38,7 @@ const closeOnEscape = (e) => {
     }
 };
 
-watch(visible.value, (newValue) => {
+watch(visible, (newValue) => {
     if (!newValue) {
         emit('close');
     }

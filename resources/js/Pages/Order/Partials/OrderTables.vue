@@ -196,7 +196,7 @@ const hideReservationList = () => {
         <RightDrawer 
             :header="'Detail - ' + selectedTable.table_no" 
             v-model:show="drawerIsVisible"
-            @close="closeDrawer"
+            @close="drawerIsVisible = false"
         >
             <OrderInfo 
                 :selectedTable="selectedTable" 
