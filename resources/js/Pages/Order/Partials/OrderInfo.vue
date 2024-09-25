@@ -171,7 +171,7 @@ const formattedOrder = computed(() => {
                     <OrderDetail :selectedTable="selectedTable" :order="order" @close="closeDrawer" />
                 </template>
                 <template #customer-detail>
-                    cuscus
+                    
                 </template>
             </TabView>
         </div>
