@@ -58,7 +58,6 @@ const filters = ref({
 
 const fetchZones = async () => {
     try {
-        flashMessage(props.message);
         const zonesResponse = await axios.get(route('orders.getAllZones'));
         zones.value = zonesResponse.data;
     } catch (error) {
