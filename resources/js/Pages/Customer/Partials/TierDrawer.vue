@@ -57,7 +57,6 @@ onMounted(() => {
                         severity="info"
                         summary="You can redeem the rewards only when the customer has checked-in to one table/room."
                         :closable="false"
-                        class="xl:col-span-10"
                     />
                 </template>
                 <template #redeemed>

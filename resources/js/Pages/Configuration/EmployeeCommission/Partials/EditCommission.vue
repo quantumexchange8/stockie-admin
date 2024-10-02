@@ -3,6 +3,7 @@ import Button from "@/Components/Button.vue";
 import Dropdown from "@/Components/Dropdown.vue";
 import MultiSelect from "@/Components/MultiSelect.vue";
 import TextInput from "@/Components/TextInput.vue";
+import { useCustomToast } from "@/Composables";
 import { useForm } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 
@@ -10,14 +11,20 @@ const props = defineProps({
     productNames: {
         type: Array,
         required: true,
+    },
+    commisionDetails: {
+        type: Object,
+        required: true,
     }
 })
+
+const { showMessage } = useCustomToast();
 
 const options = props.productNames.map(item => ({
     text: item.product_name, 
     value: item.id
 }));
-const emit = defineEmits(['closeModal']);
+const emit = defineEmits(['closeModal', 'viewEmployeeComm']);
 const isRate = ref(true)
 const commType = [
   { text: 'Fixed amount per sold product', value: 'Fixed amount per sold product' },
@@ -32,9 +39,10 @@ const setIsRate = (type) => {
 }
 
 const form = useForm({
-    commType: '',
-    commRate: '',
-    involvedProducts: '',
+    id: props.commisionDetails.id,
+    commType: props.commisionDetails.comm_type,
+    commRate: props.commisionDetails.rate,
+    involvedProducts: props.commisionDetails.productIds,
 });
 
 // Validate input to only allow numeric value to be entered
@@ -49,12 +57,17 @@ const isNumber = (e, withDot = true) => {
 };
 
 const submit = () => {
-    form.post(route('configurations.addCommission'), {
+    form.post(route('configurations.editCommission'), {
         preserveScroll: true,
-        preserveState: 'errors',
+        preserveState: true,
         onSuccess: () => {
-            form.reset();
-            emit('close');
+            closeModal();
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Commission type has been successfully updated.',
+                });
+            }, 200)
         },
         onError: (errors) => {
             console.error('Form submission error: ', errors);
@@ -65,6 +78,8 @@ const submit = () => {
 const closeModal = () => {
     form.reset();
     emit('closeModal');
+    emit('viewEmployeeComm');
+
 }
 
 const isFormValid = computed(() => {
@@ -83,6 +98,7 @@ const isFormValid = computed(() => {
                     :labelText="'Commission rate based on'"
                     :inputArray="commType"
                     :errorMessage="''"
+                    :dataValue="form.commType"
                     v-model="form.commType"
                     @onChange="setIsRate(form.commType)"
                 >
@@ -118,6 +134,7 @@ const isFormValid = computed(() => {
                 <MultiSelect 
                     :inputArray="options"
                     :labelText="'Product with this commission'"
+                    :dataValue="form.involvedProducts"
                     v-model="form.involvedProducts"
                 />
             </div>
@@ -137,7 +154,7 @@ const isFormValid = computed(() => {
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Add
+                Save Changes
             </Button>
         </div>
     </form>

@@ -155,6 +155,10 @@ const setChartOptions = () => {
         maintainAspectRatio: false,
         aspectRatio: 0.6,
         responsive: true,
+        animation: {
+            duration: 100,  
+            easing: 'linear',
+        },
         plugins: {
             hoverLabelColorChange: [customPlugin], 
             point: {

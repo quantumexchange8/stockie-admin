@@ -294,7 +294,7 @@ const setDateLastMonth = () => {
                             'inline-block': props.inline,
                         },
                         // Size
-                        '!min-w-0 pr-5 pt-3 pb-3 !z-[1105]',
+                        '!min-w-0 pr-5 pt-3 pb-3 !z-[1109]',
                         { 'pl-40 max-w-[450px]': withPresetRanges },
                         { 'pl-5 max-w-80': !withPresetRanges },
                         // Shape

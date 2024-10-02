@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConfigCommissionController;
+use App\Http\Controllers\ConfigEmployeeIncProgController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
@@ -55,6 +56,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/orderDetails/{id}',[WaiterController::class,'orderDetails'])->name('waiter.order-details');
         Route::get('/salesReport/{id}', [WaiterController::class,'salesReport'])->name('waiter.sales-report');
         Route::get('/viewAttendance/{id}', [WaiterController::class,'viewAttendance'])->name('waiter.view-attendance');
+        Route::get('/filterSalesPerformance', [WaiterController::class, 'filterSalesPerformance'])->name('waiter.filter-salesperformance');
+        Route::get('/filterCommEarned', [WaiterController::class, 'filterCommEarned'])->name('waiter.filter-commEarned');
     });
  
     /********* Menu Management **********/
@@ -103,7 +106,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/updateStock', [ConfigPromotionController::class, 'update'])->name('configurations.updateStock');
 
         /******* Employee Commission ********/
-        Route::get('/configurations', [ConfigCommissionController::class, 'index'])->name('configurations');
+        Route::get('/configurations/commission', [ConfigCommissionController::class, 'index'])->name('configurations.commission');
         Route::post('/addCommission', [ConfigCommissionController::class, 'addCommission'])->name('configurations.addCommission');
         Route::delete('/deleteCommission/{id}', [ConfigCommissionController::class, 'deleteCommission'])->name('configurations.deleteCommission');
         Route::post('/editCommission', [ConfigCommissionController::class, 'editCommission'])->name('configurations.editCommission');
@@ -111,6 +114,14 @@ Route::middleware('auth')->group(function () {
         Route::delete('/deleteProduct', [ConfigCommissionController::class, 'deleteProduct'])->name('configurations.deleteProduct');
         Route::post('/addProducts', [ConfigCommissionController::class, 'addProducts'])->name('configurations.addProducts');
         Route::post('/updateCommission', [ConfigCommissionController::class, 'updateCommission'])->name('configurations.updateCommission');
+
+        /******* Employee Incentive Programme ********/
+        Route::get('/configurations/incentive', [ConfigEmployeeIncProgController::class, 'index'])->name('configurations.incentive');
+        Route::post('configuration/addAchievement', [ConfigEmployeeIncProgController::class, 'addAchievement'])->name('configurations.addAchievement');
+        Route::delete('/configurations/deleteAchievement/{id}', [ConfigEmployeeIncProgController::class, 'deleteAchievement'])->name('configurations.deleteAchievement');
+        Route::post('/configurations/editAchievement', [ConfigEmployeeIncProgController::class, 'editAchievement'])->name('configurations.editAchievement');
+        Route::get('/configurations/incentCommDetail/{id}', [ConfigEmployeeIncProgController::class, 'incentCommDetail'])->name('configuration.incentCommDetail');
+        Route::delete('/configurations/deleteEntitled/{achievement}/{id}', [ConfigEmployeeIncProgController::class, 'deleteEntitled'])->name('configuration.deleteEntitled');
 
         /******* Promotion ********/
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');

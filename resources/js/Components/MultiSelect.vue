@@ -9,7 +9,7 @@ const props = defineProps({
         default: 'Label Text',
     },
     dataValue: {
-        type: String,
+        type: [String, Array],
         default: '',
     },
     inputName: String,
@@ -106,7 +106,7 @@ onUnmounted(() => {
                             'bg-white border border-grey-300',
                             'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                             'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                            'cursor-pointer select-none',
+                            'cursor-pointer select-none overflow-hidden',
                             { 
                                 'first:ml-0 ml-[-1px]': parent.instance.$name == 'InputGroup' && !props.showButtons,
                                 'border-grey-300': !props.invalid,
@@ -126,7 +126,7 @@ onUnmounted(() => {
                     class: 'flex p-1 items-center gap-[10px] rounded-[3px] bg-primary-25'
                 },
                 tokenLabel: {
-                    class: 'text-grey-700 text-base font-normal whitespace-nowrap'
+                    class: 'text-grey-700 text-base font-normal whitespace-nowrap overflow-hidden'
                 },
                 trigger: {
                     class: 'flex items-center text-primary-300'
@@ -180,12 +180,13 @@ onUnmounted(() => {
                 },
                 filterInput: {
                     placeholder: 'Search',
-                    class: ['!w-full max-h-[44px] flex relative justify-between items-center hover:text-primary-300 active:text-primary-200 focus:text-primary-300',
-                    'rounded-[5px] text-primary-900 active:ring-0 border-y border-l border-primary-900 bg-transparent',
-                    'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                    'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                    'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
-                    '[&>button]:hover:border-primary-100',
+                    class: [
+                        '!w-full max-h-[44px] flex relative justify-between items-center hover:text-primary-300 active:text-primary-200 focus:text-primary-300',
+                        'rounded-[5px] text-primary-900 active:ring-0 border-y border-l border-primary-900 bg-transparent',
+                        'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                        'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                        'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
+                        '[&>button]:hover:border-primary-100',
                     {
                         'border-grey-100': props.disabled === true,
                         'border-grey-300': props.disabled === false,
@@ -267,6 +268,12 @@ onUnmounted(() => {
                 </svg>
             </template>
 
+            <template #option="slotProps">
+                <div class="flex items-center gap-[10px]">
+                    <slot name="optionLabel"></slot>
+                    <div>{{ slotProps.option.text }}</div>
+                </div>
+            </template>
         </MultiSelect>
 
     </div>

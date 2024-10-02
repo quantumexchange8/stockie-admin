@@ -46,6 +46,10 @@ const setChartOptions = () => {
         maintainAspectRatio: false,
         aspectRatio: 0.6,
         responsive: true,
+        animation: {
+            duration: 200,  
+            easing: 'linear',
+        },
         plugins: {
             legend: {
                 display: false
@@ -140,6 +144,7 @@ function customTooltipHandler(context) {
         ">`;
 
         // Add title at the bottom of the body (customized position)
+
         innerHtml += `<div style="
             font-size: 16px; 
             font-weight: 600; 

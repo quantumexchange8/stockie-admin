@@ -136,7 +136,10 @@ const attendanceTotalPages = computed(() => {
                     <div 
                         class="w-full p-4 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100"
                     >
-                        <EntitledIncentive :data="incentiveData" :configIncentive="configIncentive"/>
+                        <EntitledIncentive 
+                            :data="incentiveData" 
+                            :configIncentive="configIncentive"
+                        />
                     </div>
 
                     <!-- waiter detail -->

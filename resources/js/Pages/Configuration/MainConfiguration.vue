@@ -21,30 +21,9 @@ const props = defineProps({
     ActivePromotions: Array,
     InactivePromotions: Array,
     merchant: Object,
-    commission: {
-        type: Array,
-        required: true,
-    },
-    productNames: {
-        type: Array,
-        required: true,
-    }
 })
 
 const { flashMessage } = useCustomToast();
-
-const actions = {
-    view: (productId) => `/configurations/productDetails/${productId}`,
-    edit: () => ``,
-    delete: () => ``,
-};
-
-const commissionColumn = ref([
-    { field: 'comm_type', header: 'Type', width: '35', sortable: true},
-    { field: 'rate', header: 'Rate', width: '15', sortable: true},
-    { field: 'product', header: 'Product with this commission', width: '40', sortable: true},
-    { field: 'action', header: '', width: '10', sortable: false},
-])
 
 onMounted(() => {
     flashMessage();
@@ -67,11 +46,6 @@ onMounted(() => {
             </template>
             <template #employee-commission>
                 <Commision   
-                    :columns="commissionColumn"
-                    :rows="commission"
-                    :actions="actions"
-                    :productNames="productNames"
-
                 />
             </template>
             <template #employee-incentive-programme>

@@ -13,6 +13,7 @@ import CommissionEarned from "./Partials/CommissionEarned.vue";
 import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables";
 import { FilterMatchMode } from "primevue/api";
+import axios from "axios";
 
 const home = ref({
     label: 'Waiter',
@@ -23,6 +24,22 @@ const props = defineProps({
         type: Object,
         required: true
     },
+    waiterIds: {
+        type: Array,
+        default: () => {},
+    },
+    waiterSales: {
+        type: Array,
+        default: () => {},
+    },
+    waiterNames: {
+        type: Array,
+        default: () => {},
+    },
+    waiterCommission: {
+        type: Array,
+        default: () => {},
+    }
 
 })
 
@@ -32,6 +49,12 @@ const rowType = {
     groupRowsBy: "",
 };
 
+const waiterIds = ref(props.waiterIds);
+const waiterSales = ref(props.waiterSales);
+const waiterNames = ref(props.waiterNames);
+const waiterCommission = ref(props.waiterCommission);
+const selected = ref('This month');
+const selectedFilter = ref('This month');
 const waitersRowsPerPage = ref(6);
 
 const waitersTotalPages = computed(() => {
@@ -64,6 +87,52 @@ const closeModal = () => {
     isModalOpen.value = false;
 };
 
+const filterSalesPerformance = async (filters) => {
+    // console.log(filters);
+    try {
+        const response = await axios.get('/waiter/filterSalesPerformance', {
+            method: 'GET',
+            params: {
+                selected: filters,
+            }
+        });
+        waiterIds.value = response.data.waiterIds;
+        waiterSales.value = response.data.waiterSales;
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+}
+
+const filterCommEarned = async (selectedFilter) => {
+    try {
+        const response = await axios.get('/waiter/filterCommEarned', {
+            method: 'GET',
+            params: {
+                selectedFilter: selectedFilter,
+            }
+        });
+        waiterNames.value = response.data.waiterNames;
+        waiterCommission.value = response.data.waiterCommission;
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+}
+
+const applyFilter = (filter) => {
+    selected.value = filter;
+    filterSalesPerformance(selected.value);
+}
+
+const applyCommFilter = (filter) => {
+    selectedFilter.value = filter;
+    filterCommEarned(selectedFilter.value);
+}
+
 onMounted(() => {
     flashMessage();
 });
@@ -87,14 +156,22 @@ const filters = ref({
             <div class="w-full flex flex-col gap-5 justify-center items-center">
                 <div class="w-full flex gap-[21px] flex-col md:flex-row justify-center">
                     <div
-                        class="w-full p-4 sm:p-8 bg-white sm:rounded-lg border border-solid border-primary-100 min-w-[360px]"
+                        class="w-full p-6 bg-white sm:rounded-lg border border-solid border-primary-100 rounded-[5px] min-h-[360px]"
                     >
-                        <SalesPerformance class="w-full" />
+                        <SalesPerformance 
+                            :waiterName="waiterIds"
+                            :waiterSales="waiterSales"
+                            @applyFilter="applyFilter"
+                        />
                     </div>
                     <div
-                        class="w-full p-4 sm:p-8 bg-white sm:rounded-lg border border-solid border-primary-100 min-w-[360px]"
+                        class="w-full p-6  bg-white sm:rounded-lg border border-solid border-primary-100 min-h-[360px]"
                     >
-                        <CommissionEarned />
+                        <CommissionEarned 
+                            :waiterNames="waiterNames"
+                            :waiterCommission="waiterCommission"
+                            @applyCommFilter="applyCommFilter"  
+                        />
                     </div>
                 </div>
 

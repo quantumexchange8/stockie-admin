@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\SaleHistory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,13 +17,16 @@ class SummaryReportController extends Controller
         $message = $request->session()->get('message');
 
         // total sales
-        $totalSales = Order::where('status', 'Order Served')->sum('total_amount');
+        $totalSales = SaleHistory::sum('total_price');
+                            
 
         //total product sold
-        $totalProducts = OrderItem::where('type', 'Normal')->sum('item_qty');
+        $totalProducts = OrderItem::where('type', 'Normal')
+                                    ->where('status', 'Served')
+                                    ->sum('item_qty');
 
         //total orders
-        $totalOrders = Order::all();
+        $totalOrders = Order::where('status','Order Completed')->count();
 
         //order summary
 
@@ -30,7 +34,7 @@ class SummaryReportController extends Controller
 
         $orderSummary = Order::selectRaw('MONTHNAME(created_at) as month, 
                                                     MONTH(created_at) as month_num, 
-                                                    SUM(CASE WHEN status = "Order Served" THEN 1 ELSE 0 END) as total_order')
+                                                    SUM(CASE WHEN status = "Order Completed" THEN 1 ELSE 0 END) as total_order')
                                 ->whereYear('created_at', Carbon::now()->year)
                                 ->groupBy('month', 'month_num')
                                 ->orderBy('month_num')
@@ -90,7 +94,7 @@ class SummaryReportController extends Controller
         $ordersByMonth = array_fill(0, 12, 0);
 
         $orderInYear = Order::selectRaw('MONTH(created_at) as month_num, 
-                                        SUM(CASE WHEN status = "Order Served" THEN 1 ELSE 0 END) as total_order')
+                                        SUM(CASE WHEN status = "Order Completed" THEN 1 ELSE 0 END) as total_order')
                             ->whereYear('created_at', $filterYear)
                             ->groupBy('month_num')
                             ->orderBy('month_num')

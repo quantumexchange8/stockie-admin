@@ -77,7 +77,6 @@ onMounted(() => {
                 severity="info"
                 summary="You can redeem the product only when the customer has checked-in to one table/room."
                 :closable="false"
-                class="xl:col-span-10"
             />
 
             <div class="flex flex-col items-center self-stretch divide-y-[0.5px] divide-grey-200">

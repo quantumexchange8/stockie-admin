@@ -7,32 +7,46 @@ import SearchBar from "@/Components/SearchBar.vue";
 import Table from "@/Components/Table.vue";
 import { Head } from "@inertiajs/vue3";
 import { FilterMatchMode } from "primevue/api";
-import { ref } from "vue";
-import AddCommission from "./AddCommission.vue";
-import EditCommission from "./EditCommission.vue";
+import { onMounted, ref } from "vue";
+import AddCommission from "./Partials/AddCommission.vue";
+import EditCommission from "./Partials/EditCommission.vue";
+import axios from "axios";
 
-const props = defineProps ({
-    columns: {
-        type: Array,
-        required: true,
-    },
-    rows: {
-        type: Array,
-        required: true,
-    },
-    actions: {
-        type: Object,
-        default: () => {},
-    },
-    productNames: {
-        type: Array,
-        required: true,
-    }
-})
 const isNewCommissionOpen = ref(false);
 const isEditCommOpen = ref(false);
 const isDeleteCommOpen = ref(false);
 const selectedProduct = ref();
+const isLoading = ref(false);
+const productNames = ref([]);
+const productToAdd = ref([]);
+const rows = ref([]);
+
+const actions = {
+    view: (productId) => `/configurations/productDetails/${productId}`,
+    edit: () => ``,
+    delete: () => ``,
+};
+
+const columns = ref([
+    { field: 'comm_type', header: 'Type', width: '35', sortable: true},
+    { field: 'rate', header: 'Rate', width: '15', sortable: true},
+    { field: 'product', header: 'Product with this commission', width: '40', sortable: true},
+    { field: 'action', header: '', width: '10', sortable: false},
+])
+
+const viewEmployeeComm = async () => {
+        isLoading.value=true
+    try {
+        const response = await axios.get('/configurations/configurations/commission');
+        rows.value = response.data.commission;
+        productNames.value = response.data.productNames;
+        productToAdd.value = response.data.productToAdd;
+    } catch(error){
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+}
 
 const openEditComm = (event, rows) => {
     handleDefaultClick(event);
@@ -64,6 +78,10 @@ const handleDefaultClick = (event) => {
     event.stopPropagation();
     event.preventDefault();
 }
+
+onMounted (() => {
+    viewEmployeeComm();
+});
 </script>
 
 <template>
@@ -102,7 +120,9 @@ const handleDefaultClick = (event) => {
                 >
                     <AddCommission 
                         :productNames="productNames"
+                        :productToAdd="productToAdd"
                         @closeModal="closeModal"
+                        @viewEmployeeComm="viewEmployeeComm"
                     />
                 </Modal>
             </Button>
@@ -173,6 +193,7 @@ const handleDefaultClick = (event) => {
             :productNames="productNames"
             :commisionDetails="selectedProduct"
             @closeModal="closeModal"
+            @viewEmployeeComm="viewEmployeeComm"
         />
     </Modal>
 

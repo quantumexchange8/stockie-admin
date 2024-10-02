@@ -24,6 +24,10 @@ const props = defineProps({
     commissionDetails: {
         type: Object,
         required: true,
+    },
+    productsToAdd: {
+        type: Array,
+        default: () => {},
     }
 })
 const home = ref({
@@ -48,16 +52,17 @@ const rowType = {
 
 const commDetailsColumn = ref([
     {field: 'product_name', header: 'Product Name', width: '40', sortable: true},
-    {field: 'price', header: 'Price', width: '15', sortable: true},
+    {field: 'price', header: 'Price', width: '20', sortable: true},
     {field: 'commission', header: 'Commission', width: '30', sortable: true},
-    {field: 'action', header: '', width: '15', sortable: false},
+    {field: 'action', header: '', width: '10', sortable: false},
 ])
 
 const actions = {
     delete: () => ``,
 };
 
-const selectedProduct = ref(props.id);
+const selectedProduct = ref(null);
+const removingFrom = ref(props.commissionDetails.id);
 const isDeleteModalOpen = ref(false);
 const isProductModalOpen = ref(false);
 
@@ -80,7 +85,7 @@ const hideDeleteModal = () => {
 
 const form = useForm({
     id: '',
-    commissionId: selectedProduct,
+    commissionId: removingFrom,
 })
 const submit = () => {
     form.delete(route(`configurations.deleteProduct`), {
@@ -117,7 +122,7 @@ const filters = ref({
 
         <Toast />
 
-        <div class="w-full grid justify-center items-start gap-5 flex-[1_0_0] self-stretch grid-cols-12 h-screen">
+        <div class="w-full grid justify-center items-start gap-5 flex-[1_0_0] self-stretch grid-cols-12 h-full">
             <div class="w-full flex flex-col p-6 items-center gap-6 rounded-[5px] border border-solid border-primary-100 col-span-7 ">
                 <div class="flex flex-col items-center gap-6 self-stretch">
                     <div class="flex flex-col justify-center items-start gap-[10px] self-stretch">
@@ -188,7 +193,7 @@ const filters = ref({
                 </div>
             </div>
 
-            <div class="w-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100 col-span-5">
+            <div class="w-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100 col-span-5 h-full">
                 <CommissionDetails 
                     :productDetails="productDetails"
                     :commissionDetails="commissionDetails"                
@@ -229,7 +234,7 @@ const filters = ref({
                             variant="red"
                             size="lg"
                             type="submit"
-                            @click="submit(selectedProduct)"
+                            @click="submit(selectedProduct, removingFrom)"
                         >
                             Remove
                         </Button>
@@ -247,8 +252,8 @@ const filters = ref({
             v-if="isProductModalOpen"
         >
             <AddProduct 
-                :productDetails="productDetails"
                 :id="commissionDetails.id"
+                :productsToAdd="productsToAdd"
                 @hideProductModal="hideProductModal"
             />
 

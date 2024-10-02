@@ -34,14 +34,14 @@ class KeepItem extends Model
         return $this->belongsTo(Waiter::class,'waiter_id');
     }
     
-    public function orderItems(): BelongsTo
+    public function orderItemSubitem(): BelongsTo
     {
-        return $this->belongsTo(OrderItem::class,'order_item_id');
+        return $this->belongsTo(OrderItemSubitem::class,'order_item_subitem_id');
     }
 
     public function keepHistories(): HasMany
     {
-        return $this->hasMany(KeepHistory::class,'keep_items_id');
+        return $this->hasMany(KeepHistory::class,'keep_item_id');
     }
 
 }

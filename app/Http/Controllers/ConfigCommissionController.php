@@ -6,6 +6,7 @@ use App\Models\ConfigEmployeeComm;
 use App\Models\ConfigEmployeeCommItem;
 use App\Models\IventoryItem;
 use App\Models\Product;
+use App\Models\ProductItem;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -35,20 +36,25 @@ class ConfigCommissionController extends Controller
             ];
         });
 
+        // dd($commission);
+
 
         $productNames = Product::select('id', 'product_name')->get();
         // dd($productNames);
 
-        return Inertia::render('Configuration/MainConfiguration', [
+        $items = ProductItem::whereDoesntHave('commItems')->pluck('product_id');
+        $productsToAdd = Product::whereIn('id', $items)->get(['id', 'product_name']);
+
+        return response()->json([
             'commission' => $commission,
             'productNames' => $productNames,
             'message' => $message ?? [],
+            'productToAdd' => $productsToAdd,
         ]);
     }
 
     public function addCommission(Request $request)
     {
-        dd($request->all());
         $validatedData = $request->validate([
             'commType' => ['required', 'string'],
             'commRate' => ['required', 'integer', 'max:255'],
@@ -69,12 +75,12 @@ class ConfigCommissionController extends Controller
             ]);
         }
 
-        $message = [
-            'severity' => 'success',
-            'summary' => 'New commission type has been successfully added.'
-        ];
+        // $message = [
+        //     'severity' => 'success',
+        //     'summary' => 'New commission type has been successfully added.'
+        // ];
 
-        return redirect()->route('configurations')->with(['message' => $message]);
+        return redirect()->route('configurations');
     }
 
     public function deleteCommission (String $id)
@@ -117,20 +123,15 @@ class ConfigCommissionController extends Controller
                     'item' => $products,
                 ]);
             }
-
-            $message = [
-                'severity' => 'success',
-                'summary' => 'Commission type has been edited successfully.'
-            ];
         }
-        else{
-            $message = [
-                'severity' => 'danger',
-                'summary' => 'Error occurred. Please contact administrator.'
-            ];
-        }
+        // else{
+        //     $message = [
+        //         'severity' => 'danger',
+        //         'summary' => 'Error occurred. Please contact administrator.'
+        //     ];
+        // }
 
-        return redirect()->route('configurations')->with(['message' => $message]);
+        // return redirect()->back()->with(['message' => $message]);
     }
 
     public function productDetails(Request $request, String $id)
@@ -214,10 +215,14 @@ class ConfigCommissionController extends Controller
             ];
         }
 
-        return Inertia::render('Configuration/EmployeeCommission/ProductDetails', [
+        $productItems = ProductItem::whereDoesntHave('commItems')->pluck('product_id');
+        $productsToAdd = Product::whereIn('id', $productItems)->get(['id', 'product_name']);
+
+        return Inertia::render('Configuration/EmployeeCommission/Partials/ProductDetails', [
             'message' => $message ?? [],
             'productDetails' => $commDetails,
             'commissionDetails' => $comm,
+            'productsToAdd' => $productsToAdd,
         ]);
     }
 
@@ -238,7 +243,7 @@ class ConfigCommissionController extends Controller
         else
         {
             $message = [
-                'severity' => 'danger',
+                'severity' => 'error',
                 'summary' => 'Error occurred. Please contact administrator.'
             ];
         }
@@ -271,12 +276,12 @@ class ConfigCommissionController extends Controller
                                 'rate' => $request->rate
                             ]);
 
-        $message = [
-            'severity' => 'success',
-            'summary' => 'Product has been edited.'
-        ];
+        // $message = [
+        //     'severity' => 'success',
+        //     'summary' => 'Commission has been edited.'
+        // ];
 
-        return redirect()->back()->with(['message' => $message]);
+        // return redirect()->back()->with(['message' => $message]);
     }
 
     

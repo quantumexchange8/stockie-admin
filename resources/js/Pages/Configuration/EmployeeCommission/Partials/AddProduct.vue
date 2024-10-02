@@ -8,15 +8,15 @@ import { FilterMatchMode } from 'primevue/api';
 import { computed, ref } from 'vue';
 
 const props = defineProps({
-    productDetails: {
-        type: Object,
-        default: () => {},
-    },
     id: Number,
+    productsToAdd: {
+        type: Array,
+        default: () => {},
+    }
     
 })
 const emit = defineEmits(['hideProductModal']);
-const products = ref(props.productDetails.otherProductDetails);
+const products = ref(props.productsToAdd);
 const isAddingProductEmpty = ref(true);
 
 const addingProduct = ref([]);

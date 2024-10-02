@@ -53,7 +53,7 @@ const props = defineProps({
     },
 });
 
-const { flashMessage } = useCustomToast();
+const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close']);
 
@@ -103,7 +103,7 @@ const deleteRecord = () => {
         preserveState: 'errors',
         onSuccess: () => {
             setTimeout(() => {
-                flashMessage({ 
+                showMessage({ 
                     severity: 'success',
                     summary: props.toastMessage,
                 });

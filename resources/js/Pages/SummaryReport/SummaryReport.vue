@@ -16,7 +16,7 @@ const home = ref({
 
 const props = defineProps({
     totalSales: {
-        type: String,
+        type: [String, Number],
         default: 0,
     },
     totalProducts: {
@@ -24,7 +24,7 @@ const props = defineProps({
         default: 0,
     },
     totalOrders: {
-        type: Array,
+        type: Number,
         default: 0,
     },
     ordersArray: {

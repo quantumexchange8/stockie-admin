@@ -44,7 +44,7 @@ const isEditWaiterOpen = ref(false);
 const isDeleteWaiterOpen = ref(false);
 const selectedWaiter = ref(null);
 
-function formatPhone(phone) {
+const formatPhone = (phone) => {
     if (!phone || phone.length < 10) 
         return phone; 
 

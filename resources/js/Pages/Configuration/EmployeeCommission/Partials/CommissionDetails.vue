@@ -4,6 +4,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import { BeerIcon2, CommissionIcon, DeleteIcon, EditIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
+import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -17,6 +18,9 @@ const props = defineProps({
         required: true
     }
 })
+
+const { showMessage } = useCustomToast();
+
 const isEditCommOpen = ref(false);
 const isDeleteCommOpen = ref(false);
 const isRate = ref(props.commissionDetails.comm_type === 'Fixed amount per sold product' ? false : true);
@@ -64,10 +68,16 @@ const isNumber = (e, withDot = true) => {
 const submit = () => {
     form.post(route('configurations.updateCommission'), {
         preserveScroll: true,
-        preserveState: 'errors',
+        preserveState: true,
         onSuccess: () => {
             form.reset();
             hideEditComm();
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Commission has been edited.',
+                });
+            }, 200)
         },
         onError: (errors) => {
             console.error('Form submission error, ', errors);

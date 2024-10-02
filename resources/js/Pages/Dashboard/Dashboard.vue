@@ -17,7 +17,7 @@ const home = ref({
 
 const props = defineProps({
     products: {
-        type: Object,
+        type: Array,
         required: true,
     },
     sales: {

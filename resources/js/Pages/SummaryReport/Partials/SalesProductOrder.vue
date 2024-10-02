@@ -3,7 +3,7 @@ import { BottleIcon, GrowthIcon, ListIcon, WaiterSalesIcon } from '@/Components/
 
 const props = defineProps({
     totalSales: {
-        type: String,
+        type: [String, Number],
         default: 0,
     },
     totalProducts: {
@@ -11,7 +11,7 @@ const props = defineProps({
         default: 0,
     },
     totalOrders: {
-        type: Array,
+        type: Number,
         default: 0,
     }
 })
@@ -81,7 +81,7 @@ const formatNumbers = (value) => {
                 <div class="flex flex-col gap-1 self-stretch">
                     <ListIcon />
                     <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Order</span>
-                    <span class="text-primary-900 text-lg font-medium whitespace-nowrap">{{ formatNumbers(props.totalOrders.length) }}</span>
+                    <span class="text-primary-900 text-lg font-medium whitespace-nowrap">{{ formatNumbers(props.totalOrders ) }}</span>
                 </div>
             </div>
         </div>

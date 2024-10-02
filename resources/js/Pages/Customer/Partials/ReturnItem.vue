@@ -31,6 +31,10 @@ const formSubmit = () => {
         },
     })
 };
+
+const closeItemOverlay = () => {
+    emit('close');
+}
 </script>
 
 <template>
@@ -64,6 +68,7 @@ const formSubmit = () => {
                     :type="'button'"
                     :variant="'tertiary'"
                     :size="'lg'"
+                    @click="closeItemOverlay()"
                 >
                     Cancel
                 </Button>

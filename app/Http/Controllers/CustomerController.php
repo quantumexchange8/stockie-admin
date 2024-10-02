@@ -24,33 +24,33 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $customers = Customer::with([
-            'rankings',
-            'keepItems' => function ($query) {
-                $query->where('status', 'keep')
-                    ->with(['orderItems.product', 'waiters']);
-            }
-        ])->withCount([
-                    'keepItems' => function ($query) {
-                        $query->where('status', 'keep')->where('qty', '>', 0);
-            }
-        ])->get();
+                                    'rankings',
+                                    'keepItems' => function ($query) {
+                                        $query->where('status', 'Keep')
+                                            ->with(['orderItemSubitem.productItem.product', 'waiters']);
+                                    }
+                                ])->withCount([
+                                            'keepItems' => function ($query) {
+                                                $query->where('status', 'Keep')->where('qty', '>', 0);
+                                    }
+                                ])->get();
 
-                $customers = $customers->map(function ($customer) {
-                    $activeKeepItems = $customer->keepItems
-                        ->where('qty', '>', 0)
-                        ->sortByDesc('created_at')
-                        ->map(function ($keepItem) {
-                            $itemName = $keepItem->orderItems->product->product_name ?? 'N/A';
-                                return [
-                                'id' => $keepItem->id,
-                                'item' => $itemName,
-                                'qty' => $keepItem->qty,
-                                'created_at' => $keepItem->created_at->format('d/m/Y, h:i A'),
-                                'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
-                                'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
-                                'waiter_name' => $keepItem->waiters->name ?? 'N/A',
-                            ];
-                        })->toArray(); 
+        $customers = $customers->map(function ($customer) {
+            $activeKeepItems = $customer->keepItems
+                ->where('qty', '>', 0)
+                ->sortByDesc('created_at')
+                ->map(function ($keepItem) {
+                    $itemName = $keepItem->orderItemSubitem->productItem->product->product_name ?? 'N/A';
+                        return [
+                        'id' => $keepItem->id,
+                        'item' => $itemName,
+                        'qty' => $keepItem->qty,
+                        'created_at' => $keepItem->created_at->format('d/m/Y, h:i A'),
+                        'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
+                        'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
+                        'waiter_name' => $keepItem->waiters->name ?? 'N/A',
+                    ];
+                })->toArray(); 
 
                 return [
                 "id" => $customer->id,
@@ -128,7 +128,7 @@ class CustomerController extends Controller
                 ->where('qty', '>', 0)
                 ->sortByDesc('created_at')
                 ->map(function ($keepItem) {
-                    $itemName = $keepItem->orderItems->product->product_name ?? 'N/A';
+                    $itemName = $keepItem->orderItemSubitem->productItem->product->product_name ?? 'N/A';
                         return [
                         'id' => $keepItem->id,
                         'item' => $itemName,
@@ -159,7 +159,7 @@ class CustomerController extends Controller
         $selectedItem = KeepItem::find($request->id);
         if ($selectedItem !== null) {
             $selectedItem->update([
-                'qty' => $request->qty,
+                'qty' => $selectedItem->qty - $request->qty,
             ]);
 
             $selectedItem = KeepHistory::create([
@@ -196,7 +196,7 @@ class CustomerController extends Controller
             foreach ($keepHistories as $history) {
                 $allKeepHistories[] = [
                     'id' => $history->id,
-                    'item_name' => $keepItem->orderItems->product->product_name,
+                    'item_name' => $keepItem->orderItemSubitem->productItem->product->product_name,
                     'keep_item_id' => $keepItem->id,
                     'qty'=> $history->qty,
                     'status' => $history->status,

@@ -32,7 +32,7 @@ const props = defineProps({
 <template>
     <div class="w-full flex items-start gap-[20px]">
         <!-- Sales today -->
-         <div class="w-full flex flex-col p-6 justify-center items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-gradient-to-br from-primary-900 from-[2.42%] to-[#5E0A0E] to-[102.62%]">
+         <div class="w-full h-full flex flex-col p-6 justify-center items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-gradient-to-br from-primary-900 from-[2.42%] to-[#5E0A0E] to-[102.62%]">
             <div class="flex w-[60px] h-[60px] justify-center items-center gap-[10px]">
                 <SalesTodayIcon />
             </div>
@@ -55,7 +55,7 @@ const props = defineProps({
          </div>
 
         <!-- Products Sold today -->
-        <div class="w-full flex flex-col p-6 items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
+        <div class="w-full h-full flex flex-col p-6 items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
             <div class="flex w-[60px] h-[60px] justify-center items-center gap-[10px]">
                 <ProductSoldToday />
             </div>
@@ -79,7 +79,7 @@ const props = defineProps({
         </div>
 
         <!-- order today -->
-        <div class="w-full flex flex-col p-6 items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
+        <div class="w-full h-full flex flex-col p-6 items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
             <div class="flex w-[60px] h-[60px] justify-center items-center gap-[10px]">
                 <OrderToday />
             </div>

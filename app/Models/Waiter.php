@@ -31,4 +31,9 @@ class Waiter extends Model
     {
         return $this->hasMany(WaiterAttendance::class, 'user_id');
     }
+
+    public function configIncentEmployee () : HasMany
+    {
+        return $this->hasMany(ConfigIncentiveEmployee::class, 'user_id');
+    }
 }

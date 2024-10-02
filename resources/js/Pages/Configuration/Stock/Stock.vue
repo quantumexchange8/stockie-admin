@@ -4,7 +4,6 @@ import TextInput from "@/Components/TextInput.vue";
 import Toast from "@/Components/Toast.vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import {ref} from "vue";
-// import { Select } from 'primevue/select';
 
 const stocks = ref();
 const isLoading = ref(false);
@@ -57,7 +56,7 @@ getResults()
 const editLowStock = (object) => {
     isTextInputVisible.value = true;
     form.id = object.id;
-    form.low_stock_qty = object.low_stock_qty;
+    form.low_stock_qty = object.low_stock_qty.toString();
 }
 
 const stopSetting = () => {
@@ -77,7 +76,6 @@ const stopSetting = () => {
         summary="Set low stock quantity"
         detail="How many unit considered as low at stock? Set the low stock quantity for each unit so that we can notify when the item is low at stock. "
         :closable="false"
-        class="xl:col-span-10 "
     />
 
     <form novalidate @submit.prevent="submit">
@@ -98,7 +96,6 @@ const stopSetting = () => {
                     v-show="isTextInputVisible && form.id == stocks.id"
                     :inputType="'Number'"
                     :inputName="'low_stock_qty'"
-                    :modelValue= "form.low_stock_qty.toString()"
                     @blur="stopSetting"
                     @keydown.enter.prevent="submit(form)"
                 >

@@ -10,7 +10,7 @@ const props = defineProps({
         required: true,
     },
     rows: {
-        type: Object,
+        type: Array,
         default: () => [],
     },
     rowType: Object,
@@ -34,7 +34,7 @@ const props = defineProps({
         <template v-if="props.rows.length > 0">
             <Table
                 :columns="columns"
-                :rows="rows"
+                :rows="props.rows"
                 :variant="'list'"
                 :rowType="rowType"
                 :paginator="false"
