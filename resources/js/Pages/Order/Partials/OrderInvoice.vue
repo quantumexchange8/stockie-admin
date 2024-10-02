@@ -14,8 +14,8 @@ const props = defineProps({
 const order = ref(props.order);
 
 const invoiceOrderItemsColumns = ref([
-    {field: 'item_qty', header: 'Qtm', width: '10', sortable: false},
-    {field: 'product_name', header: 'Item', width: '60', sortable: false},
+    {field: 'item_qty', header: 'Qty', width: '15', sortable: false},
+    {field: 'product_name', header: 'Item', width: '55', sortable: false},
     {field: 'amount', header: 'Amt (RM)', width: '30', sortable: false},
 ]);
 
@@ -38,7 +38,7 @@ const grandTotal = computed(() => {
 })
 
 const totalEarnedPoints = computed(() => {
-    return order.value.order_items.reduce((total, item) => total + item.point_earned, 0) ?? 0.00;
+    return order.value.order_items.filter((item) => item.status === 'Served').reduce((total, item) => total + item.point_earned, 0) ?? 0.00;
 })
 </script>
 

@@ -191,6 +191,12 @@ Route::middleware('auth')->group(function () {
         // Order items
         Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');
         Route::put('/orders/updateOrderItem/{id}', [OrderController::class, 'updateOrderItem'])->name('orders.items.update');
+        Route::post('/orders/addItemToKeep', [OrderController::class, 'addItemToKeep'])->name('orders.items.keep');
+
+        // Order's customer
+        Route::get('/orders/customer/{id}', [OrderController::class, 'getCustomerDetails'])->name('orders.customer');
+        Route::get('/orders/customer/keep/getCustomerKeepHistories/{id}', [OrderController::class, 'getCustomerKeepHistories'])->name('orders.customer.keep.getCustomerKeepHistories');
+        Route::post('/orders/customer/keep/addKeptItemToOrder/{id}', [OrderController::class, 'addKeptItemToOrder'])->name('orders.customer.keep.addKeptItemToOrder');
 
         Route::get('/getAllZones', [OrderController::class, 'getAllZones'])->name('orders.getAllZones');
         Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');

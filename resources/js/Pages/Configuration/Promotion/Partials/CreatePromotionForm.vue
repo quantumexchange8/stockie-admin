@@ -48,13 +48,15 @@ const closeForm = () => {
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
-        <div class="flex flex-col items-start self-stretch gap-6 max-h-[450px] pl-1 pr-2 py-1 overflow-auto scrollbar-thin scrollbar-webkit">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[450px] pl-1 pr-2 py-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
             <DragDropImage
-                :inputName="'image'"
+                inputName="image"
+                remarks="Suggested image size: 1920 x 1080 pixel"
                 :errorMessage="form.errors.image"
                 v-model="form.image"
+                class="col-span-full h-[244px]"
             />
-            <div class="flex flex-col items-start gap-4 flex-[1_0_0] self-stretch">
+            <div class="col-span-full flex flex-col items-start gap-4 flex-[1_0_0] self-stretch">
                 <div class="flex flex-col items-start gap-4 self-stretch">
                     <TextInput
                         :inputName="'title'"

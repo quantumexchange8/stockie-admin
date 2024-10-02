@@ -116,7 +116,7 @@ const submit = () => {
     })
 };
 
-const filteredOrderItems = computed(() => props.orderItems.filter((item) => getLeftoverQuantity(item) !== 0));
+const filteredOrderItems = computed(() => props.orderItems.filter((item) => getLeftoverQuantity(item) !== 0 && item.type === 'Normal'));
 
 const getAdjustedAmount = (item) => {
     return parseFloat(item.amount / item.item_qty * getLeftoverQuantity(item)).toFixed(2);
@@ -226,6 +226,7 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                     <Button
                         variant="red"
                         size="lg"
+                        :disabled="form.processing"
                     >
                         Delete
                     </Button>

@@ -1,0 +1,369 @@
+<script setup>
+import axios from 'axios';
+import { useForm, usePage } from '@inertiajs/vue3';
+import { onMounted, ref, computed, watch } from 'vue';
+import Button from '@/Components/Button.vue';
+import { useCustomToast } from '@/Composables/index.js';
+import Tag from '@/Components/Tag.vue';
+import Checkbox from '@/Components/Checkbox.vue';
+import NumberCounter from '@/Components/NumberCounter.vue';
+import Textarea from '@/Components/Textarea.vue';
+import TextInput from '@/Components/TextInput.vue';
+import RadioButton from '@/Components/RadioButton.vue';
+import Dropdown from '@/Components/Dropdown.vue';
+import DateInput from "@/Components/Date.vue";
+import Toggle from '@/Components/Toggle.vue';
+import { Calendar } from "@/Components/Icons/solid";
+import dayjs from 'dayjs';
+
+const props = defineProps({
+    errors: Object,
+    selectedTable: {
+        type: Object,
+        default: () => {}
+    },
+    order: {
+        type: Object,
+        default: () => {}
+    }
+})
+
+const page = usePage();
+const userId = computed(() => page.props.auth.user.id)
+
+const { showMessage } = useCustomToast();
+
+const emit = defineEmits(['close']);
+
+const products = ref([]);
+
+const keepTypes = [
+    { text: 'in quantity', value: 'qty' },
+    { text: 'in cm', value: 'cm' },
+];
+
+const expiryPeriodOptions = [
+    { text: "1 month starting from today", value: 1 },
+    { text: "3 months starting from today", value: 3 },
+    { text: "6 months starting from today", value: 6 },
+    { text: "12 months starting from today", value: 12 },
+    { text: "Customise range...", value: 0 },
+];
+
+const form = useForm({
+    user_id: userId.value,
+    customer_id: props.order.customer_id,
+    waiter_id: props.order.waiter_id,
+    order_id: props.order.id,
+    items: [],
+});
+    
+const formSubmit = () => { 
+    form.post(route('orders.items.keep'), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Item kept successfully.',
+                    detail: "You can always refer back the keep item in 'Customer detail'.",
+                });
+            }, 200);
+            form.reset();
+            emit('close');
+        },
+    })
+};
+
+onMounted(async() => {
+    try {
+        const productsResponse = await axios.get(route('orders.getAllProducts'));
+        products.value = productsResponse.data;
+        
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+});
+
+const pendingServeItems = computed(() => {
+    if (!props.order || !props.order.order_items) {
+        return [];
+    }
+
+    return props.order 
+        ? props.order.order_items
+                .map((item) => {
+                    return {
+                        ...item,
+                        total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
+                        total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
+                    };
+                })
+                .filter((item) => item.status === 'Pending Serve')
+                .filter((item) => item.type === 'Normal')
+        : [];
+});
+
+const getTotalServedQty = (item) => {
+    let count = 0;
+    const totalServedQty = [];
+
+    item.sub_items.forEach((subItem) => {
+        const servedQty = Math.ceil(subItem.serve_qty / subItem.item_qty);
+        count++;
+
+        return servedQty > 0 || count > 1 ? totalServedQty.push(servedQty) : totalServedQty.push(0);
+    });
+
+    return Math.max(...totalServedQty);
+};
+
+const getLeftoverQuantity = (item) => {
+    if (!item.sub_items || item.sub_items.length === 0) return item.item_qty;
+    
+    const untouchedQty = item.item_qty - getTotalServedQty(item);
+
+    return untouchedQty > 0 ? untouchedQty : 0;
+};
+
+const addItemToList = (item) => {
+    const index = form.items.findIndex(i => i.order_item_id === item.id);
+
+    if (index !== -1) {
+        // Remove all subitems if order item is unchecked
+        form.items = form.items.filter(i => i.order_item_id !== item.id);
+    } else {
+        item.sub_items.forEach((subItem) => {
+            form.items.push({
+                order_item_id: item.id,
+                order_item_subitem_id: subItem.id,
+                type: 'qty',
+                amount: (subItem.item_qty * item.item_qty) - subItem.serve_qty,
+                remark: '',
+                expiration: false,
+                expired_period: '',
+                date_range: '',
+                expired_from: '',
+                expired_to: '',
+                // keep_id: item.type === 'Keep' ?
+            });
+        });
+    }
+}
+
+const updateKeepAmount = (item, type) => {
+    item.amount = type === 'cm' ? (item.amount).toString() : parseInt(item.amount);
+}
+
+const isNumber = (e, withDot = true) => {
+    const { key, target: { value } } = e;
+    
+    if (/^\d$/.test(key)) return;
+
+    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
+    
+    e.preventDefault();
+};
+
+// Function to update textarea value for all subitems
+const updateRemarkForSubitems = (orderItemId, remark) => {
+    form.items.forEach((item) => {
+        if (item.order_item_id === orderItemId) {
+            item.remark = remark;
+        }
+    });
+};
+
+const toggleExpiration = (orderItemId, expiration) => {
+    form.items.forEach((item) => {
+        if (item.order_item_id === orderItemId) {
+            item.expiration = expiration;
+            if (!expiration) {
+                item.expired_period = '';
+                item.date_range = '';
+                item.expired_from = '';
+                item.expired_to = '';
+            }
+        }
+    });
+};
+
+const updateValidPeriod = (orderItemId, option) => {
+    form.items.forEach((item) => {
+        if (item.order_item_id === orderItemId) {
+            item.expired_from = option === 0  || typeof option === 'object' 
+                                ? dayjs(option[0]).format('YYYY-MM-DD') 
+                                : dayjs().format('YYYY-MM-DD');
+            item.expired_to = option === 0 || typeof option === 'object' 
+                                ? dayjs(option[1]).format('YYYY-MM-DD') 
+                                : dayjs().add(option, 'month').format('YYYY-MM-DD');
+        }
+    });
+}
+</script>
+
+<template>
+    <form novalidate @submit.prevent="formSubmit">
+        <div class="flex flex-col gap-y-6 items-start rounded-[5px]">
+            <div class="flex flex-col justify-center items-start gap-y-3 px-6 py-3 w-full">
+                <div class="flex flex-col gap-y-3 py-6 justify-center items-center w-full bg-[rgba(255,_249,_249,_0.90)] rounded-[5px]">
+                    <div class="bg-primary-700 rounded-full size-20"></div>
+                    <div class="flex flex-col gap-y-2 items-center">
+                        <p class="text-primary-900 text-base font-semibold">{{ order.customer.full_name }}</p>
+                        <div class="flex items-center justify-center gap-x-2">
+                            <p class="text-primary-950 text-sm font-medium">{{ order.customer.email }}</p>
+                            <span class="text-grey-200">&#x2022;</span>
+                            <p class="text-primary-950 text-sm font-medium">({{ order.customer.phone }})</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-y-2 self-stretch max-h-[calc(100dvh-29rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+                    <template v-if="pendingServeItems.length > 0">
+                        <div class="flex flex-col divide-y-[0.5px] divide-grey-200">
+                            <div class="flex flex-col gap-y-2 py-3" v-for="(item, index) in pendingServeItems" :key="index">
+                                <div class="flex justify-between items-center gap-x-3">
+                                    <div class="flex flex-nowrap gap-x-3 items-center">
+                                        <div class="p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
+                                        <div class="flex flex-col gap-y-2 items-start justify-center self-stretch">
+                                            <div class="flex flex-nowrap gap-x-2 items-center">
+                                                <Tag value="Set" v-if="item.product.bucket === 'set'"/>
+                                                <p class="text-base font-medium text-grey-900 truncate flex-shrink">{{ item.product.product_name }}</p>
+                                            </div>
+                                            <div class="flex flex-nowrap gap-x-2 items-center">
+                                                <p class="text-sm font-medium text-primary-950">{{ item.product.bucket === 'set' ? 'Quantity in set:' : 'Quantity:' }} {{ item.item_qty }}</p>
+                                                <p class="text-sm font-medium text-green-800">Served: {{ getTotalServedQty(item) }}</p>
+                                                <p class="text-sm font-medium text-primary-700">Left: {{ getLeftoverQuantity(item) }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Checkbox 
+                                        :checked="false"
+                                        @change="addItemToList(item)"
+                                    />
+                                </div>
+                                
+                                <template v-if="form.items.find(i => i.order_item_id === item.id)">
+                                    <template v-for="(subItem, index) in item.sub_items" :key="index">
+                                        <div class="flex flex-col self-stretch gap-y-2 py-3">
+                                            <div class="flex justify-between items-center self-stretch" v-if="item.sub_items.length > 1">
+                                                <p class="text-base text-grey-900 font-medium">
+                                                    {{ item.product.product_items.find(i => i.id === subItem.product_item_id).inventory_item.item_name }}
+                                                </p>
+                                                <div class="flex items-center gap-2 self-stretch text-primary-900 text-xs font-medium">
+                                                    <p>Served:</p>
+                                                    <p>{{ subItem.serve_qty }}/{{ subItem.item_qty * item.item_qty }}</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex justify-between items-center">
+                                                <div class="flex items-start gap-6">
+                                                    <RadioButton
+                                                        :optionArr="keepTypes"
+                                                        :checked="form.items.find(i => i.order_item_subitem_id === subItem.id).type"
+                                                        v-model:checked="form.items.find(i => i.order_item_subitem_id === subItem.id).type"
+                                                        @onChange="updateKeepAmount(form.items.find(i => i.order_item_subitem_id === subItem.id), $event)"
+                                                    />
+                                                </div>
+    
+                                                <NumberCounter
+                                                    v-if="form.items.find(i => i.order_item_subitem_id === subItem.id).type === 'qty'"
+                                                    :inputName="`item_${subItem.id}.amount`"
+                                                    :maxValue="getLeftoverQuantity(item)"
+                                                    :errorMessage="form.errors ? form.errors['items.' + index + '.amount']  : ''"
+                                                    v-model="form.items.find(i => i.order_item_subitem_id === subItem.id).amount"
+                                                    class="!w-36"
+                                                />
+                                                <TextInput
+                                                    v-if="form.items.find(i => i.order_item_subitem_id === subItem.id).type === 'cm'"
+                                                    :inputName="`item_${subItem.id}.amount`"
+                                                    :iconPosition="'right'"
+                                                    :errorMessage="form.errors ? form.errors['items.' + index + '.amount']  : ''"
+                                                    v-model="form.items.find(i => i.order_item_subitem_id === subItem.id).amount"
+                                                    @keypress="isNumber($event)"
+                                                    class="!w-36"
+                                                >
+                                                    <template #prefix>cm</template>
+                                                </TextInput>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <Textarea
+                                        inputName="remark"
+                                        labelText="Remark"
+                                        :rows="5"
+                                        :maxCharacters="60" 
+                                        :errorMessage="form.errors ? form.errors['items.' + index + '.remark']  : ''"
+                                        class="col-span-full xl:col-span-4 [&>div>label:first-child]:text-xs [&>div>label:first-child]:font-medium [&>div>label:first-child]:text-grey-900"
+                                        v-model="form.items.find(i => i.order_item_id === item.id).remark"
+                                        @input="updateRemarkForSubitems(item.id, $event.target.value)"
+                                    />
+                                    
+                                    <div class="justify-end flex gap-3">
+                                        <Toggle
+                                            :checked="form.items.find(i => i.order_item_id === item.id).expiration"
+                                            :inputName="'expiration'"
+                                            inputId="expiration"
+                                            v-model="form.items.find(i => i.order_item_id === item.id).expiration"
+                                            @change="toggleExpiration(item.id, $event.target.checked)"
+                                        />
+                                        <p class="text-base text-grey-900 font-normal">
+                                            With Keep Expiration Date
+                                        </p>
+                                    </div>
+
+                                    <template v-if="form.items.find(i => i.order_item_id === item.id).expiration">
+                                        <div class="flex flex-col gap-3 items-start">
+                                            <Dropdown
+                                                labelText="Expire Date Range"
+                                                :placeholder="'Select'"
+                                                :inputArray="expiryPeriodOptions"
+                                                :dataValue="form.items.find(i => i.order_item_id === item.id).expired_period"
+                                                inputId="expired_period"
+                                                :inputName="'expired_period_' + index"
+                                                v-model="form.items.find(i => i.order_item_id === item.id).expired_period"
+                                                @onChange="updateValidPeriod(item.id, $event)"
+                                                :iconOptions="{
+                                                    'Customise range...': Calendar,
+                                                }"
+                                            />
+
+                                            <DateInput
+                                                v-if="form.items.find(i => i.order_item_id === item.id).expired_period === 0"
+                                                :labelText="''"
+                                                :inputName="'date_range_' + index"
+                                                :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                                                :range="true"
+                                                :errorMessage="form.errors ? form.errors['items.' + index + '.expired_to']  : ''"
+                                                @onChange="updateValidPeriod(item.id, $event)"
+                                                v-model="form.items.find(i => i.order_item_id === item.id).date_range"
+                                            />
+                                        </div>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <p class="text-base font-medium text-grey-900">No pending item can be kept.</p>
+                    </template>
+                </div>
+            </div>
+
+            <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-y-6 self-stretch bg-white">
+                <p class="self-stretch text-grey-900 text-right text-md font-medium">{{ form.items.length }} item selected</p>
+                <Button
+                    size="lg"
+                    :disabled="form.items.length === 0 || form.processing"
+                >
+                    Done
+                </Button>
+            </div>
+        </div>
+    </form>
+</template>
+    

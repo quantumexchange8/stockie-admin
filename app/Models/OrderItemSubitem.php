@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrderItemSubitem extends Model
@@ -36,5 +37,14 @@ class OrderItemSubitem extends Model
     public function productItem(): BelongsTo
     {
         return $this->belongsTo(ProductItem::class, 'product_item_id');
+    }
+
+    /**
+     * KeepItem Model
+     * Get the keep item of the order item subitem.
+     */
+    public function keepItem(): HasOne
+    {
+        return $this->hasOne(KeepItem::class, 'order_item_subitem_id');
     }
 }

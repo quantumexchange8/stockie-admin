@@ -87,7 +87,7 @@ onUnmounted(() => {
             }),
             mask: ({ props }) => ({
                 class: [
-                    'transition-all duration-300',
+                    'transition-all duration-300 !z-[1106]',
                     { 'p-5': !props.position == 'full' },
 
                     // Background and Effects

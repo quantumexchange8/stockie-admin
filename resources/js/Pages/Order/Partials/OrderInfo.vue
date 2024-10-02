@@ -8,6 +8,7 @@ import { CancelIllus, OrderCompleteIllus } from '@/Components/Icons/illus';
 import { useForm } from '@inertiajs/vue3';
 import OrderInvoice from './OrderInvoice.vue';
 import { useCustomToast } from '@/Composables/index.js';
+import CustomerDetail from './CustomerDetail.vue';
 
 const props = defineProps({
     errors: Object,
@@ -21,8 +22,9 @@ const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close']);
 
-const tabs = ref(['Order Detail', 'Customer/Detail']);
+const tabs = ref(['Order Detail']);
 const order = ref({});
+const customer = ref({});
 const cancelOrderFormIsOpen = ref(false);
 const orderCompleteModalIsOpen = ref(false);
 const orderInvoiceModalIsOpen = ref(false);
@@ -32,7 +34,18 @@ onMounted(async() => {
         const orderResponse = await axios.get(route('orders.getOrderWithItems', props.selectedTable.order_table.order_id));
         order.value = orderResponse.data;
 
-        if (order.value) form.order_id = order.value.id;
+        if (order.value.customer_id) {
+            const customerResponse = await axios.get(route('orders.customer', order.value.customer_id));
+            customer.value = customerResponse.data;
+        }
+        
+        if (order.value) {
+            form.order_id = order.value.id;
+            form.customer_id = order.value.customer_id;
+            if (order.value.customer_id !== null) tabs.value.push('Customer Detail');
+        }
+
+
     } catch (error) {
         console.error(error);
     } finally {
@@ -42,6 +55,7 @@ onMounted(async() => {
 
 const form = useForm({
     order_id: order.value.id,
+    customer_id: '',
     action_type: ''
 });
 
@@ -145,7 +159,7 @@ const isOrderCompleted = computed(() => {
                                     })
                             : [];
 
-    return mappedOrder.every((item) => item.status === 'Served' || item.status === 'Cancelled');
+    return mappedOrder.every((item) => item.status === 'Served' || item.status === 'Cancelled') && !form.processing;
 });
 
 const formattedOrder = computed(() => {
@@ -161,6 +175,12 @@ const formattedOrder = computed(() => {
 
     return order.value;
 });
+
+const hasServedItem = computed(() => {
+    return !order.value.id 
+        || order.value?.order_items?.some(item => item.sub_items.some((subItem) => subItem.serve_qty > 0))
+        || order.value?.order_items?.some(item => item.type === 'Keep' || item.type === 'Expired');
+});
 </script>
 
 <template>
@@ -170,8 +190,8 @@ const formattedOrder = computed(() => {
                 <template #order-detail>
                     <OrderDetail :selectedTable="selectedTable" :order="order" @close="closeDrawer" />
                 </template>
-                <template #customer-detail>
-                    
+                <template #customer-detail v-if="order.customer_id">
+                    <CustomerDetail :customer="customer" :orderId="order.id" :tableStatus="selectedTable.status" @close="closeDrawer"/>
                 </template>
             </TabView>
         </div>
@@ -200,7 +220,7 @@ const formattedOrder = computed(() => {
                         type="button"
                         variant="tertiary"
                         size="lg"
-                        :disabled="!order.id"
+                        :disabled="hasServedItem"
                         @click="showCancelOrderForm"
                         v-if="selectedTable.status !== 'Pending Clearance'"
                     >
@@ -283,6 +303,7 @@ const formattedOrder = computed(() => {
                     <Button
                         variant="red"
                         size="lg"
+                        :disabled="form.processing"
                     >
                         Cancel
                     </Button>

@@ -20,6 +20,7 @@ class OrderItem extends Model
         'user_id',
         'waiter_id',
         'type',
+        'keep_item_id',
         'product_id',
         'item_qty',
         'amount',
@@ -35,15 +36,6 @@ class OrderItem extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class, 'order_id');
-    }
-
-    /**
-     * KeepItem Model
-     * Get the keep item of the order item.
-     */
-    public function keepItem(): HasOne
-    {
-        return $this->hasOne(KeepItem::class, 'order_item_id');
     }
 
     /**
@@ -84,6 +76,15 @@ class OrderItem extends Model
 
     public function point(): BelongsTo
     {
-        return $this->BelongsTo(Point::class, 'product_id');
+        return $this->belongsTo(Point::class, 'product_id');
+    }
+
+    /**
+     * KeepItem Model
+     * Get the keep item of the order item.
+     */
+    public function keepItem(): BelongsTo
+    {
+        return $this->belongsTo(KeepItem::class, 'keep_item_id');
     }
 }

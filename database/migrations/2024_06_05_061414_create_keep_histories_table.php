@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('keep_histories', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('keep_item_id');
-            $table->unsignedBigInteger('order_item_id');
+            $table->unsignedBigInteger('order_item_id')->nullable()->default(NULL);
             $table->string('qty');
             $table->string('cm');
             $table->dateTime('keep_date');
-            $table->dateTime('status');
+            $table->string('status');
             $table->softDeletes();
             $table->timestamps();
         });

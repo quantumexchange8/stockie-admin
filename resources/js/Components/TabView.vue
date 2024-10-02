@@ -10,9 +10,19 @@ const props = defineProps({
     },
 });
 
+// const formatTabTitle = (tab) => {
+//     return tab.replace(/[/_]+/g, " ").replace(/^-+|-+$/g, " "); // Replace spaces, '/', and '_' with '-' | Remove leading or trailing '-'
+// };
+
+// Replace spaces, '/', and '_' with '-' 
+// Remove leading or trailing '-'
 const tranformedTabs = computed(() => {
     return props.tabs.map((tab) => 
-        tab.toLowerCase().replace(/[^a-z0-9]+|^-+|-+$/g, "-").replace(/^-+|-+$/g, "")
+        tab
+            .toLowerCase()
+            .replace(/[/\s_]+/g, "-") // Replace spaces and '/' with '-'
+            .replace(/[^a-z0-9-]+/g, "") // Remove any characters other than alphanumeric and '-'
+            .replace(/^-+|-+$/g, "") // Remove leading or trailing '-'
     )
 });
 </script>

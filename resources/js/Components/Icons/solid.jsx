@@ -2631,3 +2631,20 @@ export const RecurringIcon = defineComponent({
         )
     }
 })
+
+export const CommentIcon = defineComponent({
+    setup() {
+        return () => (
+            <svg width="12" height="13" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g clip-path="url(#clip0_897_32515)">
+                    <path d="M12 1.7C12 1.04 11.46 0.5 10.8 0.5H1.2C0.54 0.5 0 1.04 0 1.7V8.9C0 9.56 0.54 10.1 1.2 10.1H9.6L12 12.5V1.7ZM9.6 7.7H2.4V6.5H9.6V7.7ZM9.6 5.9H2.4V4.7H9.6V5.9ZM9.6 4.1H2.4V2.9H9.6V4.1Z" fill="#7E171B"/>
+                </g>
+                <defs>
+                    <clipPath id="clip0_897_32515">
+                        <rect width="12" height="12" fill="white" transform="translate(0 0.5)"/>
+                    </clipPath>
+                </defs>
+            </svg>
+        )
+    }
+})

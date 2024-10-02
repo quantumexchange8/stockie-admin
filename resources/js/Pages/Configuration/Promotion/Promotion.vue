@@ -64,7 +64,7 @@ const hideCreateForm = () => {
             <Modal 
                 :title="'Add New Promotion'"
                 :show="createFormIsOpen" 
-                :maxWidth="'lg'" 
+                :maxWidth="'md'" 
                 :closeable="true" 
                 @close="hideCreateForm"
             >

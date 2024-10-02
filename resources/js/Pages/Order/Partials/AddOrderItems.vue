@@ -245,7 +245,7 @@ const quantityComputed = (productId) => {
                 <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: RM{{ calculatedTotalAmount }}</p>
                 <Button
                     size="lg"
-                    :disabled="form.items.length === 0"
+                    :disabled="form.items.length === 0 || form.processing"
                 >
                     Add to Order
                 </Button>

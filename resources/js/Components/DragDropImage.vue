@@ -16,6 +16,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    remarks: {
+        type: String,
+        default: ''
+    }
 });
 
 const hasFile = ref(false);
@@ -33,7 +37,7 @@ const removeFile = (removeFileCallback) => {
 }
 
 const imageClasses = computed(() => [
-    'w-full h-full object-cover rounded-[5px]',
+    'w-full h-full object-contain rounded-[5px]',
     props.imageClass
 ])
 </script>
@@ -87,7 +91,7 @@ const imageClasses = computed(() => [
                         @click="chooseCallback()" 
                         :type="'button'"
                         :size="'md'"
-                        class="!w-fit absolute bottom-28"
+                        class="!w-fit absolute top-[calc(50%+2.5rem)]"
                     >
                         Select an image
                     </Button>
@@ -140,7 +144,7 @@ const imageClasses = computed(() => [
                             <div class="h-11"></div>
                         </div>
                     </div>
-                    <p class="text-grey-300 text-xs font-medium">Suggested image size: 1920 x 1080 pixel</p>
+                    <p class="text-grey-300 text-xs font-medium">{{ remarks }}</p>
                 </div>
             </template>
         </FileUpload>

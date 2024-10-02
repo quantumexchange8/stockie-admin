@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('keep_items', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('customer_id');
-            $table->unsignedBigInteger('order_item_id');
+            $table->unsignedBigInteger('order_item_subitem_id');
             $table->double('qty')->nullable();
             $table->decimal('cm', 13, 2)->nullable();
             $table->string('remark');

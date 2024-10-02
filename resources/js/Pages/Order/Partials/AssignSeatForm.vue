@@ -64,8 +64,8 @@ const isNumber = (e, withDot = true) => {
 };
 
 const isFormValid = computed(() => {
-    return form.reservation ? ['reservation_date', 'pax'].every(field => form[field])
-                            : ['pax', 'waiter_id'].every(field => form[field]);
+    return form.reservation ? ['reservation_date', 'pax'].every(field => form[field]) && !form.processing
+                            : ['pax', 'waiter_id'].every(field => form[field]) && !form.processing;
 });
 
 watch(() => form.reservation, (newValue) => {

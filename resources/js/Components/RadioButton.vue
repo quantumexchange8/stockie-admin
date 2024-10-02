@@ -17,7 +17,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['update:checked']);
+const emit = defineEmits(["update:checked", "onChange"]);
 
 const selected = ref(props.checked);
 const optionListArr = ref([]);
@@ -57,6 +57,7 @@ const proxyChecked = computed({
             name="dynamic" 
             :value="option.value" 
             :disabled="disabled"
+            @change="$emit('onChange', $event.target.value)"
             :pt="{
                 root: {
                     class: [
