@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('description');
             $table->dateTime('promotion_from');
             $table->dateTime('promotion_to');
+            $table->string('status');
             $table->string('image');
             $table->softDeletes();
             $table->timestamps();

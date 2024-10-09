@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrderItemSubitem extends Model
@@ -41,10 +41,10 @@ class OrderItemSubitem extends Model
 
     /**
      * KeepItem Model
-     * Get the keep item of the order item subitem.
+     * Get the keep items of the order item subitem.
      */
-    public function keepItem(): HasOne
+    public function keepItems(): HasMany
     {
-        return $this->hasOne(KeepItem::class, 'order_item_subitem_id');
+        return $this->hasMany(KeepItem::class, 'order_item_subitem_id');
     }
 }

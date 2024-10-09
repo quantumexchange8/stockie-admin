@@ -120,7 +120,7 @@ onMounted(() => {
                                 </button>
                                 <slot name="header"/>
                             </div>
-                            <div class="flex items-start gap-3">
+                            <div class="flex items-start gap-8">
                                 <NumberedNotificationIcon 
                                     class="text-primary-900 hover:text-primary-800"
                                     :notificationValue="10"

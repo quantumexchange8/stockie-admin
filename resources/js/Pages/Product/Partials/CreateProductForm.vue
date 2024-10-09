@@ -29,6 +29,7 @@ const emit = defineEmits(['close']);
 const categoryArr = ref(props.categoryArr);
 const inventoriesArr = ref(props.inventoriesArr);
 const open = ref(false);
+const updateProductNameCounter = ref(0);
 
 const form = useForm({
     image:'',
@@ -77,6 +78,10 @@ const updateInventoryStockCount = async (index, id) => {
             const item = form.items[index];
             item.inventory_stock_qty = data.stock_qty;
             item.status = data.status;
+            if (updateProductNameCounter.value === 0) {
+                form.product_name = data.item_name;
+                updateProductNameCounter.value++;
+            }
             
             if (item.bucket === true) {
                 item.qty = data.stock_qty >= 2 ? 2 : 0;

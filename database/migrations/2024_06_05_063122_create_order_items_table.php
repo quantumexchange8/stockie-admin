@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('order_id');
             $table->unsignedBigInteger('user_id')->nullable()->default(NULL);
-            $table->unsignedBigInteger('waiter_id')->nullable()->default(NULL);
+            // $table->unsignedBigInteger('waiter_id')->nullable()->default(NULL);
             $table->string('type');
             $table->unsignedBigInteger('keep_item_id')->nullable()->default(NULL);
             $table->unsignedBigInteger('product_id');

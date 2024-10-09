@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedInteger('category_id');
             $table->string('keep');
             $table->string('status');
+            $table->string('availability');
             $table->softDeletes();
             $table->timestamps();
         });

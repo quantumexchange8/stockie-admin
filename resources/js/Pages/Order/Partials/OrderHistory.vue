@@ -1,7 +1,7 @@
 <script setup>
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { FilterMatchMode } from 'primevue/api';
 import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';
@@ -107,6 +107,10 @@ const hideOrderInvoiceModal = () => {
     }, 200);
     orderInvoiceModalIsOpen.value = false;
 };
+
+const sortedRows = computed(() => {
+    return rows.value.sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
+});
 </script>
 
 <template>
@@ -137,7 +141,7 @@ const hideOrderInvoiceModal = () => {
         <Table 
             ref="orderHistoryTable"
             :variant="'list'"
-            :rows="rows"
+            :rows="sortedRows"
             :columns="columns"
             :rowsPerPage="rowsPerPage"
             :totalPages="totalPages"
@@ -149,8 +153,8 @@ const hideOrderInvoiceModal = () => {
                 <UndetectableIllus />
                 <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
             </template>
-            <template #created_at="row">
-                <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.created_at).format('DD/MM/YYYY, HH:mm') }}</span>
+            <template #updated_at="row">
+                <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.updated_at).format('DD/MM/YYYY, HH:mm') }}</span>
             </template>
             <template #table_no="row">
                 <span class="text-grey-900 text-sm font-medium">{{ row.order_table.table.table_no }}</span>

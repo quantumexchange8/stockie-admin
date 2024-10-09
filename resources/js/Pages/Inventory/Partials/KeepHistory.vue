@@ -9,6 +9,11 @@ import { FilterMatchMode } from 'primevue/api';
 import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
+import KeepHistoryTable from './KeepHistoryTable.vue';
+
+const props = defineProps({
+    keepHistories: Array
+})
 
 const home = ref({
     label: 'Inventory',
@@ -18,16 +23,15 @@ const items = ref([
     { label: 'Keep History' },
 ]);
 // only for 'list' variant of table component
-const allStockHistoryColumns = ref([
+const columns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'inventory_item', header: 'Item Name', width: '40', sortable: true},
-    {field: 'old_stock', header: 'Previous Stock', width: '20', sortable: true},
-    {field: 'in', header: 'In', width: '10', sortable: true},
-    {field: 'out', header: 'Out', width: '10', sortable: true},
-    {field: 'current_stock', header: 'Current Stock', width: '20', sortable: true},
+    {field: 'item_name', header: 'Item Name', width: '40', sortable: true},
+    {field: 'quantity', header: 'Quantity', width: '18', sortable: true},
+    {field: 'keep_date', header: 'Date', width: '20', sortable: true},
+    {field: 'keep_for', header: 'Keep For', width: '22', sortable: true},
 ]);
 
-const stockHistories = ref([]);
+const keepHistories = ref(props.keepHistories);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -50,15 +54,15 @@ const rowType = {
 }
 
 // Get filtered inventories
-const getStockHistories = async (filters = {}) => {
+const getKeepHistories = async (filters = {}) => {
     try {
-        const stockHistoryResponse = await axios.get('/inventory/inventory/getAllStockHistory', {
+        const keepHistoryResponse = await axios.get('/inventory/inventory/getAllKeepHistory', {
             method: 'GET',
             params: {
                 dateFilter: filters,
             }
         });
-        stockHistories.value = stockHistoryResponse.data;
+        keepHistories.value = keepHistoryResponse.data;
     } catch (error) {
         console.error(error);
     } finally {
@@ -66,12 +70,8 @@ const getStockHistories = async (filters = {}) => {
     }
 }
 
-onMounted(async () => {
-    getStockHistories(date_filter.value);
-});
-
 watch(() => date_filter.value, () => {
-    getStockHistories(date_filter.value);
+    getKeepHistories(date_filter.value);
 })
 
 </script>
@@ -104,9 +104,9 @@ watch(() => date_filter.value, () => {
         </div>
         
         <div class="flex flex-col justify-center gap-5">
-            <StockHistoryTable
-                :columns="allStockHistoryColumns"
-                :rows="[]"
+            <KeepHistoryTable
+                :columns="columns"
+                :rows="keepHistories"
                 :rowType="rowType"
                 :filters="filters"
             />

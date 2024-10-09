@@ -11,6 +11,10 @@ import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 
+const props = defineProps({
+    stockHistories: Array
+})
+
 const home = ref({
     label: 'Inventory',
     route: '/inventory/inventory'
@@ -50,7 +54,7 @@ const allOutStockHistoryColumns = ref([
     {field: 'current_stock', header: 'Current Stock', width: '20', sortable: true},
 ]);
 
-const stockHistories = ref([]);
+const stockHistories = ref(props.stockHistories);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -88,10 +92,6 @@ const getStockHistories = async (filters = {}) => {
 
     }
 }
-
-onMounted(async () => {
-    getStockHistories(date_filter.value);
-});
 
 watch(() => date_filter.value, () => {
     getStockHistories(date_filter.value);

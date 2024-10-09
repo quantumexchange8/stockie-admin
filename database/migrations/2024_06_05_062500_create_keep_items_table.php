@@ -18,7 +18,7 @@ return new class extends Migration
             $table->double('qty')->nullable();
             $table->decimal('cm', 13, 2)->nullable();
             $table->string('remark');
-            $table->unsignedBigInteger('waiter_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->string('status');
             $table->dateTime('expired_from')->nullable();
             $table->dateTime('expired_to')->nullable();

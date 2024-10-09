@@ -17,7 +17,7 @@ class OrderTable extends Model
         'table_id',
         'reservation',
         'pax',
-        'waiter_id',
+        'user_id',
         'status',
         'reservation_date',
         'order_id',
@@ -41,4 +41,12 @@ class OrderTable extends Model
         return $this->belongsTo(Table::class, 'table_id');
     }
 
+    /**
+     * User Model
+     * Get the user that checked the customer in.
+     */
+    public function checkedInBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

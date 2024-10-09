@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('order_no');
             $table->string('pax');
-            $table->unsignedBigInteger('waiter_id');
+            $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('customer_id')->nullable()->default(NULL);
             $table->decimal('amount', 13, 2)->nullable()->default(NULL);
             $table->mediumInteger('voucher_id')->nullable()->default(NULL);

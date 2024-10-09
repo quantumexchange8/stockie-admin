@@ -22,6 +22,7 @@ class Product extends Model
         'category_id',
         'keep',
         'status',
+        // 'availability',
     ];
     
     // /**

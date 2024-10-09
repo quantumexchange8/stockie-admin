@@ -18,7 +18,6 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'user_id',
-        'waiter_id',
         'type',
         'keep_item_id',
         'product_id',
@@ -69,7 +68,7 @@ class OrderItem extends Model
      * User Model
      * Get the user who ordered the item.
      */
-    public function orderedBy(): BelongsTo
+    public function handledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }

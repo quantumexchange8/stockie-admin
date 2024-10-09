@@ -27,6 +27,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
+const order = computed(() => props.order);
 const drawerIsVisible = ref(false);
 const actionType = ref(null);
 const categoryArr = ref([]);
@@ -34,8 +35,10 @@ const op = ref(null);
 const op2 = ref(null);
 const selectedItem = ref();
 
+// watch(props.order, (newValue) => order.value = newValue)
+
 const form = useForm({
-    order_id: props.order.id,
+    order_id: order.value.id,
     order_item_id: '',
     point: 0,
     items: [],
@@ -122,12 +125,12 @@ onMounted(async() => {
 });
 
 const pendingServeItems = computed(() => {
-    if (!props.order || !props.order.order_items) {
+    if (!order.value || !order.value.order_items) {
         return [];
     }
 
-    return props.order 
-        ? props.order.order_items
+    return order.value 
+        ? order.value.order_items
                 .map((item) => {
                     return {
                         ...item,
@@ -139,12 +142,12 @@ const pendingServeItems = computed(() => {
 });
 
 const servedItems = computed(() => {
-    if (!props.order || !props.order.order_items) {
+    if (!order.value || !order.value.order_items) {
         return [];
     }
 
-    return props.order 
-        ? props.order.order_items
+    return order.value 
+        ? order.value.order_items
                 .map((item) => {
                     return {
                         ...item,
@@ -161,9 +164,18 @@ const totalSubItemQty = (subItem) => {
     return subItem.item_qty * selectedItem.value.item_qty;  // Multiply subitem qty by the order item's qty
 };
 
+const getKeepItemName = (item) => {
+    var itemName = '';
+    item.sub_items.forEach(subItem => {
+        itemName = item.product.product_items.find(productItem => productItem.id === subItem.product_item_id).inventory_item.item_name;
+    });
+    if (itemName) return itemName;
+};
+
 const isFormValid = computed(() => {
     return form.items.some(item => item.serving_qty > 0) && !form.processing;
 });
+
 </script>
 
 <template>
@@ -202,7 +214,10 @@ const isFormValid = computed(() => {
                 </div>
                 <div class="flex flex-col gap-2 items-start">
                     <p class="text-grey-900 text-sm font-medium">Ordered by</p>
-                    <div class="size-6 bg-primary-100 rounded-full"></div>
+                    <div class="flex whitespace-nowrap items-center gap-2">
+                        <div class="size-6 bg-primary-100 rounded-full"></div>
+                        <p class="text-grey-800 text-sm font-semibold">{{ order.waiter?.name ?? '' }}</p>
+                    </div>
                 </div>
             </div>
 
@@ -222,7 +237,7 @@ const isFormValid = computed(() => {
                                     <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
-                                            <span class="text-primary-800">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.product.product_name }}
+                                            <span class="text-primary-800">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Normal' ? item.product.product_name : getKeepItemName(item) }}
                                         </p>
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
@@ -258,7 +273,7 @@ const isFormValid = computed(() => {
                                     <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
-                                            <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.product.product_name }}
+                                            <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Normal' ? item.product.product_name : getKeepItemName(item) }}
                                         </p>
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
@@ -271,7 +286,7 @@ const isFormValid = computed(() => {
                                     <p class="text-md font-medium text-primary-800 self-stretch truncate flex-shrink text-end" v-if="item.type === 'Normal' && order.customer_id">+{{ item.point_earned }}pts</p>
                                     <div class="flex flex-nowrap gap-1 items-center">
                                         <div class="p-2 size-4 bg-primary-100 rounded-full border-[0.3px] border-grey-100"></div>
-                                        <p class="text-xs text-grey-900 font-medium">{{ item.ordered_by.name }}</p>
+                                        <p class="text-xs text-grey-900 font-medium">{{ item.handled_by.name }}</p>
                                     </div>
                                 </div>
                             </div>

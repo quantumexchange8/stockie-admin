@@ -33,10 +33,6 @@ const serviceChargeAmount = computed(() => {
     return (parseFloat(order.value.amount ?? 0) * (10 / 100)) ?? 0.00;
 })
 
-const grandTotal = computed(() => {
-    return (parseFloat(order.value.total_amount ?? 0) + sstAmount.value + serviceChargeAmount.value) ?? 0.00;
-})
-
 const totalEarnedPoints = computed(() => {
     return order.value.order_items.filter((item) => item.status === 'Served').reduce((total, item) => total + item.point_earned, 0) ?? 0.00;
 })
@@ -58,7 +54,7 @@ const totalEarnedPoints = computed(() => {
 
                 <div class="flex flex-col bg-primary-25 rounded-md items-center px-4 py-6">
                     <p class="text-primary-800 text-base font-medium">TOTAL SPENT</p>
-                    <p class="text-primary-800 text-[28px] font-medium whitespace-nowrap !leading-none">RM <span class="text-[56px]">{{ grandTotal.toFixed(2) }}</span></p>
+                    <p class="text-primary-800 text-[28px] font-medium whitespace-nowrap !leading-none">RM <span class="text-[56px]">{{ order.total_amount }}</span></p>
                 </div>
             </div>
 

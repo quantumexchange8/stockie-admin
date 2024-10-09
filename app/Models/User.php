@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -62,4 +63,31 @@ class User extends Authenticatable
     {
         return $this->hasMany(OrderItem::class, 'user_id');
     }
+
+    /**
+     * OrderTable Model
+     * Get the order tables checked in by the user.
+     */
+    public function tablesCheckedIn(): HasMany
+    {
+        return $this->hasMany(OrderTable::class, 'user_id');
+    }
+
+    // /**
+    //  * Reservation Model
+    //  * Get the reservations handled by the user.
+    //  */
+    // public function reservationsHandled(): HasMany
+    // {
+    //     return $this->hasMany(Reservation::class, 'handled_by', 'user_id');
+    // }
+
+    // /**
+    //  * Reservation Model
+    //  * Get the reservations made by the user.
+    //  */
+    // public function reservationsMade(): HasMany
+    // {
+    //     return $this->hasMany(Reservation::class, 'reserved_by', 'user_id');
+    // }
 }

@@ -31,7 +31,7 @@ class ProductController extends Controller
                                 'productItems.inventoryItem.itemCategory:id,low_stock_qty',
                                 'saleHistories'
                             ])
-                            ->orderBy('id')
+                            ->orderBy('product_name')
                             ->get()
                             ->map(function ($product) {
                                 $product_items = $product->productItems;
@@ -122,8 +122,6 @@ class ProductController extends Controller
         if (!empty($allItemErrors)) {
             return redirect()->back()->withErrors($allItemErrors)->withInput();
         }
-
-
         
         $newProduct = Product::create([
             'product_name' => $validatedData['product_name'],
@@ -133,6 +131,7 @@ class ProductController extends Controller
             'category_id' => $validatedData['category_id'],
             'keep' => $validatedData['keep'],
             'status' => $this->getProductStatus($validatedProductItems),
+            'availability' => 'Available',
         ]);
 
         if (count($validatedProductItems) > 0) {
@@ -293,7 +292,7 @@ class ProductController extends Controller
                             'productItems.inventoryItem.itemCategory:id,low_stock_qty',
                             'saleHistories'
                         ])
-                        ->orderBy('id')
+                        ->orderBy('product_name')
                         ->get()
                         ->map(function ($product) {
                             $product_items = $product->productItems;
@@ -351,7 +350,7 @@ class ProductController extends Controller
      */
     public function getInventoryItemStock(string $id)
     {
-        $data = IventoryItem::select(['stock_qty', 'status'])
+        $data = IventoryItem::select(['item_name', 'stock_qty', 'status'])
                                 ->find($id);
         
         return response()->json($data);

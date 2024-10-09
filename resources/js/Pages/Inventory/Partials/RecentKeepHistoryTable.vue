@@ -7,6 +7,7 @@ import Tag from '@/Components/Tag.vue';
 import Modal from '@/Components/Modal.vue'
 import Table from '@/Components/Table.vue'
 import Button from '@/Components/Button.vue'
+import dayjs from 'dayjs';
 
 const props = defineProps({
     errors: Object,
@@ -30,23 +31,7 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
-    totalPages: {
-        type: Number,
-        required: true,
-    },
-    rowsPerPage: {
-        type: Number,
-        required: true,
-    },
 })
-
-const selectedGroup = ref(null);
-
-const handleLinkClick = (event) => {
-    event.stopPropagation();  // Prevent the row selection event
-    event.preventDefault();   // Prevent the default link action
-    window.location.href = event.currentTarget.href;  // Manually handle the link navigation
-};
 
 </script>
 
@@ -65,28 +50,27 @@ const handleLinkClick = (event) => {
                 v-if="rows.length > 0"
                 :variant="'list'"
                 :rows="rows"
-                :totalPages="totalPages"
                 :columns="columns"
-                :rowsPerPage="rowsPerPage"
                 :rowType="rowType"
                 :actions="actions"
+                :paginator="false"
+                minWidth="min-w-[544px]"
             >
                 <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
-                <template #item_cat_id="row">
-                    {{ itemCategoryArr.find((category) => category.value === row.item_cat_id).text }}
+                <template #quantity="row">
+                    {{ parseFloat(row.qty) > parseFloat(row.cm) ? `x ${row.qty}` : `${row.cm} cm` }}
                 </template>
-                <template #keep="row">
-                    {{ row.keep ? row.keep : 0 }}
+                <template #keep_date="row">
+                    {{ dayjs(row.keep_date).format('DD/MM/YYYY') }}
                 </template>
-                <template #status="row">
-                    <Tag
-                        :variant="'green'"
-                        :value="row.status"
-                    />
+                <template #keep_for="row">
+                    <Link :href="route('customer')" class="line-clamp-1 underline text-ellipsis text-sm font-semibold text-primary-900 hover:text-primary-700">
+                        {{ row.keep_item?.customer?.full_name ?? 0 }}
+                    </Link>
                 </template>
             </Table>
             

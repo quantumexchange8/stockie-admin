@@ -7,18 +7,9 @@ import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 
 const props = defineProps({
     errors: Object,
-    columns: {
-        type: Array,
-        required: true,
-    },
-    rows: {
-        type: Array,
-        required: true,
-    },
-    rowType: {
-        type: Object,
-        required: true,
-    },
+    columns: Array,
+    rows: Array,
+    rowType: Object,
     filters: {
         type: Object,
         default: () => {},
@@ -173,7 +164,7 @@ const rowGroupedByDates = computed(() => {
                             <div class="flex justify-start items-center w-full">
                                 <div class="flex items-center gap-3">
                                     <span class="w-[60px] h-[60px] flex-shrink-0 rounded-full bg-primary-700"></span>
-                                    <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ row.inventory.name }}</span>
+                                    <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ row.inventory?.name ?? '' }}</span>
                                 </div>
                             </div>
                         </template>

@@ -29,8 +29,23 @@ class InventoryController extends Controller
         $endDate = Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
         $startDate = Carbon::now()->subDays(30)->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
 
-        $recentKeepHistories = KeepHistory::whereBetween('created_at', [$startDate, $endDate])
-                            ->get();
+        $recentKeepHistories = KeepHistory::with([
+                                                'keepItem', 
+                                                'keepItem.orderItemSubitem', 
+                                                'keepItem.orderItemSubitem.productItem', 
+                                                'keepItem.orderItemSubitem.productItem.inventoryItem',
+                                                'keepItem.customer:id,full_name', 
+                                            ])
+                                            ->whereBetween('created_at', [$startDate, $endDate])
+                                            ->limit(5)
+                                            ->get()
+                                            ->map(function ($history) {
+                                                $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+                                    
+                                                unset($history->keepItem->orderItemSubitem);
+
+                                                return $history;
+                                            });
 
         $categories = Category::select(['id', 'name'])
                                 ->orderBy('id')
@@ -458,12 +473,83 @@ class InventoryController extends Controller
      */
     public function viewKeepHistories(Request $request)
     {
+        $dateFilter = [
+            now()->subDays(7)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
+            now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d')
+        ];
+
+        $keepHistories = KeepHistory::with([
+                                            'keepItem', 
+                                            'keepItem.orderItemSubitem', 
+                                            'keepItem.orderItemSubitem.productItem', 
+                                            'keepItem.orderItemSubitem.productItem.inventoryItem',
+                                            'keepItem.customer:id,full_name', 
+                                        ])
+                                        ->whereBetween('created_at', [$dateFilter[0], $dateFilter[1]])
+                                        ->where('status', 'Keep')
+                                        ->orderBy('created_at', 'desc')
+                                        ->get()
+                                        ->map(function ($history) {
+                                            $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+                                
+                                            unset($history->keepItem->orderItemSubitem);
+
+                                            return $history;
+                                        });
+
+        // dd($keepHistories);
+
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
 
         return Inertia::render('Inventory/Partials/KeepHistory', [
             'message' => $message ?? [],
+            'keepHistories' => $keepHistories
         ]);
+    }
+
+    /**
+     * Get all keep histories.
+     */
+    public function getAllKeepHistory(Request $request)
+    {
+        $dateFilter = $request->input('dateFilter');
+        $query = KeepHistory::query();
+
+        if ($dateFilter && gettype($dateFilter) === 'array') {
+            // Single date filter
+            if (count($dateFilter) === 1) {
+                $date = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $query->whereDate('created_at', $date);
+            }
+            // Range date filter
+            if (count($dateFilter) > 1) {
+                $startDate = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $endDate = (new \DateTime($dateFilter[1]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                $query->whereDate('created_at', '>=', $startDate)
+                        ->whereDate('created_at', '<=', $endDate);
+            }
+        }
+
+        $data = $query->with([
+                            'keepItem', 
+                            'keepItem.orderItemSubitem', 
+                            'keepItem.orderItemSubitem.productItem', 
+                            'keepItem.orderItemSubitem.productItem.inventoryItem',
+                            'keepItem.customer:id,full_name', 
+                        ])
+                        ->where('status', 'Keep')
+                        ->orderBy('created_at', 'desc')
+                        ->get()
+                        ->map(function ($history) {
+                            $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+                
+                            unset($history->keepItem->orderItemSubitem);
+
+                            return $history;
+                        });
+                        
+        return response()->json($data);
     }
 
     /**
@@ -471,11 +557,23 @@ class InventoryController extends Controller
      */
     public function viewStockHistories(Request $request)
     {
+        $dateFilter = [
+            now()->subDays(7)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
+            now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d')
+        ];
+
+        $stockHistories = StockHistory::with('inventory:id,name')
+                                        ->whereDate('created_at', '>=', $dateFilter[0])
+                                        ->whereDate('created_at', '<=', $dateFilter[1])
+                                        ->orderBy('created_at', 'desc')
+                                        ->get();
+
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
 
         return Inertia::render('Inventory/Partials/StockHistory', [
             'message' => $message ?? [],
+            'stockHistories' => $stockHistories,
         ]);
     }
 

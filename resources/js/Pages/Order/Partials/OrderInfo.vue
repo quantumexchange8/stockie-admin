@@ -29,7 +29,7 @@ const cancelOrderFormIsOpen = ref(false);
 const orderCompleteModalIsOpen = ref(false);
 const orderInvoiceModalIsOpen = ref(false);
 
-onMounted(async() => {
+const fetchOrderDetails = async () => {
     try {
         const orderResponse = await axios.get(route('orders.getOrderWithItems', props.selectedTable.order_table.order_id));
         order.value = orderResponse.data;
@@ -44,14 +44,14 @@ onMounted(async() => {
             form.customer_id = order.value.customer_id;
             if (order.value.customer_id !== null) tabs.value.push('Customer Detail');
         }
-
-
     } catch (error) {
         console.error(error);
     } finally {
 
     }
-});
+};
+
+onMounted(() => fetchOrderDetails());
 
 const form = useForm({
     order_id: order.value.id,
@@ -181,6 +181,7 @@ const hasServedItem = computed(() => {
         || order.value?.order_items?.some(item => item.sub_items.some((subItem) => subItem.serve_qty > 0))
         || order.value?.order_items?.some(item => item.type === 'Keep' || item.type === 'Expired');
 });
+
 </script>
 
 <template>
@@ -188,7 +189,7 @@ const hasServedItem = computed(() => {
         <div class="px-6 py-2 w-full">
             <TabView :tabs="tabs">
                 <template #order-detail>
-                    <OrderDetail :selectedTable="selectedTable" :order="order" @close="closeDrawer" />
+                    <OrderDetail :selectedTable="selectedTable" :order="order" @close="fetchOrderDetails" />
                 </template>
                 <template #customer-detail v-if="order.customer_id">
                     <CustomerDetail :customer="customer" :orderId="order.id" :tableStatus="selectedTable.status" @close="closeDrawer"/>

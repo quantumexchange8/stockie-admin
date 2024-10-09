@@ -29,17 +29,16 @@ const home = ref({
 
 const keepHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'item', header: 'Item Name', width: '35', sortable: false},
-    {field: 'qty', header: 'Quantity', width: '15', sortable: true},
-    {field: 'keep_date', header: 'Date', width: '20', sortable: true},
-    {field: 'keep_for', header: 'Keep For', width: '30', sortable: true},
+    {field: 'item_name', header: 'Item Name', width: '40', sortable: false},
+    {field: 'quantity', header: 'Quantity', width: '18', sortable: false},
+    {field: 'keep_date', header: 'Date', width: '20', sortable: false},
+    {field: 'keep_for', header: 'Keep For', width: '22', sortable: false},
 ]);
 
 const { flashMessage } = useCustomToast();
 
 const inventories = ref(props.inventories);
 const initialInventories = ref(props.inventories);
-const rowsPerPage = ref(8);
 const inventoriesTotalPages = ref(Math.ceil(props.inventories.length / 4));
 const categoryArr = ref(props.categories);
 const itemCategoryArr = ref(props.itemCategories);
@@ -100,10 +99,6 @@ const applyCheckedFilters = (filters) => {
 onMounted(async () => {
     flashMessage();
 });
-
-const recentKeepHistoriesTotalPages = computed(() => {
-    return Math.ceil(props.recentKeepHistories.length / rowsPerPage.value);
-})
 
 const allInventoryItems = computed(() => {
     return initialInventories.value.flatMap(group => group.inventory_items);
@@ -201,8 +196,6 @@ const hideAddStockForm = () => {
                     :rows="recentKeepHistories"
                     :rowType="rowType"
                     :actions="actions"
-                    :totalPages="recentKeepHistoriesTotalPages"
-                    :rowsPerPage="rowsPerPage"
                     class="col-span-full md:col-span-8"
                 />
     

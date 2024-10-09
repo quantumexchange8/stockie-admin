@@ -39,12 +39,12 @@ const categories = ref(props.categoryArr.map((cat) => {
     }
 }));
 
-
 const form = useForm({
     user_id: userId.value,
     order_id: props.order.id,
     table_id: props.selectedTable.id,
     table_no: props.selectedTable.table_no,
+    action_type: '',
     items: [],
 });
 
@@ -53,10 +53,11 @@ const formSubmit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
+            const summary = `Product has been added to ${props.selectedTable.table_no} order` + (form.action_type === 'now' ? ' and served.' : '.');
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: `Product has been added to ${props.selectedTable.table_no} order.`,
+                    summary: summary,
                 });
             }, 200);
             form.reset();
@@ -64,7 +65,6 @@ const formSubmit = () => {
         },
     })
 };
-
 
 onMounted(async() => {
     try {
@@ -156,7 +156,7 @@ const quantityComputed = (productId) => {
                     v-model="query"
                 />
 
-                <div class="w-full max-h-[calc(100dvh-19.5rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <div class="w-full max-h-[calc(100dvh-23rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <TabView :tabs="tabs">
                         <template #all>
                             <div class="flex flex-col justify-center divide-y-[0.5px] divide-grey-200">
@@ -243,12 +243,23 @@ const quantityComputed = (productId) => {
 
             <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
                 <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: RM{{ calculatedTotalAmount }}</p>
-                <Button
-                    size="lg"
-                    :disabled="form.items.length === 0 || form.processing"
-                >
-                    Add to Order
-                </Button>
+                <div class="flex flex-col gap-3">
+                    <Button
+                        size="lg"
+                        :disabled="form.items.length === 0 || form.processing"
+                        @click="form.action_type = 'now'"
+                    >
+                        Add & Serve
+                    </Button>
+                    <Button
+                        size="lg"
+                        variant="secondary"
+                        :disabled="form.items.length === 0 || form.processing"
+                        @click="form.action_type = 'later'"
+                    >
+                        Add Only
+                    </Button>
+                </div>
             </div>
         </div>
     </form>

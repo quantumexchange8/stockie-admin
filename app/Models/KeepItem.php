@@ -21,7 +21,7 @@ class KeepItem extends Model
         'qty',
         'cm',
         'remark',
-        'waiter_id',
+        'user_id',
         'status',
         'expired_from',
         'expired_to',
@@ -34,7 +34,7 @@ class KeepItem extends Model
 
     public function waiters(): BelongsTo
     {
-        return $this->belongsTo(Waiter::class,'waiter_id');
+        return $this->belongsTo(User::class,'user_id');
     }
     
      /**
@@ -46,11 +46,33 @@ class KeepItem extends Model
         return $this->belongsTo(OrderItemSubitem::class,'order_item_subitem_id');
     }
 
+    /**
+     * KeepHistory Model
+     * Get all the histories of the keep item.
+     */
     public function keepHistories(): HasMany
     {
         return $this->hasMany(KeepHistory::class,'keep_item_id');
     }
-    
+
+    /**
+     * KeepHistory Model
+     * Get the latest history of the keep item.
+     */
+    public function latestKeepHistory()
+    {
+        return $this->hasOne(KeepHistory::class, 'keep_item_id')->latest()->limit(1);
+    }
+
+    /**
+     * KeepHistory Model
+     * Get the oldest history of the keep item.
+     */
+    public function oldestKeepHistory()
+    {
+        return $this->hasOne(KeepHistory::class, 'keep_item_id')->oldest()->limit(1);
+    }
+
     /**
     * OrderItem Model
     * Get the keep item that has been added to an order.

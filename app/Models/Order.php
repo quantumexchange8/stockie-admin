@@ -18,7 +18,7 @@ class Order extends Model
     protected $fillable = [
         'order_no',
         'pax',
-        'waiter_id',
+        'user_id',
         'customer_id',
         'amount',
         'voucher_id',
@@ -40,7 +40,7 @@ class Order extends Model
      */
     public function waiter(): BelongsTo
     {
-        return $this->belongsTo(Waiter::class, 'waiter_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**

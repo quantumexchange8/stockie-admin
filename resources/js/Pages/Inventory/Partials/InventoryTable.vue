@@ -473,13 +473,12 @@ const totalInventoryItemStock = (items) => {
                                                         <path d="M15.8337 7.08337L10.0003 12.9167L4.16699 7.08337" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
                                                     </svg>
                                                 </td>
-                                                <td class="w-[23%]">
+                                                <td class="w-[79%]">
                                                     <div class="flex items-center gap-3">
                                                         <span class="w-[60px] h-[60px] flex-shrink-0 rounded-full bg-primary-700"></span>
                                                         <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ group.name }}</span>
                                                     </div>
                                                 </td>
-                                                <td class="w-[56%]"></td>
                                                 <td class="w-[8%]">
                                                     <div class="flex justify-end items-start gap-2">
                                                         <ReplenishIcon
