@@ -21,7 +21,7 @@ const form = useForm({
     table_id: props.reservationTable.table_id,
     reservation: props.reservationTable.reservation,
     pax: props.reservationTable.pax,
-    waiter_id: props.reservationTable.waiter_id,
+    user_id: props.reservationTable.user_id,
     status: props.reservationTable.status,
     reservation_date: dayjs(props.reservationTable.reservation_date).format('DD/MM/YYYY HH:mm'),
     order_id: props.reservationTable.order_id,

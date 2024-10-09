@@ -1,6 +1,6 @@
 <script setup>
 import { computed, watch } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
 import Button from '@/Components/Button.vue';
 import Toggle from '@/Components/Toggle.vue';
 import DateInput from "@/Components/Date.vue";
@@ -18,6 +18,9 @@ const props = defineProps({
     table: Object,
 });
 
+const page = usePage();
+const userId = computed(() => page.props.auth.user.id)
+
 const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close']);
@@ -27,7 +30,8 @@ const form = useForm({
     table_no: props.table.table_no,
     reservation: false,
     pax: '',
-    waiter_id: '',
+    user_id: userId.value,
+    assigned_waiter: '',
     status: '',
     reservation_date: '',
     order_id: '',
@@ -65,12 +69,12 @@ const isNumber = (e, withDot = true) => {
 
 const isFormValid = computed(() => {
     return form.reservation ? ['reservation_date', 'pax'].every(field => form[field]) && !form.processing
-                            : ['pax', 'waiter_id'].every(field => form[field]) && !form.processing;
+                            : ['pax', 'assigned_waiter'].every(field => form[field]) && !form.processing;
 });
 
 watch(() => form.reservation, (newValue) => {
     form.reservation_date = newValue ? form.reservation_date : '';
-    form.waiter_id = newValue ? form.waiter_id : '';
+    form.assigned_waiter = newValue ? form.assigned_waiter : '';
 })
 
 </script>
@@ -118,11 +122,11 @@ watch(() => form.reservation, (newValue) => {
                     <Dropdown
                         v-if="!form.reservation"
                         imageOption
-                        :inputName="'waiter_id'"
+                        :inputName="'assigned_waiter'"
                         :labelText="'Assign Waiter'"
                         :inputArray="waiters"
-                        :errorMessage="form.errors?.waiter_id || ''"
-                        v-model="form.waiter_id"
+                        :errorMessage="form.errors?.assigned_waiter || ''"
+                        v-model="form.assigned_waiter"
                     />
                 </div>
             </div>

@@ -24,7 +24,7 @@ class OrderTableRequest extends FormRequest
         return [
             'table_id' => 'required|integer',
             'pax' => 'required|string|max:255',
-            'waiter_id' => 'nullable|integer',
+            'assigned_waiter' => 'nullable|integer',
             'status' => 'required|string|max:255',
             'reservation_date' => 'nullable|date_format:Y-m-d H:i:s',
             'order_id' => 'nullable|integer',

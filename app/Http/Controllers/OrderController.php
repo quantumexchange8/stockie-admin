@@ -112,7 +112,7 @@ class OrderController extends Controller
             $newOrder = Order::create([
                 'order_no' => $latestOrderId ? str_pad((int)$latestOrderId->order_no + 1, 3, "0", STR_PAD_LEFT) : '000',
                 'pax' => $validatedData['pax'],
-                'user_id' => $validatedData['waiter_id'],
+                'user_id' => $validatedData['assigned_waiter'],
                 'amount' => 0.00,
                 'total_amount' => 0.00,
                 'status' => 'Pending Serve',
@@ -130,7 +130,7 @@ class OrderController extends Controller
             'table_id' => $validatedData['table_id'],
             'reservation' => $request->reservation ? 'reserved' : null,
             'pax' => $validatedData['pax'],
-            'user_id' => $validatedData['waiter_id'],
+            'user_id' => $request->user_id,
             'status' => $validatedData['status'],
             'reservation_date' => $validatedData['reservation_date'],
             'order_id' => $request->reservation ? null : $newOrder->id
@@ -153,10 +153,10 @@ class OrderController extends Controller
     {
         $validatedData = $request->validated();
         
-        if (!isset($id)) {
-            // $severity = 'error';
-            // $summary = "No reservation id found.";
-        }
+        // if (!isset($id)) {
+        //     $severity = 'error';
+        //     $summary = "No reservation id found.";
+        // }
 
         if (isset($id)) {
             $reservation = OrderTable::find($id);
@@ -166,7 +166,7 @@ class OrderController extends Controller
                     'table_id'=>$validatedData['table_id'],
                     'reservation' => $request->reservation ? 'reserved' : null,
                     'pax' => $validatedData['pax'],
-                    'user_id' => $validatedData['waiter_id'],
+                    'user_id' => $validatedData['user_id'],
                     'status' => $validatedData['status'],
                     'reservation_date' => $validatedData['reservation_date'],
                     'order_id' => $validatedData['order_id']
@@ -973,7 +973,7 @@ class OrderController extends Controller
                                             'qty' => $reqItem['type'] === 'qty' ? $item['amount'] : 0,
                                             'cm' => $reqItem['type'] === 'cm' ? $item['amount'] : 0,
                                             'remark' => $item['remark'] ?: '',
-                                            'user_id' => $request->waiter_id,
+                                            'user_id' => $request->user_id,
                                             'status' => 'Keep',
                                             'expired_from' => $item['expired_from'],
                                             'expired_to' => $item['expired_to'],

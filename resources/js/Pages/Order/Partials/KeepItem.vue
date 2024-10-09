@@ -50,7 +50,6 @@ const expiryPeriodOptions = [
 const form = useForm({
     user_id: userId.value,
     customer_id: props.order.customer_id,
-    waiter_id: props.order.waiter_id,
     order_id: props.order.id,
     items: [],
 });
