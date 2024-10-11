@@ -40,6 +40,28 @@ class TableRoomController extends Controller
         ]);
     }
 
+    public function getZoneDetails() {
+        $zones = Zone::with('tables')
+                        ->select('id', 'name')
+                        ->get()
+                        ->map(function ($zone) {
+                            return [
+                                'text' => $zone->name,
+                                'value' => $zone->id,
+                                'tables' => $zone->tables->map(function ($table) {
+                                    return [
+                                        'id'=> $table->id,
+                                        'type'=> $table->type,
+                                        'table_no'=> $table->table_no,
+                                        'seat'=> $table->seat,
+                                        'zone_id' => $table->zone_id,
+                                    ];})->toArray()
+                            ];
+                        });
+
+        return response()->json($zones);
+    }
+
     public function getTableDetails(){
         $tables = Table::select('id','type','table_no', 'seat', 'zone_id')
                         ->get();
@@ -83,12 +105,7 @@ class TableRoomController extends Controller
             'status' => 'Empty Seat',
         ]);
 
-        $message = [
-            'severity' => 'success',
-            'summary' => 'New table has been successfully added.'
-        ];
-
-        return redirect()->route('table-room')->with(['message' => $message]);
+        return redirect()->route('table-room');
     }
 
     public function deleteZone($id)
@@ -141,12 +158,7 @@ class TableRoomController extends Controller
             'zone_id' => $validatedData['zone_id'],
         ]);
 
-        $message = [
-            'severity' => 'success',
-            'summary' => 'Changes saved.'
-        ];
-
-        return redirect()->route('table-room')->with(['message' => $message]);
+        return redirect()->route('table-room');
     }
 
     public function editZone(Request $request)

@@ -5,13 +5,15 @@ import Textarea from '@/Components/Textarea.vue';
 import DateInput from '@/Components/Date.vue';
 import TextInput from '@/Components/TextInput.vue';
 import DragDropImage from '@/Components/DragDropImage.vue'
+import { useCustomToast } from '@/Composables';
+import dayjs from 'dayjs';
 
 defineProps({
     errors:Object
 })
 
 const emit = defineEmits(['close'])
-
+const { showMessage } = useCustomToast();
 const form = useForm({
     title: '',
     description: '',
@@ -23,19 +25,37 @@ const form = useForm({
 
 const formSubmit = () => { 
     if (form.promotionPeriod !== '') {
-        const startDate = new Date(form.promotionPeriod[0]);
-        const endDate = new Date(form.promotionPeriod[1]);
-
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(0, 0, 0, 0);
+        let startDate, endDate;
         
-        form.promotion_from = (startDate.getFullYear() < 10 ? '0' + startDate.getFullYear() : startDate.getFullYear()) + '/' + ((startDate.getMonth() + 1) < 10 ? '0' + (startDate.getMonth() + 1) : (startDate.getMonth() + 1)) + '/' + (startDate.getDate()  < 10 ? '0' + startDate.getDate() : startDate.getDate());
-        form.promotion_to = (endDate.getFullYear() < 10 ? '0' + endDate.getFullYear() : endDate.getFullYear()) + '/' + ((endDate.getMonth() + 1) < 10 ? '0' + (endDate.getMonth() + 1) : (endDate.getMonth() + 1)) + '/' + (endDate.getDate()  < 10 ? '0' + endDate.getDate() : endDate.getDate());
+        startDate = dayjs(form.promotionPeriod[0]);
+        if (form.promotionPeriod[1] != null) {
+            endDate = dayjs(form.promotionPeriod[1]);
+        } else {
+            endDate = startDate;
+        }
+            
+        form.promotion_from = startDate.startOf('day').format('YYYY-MM-DD HH:mm:ss');
+        form.promotion_to = endDate.endOf('day').format('YYYY-MM-DD HH:mm:ss');
+
+        if (startDate.isAfter(endDate)) {
+            let temp = form.promotion_from;
+            form.promotion_from = form.promotion_to;
+            form.promotion_to = temp;
+        }
     }
 
     form.post(route('configurations.promotions.store'), {
         preserveScroll: true,
-        onSuccess: () => closeForm(),
+        onSuccess: () => {
+            closeForm(),
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Promotion has been added.',
+                    detail: 'Promotion will be visible to waiter and customer during the active period.',
+                });
+            }, 200)
+        }
     })
 };
 
@@ -97,6 +117,7 @@ const closeForm = () => {
             </Button>
             <Button
                 :size="'lg'"
+                :disabled="form.processing"
             >
                 Add
             </Button>

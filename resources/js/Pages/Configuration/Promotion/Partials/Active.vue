@@ -1,5 +1,5 @@
 <script setup>
-import {transactionFormat} from "@/Composables/index.js";
+import {transactionFormat, useCustomToast} from "@/Composables/index.js";
 import Button from "@/Components/Button.vue";
 import { DeleteIcon, EditIcon } from "@/Components/Icons/solid";
 import { ref } from "vue";
@@ -10,10 +10,13 @@ import TextInput from "@/Components/TextInput.vue";
 import DateInput from '@/Components/Date.vue';
 import Textarea from '@/Components/Textarea.vue';
 import { PromotionsNoVal } from "@/Components/NoDatas/Images";
+import { DeleteIllus } from "@/Components/Icons/illus";
 
 const props = defineProps({
     ActivePromotions: Array
 }) 
+
+const { showMessage } = useCustomToast();
 
 const editModal = ref(false);
 const actionVal = ref('');
@@ -72,9 +75,16 @@ const submit = () => {
     } else {
         form.post(route('configurations.promotion.delete'), {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 closeModal();
                 form.reset();
+                setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Selected promotion has been deleted successfully.',
+                });
+            }, 200)
             },
         })
     }
@@ -102,7 +112,7 @@ const submit = () => {
                     <div class="text-base text-gray-900 font-semibold leading-tight">
                         {{ promotion.title }}
                     </div>
-                    <div class="h-9 text-gray-700 text-xs font-medium overflow-hidden" >
+                    <div class="h-9 text-gray-700 text-xs font-medium overflow-hidden text-ellipsis whitespace-nowrap " >
                         {{ promotion.description }}
                     </div>
                 </div>
@@ -181,6 +191,7 @@ const submit = () => {
                     <Button
                         variant="primary"
                         size="lg"
+                        :disabled="form.processing"
                         type="submit"
                     >
                         Save Changes
@@ -199,15 +210,17 @@ const submit = () => {
         :withHeader="false"
     >
         <form @submit.prevent="submit">
-            <div class="flex flex-col gap-9" >
-                <div></div>
+            <div class="w-full flex flex-col gap-9" >
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
+                    <DeleteIllus />
+                </div>
                 <div class="flex flex-col gap-1" >
-                    <div class="text-primary-900 text-2xl font-medium text-center" >
+                    <span class="text-primary-900 text-lg font-medium text-center self-stretch" >
                         Delete promotion?
-                    </div>
-                    <div class="text-gray-900 text-base font-medium text-center leading-tight" >
+                    </span>
+                    <span class="text-grey-900 text-center text-base font-medium self-stretch" >
                         Are you sure you want to delete the selected promotion? This action cannot be undone.
-                    </div>
+                    </span>
                 </div>
                 <div class="flex item-center gap-3">
                     <Button
@@ -222,6 +235,7 @@ const submit = () => {
                         variant="red"
                         size="lg"
                         type="submit"
+                        :disabled="form.processing"
                     >
                         Delete
                     </Button>

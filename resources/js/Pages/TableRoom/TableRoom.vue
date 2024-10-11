@@ -7,7 +7,7 @@ import SearchBar from '@/Components/SearchBar.vue';
 import Button from '@/Components/Button.vue';
 import { GearIcon, PlusIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
-import AddManageZone from './Partials/ManageZone.vue';
+import ManageZone from './Partials/ManageZone.vue';
 import AddTable from './Partials/AddTable.vue';
 import ZoneAll from './Partials/ZoneAll.vue';
 import axios from 'axios';
@@ -32,6 +32,7 @@ const props = defineProps({
 const { flashMessage } = useCustomToast();
 
 const zones = ref(props.zones);
+const zonesManage = ref(props.zones);
 const tables = ref([]);
 const tabs = ref([]);
 const isModalOpen = ref(false);
@@ -63,6 +64,17 @@ const getTableDetails = async () => {
     }
 }
 
+const getZoneDetails = async () => {
+    try {
+        const zoneResponse = await axios.get('/table-room/get-zonedetails');
+        zones.value = zoneResponse.data;
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+}
+
 onMounted(() => {
     getTableDetails();
     flashMessage();
@@ -86,11 +98,16 @@ const closeModal = () => {
 
 // Transform the zones instance's zone text to be lower case and separated by hyphens (-) instead
 const tranformedZones = computed(() => {
-    return zones.value.map((zone) => {
-        zone.name = zone.text.toLowerCase().replace(/ /g,"-");
-        
-        return zone;
-    });
+    // console.log(zones.value);
+    if (zones.value) {
+        return zones.value.map((zone) => {
+            zone.name = zone.text.toLowerCase().replace(/ /g,"-");
+            
+            return zone;
+        });
+    }
+
+    return [];
 });
 
 const filteredZones = computed(() => {
@@ -182,7 +199,11 @@ const filteredZones = computed(() => {
                     :title="'Manage Zone'"
                     :maxWidth="'md'"
                 >
-                    <AddManageZone @close="closeModal" :zonesArr="zones"/>
+                    <ManageZone 
+                        @getZoneDetails="getZoneDetails"
+                        @close="closeModal" 
+                        :zonesArr="zones"
+                    />
                 </Modal>
             </template>
             <template #all>

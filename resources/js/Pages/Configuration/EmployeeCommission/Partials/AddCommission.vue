@@ -148,7 +148,7 @@ const isFormValid = computed(() => {
             <Button
                 :type="'submit'"
                 :size="'lg'"
-                :disabled="!isFormValid"
+                :disabled="!isFormValid || form.processing"
             >
                 Add
             </Button>

@@ -9,6 +9,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\SaleHistory;
+use App\Models\Table;
+use App\Models\User;
 use App\Models\Waiter;
 use App\Models\WaiterAttendance;
 use Carbon\Carbon;
@@ -24,14 +26,14 @@ class DashboardController extends Controller
 
         //sales today
         $sales = Order::whereDate('created_at', Carbon::today())
-                        ->where('status', 'Order Served')
+                        ->where('status', 'Order Completed')
                         ->sum('total_amount');
         if($sales == 0){
             $sales = '0';
         }
 
         $salesYesterday = Order::whereDate('created_at', Carbon::yesterday())
-                                ->where('status','Order Served')
+                                ->where('status','Order Completed')
                                 ->sum('total_amount');
         $comparedSale = 0;
         if($salesYesterday !== 0){
@@ -54,11 +56,11 @@ class DashboardController extends Controller
 
         //order today
         $order = Order::whereDate('created_at', Carbon::today())
-                        ->where('status', 'Order Served')
+                        ->where('status', 'Order Completed')
                         ->count();
 
         $orderYesterday = Order::whereDate('created_at', Carbon::yesterday())
-                                ->where('status','Order Served')
+                                ->where('status','Order Completed')
                                 ->count();
         $comparedOrder = 0;
         if($orderYesterday !== 0){
@@ -66,6 +68,9 @@ class DashboardController extends Controller
         };
 
         //table room activity
+        $activeTables = Table::whereNot('status',  'Empty Seat')
+                            ->select('table_no')
+                            ->get();
 
         //product low at stock
         $allProducts = Product::with(['productItems', 'productItems.inventoryItem.itemCategory'])
@@ -93,7 +98,7 @@ class DashboardController extends Controller
         })->flatten(1);
 
         //on duty today
-        $waiters = Waiter::all();
+        $waiters = User::where('role', 'waiter')->get();
         $onDuty = [];
         $today = Carbon::today();
 
@@ -123,7 +128,7 @@ class DashboardController extends Controller
         
             $onDuty[] = [
                 'id' => $waiter->id,
-                'waiter_name' => $waiter->name,
+                'waiter_name' => $waiter->full_name,
                 'time' => $time,
                 'status' => $status,
             ];
@@ -168,6 +173,7 @@ class DashboardController extends Controller
             'onDuty' => $onDuty,
             'salesGraph' => $totalSalesArray,
             'monthly' => $months,
+            'activeTables' => $activeTables,
         ]);
     }
 
@@ -228,6 +234,15 @@ class DashboardController extends Controller
             'totalSales' => $totalSalesArray,
             'labels' => $labels
         ]);
+    }
+
+    public function getActiveTables ()
+    {
+        $activeTables = Table::whereNot('status',  'Empty Seat')
+                            ->select('table_no')
+                            ->get();
+
+        return response()->json($activeTables);                            
     }
 
 }

@@ -163,7 +163,7 @@ class CustomerController extends Controller
             ]);
 
             $selectedItem = KeepHistory::create([
-                'keep_items_id' => $selectedItem->id,
+                'keep_item_id' => $selectedItem->id,
                 'qty' => ($request->initial_qty - $request->qty),
                 'cm' => $selectedItem->cm,
                 'keep_date' => $selectedItem->expired_from,

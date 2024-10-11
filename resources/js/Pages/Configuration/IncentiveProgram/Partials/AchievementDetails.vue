@@ -33,7 +33,7 @@ const formatRate = (rate) => {
     return rate;
 }
 
-const formatDate = (date, locale = 'en-US', options = {}) => {
+const formatDate = (date, locale = 'en-GB', options = {}) => {
     if (!(date instanceof Date)) {
         date = new Date(date);
     }

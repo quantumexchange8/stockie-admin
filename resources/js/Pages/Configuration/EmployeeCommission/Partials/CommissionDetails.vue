@@ -200,7 +200,7 @@ const isFormValid = computed(() => {
                         :type="'submit'"
                         :variant="'primary'"
                         :size="'lg'"
-                        :disabled="!isFormValid"
+                        :disabled="!isFormValid || form.processing"
                     >
                         Save Changes
                     </Button>

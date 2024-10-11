@@ -191,6 +191,7 @@ onMounted (() => {
     >
         <EditCommission 
             :productNames="productNames"
+            :productToAdd="productToAdd"
             :commisionDetails="selectedProduct"
             @closeModal="closeModal"
             @viewEmployeeComm="viewEmployeeComm"

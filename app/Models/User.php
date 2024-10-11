@@ -64,6 +64,29 @@ class User extends Authenticatable
         return $this->hasMany(OrderItem::class, 'user_id');
     }
 
+    public function keepItems () : HasMany
+    {
+        return $this->hasMany(KeepItem::class);
+    }
+    
+    /**
+     * Get the orders served by the waiter.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'user_id');
+    }
+
+    public function attendances () : HasMany
+    {
+        return $this->hasMany(WaiterAttendance::class, 'user_id');
+    }
+
+    public function configIncentEmployee () : HasMany
+    {
+        return $this->hasMany(ConfigIncentiveEmployee::class, 'user_id');
+    }
+
     /**
      * OrderTable Model
      * Get the order tables checked in by the user.

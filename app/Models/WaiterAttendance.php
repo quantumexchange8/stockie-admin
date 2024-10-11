@@ -12,6 +12,6 @@ class WaiterAttendance extends Model
 
     public function waiters(): BelongsTo
     {
-        return $this->belongsTo(Waiter::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

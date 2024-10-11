@@ -10,6 +10,7 @@ import TextInput from "@/Components/TextInput.vue";
 import DateInput from '@/Components/Date.vue';
 import Textarea from '@/Components/Textarea.vue';
 import { PromotionsNoVal } from "@/Components/NoDatas/Images";
+import { DeleteIllus } from "@/Components/Icons/illus";
 
 const props = defineProps({
     InactivePromotions: Array
@@ -201,12 +202,14 @@ const submit = () => {
     >
         <form @submit.prevent="submit">
             <div class="flex flex-col gap-9" >
-                <div></div>
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
+                    <DeleteIllus />
+                </div>
                 <div class="flex flex-col gap-1" >
-                    <div class="text-primary-900 text-2xl font-medium text-center" >
+                    <div class="text-primary-900 text-lg font-medium text-center self-stretch" >
                         Delete promotion?
                     </div>
-                    <div class="text-gray-900 text-base font-medium text-center leading-tight" >
+                    <div class="text-grey-900 text-center text-base font-medium self-stretch" >
                         Are you sure you want to delete the selected promotion? This action cannot be undone.
                     </div>
                 </div>

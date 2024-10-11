@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ConfigIncentive;
 use App\Models\ConfigIncentiveEmployee;
 use App\Models\Order;
+use App\Models\User;
 use App\Models\Waiter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class ConfigEmployeeIncProgController extends Controller
 {
     public function index(Request $request)
     {
-        $allWaiters = Waiter::select('id', 'name')->get();
+        $allWaiters = User::select('id', 'name')->where('role', 'waiter')->get();
         $incentiveProg = ConfigIncentive::with('incentiveEmployees.waiters')
                                         ->get()
                                         ->map(function ($incentive) {
@@ -59,7 +60,7 @@ class ConfigEmployeeIncProgController extends Controller
             'rate' => $rate,
             'effective_date' => Carbon::parse($request->effective_date)->startOfDay()->format('Y-m-d H:i:s'),
             'recrurring_on' => $request->recurring_on['value'],
-            'monthly_sale' => (float)$request->monthly_sale,
+            'monthly_sale' => round($request->monthly_sale, 2),
         ]);
 
         foreach ($request->entitled as $entitledWaiters)
@@ -108,6 +109,7 @@ class ConfigEmployeeIncProgController extends Controller
     public function incentCommDetail(String $id)
     {
         $entitled = ConfigIncentiveEmployee::where('incentive_id', $id)
+                                            ->orderBy('created_at')
                                             ->with(['configIncentive', 'waiters.orders'])
                                             ->get();
 
@@ -122,9 +124,8 @@ class ConfigEmployeeIncProgController extends Controller
                 })
             ];
         })->unique();
-
         $incentCommDetail = ConfigIncentive::find($id);
-        $incentEffective = $incentCommDetail->effective_date;
+        $incentEffective = Carbon::parse($incentCommDetail->effective_date)->format('Y-m-d');
         $recurringDay = $incentCommDetail->recrurring_on;
 
         $waiterDetails = [];
@@ -134,6 +135,7 @@ class ConfigEmployeeIncProgController extends Controller
                 $sales = $waiter->orders()
                     ->where('created_at', '>', $incentEffective)
                     ->where('status', 'Order Completed')
+                    ->orderBy('created_at')
                     ->get()
                     ->groupBy(function ($order) use ($recurringDay, &$entitled) {
                         $orderDate = Carbon::parse($order->created_at);
@@ -147,60 +149,67 @@ class ConfigEmployeeIncProgController extends Controller
                         }
         
                     })
-                    ->map(function ($group) use ($waiter, &$entitled) {
+                    ->map(function ($group) use ($waiter, &$entitled, &$incentCommDetail) {
                         $month = $group->first()->created_at->format('F');
                         $year = $group->first()->created_at->format('Y');
-        
-                        $status = null;
-        
-                        if ($entitled->user_id == $waiter->id) {
+                        $salesMonth = $month . ' ' . $year;
+
+                        if ($group->sum('total_amount') > $incentCommDetail->monthly_sale) {
                             $entitledMonth = $entitled->created_at->format('F Y');
-                            $salesMonth = $month . ' ' . $year;
-        
-                            Log::info('Comparing entitled month: ' . $entitledMonth . ' with sales month: ' . $salesMonth);
-        
-                            if ($entitledMonth == $salesMonth) {
-                                Log::info('Match found for entitled with user_id ' . $entitled->user_id . ' in ' . $salesMonth);
-                                $status = $entitled->status;
+                            Log::info($entitledMonth . '<-entitledMonth ,  salesMonth->' . $salesMonth);
+                            // Match the entitled month with the sales month and waiter ID
+                            if ($entitledMonth == $salesMonth && $entitled->user_id == $waiter->id) {
+                                // Set the status to the entitled status
+                                $status[$salesMonth] = $entitled->status;
+                                Log::info('matched');
                             } else {
-                                Log::info('No match for entitled in ' . $salesMonth);
+                                // Keep the status as is instead of setting to null
+                                $status = '2';
+                                Log::info('not matched');
                             }
+                        } else {
+                            $status = null;
                         }
-        
+                        
+                        // Log::info($group);
+
                         return [
                             'total_sales' => $group->sum('total_amount'),
                             'month' => $month,
                             'year' => $year,
-                            'status' => $status // Ensure the status is passed along
+                            'status' => $status[$year][$month] ?? null,
                         ];
                     });
-        
+                // Log::info($sales);
+
                 foreach ($sales as $sale) {
                     $year = $sale['year'];
                     $month = $sale['month'];
                     $total_sales = $sale['total_sales'];
                     $status = $sale['status'];
-        
-                    if (!isset($waiterDetails[$year][$month][$waiter->id])) {
-                        $waiterDetails[$year][$month][$waiter->id] = []; // Ensure unique waiter entries
-                    }
-        
-                    if (!collect($waiterDetails[$year][$month])->contains('name', $waiter->name) && $total_sales > $incentCommDetail->monthly_sale) {
-        
-                        $earned = $incentCommDetail->type === 'fixed'
-                            ? $incentCommDetail->rate
-                            : $total_sales * $incentCommDetail->rate;
-        
-                        $waiterDetails[$year][$month][$waiter->id] = [
-                            'name' => $waiter->name,
-                            'total_sales' => number_format($total_sales, 2),
-                            'earned' => (int) $earned,
-                            'status' => $status,
-                        ];
+                    if($total_sales > $incentCommDetail->monthly_sale){
+                        if (!isset($waiterDetails[$year][$month][$waiter->id])) {
+                            $waiterDetails[$year][$month][$waiter->id] = [];
+                        }
+                        
+                        if (!collect($waiterDetails[$year][$month])->contains('name', $waiter->name)) {
+            
+                            $earned = $incentCommDetail->type === 'fixed'
+                                ? $incentCommDetail->rate
+                                : $total_sales * $incentCommDetail->rate;
+            
+                            $waiterDetails[$year][$month][$waiter->id] = [
+                                'name' => $waiter->name,
+                                'total_sales' => number_format($total_sales, 2),
+                                'earned' => (int) $earned,
+                                'status' => $status,
+                            ];
+                        }
+
                     }
                 }
         
-                Log::info('Current waiter details:', $waiterDetails);
+                // Log::info('Current waiter details:', $waiterDetails);
             });
         });
         

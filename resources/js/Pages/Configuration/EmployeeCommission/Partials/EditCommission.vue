@@ -15,6 +15,10 @@ const props = defineProps({
     commisionDetails: {
         type: Object,
         required: true,
+    },
+    productToAdd: {
+        type: Array,
+        default: () => {},
     }
 })
 
@@ -152,7 +156,7 @@ const isFormValid = computed(() => {
             <Button
                 :type="'submit'"
                 :size="'lg'"
-                :disabled="!isFormValid"
+                :disabled="!isFormValid || form.processing"
             >
                 Save Changes
             </Button>

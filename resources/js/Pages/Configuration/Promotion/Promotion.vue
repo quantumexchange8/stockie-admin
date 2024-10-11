@@ -10,6 +10,7 @@ import CreatePromotionForm from './Partials/CreatePromotionForm.vue'
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
 import Active from "@/Pages/Configuration/Promotion/Partials/Active.vue"
 import Inactive from "@/Pages/Configuration/Promotion/Partials/Inactive.vue"
+import Toast from '@/Components/Toast.vue';
 
 const props = defineProps({
     ActivePromotions: Array,
@@ -36,6 +37,8 @@ const hideCreateForm = () => {
 
 <template>
     <Head title="Configuration" />
+
+    <Toast />
 
     
     <div class="flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]">

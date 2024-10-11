@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('dashboard')->group(function(){
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/filterSale', [DashboardController::class, 'filterSales'])->name('dashboard.filter-sales');
+        Route::get('/activeTables', [DashboardController::class, 'getActiveTables'])->name('dashboard.active-tables');
     });
 
     /********* Components **********/
@@ -130,9 +131,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/edit', [ConfigPromotionController::class, 'edit'])->name('configurations.promotion.edit');
         Route::post('/delete', [ConfigPromotionController::class, 'delete'])->name('configurations.promotion.delete');
         
+        /******* Invoice Setting ********/
         Route::post('/updateMerchant', [ConfigPromotionController::class, 'updateMerchant'])->name('configurations.updateMerchant');
         Route::post('/addTax', [ConfigPromotionController::class, 'addTax'])->name('configurations.addTax');
         Route::get('/getTax', [ConfigPromotionController::class, 'getTax'])->name('configurations.getTax');
+        Route::post('/editTax', [ConfigPromotionController::class, 'editTax'])->name('configurations.editTax');
+        Route::delete('/deleteTax/{id}', [ConfigPromotionController::class, 'deleteTax'])->name('configuration.deleteTax');
 
     });
 
@@ -172,6 +176,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/table-room/deleteZone/{id}', [TableRoomController::class, 'deleteZone'])->name('tableroom.delete-zone');
         Route::delete('/table-room/deleteTable/{id}', [TableRoomController::class,'deleteTable'])->name('tableroom.delete-table');
         Route::post('/add-table', [TableRoomController::class,'addTable'])->name('tableroom.add-table');
+        Route::get('/get-zonedetails', [TableRoomController::class, 'getZoneDetails'])->name('tableroom.getZoneDetails');
         Route::get('/get-tabledetails', [TableRoomController::class,'getTableDetails'])->name('tableroom.getTableDetails');
         Route::post('/edit-table', [TableRoomController::class,'editTable'])->name('tableroom.edit-table');
         Route::post('/edit-zone', [TableRoomController::class,'editZone'])->name('tableroom.edit-zone');

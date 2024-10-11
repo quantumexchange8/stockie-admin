@@ -22,13 +22,14 @@ class WaiterRequest extends FormRequest
     public function rules()
     {
         $rules = [
+            'username'=>'required|string|max:255',
             'name'=>'required|string|max:255',
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
             // 'email' => 'required|email|unique:waiters',
             // 'staffid' => 'required|string|unique:waiters,staffid',
             'salary' => 'required|integer|min:0',
             'stockie_email' => 'required|email',
-            'stockie_password' => 'required|string',
+            'password' => 'required|string',
         ];
 
         $rules['email'] = $this->input('id') 
@@ -36,19 +37,19 @@ class WaiterRequest extends FormRequest
                     [
                         'required',
                         'email',
-                        Rule::unique('waiters')->ignore($this->input('id')),
+                        Rule::unique('users')->ignore($this->input('id')),
                     ]
-                : 'required|email|unique:waiters';
+                : 'required|email|unique:users';
 
 
-        $rules['staffid'] = $this->input('id') 
+        $rules['role_id'] = $this->input('id') 
                 ?    
                     [
                         'required',
                         'string',
-                        Rule::unique('waiters')->ignore($this->input('id')),
+                        Rule::unique('users')->ignore($this->input('id')),
                     ]
-                : 'required|string|unique:waiters';
+                : 'required|string|unique:users';
 
         return $rules;
     }

@@ -6,6 +6,7 @@ import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
 import RadioButton from '@/Components/RadioButton.vue';
 import { tableType } from '@/Composables/constants';
+import { useCustomToast } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -14,6 +15,7 @@ const props = defineProps({
         default: () => [],
     }
 });
+const { showMessage } = useCustomToast();
 const emit = defineEmits(['close']);
 const zones = ref();
 
@@ -35,6 +37,12 @@ const formSubmit = () => {
         onSuccess: () => {
             form.reset();
             emit('close');
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'New table has been successfully added.',
+                });
+            }, 200)
         },
         onError: (errors) => {
             console.error('Form submission error, ', errors);

@@ -3,13 +3,17 @@ import { TableRoomActivityIllust } from '@/Components/Icons/illus';
 import { CircledArrowHeadRightIcon2 } from '@/Components/Icons/solid';
 import { Link } from '@inertiajs/vue3';
 
-const activeTable = (n) => {
-    console.log('t' + n + ' button clicked')
-}
+const props = defineProps({
+    activeTables: {
+        type: Array,
+        required: true,
+    }
+})
+
 </script>
 
 <template>
-    <div class="w-full flex flex-col py-6 item-start gap-6 shrink-0 rounded-[5px] border border-solid border-primary-100">
+    <div class="w-full flex flex-col py-6 item-start shrink-0 rounded-[5px] border border-solid border-primary-100">
         <div class="w-full flex flex-col items-start gap-[10px] self-stretch">
             <div class="w-full flex justify-between px-6 items-center self-stretch ">
                 <span class="flex flex-col justify-between flex-[1_0_0] text-md font-medium text-primary-900 w-full">Table / Room Activity</span>
@@ -21,7 +25,7 @@ const activeTable = (n) => {
             </div>
         </div>
 
-        <div class="flex pl-6 items-end gap-[10px] self-stretch overflow-x-auto relative">
+        <div class="flex pl-6 items-end gap-[10px] self-stretch overflow-x-scroll relative">
             <div 
                 class="flex p-3 pt-0 items-end gap-1 flex-[1_0_0] h-[102.231px] w-[400px] absolute
                         rounded-tl-[45px] rounded-tr-[5px] rounded-bl-[5px] rounded-br-[5px] 
@@ -33,11 +37,12 @@ const activeTable = (n) => {
                 <div class="flex flex-col justify-center items-start gap-[5px] flex-[1_0_0]">
                     <span class="text-primary-950 text-xs font-normal">Active Table / Room: </span>
                     <div class="flex items-center gap-3 self-stretch">
-                        <template v-for="n in 10" :key="n">
-                            <div class="flex w-9 h-9 px-[9px] py-2 flex-col justify-center items-center gap-[10px] rounded-full bg-primary-800 hover:bg-primary-900 hover:cursor-pointer"
-                                    @click="activeTable(n)">
-                                <span class="text-primary-25 text-base font-medium">T{{ n }}</span>
-                            </div>
+                        <template v-for="(table, index) in props.activeTables" :key="index">
+                            <Link :href="route('orders')">
+                                <div class="flex w-9 h-9 px-[9px] py-2 flex-col justify-center items-center gap-[10px] rounded-full bg-primary-800 hover:bg-primary-900 hover:cursor-pointer">
+                                    <span class="text-primary-25 text-base font-medium">{{ table.table_no }}</span>
+                                </div>
+                            </Link>
                         </template>
                     </div>
                 </div>

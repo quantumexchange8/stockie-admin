@@ -5,7 +5,6 @@ import { useForm } from "@inertiajs/vue3";
 import { nextTick, ref, watch } from "vue";
 import { DeleteIcon, Menu2Icon, PlusIcon } from '@/Components/Icons/solid.jsx';
 import Modal from '@/Components/Modal.vue';
-import Table from "@/Components/Table.vue";
 
 const props = defineProps({
     zonesArr: {
@@ -14,18 +13,14 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits(["close", 'getZoneDetails']);
 
 const deleteProductFormIsOpen = ref(false);
 const selectedZone = ref(null);
 const isTextInputVisible = ref(false);
 const isEditing = ref(false);
 const currentZoneId = ref(null);
-
 const zones = ref();
-watch(() => props.zonesArr, (newValue) => {
-    zones.value = newValue ? newValue : {};
-}, { immediate: true });
 
 const form = useForm({
     name: "",
@@ -44,16 +39,15 @@ const addZone = () => {
 
 const submit = (id) => {
     if(isEditing.value){
-            form.id = id,
+        form.id = id,
         form.post(route('tableroom.edit-zone'), {
             preserveScroll: true,
-            preserveState: 'errors',
+            preserveState: true,
             onSuccess: () => {
+                isEditing.value = false;
+                isTextInputVisible.value = false;
                 form.reset();
-                emit('close');
-            },
-            onError: (errors) => {
-                console.error('Form submission error: ', errors);
+                emit('getZoneDetails');
             }
         })
     }
@@ -65,17 +59,14 @@ const submit = (id) => {
                 isTextInputVisible.value = false;
                 form.reset();
                 emit('close');
-            },
-            onError: (errors) => {
-                console.error('Form submission error:', errors);
             }
         });
     }
 };
 
 const handleDefaultClick = (event) => {
-    event.stopPropagation();  // Prevent the row selection event
-    event.preventDefault();   // Prevent the default link action
+    event.stopPropagation();  
+    event.preventDefault();   
 };
 
 const showDeleteGroupForm = (event, id) => {
@@ -89,34 +80,18 @@ const hideDeleteProductForm = () => {
 }
 
 
-function startEditing(zonesArr) {
+const startEditing = (zonesArr) => {
+    // document.getElementById('zone').focus();
     isTextInputVisible.value = false;
     isEditing.value = true;
     currentZoneId.value = zonesArr.value;
     form.edit_name = zonesArr.text;
-
-    nextTick(() => {
-        const inputElement = document.getElementById('edit_zone_name');
-        if(inputElement){
-            // inputElement.focus();
-        }
-    })
 }
 
-watch(isEditing, (newVal) => {
-    if(newVal) {
-        nextTick(() => {
-            const inputElement = document.getElementById('edit_zone_name');
-            if(inputElement){
-                inputElement.focus();
-            }
-        });
-    }
-});
+watch(() => props.zonesArr, (newValue) => {
+    zones.value = newValue ? newValue : {};
+}, { immediate: true });
 
-const stopEditing = () => {
-  isEditing.value = false;
-}
 
 </script>
 
@@ -156,11 +131,12 @@ const stopEditing = () => {
                             <TextInput
                                 :zoneId="currentZoneId"
                                 :errorMessage="form.errors.edit_name"
+                                :id="'zone'"
                                 input-name="edit_zone_name"
                                 inputId="edit_name"
                                 v-model="form.edit_name"
                                 ref="editZoneNameInput"
-                                @blur="stopEditing"
+                                @blur="submit(zonesArr.value)"
                                 @keydown.enter.prevent="submit(zonesArr.value)"
                             />
                         </template>

@@ -55,6 +55,10 @@ const props = defineProps({
     monthly: {
         type: Array,
         required: true,
+    },
+    activeTables: {
+        type: Array,
+        required: true,
     }
 })
 const stockColumn = ref([
@@ -138,7 +142,7 @@ onMounted(async()=> {
                 </div>
                 <div class="flex col-span-4">
                     <!-- table / room activity -->
-                    <TableRoomActivity />
+                    <TableRoomActivity :activeTables="activeTables"/>
                 </div>
             </div>
             <div class="grid grid-cols-12 gap-[20px]">

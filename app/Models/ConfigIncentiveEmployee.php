@@ -20,7 +20,7 @@ class ConfigIncentiveEmployee extends Model
 
     public function waiters() : HasMany
     {
-        return $this->hasMany(Waiter::class, 'id', 'user_id');
+        return $this->hasMany(User::class, 'id', 'user_id');
     }
 
     public function configIncentive() : BelongsTo

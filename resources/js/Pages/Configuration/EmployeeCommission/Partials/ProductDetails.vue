@@ -234,6 +234,7 @@ const filters = ref({
                             variant="red"
                             size="lg"
                             type="submit"
+                            :disabled="form.processing"
                             @click="submit(selectedProduct, removingFrom)"
                         >
                             Remove

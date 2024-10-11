@@ -8,6 +8,7 @@ import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import Accordion from '@/Components/Accordion.vue';
+import { useCustomToast } from '@/Composables';
 
 const props = defineProps({
     zones: {
@@ -19,6 +20,8 @@ const emit = defineEmits(['close']);
 const zonesDetail = ref();
 const editModal = ref(false);
 const deleteModal = ref(false);
+const { showMessage } = useCustomToast();
+
 
 watch(() => props.zones, (newValue) => {
     zonesDetail.value = newValue ? newValue : {};
@@ -88,6 +91,12 @@ const formSubmit = () => {
             onSuccess: () => {
                 form.reset();
                 emit('close');
+                setTimeout(() => {
+                    showMessage({ 
+                        severity: 'success',
+                        summary: 'Changes saved.',
+                    });
+                }, 200)
             },
             onError: (errors) => {
                 console.error('Form submission error, ', errors);
@@ -239,6 +248,7 @@ const isFormValid = computed(() => {
                         variant="red"
                         size="lg"
                         type="submit"
+                        :disabled="form.processing"
                     >
                         Delete
                     </Button>

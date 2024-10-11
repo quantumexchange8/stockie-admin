@@ -13,21 +13,33 @@ use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Log;
+use Validator;
 
 class ConfigPromotionController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $message = $request->session()->get('message');
+        $nowDate = now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
+        
+        ConfigPromotion::whereDate('promotion_from', '<=', $nowDate)
+            ->whereDate('promotion_to', '>', $nowDate) 
+            ->update(['status' => 'Active']);
 
-        $nowDate = Carbon::now();
+        ConfigPromotion::where(function ($query) use ($nowDate) {
+                $query->whereDate('promotion_to', '<=', $nowDate)  
+                    ->orWhereDate('promotion_from', '>', $nowDate); 
+            })
+            ->update(['status' => 'Inactive']);
+
         $ActivePromotions = ConfigPromotion::where('status', 'Active')->get();
         $InactivePromotions = ConfigPromotion::where('status', 'Inactive')->get();
-        
+
         $ActivePromotions->each(function ($active) {
             $active->promotion_image = $active->getFirstMediaUrl('promotion');
         });
@@ -42,7 +54,6 @@ class ConfigPromotionController extends Controller
             'ActivePromotions' => $ActivePromotions,
             'InactivePromotions' => $InactivePromotions,
             'merchant' => $merchant,
-            'message' => $message ?? [],
         ]);
     }
 
@@ -61,13 +72,14 @@ class ConfigPromotionController extends Controller
     {
         
         $data = $request->all();
-        $todayDate = new DateTime();
-        if (($todayDate >= $request->promotion_from) && ($todayDate < $request->todayDate)) {
+        // dd($data);
+        $todayDate = now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
+        // dd($todayDate);
+        if ($todayDate >= $request->promotion_from && $todayDate < $request->promotion_to) {
             $status = 'Active';
         } else {
             $status = 'Inactive';
         }
-        // dd($data);
 
         $promotion = ConfigPromotion::create([
             'title' => $data['title'],
@@ -77,6 +89,7 @@ class ConfigPromotionController extends Controller
             'image' => $data['image'],
             'status' => $status,
         ]);
+        // dd($promotion);
 
         if ($request->hasfile('image'))
         {
@@ -101,8 +114,8 @@ class ConfigPromotionController extends Controller
     {
         
 
-        $todayDate = new DateTime();
-        if (($todayDate >= $request->promotion_from) && ($todayDate < $request->todayDate)) {
+        $todayDate = date('Y/m/d');
+        if (($todayDate >= $request->promotion_from) && ($todayDate <= $request->todayDate)) {
             $status = 'Active';
         } else {
             $status = 'Inactive';
@@ -168,9 +181,9 @@ class ConfigPromotionController extends Controller
     {
 
         $request->validate([
-            'merchant_name' => ['required'],
-            'merchant_contact' => ['required'],
-            'merchant_address' => ['required'],
+            'merchant_name' => ['required', 'string'],
+            'merchant_contact' => ['required', 'numeric'],
+            'merchant_address' => ['required', 'max:255'],
         ]);
 
         $config_merchant = ConfigMerchant::find($request->merchant_id);
@@ -185,18 +198,56 @@ class ConfigPromotionController extends Controller
     }
 
     public function addTax(Request $request)
-    {
-        $request->validate([
-            'name' => ['required'],
+    {   
+        // dd($request->all());
+        $newTax = TaxSetting::find($request->id);
+
+        $rules = [
+            'name' => ['required',
+                        'max:255',
+                        Rule::unique('tax_settings', 'name')->whereNull('deleted_at')->ignore($newTax ? $newTax->id : null)
+                    ],
             'percentage' => ['required'],
-        ]);
+        ];
 
-        $tax = TaxSetting::create([
-            'name' => $request->name,
-            'percentage' => $request->percentage,
-        ]);
+        $requestMessages = [
+            'name.required' => 'The name field is required.',
+            'name.max' => 'The name field must not exceed 255 characters.',
+            'name.unique' => 'The name already exists in the tax settings.',
+            'percentage.required' => 'This field is required.',
+        ];
 
-        return redirect()->back()->with('updated succesfully');
+        // if (!$newTax) {
+        //     $rules['name'][] = Rule::unique('tax_settings', 'name')->whereNull('deleted_at');
+        // }
+
+        $taxValidator = Validator::make(
+            $request->all(),
+            $rules,
+            $requestMessages
+        );
+
+        if ($taxValidator->fails()) {
+            Log::info($taxValidator->errors());
+            return redirect()
+                    ->back()
+                    ->withErrors($taxValidator)
+                    ->withInput();
+        }
+
+        if ($newTax) {
+            // Update the existing tax
+            $newTax->update([
+                'name' => $request->name,
+                'percentage' => $request->percentage,
+            ]);
+        } else {
+            // Create a new tax
+            TaxSetting::create([
+                'name' => $request->name,
+                'percentage' => $request->percentage,
+            ]);
+        }
     }
 
     public function getTax()
@@ -207,5 +258,20 @@ class ConfigPromotionController extends Controller
         $results = $stock->get();
 
         return response()->json($results);
+    }
+
+    public function editTax (Request $request)
+    {
+        dd($request->all());
+
+        return response()->json($request);
+    }
+
+    public function deleteTax (String $id)
+    {
+        $deletingId = TaxSetting::find($id);
+        if($deletingId){
+            $deletingId->delete();
+        };
     }
 }

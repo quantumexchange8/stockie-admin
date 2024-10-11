@@ -126,7 +126,7 @@ const filterProducts = computed(() => {
                         :type="'submit'"
                         :variant="'primary'"
                         :size="'lg'"
-                        :disabled="isAddingProductEmpty"
+                        :disabled="isAddingProductEmpty || form.processing"
                     >
                         Add
                     </Button>
