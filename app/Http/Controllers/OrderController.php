@@ -17,7 +17,7 @@ use App\Models\ProductItem;
 use App\Models\SaleHistory;
 use App\Models\StockHistory;
 use App\Models\Table;
-use App\Models\TaxSetting;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Zone;
@@ -661,7 +661,7 @@ class OrderController extends Controller
                             ])->find($id);
             $table = Table::find($order->orderTable['table_id']);
             $customer = Customer::find($request->customer_id);
-            $taxes = TaxSetting::whereIn('name', ['SST', 'Service Tax'])->pluck('percentage', 'name');
+            $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('percentage', 'name');
             $totalTaxPercentage = ($taxes['SST'] ?? 0) + ($taxes['Service Tax'] ?? 0);
 
             if ($request->action_type === 'complete') {

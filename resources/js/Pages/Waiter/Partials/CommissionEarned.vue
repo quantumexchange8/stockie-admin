@@ -4,7 +4,6 @@ import { DropdownIcon } from '@/Components/Icons/solid';
 import Chart from "primevue/chart";
 import { ref, onMounted, watch } from "vue";
 import { UndetectableIllus } from '@/Components/Icons/illus';
-import { Animation } from 'chart.js';
 
 const props = defineProps ({
     waiterNames: {
@@ -17,8 +16,6 @@ const props = defineProps ({
     }
 })
 
-const name = ref(props.waiterNames);
-const waiterCommission = ref(props.waiterCommission);
 const emit = defineEmits(['applyCommFilter']);
 const graphFilter = ref(['This month', 'This year']);
 const selectedFilter = ref(graphFilter.value[0]);

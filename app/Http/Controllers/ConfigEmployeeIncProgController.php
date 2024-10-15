@@ -119,7 +119,7 @@ class ConfigEmployeeIncProgController extends Controller
                 'waiters' => $entitleds->waiters->flatMap(function($waiter){
                     return [
                         'id' => $waiter->id,
-                        'name' => $waiter->name,
+                        'name' => $waiter->full_name,
                     ];
                 })
             ];
@@ -156,22 +156,18 @@ class ConfigEmployeeIncProgController extends Controller
 
                         if ($group->sum('total_amount') > $incentCommDetail->monthly_sale) {
                             $entitledMonth = $entitled->created_at->format('F Y');
-                            Log::info($entitledMonth . '<-entitledMonth ,  salesMonth->' . $salesMonth);
                             // Match the entitled month with the sales month and waiter ID
                             if ($entitledMonth == $salesMonth && $entitled->user_id == $waiter->id) {
                                 // Set the status to the entitled status
                                 $status[$salesMonth] = $entitled->status;
-                                Log::info('matched');
                             } else {
                                 // Keep the status as is instead of setting to null
                                 $status = '2';
-                                Log::info('not matched');
                             }
                         } else {
                             $status = null;
                         }
                         
-                        // Log::info($group);
 
                         return [
                             'total_sales' => $group->sum('total_amount'),
@@ -180,7 +176,6 @@ class ConfigEmployeeIncProgController extends Controller
                             'status' => $status[$year][$month] ?? null,
                         ];
                     });
-                // Log::info($sales);
 
                 foreach ($sales as $sale) {
                     $year = $sale['year'];
@@ -209,7 +204,6 @@ class ConfigEmployeeIncProgController extends Controller
                     }
                 }
         
-                // Log::info('Current waiter details:', $waiterDetails);
             });
         });
         

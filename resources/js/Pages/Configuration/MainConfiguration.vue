@@ -10,12 +10,13 @@ import Breadcrumb from '@/Components/Breadcrumb.vue';
 import TabView from "@/Components/TabView.vue";
 import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables";
+import PointsSettings from "./PointsSettings/PointsSettings.vue";
 
 const home = ref({
     label: 'Configuration',
 });
 
-const tabs = ref(["Stock", "Employee Commission", "Employee Incentive Programme", "Promotion", "Invoice Setting"]);
+const tabs = ref(["Stock", "Employee Commission", "Employee Incentive Programme", "Promotion", "Invoice Setting", "Points Settings"]);
 
 const props = defineProps({
     ActivePromotions: Array,
@@ -61,6 +62,9 @@ onMounted(() => {
                 <MerchantDetail 
                     :merchant="merchant"
                 />
+            </template>
+            <template #points-settings>
+                <PointsSettings />
             </template>
         </TabView>
     </AuthenticatedLayout>

@@ -3,18 +3,17 @@ import Button from '@/Components/Button.vue';
 import { EmptyEntitledIncentive } from '@/Components/Icons/illus.jsx';
 import { CircledArrowHeadRightIcon2, TargetIcon } from '@/Components/Icons/solid';
 import { Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 
 const props = defineProps({
-    data: Object,
     configIncentive: Array,
 });
+console.log(props.configIncentive);
 
-function formatMonthlySale (monthly_sale){
+const formatMonthlySale = (monthly_sale) => {
     return monthly_sale.substring(0, monthly_sale.length-3);
 }
 
-function formatPercentageRate (rate){
+const formatPercentageRate = (rate) => {
     return rate * 100 + '%';
 }
 
@@ -30,16 +29,16 @@ function formatPercentageRate (rate){
                     />
             </Link>
         </div>
-        <div class="flex flex-col px-0.5 items-start gap-4 self-stretch" v-if="configIncentive" v-for="data in configIncentive">
+        <div class="flex flex-col px-0.5 items-start gap-4 self-stretch" v-if="configIncentive.length > 0" v-for="data in configIncentive" :key="data.incentive_id">
             <Link 
-            :href="route('configurations')"
+            :href="route('configuration.incentCommDetail', data.incentive_id)"
             class="w-full flex p-3 flex-col items-start gap-0.5 self-strech rounded-[5px] bg-primary-25">
-                <span v-if="data.type === 'fixed'" class="text-primary-900 text-md font-semibold">RM {{ data.rate }}</span>
-                <span v-if="data.type === 'percentage'" class="text-primary-900 text-md font-semibold">{{ formatPercentageRate(data.rate) }}</span>
+                <span v-if="data.config_incentive.type === 'fixed'" class="text-primary-900 text-md font-semibold">RM {{ data.config_incentive.rate }}</span>
+                <span v-if="data.config_incentive.type === 'percentage'" class="text-primary-900 text-md font-semibold">{{ formatPercentageRate(data.config_incentive.rate) }}</span>
                 <span class="text-grey-900 text-sm font-normal">of total monthly sales</span>
                 <div class="flex items-center gap-1">
                     <TargetIcon />
-                    <span class="text-2xs font-normal text-primary-800">RM {{ formatMonthlySale(data.monthly_sale) }}</span>
+                    <span class="text-2xs font-normal text-primary-800">RM {{ formatMonthlySale(data.config_incentive.monthly_sale) }}</span>
                 </div>
             </Link>
         </div>

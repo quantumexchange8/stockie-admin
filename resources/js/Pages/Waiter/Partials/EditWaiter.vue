@@ -5,6 +5,7 @@ import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
 import { computed } from "vue";
+import { useCustomToast } from "@/Composables";
 
 const props = defineProps({
     waiters: {
@@ -12,6 +13,7 @@ const props = defineProps({
         required: true
     },
 })
+const { showMessage } = useCustomToast();
 
 const emit = defineEmits(["close"]);
 const closeModal = () => {
@@ -20,7 +22,7 @@ const closeModal = () => {
     emit("close");
 };
 
-function formatPhone(phone) {
+const formatPhone = (phone) => {
     if (!phone || phone.length < 10) 
         return phone; 
     
@@ -32,7 +34,7 @@ function formatPhone(phone) {
     return phone;
 }
 
-function formatSalary(salary) {
+const formatSalary = (salary) => {
     if(salary.endsWith('.00'))
         salary = salary.slice(0, -3);
 
@@ -41,13 +43,14 @@ function formatSalary(salary) {
 
 const form = useForm({
     id: props.waiters.id,
-    name: props.waiters.name,
+    username: props.waiters.name,
+    name: props.waiters.full_name,
     phone: formatPhone(props.waiters.phone),
     email: props.waiters.email,
-    staffid: props.waiters.staffid,
+    role_id: props.waiters.role_id,
     salary: formatSalary(props.waiters.salary),
     stockie_email: props.waiters.stockie_email,
-    stockie_password: '',
+    password: '',
 });
 
 const submit = () => {
@@ -56,6 +59,12 @@ const submit = () => {
         preserveState: 'errors',
         onSuccess: () => {
             closeModal();
+            setTimeout(() => {
+                showMessage({
+                    severity: 'success',
+                    summary: 'Changes saved',
+                });
+            }, 200)
         },
         onError: (error) => {
             console.error(error); // Log the error details
@@ -63,7 +72,7 @@ const submit = () => {
     });
 };
 
-const requiredFields = ['name', 'phone', 'email', 'staffid', 'salary', 'stockie_email', 'stockie_password'];
+const requiredFields = ['name', 'phone', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
@@ -87,6 +96,18 @@ const isFormValid = computed(() => {
                             </div>
 
                             <div class="flex flex-col gap-4">
+                                <div class="flex md:gap-4">
+                                    <TextInput
+                                        label-text="User name"
+                                        :placeholder="'eg: johndoe'"
+                                        inputId="username"
+                                        type="'text'"
+                                        v-model="form.username"
+                                        :errorMessage="form.errors.username"
+                                    >
+                                    </TextInput>
+                                </div>
+
                                 <div class="flex md:gap-4">
                                     <TextInput
                                         label-text="Full name"
@@ -140,12 +161,12 @@ const isFormValid = computed(() => {
                                     <TextInput
                                         label-text="Staff ID"
                                         :placeholder="'eg: J8192'"
-                                        inputId="staffid"
+                                        inputId="role_id"
                                         type="'text'"
-                                        v-model="form.staffid"
+                                        v-model="form.role_id"
                                     ></TextInput>
                                     <InputError
-                                        :message="form.errors.staffid"
+                                        :message="form.errors.role_id"
                                     />
                                 </div>
                                 <div class="w-full flex flex-col">
@@ -187,12 +208,12 @@ const isFormValid = computed(() => {
                                     <TextInput
                                         label-text="Password"
                                         :placeholder="'for Stockie account log-in'"
-                                        inputId="stockie_password"
+                                        inputId="password"
                                         :inputType="'password'"
-                                        v-model="form.stockie_password"
+                                        v-model="form.password"
                                     ></TextInput>
                                     <InputError
-                                        :message="form.errors.stockie_password"
+                                        :message="form.errors.password"
                                     />
                                 </div>
                             </div>

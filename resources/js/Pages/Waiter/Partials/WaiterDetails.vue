@@ -10,6 +10,7 @@ import Commission from './Commission.vue';
 import { CommissionIcon, GrowthIcon, WaiterSalesIcon } from '@/Components/Icons/solid';
 import Sales from './Sales.vue';
 import Attendance from './Attendance.vue';
+import Incentive from './Incentive.vue';
 
 const props = defineProps({
     id: [Number, String],
@@ -19,11 +20,26 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    total_sales: {
+        type: Number,
+        default: 0,
+    },
     attendance: Array,
+    commissionData: {
+        type: Array,
+        default: () => {},
+    },
     incentiveData: Object,
     configIncentive: Object,
+    commissionThisMonth: {
+        type: Number,
+        default: 0,
+    },
+    incentiveThisMonth: {
+        type: Number,
+        default: 0,
+    }
 })
-
 const home = ref({
     label: 'Waiter',
     route: '/waiter'
@@ -35,11 +51,11 @@ const items = ref([
 
 const waiter = ref(props.waiter);
 const attendance = ref(props.attendance);
-const data = ref(props.incentiveData);
 const salesRowsPerPage = ref(11);
 const commissionRowsPerPage = ref(11);
+const incentiveRowsPerPage = ref(11);
 const attendanceRowsPerPage = ref(11);
-const tabs = ref(['Sales', 'Commission', 'Attendance']);
+const tabs = ref(['Sales', 'Commission', 'Incentive', 'Attendance']);
 const salesColumn = ref([
     {field: 'created_at', header: 'Date', sortable: true},
     {field: 'order_no', header: 'Order',sortable: true},
@@ -49,12 +65,16 @@ const salesColumn = ref([
 ]);
 
 const commissionColumn = ref([
-    {field: 'created_by', header: 'Month', width: '15', sortable: true},
-    {field: 'total_sales', header: 'Total', width: '12', sortable: true},
-    {field: 'commission', header: 'Commission', width: '18', sortable: true},
-    {field: 'incentive', header: 'Incentive', width: '27', sortable: true},
-    {field: 'total_commission', header: 'Total Commission', width: '18', sortable: true},
-    {field: 'status', header: 'Status', width: '10', sortable: true},
+    {field: 'created_at', header: 'Month', width: '60', sortable: true},
+    {field: 'total_sales', header: 'Total Sales', width: '20', sortable: true},
+    {field: 'commission', header: 'Commission', width: '20', sortable: true},
+]);
+
+const incentiveColumn = ref([
+    {field: 'monthYear', header: 'Month', width: '25', sortable: true},
+    {field: 'totalSales', header: 'Total Sales', width: '25', sortable: true},
+    {field: 'incentiveAmt', header: 'Incentive', width: '30', sortable: true},
+    {field: 'status', header: 'Status', width: '20', sortable: true},
 ]);
 
 const attendanceColumn = ref([
@@ -62,6 +82,7 @@ const attendanceColumn = ref([
     {field: 'check_out', header: 'Check out', width: '35', sortable: true},
     {field: 'duration', header: 'Duration', width: '30', sortable: true},
 ]);
+
 
 const rowType = {
     rowGroups: false,
@@ -81,6 +102,10 @@ const salesTotalPages = computed(() => {
 
 const commissionTotalPages = computed(() => {
     return Math.ceil(props.incentiveData.length / commissionRowsPerPage.value);
+})
+
+const incentiveTotalPages = computed(() => {
+    return Math.ceil(props.commissionData.length / incentiveRowsPerPage.value);
 })
 
 const attendanceTotalPages = computed(() => {
@@ -113,7 +138,7 @@ const attendanceTotalPages = computed(() => {
                             <div class="flex flex-col gap-1 self-stretch"> 
                                 <GrowthIcon />
                                 <span class="text-primary-100 text-sm font-medium whitespace-nowrap w-full">Total sales this month</span>
-                                <span class="text-primary-25 text-lg font-medium ">RM {{ incentiveData.length ? incentiveData.slice(-1)[0].total_sales : 0 }}</span>
+                                <span class="text-primary-25 text-lg font-medium ">RM {{ props.total_sales }}</span>
                             </div>
                             <div class="absolute bottom-0 right-0">
                                 <WaiterSalesIcon />
@@ -126,15 +151,15 @@ const attendanceTotalPages = computed(() => {
                             <div class="flex flex-col gap-1 self-stretch">
                                 <CommissionIcon />
                                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Commission in this month</span>
-                                <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ incentiveData.length ? incentiveData.slice(-1)[0].total_commission : 0 }}</span>
-                                <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ incentiveData.length ? incentiveData.slice(-1)[0].commission : 0 }} + RM {{ incentiveData.length ? incentiveData.slice(-1)[0].incentive : 0 }})</span>
+                                <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ props.incentiveThisMonth + props.commissionThisMonth }}</span>
+                                <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ props.incentiveThisMonth }} + RM {{ props.commissionThisMonth }})</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- entitled incentive -->
                     <div 
-                        class="w-full p-4 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100"
+                        class="w-full p-4 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 max-h-[500px] overflow-y-scroll scrollbar-webkit scrollbar-thin"
                     >
                         <EntitledIncentive 
                             :data="incentiveData" 
@@ -146,7 +171,9 @@ const attendanceTotalPages = computed(() => {
                     <div 
                         class="w-full p-6 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 min-w-[315px]"
                     >
-                        <WaiterDetailCard :waiter="waiter" />
+                        <WaiterDetailCard 
+                            :waiter="waiter" 
+                        />
                     </div>
                 </div>
                 
@@ -169,13 +196,24 @@ const attendanceTotalPages = computed(() => {
 
                         <template #commission>
                             <Commission 
-                                :order="order" 
-                                :data="incentiveData" 
+                                :data="commissionData" 
                                 :columns="commissionColumn"
                                 :waiter="waiter"
                                 :rowType="rowType"
                                 :totalPages="commissionTotalPages"
                                 :rowsPerPage="commissionRowsPerPage"
+                            />
+                        </template>
+
+                        <template #incentive>
+                            <Incentive 
+                                :waiter="waiter.full_name" 
+                                :columns="incentiveColumn" 
+                                :dateFilter="defaultDateFilter" 
+                                :incentiveData="incentiveData"
+                                :rowType="rowType"
+                                :totalPages="incentiveTotalPages"
+                                :rowsPerPage="incentiveRowsPerPage"
                             />
                         </template>
 

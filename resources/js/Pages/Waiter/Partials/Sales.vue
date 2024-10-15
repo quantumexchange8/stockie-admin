@@ -38,6 +38,7 @@ const isDetailModalOpen = ref(false);
 const selectedOrder = ref(null);
 const order = ref(props.order);
 const waiter = ref(props.waiter);
+const isLoading = ref(false);
 
 const defaultLatest7Days = computed(() => {
     let currentDate = dayjs();
@@ -47,17 +48,13 @@ const defaultLatest7Days = computed(() => {
 });
 
 
-const viewOrderDetail = async (id) => {
-    try {
-        const response = await axios.get(`/waiter/orderDetails/${id}`);
-        selectedOrder.value = response.data;
-        isDetailModalOpen.value = true;
-    } catch(error) {
-        console.error('Something went wrong.', error);
-    }
+const viewOrderDetail = (items) => {
+    isDetailModalOpen.value = true;
+    selectedOrder.value = items;
 }
 
 const viewSalesReport = async (filters = {}, id) => {
+    isLoading.value = true;
     try {
         const salesReportResponse = await axios.get(`/waiter/salesReport/${id}`, {
             method: 'GET',
@@ -70,7 +67,7 @@ const viewSalesReport = async (filters = {}, id) => {
     } catch (error) {
         console.error(error);
     } finally {
-        
+        isLoading.value = false;
     }
 }
 
@@ -81,9 +78,9 @@ watch(() => date_filter.value, () => {
 })
 
 const orderColumn = ref([
-    {field: 'product_name', header: 'Product Name', width: '42', sortable: true},
-    {field: 'serve_qty', header: 'Quantity', width: '18', sortable: true},
-    {field: 'price', header: 'Price', width: '17', sortable: true},
+    {field: 'product_name', header: 'Product Name', width: '37', sortable: true},
+    {field: 'serve_qty', header: 'Quantity', width: '20', sortable: true},
+    {field: 'price', header: 'Price', width: '20', sortable: true},
     {field: 'commission', header: 'Commission', width: '23', sortable: true},
 ])
 
@@ -233,7 +230,7 @@ const exportToCSV = () => {
                 <template #action="order">
                     <DetailIcon 
                         class="text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="viewOrderDetail(order.order_id)"
+                        @click="viewOrderDetail(order.items)"
                     />
                 </template>
             </Table>

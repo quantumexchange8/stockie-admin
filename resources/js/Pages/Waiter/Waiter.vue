@@ -64,10 +64,10 @@ const waitersTotalPages = computed(() => {
 const { flashMessage } = useCustomToast();
 
 const waiterColumns = ref([
-    {field: 'staffid', header: 'ID', width: '11.5', sortable: true},
-    {field: 'name', header: 'Waiter', width: '21.5', sortable: true},
+    {field: 'role_id', header: 'ID', width: '11.5', sortable: true},
+    {field: 'full_name', header: 'Waiter', width: '21.5', sortable: true},
     {field: 'phone', header: 'Phone', width: '20', sortable: true},
-    {field: 'stockie_email', header: 'Email', width: '35', sortable: true},
+    {field: 'worker_email', header: 'Email', width: '35', sortable: true},
     {field: 'action', header: '', width: '20', sortable: false},
 ]);
 

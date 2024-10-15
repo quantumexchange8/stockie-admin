@@ -23,12 +23,11 @@ const home = ref({
 // only for 'list' variant of table component
 const productColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'product_name', header: 'Product Name', width: '36', sortable: false},
-    {field: 'price', header: 'Price', width: '13', sortable: true},
-    {field: 'point', header: 'Pts', width: '11', sortable: true},
-    {field: 'keep', header: 'Keep', width: '15', sortable: true},
+    {field: 'availability', header: 'Availability', width: '13', sortable: false},
+    {field: 'product_name', header: 'Product Name', width: '50', sortable: false},
+    {field: 'price', header: 'Price', width: '15', sortable: false},
     {field: 'stock_left', header: 'Left', width: '15', sortable: false},
-    {field: 'action', header: '', width: '10', sortable: false, edit: true, delete: true,}
+    {field: 'action', header: '', width: '7', sortable: false, edit: true}
 ]);
 
 const topSellingProductColumns = ref([

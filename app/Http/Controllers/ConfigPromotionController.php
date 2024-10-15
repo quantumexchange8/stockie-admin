@@ -6,7 +6,7 @@ use App\Http\Requests\ConfigPromotionRequest;
 use App\Models\ConfigMerchant;
 use App\Models\ConfigPromotion;
 use App\Models\ItemCategory;
-use App\Models\TaxSetting;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use DateTime;
@@ -200,26 +200,21 @@ class ConfigPromotionController extends Controller
     public function addTax(Request $request)
     {   
         // dd($request->all());
-        $newTax = TaxSetting::find($request->id);
-
+        $newTax = Setting::find($request->id);
         $rules = [
             'name' => ['required',
                         'max:255',
-                        Rule::unique('tax_settings', 'name')->whereNull('deleted_at')->ignore($newTax ? $newTax->id : null)
+                        Rule::unique('settings', 'name')->whereNull('deleted_at')->ignore($newTax ? $newTax->id : null)
                     ],
-            'percentage' => ['required'],
+            'value' => ['required'],
         ];
 
         $requestMessages = [
             'name.required' => 'The name field is required.',
             'name.max' => 'The name field must not exceed 255 characters.',
             'name.unique' => 'The name already exists in the tax settings.',
-            'percentage.required' => 'This field is required.',
+            'value.required' => 'This field is required.',
         ];
-
-        // if (!$newTax) {
-        //     $rules['name'][] = Rule::unique('tax_settings', 'name')->whereNull('deleted_at');
-        // }
 
         $taxValidator = Validator::make(
             $request->all(),
@@ -228,7 +223,6 @@ class ConfigPromotionController extends Controller
         );
 
         if ($taxValidator->fails()) {
-            Log::info($taxValidator->errors());
             return redirect()
                     ->back()
                     ->withErrors($taxValidator)
@@ -239,13 +233,15 @@ class ConfigPromotionController extends Controller
             // Update the existing tax
             $newTax->update([
                 'name' => $request->name,
-                'percentage' => $request->percentage,
+                'value' => round($request->value, 2),
+                'type' => 'percentage',
             ]);
         } else {
             // Create a new tax
-            TaxSetting::create([
+            Setting::create([
                 'name' => $request->name,
-                'percentage' => $request->percentage,
+                'value' => $request->percentage,
+                'type' => 'percentage',
             ]);
         }
     }
@@ -253,25 +249,41 @@ class ConfigPromotionController extends Controller
     public function getTax()
     {
 
-        $stock = TaxSetting::query();
+        $stock = Setting::query();
 
-        $results = $stock->get();
+        $results = $stock->where('type', 'tax')->get();
 
         return response()->json($results);
     }
 
-    public function editTax (Request $request)
-    {
-        dd($request->all());
-
-        return response()->json($request);
-    }
-
     public function deleteTax (String $id)
     {
-        $deletingId = TaxSetting::find($id);
+        $deletingId = Setting::find($id);
         if($deletingId){
             $deletingId->delete();
         };
+    }
+
+    public function pointCalculate (Request $request)
+    {
+        $isPointExist = Setting::where('name', 'Point')->first();
+
+        if($isPointExist)
+        {
+            $isPointExist->update([
+                'type' => 'point',
+                'value_type' => 'price',
+                'value' => $request->value,
+                'point' => $request->point,
+            ]);
+        } else {
+            Setting::create([
+                'name' => 'Point',
+                'type' => 'point',
+                'value_type' => 'price',
+                'value' => $request->value,
+                'point' => $request->point,
+            ]);
+        }
     }
 }

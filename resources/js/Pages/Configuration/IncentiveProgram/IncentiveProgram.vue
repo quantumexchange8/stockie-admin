@@ -21,7 +21,7 @@ const selectedIncent = ref(null);
 const waiters = ref([]);
 
 const actions = {
-    // view: (incentive) => `/configurations/configurations/incentCommDetail/${incentive}`,
+    view: (incentive) => `/configurations/configurations/incentCommDetail/${incentive}`,
     edit: () => ``,
     delete: () => ``,
 };

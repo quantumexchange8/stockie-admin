@@ -1,27 +1,38 @@
 <script setup>
 import { UndetectableIllus } from '@/Components/Icons/illus';
-import { UploadIcon } from '@/Components/Icons/solid';
 import SearchBar from '@/Components/SearchBar.vue';
 import Table from '@/Components/Table.vue';
-import Tag from '@/Components/Tag.vue';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
-import { Link } from '@inertiajs/vue3';
-import dayjs from 'dayjs';
-import { FilterMatchMode } from 'primevue/api';
 import { ref } from 'vue';
+import { FilterMatchMode } from 'primevue/api';
+import Tag from '@/Components/Tag.vue';
+import { Link } from '@inertiajs/vue3';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+import { UploadIcon } from '@/Components/Icons/solid';
+import dayjs from 'dayjs';
 
 const props = defineProps({
-    data: Object,
+    waiter: {
+        type: String,
+        required: true,
+    },
+    columns: {
+        type: Array,
+        required: true,
+    },
+    dateFilter: {
+        type: Array,
+        required: true,
+    },
+    incentiveData: {
+        type: Array,
+        default: () => {},
+    },
     rowType: Object,
-    columns: Array,
-    waiter: Object,
     totalPages: Number,
     rowsPerPage: Number,
 })
-const data = ref(props.data)
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
+
+const incentiveData = ref(props.incentiveData);
 
 const arrayToCsv = (data) => {
     const array = [Object.keys(data[0])].concat(data)
@@ -46,16 +57,17 @@ const downloadBlob = (content, filename, contentType) => {
 const exportToCSV = () => { 
     const dataArr = [];
     const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const waiterName = props.waiter.full_name || 'Unknown_Waiter';
-    const fileName = `Waiter_${waiterName}_Daily Sales Report_${currentDateTime}.csv`;
+    const waiterName = props.waiter || 'Unknown_Waiter';
+    const fileName = `Waiter_${waiterName}_Monthly Incentive Report_${currentDateTime}.csv`;
     const contentType = 'text/csv;charset=utf-8;';
 
-    if (data.value && data.value.length > 0) {
-        data.value.forEach(row => {
+    if (incentiveData.value && incentiveData.value.length > 0) {
+        incentiveData.value.forEach(row => {
             dataArr.push({
-                'Date': row.created_at,
-                'Total': row.monthly_sale,
-                'Commission': row.commissionAmt,
+                'Date': row.monthYear,
+                'Total': row.totalSales,
+                'Incentive': row.incentiveAmt,
+                'Status': row.status,
             })
         });
 
@@ -65,12 +77,15 @@ const exportToCSV = () => {
     }
 }
 
+const filters = ref({
+    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
+});
 </script>
 
 <template>
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Monthly Commission Report</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Monthly Incentive Report</span>
             <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton
@@ -94,9 +109,9 @@ const exportToCSV = () => {
                         <MenuItem v-slot="{ active }">
                         <button type="button" :class="[
                             { 'bg-primary-100': active },
-                            { 'bg-grey-50 pointer-events-none': data.length === 0 },
+                            { 'bg-grey-50 pointer-events-none': incentiveData.length === 0 },
                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="data.length === 0" @click="exportToCSV">
+                        ]" :disabled="incentiveData.length === 0" @click="exportToCSV">
                             CSV
                         </button>
                         </MenuItem>
@@ -104,9 +119,9 @@ const exportToCSV = () => {
                         <MenuItem v-slot="{ active }">
                         <button type="button" :class="[
                             // { 'bg-primary-100': active },
-                            { 'bg-grey-50 pointer-events-none': data.length === 0 },
+                            { 'bg-grey-50 pointer-events-none': incentiveData.length === 0 },
                             'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="data.length === 0">
+                        ]" :disabled="incentiveData.length === 0">
                             PDF
                         </button>
                         </MenuItem>
@@ -122,14 +137,14 @@ const exportToCSV = () => {
                 v-model="filters['global'].value"
             />
         </div>
-
+        <div class="w-full" v-if="incentiveData">
             <Table
                 :columns="columns"
+                :rows="incentiveData"
                 :variant="'list'"
-                :rows="data"
-                :rowType="rowType"
                 :searchFilter="true"
                 :filters="filters"
+                :rowType="rowType"
                 :totalPages="totalPages"
                 :rowsPerPage="rowsPerPage"
             >
@@ -137,15 +152,35 @@ const exportToCSV = () => {
                     <UndetectableIllus class="w-44 h-44"/>
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
-                <template #created_at="data">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">{{ data.created_at }}</span>
+                <template #monthYear="incentiveData">
+                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">{{ incentiveData.monthYear }}</span>
                 </template>
-                <template #total_sales="data">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">RM {{ data.monthly_sale }}</span>
+                <template #totalSales="incentiveData">
+                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ incentiveData.totalSales }}</span>
                 </template>
-                <template #commission="data">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">RM {{ data.commissionAmt }}</span>
+                <template #incentiveAmt="incentiveData">
+                    <div v-if="incentiveData.incentiveAmt != 0" class="inline-flex items-center whitespace-nowrap gap-0.5">
+                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ incentiveData.incentiveAmt }} </span>
+                            <span class="line-clamp-1 text-primary-900 text-ellipsis text-sm font-medium">
+                                <template v-if="incentiveData.type == 'fixed'">
+                                    ( RM {{ incentiveData.rate }} of total sales )
+                                </template>
+                                <template v-if="incentiveData.type == 'percentage'">
+                                     ( {{ incentiveData.rate * 100 }}% of total sales )
+                                </template>
+                            </span>
+                    </div>
+                </template>
+                <template #status="incentiveData">
+                    <Link :href="route('configuration.incentCommDetail', incentiveData.incentiveId)">
+                        <Tag
+                            :variant="'green'"
+                            :value="incentiveData.status"
+                        />
+                    </Link>
                 </template>
             </Table>
-    </div>
+        </div>
+        </div>
 </template>
+

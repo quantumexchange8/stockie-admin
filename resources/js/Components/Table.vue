@@ -1,15 +1,16 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { ref, onMounted, computed, watch, reactive } from 'vue';
+import { Link, useForm } from '@inertiajs/vue3';
 import Button from './Button.vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-import Dropdown from '@/Components/Dropdown.vue'
 import { ViewIcon, ReplenishIcon, EditIcon, DeleteIcon } from './Icons/solid';
 import { UndetectableIllus } from "@/Components/Icons/illus.jsx";
 import TextInput from '@/Components/TextInput.vue';
 import Tag from '@/Components/Tag.vue';
 import Paginator from 'primevue/paginator';
+import Toggle from './Toggle.vue';
+import { useCustomToast } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -61,6 +62,7 @@ const currentPage = ref(1);
 const loading = ref(false);
 const selectedProduct = ref();
 const expandedRowGroups = ref();
+const forms = reactive({});
 
 // const emit = defineEmits(["updateFilteredRowsCount"]);
 
@@ -70,6 +72,8 @@ const defaultActions = {
     edit: () => '',
     delete: () => ''
 };
+
+const { showMessage } = useCustomToast();
 
 const mergedActions = computed(() => {
     return Object.keys(props.actions).length === 0 
@@ -172,12 +176,72 @@ const totalStockByGroup = computed(() => {
 });
 
 
+paginatedRows.value.forEach(item => {
+    forms[item.id] = useForm({
+        id: item.id,
+        product_name: item.product_name,
+        availability: item.availability === 'Available' ? true : false,
+        availabilityWord: '',
+    });
+});
+
+const toggleAvailability = (item) => {
+    if (forms[item.id]) {
+        forms[item.id].availability = !forms[item.id].availability;  
+        forms[item.id].id = item.id;
+        forms[item.id].product_name = item.product_name;
+        forms[item.id].availabilityWord = forms[item.id].availability ? 'Available' : 'Unavailable';
+        
+        updateAvailability(item.id); 
+    } else {
+        console.error(`Item with id ${item.id} not found in forms.`);
+    }
+};
+
+
+const updateAvailability = (id) => {
+    const form = forms[id];
+    if (form) {
+        const availability = form.availability === true ? 'available' : 'unavailable';
+        
+        form.post(route('products.updateAvailability'), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setTimeout(() => {
+                    showMessage({
+                        severity: 'success',
+                        summary: `${form.product_name} is now ${availability}.`
+                    });
+                }, 200);
+            },
+            onError: () => {
+                setTimeout(() => {
+                    showMessage({
+                        severity: 'danger',
+                        summary: 'Error occurred. Please contact the administrator.'
+                    });
+                });
+            }
+        });
+    } else {
+        console.error(`Form for item ID ${id} does not exist.`);
+    }
+};
+
+
+
 onMounted(() => {
     loading.value = true;
     if (props.rows) {
         loading.value = false;
     }
 });
+
+// watch(() => form.availability, (newValue) => {
+//     form.availability = newValue ? newValue : form.availability;
+// }, { immediate: true });
+
 </script>
 
 <template>
@@ -541,87 +605,72 @@ onMounted(() => {
                 </svg>
             </template>
         </DataTable>
+        <form @submit.prevent="updateAvailability">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4" v-if="props.variant === 'grid'">
             <div v-for="(item, index) in paginatedRows" :key="index" class="col-span-full md:col-span-3">
-                <div class="flex flex-col items-start gap-3">
-                    <slot name="item-body">
-                        <div 
-                            :class="[
-                                'relative self-stretch w-full h-52 rounded-[5px] border border-grey-100',
-                                {
-                                    'bg-primary-25': index % 2 === 0 && item.stock_left > 0,
-                                    'bg-white': index % 2 !== 0 && item.stock_left > 0,
-                                    'bg-black opacity-50': item.stock_left === 0
-                                }
-                            ]"
-                        >
+                <div class="flex flex-col items-start gap-1 w-full">
+                        <slot name="item-body">
                             <div 
-                                class="w-full h-[168px] cursor-pointer"
-                                :class="{'hover:bg-primary-50': item.stock_left !== 0 }"
-                                @click="redirectAction(mergedActions.view(item.id))"
+                                :class="[
+                                    'relative self-stretch w-full h-52 rounded-[5px] border border-grey-100',
+                                    {
+                                        'bg-primary-25': index % 2 === 0 && item.stock_left > 0,
+                                        'bg-white': index % 2 !== 0 && item.stock_left > 0,
+                                        'bg-black opacity-50': item.stock_left === 0
+                                    }
+                                ]"
                             >
+                                <div 
+                                    class="w-full h-[168px] cursor-pointer"
+                                    :class="{'hover:bg-primary-50': item.stock_left !== 0 }"
+                                    @click="redirectAction(mergedActions.view(item.id))"
+                                >
+                                </div>
+                                <span class="absolute top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.stock_left === 0">Out of Stock</span>
+                                <div class="flex p-[2px] items-start flex-shrink-0 gap-0.5" v-if="item.stock_left > 0">
+                                    <slot name="editAction" :="item">
+                                        <Button
+                                            :type="'button'"
+                                            :size="'md'"
+                                            @click="redirectAction(mergedActions.view(item.id))"
+                                            class="!bg-primary-100 hover:!bg-primary-200 rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[5px]"
+                                        >
+                                            <EditIcon class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer" />
+                                        </Button>
+                                    </slot>
+                                </div>
                             </div>
-                            <span class="absolute top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.stock_left === 0">Out of Stock</span>
-                            <div class="flex p-[2px] items-start flex-shrink-0 gap-0.5" v-if="item.stock_left > 0">
-                                <slot name="editAction" :="item">
-                                    <Button
-                                        :type="'button'"
-                                        :size="'md'"
-                                        @click="redirectAction(mergedActions.view(item.id))"
-                                        class="!bg-primary-100 hover:!bg-primary-200 rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[5px]"
-                                    >
-                                        <EditIcon class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer" />
-                                    </Button>
-                                </slot>
-                                <slot name="deleteAction" :="item">
-                                    <Button
-                                        :type="'button'"
-                                        :size="'md'"
-                                        @click="redirectAction(mergedActions.delete(item.id))"
-                                        class="!bg-primary-600 hover:!bg-primary-700 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[5px]"
-                                    >
-                                        <DeleteIcon class="w-5 h-5 text-primary-100 hover:text-primary-50 cursor-pointer pointer-events-none" />
-                                    </Button>
-                                </slot>
+                            <div class="w-full flex gap-2 items-center">
+                                <Tag value="Set" v-if="item.bucket === 'set'"/>
+                                <span class="w-full self-stretch text-primary-950 text-md font-semibold overflow-hidden text-ellipsis whitespace-nowrap">{{ item.product_name }}</span>
                             </div>
-                        </div>
-                        <span class="text-md font-semibold text-primary-950">RM {{ item.price }}</span>
-                        <Tag
-                            :variant="item.keep ? 'green' : 'yellow'"
-                            :value="item.keep === 'Active' ? 'Keep is allowed' : 'Keep is not allowed'"
-                        />
-                        <div class="flex items-center self-stretch gap-2">
-                            <span class="text-base font-medium text-grey-900">{{ item.point }} pts</span>
-                            <svg 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                width="5" 
-                                height="4" 
-                                viewBox="0 0 5 4" 
-                                fill="none"
-                            >
-                                <circle 
-                                    cx="2.5" 
-                                    cy="2" 
-                                    r="2" 
-                                    fill="#353D45"
+                            <span class="self-stretch text-md font-normal text-primary-950">RM {{ item.price }}</span> 
+                            <div class="flex items-center self-stretch gap-2">
+                                <Toggle 
+                                    :checked="forms[item.id].id === item.id && forms[item.id].availability" 
+                                    :inputName="'availability'"
+                                    :inputId="'availability'"
+                                    v-model="forms[item.id].availability"
+                                    @change="toggleAvailability(item)"
                                 />
-                            </svg>
-                            <span class="text-base font-medium text-primary-600">{{ item.stock_left }} left</span>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <Tag value="Set" v-if="item.bucket === 'set'"/>
-                            <span class="text-sm font-medium text-grey-900 overflow-hidden text-ellipsis">{{ item.product_name }}</span>
-                        </div>
+                                <span class="text-base font-medium" 
+                                :class="item.status === 'In stock' ? 'text-green-700' 
+                                        : item.status === 'Low in stock' ? 'text-yellow-700' 
+                                        : 'text-primary-600'">
+                                        {{ item.stock_left }} left
+                                </span>
+                            </div>
+                        </slot>
+                    </div>
+                </div>
+                <div v-if="$slots.empty && paginatedRows.length === 0" class="col-span-full">
+                    <slot name="empty">
+                        <UndetectableIllus/>
+                        <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
                     </slot>
                 </div>
             </div>
-            <div v-if="$slots.empty && paginatedRows.length === 0" class="col-span-full">
-                <slot name="empty">
-                    <UndetectableIllus/>
-                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
-                </slot>
-            </div>
-        </div>
+        </form>
         <Paginator 
             :rows="props.rowsPerPage" 
             :totalRecords="props.rows.length"

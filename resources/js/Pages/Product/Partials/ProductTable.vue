@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, reactive } from 'vue';
 import { FilterMatchMode } from 'primevue/api';
 import Tag from '@/Components/Tag.vue';
 import Table from '@/Components/Table.vue';
@@ -13,6 +13,9 @@ import { EmptyIllus } from '@/Components/Icons/illus.jsx';
 import { PlusIcon, EditIcon, DeleteIcon, ListViewIcon, GridViewIcon } from '@/Components/Icons/solid';
 import CreateProductForm from './CreateProductForm.vue';
 import EditProductForm from './EditProductForm.vue';
+import Toggle from '@/Components/Toggle.vue';
+import { useForm } from '@inertiajs/vue3';
+import { useCustomToast } from '@/Composables';
 
 const props = defineProps({
     columns: {
@@ -58,6 +61,8 @@ const selectedProduct = ref(null);
 const categories = ref([]);
 const selectedCategory = ref(0);
 const selectedLayout = ref('grid');
+const forms = reactive({});
+const { showMessage } = useCustomToast();
 
 const checkedFilters = ref({
     keepStatus: [],
@@ -71,6 +76,59 @@ const keepStatusArr = ref(['Active', 'Inactive']);
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
+
+props.rows.forEach(item => {
+    forms[item.id] = useForm({
+        id: item.id,
+        product_name: item.product_name,
+        availability: item.availability === 'Available' ? true : false,
+        availabilityWord: '',
+    });
+});
+
+const toggleAvailability = (event, item) => {
+    handleDefaultClick(event);
+    if (forms[item.id]) {
+        forms[item.id].availability = !forms[item.id].availability;  
+        forms[item.id].id = item.id;
+        forms[item.id].product_name = item.product_name;
+        forms[item.id].availabilityWord = forms[item.id].availability ? 'Available' : 'Unavailable';
+        
+        updateAvailability(item.id); 
+    } else {
+        console.error(`Item with id ${item.id} not found in forms.`);
+    }
+};
+
+const updateAvailability = (id) => {
+    const form = forms[id];
+    if (form) {
+        const availability = form.availability === true ? 'available' : 'unavailable';
+        
+        form.post(route('products.updateAvailability'), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setTimeout(() => {
+                    showMessage({
+                        severity: 'success',
+                        summary: `${form.product_name} is now ${availability}.`
+                    });
+                }, 200);
+            },
+            onError: () => {
+                setTimeout(() => {
+                    showMessage({
+                        severity: 'danger',
+                        summary: 'Error occurred. Please contact the administrator.'
+                    });
+                });
+            }
+        });
+    } else {
+        console.error(`Form for item ID ${id} does not exist.`);
+    }
+};
 
 const showCreateForm = () => {
     createFormIsOpen.value = true;
@@ -366,10 +424,13 @@ onMounted(() => {
                         @click="showEditGroupForm($event, row)"
                     />
                 </template>
-                <template #deleteAction="row">
-                    <DeleteIcon
-                        class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                        @click="showDeleteGroupForm($event, row.id)"
+                <template #availability="row">
+                    <Toggle 
+                        :checked="forms[row.id].id === row.id && forms[row.id].availability" 
+                        :inputName="'availability'"
+                        :inputId="'availability'"
+                        v-model="forms[row.id].availability"
+                        @click="toggleAvailability($event, row)"
                     />
                 </template>
                 <template #product_name="row">
@@ -381,20 +442,11 @@ onMounted(() => {
                 <template #price="row">
                     <span class="text-grey-900 text-sm font-medium">RM {{ row.price }}</span>
                 </template>
-                <template #point="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.point || 0 }}</span>
-                </template>
-                <template #keep="row">
-                    <Tag
-                        :variant="row.keep ? 'green' : 'yellow'"
-                        :value="row.keep === 'Active' ? 'Keep is allowed' : 'Keep is not allowed'"
-                    />
-                </template>
                 <template #stock_left="row">
-                    <span class="text-primary-600 inline-block align-middle">
+                    <span class="inline-block align-middle"
+                            :class="row.status === 'In stock' ? 'text-green-700' : row.status === 'Low in stock' ? 'text-yellow-700' : 'text-primary-600'">
                         <p v-if="row.status === 'Out of stock'">{{ row.status }}</p>
                         <p v-else>{{ row.bucket === 'set' ? `${row.stock_left} set` : row.stock_left }}</p>
-                        
                     </span>
                 </template>
             </Table>

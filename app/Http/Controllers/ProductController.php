@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
+use Log;
 
 class ProductController extends Controller
 {
@@ -562,4 +563,18 @@ class ProductController extends Controller
 
     //     return response()->json($data);
     // }
+
+    public function updateAvailability(Request $request)
+    {
+        // dd($request->all());
+        $selectedProduct = Product::find($request->id);
+
+        if ($selectedProduct) {
+            $selectedProduct->update([
+                'availability' => $request->availabilityWord,
+            ]);
+        } else {
+        }
+    }
+
 }

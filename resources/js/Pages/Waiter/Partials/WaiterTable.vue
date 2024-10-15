@@ -113,20 +113,20 @@ const handleDefaultClick = (event) => {
                 @click="showDeleteWaiterForm($event, rows.id)"
             />
         </template>
-        <template #staffid="rows">
-            <span class="text-grey-900 text-sm font-medium">{{ rows.staffid }}</span>
+        <template #role_id="rows">
+            <span class="text-grey-900 text-sm font-medium">{{ rows.role_id }}</span>
         </template>
-        <template #name="rows">
+        <template #full_name="rows">
             <template class="flex flex-row gap-[10px] items-center">
                 <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"></span>
-                <span class="text-grey-900 text-sm font-medium">{{ rows.name }}</span>
+                <span class="text-grey-900 text-sm font-medium">{{ rows.full_name }}</span>
             </template>
         </template>
         <template #phone="rows">
             <span class="text-grey-900 text-sm font-medium">{{ formatPhone(rows.phone) }}</span>   
         </template>
-        <template #stockie_email="rows">
-            <span class="text-grey-900 text-sm font-medium truncate">{{ rows.stockie_email }}</span>
+        <template #worker_email="rows">
+            <span class="text-grey-900 text-sm font-medium truncate">{{ rows.worker_email }}</span>
         </template>
     </Table>
 

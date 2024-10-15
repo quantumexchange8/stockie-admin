@@ -75,6 +75,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
         Route::delete('/products/deleteProduct/{id}', [ProductController::class, 'deleteProduct'])->name('products.deleteProduct');
         Route::delete('/products/deleteProductItem/{id}', [ProductController::class, 'deleteProductItem'])->name('products.deleteProductItem');
+        Route::post('/products/updateAvailability', [ProductController::class, 'updateAvailability'])->name('products.updateAvailability');
     });
 
      /********* Inventory **********/
@@ -135,9 +136,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/updateMerchant', [ConfigPromotionController::class, 'updateMerchant'])->name('configurations.updateMerchant');
         Route::post('/addTax', [ConfigPromotionController::class, 'addTax'])->name('configurations.addTax');
         Route::get('/getTax', [ConfigPromotionController::class, 'getTax'])->name('configurations.getTax');
-        Route::post('/editTax', [ConfigPromotionController::class, 'editTax'])->name('configurations.editTax');
         Route::delete('/deleteTax/{id}', [ConfigPromotionController::class, 'deleteTax'])->name('configuration.deleteTax');
 
+        /******* Points Settings ********/
+        Route::post('/pointCalculate', [ConfigPromotionController::class, 'pointCalculate'])->name('configuration.pointCalculate');
     });
 
     /******** Loyalty Programme **********/

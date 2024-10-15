@@ -98,10 +98,10 @@ watch( () => props.waiter, (newValue) => {
                 <div>
                     <Tag
                         :variant="'default'"
-                        :value="waiterDetail.staffid"
+                        :value="waiterDetail.role_id"
                         class="px-[10px] py-2 w-auto"
                     /></div>
-                    <span class="font-md text-grey-900">{{ waiterDetail.name }}</span>
+                    <span class="font-md text-grey-900">{{ waiterDetail.full_name }}</span>
                 </div>
             </div>
             <div class="w-full grid grid-rows-3 divide-y divide-primary-50">
@@ -115,7 +115,7 @@ watch( () => props.waiter, (newValue) => {
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">
                         <MailIcon class="text-primary-900"/>
                     </div>
-                    <span class="font-md text-grey-900 py-[14px] truncate">{{ waiterDetail.stockie_email }}</span>
+                    <span class="font-md text-grey-900 py-[14px] truncate">{{ waiterDetail.worker_email }}</span>
                 </div>
                 <div class="w-full flex flex-row row-span-1 gap-4 items-center">
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">

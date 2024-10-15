@@ -33,7 +33,7 @@ const props = defineProps({
         required: true,
     }
 })
-// console.log(props.details);
+console.log(props.details);
 
 const sortInventories = (field) => {
     if (sortField.value === field) {
@@ -126,7 +126,7 @@ const filters = ref({
         <Toast />
 
         <div class="w-full flex p-5 items-start gap-5 flex-[1_0_0] self-stretch">
-            <div class="w-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100">
+            <div class="w-full h-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100">
                 <div class="w-full flex flex-col items-center gap-6 self-stretch">
                     <div class="flex justify-between items-center flex-[1_0_0] self-stretch">
                         <span class="text-primary-900 text-md font-medium">Past Achiever</span>

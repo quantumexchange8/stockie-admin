@@ -5,6 +5,7 @@ import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
 import { computed } from "vue";
+import { useCustomToast } from "@/Composables";
 
 const props = defineProps({
     waiters: {
@@ -12,6 +13,7 @@ const props = defineProps({
         required: true
     },
 })
+const { showMessage } = useCustomToast();
 
 const emit = defineEmits(["close"]);
 const closeModal = () => {
@@ -21,13 +23,14 @@ const closeModal = () => {
 };
 
 const form = useForm({
+    username: "",
     name: "",
     phone: "",
     email: "",
-    staffid: "",
+    role_id: "",
     salary: "",
     stockie_email: "",
-    stockie_password: "",
+    password: "",
 });
 
 const submit = () => {
@@ -36,14 +39,20 @@ const submit = () => {
         preserveState: 'errors',
         onSuccess: () => {
             closeModal();
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'New waiter has been successfully added.',
+                });
+            }, 200)
         },
         onError: (error) => {
-            console.error(error); // Log the error details
+            console.error(error);
         },
     });
 };
 
-const requiredFields = ['name', 'phone', 'email', 'staffid', 'salary', 'stockie_email', 'stockie_password'];
+const requiredFields = ['username', 'name', 'phone', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
@@ -67,6 +76,17 @@ const isFormValid = computed(() => {
                             </div>
 
                             <div class="flex flex-col md:gap-4">
+                                <div class="flex md:gap-4">
+                                    <TextInput
+                                        :labelText="'User name'"
+                                        :placeholder="'eg: johndoe'"
+                                        inputId="username"
+                                        v-model="form.username"
+                                        :errorMessage="form.errors.username"
+                                    >
+                                    </TextInput>
+                                </div>
+
                                 <div class="flex md:gap-4">
                                     <TextInput
                                         label-text="Full name"
@@ -120,12 +140,12 @@ const isFormValid = computed(() => {
                                     <TextInput
                                         label-text="Staff ID"
                                         :placeholder="'eg: J8192'"
-                                        inputId="staffid"
+                                        inputId="role_id"
                                         type="'text'"
-                                        v-model="form.staffid"
+                                        v-model="form.role_id"
                                     ></TextInput>
                                     <InputError
-                                        :message="form.errors.staffid"
+                                        :message="form.errors.role_id"
                                     />
                                 </div>
                                 <div class="w-full flex flex-col">
@@ -167,12 +187,12 @@ const isFormValid = computed(() => {
                                     <TextInput
                                         label-text="Password"
                                         :placeholder="'for Stockie account log-in'"
-                                        inputId="stockie_password"
+                                        inputId="password"
                                         :inputType="'password'"
-                                        v-model="form.stockie_password"
+                                        v-model="form.password"
                                     ></TextInput>
                                     <InputError
-                                        :message="form.errors.stockie_password"
+                                        :message="form.errors.password"
                                     />
                                 </div>
                             </div>

@@ -32,6 +32,7 @@ const getResults = async () => {
 
         const response = await axios.get(url);
         taxes.value = response.data;
+        console.log(taxes.value);
     } catch (error) {
         console.error(error);
     } finally {
@@ -45,14 +46,16 @@ const form = useForm({
     merchant_contact: props.merchant.merchant_contact ?? '',
     merchant_address: props.merchant.merchant_address ?? '',
     name: '',
-    percentage: '',
+    value: '',
 });
 
 const editTaxForm = useForm({
     id: taxes.id,
     name: taxes.name,
-    percentage: taxes.percentage,
+    value: parseInt(taxes.value),
 })
+
+console.log(editTaxForm);
 
 const deleteForm = useForm({
     id: selectedTax.value,
@@ -125,7 +128,7 @@ const startEditing = (event, tax, type) => {
     actionVal.value = 'edit';
     editTaxForm.id = tax.id;
     editTaxForm.name = tax.name;
-    editTaxForm.percentage = tax.percentage.toString();
+    editTaxForm.value = tax.value;
 }
 
 
@@ -144,14 +147,14 @@ const addTax = (event) => {
     isAddTaxClicked.value = true;
     actionVal.value = 'add';
     const tempId = Date.now();
-    taxes.value.push({ id: tempId, name: '', percentage: '' });
+    taxes.value.push({ id: tempId, name: '', value: '' });
 
     const newTax = taxes.value[taxes.value.length - 1];
     isEditingPercentage.value = true;
     isEditingName.value = true;
     editTaxForm.id = newTax.id;
     editTaxForm.name = newTax.name;
-    editTaxForm.percentage = newTax.percentage.toString();
+    editTaxForm.value = newTax.value;
 
 }
 
@@ -171,7 +174,7 @@ const stopEditing = () => {
         percentageColumn.width = '17';
     }
 
-    if (editTaxForm.name.trim() !== '' && editTaxForm.percentage.trim() !== '') {
+    if (editTaxForm.name.trim() !== '' && editTaxForm.value.trim() !== '') {
         taxSubmit();
     } else {
         showMessage({
@@ -180,7 +183,7 @@ const stopEditing = () => {
         });
         getResults();
         const lastTax = taxes.value[taxes.value.length - 1];
-        if (lastTax && lastTax.name.trim() === '' && lastTax.percentage.toString().trim() === '') {
+        if (lastTax && lastTax.name.trim() === '' && lastTax.value.trim() === '') {
             taxes.value.pop();
         }
     }
@@ -205,7 +208,6 @@ const formSubmit = () => {
 const taxSubmit = () => {
 
     const currentAction = actionVal.value;
-
     editTaxForm.post(route('configurations.addTax'), {
         preserveScroll: true,
         preserveState: true,
@@ -230,7 +232,7 @@ const taxSubmit = () => {
             }, 200);
             getResults();
             const lastTax = taxes.value[taxes.value.length - 1];
-            if (lastTax && lastTax.name.trim() === '' && lastTax.percentage.toString().trim() === '') {
+            if (lastTax && lastTax.name.trim() === '' && lastTax.value.trim() === '') {
                 taxes.value.pop();
             }
         }
@@ -389,9 +391,9 @@ watch(() => taxes.value, (newValue) => {
                         </template>
                         <template #percentage="taxes">
                             <TextInput
-                                v-model="editTaxForm.percentage"
+                                v-model="editTaxForm.value"
                                 v-if="isEditingPercentage && editTaxForm.id == taxes.id"
-                                :errorMessage="editTaxForm.errors?.percentage"
+                                :errorMessage="editTaxForm.errors?.value"
                                 :disabled="editTaxForm.processing"
                                 iconPosition="'right'"
                                 @click="isAddTaxClicked ? null : startEditing($event, taxes, 'percentage')"
@@ -409,7 +411,7 @@ watch(() => taxes.value, (newValue) => {
                                         class="flex-[1_0_0] text-grey-900 text-sm font-medium"
                                         @click="startEditing($event, taxes, 'percentage')"
                                     >
-                                        {{ taxes.percentage }}
+                                        {{ taxes.value }}
                                     </div>
                                     <PercentageIcon />
                                 </div>
