@@ -112,7 +112,7 @@ onMounted(() => {
             <div
                 v-if="$slots.prefix"
                 :class="[
-                    'absolute min-h-[44px] max-h-[44px] flex py-3 text-base mb-1 items-center',
+                    'absolute min-h-[44px] max-h-[44px] flex py-3 text-base mb-1 items-center text-grey-700',
                     iconPosition === 'left' ? 'left-0  pl-3' : 'right-0 pr-3',
                 ]"
             >
@@ -132,7 +132,7 @@ onMounted(() => {
                         'border-grey-300': disabled === false,
                         'border-red-500 focus:border-red-500 hover:border-red-500':
                             errorMessage,
-                        'pl-4 pr-11 text-center': $slots.prefix,
+                        'pl-11 pr-11 text-center': $slots.prefix,
                         'pl-4 pr-4': !$slots.prefix,
                         'text-center': iconPosition === 'right',
                         '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none':

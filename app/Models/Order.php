@@ -65,4 +65,12 @@ class Order extends Model
     {
         return $this->belongsTo(Customer::class, 'customer_id');
     }
+
+    /**
+     * Get the reservation made.
+     */
+    public function reservation(): HasOne
+    {
+        return $this->hasOne(Reservation::class, 'order_id');
+    }
 }

@@ -74,3 +74,17 @@ export const tableType = [
     { text: 'Table', value: 'table' },
     { text: 'Room', value: 'room' },
 ];
+
+// ----------------------------------------------------------------------------------
+//                                  Reservation
+// ----------------------------------------------------------------------------------
+
+export const cancelTypes = [
+    { text: 'Change of plan', value: 'Change of plan' },
+    { text: 'Feeling unwell', value: 'Feeling unwell' },
+    { text: 'Bad weather', value: 'Bad weather' },
+    { text: 'Work conflicts', value: 'Work conflicts' },
+    { text: 'Family emergency', value: 'Family emergency' },
+    { text: 'Forgotten reservation', value: 'Forgotten reservation' },
+    { text: 'Others (specify under Remarks)', value: 'Others (specify under Remarks)' },
+];

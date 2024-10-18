@@ -62,4 +62,18 @@ class Customer extends Model
         return $this->hasMany(Order::class, 'customer_id', 'id');
     }
 
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class, 'customer_id');
+    }
+
+    public function reservationCancelled(): HasMany
+    {
+        return $this->hasMany(Reservation::class, 'customer_id')->where('status', 'Cancelled');
+    }
+
+    public function reservationAbandoned(): HasMany
+    {
+        return $this->hasMany(Reservation::class, 'customer_id')->where('status', 'No show');
+    }
 }

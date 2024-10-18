@@ -9,12 +9,12 @@ export default {
             'rounded-md',
 
             // Color and Background
-            'bg-surface-0 dark:bg-surface-900',
+            'bg-surface-0',
             'border',
-            { 'border-surface-300 dark:border-surface-600': !props.invalid },
+            { 'border-surface-300': !props.invalid },
 
             // Invalid State
-            { 'border-red-500 dark:border-red-400': props.invalid },
+            { 'border-red-500': props.invalid },
 
             // Transitions
             'transition-all',
@@ -22,7 +22,7 @@ export default {
 
             // States
             { 'hover:border-primary': !props.invalid },
-            { 'outline-none outline-offset-0 ring ring-primary-400/50 dark:ring-primary-300/50': state.focused },
+            { 'outline-none outline-offset-0 ring ring-primary-400/50': state.focused },
 
             // Misc
             'cursor-pointer',
@@ -44,8 +44,8 @@ export default {
             },
 
             // Color
-            { 'text-surface-800 dark:text-white/80': props.modelValue?.length, 'text-surface-400 dark:text-surface-500': !props.modelValue?.length },
-            'placeholder:text-surface-400 dark:placeholder:text-surface-500',
+            { 'text-surface-800': props.modelValue?.length, 'text-surface-400': !props.modelValue?.length },
+            'placeholder:text-surface-400',
 
             // Transitions
             'transition duration-200',
@@ -77,14 +77,13 @@ export default {
             // Position
 
             // Shape
-            'border-0 dark:border',
+            'border-0',
             'rounded-md',
             'shadow-md',
 
             // Color
-            'bg-surface-0 dark:bg-surface-800',
-            'text-surface-800 dark:text-white/80',
-            'dark:border-surface-700'
+            'bg-surface-0',
+            'text-surface-800',
         ]
     },
     header: {
@@ -100,9 +99,9 @@ export default {
             'rounded-tr-md',
 
             // Color
-            'text-surface-700 dark:text-white/80',
-            'bg-surface-100 dark:bg-surface-800',
-            'border-surface-300 dark:border-surface-700',
+            'text-surface-700',
+            'bg-surface-100',
+            'border-surface-300',
 
             '[&_[data-pc-name=pcfiltercontainer]]:!flex-auto',
             '[&_[data-pc-name=pcfilter]]:w-full'
@@ -141,13 +140,13 @@ export default {
             'py-3 px-5 gap-2',
 
             // Color
-            { 'text-surface-700 dark:text-white/80': !context.focused && !context.selected },
-            { 'bg-surface-200 dark:bg-surface-600/60 text-surface-700 dark:text-white/80': context.focused && !context.selected },
+            { 'text-surface-700': !context.focused && !context.selected },
+            { 'bg-surface-200 text-surface-700': context.focused && !context.selected },
             { 'bg-highlight': context.selected },
 
             //States
-            { 'hover:bg-surface-100 dark:hover:bg-surface-600/80': !context.focused && !context.selected },
-            { 'hover:text-surface-700 hover:bg-surface-100 dark:hover:text-white dark:hover:bg-surface-600/80': context.focused && !context.selected },
+            { 'hover:bg-surface-100': !context.focused && !context.selected },
+            { 'hover:text-surface-700 hover:bg-surface-100': context.focused && !context.selected },
 
             // Transitions
             'transition-shadow',
@@ -169,8 +168,8 @@ export default {
             'p-3 px-5',
 
             // Color
-            'text-surface-800 dark:text-white/80',
-            'bg-surface-0 dark:bg-surface-600/80',
+            'text-surface-800',
+            'bg-surface-0',
 
             // Misc
             'cursor-auto'
@@ -185,12 +184,12 @@ export default {
             'py-3 px-5',
 
             // Color
-            'text-surface-800 dark:text-white/80',
+            'text-surface-800',
             'bg-transparent'
         ]
     },
     loadingIcon: {
-        class: 'text-surface-400 dark:text-surface-500 animate-spin'
+        class: 'text-surface-400 animate-spin'
     },
     transition: {
         enterFromClass: 'opacity-0 scale-y-[0.8]',

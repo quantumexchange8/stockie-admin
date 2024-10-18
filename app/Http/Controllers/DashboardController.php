@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Iventory;
 use App\Models\IventoryItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Reservation;
 use App\Models\SaleHistory;
 use App\Models\Table;
 use App\Models\User;
@@ -80,7 +82,6 @@ class DashboardController extends Controller
         $allProducts = $allProducts->map(function ($product) {
 
             return $product->productItems->map(function ($productItem) use ($product) {
-        
                 $inventoryItem = $productItem->inventoryItem;
                 $categoryName = $inventoryItem && $inventoryItem->itemCategory ? $inventoryItem->itemCategory->name : null;
         
@@ -94,7 +95,6 @@ class DashboardController extends Controller
                 ];
         
             })->toArray(); 
-        
         })->flatten(1);
 
         //on duty today
@@ -133,6 +133,7 @@ class DashboardController extends Controller
                 'status' => $status,
             ];
         }
+
         usort($onDuty, function($a, $b) {
             $timeA = $a['time'] ? Carbon::parse($a['time']) : Carbon::parse('00:00');
             $timeB = $b['time'] ? Carbon::parse($b['time']) : Carbon::parse('00:00');
@@ -160,6 +161,26 @@ class DashboardController extends Controller
                     ->sortByDesc('stock_qty')
                     ->values()
                     ->all();
+                    
+        $todayReservations = Reservation::with([
+                                                'reservedFor.reservations', 
+                                                'reservedFor.reservationCancelled', 
+                                                'reservedFor.reservationAbandoned', 
+                                                'reservedBy', 
+                                                'handledBy'
+                                            ])
+                                            ->whereDate('reservation_date', now('Asia/Kuala_Lumpur')->toDateString())
+                                            ->orderBy('id')
+                                            ->get();
+
+        $waiters = User::where('role', 'waiter')
+                        ->get(['id', 'name'])
+                        ->map(function ($waiter) { 
+                            return [
+                                'text' => $waiter->name,
+                                'value' => $waiter->id
+                            ];
+                        });
 
         return Inertia::render('Dashboard/Dashboard', [
             'message' => $message ?? [],
@@ -174,6 +195,11 @@ class DashboardController extends Controller
             'salesGraph' => $totalSalesArray,
             'monthly' => $months,
             'activeTables' => $activeTables,
+            'reservations' => $todayReservations,
+            'customers' => Customer::all(),
+            'tables' => Table::orderBy('zone_id')->get(),
+            'occupiedTables' => Table::where('status', '!=', 'Empty Seat')->get(),
+            'waiters' => $waiters,
         ]);
     }
 

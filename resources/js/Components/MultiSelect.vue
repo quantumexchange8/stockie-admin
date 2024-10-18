@@ -1,6 +1,6 @@
 <script setup>
 import MultiSelect from "primevue/multiselect";
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { onMounted, onBeforeUnmount, onUnmounted, ref, watch } from "vue";
 import Label from "./Label.vue";
 
 const props = defineProps({
@@ -30,6 +30,7 @@ const props = defineProps({
 
 const emits = defineEmits(['update:modelValue', 'onChange']);
 const open = ref(false);
+const isOverlayOpen = ref(false);
 const localValue = ref(props.dataValue);
 const options = ref(props.inputArray);
 
@@ -55,10 +56,40 @@ const updateSelectedOption = (option) => {
 };
 
 const handleClickOutside = (event) => {
-    if(!event.target.closest('.p-multiselect')) {
-        open.value = false;
-  }
+    // const multiSelectWrapper = document.querySelector(".p-multiselect");
+    // const multiSelectOverlay = document.querySelector(".p-multiselect-panel");
+    // console.log(event.target.closest('.p-multiselect-panel'));
+    // Close only if click happens outside the dropdown and overlay
+    // open.value = true;
+    // if (event.target.closest('.p-multiselect')) {
+    // }
 };
+
+const closeOverlay = () => {
+    open.value = false;
+};
+
+// Local click outside directive
+// const vClickOutside = {
+//     beforeMount(el, binding) {
+//         el.clickOutsideEvent = (event) => {
+//             // Check if the click is outside the multiselect component but inside the modal
+//             const modal = el.closest('.modal-panel'); // Replace '.modal-class' with the actual modal's class
+//             console.log(el.contains(event.target));
+
+//             // Close only if the click is outside the multiselect and still inside the modal
+//             if (!(el.contains(event.target)) && modal && modal.contains(event.target)) {
+//                 binding.value(event);
+//             }
+//         };
+//         // Attach the event listener to the document
+//         document.addEventListener('click', el.clickOutsideEvent);
+//     },
+//     unmounted(el) {
+//         // Remove the event listener when the element is unmounted
+//         document.removeEventListener('click', el.clickOutsideEvent);
+//     },
+// };
 
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
@@ -90,19 +121,20 @@ onUnmounted(() => {
             :options="options"
             optionLabel="text"
             optionValue="value"
+            optionDisabled="disabled"
             :placeholder="placeholder"
             :maxSelectedLabels="7" 
             display="chip"
             filter 
             @change="updateSelectedOption"
-            @click="open = !open"
             :pt="{
                 root: ({ props, state, parent }) => {
-                    open = state.overlayVisible ? true : false;
-                    // state.overlayVisible = !open || !state.focused && !state.clicked ? false : true;
+                    open = state.overlayVisible;
+                    isOverlayOpen = state.overlayVisible;
+                    // state.overlayVisible = isOpened;
                     return {
                         class: [
-                            'inline-flex flex-row relative min-h-[44px] w-full justify-between py-2 pl-2 pr-4 ',
+                            'p-multiselect inline-flex flex-row relative min-h-[44px] mb-1 w-full justify-between py-2 pl-2 pr-4 rounded-md',
                             'bg-white border border-grey-300',
                             'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                             'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
@@ -119,14 +151,24 @@ onUnmounted(() => {
                         ]
                     }
                 },
-                label: {
-                    class: 'flex max-w-full items-center gap-3'
+                label: ({ props, parent }) => {
+                    var _a;
+                    return {
+                        class: [
+                            'flex flex-wrap max-w-full items-center gap-2 text-grey-200 text-base font-normal',
+                            { 
+                                'pr-7': props.showClear,
+                                // Filled State *for FloatLabel
+                                filled: ((_a = parent.instance) == null ? void 0 : _a.$name) == 'FloatLabel' && props.modelValue !== null 
+                            },
+                        ]
+                    };
                 },
                 token: {
-                    class: 'flex p-1 items-center gap-[10px] rounded-[3px] bg-primary-25'
+                    class: 'flex p-1 items-center gap-x-1 rounded-[3px] bg-primary-50'
                 },
                 tokenLabel: {
-                    class: 'text-grey-700 text-base font-normal whitespace-nowrap overflow-hidden'
+                    class: 'text-grey-700 text-xs font-normal whitespace-nowrap overflow-hidden'
                 },
                 trigger: {
                     class: 'flex items-center text-primary-300'
@@ -136,7 +178,7 @@ onUnmounted(() => {
                     return {
                         class: [
                             'block relative flex items-center w-full px-4 py-3 rounded-none',
-                            'text-grey-200 text-base font-normal bg-transparent border-0',
+                            '!text-grey-200 text-base font-normal bg-transparent border-0',
                             'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
                             'transition duration-200',
                             'focus:outline-none focus:shadow-none',
@@ -160,33 +202,40 @@ onUnmounted(() => {
                             'text-grey-700 text-base font-normal',
                             'focus-visible:outline-none focus-visible:outline-offset-0 focus-visible:ring focus-visible:ring-inset focus-visible:ring-primary-400/50',
                             {
-                                'pointer-events-none cursor-default': context.disabled,
+                                '!cursor-not-allowed': context.disabled,
                                 'cursor-pointer': !context.disabled 
                             },
-                        ]
+                        ],
+
                     }
                 },
-                panel: {
-                    class: [
-                        'absolute top-0 left-0 !z-[1110]', 
-                        '!mt-1 p-1', 
-                        'border-2 border-red-50', 
-                        'rounded-[5px]', 
-                        'shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]', 
-                        'bg-white', 
-                        'text-grey-800',
-                        'overflow-auto scrollbar-thin scrollbar-webkit'
-                    ]
+                panel:  ({ props, state, global, context, parent, instance }) => {
+                    // console.log(instance.focused);
+                    // state.focused = open;
+                    // state.overlayVisible = open;
+                    // state.overlayVisible = !open || !state.focused || !state.clicked ? false : true;
+                    return {
+                        class: [
+                            'p-multiselect-panel self-stretch absolute top-0 left-0 !z-[1110]', 
+                            '!mt-1 p-1', 
+                            'border-2 border-red-50', 
+                            'rounded-[5px]', 
+                            'shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]', 
+                            'bg-white', 
+                            'text-grey-800',
+                            'overflow-auto scrollbar-thin scrollbar-webkit'
+                        ]
+                    }
                 },
                 filterInput: {
                     placeholder: 'Search',
                     class: [
-                        '!w-full max-h-[44px] flex relative justify-between items-center hover:text-primary-300 active:text-primary-200 focus:text-primary-300',
+                        '!w-full max-h-[44px] flex relative justify-between items-center hover:text-primary-900 active:text-primary-900 focus:text-primary-900',
                         'rounded-[5px] text-primary-900 active:ring-0 border-y border-l border-primary-900 bg-transparent',
-                        'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                        'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                        'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
-                        '[&>button]:hover:border-primary-100',
+                        'hover:border-primary-900 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                        'active:border-primary-900 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                        'focus:border-primary-900 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
+                        '[&>button]:hover:border-primary-100 placeholder-grey-200',
                     {
                         'border-grey-100': props.disabled === true,
                         'border-grey-300': props.disabled === false,
@@ -203,15 +252,23 @@ onUnmounted(() => {
                 header: {
                     class: 'flex px-4 py-3 items-center gap-[10px] self-stretch w-full'
                 },
-                headerCheckbox: {
-                    class: 'flex size-5 justify-center items-center',
-                    input: `rounded-full focus:ring-white
-                            checked:bg-primary-900 
-                            active:bg-primary-900
-                            hover:checked:bg-primary-900
-                            focus:checked:bg-primary-900
-                            checked:focus:border-none`,
-                    box: '!hidden',
+                headerCheckbox: ({ props, state, global, context, parent, instance }) => {
+                    return {
+                        root: [
+                            'flex size-5 justify-center items-center',
+                            {
+                                'pointer-events-none cursor-not-allowed': context.disabled,
+                                'cursor-pointer': !context.disabled 
+                            },
+                        ],
+                        input: `rounded-full focus:ring-white
+                                checked:bg-primary-900 
+                                active:bg-primary-900
+                                hover:checked:bg-primary-900
+                                focus:checked:bg-primary-900
+                                checked:focus:border-none`,
+                        box: '!hidden',
+                    }
                 },
                 closeButton: {
                     class: 'flex items-end'
@@ -219,15 +276,24 @@ onUnmounted(() => {
                 // wrapper: {
                 //     class: 'flex max-h-[44px] px-4 py-2 items-center gap-[10px] self-stretch rounded-t-0.5'
                 // },
-                itemCheckbox: {
-                    class: 'flex size-5 justify-center items-center',
-                    input: `rounded-full focus:ring-white
+                itemCheckbox: ({ props, state, global, context, parent, instance }) => {
+                    // console.log(context.disabled);
+                    return {
+                        root: 'flex size-5 justify-center items-center',
+                        input: [
+                            `rounded-full focus:ring-white
                             checked:bg-primary-900 
                             active:bg-primary-900
                             hover:checked:bg-primary-900
                             focus:checked:bg-primary-900
                             checked:focus:border-none`,
-                    box: '!hidden',
+                            {
+                                'pointer-events-none !cursor-not-allowed bg-grey-100 border-grey-200': context.disabled,
+                                'cursor-pointer': !context.disabled 
+                            },
+                        ],
+                        box: '!hidden',
+                    }
                 },
                 input: {
                     class: 'bg-primary-900'
@@ -256,8 +322,8 @@ onUnmounted(() => {
                 </svg>
             </template>
 
-            <template #removetokenicon>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <template #removetokenicon="{ removeCallback }">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" @click="removeCallback">
                     <path d="M11.3337 4.66602L4.66699 11.3327M4.66699 4.66602L11.3337 11.3327" stroke="#7E171B" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </template>

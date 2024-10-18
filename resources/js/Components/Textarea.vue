@@ -70,9 +70,19 @@ const updateCharacterCount = (event) => {
     <div class="w-full">
         <template v-if="labelText">
             <div class="flex item-center justify-between">
-                <Label :value="labelText" />
-                <Label class="text-grey-300 text-xs font-medium" v-if="maxCharacters">{{ `${inputCharacters} / ${maxCharacters}` }}</Label>
-    
+                <Label 
+                    v-if="labelText" 
+                    :value="labelText"
+                    :for="inputName"
+                    :class="[
+                        'mb-1 text-xs !font-medium',
+                        {
+                            'text-grey-900': disabled === false,
+                            'text-grey-500': disabled === true,
+                        },
+                    ]"
+                />
+                <Label class="text-grey-300 text-xs font-medium" v-if="maxCharacters !== 524288">{{ `${inputCharacters} / ${maxCharacters}` }}</Label>
             </div>
         </template>
         <textarea
@@ -100,6 +110,6 @@ const updateCharacterCount = (event) => {
             :placeholder="placeholder"
         />
         <HintText v-if="hintText !== ''" :hintText="hintText" />
-        <InputError :message="errorMessage" v-if="errorMessage" />
+        <InputError :message="props.errorMessage" v-if="props.errorMessage" />
     </div>
 </template>

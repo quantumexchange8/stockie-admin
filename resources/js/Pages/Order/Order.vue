@@ -26,7 +26,7 @@ const props = defineProps({
 const zones = ref(props.zones);
 const tabs = ref([]);
 const orderHistoryIsOpen = ref(false);
-const orderHistoriesRowsPerPage = ref(10);
+const orderHistoriesRowsPerPage = ref(6);
 
 const orderHistoryColumns = ref([
     {field: 'updated_at', header: 'Date & Time', width: '15', sortable: false},

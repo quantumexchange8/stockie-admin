@@ -29,7 +29,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $zones = Zone::with(['tables', 'tables.orderTables', 'tables.orderTables.order'])
+        $zones = Zone::with(['tables.orderTables.order'])
                         ->select('id', 'name')
                         ->get()
                         ->map(function ($zone) {
@@ -396,13 +396,8 @@ class OrderController extends Controller
     public function getOrderWithItems(string $id)
     {
         $order = Order::with([
-                            'orderItems', 
-                            'orderItems.product', 
-                            'orderItems.product.productItems',
                             'orderItems.product.productItems.inventoryItem',
                             'orderItems.handledBy:id,name',
-                            'orderItems.subItems',
-                            'orderItems.subItems.keepItems',
                             'orderItems.subItems.keepItems.keepHistories' => function ($query) {
                                 $query->where('status', 'Keep')->latest()->offset(1)->limit(100);
                             },
@@ -428,12 +423,7 @@ class OrderController extends Controller
     public function cancelOrder(string $id)
     {
         $existingOrder = Order::with([
-                                    'orderItems', 
-                                    'orderItems.subItems', 
-                                    'orderItems.subItems.productItem', 
-                                    'orderItems.subItems.productItem.inventoryItem', 
                                     'orderItems.subItems.productItem.inventoryItem.itemCategory', 
-                                    'orderTable',
                                     'orderTable.table',
                                 ])
                                 ->find($id);
@@ -603,7 +593,7 @@ class OrderController extends Controller
      */
     public function getAllZones()
     {
-        $zones = Zone::with(['tables', 'tables.orderTables', 'tables.orderTables.order'])
+        $zones = Zone::with(['tables.orderTables.order'])
                         ->select('id', 'name')
                         ->get()
                         ->map(function ($zone) {
@@ -655,6 +645,7 @@ class OrderController extends Controller
         if (isset($id)) {
             $order = Order::with([
                                 'orderTable', 
+                                'reservation', 
                                 'orderItems' => function ($query) {
                                     $query->where('status', 'Served');
                                 }
@@ -701,6 +692,7 @@ class OrderController extends Controller
                     'order_id' => null
                 ]);
                 $order->orderTable->update(['status' => 'Order Completed']);
+                if ($order->reservation) $order->reservation->update(['status' => 'Completed']);
             }
         }
 
@@ -769,7 +761,7 @@ class OrderController extends Controller
     public function removeOrderItem(Request $request, string $id)
     {        
         if (isset($id)) {
-            $order = Order::with(['orderItems', 'orderItems.product', 'orderTable', 'orderTable.table'])->find($id);
+            $order = Order::with(['orderItems.product', 'orderTable.table'])->find($id);
             $orderItems = $order->orderItems;
             $orderTable = $order->orderTable;
             $table = $orderTable->table;
@@ -784,7 +776,7 @@ class OrderController extends Controller
                             $subItems = OrderItemSubitem::where('order_item_id', $item['id'])->get();
                                                 
                             foreach ($subItems as $subItem) {
-                                $productItem = ProductItem::with(['inventoryItem', 'inventoryItem.itemCategory'])->find($subItem->product_item_id);
+                                $productItem = ProductItem::with(['inventoryItem.itemCategory'])->find($subItem->product_item_id);
                                 $inventoryItem = $productItem->inventoryItem;
                                 
                                 // $qtySold = $subItem['serve_qty'];
@@ -934,7 +926,7 @@ class OrderController extends Controller
         }
 
         if (count($validatedItems) > 0) {
-            $order = Order::with(['orderTable', 'orderItems', 'orderItems.subItems', 'orderItems.product'])->find($request->order_id);
+            $order = Order::with(['orderTable', 'orderItems.subItems', 'orderItems.product'])->find($request->order_id);
             $orderItems = $order->orderItems;
                         
             foreach ($orderItems as $orderItemKey => $orderItem) {
@@ -1068,8 +1060,6 @@ class OrderController extends Controller
     public function getCustomerKeepHistories(string $id) 
     {
         $keepHistories = KeepHistory::with([
-                                        'keepItem', 
-                                        'keepItem.orderItemSubitem', 
                                         'keepItem.orderItemSubitem.productItem:id,inventory_item_id', 
                                         'keepItem.orderItemSubitem.productItem.inventoryItem:id,item_name', 
                                         'keepItem.waiters:id,name'
@@ -1145,7 +1135,7 @@ class OrderController extends Controller
                 'status' => 'Returned',
             ]);
 
-            $order = Order::with(['orderTable', 'orderTable.table'])->find($request->order_id);
+            $order = Order::with(['orderTable.table'])->find($request->order_id);
 
             if ($request->type === 'qty') {
                 $keepItem->update([

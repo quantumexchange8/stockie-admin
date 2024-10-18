@@ -20,6 +20,7 @@ import {
     CustomerIcon,
     TableRoomIcon,
     LoyaltyIcon,
+    ReservationIcon,
 } from "@/Components/Icons/solid";
 </script>
 
@@ -102,6 +103,15 @@ import {
                 >
                     <template #icon>
                         <TableRoomIcon aria-hidden="true" />
+                    </template>
+                </SidebarLink>
+                <SidebarLink 
+                    title="Reservation" 
+                    :href="route('reservations')"
+                    :active="route().current('reservations')"
+                >
+                    <template #icon>
+                        <ReservationIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
             </div>

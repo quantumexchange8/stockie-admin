@@ -16,6 +16,7 @@ use App\Http\Controllers\ConfigPromotionController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\TableRoomController;
 
 
@@ -232,6 +233,24 @@ Route::middleware('auth')->group(function () {
         Route::get('/filterOrder', [SummaryReportController::class, 'filterOrder'])->name('summary-report.filter-order');
         Route::get('/filterSales', [SummaryReportController::class, 'filterSales'])->name('summary-report.filter-sales');
      });
+
+    /******** Reservation **********/
+    Route::prefix('reservation')->group(function(){
+        Route::get('', [ReservationController::class, 'index'])->name('reservations');
+        Route::post('', [ReservationController::class, 'store'])->name('reservations.store');
+        Route::put('/{id}', [ReservationController::class, 'update'])->name('reservations.update');
+        Route::delete('/{id}', [ReservationController::class, 'delete'])->name('reservations.delete');
+        
+        // Reservation actions
+        Route::get('/getReservations', [ReservationController::class, 'getReservations'])->name('reservations.getReservations');
+        Route::post('/checkInGuest/{id}', [ReservationController::class, 'checkInGuest'])->name('reservations.checkInGuest');
+        Route::put('/markAsNoShow/{id}', [ReservationController::class, 'markAsNoShow'])->name('reservations.markAsNoShow');
+        Route::put('/delayReservation/{id}', [ReservationController::class, 'delayReservation'])->name('reservations.delayReservation');
+        Route::put('/cancelReservation/{id}', [ReservationController::class, 'cancelReservation'])->name('reservations.cancelReservation');
+
+        // View reservation history
+        Route::get('/reservation-history', [ReservationController::class, 'viewReservationHistory'])->name('reservations.viewReservationHistory');
+    });
 });
 
 require __DIR__.'/auth.php';

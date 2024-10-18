@@ -133,7 +133,7 @@ export function useCustomToast() {
     const toast = useToast();
     const { props } = usePage();
 
-    const flashMessage = (options = {}) => {
+    function flashMessage(options = {}) {
         const message = props.message && Object.keys(props.message).length !== 0 ? props.message : null;
 
         if (message) {
@@ -155,7 +155,7 @@ export function useCustomToast() {
         }
     };
     
-    const showMessage = (message) => {
+    function showMessage(message) {
         if (message && message.summary) {
             toast.add({
                 severity: message.severity ?? 'info',
@@ -170,5 +170,126 @@ export function useCustomToast() {
     return {
         flashMessage,
         showMessage,
+    };
+}
+
+export function usePhoneUtils() {
+    // Format the phone number value for display
+    function formatPhone(phone, withHyphen = false, forEdit = false) {
+        if (!phone) return phone; 
+
+        let inbetweenChar = withHyphen ? '-' : ' ';
+    
+        // Remove non-digit characters to ensure clean formatting
+        let cleanedPhone = phone.replace(/\D/g, '');
+    
+        if (forEdit) {
+            cleanedPhone = cleanedPhone.slice(2);
+        
+            // Check if it's a mobile number starting with '1' or '11', or landline starting with '3' or '8'
+            if (cleanedPhone.startsWith('11')) {
+                // Format for +60 11 xxxx xxxx
+                return `${cleanedPhone.slice(0, 2)}${inbetweenChar}${cleanedPhone.slice(2, 6)} ${cleanedPhone.slice(6)}`;
+            } else if (cleanedPhone.startsWith('1') || cleanedPhone.startsWith('+608')) {
+                // Format for +60 1x xxx xxxx
+                return `${cleanedPhone.slice(0, 2)}${inbetweenChar}${cleanedPhone.slice(2, 5)} ${cleanedPhone.slice(5)}`;
+            } else {
+                // Format for +60 3 xxxx xxxx or +60 8x xxx xxx
+                return `${cleanedPhone.slice(0, 1)}${inbetweenChar}${cleanedPhone.slice(1, 5)} ${cleanedPhone.slice(5)}`;
+            }
+        } else {
+            // Ensure the number starts with '+60', remove the '60' if already prefixed
+            if (cleanedPhone.startsWith('60')) {
+                cleanedPhone = `+${cleanedPhone}`;
+            } else if (!cleanedPhone.startsWith('+60')) {
+                cleanedPhone = `+60${cleanedPhone}`;
+            }
+        
+            // Check if it's a mobile number starting with '1' or '11', or landline starting with '3' or '8'
+            if (cleanedPhone.startsWith('+6011')) {
+                // Format for +60 11 xxxx xxxx
+                return `${cleanedPhone.slice(0, 3)} ${cleanedPhone.slice(3, 5)}${inbetweenChar}${cleanedPhone.slice(5, 9)} ${cleanedPhone.slice(9)}`;
+            } else if (cleanedPhone.startsWith('+601') || cleanedPhone.startsWith('+608')) {
+                // Format for +60 1x xxx xxxx
+                return `${cleanedPhone.slice(0, 3)} ${cleanedPhone.slice(3, 5)}${inbetweenChar}${cleanedPhone.slice(5, 8)} ${cleanedPhone.slice(8)}`;
+            } else if (cleanedPhone.startsWith('+60')) {
+                // Format for +60 3 xxxx xxxx or +60 8x xxx xxx
+                return `${cleanedPhone.slice(0, 3)} ${cleanedPhone.slice(3, 4)}${inbetweenChar}${cleanedPhone.slice(4, 8)} ${cleanedPhone.slice(8)}`;
+            }
+        }
+    
+        return cleanedPhone;
+    };
+
+    // Transform the phone number value for storing
+    function transformPhone(phone) {
+        if (!phone) return phone; 
+
+        // Remove whitespace and underscore, then add '+60' if it doesn't already exist
+        let formattedPhone = phone.startsWith('+60') 
+            ? phone.replace(/[\s_]+/g, '') 
+            : `+60${phone.replace(/[\s_]+/g, '')}`;
+
+        // Determine the maximum allowed length based on phone number patterns
+        const maxLength = formattedPhone.startsWith('+6011') 
+            ? 14 // +60 11-xxxx xxxx (mobile)
+            : formattedPhone.startsWith('+601') || formattedPhone.startsWith('+603') 
+                ? 13 // +60 1x-xxx xxxx (mobile) or +60 3-xxxx xxxx (landline)
+                : 12; // +60 8x-xxx xxx (landline) or default
+
+        return formattedPhone.slice(0, maxLength);
+    };
+
+    // Format the phone number input and updates the form field value
+    function formatPhoneInput(event) {
+        let input = event.target.value.replace(/\D/g, ''); // Remove non-digit characters
+
+        // Handle backspace clearing without reapplying format
+        if (event.inputType === 'deleteContentBackward') return;
+
+        const phone = input.startsWith('60') ? input.slice(2) : input;
+
+        // Define formatting patterns for different types of numbers
+        const formats = {
+            '1': phone.startsWith('11') ? /(\d{0,2})(\d{0,4})(\d{0,4})/ : /(\d{0,2})(\d{0,3})(\d{0,4})/,
+            '3': /(\d{0,1})(\d{0,4})(\d{0,4})/,
+            '8': /(\d{0,2})(\d{0,3})(\d{0,3})/,
+            'default': /(\d{0,1})(\d{0,3})(\d{0,4})/
+        };
+
+        // Select the format based on the first digit of the phone number
+        const matchFormat = formats[phone[0]] || formats['default'];
+
+        // Restrict the length and format the number based on the pattern
+        const match = phone.match(matchFormat);
+        const formatted = `${match[1]}-${match[2]}${match[3] ? ' ' + match[3] : ''}`;
+
+        // Update the displayed value in the input field
+        event.target.value = formatted;
+    };
+
+    return {
+        formatPhone,
+        transformPhone,
+        formatPhoneInput,
+    };
+}
+
+export function useInputValidator() {
+    function isValidNumberKey(e, allowDecimal = true) {
+        const { key, target: { value } } = e;
+
+        // Allow digits
+        if (/^\d$/.test(key)) return;
+
+        // Allow decimal point if not already in the value
+        if (allowDecimal && key === '.' && /\d/.test(value) && !value.includes('.')) return;
+
+        // Prevent invalid characters
+        e.preventDefault();
+    };
+
+    return {
+        isValidNumberKey,
     };
 }

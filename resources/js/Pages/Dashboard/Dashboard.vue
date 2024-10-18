@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { Head } from '@inertiajs/vue3';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import SalesProductOrder from './Partials/SalesProductOrder.vue';
@@ -10,6 +10,7 @@ import ProductLowStock from './Partials/ProductLowStock.vue';
 import OnDutyToday from './Partials/OnDutyToday.vue';
 import Toast from '@/Components/Toast.vue';
 import { useCustomToast } from '@/Composables';
+import TodayReservation from './Partials/TodayReservation.vue';
 
 const home = ref({
     label: 'Dashboard',
@@ -59,8 +60,22 @@ const props = defineProps({
     activeTables: {
         type: Array,
         required: true,
-    }
+    },
+    reservations: Array,
+    customers: Array,
+    tables: Array,
+    occupiedTables: Array,
+    waiters: Array,
 })
+
+const { flashMessage } = useCustomToast();
+
+const activeFilter = ref('month');
+const salesGraph = ref(props.salesGraph);
+const monthly = ref(props.monthly);
+const reservations = ref(props.reservations);
+const reservationRowsPerPage = ref(10);
+
 const stockColumn = ref([
     { field: 'product_name', header: 'Product Name', width: '33', sortable: false},    
     { field: 'category', header: 'Category', width: '25', sortable: false},
@@ -68,16 +83,29 @@ const stockColumn = ref([
     { field: 'stock_qty', header: 'Left', width: '15', sortable: false},
 ])
 
+const reservationColumns = ref([
+    { field: 'reservation_no', header: 'No.', width: '9', sortable: false},
+    { field: 'res_time', header: 'Time', width: '7', sortable: false},
+    { field: 'name', header: 'Name', width: '26', sortable: false},
+    { field: 'pax', header: 'Pax', width: '6', sortable: false},
+    { field: 'table_no', header: 'Table / Room', width: '19', sortable: false},
+    { field: 'phone', header: 'Contact No.', width: '15', sortable: false},
+    { field: 'status', header: 'Status', width: '10', sortable: false},
+    { field: 'action', header: 'Action', width: '8', edit: false, delete: false, sortable: false},
+])
+
 const rowType = {
     rowGroups: false,
     expandable: false, 
     groupRowsBy: "",
 };
-const activeFilter = ref('month');
-const salesGraph = ref(props.salesGraph);
-const monthly = ref(props.monthly);
-const { flashMessage } = useCustomToast();
 
+const actions = {
+    edit: () => ``,
+    delete: () => ``,
+};
+
+const reservationTotalPages = computed(() => Math.ceil(props.reservations.length / reservationRowsPerPage.value))
 
 const filterSales = async (filters = {}) => {
     try {
@@ -104,6 +132,18 @@ const applyTimeFilter = (filter) => {
     filterSales(activeFilter.value);
 }
 
+const fetchReservations = async () => {
+    try {
+        const response = await axios.get(route('reservations.getReservations'));
+        reservations.value = response.data;
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+};
+
 onMounted(async()=> {
     flashMessage();
 })
@@ -121,7 +161,7 @@ onMounted(async()=> {
         <Toast />
 
         <div class="w-full flex flex-col gap-[20px] p-[20px]">
-            <div class="gap-[20px] grid grid-cols-12 ">
+            <div class="gap-[20px] grid grid-cols-12">
                 <div class="flex flex-col gap-[20px] col-span-8">
                     <!-- sales, product sold, order today -->
                     <SalesProductOrder 
@@ -145,6 +185,7 @@ onMounted(async()=> {
                     <TableRoomActivity :activeTables="activeTables"/>
                 </div>
             </div>
+
             <div class="grid grid-cols-12 gap-[20px]">
                 <!-- product low at stock -->
                  <div class="col-span-8">
@@ -160,6 +201,20 @@ onMounted(async()=> {
                     <OnDutyToday :onDuty="onDuty"/>
                 </div>
             </div>
+
+            <TodayReservation 
+                :customers="customers" 
+                :tables="tables" 
+                :occupiedTables="occupiedTables" 
+                :waiters="waiters" 
+                :columns="reservationColumns" 
+                :rows="reservations" 
+                :actions="actions" 
+                :rowType="rowType" 
+                :totalPages="reservationTotalPages" 
+                :rowsPerPage="reservationRowsPerPage"
+                @fetchReservations="fetchReservations"
+            />
         </div>
     </AuthenticatedLayout>
 </template>

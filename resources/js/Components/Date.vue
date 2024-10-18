@@ -1,16 +1,17 @@
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import dayjs from "dayjs";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
-import Calendar from "primevue/calendar";
+import CalendarPicker from "primevue/calendar";
 import {
     CircledTimesIcon,
     CircledArrowHeadLeftIcon,
     CircledArrowHeadRightIcon,
     CircledArrowHeadUpIcon,
     CircledArrowHeadDownIcon,
+    Calendar,
 } from "./Icons/solid";
 
 const props = defineProps({
@@ -44,8 +45,10 @@ const props = defineProps({
     },
 });
 
+const calendarRef = ref(null);
 const modelValue = ref(props.modelValue);
 const initialModelValue = ref(props.modelValue);
+const isFocused = ref(false);
 
 const emit = defineEmits(["update:modelValue", "onChange"]);
 
@@ -120,6 +123,22 @@ const setDateLastMonth = () => {
 
     modelValue.value = [firstDay, lastDay];
 };
+
+// Function to handle focus and blur events
+const handleFocus = () => {
+    calendarRef.value.overlayVisible = false
+    isFocused.value = true;
+};
+
+const handleBlur = () => {
+    isFocused.value = false;
+};
+
+onMounted(() => {
+    if (calendarRef.value) {
+        calendarRef.value.overlayVisible = false; // Prevent focus on calendar input
+    }
+});
 </script>
 
 <template>
@@ -137,10 +156,13 @@ const setDateLastMonth = () => {
             v-if="labelText"
         >
         </Label>
-        <Calendar
+        <CalendarPicker
+            ref="calendarRef"
             :name="props.inputName"
             :modelValue="modelValue"
             @update:modelValue="updateValue"
+            @focus="handleFocus"
+            @blur="handleBlur"
             dateFormat="dd/mm/yy"
             :selectionMode="props.range === true ? 'range' : 'single'"
             :manualInput="false"
@@ -154,16 +176,16 @@ const setDateLastMonth = () => {
                 root: ({ props }) => ({
                     class: [
                         'inline-flex items-center w-full relative',
-                        '[&>svg]:hover:text-primary-800',
+                        '[&>div>svg]:hover:text-primary-800',
                         { 'select-none pointer-events-none cursor-default': props.disabled }
                     ]
                 }),
-                input: ({ props, parent }) => {
+                input: ({ props, parent, state }) => {
                     var _a;
                     return {
                         class: [
                             // Display
-                            'flex flex-auto',
+                            'flex flex-auto items-center',
                             // Font
                             'leading-normal text-base font-normal',
                             {
@@ -187,11 +209,11 @@ const setDateLastMonth = () => {
                             // Invalid State
                             { 'border-primary-950': props.invalid },
                             // Spacing
-                            'my-0 ml-0 -mr-4 py-3 px-4',
+                            'mb-1 ml-0 -mr-4 py-3 px-4',
                             // Shape
                             'rounded-[5px] flex-1',
                             //Sizing
-                            'min-w-60 max-h-[44px] min-h-[44px]',
+                            'min-w-60 max-h-[44px] min-h-[40px]',
                             // States
                             {
                                 'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]':
@@ -311,97 +333,64 @@ const setDateLastMonth = () => {
                 }),
                 inputicon: ({ state }) => ({
                     class: [
-                        'w-4 h-4 flex-shrink-0 bg-white fill-primary-50 cursor-pointer transform !-translate-x-[90%]',
+                        'w-4 h-4 flex-shrink-0 bg-white cursor-pointer transform !-translate-x-[90%]',
                         {
-                            'text-primary-200': state.focused,
-                            'text-primary-900': !state.focused,
+                            '!text-primary-200': state.focused,
+                            'text-grey-100': !state.focused,
                         }
                     ]
                 }),
             }"
         >
             <template #inputicon="{ clickCallback }">
-                <template v-if="!range && withTime && modelValue === ''">
-                    <svg 
-                        width="20" 
-                        height="20" 
-                        viewBox="0 0 20 20" 
-                        fill="none" 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        class="w-4 h-4 flex-shrink-0 text-primary-800 cursor-pointer transform !-translate-x-[90%]" 
-                        @click="clickCallback"
-                    >
-                        <path d="M5.83301 12.5L9.99967 16.6667L14.1663 12.5M5.83301 7.50004L9.99967 3.33337L14.1663 7.50004" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>  
-                </template>
-                <CircledTimesIcon
-                    class="w-4 h-4 flex-shrink-0 fill-primary-50 text-primary-900 hover:text-primary-900 cursor-pointer transform !-translate-x-[90%]"
-                    @click="resetValue(initialModelValue)"
-                    v-if="modelValue !== ''"
-                />
+                <div class="flex justify-center">
+                    <template v-if="!range && withTime && modelValue === ''">
+                        <Calendar :class="['size-4 flex-shrink-0 cursor-pointer transform !-translate-x-[90%] !-translate-y-[10%]', isFocused ? 'text-primary-200' : 'text-grey-400']" @click="clickCallback" />
+                    </template>
+                    <CircledTimesIcon
+                        class="w-4 h-4 flex-shrink-0 fill-primary-50 text-primary-900 hover:text-primary-900 cursor-pointer transform !-translate-x-[90%]"
+                        @click="resetValue(initialModelValue)"
+                        v-if="modelValue !== ''"
+                    />
+                </div>
             </template>
             <template #previousicon>
-                <CircledArrowHeadLeftIcon
-                    class="w-4 h-4 text-grey-900 [&>rect]:hover:fill-grey-100"
-                />
+                <CircledArrowHeadLeftIcon class="w-4 h-4 text-grey-900 [&>rect]:hover:fill-grey-100" />
             </template>
             <template #nexticon>
-                <CircledArrowHeadRightIcon
-                    class="w-4 h-4 text-grey-900 [&>rect]:hover:fill-grey-100"
-                />
+                <CircledArrowHeadRightIcon class="w-4 h-4 text-grey-900 [&>rect]:hover:fill-grey-100" />
             </template>
             <template #incrementicon>
-                <CircledArrowHeadUpIcon
-                    class="w-4 h-4 text-grey-900 [&>rect]:hover:fill-grey-100"
-                />
+                <CircledArrowHeadUpIcon class="w-4 h-4 text-grey-900 [&>rect]:hover:fill-grey-100" />
             </template>
             <template #decrementicon>
-                <CircledArrowHeadDownIcon
-                    class="w-4 h-4 text-grey-900 [&>rect]:hover:fill-grey-100"
-                />
+                <CircledArrowHeadDownIcon class="w-4 h-4 text-grey-900 [&>rect]:hover:fill-grey-100" />
             </template>
             <template #footer>
-                <div
-                    class="absolute left-[130px] top-[-1px] h-full -translate-x-full bg-white max-w-96 !min-w-0 py-5 rounded-lg"
-                    v-show="withPresetRanges"
-                >
-                    <div
-                        class="flex pr-3 flex-col items-start self-stretch w-full h-full border-r-[0.5px] border-grey-200"
-                    >
-                        <span
-                            class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer"
-                            @click="setDateToday"
-                            >Today</span
-                        >
-                        <span
-                            class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer"
-                            @click="setDateYesterday"
-                            >Yesterday</span
-                        >
-                        <span
-                            class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer"
-                            @click="setDateLast7Days"
-                            >Last 7 days</span
-                        >
-                        <span
-                            class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer"
-                            @click="setDateLast30Days"
-                            >Last 30 days</span
-                        >
-                        <span
-                            class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer"
-                            @click="setDateThisMonth"
-                            >This Month</span
-                        >
-                        <span
-                            class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer"
-                            @click="setDateLastMonth"
-                            >Last Month</span
-                        >
+                <div class="absolute left-[130px] top-[-1px] h-full -translate-x-full bg-white max-w-96 !min-w-0 py-5 rounded-lg" v-show="withPresetRanges" >
+                    <div class="flex pr-3 flex-col items-start self-stretch w-full h-full border-r-[0.5px] border-grey-200">
+                        <span class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer" @click="setDateToday">
+                            Today
+                        </span>
+                        <span class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer" @click="setDateYesterday">
+                            Yesterday
+                        </span>
+                        <span class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer" @click="setDateLast7Days">
+                            Last 7 days
+                        </span>
+                        <span class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer" @click="setDateLast30Days">
+                            Last 30 days
+                        </span>
+                        <span class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer" @click="setDateThisMonth">
+                            This Month
+                        </span>
+                        <span class="flex py-2 px-3 items-center gap-2 self-stretch rounded-[5px] text-xs font-normal text-grey-700 hover:text-primary-900 hover:bg-primary-50 cursor-pointer" @click="setDateLastMonth">
+                            Last Month
+                        </span>
                     </div>
                 </div>
             </template>
-        </Calendar>
+        </CalendarPicker>
         <HintText v-if="hintText !== ''" :hintText="hintText" />
         <InputError :message="errorMessage" v-if="errorMessage" />
     </div>

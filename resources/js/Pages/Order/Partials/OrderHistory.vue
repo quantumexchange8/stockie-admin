@@ -114,15 +114,15 @@ const sortedRows = computed(() => {
 </script>
 
 <template>
-    <div class="flex flex-col items-centers gap-6">
-        <div class="flex justify-between items-start self-stretch">
+    <div class="flex flex-col items-centers gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit h-full !max-h-[calc(100dvh-17rem)]">
+        <div class="flex justify-between items-start">
             <SearchBar
                 placeholder="Search"
                 :showFilter="false"
                 v-model="filters['global'].value"
                 class="max-w-[309px]"
             />
-            <div class="flex items-start gap-3">
+            <div class="flex items-start gap-x-7">
                 <DateInput
                     :inputName="'date_filter'"
                     :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
@@ -138,56 +138,58 @@ const sortedRows = computed(() => {
                 />
             </div>
         </div>
-        <Table 
-            ref="orderHistoryTable"
-            :variant="'list'"
-            :rows="sortedRows"
-            :columns="columns"
-            :rowsPerPage="rowsPerPage"
-            :totalPages="totalPages"
-            :searchFilter="true"
-            :filters="filters"
-            minWidth="min-w-[965px]"
-        >
-            <template #empty>
-                <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
-            </template>
-            <template #updated_at="row">
-                <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.updated_at).format('DD/MM/YYYY, HH:mm') }}</span>
-            </template>
-            <template #table_no="row">
-                <span class="text-grey-900 text-sm font-medium">{{ row.order_table.table.table_no }}</span>
-            </template>
-            <template #order_no="row">
-                <span class="text-grey-900 text-sm font-medium">#{{ row.order_no }}</span>
-            </template>
-            <template #total_amount="row">
-                <span class="text-grey-900 text-sm font-medium">RM {{ row.total_amount }}</span>
-            </template>
-            <template #waiter="row">
-                <div class="flex whitespace-nowrap gap-1 items-center">
-                    <div class="size-4 bg-primary-200 rounded-full"></div>
-                    <span class="text-grey-900 text-sm font-medium">{{ row.waiter.name }}</span>
-                </div>
-            </template>
-            <template #status="row">
-                <Tag
-                    :variant="row.status === 'Order Completed' ? 'green' : 'red'"
-                    :value="row.status"
-                />
-            </template>
-            <template #action="row">
-                <Button
-                    type="button"
-                    variant="tertiary"
-                    class="!w-fit col-span-3 hover:bg-primary-50"
-                    @click="openOverlay($event, row)"
-                >
-                    Invoice
-                </Button>
-            </template>
-        </Table>
+        <div class="flex items-center">
+            <Table 
+                ref="orderHistoryTable"
+                :variant="'list'"
+                :rows="sortedRows"
+                :columns="columns"
+                :rowsPerPage="rowsPerPage"
+                :totalPages="totalPages"
+                :searchFilter="true"
+                :filters="filters"
+                minWidth="min-w-[965px]"
+            >
+                <template #empty>
+                    <UndetectableIllus />
+                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                </template>
+                <template #updated_at="row">
+                    <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.updated_at).format('DD/MM/YYYY, HH:mm') }}</span>
+                </template>
+                <template #table_no="row">
+                    <span class="text-grey-900 text-sm font-medium">{{ row.order_table.table.table_no }}</span>
+                </template>
+                <template #order_no="row">
+                    <span class="text-grey-900 text-sm font-medium">#{{ row.order_no }}</span>
+                </template>
+                <template #total_amount="row">
+                    <span class="text-grey-900 text-sm font-medium">RM {{ row.total_amount }}</span>
+                </template>
+                <template #waiter="row">
+                    <div class="flex whitespace-nowrap gap-1 items-center">
+                        <div class="size-4 bg-primary-200 rounded-full"></div>
+                        <span class="text-grey-900 text-sm font-medium">{{ row.waiter.name }}</span>
+                    </div>
+                </template>
+                <template #status="row">
+                    <Tag
+                        :variant="row.status === 'Order Completed' ? 'green' : 'red'"
+                        :value="row.status"
+                    />
+                </template>
+                <template #action="row">
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        class="!w-fit col-span-3 hover:bg-primary-50"
+                        @click="openOverlay($event, row)"
+                    >
+                        Invoice
+                    </Button>
+                </template>
+            </Table>
+        </div>
     </div>
 
     <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">

@@ -65,6 +65,7 @@ const expandedRowGroups = ref();
 const forms = reactive({});
 
 // const emit = defineEmits(["updateFilteredRowsCount"]);
+const emit = defineEmits(["onRowClick"]);
 
 const defaultActions = {
     view: () => '',
@@ -128,11 +129,11 @@ const onRowSelect = (event) => {
     const url = mergedActions.value.view(event.data.id);
 
     if (typeof props.actions.view === 'function' && url) {
-        if (url) {
-            window.location.href = url;
-        }
+        if (url) window.location.href = url;
     }
 };
+
+const onRowClick = (event) => emit('onRowClick', event);
 
 const groupedByColumnWidth = computed(() => {
     const matchingColumn = props.columns.find(column => column.field === mergedRowType.value.groupRowsBy);
@@ -262,6 +263,7 @@ onMounted(() => {
             :filters="searchFilter ? filters : {}"
             stripedRows
             @rowSelect="onRowSelect"
+            @rowClick="onRowClick"
             @page="onPageChange"
             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
             v-if="props.variant === 'list'"

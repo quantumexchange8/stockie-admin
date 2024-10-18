@@ -41,6 +41,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    editable: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emits = defineEmits(["update:modelValue", "onChange"]);
@@ -112,6 +116,7 @@ onUnmounted(() => {
             :disabled="disabled"
             :optionGroupLabel="grouped ? 'group_name' : null"
             :optionGroupChildren="grouped ? 'items' : null"
+            :editable="editable"
             optionLabel="text"
             optionValue='value'
             @change="updateSelectedOption"
@@ -122,7 +127,7 @@ onUnmounted(() => {
                     state.overlayVisible = !open || !state.focused || !state.clicked ? false : true;
                     return {
                         class: [
-                            'inline-flex relative w-full max-h-[44px]',
+                            'inline-flex relative w-full mb-1 max-h-[44px]',
                             'bg-white border border-grey-300',
                             'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                             'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
@@ -150,9 +155,9 @@ onUnmounted(() => {
                     return {
                         class: [
                             'block relative flex items-center w-full px-4 py-3 rounded-none',
-                            'text-grey-200 text-base font-normal bg-transparent border-0',
+                            'placeholder-grey-200 text-grey-200 text-base font-normal bg-transparent border-0',
                             'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
-                            'transition duration-200',
+                            'transition duration-200 focus:ring-0',
                             'focus:outline-none focus:shadow-none',
                             { 
                                 'text-grey-700 ': props.modelValue != null && props.modelValue !== '', 

@@ -1,0 +1,290 @@
+<script setup>
+import { computed, ref } from 'vue';
+import { Link, useForm, usePage } from '@inertiajs/vue3';
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
+import Tag from '@/Components/Tag.vue';
+import Modal from '@/Components/Modal.vue';
+import Table from '@/Components/Table.vue';
+import { EmptyIllus, UndetectableIllus } from '@/Components/Icons/illus';
+import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
+import CheckInGuestForm from '@/Pages/Reservation/Partials/CheckInGuestForm.vue';
+import ReservationDetail from '@/Pages/Reservation/Partials/ReservationDetail.vue';
+import DelayReservationForm from '@/Pages/Reservation/Partials/DelayReservationForm.vue';
+import CancelReservationForm from '@/Pages/Reservation/Partials/CancelReservationForm.vue';
+import { CheckCircleIcon, CircledArrowHeadRightIcon2, CircledTimesIcon, HorizontalDotsIcon, HourGlassIcon, NoShowIcon } from '@/Components/Icons/solid';
+import dayjs from 'dayjs';
+
+const props = defineProps({
+    customers: Array,
+    tables: Array,
+    occupiedTables: Array,
+    waiters: Array,
+    columns: Array,
+    rows: {
+        type: Array,
+        default: []
+    },
+    rowType: Object,
+    totalPages: Number,
+    rowsPerPage: Number,
+    actions: {
+        type: Object,
+        default: () => {},
+    },
+})
+
+const emit = defineEmits(['fetchReservations']);
+
+const { showMessage } = useCustomToast();
+const { formatPhone } = usePhoneUtils();
+
+const page = usePage();
+const userId = computed(() => page.props.auth.user.id);
+
+const selectedReservation = ref(null);
+const reservationDetailIsOpen = ref(false);
+const checkInFormIsOpen = ref(false);
+const delayReservationFormIsOpen = ref(false);
+const cancelReservationFormIsOpen = ref(false);
+
+const form = useForm({ handled_by: userId.value });
+
+const handleDefaultClick = (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+};
+const markReservationAsNoShow = (id) => { 
+    form.put(route('reservations.markAsNoShow', id), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: "Reservation has been marked as 'No show'.",
+                });
+            }, 200);
+            emit('fetchReservations')
+        },
+    })
+};
+const showReservationDetailForm = (reservation) => {
+    selectedReservation.value = reservation;
+    reservationDetailIsOpen.value = true;
+}
+
+const hideReservationDetailForm = () => {
+    reservationDetailIsOpen.value = false;
+    setTimeout(() => {
+        selectedReservation.value = null;
+    }, 300);
+}
+
+const showCheckInForm = (reservation) => {
+    selectedReservation.value = reservation;
+    checkInFormIsOpen.value = true;
+}
+
+const hideCheckInForm = () => {
+    checkInFormIsOpen.value = false;
+    setTimeout(() =>selectedReservation.value = null, 300);
+}
+
+const showDelayReservationForm = (reservation) => {
+    selectedReservation.value = reservation;
+    delayReservationFormIsOpen.value = true;
+}
+
+const hideDelayReservationForm = () => {
+    delayReservationFormIsOpen.value = false;
+    setTimeout(() =>selectedReservation.value = null, 300);
+}
+
+const showCancelReservationForm = (reservation) => {
+    selectedReservation.value = reservation;
+    cancelReservationFormIsOpen.value = true;
+}
+
+const hideCancelReservationForm = () => {
+    cancelReservationFormIsOpen.value = false;
+    setTimeout(() =>selectedReservation.value = null, 300);
+}
+
+const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
+
+const getStatusVariant = (status) => {
+    switch (status) {
+        case 'Pending': return 'yellow';
+        case 'Checked in': return 'default'
+        case 'Delayed': return 'red'
+        case 'Completed': return 'green'
+        case 'No show': return 'blue'
+        case 'Cancelled': return 'grey'
+    }
+}; 
+</script>
+
+<template>
+    <div class="flex flex-col p-6 gap-y-6 items-end shrink-0 rounded-[5px] border border-solid border-primary-100">
+        <div class="flex justify-between items-center self-stretch">
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Today's Reservation</span>
+            <Link :href="route('reservations')">
+                <CircledArrowHeadRightIcon2  
+                    class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
+                />
+            </Link>
+        </div>
+        
+        <template v-if="rows.length > 0">
+            <Table
+                :variant="'list'"
+                :rows="rows"
+                :totalPages="totalPages"
+                :columns="columns"
+                :rowsPerPage="rowsPerPage"
+                :actions="actions"
+                :rowType="rowType"
+                minWidth="min-w-[950px]"
+                @onRowClick="showReservationDetailForm($event.data)"
+            >
+                <template #empty>
+                    <div class="flex flex-col gap-5 items-center">
+                        <EmptyIllus/>
+                        <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
+                    </div>
+                </template>
+                <template #reservation_no="row">{{ row.reservation_no }}</template>
+                <template #res_time="row">{{ dayjs(row.reservation_date).format('HH:mm') }}</template>
+                <template #name="row">
+                    <div class="flex items-center gap-x-2">
+                        <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div>
+                        {{ row.name }}
+                    </div>
+                </template>
+                <template #table_no="row">{{ getTableNames(row.table_no) }}</template>
+                <template #phone="row">{{ formatPhone(row.phone) }}</template>
+                <template #status="row"><Tag :value="row.status" :variant="getStatusVariant(row.status)" /></template>
+                <template #action="row">
+                    <div class="w-full flex items-center justify-center" v-if="['Pending', 'Delayed', 'Checked in'].includes(row.status)" @click="handleDefaultClick">
+                        <!-- <HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" @click="showActionsOverlay" />
+                        <OverlayPanel ref="op" @close="hideActionsOverlay">
+                            <div class="flex flex-nowrap">
+                                <div class="size-4 bg-primary-100 rounded-full"></div>
+                                <div class="size-4 bg-primary-100 rounded-full"></div>
+                                <div class="size-4 bg-primary-100 rounded-full"></div>
+                                <div class="size-4 bg-primary-100 rounded-full"></div>
+                                <div class="size-4 bg-primary-100 rounded-full"></div>
+                                <div class="size-4 bg-primary-100 rounded-full"></div>
+                                <div class="size-4 bg-primary-100 rounded-full"></div>
+                            </div>
+                        </OverlayPanel> -->
+                        <Menu as="div" class="relative inline-block text-left">
+                            <MenuButton><HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" /></MenuButton>
+
+                            <transition 
+                                enter-active-class="transition duration-100 ease-out"
+                                enter-from-class="transform scale-95 opacity-0" 
+                                enter-to-class="transform scale-100 opacity-100"
+                                leave-active-class="transition duration-75 ease-in"
+                                leave-from-class="transform scale-100 opacity-100" 
+                                leave-to-class="transform scale-95 opacity-0"
+                            >
+                                <MenuItems class="absolute !z-[1010] min-w-[247px] right-0 p-1 flex flex-col gap-y-0.5 origin-top-right whitespace-nowrap rounded-[5px] bg-white shadow-lg">
+                                    <MenuItem v-slot="{ active }">
+                                        <div class="p-3 flex items-center justify-between" @click="showCheckInForm(row)">
+                                            <p class="text-grey-900 text-base font-medium ">Check in customer </p>
+                                            <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
+                                        </div>
+                                    </MenuItem>
+                                    <MenuItem v-slot="{ active }">
+                                        <div class="p-3 flex items-center justify-between" @click="markReservationAsNoShow(row.id)">
+                                            <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
+                                            <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
+                                        </div>
+                                    </MenuItem>
+                                    <MenuItem v-slot="{ active }">
+                                        <div class="p-3 flex items-center justify-between" @click="showDelayReservationForm(row)">
+                                            <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
+                                            <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
+                                        </div>
+                                    </MenuItem>
+                                    <MenuItem v-slot="{ active }">
+                                        <div class="p-3 flex items-center justify-between" @click="showCancelReservationForm(row)">
+                                            <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
+                                            <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
+                                        </div>
+                                    </MenuItem>
+                                </MenuItems>
+                            </transition>
+                        </Menu>
+                    </div>
+                </template>
+            </Table>
+        </template>
+        <template v-else>
+            <div class="flex w-full flex-col items-center justify-center gap-5">
+                <UndetectableIllus />
+                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            </div>
+        </template>
+    </div>
+
+    <!-- View reservation detail -->
+    <Modal 
+        :title="'Reservation Detail'"
+        :show="reservationDetailIsOpen" 
+        :maxWidth="'sm'" 
+        @close="hideReservationDetailForm"
+    >
+        <ReservationDetail
+            :reservation="selectedReservation" 
+            :customers="customers" 
+            :tables="tables" 
+            @close="hideReservationDetailForm" 
+            @fetchReservations="$emit('fetchReservations')"
+        />
+    </Modal>
+
+    <!-- Check in customer -->
+    <Modal 
+        :title="'Assign Seat'"
+        :show="checkInFormIsOpen" 
+        :maxWidth="'xs'" 
+        @close="hideCheckInForm"
+    >
+        <CheckInGuestForm 
+            :reservation="selectedReservation" 
+            :waiters="waiters" 
+            :tables="tables" 
+            :occupiedTables="occupiedTables" 
+            @close="hideCheckInForm" 
+        />
+    </Modal>
+
+    <Modal 
+        :title="'Delay Reservation'"
+        :show="delayReservationFormIsOpen" 
+        :maxWidth="'2xs'" 
+        @close="hideDelayReservationForm"
+    >
+        <DelayReservationForm 
+            :reservation="selectedReservation" 
+            @close="hideDelayReservationForm" 
+            @fetchReservations="$emit('fetchReservations')"
+        />
+    </Modal>
+
+    <Modal 
+        :title="'Cancel Reservation'"
+        :show="cancelReservationFormIsOpen" 
+        :maxWidth="'sm'" 
+        @close="hideCancelReservationForm"
+    >
+        <CancelReservationForm 
+            :reservation="selectedReservation" 
+            @close="hideCancelReservationForm" 
+            @fetchReservations="$emit('fetchReservations')"
+        />
+    </Modal>
+</template>
+

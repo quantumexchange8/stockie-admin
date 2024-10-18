@@ -22,7 +22,7 @@ const variantClasses = (variant) => ({
     'bg-green-50 border-green-100 text-green-700': variant == 'green',
     'bg-blue-50 border-blue-100 text-blue-700': variant == 'blue',
     'bg-grey-50 border-grey-100 text-grey-700': variant == 'grey',
-    'bg-yellow-50 border-yellow-100 text-yello-600': variant == 'yellow',
+    'bg-yellow-50 border-yellow-100 text-yellow-600': variant == 'yellow',
 })
 
 const classes = computed(() => [
