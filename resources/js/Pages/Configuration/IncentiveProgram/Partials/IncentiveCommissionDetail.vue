@@ -3,12 +3,16 @@ import Breadcrumb from '@/Components/Breadcrumb.vue';
 import { TableSortIcon } from '@/Components/Icons/solid';
 import SearchBar from '@/Components/SearchBar.vue';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { FilterMatchMode } from 'primevue/api';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { EmptyIllus } from '@/Components/Icons/illus';
 import AchievementDetails from './AchievementDetails.vue';
 import Toast from '@/Components/Toast.vue';
+import { transactionFormat, useCustomToast } from '@/Composables';
+import Paginator from 'primevue/paginator';
+import TextInput from '@/Components/TextInput.vue';
 
 const home = ref({
     label: 'Configuration',
@@ -21,7 +25,7 @@ const items = ref([
 
 const props = defineProps({
     details: {
-        type: Object,
+        type: Array,
         required: true,
     },
     achievementDetails: {
@@ -29,11 +33,64 @@ const props = defineProps({
         required: true,
     },
     waiterName: {
-        type: Array,
+        type: Object,
         required: true,
     }
 })
-console.log(props.details);
+
+const detail = ref(props.details);
+const sortField = ref('');
+const sortOrder = ref(1);
+const currentPage = ref(1);
+const statuses = ['Paid', 'Pending'];
+const isLoading = ref(false);
+const totalPages = ref(Math.ceil(props.details.length /4));
+const searchQuery = ref('');
+
+const { formatAmount } = transactionFormat();
+const { showMessage } = useCustomToast();
+
+const onPageChange = (event) => {
+    currentPage.value = event.page + 1;
+};
+
+const goToPage = (event) => {
+    const page = parseInt(event.target.value);
+    if (page > 0 && page <= props.totalPages) {
+        currentPage.value = page;
+    }
+};
+
+const computedRowsPerPage = computed(() => {
+    const start = (currentPage.value - 1) * 4;
+    const end = start + 4;
+    return detail.value.slice(start, end);
+});
+
+const updateStatus = async (selectedStatus = null, id = 0, achievementId = 0) => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get('/configurations/configurations/updateStatus', {
+            method: 'GET',
+            params: {
+                selectedStatus: selectedStatus,
+                id: id,
+                achievementId: achievementId,
+            }
+        });
+        detail.value = response.data;
+        setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Achiever status has been updated.',
+                });
+            }, 200)
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+}
 
 const sortInventories = (field) => {
     if (sortField.value === field) {
@@ -53,65 +110,81 @@ const sortInventories = (field) => {
         } else if (Date.parse(valueA)) {
             return (new Date(valueA) - new Date(valueB)) * sortOrder.value;
         }
-        return 0; // Default case if no specific comparison is needed
+        return 0; 
     };
 
     // Sort function for 'stock_qty', 'item_category', or other fields
     switch (field) {
-        case 'stock_qty':
+        case 'earned':
             // Sort groups by total stock quantity
-            props.rows.sort((a, b) => {
-                const totalStockA = a.inventory_items.reduce((sum, item) => sum + item.stock_qty, 0);
-                const totalStockB = b.inventory_items.reduce((sum, item) => sum + item.stock_qty, 0);
-                return compareValues(totalStockA, totalStockB);
-            });
-
-            // Sort items within each group by individual stock quantity
-            props.rows.forEach(group => {
-                group.inventory_items.sort((a, b) => compareValues(a.stock_qty, b.stock_qty));
+            detail.value.forEach(group => {
+                group.data.sort((a, b) =>
+                    compareValues(a.incentive, b.incentive)
+                );
             });
             break;
 
-        case 'item_category':
-            // Sort items within each group by item category name
-            props.rows.forEach(group => {
-                group.inventory_items.sort((a, b) =>
-                    compareValues(a.item_category.name.toLowerCase(), b.item_category.name.toLowerCase())
+        case 'sales':
+            // Sort items within each group by total sales
+            detail.value.forEach(group => {
+                group.data.sort((a, b) =>
+                    compareValues(a.total_sales, b.total_sales)
                 );
             });
             break;
 
         case 'status':
             // Sort items within each group by status
-            rows.value.forEach(group => {
-                group.inventory_items.sort((a, b) => compareValues(a.status.toLowerCase(), b.status.toLowerCase()));
+            detail.value.forEach(group => {
+                group.data.sort((a, b) => compareValues(a.status.toLowerCase(), b.status.toLowerCase()));
             });
             break;
 
-        case 'item_code':
-            // Sort items within each group by item_code alphabetically
-            rows.value.forEach(group => {
-                group.inventory_items.sort((a, b) => compareValues(a.item_code.toLowerCase(), b.item_code.toLowerCase()));
+        case 'achiever':
+            // Sort items within each group by name alphabetically
+            detail.value.forEach(group => {
+                group.data.sort((a, b) => compareValues(a.name.toLowerCase(), b.name.toLowerCase()));
             });
-            break;
-
-        case 'name':
-            // Sort items within each group by item_code alphabetically
-            rows.value.forEach(group => {
-                group.inventory_items.sort((a, b) => compareValues(a.item_name.toLowerCase(), b.item_name.toLowerCase()));
-            });
-            props.details.sort((a, b) => {
-                const valueA = a.inventory_items[0][field]?.toLowerCase?.() || a[field]?.toLowerCase?.() || '';
-                const valueB = b.inventory_items[0][field]?.toLowerCase?.() || b[field]?.toLowerCase?.() || '';
+            detail.value.sort((a, b) => {
+                const valueA = a.data[0][field]?.toLowerCase?.() || a[field]?.toLowerCase?.() || '';
+                const valueB = b.data[0][field]?.toLowerCase?.() || b[field]?.toLowerCase?.() || '';
                 return compareValues(valueA, valueB);
             });
             break;
     }
 };
 
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
+watch(() => detail.value, (newValue) => {
+    detail.value = newValue ? newValue : {};
+}, { immediate: true } );
+
+watch(() => searchQuery.value, (newValue) => {
+    if (newValue === '') {
+        detail.value = props.details;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    detail.value = props.details.map(group => {
+        const filteredDetails = group.data.filter(item => {
+            const itemName = item.name.toLowerCase();
+            const itemTotalSales = item.total_sales.toString().toLowerCase();
+            const itemMonthlySale = item.monthly_sale.toString().toLowerCase();
+            const itemIncentive = item.incentive.toString().toLowerCase();
+            const itemStatus = item.status.toLowerCase();
+            return  itemName.includes(query) ||
+                    itemTotalSales.includes(query) ||
+                    itemMonthlySale.includes(query) ||
+                    itemIncentive.includes(query) ||
+                    itemStatus.includes(query);
+        });
+
+        return filteredDetails.length > 0 ? {...group, data: filteredDetails } : null;
+    })
+    .filter(group => group !== null);
+}, { immediate: true });
+
 </script>
 
 <template>
@@ -135,7 +208,7 @@ const filters = ref({
                     <SearchBar
                         placeholder="Search"
                         :showFilter="false"
-                        v-model="filters['global'].value"
+                        v-model="searchQuery"
                     />
 
                     <table class="w-full border-spacing-3 border-collapse min-w-[755px]">
@@ -169,7 +242,7 @@ const filters = ref({
                         </thead>
                         <tbody class="w-full before:content-['@'] before:table-row before:leading-3 before:indent[-99999px] before:invisible">
                             <tr 
-                                v-if="props.details.length > 0" 
+                                v-if="detail.length > 0" 
                                 v-for="(group, groupIndex) in computedRowsPerPage" :key="groupIndex" 
                                 class="rounded-[5px]"
                                 :class="groupIndex % 2 === 0 ? 'bg-white' : 'bg-primary-25'"
@@ -179,7 +252,7 @@ const filters = ref({
                                         as="div" 
                                         :defaultOpen="false"
                                         v-slot="{ open }" 
-                                        class="flex flex-col justify-center"
+                                        class="flex flex-col justify-center min-h-12"
                                     >
                                         <DisclosureButton class="flex items-center justify-between gap-2.5 rounded-sm py-1 hover:bg-primary-50">
                                             <table class="w-full border-spacing-1 border-separate">
@@ -200,8 +273,7 @@ const filters = ref({
                                                         </td>
                                                         <td class="w-[23%]">
                                                             <div class="flex items-center gap-3">
-                                                                <span class="w-[60px] h-[60px] flex-shrink-0 rounded-full bg-primary-700"></span>
-                                                                <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ props.details.name }}</span>
+                                                                <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ group.month }}</span>
                                                             </div>
                                                         </td>
                                                         <td class="w-[56%]"></td>
@@ -219,20 +291,68 @@ const filters = ref({
                                             leave-from-class="transform scale-100 opacity-100"
                                             leave-to-class="transform scale-95 opacity-0"
                                         >
-                                            <DisclosurePanel class="bg-white pt-2 pb-3">
+                                            <DisclosurePanel class="bg-white pt-2 pb-3" >
                                                 <div 
                                                     class="w-full flex items-center gap-x-3 rounded-[5px] text-sm text-grey-900 font-medium odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900 hover:bg-primary-50" 
-                                                    v-for="(item, index) in props.details" :key="index"
+                                                    v-for="(data, index) in group.data" :key="index"
                                                 >
-                                                    <div class="w-[27%] py-2 px-3 truncate">{{ item.name }}</div>
-                                                    <div class="w-[11%] py-2 px-3">{{ item.total_sales }}</div>
-                                                    <div class="w-[10%] py-2 px-3">{{ item.earned }}</div>
-                                                    <div class="w-[11%] py-2 px-3">{{ item.status }}</div>
-                                                    <div class="w-[11%] py-2 px-3">{{ 0 }}</div>
-                                                    <div class="w-[12%] py-2 px-3"></div>
-                                                </div>
-                                                <div class="flex justify-end pr-[50px] bg-white mt-3">
-                                                    <span>Total Stock: {{ totalInventoryItemStock(group.inventory_items) }}</span>
+                                                    <div class="w-[29%] py-2 px-3 truncate flex gap-2.5 items-center">
+                                                        <div class="size-8 rounded-full bg-primary-300"></div>
+                                                        {{ data.name }}
+                                                    </div>
+                                                    <div class="w-[24%] py-2 px-3">RM {{ formatAmount(data.total_sales) }}</div>
+                                                    <div class="w-[23%] py-2 px-3">RM {{ formatAmount(data.incentive) }}</div>
+                                                    <div class="w-[17%] py-2 px-3">
+                                                        <Menu as="div" class="relative inline-block text-left">
+                                                            <div>
+                                                                <MenuButton
+                                                                    class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 px-2.5 py-1.5 text-2xs font-semibold"
+                                                                    :class="data.status === 'Paid' 
+                                                                        ? 'bg-green-50 border border-green-100 text-green-700 hover:bg-green-100' 
+                                                                        : 'bg-primary-50 border border-primary-200 text-primary-500 hover:bg-primary-100'"
+                                                                    >
+                                                                    {{ data.status }}
+                                                                    <svg 
+                                                                        width="20" 
+                                                                        height="20" 
+                                                                        viewBox="0 0 20 20" 
+                                                                        fill="none" 
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        class="inline-block text-grey-900 transition ease-in-out"
+                                                                        :class="[open ? '' : '-rotate-90']"
+                                                                    >
+                                                                        <path d="M15.8337 7.08337L10.0003 12.9167L4.16699 7.08337" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                                                                    </svg>
+                                                                </MenuButton>
+                                                            </div>
+
+                                                            <transition 
+                                                                enter-active-class="transition duration-100 ease-out"
+                                                                enter-from-class="transform scale-95 opacity-0" 
+                                                                enter-to-class="transform scale-100 opacity-100"
+                                                                leave-active-class="transition duration-75 ease-in"
+                                                                leave-from-class="transform scale-100 opacity-100" 
+                                                                leave-to-class="transform scale-95 opacity-0"
+                                                            >
+                                                                <MenuItems
+                                                                    class="absolute z-10 right-0 mt-2 w-32 p-1 gap-0.5 origin-top-right divide-y divide-y-grey-100 rounded-md bg-white shadow-lg"
+                                                                    >
+                                                                    <MenuItem v-slot="{ active }" v-for="status in statuses">
+                                                                    <button type="button" :class="[
+                                                                        { 'bg-primary-100': active },
+                                                                        { 'group flex items-center gap-2.5 px-4 py-2 self-stretch rounded-[5px] bg-primary-50 text-primary-900' : (data.status === status)},
+
+                                                                        'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+
+                                                                    ]" @click="updateStatus(status, data.id, props.achievementDetails.id)">
+                                                                        {{ status }}
+                                                                    </button>
+                                                                    </MenuItem>
+                                                                </MenuItems>
+                                                            </transition>
+                                                        </Menu>
+                                                    </div>
+                                                    <div class="w-[7%] py-2 px-3"></div>
                                                 </div>
                                             </DisclosurePanel>
                                         </transition>
@@ -249,7 +369,188 @@ const filters = ref({
                             </tr>
                         </tbody>
                     </table>
+
                 </div>
+                <Paginator
+                    :rows="4" 
+                    :totalRecords="detail.length"
+                    :class="'w-full'"
+                    template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+                    @page="onPageChange"
+                    :pt="{
+                        root: {
+                            class: 'flex justify-between items-center flex-wrap bg-white text-grey-500 py-3 !w-full '
+                        },
+                        start: {
+                            class: 'mr-auto'
+                        },
+                        pages: {
+                            class: 'flex justify-center items-center'
+                        },
+                        pagebutton: ({ context }) => {
+                            return {
+                                class: [
+                                    'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                                    {
+                                        'rounded-full bg-primary-900 text-primary-50': context.active,
+                                        'hover:rounded-full hover:bg-primary-50 hover:text-primary-900': !context.active,
+                                    },
+                                ]
+                            };
+                        },
+                        end: {
+                            class: 'ml-auto'
+                        },
+                        firstpagebutton: {
+                            class: [
+                                {
+                                    'hidden': totalPages < 5,
+                                },
+                                'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                                'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                                'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',,
+                                'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                                'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
+                            ]
+                        },
+                        previouspagebutton: {
+                            class: [
+                                {
+                                    'hidden': totalPages === 1
+                                },
+                                'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                                'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                                'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
+                            ]
+                        },
+                        nextpagebutton: {
+                            class: [
+                                {
+                                    'hidden': totalPages === 1
+                                },
+                                'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                                'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                                'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
+                            ]
+                        },
+                        lastpagebutton: {
+                            class: [
+                                {
+                                    'hidden': totalPages < 5
+                                },
+                                'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                                'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                                'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
+                            ]
+                        },
+                    }"
+                >
+                    <template #start>
+                        <div class="text-xs font-medium text-grey-500">
+                            Showing: <span class="text-grey-900">{{ totalPages === 0 ? 0 : currentPage }} of {{ totalPages }}</span>
+                        </div>
+                    </template>
+                    <template #end>
+                        <div class="flex justify-center items-center gap-2 text-xs font-medium text-grey-900 whitespace-nowrap">
+                            Go to Page: 
+                            <TextInput
+                                :inputName="'go_to_page'"
+                                :placeholder="'eg: 12'"
+                                class="!w-20"
+                                :disabled="true"
+                                v-if="totalPages === 1"
+                            />
+                            <TextInput
+                                :inputName="'go_to_page'"
+                                :placeholder="'eg: 12'"
+                                class="!w-20"
+                                :disabled="false"
+                                @input="goToPage($event)"
+                                v-else
+                            />
+                        </div>
+                    </template>
+                    <template #firstpagelinkicon>
+                        <svg 
+                            width="15" 
+                            height="12" 
+                            viewBox="0 0 15 12" 
+                            fill="none" 
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path 
+                                d="M14 11L9 6L14 1" 
+                                stroke="currentColor" 
+                                stroke-width="2" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"/>
+                            <path
+                                d="M6 11L1 6L6 1" 
+                                stroke="currentColor" 
+                                stroke-width="2" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                    </template>
+                    <template #prevpagelinkicon>
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            width="7" 
+                            height="12" 
+                            viewBox="0 0 7 12" 
+                            fill="none"
+                        >
+                            <path 
+                                d="M6 11L1 6L6 1" 
+                                stroke="currentColor" 
+                                stroke-width="2" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                    </template>
+                    <template #nextpagelinkicon>
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            width="7" 
+                            height="12" 
+                            viewBox="0 0 7 12" 
+                            fill="none"
+                        >
+                            <path 
+                                d="M1 11L6 6L1 1" 
+                                stroke="currentColor" 
+                                stroke-width="2" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                    </template>
+                    <template #lastpagelinkicon>
+                        <svg 
+                            width="15" 
+                            height="12" 
+                            viewBox="0 0 15 12" 
+                            fill="none" 
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path 
+                                d="M1 11L6 6L1 1" 
+                                stroke="currentColor" 
+                                stroke-width="2" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"/>
+                            <path
+                                d="M9 11L14 6L9 1" 
+                                stroke="currentColor" 
+                                stroke-width="2" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                    </template>
+                </Paginator>
             </div>
 
             <AchievementDetails 

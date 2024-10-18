@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
+use Log;
 
 class CustomerController extends Controller
 {
@@ -27,7 +28,7 @@ class CustomerController extends Controller
                                     'rankings',
                                     'keepItems' => function ($query) {
                                         $query->where('status', 'Keep')
-                                            ->with(['orderItemSubitem.productItem.product', 'waiters']);
+                                            ->with(['orderItemSubitem.productItem.product', 'waiter']);
                                     }
                                 ])->withCount([
                                             'keepItems' => function ($query) {
@@ -48,7 +49,7 @@ class CustomerController extends Controller
                         'created_at' => $keepItem->created_at->format('d/m/Y, h:i A'),
                         'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
                         'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
-                        'waiter_name' => $keepItem->waiters->name ?? 'N/A',
+                        'waiter_name' => $keepItem->waiter->full_name ?? 'N/A',
                     ];
                 })->toArray(); 
 
@@ -136,7 +137,7 @@ class CustomerController extends Controller
                         'created_at' => Carbon::parse($keepItem->created_at)->format('d/m/Y, h:i A'),
                         'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
                         'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
-                        'waiter_name' => $keepItem->waiters->name ?? 'N/A',
+                        'waiter_name' => $keepItem->waiter->full_name ?? 'N/A',
                     ];
                 })->toArray(); 
 
@@ -202,10 +203,12 @@ class CustomerController extends Controller
                     'status' => $history->status,
                     'created_at' => Carbon::parse($history->created_at)->format('d/m/Y, h:i A'),
                     'expired_date' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
-                    'waiter_name' => $keepItem->waiters->name,
+                    'waiter_name' => $keepItem->waiter->full_name ?? null,
                 ];
             }
         };
+
+        // Log::info(array_values($allKeepHistories));
         $sortedKeepHistories = collect($allKeepHistories)->sortByDesc('created_at')->values()->all();
         return response()->json($sortedKeepHistories);
     }

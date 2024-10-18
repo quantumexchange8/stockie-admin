@@ -1,8 +1,9 @@
 <script setup>
 import { CalendarIcon, CommissionIcon, DeleteIcon, EditIcon, RecurringIcon, TargetIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import EditAchievement from './EditAchievement.vue';
+import { transactionFormat } from '@/Composables';
 
 const props = defineProps ({
     achievementDetails: {
@@ -10,16 +11,22 @@ const props = defineProps ({
         required: true,
     },
     waiterName: {
-        type: Array,
+        type: Object,
         required: true,
     }
 })
+const { formatDate } = transactionFormat();
+
 const isDeleteWaiterOpen = ref(false);
 const isEditAchievementOpen = ref(false);
 const isDeleteAchievementOpen = ref(false);
 const selectedAchievement = ref(null);
 const selectedWaiter = ref(null);
-const rows = ref([]);
+const isRate = ref({
+    ...props.achievementDetails,
+    isRate: props.achievementDetails.type !== 'fixed'
+});
+
 const waiters = ref([]);
 const isLoading = ref(false);
 
@@ -32,20 +39,6 @@ const formatRate = (rate) => {
     rate = rate * 100;
     return rate;
 }
-
-const formatDate = (date, locale = 'en-GB', options = {}) => {
-    if (!(date instanceof Date)) {
-        date = new Date(date);
-    }
-
-    const defaultOptions = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-    };
-
-    return date.toLocaleDateString(locale, { ...defaultOptions, ...options });
-};
 
 const getSuffix = (day) => {
     switch(day)
@@ -107,18 +100,18 @@ const getEmployeeIncent = async () => {
 </script>
 
 <template>
-    <div class="w-full flex flex-col p-6 items-center gap-6 rounded-[5px] border border-solid border-primary-100 min-w-[300px]">
+    <div class="w-full h-full flex flex-col p-6 items-center gap-6 rounded-[5px] border border-solid border-primary-100 min-w-[300px]">
         <div class="w-full flex flex-col items-end gap-6 flex-[1_0_0] self-stretch">
             <div class="w-full flex items-center justify-between gap-2.5 self-stretch">
                 <span class="text-primary-900 text-md font-medium">Achievement Detail</span>
                 <div class="flex flex-nowrap gap-2">
                     <EditIcon 
                         class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="showEditAchievement(props.achievementDetails)"
+                        @click="showEditAchievement(isRate)"
                     />
                     <DeleteIcon 
                         class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
-                        @click="showDeleteAchievement(props.achievementDetails.id)"
+                        @click="showDeleteAchievement(isRate.id)"
                     />
                 </div>
             </div>
@@ -177,19 +170,19 @@ const getEmployeeIncent = async () => {
                 </div>
 
                 <div class="flex flex-col items-start gap-1 self-stretch">
-                    <template v-for="(waiters,id) in props.waiterName" :key="id">
-                        <template v-for="(waiter, index) in waiters" :key="index">
-                            <div class="flex px-3 py-2 justify-between items-center self-stretch rounded-[5px]">
-                                <div class="flex items-center gap-2.5 flex-[1_0_0]">
-                                    <div class="size-7 rounded-full bg-primary-700"></div>
-                                    <span class="text-grey-900 text-sm font-medium">{{ waiter.name }}</span>
-                                </div>
-                                <DeleteIcon 
-                                    class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
-                                    @click="showDeleteWaiter(waiter.id)"
-                                />
+                    <template v-for="(waiter, index) in Object.values(props.waiterName).sort((a, b) => a.name.localeCompare(b.name))" :key="index">
+                        <div class="flex px-3 py-2 justify-between items-center self-stretch rounded-[5px]"
+                            :class="(index + 1) % 2 === 0 ? 'bg-primary-25' : 'bg-white'"
+                        >
+                            <div class="flex items-center gap-2.5 flex-[1_0_0]">
+                                <div class="size-7 rounded-full bg-primary-700"></div>
+                                <span class="text-grey-900 text-sm font-medium">{{ waiter.name }}</span>
                             </div>
-                        </template>
+                            <DeleteIcon 
+                                class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
+                                @click="showDeleteWaiter(waiter.id)"
+                            />
+                        </div>
                     </template>
                 </div>
             </div>

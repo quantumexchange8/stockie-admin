@@ -12,7 +12,7 @@ const props = defineProps ({
 </script>
 
 <template>
-    <div class="w-full flex flex-col items-end gap-6 py-6 rounded-[5px] bg-gradient-to-br from-primary-900 from-[2.42%] to-[#5E0A0E] to-[102.62%]">
+    <div class="w-full h-full flex flex-col items-end gap-6 py-6 rounded-[5px] bg-gradient-to-br from-primary-900 from-[2.42%] to-[#5E0A0E] to-[102.62%]">
         <div class="flex flex-col pl-4 items-start gap-[10px] self-stretch">
             <div class="flex pl-3 pr-6 justify-between items-center self-stretch rounded-tl-[5px] rounded-bl-[5px]">
                 <span class="flex flex-col justify-center flex-[1_0_0] text-primary-25 text-md font-medium">On Duty Today</span>

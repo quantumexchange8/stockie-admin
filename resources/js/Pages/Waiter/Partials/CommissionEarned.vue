@@ -4,6 +4,7 @@ import { DropdownIcon } from '@/Components/Icons/solid';
 import Chart from "primevue/chart";
 import { ref, onMounted, watch } from "vue";
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import { transactionFormat } from '@/Composables';
 
 const props = defineProps ({
     waiterNames: {
@@ -19,6 +20,8 @@ const props = defineProps ({
 const emit = defineEmits(['applyCommFilter']);
 const graphFilter = ref(['This month', 'This year']);
 const selectedFilter = ref(graphFilter.value[0]);
+const { formatAmount } = transactionFormat();
+// const formattedCommission = props.waiterCommission.map(value => formatAmount(value));
 
 const chartData = ref();
 const chartOptions = ref();
@@ -79,7 +82,7 @@ const setChartOptions = () => {
         aspectRatio: 0.6,
         responsive: true,
         animation: {
-            duration: 200,  
+            duration: 150,  
             easing: 'linear',
         },
         plugins: {

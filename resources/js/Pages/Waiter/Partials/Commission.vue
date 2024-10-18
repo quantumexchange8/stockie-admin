@@ -3,9 +3,8 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import { UploadIcon } from '@/Components/Icons/solid';
 import SearchBar from '@/Components/SearchBar.vue';
 import Table from '@/Components/Table.vue';
-import Tag from '@/Components/Tag.vue';
+import { transactionFormat } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
-import { Link } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import { FilterMatchMode } from 'primevue/api';
 import { ref } from 'vue';
@@ -18,6 +17,9 @@ const props = defineProps({
     totalPages: Number,
     rowsPerPage: Number,
 })
+
+const { formatAmount } = transactionFormat();
+
 const data = ref(props.data)
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -141,10 +143,10 @@ const exportToCSV = () => {
                     <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">{{ data.created_at }}</span>
                 </template>
                 <template #total_sales="data">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">RM {{ data.monthly_sale }}</span>
+                    <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">RM {{ formatAmount(data.monthly_sale) }}</span>
                 </template>
                 <template #commission="data">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">RM {{ data.commissionAmt }}</span>
+                    <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">RM {{ formatAmount(data.commissionAmt) }}</span>
                 </template>
             </Table>
     </div>

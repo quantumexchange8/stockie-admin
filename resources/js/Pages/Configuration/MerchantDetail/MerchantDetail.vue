@@ -32,7 +32,6 @@ const getResults = async () => {
 
         const response = await axios.get(url);
         taxes.value = response.data;
-        console.log(taxes.value);
     } catch (error) {
         console.error(error);
     } finally {
@@ -55,15 +54,13 @@ const editTaxForm = useForm({
     value: parseInt(taxes.value),
 })
 
-console.log(editTaxForm);
-
 const deleteForm = useForm({
     id: selectedTax.value,
 })
 
 const merchantColumn = ref([
     { field: 'name', header: 'Tax Type', width: '70', sortable: false},
-    { field: 'percentage', header: 'Percentage', width: '17', sortable: false},
+    { field: 'value', header: 'Percentage', width: '17', sortable: false},
     { field: 'action', header: '', width: '13', sortable: false}
 ])
 
@@ -91,14 +88,14 @@ const openDeleteTax = (tax) => {
 }
 
 const startEditing = (event, tax, type) => {
-    event.preventDefault();
-    event.stopPropagation();
+    // event.preventDefault();
+    // event.stopPropagation();
     const actionCol = merchantColumn.value.find(col => col.field === 'action');
     if (actionCol) {
         actionCol.width = '0';
     }
 
-    const percentageColumn = merchantColumn.value.find(col => col.field === 'percentage');
+    const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
     if (percentageColumn) {
         percentageColumn.width = '30'; 
     }
@@ -166,7 +163,7 @@ const stopEditing = () => {
     
     const actionCol = merchantColumn.value.find(col => col.field === 'action');
     if (actionCol && defaultActionWidth) {
-        actionCol.width = defaultActionWidth; 
+        actionCol.width = '13'; 
     }
 
     const percentageColumn = merchantColumn.value.find(col => col.field === 'percentage');
@@ -389,7 +386,7 @@ watch(() => taxes.value, (newValue) => {
                                 @keydown.enter.prevent="stopEditing()"
                             />
                         </template>
-                        <template #percentage="taxes">
+                        <template #value="taxes">
                             <TextInput
                                 v-model="editTaxForm.value"
                                 v-if="isEditingPercentage && editTaxForm.id == taxes.id"

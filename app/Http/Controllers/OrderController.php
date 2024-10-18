@@ -661,7 +661,7 @@ class OrderController extends Controller
                             ])->find($id);
             $table = Table::find($order->orderTable['table_id']);
             $customer = Customer::find($request->customer_id);
-            $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('percentage', 'name');
+            $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('value', 'name');
             $totalTaxPercentage = ($taxes['SST'] ?? 0) + ($taxes['Service Tax'] ?? 0);
 
             if ($request->action_type === 'complete') {

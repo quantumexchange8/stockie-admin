@@ -10,6 +10,7 @@ import Table from '@/Components/Table.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import Modal from '@/Components/Modal.vue';
 import axios from 'axios';
+import { transactionFormat } from '@/Composables';
 
 const props = defineProps({
     dateFilter: Array,
@@ -39,6 +40,8 @@ const selectedOrder = ref(null);
 const order = ref(props.order);
 const waiter = ref(props.waiter);
 const isLoading = ref(false);
+
+const { formatAmount } = transactionFormat();
 
 const defaultLatest7Days = computed(() => {
     let currentDate = dayjs();
@@ -263,10 +266,10 @@ const exportToCSV = () => {
                 <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ selectedOrder.serve_qty }}</span>
             </template>
             <template #price="selectedOrder">
-                <span class="text-grey-900 text-sm font-medium line-clamp-1">RM {{ selectedOrder.price }}</span>
+                <span class="text-grey-900 text-sm font-medium line-clamp-1">RM {{ formatAmount(selectedOrder.price) }}</span>
             </template>
             <template #commission="selectedOrder">
-                <span class="text-grey-900 text-sm font-medium line-clamp-1">RM {{ selectedOrder.commission }}</span>
+                <span class="text-grey-900 text-sm font-medium line-clamp-1">RM {{ formatAmount(selectedOrder.commission) }}</span>
             </template>
         </Table>
     </div>

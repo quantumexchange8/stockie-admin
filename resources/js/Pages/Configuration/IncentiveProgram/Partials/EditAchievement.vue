@@ -6,7 +6,7 @@ import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     selectedIncent: {
@@ -14,7 +14,6 @@ const props = defineProps({
         required: true,
     },
 })
-
 const emit = defineEmits(['closeModal', 'getEmployeeIncent']);
 const closeModal = () => {
     emit('closeModal');

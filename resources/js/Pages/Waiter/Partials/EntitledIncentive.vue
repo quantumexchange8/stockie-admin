@@ -7,7 +7,6 @@ import { Link } from '@inertiajs/vue3';
 const props = defineProps({
     configIncentive: Array,
 });
-console.log(props.configIncentive);
 
 const formatMonthlySale = (monthly_sale) => {
     return monthly_sale.substring(0, monthly_sale.length-3);

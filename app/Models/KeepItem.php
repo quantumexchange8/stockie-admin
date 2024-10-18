@@ -32,7 +32,7 @@ class KeepItem extends Model
         return $this->belongsTo(Customer::class, 'customer_id');
     }
 
-    public function waiters(): BelongsTo
+    public function waiter(): BelongsTo
     {
         return $this->belongsTo(User::class,'user_id');
     }

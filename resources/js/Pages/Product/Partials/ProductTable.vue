@@ -429,6 +429,7 @@ onMounted(() => {
                         :checked="forms[row.id].id === row.id && forms[row.id].availability" 
                         :inputName="'availability'"
                         :inputId="'availability'"
+                        :disabled="forms[row.id].processing"
                         v-model="forms[row.id].availability"
                         @click="toggleAvailability($event, row)"
                     />

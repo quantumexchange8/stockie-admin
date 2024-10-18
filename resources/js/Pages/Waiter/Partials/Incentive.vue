@@ -9,6 +9,7 @@ import { Link } from '@inertiajs/vue3';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { UploadIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
+import { transactionFormat } from '@/Composables';
 
 const props = defineProps({
     waiter: {
@@ -33,6 +34,7 @@ const props = defineProps({
 })
 
 const incentiveData = ref(props.incentiveData);
+const { formatAmount } = transactionFormat();
 
 const arrayToCsv = (data) => {
     const array = [Object.keys(data[0])].concat(data)
@@ -156,11 +158,11 @@ const filters = ref({
                     <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">{{ incentiveData.monthYear }}</span>
                 </template>
                 <template #totalSales="incentiveData">
-                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ incentiveData.totalSales }}</span>
+                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(incentiveData.totalSales) }}</span>
                 </template>
                 <template #incentiveAmt="incentiveData">
                     <div v-if="incentiveData.incentiveAmt != 0" class="inline-flex items-center whitespace-nowrap gap-0.5">
-                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ incentiveData.incentiveAmt }} </span>
+                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(incentiveData.incentiveAmt) }} </span>
                             <span class="line-clamp-1 text-primary-900 text-ellipsis text-sm font-medium">
                                 <template v-if="incentiveData.type == 'fixed'">
                                     ( RM {{ incentiveData.rate }} of total sales )

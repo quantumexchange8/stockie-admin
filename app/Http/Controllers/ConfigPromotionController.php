@@ -2,21 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ConfigPromotionRequest;
 use App\Models\ConfigMerchant;
 use App\Models\ConfigPromotion;
 use App\Models\ItemCategory;
 use App\Models\Setting;
-use App\Models\User;
-use Carbon\Carbon;
-use DateTime;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Log;
-use Validator;
 
 class ConfigPromotionController extends Controller
 {
@@ -201,54 +194,45 @@ class ConfigPromotionController extends Controller
     {   
         // dd($request->all());
         $newTax = Setting::find($request->id);
-        $rules = [
-            'name' => ['required',
-                        'max:255',
-                        Rule::unique('settings', 'name')->whereNull('deleted_at')->ignore($newTax ? $newTax->id : null)
-                    ],
-            'value' => ['required'],
-        ];
 
-        $requestMessages = [
+        $request->validate([
+            'name' => [
+                'required',
+                'max:255',
+                Rule::unique('settings', 'name')
+                    ->whereNull('deleted_at')
+                    ->ignore($newTax ? $newTax->id : null),
+            ],
+            'value' => ['required'],
+        ], [
             'name.required' => 'The name field is required.',
             'name.max' => 'The name field must not exceed 255 characters.',
             'name.unique' => 'The name already exists in the tax settings.',
             'value.required' => 'This field is required.',
-        ];
+        ]);
 
-        $taxValidator = Validator::make(
-            $request->all(),
-            $rules,
-            $requestMessages
-        );
-
-        if ($taxValidator->fails()) {
-            return redirect()
-                    ->back()
-                    ->withErrors($taxValidator)
-                    ->withInput();
-        }
 
         if ($newTax) {
             // Update the existing tax
             $newTax->update([
                 'name' => $request->name,
                 'value' => round($request->value, 2),
-                'type' => 'percentage',
+                'type' => 'tax',
+                'value_type' => 'percentage',
             ]);
         } else {
             // Create a new tax
             Setting::create([
                 'name' => $request->name,
-                'value' => $request->percentage,
-                'type' => 'percentage',
+                'value' => $request->value,
+                'type' => 'tax',
+                'value_type' => 'percentage',
             ]);
         }
     }
 
     public function getTax()
     {
-
         $stock = Setting::query();
 
         $results = $stock->where('type', 'tax')->get();

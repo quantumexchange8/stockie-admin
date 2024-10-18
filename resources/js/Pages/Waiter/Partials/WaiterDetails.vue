@@ -11,6 +11,7 @@ import { CommissionIcon, GrowthIcon, WaiterSalesIcon } from '@/Components/Icons/
 import Sales from './Sales.vue';
 import Attendance from './Attendance.vue';
 import Incentive from './Incentive.vue';
+import { transactionFormat } from '@/Composables';
 
 const props = defineProps({
     id: [Number, String],
@@ -49,6 +50,7 @@ const items = ref([
     { label: 'Waiter Detail'},
 ]);
 
+const { formatAmount } = transactionFormat();
 const waiter = ref(props.waiter);
 const attendance = ref(props.attendance);
 const salesRowsPerPage = ref(11);
@@ -138,7 +140,7 @@ const attendanceTotalPages = computed(() => {
                             <div class="flex flex-col gap-1 self-stretch"> 
                                 <GrowthIcon />
                                 <span class="text-primary-100 text-sm font-medium whitespace-nowrap w-full">Total sales this month</span>
-                                <span class="text-primary-25 text-lg font-medium ">RM {{ props.total_sales }}</span>
+                                <span class="text-primary-25 text-lg font-medium ">RM {{ formatAmount(props.total_sales) }}</span>
                             </div>
                             <div class="absolute bottom-0 right-0">
                                 <WaiterSalesIcon />
@@ -151,8 +153,8 @@ const attendanceTotalPages = computed(() => {
                             <div class="flex flex-col gap-1 self-stretch">
                                 <CommissionIcon />
                                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Commission in this month</span>
-                                <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ props.incentiveThisMonth + props.commissionThisMonth }}</span>
-                                <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ props.incentiveThisMonth }} + RM {{ props.commissionThisMonth }})</span>
+                                <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ formatAmount(props.incentiveThisMonth + props.commissionThisMonth) }}</span>
+                                <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ formatAmount(props.incentiveThisMonth) }} + RM {{ formatAmount(props.commissionThisMonth) }})</span>
                             </div>
                         </div>
                     </div>

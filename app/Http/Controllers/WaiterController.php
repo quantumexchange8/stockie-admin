@@ -33,20 +33,20 @@ class WaiterController extends Controller
         $allWaiters = User::where('role', 'waiter')->select('id', 'full_name')->get()->keyBy('id');
 
         $waitersSalesDetail = OrderItem::with('order.waiter')
-                                    ->where('status', 'Served')
-                                    ->where('type', 'Normal')
-                                    ->whereMonth('created_at', now()->month)
-                                    ->whereYear('created_at', now()->year)
-                                    ->selectRaw('user_id, SUM(amount) as total_sales')
-                                    ->groupBy('user_id')
-                                    ->get()
-                                    ->map(function ($order) {
-                                        return [
-                                            'waiter_id' => $order->user_id,
-                                            'total_sales' => (int)$order->total_sales,
-                                        ];
-                                    })
-                                    ->keyBy('waiter_id');
+                                        ->where('status', 'Served')
+                                        ->where('type', 'Normal')
+                                        ->whereMonth('created_at', now()->month)
+                                        ->whereYear('created_at', now()->year)
+                                        ->selectRaw('user_id, SUM(amount) as total_sales')
+                                        ->groupBy('user_id')
+                                        ->get()
+                                        ->map(function ($order) {
+                                            return [
+                                                'waiter_id' => $order->user_id,
+                                                'total_sales' => (int)$order->total_sales,
+                                            ];
+                                        })
+                                        ->keyBy('waiter_id');
         $waitersDetail = [];
         foreach ($allWaiters as $waiter) {
             $salesDetail = $waitersSalesDetail->firstWhere('waiter_id', $waiter->id);
@@ -62,11 +62,12 @@ class WaiterController extends Controller
 
         //for commission earned
         //step 1: get the purchased items
-        $purchased = Order::with(['orderItems.product'])
-                            ->whereMonth('created_at', now()->month)
-                            ->whereYear('created_at', now()->year)
-                            ->where('status', 'Order Completed')
-                            ->get();
+        $purchased = OrderItem::with('product.productItems.commItems.configComms', 'handledBy')
+                                ->where('status', 'Served')
+                                ->where('type', 'Normal')
+                                ->whereMonth('created_at', now()->month)
+                                ->whereYear('created_at', now()->year)
+                                ->get();
         $waitersList = User::where('role', 'waiter')->get()->keyBy('id'); 
         $result = [];
 
@@ -77,35 +78,30 @@ class WaiterController extends Controller
                 'commission' => 0, 
             ];
         }
-
-        // $purchased = Order::with(['orderItems.product'])->get();
-
         foreach ($purchased as $order) {
+
             $waiterId = $order->user_id;
+            $itemQty = $order->item_qty;
+            $productPrice = $order->product->price;
+            $commId = ConfigEmployeeCommItem::where('item', $order->product_id)
+                                            ->where('created_at', '<=', $order->created_at)
+                                            ->pluck('comm_id');
 
-            foreach ($order->orderItems as $orderItem) {
-                $itemQty = $orderItem->item_qty;
-                $productPrice = $orderItem->product->price;
-                $commId = ConfigEmployeeCommItem::where('item', $orderItem->product_id)
-                                                ->where('created_at', '<=', $orderItem->created_at)
-                                                ->pluck('comm_id');
+            $commType = ConfigEmployeeComm::whereIn('id', $commId)
+                                            ->select('comm_type', 'rate')
+                                            ->get()
+                                            ->toArray();
+            foreach ($commType as $comm) {
+                $rate = $comm['rate']; 
+                $commTypeValue = $comm['comm_type']; 
+                if ($commTypeValue === 'Fixed amount per sold product') {
+                    $commission = $rate * $itemQty;
+                } else {
+                    $commission = $productPrice * $rate / 100 * $itemQty;
+                }
 
-                $commType = ConfigEmployeeComm::whereIn('id', $commId)
-                                                ->select('comm_type', 'rate')
-                                                ->get()
-                                                ->toArray();
-                foreach ($commType as $comm) {
-                    $rate = $comm['rate']; 
-                    $commTypeValue = $comm['comm_type']; 
-                    if ($commTypeValue === 'Fixed amount per sold product') {
-                        $commission = $rate * $itemQty;
-                    } else {
-                        $commission = $productPrice * $rate / 100 * $itemQty;
-                    }
-
-                    if (isset($result[$waiterId])) {
-                        $result[$waiterId]['commission'] += $commission; 
-                    }
+                if (isset($result[$waiterId])) {
+                    $result[$waiterId]['commission'] += $commission; 
                 }
             }
         }
@@ -113,7 +109,10 @@ class WaiterController extends Controller
         // dd($purchased);
 
         $name = array_column($result, 'waiterName');
-        $commission = array_column($result, 'commission');
+        $commission = array_map(function($value) {
+            return (float)number_format(ceil($value * 100) / 100, 2, '.', '');
+        }, array_column($result, 'commission'));
+
 
         return Inertia::render('Waiter/Waiter', [
             'waiters'=> $waiters,
@@ -191,20 +190,20 @@ class WaiterController extends Controller
                                             $checkIn = Carbon::parse($record->check_in);
                                             $checkOut = Carbon::parse($record->check_out);
     
-            $durationInSeconds = $checkIn->diffInSeconds($checkOut);
-    
-            $hours = floor($durationInSeconds / 3600);
-            $minutes = floor(($durationInSeconds % 3600) / 60);
-            $seconds = $durationInSeconds % 60;
-    
-            $formattedDuration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
-    
-            return [
-                'check_in' => $checkIn->toDateTimeString(),
-                'check_out' => $checkOut->toDateTimeString(),
-                'duration' => $formattedDuration,
-            ];
-        });
+                                            $durationInSeconds = $checkIn->diffInSeconds($checkOut);
+                                    
+                                            $hours = floor($durationInSeconds / 3600);
+                                            $minutes = floor(($durationInSeconds % 3600) / 60);
+                                            $seconds = $durationInSeconds % 60;
+                                    
+                                            $formattedDuration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                                    
+                                            return [
+                                                'check_in' => $checkIn->toDateTimeString(),
+                                                'check_out' => $checkOut->toDateTimeString(),
+                                                'duration' => $formattedDuration,
+                                            ];
+                                        });
 
         //existing incentive thresholds
         $configIncentive = ConfigIncentiveEmployee::where('user_id', $id)
@@ -227,16 +226,12 @@ class WaiterController extends Controller
                                         ->selectRaw('YEAR(created_at) as year, MONTHNAME(created_at) as month, MONTH(created_at) as month_num, SUM(amount) as total_sales')
                                         ->groupBy('year', 'month', 'month_num')
                                         ->get();
-                                        
+        
         //commission
         $commissionItemsIds = OrderItem::where('user_id', $id)
                                         ->where('status', 'Served')
                                         ->where('type', 'Normal')
-                                        ->with('product', 
-                                                        'product.productItems', 
-                                                        'product.productItems.commItems', 
-                                                        'product.productItems.commItems.configComms' 
-                                                )
+                                        ->with('product.productItems.commItems.configComms')
                                         ->get();
 
         $groupCommissionItemsIds = $commissionItemsIds->groupBy(function($orderItem){
@@ -247,20 +242,19 @@ class WaiterController extends Controller
             $commissionMonthNum = $groupItems->first()->created_at->month;
             $matchingSales = $totalSalesMonthly->firstWhere('month_num', $commissionMonthNum);
             $commissionAmt = 0;
-        
+            
             foreach ($groupItems as $commissionItemsId) {
-
                 foreach ($commissionItemsId->product->productItems as $productItem) {
-                    
                     foreach ($productItem->commItems as $commItem) {
                         $commissionItemPrice = $commissionItemsId->product->price;
                         $rate = $commItem->configComms->rate;
                         $commType = $commItem->configComms->comm_type;
-        
+                        $item_qty = $commissionItemsId->item_qty;
+                        
                         if ($commType === 'Fixed amount per sold product') {
-                            $commissionAmt += $rate;
+                            $commissionAmt += $rate * $item_qty;
                         } else {
-                            $commissionValue = $commissionItemPrice * ($rate / 100);
+                            $commissionValue = $commissionItemPrice * $item_qty * ($rate / 100);
                             $commissionAmt += $commissionValue;
                         }
                     }
@@ -282,36 +276,39 @@ class WaiterController extends Controller
                                             ->with('configIncentive')
                                             ->orderBy('created_at')
                                             ->get();
-                                            
-        $groupIncentive = $incentive->groupBy(function($incentiveMonth){
-            //change this part? do the grouping here?
-            // this part is just sorting with its original created_at, no further modifications
 
+        $groupIncentive = $incentive->groupBy(function($incentiveMonth) {
             return $incentiveMonth->created_at->format('F Y');
         });
         
         $incentiveData = $groupIncentive->map(function ($groupItems, $monthYear) use ($totalSalesMonthly) {
             $incentiveMonthNum = $groupItems->first()->created_at->month;
-            $matchingSales = $totalSalesMonthly->firstWhere('month_num', $incentiveMonthNum);    
+
+            // Find matching sales for the same month
+            $matchingSales = $totalSalesMonthly->firstWhere('month_num', $incentiveMonthNum);
             $incentiveAmt = 0;
+        
+            // filter and keep the incentives with reached monthly sale
             $validIncentives = $groupItems->filter(function($incentive) use ($matchingSales) {
                 return $matchingSales && $matchingSales->total_sales > $incentive->configIncentive->monthly_sale;
             });
-
+            
             if ($validIncentives->isEmpty()) {
                 return null;
             }
-
+        
+            // among the reached monthly sale get the highest one
             $incentive = $validIncentives->sortByDesc(function($incentive) {
                 return $incentive->configIncentive->monthly_sale;
             })->first();
-
+        
+            //calculate incentive
             if ($incentive) {
                 $rate = $incentive->configIncentive->rate;
                 $status = $incentive->status;
                 $type = $incentive->configIncentive->type;
                 $incentiveId = $incentive->incentive_id;
-
+        
                 if ($type === 'fixed') {
                     $incentiveAmt = $rate;
                 } else {
@@ -340,35 +337,39 @@ class WaiterController extends Controller
 
         //date filter
         $dateFilter = [
-            now()->subDays(7)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
-            now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
+            Carbon::now()->subDays(7)->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
+            Carbon::now()->timezone('Asia/Kuala_Lumpur')->endOfDay()->format('Y-m-d H:i:s'),
         ];
 
         //orders
         $allOrders = OrderItem::where('user_id', $id)
-                            ->whereBetween('created_at', $dateFilter)
-                            ->orderBy('created_at','desc')
-                            ->with('order', 'product.productItems.commItems.configComms')
-                            ->get();
+                                ->where('type', 'Normal')
+                                ->where('status', 'Served')
+                                ->whereBetween('created_at', $dateFilter)
+                                ->orderBy('created_at','desc')
+                                ->with('order', 'product.productItems.commItems.configComms')
+                                ->get();
+
+        // dd($allOrders);
         $orders = $allOrders->map(function ($order) {
             $commissionAmt = 0;
             $totalAmount = $order->amount;
             $productName = $order->product->product_name;
             $productPrice = $order->product->price;
             $item_qty = $order->item_qty;
-                foreach ($order->product->productItems as $productItem) {
-                    foreach ($productItem->commItems as $commItem) {
-                        $rate = $commItem->configComms->rate;
-                        $commType = $commItem->configComms->comm_type;
-        
-                        if ($commType === 'Fixed amount per sold product') {
-                            $commissionAmt += $rate * $order->item_qty;
-                        } else {
-                            $commissionValue = $order->amount * ($rate / 100);
-                            $commissionAmt += $commissionValue;
-                        }
+            foreach ($order->product->productItems as $productItem) {
+                foreach ($productItem->commItems as $commItem) {
+                    $rate = $commItem->configComms->rate;
+                    $commType = $commItem->configComms->comm_type;
+    
+                    if ($commType === 'Fixed amount per sold product') {
+                        $commissionAmt += $rate * $order->item_qty;
+                    } else {
+                        $commissionValue = $productPrice * $order->item_qty * ($rate / 100);
+                        $commissionAmt += $commissionValue;
                     }
                 }
+            }
             
             return [
                 'created_at' => $order->created_at->format('d/m/Y'),
@@ -381,6 +382,8 @@ class WaiterController extends Controller
                 'commission' => round($commissionAmt, 2)
             ];
         });
+
+        // dd($orders);
 
         $groupedOrders = $orders->groupBy('order_no')->map(function ($groupedItems, $orderNo) {
             $totalSales = $groupedItems->sum('total_amount');
@@ -421,28 +424,66 @@ class WaiterController extends Controller
             return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
         }, $dateFilter);
 
-        $commissionRate = 0.15;
-        $allOrders = Order::whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
-                        ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
-                            $subQuery->whereDate('created_at','<=', $dateFilter[1]);
-                        })
-                        ->where('user_id', $id)
-                        ->orderBy('created_at','desc')
-                        ->get();
-        $orders = $allOrders->map(function ($order) use ($commissionRate) {
-            $totalAmount = (float) $order->total_amount; 
-            $commission = $totalAmount * $commissionRate;
+        $allOrders = OrderItem::whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
+                                ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
+                                    $subQuery->whereDate('created_at','<=', $dateFilter[1]);
+                                })
+                                ->with('order','product.productItems.commItems.configComms')
+                                ->where('status', 'Served')
+                                ->where('type', 'Normal')
+                                ->where('user_id', $id)
+                                ->orderBy('created_at','desc')
+                                ->get();
+        $orders = $allOrders->map(function ($order) {
+            $commissionAmt = 0;
+            $totalAmount = $order->amount;
+            $productName = $order->product->product_name;
+            $productPrice = $order->product->price;
+            $item_qty = $order->item_qty;
+            foreach ($order->product->productItems as $productItem) {
+                foreach ($productItem->commItems as $commItem) {
+                    $rate = $commItem->configComms->rate;
+                    $commType = $commItem->configComms->comm_type;
+    
+                    if ($commType === 'Fixed amount per sold product') {
+                        $commissionAmt += $rate * $order->item_qty;
+                    } else {
+                        $commissionValue = $productPrice * $order->item_qty * ($rate / 100);
+                        $commissionAmt += $commissionValue;
+                    }
+                }
+            }
             
             return [
                 'created_at' => $order->created_at->format('d/m/Y'),
                 'order_id' => $order->id,
-                'order_no' => $order->order_no,
+                'order_no' => $order->order->order_no,
+                'product_name' => $productName,
+                'price' => $productPrice,
+                'serve_qty' => $item_qty,
                 'total_amount' => round($totalAmount, 2), 
-                'commission' => round($commission, 2)
+                'commission' => round($commissionAmt, 2)
             ];
         });
 
-        return response()->json($orders);
+        // dd($orders);
+
+        $groupedOrders = $orders->groupBy('order_no')->map(function ($groupedItems, $orderNo) {
+            $totalSales = $groupedItems->sum('total_amount');
+            $totalCommission = $groupedItems->sum('commission');
+            $createdAt = $groupedItems->first()['created_at'];
+        
+            return [
+                'created_at' => $createdAt,
+                'order_no' => $orderNo,
+                'total_amount' => round($totalSales, 2),
+                'commission' => round($totalCommission, 2),
+                'items' => $groupedItems->toArray()
+            ];
+        });
+        $groupedOrders = array_values($groupedOrders->toArray());
+
+        return response()->json($groupedOrders);
    }
 
    public function orderDetails(string $id)
