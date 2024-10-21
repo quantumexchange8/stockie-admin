@@ -35,10 +35,10 @@ class ReservationController extends Controller
                                             ->get();
 
         $waiters = User::where('role', 'waiter')
-                        ->get(['id', 'name'])
+                        ->get(['id', 'full_name'])
                         ->map(function ($waiter) { 
                             return [
-                                'text' => $waiter->name,
+                                'text' => $waiter->full_name,
                                 'value' => $waiter->id
                             ];
                         });

@@ -31,6 +31,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    minDate: {
+        type: Date,
+        default: new Date,
+    },
     hintText: {
         type: String,
         default: "",
@@ -160,18 +164,19 @@ onMounted(() => {
             ref="calendarRef"
             :name="props.inputName"
             :modelValue="modelValue"
+            dateFormat="dd/mm/yy"
+            iconDisplay="input"
+            hourFormat="12"
+            :selectionMode="props.range === true ? 'range' : 'single'"
+            showIcon
+            :manualInput="false"
+            :minDate="minDate"
+            :showTime="props.withTime"
+            :placeholder="props.placeholder"
+            :disabled="disabled"
             @update:modelValue="updateValue"
             @focus="handleFocus"
             @blur="handleBlur"
-            dateFormat="dd/mm/yy"
-            :selectionMode="props.range === true ? 'range' : 'single'"
-            :manualInput="false"
-            showIcon
-            iconDisplay="input"
-            :showTime="props.withTime"
-            hourFormat="12"
-            :placeholder="props.placeholder"
-            :disabled="disabled"
             :pt="{
                 root: ({ props }) => ({
                     class: [

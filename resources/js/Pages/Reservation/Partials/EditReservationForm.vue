@@ -62,7 +62,7 @@ const submit = () => {
 const customersArr = computed(() => {
     return props.customers.map((customer) => {
         return {
-            'text': customer.name,
+            'text': customer.full_name,
             'value': customer.id,
         }
     })

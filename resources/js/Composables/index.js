@@ -1,6 +1,7 @@
 import { reactive, watchEffect, watch } from 'vue'
 import { useToast } from 'primevue/usetoast';
 import { usePage } from '@inertiajs/vue3';
+import dayjs from 'dayjs';
 
 export const sidebarState = reactive({
     isOpen: window.innerWidth > 1024,
@@ -289,7 +290,39 @@ export function useInputValidator() {
         e.preventDefault();
     };
 
-    return {
-        isValidNumberKey,
+    return { isValidNumberKey };
+}
+
+export function useFileExport() {
+    function arrayToCsv(data) {
+        const array = [Object.keys(data[0]), ...data];
+
+        return array.map(it => Object.values(it).toString()).join('\n');
     };
+
+    function downloadBlob(content, fileName, contentType) {
+        // Create a blob
+        var blob = new Blob([content], { type: contentType });
+        var url = URL.createObjectURL(blob);
+        // Create a link to download it
+        var pom = document.createElement('a');
+        pom.href = url;
+        pom.setAttribute('download', fileName);
+        pom.click();
+        URL.revokeObjectURL(url); // Revoke the object URL after download
+    };
+
+    function exportToCSV(mappedData, fileNamePrefix) { 
+        if (mappedData.length > 0) {
+            const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
+            const fileName = `${fileNamePrefix}_${currentDateTime}.csv`;
+            const contentType = 'text/csv;charset=utf-8;';
+            const myLogs = arrayToCsv(mappedData);
+            downloadBlob(myLogs, fileName, contentType);
+        } else {
+            console.log('No data available');
+        }
+    }
+
+    return { exportToCSV };
 }

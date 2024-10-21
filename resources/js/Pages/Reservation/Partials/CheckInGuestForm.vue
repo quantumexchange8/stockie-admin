@@ -111,9 +111,10 @@ const updateSelectedTables = (event) => {
                     </span>
                     <span class="text-primary-900" v-else>{{ newSelectedTables }}</span>
                 </p>
-                <p class="text-primary-800 text-xs font-normal self-stretch">Some selected table/room are currently unavailable, please replace with another one.</p>
+                <p class="text-primary-800 text-xs font-normal self-stretch" v-if="selectedTables.some((table) => table.disabled === true)">Some selected table/room are currently unavailable, please replace with another one.</p>
                 <div class="flex flex-col gap-6 items-center self-stretch">
                     <MultiSelect 
+                        v-if="selectedTables.some((table) => table.disabled === true)"
                         inputName="table_no"
                         labelText="Select table/room"
                         placeholder="Select"

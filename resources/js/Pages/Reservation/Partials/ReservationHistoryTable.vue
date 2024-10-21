@@ -8,7 +8,7 @@ import Table from '@/Components/Table.vue';
 import Modal from '@/Components/Modal.vue';
 import { UploadIcon } from '@/Components/Icons/solid';
 import ReservationDetail from './ReservationDetail.vue';
-import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
+import { useCustomToast, usePhoneUtils, useFileExport } from '@/Composables/index.js';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import { EmptyIllus } from '@/Components/Icons/illus.jsx';
 
@@ -27,6 +27,7 @@ const props = defineProps({
 
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
+const { exportToCSV } = useFileExport();
 
 const op = ref(null);
 const checkInOverlay = ref(null);
@@ -60,53 +61,20 @@ const hideReservationDetailForm = () => {
     }, 300);
 }
 
-const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
+const getTableNames = (table_no) => `"${table_no.map(selectedTable => selectedTable.name).join(', ')}"`;
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const reservationArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const fileName = `Reservation History List_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (props.rows && props.rows.length > 0) {
-        props.rows.forEach(row => {
-            reservationArr.push({
-                'No.': row.reservation_no,
-                'Date': dayjs(row.reservation_date).format('DD/MM/YYYY'),
-                'Time': dayjs(row.reservation_date).format('HH:mm'),
-                'Name': row.name,
-                'Pax': row.pax,
-                'Table / Room': getTableNames(row.table_no),
-                'Contact No.': formatPhone(row.phone),
-                'Status': row.status,
-            })
-        });
-
-        const myLogs = arrayToCsv(reservationArr);
-        downloadBlob(myLogs, fileName, contentType);
-    } else {
-        console.log(props.rows.value)
-    }
+const csvExport = () => { 
+    const mappedReservations = props.rows.map(row => ({
+        'No.': row.reservation_no,
+        'Date': dayjs(row.reservation_date).format('DD/MM/YYYY'),
+        'Time': dayjs(row.reservation_date).format('HH:mm'),
+        'Name': row.name,
+        'Pax': row.pax,
+        'Table / Room': getTableNames(row.table_no),
+        'Contact No.': formatPhone(row.phone),
+        'Status': row.status,
+    }));
+    exportToCSV(mappedReservations, 'Reservation History List');
 }
 
 const getStatusVariant = (status) => {
@@ -151,7 +119,7 @@ const getStatusVariant = (status) => {
                                     'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                 ]" 
                                 :disabled="rows.length === 0" 
-                                @click="exportToCSV"
+                                @click="csvExport"
                             >
                                 CSV
                             </button>

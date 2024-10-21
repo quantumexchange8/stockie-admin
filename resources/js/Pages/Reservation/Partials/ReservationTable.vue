@@ -19,10 +19,9 @@ import OverlayPanel from '@/Components/OverlayPanel.vue';
 import ReservationDetail from './ReservationDetail.vue';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import CheckInGuestForm from './CheckInGuestForm.vue';
-import { usePhoneUtils } from '@/Composables/index.js';
+import { usePhoneUtils, useCustomToast, useFileExport } from '@/Composables/index.js';
 import CancelReservationForm from './CancelReservationForm.vue';
 import DelayReservationForm from './DelayReservationForm.vue';
-import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     customers: Array,
@@ -46,6 +45,7 @@ const userId = computed(() => page.props.auth.user.id)
 
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
+const { exportToCSV } = useFileExport();
 
 const emit = defineEmits(['fetchReservations']);
 
@@ -140,53 +140,20 @@ const hideCancelReservationForm = () => {
     setTimeout(() =>selectedReservation.value = null, 300);
 }
 
-const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
+const getTableNames = (table_no) => `"${table_no.map(selectedTable => selectedTable.name).join(', ')}"`;
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const reservationArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const fileName = `Upcoming Reservation List_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (props.rows && props.rows.length > 0) {
-        props.rows.forEach(row => {
-            reservationArr.push({
-                'No.': row.reservation_no,
-                'Date': dayjs(row.reservation_date).format('DD/MM/YYYY'),
-                'Time': dayjs(row.reservation_date).format('HH:mm'),
-                'Name': row.name,
-                'Pax': row.pax,
-                'Table / Room': getTableNames(row.table_no),
-                'Contact No.': formatPhone(row.phone),
-                'Status': row.status,
-            })
-        });
-
-        const myLogs = arrayToCsv(reservationArr);
-        downloadBlob(myLogs, fileName, contentType);
-    } else {
-        console.log(props.rows.value)
-    }
+const csvExport = () => { 
+    const mappedReservations = props.rows.map(row => ({
+        'No.': row.reservation_no,
+        'Date': dayjs(row.reservation_date).format('DD/MM/YYYY'),
+        'Time': dayjs(row.reservation_date).format('HH:mm'),
+        'Name': row.name,
+        'Pax': row.pax,
+        'Table / Room': getTableNames(row.table_no),
+        'Contact No.': formatPhone(row.phone),
+        'Status': row.status,
+    }));
+    exportToCSV(mappedReservations, 'Upcoming Reservation List');
 }
 
 const getStatusVariant = (status) => {
@@ -231,7 +198,7 @@ const getStatusVariant = (status) => {
                                     'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                 ]" 
                                 :disabled="rows.length === 0" 
-                                @click="exportToCSV"
+                                @click="csvExport"
                             >
                                 CSV
                             </button>
@@ -344,27 +311,27 @@ const getStatusVariant = (status) => {
                                 leave-from-class="transform scale-100 opacity-100" 
                                 leave-to-class="transform scale-95 opacity-0"
                             >
-                                <MenuItems class="absolute !z-[1010] min-w-[247px] right-0 p-1 flex flex-col gap-y-0.5 origin-top-right whitespace-nowrap rounded-[5px] bg-white shadow-lg">
+                                <MenuItems class="fixed !z-[1010] min-w-[247px] -translate-x-[calc(100%-1rem)] p-1 flex flex-col gap-y-0.5 rounded-[5px] bg-white shadow-lg">
                                     <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between" @click="showCheckInForm(row)">
+                                        <div class="p-3 flex items-center justify-between cursor-pointer" @click="showCheckInForm(row)">
                                             <p class="text-grey-900 text-base font-medium ">Check in customer </p>
                                             <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
                                         </div>
                                     </MenuItem>
                                     <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between" @click="markReservationAsNoShow(row.id)">
+                                        <div class="p-3 flex items-center justify-between cursor-pointer" @click="markReservationAsNoShow(row.id)">
                                             <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
                                             <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
                                         </div>
                                     </MenuItem>
                                     <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between" @click="showDelayReservationForm(row)">
+                                        <div class="p-3 flex items-center justify-between cursor-pointer" @click="showDelayReservationForm(row)">
                                             <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
                                             <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
                                         </div>
                                     </MenuItem>
                                     <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between" @click="showCancelReservationForm(row)">
+                                        <div class="p-3 flex items-center justify-between cursor-pointer" @click="showCancelReservationForm(row)">
                                             <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
                                             <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
                                         </div>
