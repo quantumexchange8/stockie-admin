@@ -93,6 +93,7 @@ const isFormValid = computed(() => {
                     placeholder="Select Date and Time"
                     class="col-span-full sm:col-span-6"
                     withTime
+                    :minDate="new Date()"
                     :errorMessage="form.errors?.reservation_date || ''"
                     v-model="form.reservation_date"
                 />

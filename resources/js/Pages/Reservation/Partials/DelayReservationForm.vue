@@ -54,6 +54,7 @@ const isFormValid = computed(() => ['new_reservation_date'].every(field => form[
                 labelText="Delay to"
                 placeholder="Select Date and Time"
                 withTime
+                :minDate="new Date()"
                 :errorMessage="form.errors?.new_reservation_date || ''"
                 v-model="form.new_reservation_date"
             />

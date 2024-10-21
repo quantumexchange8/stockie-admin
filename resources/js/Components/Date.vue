@@ -31,10 +31,7 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
-    minDate: {
-        type: Date,
-        default: new Date,
-    },
+    minDate: Date,
     hintText: {
         type: String,
         default: "",
