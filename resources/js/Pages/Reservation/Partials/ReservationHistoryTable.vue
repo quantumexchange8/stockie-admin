@@ -2,14 +2,12 @@
 import dayjs from 'dayjs';
 import { ref, computed } from 'vue';
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import Tag from '@/Components/Tag.vue';
 import Table from '@/Components/Table.vue';
 import Modal from '@/Components/Modal.vue';
 import { UploadIcon } from '@/Components/Icons/solid';
 import ReservationDetail from './ReservationDetail.vue';
 import { useCustomToast, usePhoneUtils, useFileExport } from '@/Composables/index.js';
-import OverlayPanel from '@/Components/OverlayPanel.vue';
 import { EmptyIllus } from '@/Components/Icons/illus.jsx';
 
 const props = defineProps({
@@ -29,8 +27,6 @@ const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
 const { exportToCSV } = useFileExport();
 
-const op = ref(null);
-const checkInOverlay = ref(null);
 const selectedReservation = ref(null);
 const reservationDetailIsOpen = ref(false);
 
@@ -39,15 +35,6 @@ const handleDefaultClick = (event) => {
     event.stopPropagation();
     event.preventDefault();
 };
-
-// const showActionsOverlay = (event) => { 
-//     handleDefaultClick(event);
-//     op.value.show(event); 
-// };
-
-// const hideActionsOverlay = () => {
-//     if (op.value) op.value.hide();
-// }
 
 const showReservationDetailForm = (reservation) => {
     selectedReservation.value = reservation;
@@ -61,7 +48,7 @@ const hideReservationDetailForm = () => {
     }, 300);
 }
 
-const getTableNames = (table_no) => `"${table_no.map(selectedTable => selectedTable.name).join(', ')}"`;
+const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
 
 const csvExport = () => { 
     const mappedReservations = props.rows.map(row => ({
@@ -70,7 +57,7 @@ const csvExport = () => {
         'Time': dayjs(row.reservation_date).format('HH:mm'),
         'Name': row.name,
         'Pax': row.pax,
-        'Table / Room': getTableNames(row.table_no),
+        'Table / Room': `"${getTableNames(row.table_no)}"`,
         'Contact No.': formatPhone(row.phone),
         'Status': row.status,
     }));

@@ -395,7 +395,7 @@ onMounted(() => {
             >
                 <template #body="slotProps">
                     <slot :name="col.field" :="slotProps.data">
-                        {{ slotProps.data[col.field] }}
+                        <p class="text-sm font-medium text-grey-900">{{ slotProps.data[col.field] }}</p>
                     </slot>
                     
                     <div class="flex justify-end items-start gap-2" v-if="col.field === 'action' && !mergedRowType.rowGroups">

@@ -70,14 +70,15 @@ const showMakeReservationForm = () => makeReservationFormIsOpen.value = true;
 
 const hideMakeReservationForm = () => makeReservationFormIsOpen.value = false;
 
-// const showActionsOverlay = (event) => { 
-//     handleDefaultClick(event);
-//     op.value.show(event); 
-// };
+const openOverlay = (event) =>  op.value.show(event);
 
-// const hideActionsOverlay = () => {
-//     if (op.value) op.value.hide();
-// }
+const closeOverlay = () => op.value.hide();
+
+const openActionMenu = (event, reservation) => {
+    selectedReservation.value = reservation;
+    handleDefaultClick(event);
+    openOverlay(event);
+}
 
 const markReservationAsNoShow = (id) => { 
     form.put(route('reservations.markAsNoShow', id), {
@@ -110,14 +111,11 @@ const hideReservationDetailForm = () => {
 const showCheckInForm = (reservation) => {
     selectedReservation.value = reservation;
     checkInFormIsOpen.value = true;
-    // checkInOverlay.value.show(event);
 }
 
 const hideCheckInForm = () => {
     checkInFormIsOpen.value = false;
     setTimeout(() =>selectedReservation.value = null, 300);
-    // selectedReservation.value = null;
-    // checkInOverlay.value.hide();
 }
 
 const showDelayReservationForm = (reservation) => {
@@ -140,7 +138,7 @@ const hideCancelReservationForm = () => {
     setTimeout(() =>selectedReservation.value = null, 300);
 }
 
-const getTableNames = (table_no) => `"${table_no.map(selectedTable => selectedTable.name).join(', ')}"`;
+const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
 
 const csvExport = () => { 
     const mappedReservations = props.rows.map(row => ({
@@ -149,7 +147,7 @@ const csvExport = () => {
         'Time': dayjs(row.reservation_date).format('HH:mm'),
         'Name': row.name,
         'Pax': row.pax,
-        'Table / Room': getTableNames(row.table_no),
+        'Table / Room': `"${getTableNames(row.table_no)}"`,
         'Contact No.': formatPhone(row.phone),
         'Status': row.status,
     }));
@@ -287,61 +285,36 @@ const getStatusVariant = (status) => {
                 <template #phone="row">{{ formatPhone(row.phone) }}</template>
                 <template #status="row"><Tag :value="row.status" :variant="getStatusVariant(row.status)" /></template>
                 <template #action="row">
-                    <div class="w-full flex items-center justify-center" v-if="['Pending', 'Delayed', 'Checked in'].includes(row.status)" @click="handleDefaultClick">
-                        <!-- <HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" @click="showActionsOverlay" />
-                        <OverlayPanel ref="op" @close="hideActionsOverlay">
-                            <div class="flex flex-nowrap">
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                            </div>
-                        </OverlayPanel> -->
-                        <Menu as="div" class="relative inline-block text-left">
-                            <MenuButton><HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" /></MenuButton>
-
-                            <transition 
-                                enter-active-class="transition duration-100 ease-out"
-                                enter-from-class="transform scale-95 opacity-0" 
-                                enter-to-class="transform scale-100 opacity-100"
-                                leave-active-class="transition duration-75 ease-in"
-                                leave-from-class="transform scale-100 opacity-100" 
-                                leave-to-class="transform scale-95 opacity-0"
-                            >
-                                <MenuItems class="fixed !z-[1010] min-w-[247px] -translate-x-[calc(100%-1rem)] p-1 flex flex-col gap-y-0.5 rounded-[5px] bg-white shadow-lg">
-                                    <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between cursor-pointer" @click="showCheckInForm(row)">
-                                            <p class="text-grey-900 text-base font-medium ">Check in customer </p>
-                                            <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
-                                        </div>
-                                    </MenuItem>
-                                    <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between cursor-pointer" @click="markReservationAsNoShow(row.id)">
-                                            <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
-                                            <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
-                                        </div>
-                                    </MenuItem>
-                                    <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between cursor-pointer" @click="showDelayReservationForm(row)">
-                                            <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
-                                            <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
-                                        </div>
-                                    </MenuItem>
-                                    <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between cursor-pointer" @click="showCancelReservationForm(row)">
-                                            <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
-                                            <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
-                                        </div>
-                                    </MenuItem>
-                                </MenuItems>
-                            </transition>
-                        </Menu>
+                    <div class="w-full flex items-center justify-center" v-if="['Pending', 'Delayed', 'Checked in'].includes(row.status)" @click="openActionMenu($event, row)">
+                        <HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" />
                     </div>
                 </template>
             </Table>
+    
+            <!-- Open reservation action menu -->
+            <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-1">
+                <div class="flex flex-col gap-y-0.5 bg-white min-w-[247px]">
+                    <div class="p-3 flex items-center justify-between" @click="showCheckInForm(selectedReservation)">
+                        <p class="text-grey-900 text-base font-medium ">Check in customer </p>
+                        <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
+                    </div>
+
+                    <div class="p-3 flex items-center justify-between" @click="markReservationAsNoShow(selectedReservation.id)">
+                        <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
+                        <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
+                    </div>
+
+                    <div class="p-3 flex items-center justify-between" @click="showDelayReservationForm(selectedReservation)">
+                        <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
+                        <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
+                    </div>
+
+                    <div class="p-3 flex items-center justify-between" @click="showCancelReservationForm(selectedReservation)">
+                        <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
+                        <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
+                    </div>
+                </div>
+            </OverlayPanel>
 
             <!-- Make reservation -->
             <Modal

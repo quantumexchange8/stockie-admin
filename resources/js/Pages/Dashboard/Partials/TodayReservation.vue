@@ -13,6 +13,7 @@ import DelayReservationForm from '@/Pages/Reservation/Partials/DelayReservationF
 import CancelReservationForm from '@/Pages/Reservation/Partials/CancelReservationForm.vue';
 import { CheckCircleIcon, CircledArrowHeadRightIcon2, CircledTimesIcon, HorizontalDotsIcon, HourGlassIcon, NoShowIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
+import OverlayPanel from '@/Components/OverlayPanel.vue';
 
 const props = defineProps({
     customers: Array,
@@ -46,6 +47,7 @@ const reservationDetailIsOpen = ref(false);
 const checkInFormIsOpen = ref(false);
 const delayReservationFormIsOpen = ref(false);
 const cancelReservationFormIsOpen = ref(false);
+const op = ref(null);
 
 const form = useForm({ handled_by: userId.value });
 
@@ -122,6 +124,16 @@ const getStatusVariant = (status) => {
         case 'Cancelled': return 'grey'
     }
 }; 
+
+const openActionMenu = (event, reservation) => {
+    selectedReservation.value = reservation;
+    handleDefaultClick(event);
+    openOverlay(event);
+}
+
+const openOverlay = (event) =>  op.value.show(event);
+
+const closeOverlay = () => op.value.hide();
 </script>
 
 <template>
@@ -165,58 +177,8 @@ const getStatusVariant = (status) => {
                 <template #phone="row">{{ formatPhone(row.phone) }}</template>
                 <template #status="row"><Tag :value="row.status" :variant="getStatusVariant(row.status)" /></template>
                 <template #action="row">
-                    <div class="w-full flex items-center justify-center" v-if="['Pending', 'Delayed', 'Checked in'].includes(row.status)" @click="handleDefaultClick">
-                        <!-- <HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" @click="showActionsOverlay" />
-                        <OverlayPanel ref="op" @close="hideActionsOverlay">
-                            <div class="flex flex-nowrap">
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                                <div class="size-4 bg-primary-100 rounded-full"></div>
-                            </div>
-                        </OverlayPanel> -->
-                        <Menu as="div" class="relative inline-block text-left">
-                            <MenuButton><HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" /></MenuButton>
-
-                            <transition 
-                                enter-active-class="transition duration-100 ease-out"
-                                enter-from-class="transform scale-95 opacity-0" 
-                                enter-to-class="transform scale-100 opacity-100"
-                                leave-active-class="transition duration-75 ease-in"
-                                leave-from-class="transform scale-100 opacity-100" 
-                                leave-to-class="transform scale-95 opacity-0"
-                            >
-                                <MenuItems class="absolute !z-[1010] min-w-[247px] right-0 p-1 flex flex-col gap-y-0.5 origin-top-right whitespace-nowrap rounded-[5px] bg-white shadow-lg">
-                                    <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between" @click="showCheckInForm(row)">
-                                            <p class="text-grey-900 text-base font-medium ">Check in customer </p>
-                                            <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
-                                        </div>
-                                    </MenuItem>
-                                    <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between" @click="markReservationAsNoShow(row.id)">
-                                            <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
-                                            <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
-                                        </div>
-                                    </MenuItem>
-                                    <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between" @click="showDelayReservationForm(row)">
-                                            <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
-                                            <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
-                                        </div>
-                                    </MenuItem>
-                                    <MenuItem v-slot="{ active }">
-                                        <div class="p-3 flex items-center justify-between" @click="showCancelReservationForm(row)">
-                                            <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
-                                            <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
-                                        </div>
-                                    </MenuItem>
-                                </MenuItems>
-                            </transition>
-                        </Menu>
+                    <div class="w-full flex items-center justify-center" v-if="['Pending', 'Delayed', 'Checked in'].includes(row.status)" @click="openActionMenu($event, row)">
+                        <HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" />
                     </div>
                 </template>
             </Table>
@@ -228,6 +190,31 @@ const getStatusVariant = (status) => {
             </div>
         </template>
     </div>
+    
+    <!-- Open reservation action menu -->
+    <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-1">
+        <div class="flex flex-col gap-y-0.5 bg-white min-w-[247px]">
+            <div class="p-3 flex items-center justify-between" @click="showCheckInForm(selectedReservation)">
+                <p class="text-grey-900 text-base font-medium ">Check in customer </p>
+                <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
+            </div>
+
+            <div class="p-3 flex items-center justify-between" @click="markReservationAsNoShow(selectedReservation.id)">
+                <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
+                <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
+            </div>
+
+            <div class="p-3 flex items-center justify-between" @click="showDelayReservationForm(selectedReservation)">
+                <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
+                <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
+            </div>
+
+            <div class="p-3 flex items-center justify-between" @click="showCancelReservationForm(selectedReservation)">
+                <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
+                <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
+            </div>
+        </div>
+    </OverlayPanel>
 
     <!-- View reservation detail -->
     <Modal 

@@ -17,6 +17,7 @@ use App\Models\Waiter;
 use App\Models\WaiterAttendance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Log;
 
@@ -170,14 +171,26 @@ class DashboardController extends Controller
                                                 'handledBy'
                                             ])
                                             ->whereDate('reservation_date', now('Asia/Kuala_Lumpur')->toDateString())
-                                            ->orderBy('id')
+                                            // ->whereDate('reservation_date', '>', $yesterday)
+                                            ->where(function ($query) {
+                                                // Check for 'Pending' status and overdue reservation_date
+                                                $query->where('status', 'Pending')
+                                                    ->whereDate('reservation_date', now('Asia/Kuala_Lumpur')->toDateString());
+                                
+                                                // Or check for 'Delayed' status and overdue action_date
+                                                $query->orWhere(function ($subQuery)  {
+                                                    $subQuery->where('status', 'Delayed')
+                                                        ->whereDate('action_date', now('Asia/Kuala_Lumpur')->toDateString());
+                                                });
+                                            })
+                                            ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
                                             ->get();
 
         $waiters = User::where('role', 'waiter')
-                        ->get(['id', 'name'])
+                        ->get(['id', 'full_name'])
                         ->map(function ($waiter) { 
                             return [
-                                'text' => $waiter->name,
+                                'text' => $waiter->full_name,
                                 'value' => $waiter->id
                             ];
                         });
