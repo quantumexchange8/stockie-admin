@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('config_discount_items', function (Blueprint $table) {
             $table->id();
-            $table->string('product_name');
-            $table->string('price');
-            $table->string('point');
-            $table->unsignedInteger('category_id');
             $table->unsignedBigInteger('discount_id');
-            $table->string('keep');
-            $table->string('status');
-            $table->string('availability');
+            $table->unsignedBigInteger('product_id');
+            $table->decimal('price_before', 13, 2);
+            $table->decimal('price_after', 13, 2);
             $table->softDeletes();
             $table->timestamps();
         });
@@ -31,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('config_discount_items');
     }
 };

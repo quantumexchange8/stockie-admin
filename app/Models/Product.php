@@ -20,6 +20,7 @@ class Product extends Model
         'bucket',
         'point',
         'category_id',
+        'discount_id',
         'keep',
         'status',
         'availability',
