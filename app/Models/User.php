@@ -96,6 +96,15 @@ class User extends Authenticatable
         return $this->hasMany(OrderTable::class, 'user_id');
     }
 
+    /**
+     * Payment Model
+     * Get the order payment receipts.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'handled_by', 'id');
+    }
+
     // /**
     //  * Reservation Model
     //  * Get the reservations handled by the user.

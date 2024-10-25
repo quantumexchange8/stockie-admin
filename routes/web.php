@@ -191,7 +191,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders');
         Route::put('/orders/cancelOrder/{id}', [OrderController::class, 'cancelOrder'])->name('orders.cancel');
         Route::put('/orders/updateOrderStatus/{id}', [OrderController::class, 'updateOrderStatus'])->name('orders.complete');
-        Route::put('/orders/removeOrderItem/{id}', [OrderController::class, 'removeOrderItem'])->name('orders.removeOrderItem');
+        Route::put('/orders/updateOrderCustomer/{data}', [OrderController::class, 'updateOrderCustomer'])->name('orders.updateOrderCustomer');
 
         // Order tables
         Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');
@@ -200,8 +200,9 @@ Route::middleware('auth')->group(function () {
         
         // Order items
         Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');
-        Route::put('/orders/updateOrderItem/{id}', [OrderController::class, 'updateOrderItem'])->name('orders.items.update');
         Route::post('/orders/addItemToKeep', [OrderController::class, 'addItemToKeep'])->name('orders.items.keep');
+        Route::put('/orders/updateOrderItem/{id}', [OrderController::class, 'updateOrderItem'])->name('orders.items.update');
+        Route::put('/orders/removeOrderItem/{id}', [OrderController::class, 'removeOrderItem'])->name('orders.removeOrderItem');
 
         // Order's customer
         Route::get('/orders/customer/{id}', [OrderController::class, 'getCustomerDetails'])->name('orders.customer');

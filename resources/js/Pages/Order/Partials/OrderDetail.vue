@@ -8,13 +8,16 @@ import { DeleteIcon, PlusIcon, TimesIcon } from '@/Components/Icons/solid.jsx';
 import axios from 'axios';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
-import { useForm } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import RemoveOrderItem from './RemoveOrderItem.vue';
 import KeepItem from './KeepItem.vue';
+import Dropdown from '@/Components/Dropdown.vue';
 
 const props = defineProps({
     errors: Object,
+    customers: Array,
+    users: Array,
     selectedTable: {
         type: Object,
         default: () => {}
@@ -25,7 +28,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'fetchZones']);
 
 const order = computed(() => props.order);
 const drawerIsVisible = ref(false);
@@ -89,6 +92,7 @@ const closeOrderDetails = () => {
     closeOverlay();
     setTimeout(() => {
         emit('close');
+        emit('fetchZones');
     }, 300);
 }
 
@@ -97,9 +101,7 @@ const showDeleteOrderItemOverlay = (event) => {
 }
 
 const hideDeleteOrderItemOverlay = () => {
-    if (op2.value) {
-        op2.value.hide();
-    }
+    if (op2.value) op2.value.hide();
 }
 
 const formSubmit = () => { 
@@ -172,15 +174,48 @@ const getKeepItemName = (item) => {
     if (itemName) return itemName;
 };
 
-const isFormValid = computed(() => {
-    return form.items.some(item => item.serving_qty > 0) && !form.processing;
+const orderedBy = computed(() => {
+    if (!order.value?.order_items?.length || !props.users?.length) return [];
+
+    const userMap = new Map(props.users.map(({ id, full_name }) => [id, full_name]));
+
+    const uniqueUsers = [...new Set(order.value.order_items.map(({ user_id }) => user_id))];
+
+    return uniqueUsers
+        .map((id) => userMap.get(id))
+        .filter(Boolean); // Filter out undefined or null values
 });
+
+const updateOrderCustomerForm = useForm({ customer_id: '' });
+
+const updateOrderCustomer = (customerItem) => {
+    updateOrderCustomer.customer_id = customerItem;
+    updateOrderCustomerForm.put(route('orders.updateOrderCustomer', order.value.id), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            form.reset();
+            closeOrderDetails();
+        },
+    })
+}
+
+const getItemTypeName = (type) => {
+    switch (type) {
+        case 'Keep': return 'Keep Item';
+        case 'Redemption': return 'Redeemed Product'
+        case 'Reward': return 'Entry Reward'
+    }
+}
+
+const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0) && !form.processing);
 
 </script>
 
 <template>
     <RightDrawer 
-        :header="actionType === 'keep' ? 'Keep Item' : `Order for ${selectedTable.table_no}`" 
+        :header="actionType === 'keep' ? 'Keep Item' : ''" 
+        :withHeader="actionType === 'keep'"
         previousTab
         v-model:show="drawerIsVisible"
         @close="closeDrawer"
@@ -197,26 +232,45 @@ const isFormValid = computed(() => {
                 :categoryArr="categoryArr" 
                 :order="order" 
                 :selectedTable="selectedTable"
+                @fetchZones="$emit('fetchZones')"
                 @close="closeDrawer();closeOrderDetails()"
             />
         </template>
     </RightDrawer>
-    <div class="w-full flex flex-col gap-6 items-start rounded-[5px] pr-1 max-h-[calc(100dvh-23rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <div class="w-full flex flex-col gap-6 items-start rounded-[5px] pr-1 max-h-[calc(100dvh-23.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col items-start gap-4 self-stretch">
-            <div class="flex gap-3 py-4 items-start justify-between self-stretch">
-                <div class="flex flex-col gap-2 items-start">
-                    <p class="text-grey-900 text-sm font-medium">Order No.</p>
-                    <p class="text-grey-800 text-md font-semibold">#{{ order.order_no }}</p>
+            <div class="flex flex-col items-start gap-y-4 py-4 self-stretch">
+                <div class="w-full flex flex-row gap-x-3 items-start">
+                    <div class="basis-1/2 flex flex-col gap-2 items-start">
+                        <p class="text-grey-900 text-sm font-medium">Order No.</p>
+                        <p class="text-grey-800 text-md font-semibold">#{{ order.order_no }}</p>
+                    </div>
+                    <div class="basis-1/2 flex flex-col gap-2 items-start">
+                        <p class="text-grey-900 text-sm font-medium">No. of pax</p>
+                        <p class="text-grey-800 text-md font-semibold">{{ order.pax }}</p>
+                    </div>
                 </div>
-                <div class="flex flex-col gap-2 items-start">
-                    <p class="text-grey-900 text-sm font-medium">No. of pax</p>
-                    <p class="text-grey-800 text-md font-semibold">{{ order.pax }}</p>
-                </div>
-                <div class="flex flex-col gap-2 items-start">
-                    <p class="text-grey-900 text-sm font-medium">Ordered by</p>
-                    <div class="flex whitespace-nowrap items-center gap-2">
-                        <div class="size-6 bg-primary-100 rounded-full"></div>
-                        <p class="text-grey-800 text-sm font-semibold">{{ order.waiter?.name ?? '' }}</p>
+                <div class="w-full flex flex-row gap-x-3 items-start">
+                    <div class="basis-1/2 flex flex-col gap-2 items-start">
+                        <p class="text-grey-900 text-sm font-medium">Ordered by</p>
+                        <div class="flex whitespace-nowrap items-center gap-2">
+                            <div class="size-6 bg-primary-100 rounded-full" v-for="user in orderedBy"></div>
+                            <p class="text-grey-800 text-sm font-semibold" :class="{'!text-grey-200': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0] : 'No order yet' }}</p>
+                            <!-- <p class="text-grey-800 text-sm font-semibold">{{ order.waiter?.full_name ?? '' }}</p> -->
+                        </div>
+                    </div>
+                    <div class="basis-1/2 flex flex-col gap-2 items-start">
+                        <p class="text-grey-900 text-sm font-medium">Customer</p>
+                        <Dropdown
+                            inputName="customer_id"
+                            imageOption
+                            plainStyle
+                            :inputArray="customers"
+                            :dataValue="order.customer_id"
+                            :errorMessage="updateOrderCustomerForm.errors?.customer_id || ''"
+                            v-model="updateOrderCustomerForm.customer_id"
+                            @onChange="updateOrderCustomer"
+                        />
                     </div>
                 </div>
             </div>
@@ -242,7 +296,7 @@ const isFormValid = computed(() => {
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
                                             <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ parseFloat(item.amount).toFixed(2) }}</p>
-                                            <Tag :value="item.type" variant="blue" v-else/>
+                                            <Tag :value="getItemTypeName(item.type)" variant="blue" v-else/>
                                         </div>
                                     </div>
                                 </div>
@@ -278,7 +332,7 @@ const isFormValid = computed(() => {
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
                                             <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ parseFloat(item.amount).toFixed(2) }}</p>
-                                            <Tag :value="item.type" variant="blue" v-else/>
+                                            <Tag :value="item.type === 'Keep' ? 'Keep Item' : item.type === 'Redemption' ? 'Redeemed Product' : 'Entry Reward'" variant="blue" v-else/>
                                         </div>
                                     </div>
                                 </div>
@@ -297,7 +351,7 @@ const isFormValid = computed(() => {
                     </template>
                 </div>
 
-                <div class="flex gap-2.5 items-center self-stretch" v-if="selectedTable.status !== 'Pending Clearance'">
+                <div class="flex gap-2.5 pb-6 items-center self-stretch" v-if="selectedTable.status !== 'Pending Clearance'">
                     <Button
                         v-if="order.customer_id"
                         type="button"

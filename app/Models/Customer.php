@@ -76,4 +76,12 @@ class Customer extends Model
     {
         return $this->hasMany(Reservation::class, 'customer_id')->where('status', 'No show');
     }
+
+    /**
+     * Get the user that handled the payment.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'customer_id');
+    }
 }

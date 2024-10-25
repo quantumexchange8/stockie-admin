@@ -1,14 +1,23 @@
 <script setup>
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
     tabs: {
         type: Array,
-        required: true,
         default: () => [],
     },
+    selectedTab: {
+        type: Number,
+        default: 0
+    }
 });
+
+const selectedTab = ref(props.selectedTab);
+
+const changeTab = (index) => selectedTab.value = index;
+
+watch(() => props.selectedTab, (newValue) => selectedTab.value = newValue);
 
 // const formatTabTitle = (tab) => {
 //     return tab.replace(/[/_]+/g, " ").replace(/^-+|-+$/g, " "); // Replace spaces, '/', and '_' with '-' | Remove leading or trailing '-'
@@ -28,7 +37,7 @@ const tranformedTabs = computed(() => {
 </script>
 
 <template>
-    <TabGroup>
+    <TabGroup :selectedIndex="selectedTab" @change="changeTab">
         <TabList class="flex">
             <slot name="startheader"></slot> 
             <template v-for="(tab, index) in tabs" :key="index">

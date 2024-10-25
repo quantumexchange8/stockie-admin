@@ -37,10 +37,6 @@ const form = useForm({
     items: props.selectedGroup ? props.selectedGroup : [],
 });
 
-const updatedInventoryItemsArr = computed(() => {
-  return form.items = props.selectedGroup;
-})
-
 const formSubmit = () => { 
     form.put(route('inventory.updateInventoryAndItems', props.group.id), {
         preserveScroll: true,
@@ -60,21 +56,17 @@ const cancelForm = () => {
 
 const requiredFields = ['name', 'category_id', 'image', 'items'];
 
-const isFormValid = computed(() => {
-    return requiredFields.every(field => form[field]);
-});
+const isFormValid = computed(() => requiredFields.every(field => form[field]));
 
 const addItem = () => {
-    form.items.push(
-        {
-            inventory_id: props.group.id,
-            item_name: '',
-            item_code: '',
-            item_cat_id: '',
-            stock_qty: 0,
-            status: 'In stock',
-        }
-    );
+    form.items.push({
+        inventory_id: props.group.id,
+        item_name: '',
+        item_code: '',
+        item_cat_id: '',
+        stock_qty: 0,
+        status: 'In stock',
+    });
 }
 </script>
 
@@ -103,7 +95,7 @@ const addItem = () => {
                     />
                 </div>
                 <div class="flex flex-col items-end gap-4 self-stretch">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 self-stretch" v-for="(item, i) in updatedInventoryItemsArr" :key="i">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 self-stretch" v-for="(item, i) in form.items" :key="i">
                         <TextInput
                             :inputName="'items.'+ i +'.item_name'"
                             :labelText="'Item '+ (i + 1) +' name'"
@@ -155,7 +147,7 @@ const addItem = () => {
                 :size="'lg'"
                 @click="cancelForm"
             >
-                Dicard
+                Discard
             </Button>
             <Button
                 :size="'lg'"

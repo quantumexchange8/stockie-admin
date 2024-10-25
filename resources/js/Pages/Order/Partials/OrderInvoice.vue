@@ -36,6 +36,8 @@ const serviceChargeAmount = computed(() => {
 const totalEarnedPoints = computed(() => {
     return order.value.order_items.filter((item) => item.status === 'Served').reduce((total, item) => total + item.point_earned, 0) ?? 0.00;
 })
+
+const orderTableNames = computed(() => order.value.order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '');
 </script>
 
 <template>
@@ -71,7 +73,7 @@ const totalEarnedPoints = computed(() => {
                     </div>
                     <div class="w-1/3 flex flex-col justify-between items-start">
                         <p class="text-primary-950 text-xs font-light">Table No.</p>
-                        <p class="text-primary-950 text-md font-medium">{{ order.order_table.table.table_no }}</p>
+                        <p class="text-primary-950 text-md font-medium">{{ orderTableNames }}</p>
                     </div>
                 </div>
             </div>

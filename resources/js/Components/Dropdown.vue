@@ -45,6 +45,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    plainStyle: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emits = defineEmits(["update:modelValue", "onChange"]);
@@ -127,21 +131,20 @@ onUnmounted(() => {
                     state.overlayVisible = !open || !state.focused || !state.clicked ? false : true;
                     return {
                         class: [
-                            'inline-flex relative w-full mb-1 max-h-[44px]',
-                            'bg-white border border-grey-300',
-                            'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                            'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
-                            'cursor-pointer select-none',
+                            'inline-flex relative w-full mb-1 max-h-[44px] cursor-pointer select-none',
                             { 
+                                'bg-white border border-grey-300': !plainStyle,
+                                'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !plainStyle,
+                                'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !plainStyle,
                                 'rounded-md': parent.instance.$name !== 'InputGroup',
                                 'first:rounded-l-md rounded-none last:rounded-r-md': parent.instance.$name == 'InputGroup',
                                 'border-0 border-y border-l last:border-r': parent.instance.$name == 'InputGroup',
                                 'first:ml-0 ml-[-1px]': parent.instance.$name == 'InputGroup' && !props.showButtons,
                                 'border-grey-300': !props.invalid,
                                 'border-primary-500': props.invalid,
-                                'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !state.focused,
+                                'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !state.focused && !plainStyle,
+                                'outline-none border-primary-300 shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': state.focused && !plainStyle,
                                 'border-primary-500 focus:border-primary-500 hover:border-primary-500': props.errorMessage,
-                                'outline-none border-primary-300 shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': state.focused,
                                 'border-grey-100 opacity-60 pointer-events-none cursor-default': props.disabled 
                             }
                             // Transitions
@@ -150,16 +153,18 @@ onUnmounted(() => {
                         ]
                     }
                 },
-                input: ({ props, parent }) => {
+                input: ({ props, parent, state }) => {
                     var _a;
                     return {
                         class: [
-                            'block relative flex items-center w-full px-4 py-3 rounded-none',
+                            'block relative flex items-center w-full rounded-none',
                             'placeholder-grey-200 text-grey-200 text-base font-normal bg-transparent border-0',
                             'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
                             'transition duration-200 focus:ring-0',
                             'focus:outline-none focus:shadow-none',
                             { 
+                                'px-4 py-3': !plainStyle,
+                                'hover:text-grey-900': !state.focused && plainStyle,
                                 'text-grey-700 ': props.modelValue != null && props.modelValue !== '', 
                                 'text-grey-200': props.modelValue == null || props.modelValue !== '',
                                 'pr-7': props.showClear,
@@ -213,6 +218,7 @@ onUnmounted(() => {
                     fill="none"
                     :class="open ? 'rotate-270' : 'rotate-180'"
                     class="transition-all duration-200 transform self-center"
+                    v-if="!plainStyle"
                 >
                     <path
                         d="M12 10L8 6L4 10"
@@ -221,6 +227,18 @@ onUnmounted(() => {
                         stroke-linecap="round"
                         stroke-linejoin="round"
                     />
+                </svg>
+
+                <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg" v-else>
+                    <g clip-path="url(#clip0_4705_26673)">
+                        <path d="M4.26826 7.61216H11.7331C12.0352 7.61216 12.3123 7.44478 12.4533 7.17785C12.5941 6.91038 12.5755 6.58772 12.4048 6.33789L8.62642 0.81698C8.49115 0.619372 8.2672 0.501073 8.02765 0.500002C7.78836 0.499418 7.5637 0.616258 7.42734 0.813282L3.59911 6.33429C3.42657 6.58302 3.40649 6.90726 3.54698 7.17575C3.68747 7.44378 3.96533 7.61216 4.26826 7.61216Z" fill="#7E171B"/>
+                        <path d="M11.7331 9.38867H4.26825C3.96532 9.38867 3.68746 9.55712 3.54697 9.82512C3.40648 10.0936 3.42659 10.4178 3.5991 10.6665L7.42733 16.1875C7.56369 16.3845 7.78835 16.5014 8.02764 16.5009C8.26719 16.4999 8.49114 16.3814 8.62641 16.1839L12.4048 10.6629C12.5755 10.4131 12.594 10.0904 12.4533 9.82291C12.3123 9.55605 12.0352 9.38867 11.7331 9.38867Z" fill="#7E171B"/>
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_4705_26673">
+                            <rect width="16" height="16" fill="white" transform="translate(0 0.5)"/>
+                        </clipPath>
+                    </defs>
                 </svg>
             </template>
             <template #optiongroup="slotProps" v-if="grouped">

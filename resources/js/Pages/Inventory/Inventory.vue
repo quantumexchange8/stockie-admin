@@ -12,7 +12,7 @@ import RecentKeepHistoryTable from './Partials/RecentKeepHistoryTable.vue'
 import TotalStockChart from './Partials/TotalStockChart.vue'
 import AddStockForm from './Partials/AddStockForm.vue'
 import Breadcrumb from '@/Components/Breadcrumb.vue';
-import { OrderDeliveredIllus } from '@/Components/Icons/illus'
+import { EmptyIllus, OrderDeliveredIllus } from '@/Components/Icons/illus'
 import Toast from '@/Components/Toast.vue';
 import { useCustomToast } from '@/Composables/index.js';
 
@@ -235,7 +235,7 @@ const hideAddStockForm = () => {
                     </div>
                     <div class="flex justify-center items-center gap-2" v-else>
                         <span class="text-sm font-medium text-primary-900">Seems like everything is in stock!</span>
-                        <OrderDeliveredIllus />
+                        <EmptyIllus />
                     </div>
                 </div>
                 <Modal 

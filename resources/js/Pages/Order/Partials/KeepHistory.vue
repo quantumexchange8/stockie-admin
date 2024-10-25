@@ -88,7 +88,7 @@ onMounted(() => {
                                                     {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
                                                 </span>
                                                 <span class="w-3 h-3 bg-primary-900 rounded-full"></span>
-                                                <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiters.name }}</span>
+                                                <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.name }}</span>
                                             </div>
                                             <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
                                             <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark">
@@ -146,7 +146,7 @@ onMounted(() => {
                                                     {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
                                                 </span>
                                                 <span class="w-3 h-3 bg-primary-900 rounded-full"></span>
-                                                <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiters.name }}</span>
+                                                <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.name }}</span>
                                             </div>
                                             <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
                                             <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark">

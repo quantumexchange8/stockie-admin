@@ -17,6 +17,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    withHeader: {
+        type: Boolean,
+        default: true
+    }
 })
 
 const emit = defineEmits(['close']);
@@ -127,6 +131,7 @@ onUnmounted(() => {
         <template #container="{ closeCallback }">
             <div class="flex flex-col justify-center">
                 <div 
+                    v-if="withHeader"
                     class="flex items-center px-6 pt-6 pb-3"
                     :class="{
                         'justify-between':!previousTab,

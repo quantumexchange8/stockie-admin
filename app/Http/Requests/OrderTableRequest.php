@@ -22,11 +22,9 @@ class OrderTableRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'table_id' => 'required|integer',
+            'tables' => 'required|array',
             'pax' => 'required|string|max:255',
-            'assigned_waiter' => 'nullable|integer',
-            'status' => 'required|string|max:255',
-            'reservation_date' => 'nullable|date_format:Y-m-d H:i:s',
+            'assigned_waiter' => 'required|integer',
             'order_id' => 'nullable|integer',
         ];
     }
@@ -34,24 +32,20 @@ class OrderTableRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name' => 'Ranking Name',
-            'min_amount' => 'Minimum Amount',
-            'reward' => 'Reward',
+            'tables' => 'Tables',
+            'pax' => 'No. of pax',
+            'assigned_waiter' => 'Assigned Waiter',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'name.required' => 'This field is required.',
-            'name.string' => 'This field must be a string.',
-            'name.max' => 'This field must not exceed 255 characters.',
-            'name.unique' => 'This field must be unique.',
-            'min_amount.required' => 'This field is required.',
-            'min_amount.integer' => 'This field must be an integer.',
-            'reward.required' => 'This field is required.',
-            'reward.string' => 'This field must be a string.',
-            'reward.max' => 'This field must not exceed 255 characters.',
+            'required' => 'This field is required.',
+            'string' => 'This field must be a string.',
+            'max' => 'This field must not exceed 255 characters.',
+            'integer' => 'This field must be an integer.',
+            'array' => 'This field must be an array.',
         ];
     }
 }

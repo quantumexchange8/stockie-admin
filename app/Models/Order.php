@@ -30,9 +30,9 @@ class Order extends Model
     /**
      * Get the order table of the order.
      */
-    public function orderTable(): HasOne
+    public function orderTable(): HasMany
     {
-        return $this->hasOne(OrderTable::class, 'order_id');
+        return $this->hasMany(OrderTable::class, 'order_id');
     }
     
     /**
@@ -72,5 +72,13 @@ class Order extends Model
     public function reservation(): HasOne
     {
         return $this->hasOne(Reservation::class, 'order_id');
+    }
+
+    /**
+     * Get the payment receipt of the order.
+     */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'order_id');
     }
 }

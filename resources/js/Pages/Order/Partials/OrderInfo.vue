@@ -5,22 +5,30 @@ import OrderDetail from './OrderDetail.vue';
 import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
 import { CancelIllus, OrderCompleteIllus } from '@/Components/Icons/illus';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
 import OrderInvoice from './OrderInvoice.vue';
 import { useCustomToast } from '@/Composables/index.js';
 import CustomerDetail from './CustomerDetail.vue';
+import { TimesIcon } from '@/Components/Icons/solid';
+import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
+import MakePaymentForm from './MakePaymentForm.vue';
 
 const props = defineProps({
     errors: Object,
+    customers: Array,
+    users: Array,
     selectedTable: {
         type: Object,
         default: () => {},
     },
 })
 
+const page = usePage();
+const userId = computed(() => page.props.auth.user.id)
+
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'fetchZones']);
 
 const tabs = ref(['Order Detail']);
 const order = ref({});
@@ -28,6 +36,8 @@ const customer = ref({});
 const cancelOrderFormIsOpen = ref(false);
 const orderCompleteModalIsOpen = ref(false);
 const orderInvoiceModalIsOpen = ref(false);
+const drawerIsVisible = ref(false);
+const selectedTab = ref(0);
 
 const fetchOrderDetails = async () => {
     try {
@@ -42,7 +52,7 @@ const fetchOrderDetails = async () => {
         if (order.value) {
             form.order_id = order.value.id;
             form.customer_id = order.value.customer_id;
-            if (order.value.customer_id !== null) tabs.value.push('Customer Detail');
+            if (order.value.customer_id && !tabs.value.includes('Customer Detail')) tabs.value.push('Customer Detail');
         }
     } catch (error) {
         console.error(error);
@@ -54,6 +64,7 @@ const fetchOrderDetails = async () => {
 onMounted(() => fetchOrderDetails());
 
 const form = useForm({
+    user_id: userId.value,
     order_id: order.value.id,
     customer_id: '',
     action_type: ''
@@ -62,6 +73,15 @@ const form = useForm({
 const closeDrawer = () => {
     emit('close');
 }
+
+const openPaymentDrawer = () => {
+    if (!drawerIsVisible.value) drawerIsVisible.value = true;
+};
+
+const closePaymentDrawer = () => {
+    drawerIsVisible.value = false;
+    selectedTab.value = 1;
+};
 
 const showOrderCompleteModal = () => {
     orderCompleteModalIsOpen.value = true;
@@ -142,6 +162,7 @@ const submit = (action) => {
                 },
             })
         }
+        emit('fetchZones');
     }
 };
 
@@ -182,17 +203,49 @@ const hasServedItem = computed(() => {
         || order.value?.order_items?.some(item => item.type === 'Keep' || item.type === 'Expired');
 });
 
+const orderTableNames = computed(() => order.value.order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '');
+
 </script>
 
 <template>
+    <RightDrawer 
+        :header="'Make Payment'" 
+        previousTab
+        v-model:show="drawerIsVisible"
+        @close="closePaymentDrawer"
+    >
+        <MakePaymentForm 
+            :order="order" 
+            :selectedTable="selectedTable"
+            @close="closePaymentDrawer"
+        />
+    </RightDrawer>
+
     <div class="flex flex-col gap-6 items-start rounded-[5px]">
+        <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
+            <span class="text-primary-950 text-center text-md font-medium">Detail - {{ orderTableNames  }}</span>
+            <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer" />
+        </div>
+
         <div class="px-6 py-2 w-full">
-            <TabView :tabs="tabs">
+            <TabView :tabs="tabs" :selectedTab="selectedTab">
                 <template #order-detail>
-                    <OrderDetail :selectedTable="selectedTable" :order="order" @close="fetchOrderDetails" />
+                    <OrderDetail 
+                        :selectedTable="selectedTable" 
+                        :order="order" 
+                        :customers="customers" 
+                        :users="users"
+                        @fetchZones="$emit('fetchZones')" 
+                        @close="fetchOrderDetails" 
+                    />
                 </template>
                 <template #customer-detail v-if="order.customer_id">
-                    <CustomerDetail :customer="customer" :orderId="order.id" :tableStatus="selectedTable.status" @close="closeDrawer"/>
+                    <CustomerDetail 
+                        :customer="customer" 
+                        :orderId="order.id" 
+                        :tableStatus="selectedTable.status" 
+                        @close="closeDrawer"
+                    />
                 </template>
             </TabView>
         </div>
@@ -200,32 +253,40 @@ const hasServedItem = computed(() => {
         <form @submit.prevent="submit('complete')">
             <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
                 <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: RM{{ order.total_amount }}</p>
-                <div class="flex flex-col gap-3">
-                    <Button
+                <div class="flex flex-col items-center self-stretch gap-3">
+                    <div class="flex items-start self-stretch gap-3">
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            size="lg"
+                            :disabled="hasServedItem"
+                            @click="showCancelOrderForm"
+                        >
+                            Cancel Order
+                        </Button>
+                        <Button
+                            size="lg"
+                            variant="tertiary"
+                            :disabled="selectedTable.status !== 'Pending Clearance'"
+                            @click="form.action_type = 'clear'"
+                        >
+                            Free Up Table
+                        </Button>
+                    </div>
+                    <!-- <Button
                         size="lg"
                         :disabled="!isOrderCompleted"
-                        v-if="selectedTable.status !== 'Pending Clearance'"
                         @click="form.action_type = 'complete'"
                     >
-                        Complete Order
-                    </Button>
-                    <Button
-                        size="lg"
-                        :disabled="!isOrderCompleted"
-                        @click="form.action_type = 'clear'"
-                        v-else
-                    >
-                        Free Up Table
-                    </Button>
+                        Make Payment
+                    </Button> -->
                     <Button
                         type="button"
-                        variant="tertiary"
                         size="lg"
-                        :disabled="hasServedItem"
-                        @click="showCancelOrderForm"
-                        v-if="selectedTable.status !== 'Pending Clearance'"
+                        :disabled="!isOrderCompleted"
+                        @click="openPaymentDrawer"
                     >
-                        Cancel Order
+                        Make Payment
                     </Button>
                 </div>
             </div>

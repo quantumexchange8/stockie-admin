@@ -243,6 +243,7 @@ class ReservationController extends Controller
      */
     public function getReservations()
     {
+        $cutoffTime = Carbon::now()->subHours(24);
         // $yesterday = now('Asia/Kuala_Lumpur')->subDay();
         $upcomingReservations = Reservation::with([
                                                 'reservedFor.reservations', 
@@ -251,9 +252,18 @@ class ReservationController extends Controller
                                                 'reservedBy', 
                                                 'handledBy'
                                             ])
-                                            // ->whereDate('reservation_date', '>', $yesterday)
-                                            ->whereIn('status', ['Pending', 'Delayed'])
-                                            ->orderBy('id')
+                                            ->where(function ($query) use ($cutoffTime) {
+                                                // Check for 'Pending' status and overdue reservation_date
+                                                $query->where('status', 'Pending')
+                                                    ->where('reservation_date', '>=', $cutoffTime);
+                                
+                                                // Or check for 'Delayed' status and overdue action_date
+                                                $query->orWhere(function ($subQuery) use ($cutoffTime) {
+                                                    $subQuery->where('status', 'Delayed')
+                                                        ->where('action_date', '>=', $cutoffTime);
+                                                });
+                                            })
+                                            ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
                                             ->get();
 
         return response()->json($upcomingReservations);

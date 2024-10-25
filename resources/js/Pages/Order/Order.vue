@@ -19,8 +19,10 @@ const home = ref({
 
 const props = defineProps({
     zones: Array,
-    waiters: Array,
+    users: Array,
     orders: Array,
+    occupiedTables: Array,
+    customers: Array,
 });
 
 const zones = ref(props.zones);
@@ -149,7 +151,9 @@ const filteredZones = computed(() => {
                     <OrderTables 
                         isMainTab 
                         :zones="filteredZones" 
-                        :waiters="waiters"
+                        :users="users"
+                        :customers="customers"
+                        :occupiedTables="occupiedTables"
                         @fetchZones="fetchZones"
                     />
                 </template>
@@ -162,7 +166,9 @@ const filteredZones = computed(() => {
                         :zones="filteredZones" 
                         :activeTab="zone.value" 
                         :zoneName="zone.text"
-                        :waiters="waiters"
+                        :users="users"
+                        :customers="customers"
+                        :occupiedTables="occupiedTables"
                         @fetchZones="fetchZones"
                     />
                 </template>

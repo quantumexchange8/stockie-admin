@@ -30,9 +30,10 @@ const inlineMessageIsOpen = ref(true);
         position="top-center" 
         @close="visible = false"
         :pt="{
-            root: ({ props }) => ({
+            root: ({ props, state }) => ({
                 class: [
                     'w-[50%] rounded-md',
+                    { 'hidden': state.messages.length === 0},
                     { '-translate-x-2/4 !top-20 !z-[1001]': props.position == 'top-center' || props.position == 'bottom-center' }
                 ]
             }),

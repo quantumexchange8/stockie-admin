@@ -19,12 +19,11 @@ dayjs.extend(relativeTime);
 
 const props = defineProps({
     zones: Array,
+    occupiedTables: Array,
+    customers: Array,
     activeTab: Number,
     zoneName: String,
-    waiters: {
-        type: Array,
-        default: () => []
-    },
+    users: Array,
     isMainTab: {
         type: Boolean,
         default: false
@@ -35,16 +34,16 @@ const emit = defineEmits(['fetchZones']);
 
 const op = ref(null);
 const selectedTable = ref(null);
-const reservationListIsOpen = ref(false);
-const reservationsRowsPerPage = ref(6);
+// const reservationListIsOpen = ref(false);
+// const reservationsRowsPerPage = ref(6);
 const drawerIsVisible = ref(false);
 
-const reservationsColumns = ref([
-    { field: "reservation_at", header: "Date", width: "25", sortable: true },
-    { field: "reservation_time", header: "Time", width: "25", sortable: true },
-    { field: "pax", header: "No. of Pax", width: "25", sortable: true },
-    { field: "action", header: "", width: "25", sortable: false, edit: true, delete: true },
-]);
+// const reservationsColumns = ref([
+//     { field: "reservation_at", header: "Date", width: "25", sortable: true },
+//     { field: "reservation_time", header: "Time", width: "25", sortable: true },
+//     { field: "pax", header: "No. of Pax", width: "25", sortable: true },
+//     { field: "action", header: "", width: "25", sortable: false, edit: true, delete: true },
+// ]);
 
 const rowType = {
     rowGroups: false,
@@ -115,28 +114,47 @@ const getTableClasses = (table) => ({
 });
 
 const waitersArr = computed(() => {
-    return props.waiters.map((waiter) => {
-        return {
-            'text': waiter.name,
-            'value': waiter.id,
-        }
-    })
+    return props.users
+        .filter(({role}) => role === 'waiter')
+        .map(({id, full_name}) => {
+            return {
+                'text': full_name,
+                'value': id,
+            }
+        });
 });
 
-const getTooltipMessage = (table) => {
-    if (!table.reservations || table.reservations.length === 0) {
-        return 'No reservations';
-    }
+const tablesArr = computed(() => {
+    const seenTableNos = new Set();
+    return props.zones.reduce((allTables, zone) => {
+        zone.tables.forEach(({ table_no, id }) => {
+            if (!seenTableNos.has(table_no)) {
+                seenTableNos.add(table_no);
+                allTables.push({
+                    text: table_no,
+                    value: id,
+                    'disabled': props.occupiedTables.some((occupiedTable) => occupiedTable.id === id),
+                });
+            }
+        });
+        return allTables;
+    }, []);
+});
 
-    const reservationList = table.reservations
-        .map((res, index) => {
-            const formattedDate = dayjs(res.reservation_date).format('DD/MM/YYYY, hh:mm A');
-            return `${index + 1}. ${formattedDate}`;
-        })
-        .join('\n');
+// const getTooltipMessage = (table) => {
+//     if (!table.reservations || table.reservations.length === 0) {
+//         return 'No reservations';
+//     }
 
-    return `${reservationList}`;
-}
+//     const reservationList = table.reservations
+//         .map((res, index) => {
+//             const formattedDate = dayjs(res.reservation_date).format('DD/MM/YYYY, hh:mm A');
+//             return `${index + 1}. ${formattedDate}`;
+//         })
+//         .join('\n');
+
+//     return `${reservationList}`;
+// }
 
 let intervals = ref([]);
 
@@ -172,34 +190,37 @@ onUnmounted(() => {
     intervals.value.forEach(clearInterval);
 });
 
-const showReservationList = (event, table) => {
-    event.preventDefault();
-    event.stopPropagation();
+// const showReservationList = (event, table) => {
+//     event.preventDefault();
+//     event.stopPropagation();
     
-    selectedTable.value = table;
-    selectedTable.value.reservations.forEach(res => {
-        res['table_no'] = selectedTable.value.table_no;
-    });
-    reservationListIsOpen.value = true;
-}
+//     selectedTable.value = table;
+//     selectedTable.value.reservations.forEach(res => {
+//         res['table_no'] = selectedTable.value.table_no;
+//     });
+//     reservationListIsOpen.value = true;
+// }
 
-const hideReservationList = () => {
-    reservationListIsOpen.value = false;
-    setTimeout(() => {
-        selectedTable.value = null;
-    }, 200);
-}
+// const hideReservationList = () => {
+//     reservationListIsOpen.value = false;
+//     setTimeout(() => {
+//         selectedTable.value = null;
+//     }, 200);
+// }
 </script>
 
 <template>
     <template v-if="selectedTable">
         <RightDrawer 
-            :header="'Detail - ' + selectedTable.table_no" 
+            :withHeader="false"
             v-model:show="drawerIsVisible"
             @close="drawerIsVisible = false"
         >
             <OrderInfo 
                 :selectedTable="selectedTable" 
+                :customers="customers"
+                :users="users"
+                @fetchZones="$emit('fetchZones')"
                 @close="closeDrawer"
             />
         </RightDrawer>
@@ -231,14 +252,14 @@ const hideReservationList = () => {
                                     </div>
                                 </template>
                             </Card>
-                            <div 
+                            <!-- <div 
                                 v-if="table.reservations && table.reservations.length > 0"
                                 v-tooltip.top="{ value: getTooltipMessage(table) }"
                                 class="absolute top-[5px] left-0 size-6 bg-primary-200 rounded-r-[5px] flex justify-center items-center gap-2.5 py-1 px-2 w-fit cursor-pointer" 
                                 @click="showReservationList($event, table)"
                             >
                                 <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </template>
@@ -265,14 +286,14 @@ const hideReservationList = () => {
                             </div>
                         </template>
                     </Card>
-                    <div 
+                    <!-- <div 
                         v-if="table.reservations && table.reservations.length > 0"
                         v-tooltip.top="{ value: getTooltipMessage(table) }"
                         class="absolute top-[5px] left-0 size-6 bg-primary-200 rounded-r-[5px] flex justify-center items-center gap-2.5 py-1 px-2 w-fit cursor-pointer" 
                         @click="showReservationList($event, table)"
                     >
                         <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <div class="flex flex-col items-center text-center gap-5" v-else>
@@ -290,7 +311,7 @@ const hideReservationList = () => {
                 </Button>
             </div>
         </template>
-        <Modal 
+        <!-- <Modal 
             :title="'Reservation List'"
             :show="reservationListIsOpen" 
             :maxWidth="'sm'" 
@@ -306,7 +327,7 @@ const hideReservationList = () => {
                     :rowsPerPage="reservationsRowsPerPage"
                 />
             </template>
-        </Modal>
+        </Modal> -->
     </div> 
 
     <!-- Assign Seat -->
@@ -314,6 +335,7 @@ const hideReservationList = () => {
         <AssignSeatForm 
             :table="selectedTable"
             :waiters="waitersArr"
+            :tablesArr="tablesArr"
             @close="closeOverlay"
         />
     </OverlayPanel>

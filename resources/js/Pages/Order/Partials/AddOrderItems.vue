@@ -8,6 +8,7 @@ import SearchBar from '@/Components/SearchBar.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { useCustomToast } from '@/Composables/index.js';
+import { ArrowLeftIcon } from '@/Components/Icons/solid';
 
 const props = defineProps({
     errors: Object,
@@ -27,7 +28,7 @@ const userId = computed(() => page.props.auth.user.id)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'fetchZones']);
 
 const query = ref('');
 const tabs = ref(['All']);
@@ -42,8 +43,6 @@ const categories = ref(props.categoryArr.map((cat) => {
 const form = useForm({
     user_id: userId.value,
     order_id: props.order.id,
-    table_id: props.selectedTable.id,
-    table_no: props.selectedTable.table_no,
     action_type: '',
     items: [],
 });
@@ -61,6 +60,7 @@ const formSubmit = () => {
                 });
             }, 200);
             form.reset();
+            emit('fetchZones');
             emit('close');
         },
     })
@@ -143,11 +143,24 @@ const quantityComputed = (productId) => {
         set: (value) => updateProductQuantity(productId, value)
     });
 };
+
+const orderTableNames = computed(() => props.order.order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '');
+
 </script>
 
 <template>
     <form novalidate @submit.prevent="formSubmit">
         <div class="flex flex-col gap-6 items-start rounded-[5px]">
+            <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
+                <ArrowLeftIcon
+                    class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" 
+                    @click="$emit('close')" 
+                />
+                <div class="flex items-center justify-center w-full">
+                    <span class="text-primary-950 text-center text-md font-medium">Order for {{ orderTableNames  }}</span>
+                </div>
+            </div>
+
             <div class="flex flex-col justify-center items-start gap-3 px-6 py-3 w-full">
                 <SearchBar 
                     :placeholder="'Search'"
@@ -156,7 +169,7 @@ const quantityComputed = (productId) => {
                     v-model="query"
                 />
 
-                <div class="w-full max-h-[calc(100dvh-23rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <div class="w-full max-h-[calc(100dvh-20.5rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <TabView :tabs="tabs">
                         <template #all>
                             <div class="flex flex-col justify-center divide-y-[0.5px] divide-grey-200">
@@ -243,21 +256,21 @@ const quantityComputed = (productId) => {
 
             <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
                 <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: RM{{ calculatedTotalAmount }}</p>
-                <div class="flex flex-col gap-3">
-                    <Button
-                        size="lg"
-                        :disabled="form.items.length === 0 || form.processing"
-                        @click="form.action_type = 'now'"
-                    >
-                        Add & Serve
-                    </Button>
+                <div class="flex gap-3">
                     <Button
                         size="lg"
                         variant="secondary"
                         :disabled="form.items.length === 0 || form.processing"
                         @click="form.action_type = 'later'"
                     >
-                        Add Only
+                        Serve Later
+                    </Button>
+                    <Button
+                        size="lg"
+                        :disabled="form.items.length === 0 || form.processing"
+                        @click="form.action_type = 'now'"
+                    >
+                        Serve Now
                     </Button>
                 </div>
             </div>

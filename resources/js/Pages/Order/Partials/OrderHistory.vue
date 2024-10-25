@@ -3,39 +3,23 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { ref, watch, computed } from 'vue'
 import { FilterMatchMode } from 'primevue/api';
-import SearchBar from '@/Components/SearchBar.vue';
-import DateInput from '@/Components/Date.vue';
-import Table from '@/Components/Table.vue';
-import { UndetectableIllus } from '@/Components/Icons/illus';
 import Tag from '@/Components/Tag.vue';
-import Dropdown from '@/Components/Dropdown.vue';
-import Button from '@/Components/Button.vue';
+import Table from '@/Components/Table.vue';
 import Modal from '@/Components/Modal.vue';
+import Button from '@/Components/Button.vue';
+import DateInput from '@/Components/Date.vue';
 import OrderInvoice from './OrderInvoice.vue';
+import Dropdown from '@/Components/Dropdown.vue';
+import SearchBar from '@/Components/SearchBar.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
+import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
-    errors: Object,
-    columns: {
-        type: Array,
-        required: true,
-    },
-    rows: {
-        type: Array,
-        required: true,
-    },
-    rowType: {
-        type: Object,
-        required: true,
-    },
-    totalPages: {
-        type: Number,
-        required: true,
-    },
-    rowsPerPage: {
-        type: Number,
-        required: true,
-    },
+    columns: Array,
+    rows: Array,
+    rowType: Object,
+    totalPages: Number,
+    rowsPerPage: Number,
 });
 
 
@@ -108,9 +92,9 @@ const hideOrderInvoiceModal = () => {
     orderInvoiceModalIsOpen.value = false;
 };
 
-const sortedRows = computed(() => {
-    return rows.value.sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
-});
+const sortedRows = computed(() => rows.value.sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at))));
+
+const getOrderTableNames = (order_table) => order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '';
 </script>
 
 <template>
@@ -158,7 +142,8 @@ const sortedRows = computed(() => {
                     <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.updated_at).format('DD/MM/YYYY, HH:mm') }}</span>
                 </template>
                 <template #table_no="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.order_table.table.table_no }}</span>
+                    <!-- <span class="text-grey-900 text-sm font-medium">{{ row.order_table.table.table_no }}</span> -->
+                    <span class="text-grey-900 text-sm font-medium">{{ getOrderTableNames(row.order_table) }}</span>
                 </template>
                 <template #order_no="row">
                     <span class="text-grey-900 text-sm font-medium">#{{ row.order_no }}</span>

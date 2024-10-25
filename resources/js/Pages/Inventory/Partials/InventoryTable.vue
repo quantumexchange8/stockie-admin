@@ -17,22 +17,10 @@ import TextInput from '@/Components/TextInput.vue';
 
 const props = defineProps({
     errors: Object,
-    rows: {
-        type: Array,
-        required: true,
-    },
-    categoryArr: {
-        type: Array,
-        default: () => [],
-    },
-    itemCategoryArr: {
-        type: Array,
-        default: () => [],
-    },
-    totalPages: {
-        type: Number,
-        required: true,
-    },
+    rows: Array,
+    categoryArr: Array,
+    itemCategoryArr: Array,
+    totalPages: Number,
 })
 
 const emit = defineEmits(["applyCategoryFilter", "applyCheckedFilters"]);
@@ -86,9 +74,12 @@ const closeForm = (action) => {
 
     if (action !== 'create') {
         setTimeout(() => {
-            selectedGroupItems.value = null;
             selectedGroup.value = null;
+            selectedGroupItems.value = null;
         }, 300);
+        if (action === 'edit') {
+            selectedGroupItems.value = []; // Ensure form resets to initial state on edit
+        }
     }
 }
 
@@ -540,18 +531,24 @@ const totalInventoryItemStock = (items) => {
                             </Disclosure>
                         </td>
                     </tr>
-                    <tr v-else>
+                    <tr v-if="rows.length === 0 && props.rows.length > 0">
                         <td colspan="8">
                             <div class="flex flex-col items-center justify-center gap-5">
-                                <EmptyIllus />
+                                <EmptyIllus class="flex-shrink-0"/>
                                 <span class="text-primary-900 text-sm font-medium">We couldn't find any result...</span>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
+
+            <div class="flex flex-col items-center justify-center gap-5" v-if="props.rows.length === 0">
+                <EmptyIllus class="flex-shrink-0"/>
+                <span class="text-primary-900 text-sm font-medium">You haven't added any group yet...</span>
+            </div>
             
             <Paginator
+                v-if="props.rows.length > 0"
                 :rows="4" 
                 :totalRecords="rows.length"
                 template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
