@@ -5,7 +5,7 @@ import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
 import { computed } from "vue";
-import { useCustomToast } from "@/Composables";
+import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
 
 const props = defineProps({
     waiters: {
@@ -14,6 +14,8 @@ const props = defineProps({
     },
 })
 const { showMessage } = useCustomToast();
+const { transformPhone, formatPhoneInput } = usePhoneUtils();
+const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(["close"]);
 const closeModal = () => {
@@ -26,6 +28,7 @@ const form = useForm({
     username: "",
     name: "",
     phone: "",
+    phone_temp: "",
     email: "",
     role_id: "",
     salary: "",
@@ -34,6 +37,7 @@ const form = useForm({
 });
 
 const submit = () => {
+    form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
     form.post(route("waiter.add-waiter"), {
         preserveScroll: true,
         preserveState: 'errors',
@@ -52,7 +56,7 @@ const submit = () => {
     });
 };
 
-const requiredFields = ['username', 'name', 'phone', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
+const requiredFields = ['username', 'name', 'phone_temp', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
@@ -60,7 +64,7 @@ const isFormValid = computed(() => {
 </script>
 <template>
     <div class="w-full flex flex-col overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
-        <form @submit.prevent="submit">
+        <form @submit.prevent="submit" autocomplete="off">
             <div class="w-full flex flex-col max-h-[500px] md:gap-9">
                 <div class="w-full flex md:gap-6">
                     <DragDropImage
@@ -105,9 +109,11 @@ const isFormValid = computed(() => {
                                             label-text="Phone number"
                                             inputId="phone"
                                             type="'tel'"
-                                            v-model="form.phone"
-                                            :errorMessage="form.errors.phone"
+                                            v-model="form.phone_temp"
+                                            :errorMessage="form.errors?.phone || ''"
                                             :iconPosition="'left'"
+                                            @keypress="isValidNumberKey($event, false)"
+                                            @input="formatPhoneInput"
                                         >
                                             <template #prefix>
                                                 <span class="text-grey-900"
@@ -124,7 +130,7 @@ const isFormValid = computed(() => {
                                             inputId="email"
                                             type="'email'"
                                             v-model="form.email"
-                                            :errorMessage="form.errors.email"
+                                            :errorMessage="form.errors?.email || ''"
                                         >
                                         </TextInput>
                                     </div>
@@ -155,6 +161,7 @@ const isFormValid = computed(() => {
                                         type="'text'"
                                         v-model="form.salary"
                                         :iconPosition="'left'"
+                                        @keypress="isValidNumberKey($event, true)"
                                     >
                                         <template #prefix>
                                             <span class="text-grey-900"
@@ -173,7 +180,7 @@ const isFormValid = computed(() => {
                             <div class="flex md:gap-4">
                                 <div class="w-full flex flex-col">
                                     <TextInput
-                                        label-text="Email address"
+                                        labelText="Email address"
                                         :placeholder="'for Stockie account log-in'"
                                         inputId="stockie_email"
                                         type="'email'"
@@ -185,7 +192,7 @@ const isFormValid = computed(() => {
                                 </div>
                                 <div class="w-full flex flex-col">
                                     <TextInput
-                                        label-text="Password"
+                                        labelText="Password"
                                         :placeholder="'for Stockie account log-in'"
                                         inputId="password"
                                         :inputType="'password'"
@@ -205,16 +212,18 @@ const isFormValid = computed(() => {
                         type="button"
                         @click="form.reset()"
                         :size="'lg'"
-                        >Cancel</Button
                     >
+                        Cancel
+                    </Button>
                     <Button
                         variant="primary"
                         type="submit"
                         :size="'lg'"
                         :disabled="!isFormValid || form.processing"
                         :class="{ 'opacity-25': form.processing }"
-                        >Add</Button
                     >
+                        Add
+                    </Button>
                 </div>
             </div>
         </form>

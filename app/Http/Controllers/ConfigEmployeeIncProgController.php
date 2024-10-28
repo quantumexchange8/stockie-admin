@@ -17,7 +17,7 @@ class ConfigEmployeeIncProgController extends Controller
 {
     public function index(Request $request)
     {
-        $allWaiters = User::select('id', 'name')->where('role', 'waiter')->get();
+        $allWaiters = User::select('id', 'full_name')->where('role', 'waiter')->get();
         $incentiveProg = ConfigIncentive::with('incentiveEmployees.waiters')
                                         ->get()
                                         ->map(function ($incentive) {

@@ -11,7 +11,7 @@ import SaleHistoryTable from './SalesHistoryTable.vue'
 import ProductInfoSection from './ProductInfoSection.vue';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import Toast from '@/Components/Toast.vue';
-import { useCustomToast } from '@/Composables/index.js';
+import { useCustomToast, useFileExport } from '@/Composables/index.js';
 
 const props = defineProps({
     product: Object,
@@ -50,6 +50,7 @@ const defaultLatest30Days = computed(() => {
 });
 
 const { flashMessage } = useCustomToast();
+const { exportToCSV } = useFileExport();
 
 const product = ref(props.product);
 const saleHistories = ref(props.saleHistories);
@@ -84,47 +85,14 @@ const getSaleHistories = async (filters = {}, id) => {
     }
 }
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const saleHistoriesArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const fileName = `Product_${props.product.id}_Sale History_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (saleHistories.value && saleHistories.value.length > 0) {
-        saleHistories.value.forEach(row => {
-            saleHistoriesArr.push({
-                'Date': dayjs(row.created_at).format('DD/MM/YYYY'),
-                'Time': dayjs(row.created_at).format('hh:mm A'),
-                'Amount': 'RM ' + row.total_price.toFixed(2),
-                'Quantity': row.qty,
-            })
-        });
-
-        const myLogs = arrayToCsv(saleHistoriesArr);
-        
-        downloadBlob(myLogs, fileName, contentType);
-        console.log("Sale Histories has been saved");
-    }
+const csvExport = () => {
+    const mappedSalesHistories = saleHistories.value.map(salesHistory => ({
+        'Date': dayjs(salesHistory.created_at).format('DD/MM/YYYY'),
+        'Time': dayjs(salesHistory.created_at).format('hh:mm A'),
+        'Amount': 'RM ' + salesHistory.total_price.toFixed(2),
+        'Quantity': salesHistory.qty,
+    }));
+    exportToCSV(mappedSalesHistories, 'Sale History');
 }
 
 const productItemsTotalPages = computed(() => {
@@ -192,7 +160,7 @@ onMounted(() => {
                                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                         ]"
                                         :disabled="saleHistories.length === 0"
-                                        @click="exportToCSV"
+                                        @click="csvExport"
                                     >
                                         CSV
                                     </button>

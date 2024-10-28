@@ -32,6 +32,7 @@ const props = defineProps({
         default: false,
     },
     minDate: Date,
+    disabledDates: [Date, Array],
     hintText: {
         type: String,
         default: "",
@@ -168,6 +169,7 @@ onMounted(() => {
             showIcon
             :manualInput="false"
             :minDate="minDate"
+            :disabledDates="disabledDates"
             :showTime="props.withTime"
             :placeholder="props.placeholder"
             :disabled="disabled"
@@ -346,7 +348,7 @@ onMounted(() => {
         >
             <template #inputicon="{ clickCallback }">
                 <div class="flex justify-center">
-                    <template v-if="!range && withTime && modelValue === ''">
+                    <template v-if="modelValue === ''">
                         <Calendar :class="['size-4 flex-shrink-0 cursor-pointer transform !-translate-x-[90%] !-translate-y-[10%]', isFocused ? 'text-primary-200' : 'text-grey-400']" @click="clickCallback" />
                     </template>
                     <CircledTimesIcon

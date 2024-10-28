@@ -4,7 +4,7 @@ import Date from '@/Components/Date.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast } from '@/Composables';
+import { useCustomToast, useInputValidator } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -16,9 +16,10 @@ const props = defineProps({
 })
 
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
 
 const waiters = props.waiters.map(item => ({
-    text: item.name,
+    text: item.full_name,
     value: item.id
 }));
 
@@ -53,17 +54,6 @@ const setIsRate = (type) => {
         isRate.value = true;
     }
 }
-
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
 
 const isFormValid = computed(() => {
     return ['comm_type', 'rate', 'effective_date', 'recurring_on', 'monthly_sale', 'entitled'].every(field => form[field]);
@@ -117,7 +107,7 @@ const submit = () => {
                     iconPosition='right'
                     v-model="form.rate"
                     v-show="isRate"
-                    @keypress="isNumber($event)"
+                    @keypress="isValidNumberKey($event, true)"
                     class="col-span-4"
                 >
                     <template #prefix>%</template>
@@ -129,7 +119,7 @@ const submit = () => {
                     iconPosition="left"
                     v-model="form.rate"
                     v-show="!isRate"
-                    @keypress="isNumber($event)"
+                    @keypress="isValidNumberKey($event, true)"
                     class="col-span-4"
                 >
                     <template #prefix>RM</template>
@@ -161,7 +151,7 @@ const submit = () => {
                 :inputName="'monthly_sale'"
                 :iconPosition="'left'"
                 v-model="form.monthly_sale"
-                @keypress="isNumber($event)"
+                @keypress="isValidNumberKey($event, true)"
             >
                 <template #prefix>RM</template>
             </TextInput>

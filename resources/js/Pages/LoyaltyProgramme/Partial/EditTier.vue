@@ -17,6 +17,7 @@ import Tiger from "../../../../assets/images/Loyalty/Tiger.svg";
 // import DiscountAmount from "@/Pages/LoyaltyProgramme/Partial/DiscountAmount.vue";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
 import Toast from '@/Components/Toast.vue'
+import { useInputValidator } from "@/Composables";
 
 const props = defineProps({
     tier: {
@@ -30,6 +31,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close"]);
+const { isValidNumberKey } = useInputValidator();
 // const ranking = ref({});
 // const rankingRewards = ref([]);
 
@@ -137,17 +139,6 @@ const toggleMinPurchase = (index) => {
     const reward = form.rewards[index];
     reward.min_purchase =
         reward.min_purchase === "active" ? "inactive" : "active";
-};
-
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
 };
 
 const resetReward = (value, index) => {
@@ -325,7 +316,7 @@ const submit = () => {
                                                     :labelText="reward.reward_type === 'Discount (Amount)' ? 'Discount Amount' : 'Discount Percentage'"
                                                     inputId="discount"
                                                     v-model="reward.discount"
-                                                    @keypress="isNumber($event)"
+                                                    @keypress="isValidNumberKey($event, true)"
                                                 >
                                                     <template #prefix>{{ reward.reward_type === 'Discount (Amount)' ? 'RM' : '%' }}</template>
                                                 </TextInput>
@@ -337,7 +328,7 @@ const submit = () => {
                                                     labelText="Minimum purchase amount"
                                                     inputId="min_purchase_amount"
                                                     v-model="reward.min_purchase_amount"
-                                                    @keypress="isNumber($event)"
+                                                    @keypress="isValidNumberKey($event, true)"
                                                 >
                                                     <template #prefix>RM</template>
                                                 </TextInput>
@@ -365,7 +356,7 @@ const submit = () => {
                                                 v-model="reward.bonus_point"
                                                 :inputName="'bonus_point_' + index"
                                                 :errorMessage="form.errors ? form.errors['items.' + index + '.bonus_point']  : ''"
-                                                @keypress="isNumber($event)"
+                                                @keypress="isValidNumberKey($event, false)"
                                             >
                                                 <template #prefix>pts</template>
                                             </TextInput>

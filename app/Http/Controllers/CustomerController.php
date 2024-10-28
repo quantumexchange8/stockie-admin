@@ -228,7 +228,7 @@ class CustomerController extends Controller
 
         $earned = $orders->map(function ($order) {
             $positivePoints = $order->orderItems->sum('point_earned');
-            $pointNames = $order->orderItems->where('type', 'Redeemed Product')
+            $pointNames = $order->orderItems->where('type', 'Redemption')
                 ->map(function ($item) {
                     return [
                         "id" => $item->point->id,

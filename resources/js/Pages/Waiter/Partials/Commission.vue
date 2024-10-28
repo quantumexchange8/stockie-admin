@@ -3,7 +3,7 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import { UploadIcon } from '@/Components/Icons/solid';
 import SearchBar from '@/Components/SearchBar.vue';
 import Table from '@/Components/Table.vue';
-import { transactionFormat } from '@/Composables';
+import { transactionFormat, useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import dayjs from 'dayjs';
 import { FilterMatchMode } from 'primevue/api';
@@ -19,53 +19,23 @@ const props = defineProps({
 })
 
 const { formatAmount } = transactionFormat();
+const { exportToCSV } = useFileExport();
+
 
 const data = ref(props.data)
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
+const csvExport = () => {
+    const waiterName = props.waiter.full_name || 'Unknown Waiter';
+    const dataArr = data.value.map(data => ({
+        'Date': data.created_at,
+        'Total': data.monthly_sale,
+        'Commission': data.commissionAmt,        
+    }));
+    exportToCSV(dataArr, `${waiterName}_Daily Sales Report`)
 };
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const dataArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const waiterName = props.waiter.full_name || 'Unknown_Waiter';
-    const fileName = `Waiter_${waiterName}_Daily Sales Report_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (data.value && data.value.length > 0) {
-        data.value.forEach(row => {
-            dataArr.push({
-                'Date': row.created_at,
-                'Total': row.monthly_sale,
-                'Commission': row.commissionAmt,
-            })
-        });
-
-        const myLogs = arrayToCsv(dataArr);
-        
-        downloadBlob(myLogs, fileName, contentType);
-    }
-}
 
 </script>
 
@@ -98,7 +68,7 @@ const exportToCSV = () => {
                             { 'bg-primary-100': active },
                             { 'bg-grey-50 pointer-events-none': data.length === 0 },
                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="data.length === 0" @click="exportToCSV">
+                        ]" :disabled="data.length === 0" @click="csvExport">
                             CSV
                         </button>
                         </MenuItem>

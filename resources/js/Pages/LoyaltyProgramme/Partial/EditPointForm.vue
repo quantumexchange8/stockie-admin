@@ -8,6 +8,7 @@ import DragDropImage from '@/Components/DragDropImage.vue'
 import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { DeleteIcon } from '@/Components/Icons/solid';
+import { useInputValidator } from '@/Composables';
 
 const props = defineProps({
     point: {
@@ -21,7 +22,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
-
+const { isValidNumberKey } = useInputValidator();
 const inventoriesArr = ref(props.inventoriesArr);
 
 const form = useForm({
@@ -70,18 +71,6 @@ const updateInventoryStockCount = async (index, id) => {
     }
 }
 
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
-
-
 const isFormValid = computed(() => {
     return ['name', 'point'].every(field => form[field]) && form.items.length > 0;
 });
@@ -115,7 +104,7 @@ const isFormValid = computed(() => {
                                 :iconPosition="'right'"
                                 :errorMessage="form.errors?.point || ''"
                                 v-model="form.point"
-                                @keypress="isNumber($event)"
+                                @keypress="isValidNumberKey($event, false)"
                                 class="col-span-full sm:col-span-4 [&>div>input]:text-center"
                             >
                                 <template #prefix>pts</template>

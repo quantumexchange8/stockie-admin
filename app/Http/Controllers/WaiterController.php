@@ -26,6 +26,7 @@ class WaiterController extends Controller
    public function waiter(Request $request)
    {
         $waiters = User::where('role', 'waiter')->get();
+        // dd($waiters);
 
         $message = $request->session()->get('message');
 
@@ -135,7 +136,7 @@ class WaiterController extends Controller
        User::create([
             'name' => $request->username,
             'full_name' => $request->name,
-            'phone' => '+60' . $request->phone,
+            'phone' => $request->phone,
             'email'=>$request->email,
             'role_id' => $request->role_id,
             'role' => 'waiter',
@@ -164,8 +165,9 @@ class WaiterController extends Controller
    {
         $editWaiter = User::find($request->id);
         $editWaiter->update([
-            'name' => $request->input('name'),
-            'phone' => '+60' . $request->input('phone'),
+            'name' => $request->input('username'),
+            'full_name' => $request->input('name'),
+            'phone' => $request->input('phone'),
             'email' => $request->input('email'),
             'staffid' => $request->input('staffid'),
             'salary' => $request->input('salary'),

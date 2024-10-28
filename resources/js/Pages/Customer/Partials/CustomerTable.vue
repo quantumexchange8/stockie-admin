@@ -16,6 +16,7 @@ import Slider from "@/Components/Slider.vue";
 import dayjs from "dayjs";
 import RightDrawer from "@/Components/RightDrawer/RightDrawer.vue";
 import CustomerDetail from "./CustomerDetail.vue";
+import { useFileExport } from "@/Composables";
 
 
 const props = defineProps ({
@@ -38,6 +39,7 @@ const props = defineProps ({
 })
 
 const emit = defineEmits(["applyCheckedFilters"]);
+const { exportToCSV } = useFileExport();
 
 const customer = ref(props.customers);
 const isSidebarOpen = ref(false);
@@ -128,47 +130,15 @@ const toggleKeepStatus = (status) => {
     }
 }
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-const exportToCSV = () => { 
-    const customerArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const fileName = `Customer List_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (props.customers && props.customers.length > 0) {
-        props.customers.forEach(row => {
-            customerArr.push({
-                'Tier': row.tier,
-                'Customer': row.name,
-                'Points': row.points,
-                'Keep': row.keep,
-                'Joined Date': row.created_at,
-            })
-        });
-
-        const myLogs = arrayToCsv(customerArr);
-        downloadBlob(myLogs, fileName, contentType);
-    } else {
-        console.log(props.customers.value)
-    }
+const csvExport = () => {
+    const mappedCustomers = props.customers.map(customer => ({
+        'Tier': customer.tier,
+        'Customer': customer.name,
+        'Points': customer.points,
+        'Keep': customer.keep,
+        'Joined Date': customer.created_at,
+    }));
+    exportToCSV(mappedCustomers, 'Customer List')
 }
 
 const formatPoints = (points) => {
@@ -209,7 +179,7 @@ const formatPoints = (points) => {
                                 { 'bg-primary-100': active },
                                 { 'bg-grey-50 pointer-events-none': customers.length === 0 },
                                 'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                            ]" :disabled="customers.length === 0" @click="exportToCSV">
+                            ]" :disabled="customers.length === 0" @click="csvExport">
                                 CSV
                             </button>
                             </MenuItem>

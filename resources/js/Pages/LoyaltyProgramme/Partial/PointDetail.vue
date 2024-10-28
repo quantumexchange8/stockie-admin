@@ -10,7 +10,7 @@ import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import RedemptionHistoryTable from './RedemptionHistoryTable.vue';
 import PointInfoSection from './PointInfoSection.vue';
 import Toast from '@/Components/Toast.vue'
-import { useCustomToast } from '@/Composables/index.js';
+import { useCustomToast, useFileExport } from '@/Composables/index.js';
 
 const props = defineProps({
     redemptionHistories: Array,
@@ -41,6 +41,7 @@ const pointItemsColumns = ref([
 ]);
 
 const { flashMessage } = useCustomToast();
+const { exportToCSV } = useFileExport();
 
 const redemptionHistories = ref(props.redemptionHistories);
 const redemptionHistoriesRowsPerPage = ref(16);
@@ -75,47 +76,14 @@ const getPointHistories = async (filters = []) => {
     }
 }
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const redemptionHistoriesArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const fileName = `Redeemable Item_${props.id}_Redemption History_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (props.redemptionHistories && props.redemptionHistories.length > 0) {
-        props.redemptionHistories.forEach(row => {
-            redemptionHistoriesArr.push({
-                'Date': dayjs(row.redemption_date).format('DD/MM/YYYY'),
-                'Redeemable_Item': row.point.name,
-                'Quantity': row.qty,
-                'Redeemed_By': row.redeem_by,
-            })
-        });
-
-        const myLogs = arrayToCsv(redemptionHistoriesArr);
-        
-        downloadBlob(myLogs, fileName, contentType);
-        console.log("Redemption Histories has been saved");
-    }
+const csvExport = () => {
+    const mappedRedemptions = props.redemptionHistories.map(redemptionHistory => ({
+        'Date': dayjs(redemptionHistory.redemption_date).format('DD/MM/YYYY'),
+        'Redeemable_Item': redemptionHistory.point.name,
+        'Quantity': redemptionHistory.qty,
+        'Redeemed_By': redemptionHistory.redeem_by,
+    }));
+    exportToCSV(mappedRedemptions, 'Redeemable Item');
 }
 
 const redemptionHistoriesTotalPages = computed(() => {
@@ -178,7 +146,7 @@ onMounted(async() => {
                                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                         ]"
                                         :disabled="redemptionHistories.length === 0"
-                                        @click="exportToCSV"
+                                        @click="csvExport"
                                     >
                                         CSV
                                     </button>

@@ -5,7 +5,7 @@ import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
 import { computed } from "vue";
-import { useCustomToast } from "@/Composables";
+import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
 
 const props = defineProps({
     waiters: {
@@ -14,6 +14,8 @@ const props = defineProps({
     },
 })
 const { showMessage } = useCustomToast();
+const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
+const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(["close"]);
 const closeModal = () => {
@@ -22,38 +24,22 @@ const closeModal = () => {
     emit("close");
 };
 
-const formatPhone = (phone) => {
-    if (!phone || phone.length < 10) 
-        return phone; 
-    
-
-    if (phone.startsWith('+6')) 
-        phone = phone.slice(3);
-      
-
-    return phone;
-}
-
-const formatSalary = (salary) => {
-    if(salary.endsWith('.00'))
-        salary = salary.slice(0, -3);
-
-    return salary;
-}
 
 const form = useForm({
     id: props.waiters.id,
     username: props.waiters.name,
     name: props.waiters.full_name,
-    phone: formatPhone(props.waiters.phone),
+    phone: props.waiters.phone,
+    phone_temp: formatPhone(props.waiters.phone, true, true),
     email: props.waiters.email,
     role_id: props.waiters.role_id,
-    salary: formatSalary(props.waiters.salary),
+    salary: props.waiters.salary,
     stockie_email: props.waiters.stockie_email,
     password: '',
 });
 
 const submit = () => {
+    form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
     form.post(route("waiter.edit-waiter"), {
         preserveScroll: true,
         preserveState: 'errors',
@@ -72,7 +58,7 @@ const submit = () => {
     });
 };
 
-const requiredFields = ['name', 'phone', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
+const requiredFields = ['name', 'phone_temp', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
@@ -80,7 +66,7 @@ const isFormValid = computed(() => {
 </script>
 <template>
     <div class="w-full flex flex-col max-h-[650px] overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
-        <form novalidate @submit.prevent="submit">
+        <form @submit.prevent="submit">
             <div class="w-full flex flex-col md:gap-9">
                 <div class="w-full flex flex-col gap-6 md:flex-row justify-center">
                     <DragDropImage
@@ -123,12 +109,14 @@ const isFormValid = computed(() => {
                                 <div class="flex gap-4">
                                     <div class="w-full flex flex-col">
                                         <TextInput
-                                            label-text="Phone number"
+                                            labelText="Phone number"
                                             inputId="phone"
                                             type="'tel'"
-                                            v-model="form.phone"
-                                            :errorMessage="form.errors.phone"
+                                            v-model="form.phone_temp"
+                                            :errorMessage="form.errors?.phone || ''"
                                             :iconPosition="'left'"
+                                            @keypress="isValidNumberKey($event, false)"
+                                            @input="formatPhoneInput"
                                         >
                                             <template #prefix>
                                                 <span class="text-grey-900"
@@ -176,6 +164,7 @@ const isFormValid = computed(() => {
                                         type="'text'"
                                         v-model="form.salary"
                                         :iconPosition="'left'"
+                                        @keypress="isValidNumberKey($event, true)"
                                     >
                                         <template #prefix>
                                             <span class="text-grey-900"

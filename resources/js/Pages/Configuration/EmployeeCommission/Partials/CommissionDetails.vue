@@ -4,7 +4,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import { BeerIcon2, CommissionIcon, DeleteIcon, EditIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast } from '@/Composables';
+import { useCustomToast, useInputValidator } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -20,6 +20,7 @@ const props = defineProps({
 })
 
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
 
 const isEditCommOpen = ref(false);
 const isDeleteCommOpen = ref(false);
@@ -53,17 +54,6 @@ const showDeleteComm = (id) => {
 const hideDeleteComm = () => {
     isDeleteCommOpen.value = false;
 }
-
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
 
 const submit = () => {
     form.post(route('configurations.updateCommission'), {
@@ -168,7 +158,7 @@ const isFormValid = computed(() => {
                         iconPosition="right"
                         v-model="form.rate"
                         v-show="isRate"
-                        @keypress="isNumber($event)"
+                        @keypress="isValidNumberKey($event, true)"
                     >
                         <template #prefix>%</template>
                     </TextInput>
@@ -181,7 +171,7 @@ const isFormValid = computed(() => {
                         iconPosition="left"
                         v-model="form.rate"
                         v-show="!isRate"
-                        @keypress="isNumber($event)"
+                        @keypress="isValidNumberKey($event, true)"
                     >
                         <template #prefix>RM</template>
                     </TextInput>

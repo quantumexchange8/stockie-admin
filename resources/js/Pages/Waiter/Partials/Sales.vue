@@ -10,7 +10,7 @@ import Table from '@/Components/Table.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import Modal from '@/Components/Modal.vue';
 import axios from 'axios';
-import { transactionFormat } from '@/Composables';
+import { transactionFormat, useFileExport } from '@/Composables';
 
 const props = defineProps({
     dateFilter: Array,
@@ -42,6 +42,7 @@ const waiter = ref(props.waiter);
 const isLoading = ref(false);
 
 const { formatAmount } = transactionFormat();
+const { exportToCSV } = useFileExport();
 
 const defaultLatest7Days = computed(() => {
     let currentDate = dayjs();
@@ -95,47 +96,16 @@ const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const orderArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const waiterName = waiter.value?.name || 'Unknown_Waiter';
-    const fileName = `Waiter_${waiterName}_Daily Sales Report_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (order.value && order.value.length > 0) {
-        order.value.forEach(row => {
-            orderArr.push({
-                'Date': row.created_at,
-                'Amount': 'RM ' + row.total_amount.toFixed(2),
-                'Commission': 'RM ' + row.commission,
-            })
-        });
-
-        const myLogs = arrayToCsv(orderArr);
-        
-        downloadBlob(myLogs, fileName, contentType);
-    }
+const csvExport = () => {
+    const waiterName = waiter.value?.full_name || 'Unknown Waiter';
+    const mappedOrders = order.value.map(order => ({
+        'Date': order.created_at,
+        'Amount': 'RM ' + order.total_amount.toFixed(2),
+        'Commission': 'RM ' + order.commission,
+    }));
+    exportToCSV(mappedOrders, `${waiterName}_Daily Sales Report`);
 }
+
 
 
 </script>
@@ -169,7 +139,7 @@ const exportToCSV = () => {
                             { 'bg-primary-100': active },
                             { 'bg-grey-50 pointer-events-none': order.length === 0 },
                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="order.length === 0" @click="exportToCSV">
+                        ]" :disabled="order.length === 0" @click="csvExport">
                             CSV
                         </button>
                         </MenuItem>

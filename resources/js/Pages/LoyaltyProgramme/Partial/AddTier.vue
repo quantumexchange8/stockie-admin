@@ -12,6 +12,7 @@ import Accordion from "@/Components/Accordion.vue";
 // import Carlsbeg from "../../../../assets/images/Loyalty/Carlsbeg.svg";
 // import Tiger from "../../../../assets/images/Loyalty/Tiger.svg";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
+import { useInputValidator } from "@/Composables";
 
 const props = defineProps({
     inventoryItems: {
@@ -24,6 +25,7 @@ const emit = defineEmits(["close"]);
 
 const rewardList = ref([]);
 
+const { isValidNumberKey } = useInputValidator();
 const toggleMinPurchase = (index) => {
     const reward = rewardList.value[index];
     reward.min_purchase = reward.min_purchase === "active" ? "inactive" : "active";
@@ -75,17 +77,6 @@ const closeModal = () => {
     form.reset();
     form.errors = {};
     emit("close");
-};
-
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
 };
 
 const resetReward = (value, index) => {
@@ -160,7 +151,7 @@ const updateValidPeriod = (reward, option) => {
                             v-model="form.min_amount"
                             :iconPosition="'left'"
                             :errorMessage="form.errors.min_amount"
-                            @keypress="isNumber($event)"
+                            @keypress="isValidNumberKey($event, true)"
                         >
                             <template #prefix> RM </template>
                         </TextInput>
@@ -220,7 +211,7 @@ const updateValidPeriod = (reward, option) => {
                                                     :labelText="reward.reward_type === 'Discount (Amount)' ? 'Discount Amount' : 'Discount Percentage'"
                                                     inputId="discount"
                                                     v-model="reward.discount"
-                                                    @keypress="isNumber($event)"
+                                                    @keypress="isValidNumberKey($event, true)"
                                                 >
                                                     <template #prefix>{{ reward.reward_type === 'Discount (Amount)' ? 'RM' : '%' }}</template>
                                                 </TextInput>
@@ -232,7 +223,7 @@ const updateValidPeriod = (reward, option) => {
                                                     labelText="Minimum purchase amount"
                                                     inputId="min_purchase_amount"
                                                     v-model="reward.min_purchase_amount"
-                                                    @keypress="isNumber($event)"
+                                                    @keypress="isValidNumberKey($event, true)"
                                                 >
                                                     <template #prefix>RM</template>
                                                 </TextInput>
@@ -260,7 +251,7 @@ const updateValidPeriod = (reward, option) => {
                                                 v-model="reward.bonus_point"
                                                 :inputName="'bonus_point_' + index"
                                                 :errorMessage="form.errors ? form.errors['items.' + index + '.bonus_point']  : ''"
-                                                @keypress="isNumber($event)"
+                                                @keypress="isValidNumberKey($event, false)"
                                             >
                                                 <template #prefix>pts</template>
                                             </TextInput>

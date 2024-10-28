@@ -8,6 +8,7 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import { computed, onMounted, ref, watch } from 'vue';
 import { FilterMatchMode } from 'primevue/api';
 import dayjs from 'dayjs';
+import { useFileExport } from '@/Composables';
 
 const props = defineProps({
     dateFilter: Array,
@@ -30,6 +31,7 @@ const props = defineProps({
 
 const waiter = ref(props.waiter);
 const attendance = ref(props.attendance);
+const { exportToCSV } = useFileExport();
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -63,46 +65,13 @@ const viewAttendance = async (filters = {}, id) => {
     }
 }
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const attendanceArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const waiterName = waiter.value?.name || 'Unknown_Waiter';
-    const fileName = `Waiter_${waiterName}_Attendance Report_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (attendance.value && attendance.value.length > 0) {
-        attendance.value.forEach(row => {
-            attendanceArr.push({
-                // 'Generated at': dayjs(row.created_at).format('DD/MM/YYYY'),
-                'Check in': row.check_in,
-                'Check out': row.check_out,
-            })
-        });
-
-        const myLogs = arrayToCsv(attendanceArr);
-        
-        downloadBlob(myLogs, fileName, contentType);
-    }
+const csvExport = () => {
+    const waiterName = waiter.value?.full_name || 'Unknown Waiter';
+    const mappedAttendance = attendance.value.map(attendance => ({
+        'Check in': attendance.check_in,
+        'Check out': attendance.check_out,
+    }));
+    exportToCSV(mappedAttendance, `Waiter_${waiterName}_Attendance Report`);
 }
 
 </script>
@@ -136,7 +105,7 @@ const exportToCSV = () => {
                             { 'bg-primary-100': active },
                             { 'bg-grey-50 pointer-events-none': attendance.length === 0 },
                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="attendance.length === 0" @click="exportToCSV">
+                        ]" :disabled="attendance.length === 0" @click="csvExport">
                             CSV
                         </button>
                         </MenuItem>

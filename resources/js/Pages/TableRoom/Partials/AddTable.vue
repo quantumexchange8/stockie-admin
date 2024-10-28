@@ -6,7 +6,7 @@ import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
 import RadioButton from '@/Components/RadioButton.vue';
 import { tableType } from '@/Composables/constants';
-import { useCustomToast } from '@/Composables';
+import { useCustomToast, useInputValidator } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -16,6 +16,8 @@ const props = defineProps({
     }
 });
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
+
 const emit = defineEmits(['close']);
 const zones = ref();
 
@@ -55,16 +57,6 @@ const cancelForm = () => {
     emit('close');
 }
 
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
-
 const requiredFields = ['type', 'table_no', 'seat', 'zone_id'];
 
 const isFormValid = computed(() => {
@@ -99,7 +91,7 @@ const isFormValid = computed(() => {
                         :labelText="'No. of Seats Available'"
                         :placeholder="'number only (eg: 6)'"
                         :errorMessage="form.errors?.seat || ''"
-                        @keypress="isNumber($event)"
+                        @keypress="isValidNumberKey($event, false)"
                         v-model="form.seat"
                         class="col-span-full md:col-span-6"
                     />

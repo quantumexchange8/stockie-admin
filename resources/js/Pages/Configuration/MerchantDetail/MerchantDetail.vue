@@ -7,7 +7,7 @@ import { ref, watch } from "vue";
 import Button from '@/Components/Button.vue';
 import Toast from "@/Components/Toast.vue";
 import Table from "@/Components/Table.vue";
-import { useCustomToast } from "@/Composables";
+import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
 import { DeleteIllus } from "@/Components/Icons/illus";
 
 const props = defineProps({
@@ -24,6 +24,8 @@ const isEditingPercentage = ref(false);
 const isAddTaxClicked = ref(false);
 const actionVal = ref(null);
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
+const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
 
 const getResults = async () => {
     isLoading.value = true
@@ -43,6 +45,7 @@ const form = useForm({
     merchant_id: props.merchant.id ?? '',
     merchant_name: props.merchant.merchant_name ?? '',
     merchant_contact: props.merchant.merchant_contact ?? '',
+    merchant_contact_temp: formatPhone(props.merchant.merchant_contact, true, true),
     merchant_address: props.merchant.merchant_address ?? '',
     name: '',
     value: '',
@@ -88,8 +91,8 @@ const openDeleteTax = (tax) => {
 }
 
 const startEditing = (event, tax, type) => {
-    // event.preventDefault();
-    // event.stopPropagation();
+    event.preventDefault();
+    event.stopPropagation();
     const actionCol = merchantColumn.value.find(col => col.field === 'action');
     if (actionCol) {
         actionCol.width = '0';
@@ -187,6 +190,7 @@ const stopEditing = () => {
 }
 
 const formSubmit = () => { 
+    form.merchant_contact = form.merchant_contact_temp ? transformPhone(form.merchant_contact_temp) : '';
     form.post(route('configurations.updateMerchant'), {
         preserveScroll: true,
         onSuccess: () => {
@@ -267,19 +271,6 @@ const deleteSubmit = () => {
     }
 }
 
-
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
-
-
 getResults()
 
 watch(() => taxes.value, (newValue) => {
@@ -323,7 +314,7 @@ watch(() => taxes.value, (newValue) => {
                     <div class="w-full flex h-full justify-between items-center self-stretch">
                         <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                             <span class="text-grey-600 align-center text-sm font-medium">Merchant Contact No.</span>
-                            <span class="text-grey-900 align-center text-md font-medium">{{ props.merchant.merchant_contact }}</span>
+                            <span class="text-grey-900 align-center text-md font-medium">{{ formatPhone(props.merchant.merchant_contact) }}</span>
                         </div>
                     </div>
                     <div class="w-full flex h-full justify-between items-center self-stretch">
@@ -396,7 +387,7 @@ watch(() => taxes.value, (newValue) => {
                                 @click="isAddTaxClicked ? null : startEditing($event, taxes, 'percentage')"
                                 @blur="isAddTaxClicked ? null : stopEditing()"
                                 @keydown.enter.prevent="stopEditing()"
-                                @keypress="isNumber($event)"
+                                @keypress="isValidNumberKey($event, true)"
                             >
                                 <template #prefix>
                                     <PercentageIcon />
@@ -454,10 +445,19 @@ watch(() => taxes.value, (newValue) => {
                         <TextInput
                             :inputName="'merchant_contact'"
                             :labelText="'Merchant Contact No.'"
-                            :placeholder="'eg: Heineken B1F1 Promotion'"
-                            :errorMessage="form.errors.merchant_contact"
-                            v-model="form.merchant_contact"
-                        />
+                            :iconPosition="'left'"
+                            :errorMessage="form.errors?.merchant_contact || ''"
+                            v-model="form.merchant_contact_temp"
+                            @keypress="isValidNumberKey($event, false)"
+                            @input="formatPhoneInput"
+                            class="[&>div:nth-child(2)>input]:text-start"
+                        >
+                            <template #prefix>
+                                <span class="text-grey-700 text-base font-normal">
+                                    +60
+                                </span>
+                            </template>
+                        </TextInput>
                     </div>
                     <div>
                         <TextInput

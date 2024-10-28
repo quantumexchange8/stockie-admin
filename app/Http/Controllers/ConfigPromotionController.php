@@ -18,17 +18,17 @@ class ConfigPromotionController extends Controller
      */
     public function index()
     {
-        $nowDate = now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
+        // $nowDate = now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
         
-        ConfigPromotion::whereDate('promotion_from', '<=', $nowDate)
-            ->whereDate('promotion_to', '>', $nowDate) 
-            ->update(['status' => 'Active']);
+        // ConfigPromotion::whereDate('promotion_from', '<=', $nowDate)
+        //     ->whereDate('promotion_to', '>', $nowDate) 
+        //     ->update(['status' => 'Active']);
 
-        ConfigPromotion::where(function ($query) use ($nowDate) {
-                $query->whereDate('promotion_to', '<=', $nowDate)  
-                    ->orWhereDate('promotion_from', '>', $nowDate); 
-            })
-            ->update(['status' => 'Inactive']);
+        // ConfigPromotion::where(function ($query) use ($nowDate) {
+        //         $query->whereDate('promotion_to', '<=', $nowDate)  
+        //             ->orWhereDate('promotion_from', '>', $nowDate); 
+        //     })
+        //     ->update(['status' => 'Inactive']);
 
         $ActivePromotions = ConfigPromotion::where('status', 'Active')->get();
         $InactivePromotions = ConfigPromotion::where('status', 'Inactive')->get();
@@ -105,7 +105,6 @@ class ConfigPromotionController extends Controller
      */
     public function edit(Request $request)
     {
-        
 
         $todayDate = date('Y/m/d');
         if (($todayDate >= $request->promotion_from) && ($todayDate <= $request->todayDate)) {
@@ -175,7 +174,7 @@ class ConfigPromotionController extends Controller
 
         $request->validate([
             'merchant_name' => ['required', 'string'],
-            'merchant_contact' => ['required', 'numeric'],
+            'merchant_contact' => ['required', 'string'],
             'merchant_address' => ['required', 'max:255'],
         ]);
 
@@ -269,5 +268,14 @@ class ConfigPromotionController extends Controller
                 'point' => $request->point,
             ]);
         }
+    }
+
+    public function getPoint() {
+        $setting = Setting::where('name', 'Point')->first(['point', 'value']);
+    
+        return response()->json([
+            'existingPoint' => (string)$setting->point ?? null,
+            'respectiveValue' => $setting->value ?? null,
+        ]);
     }
 }

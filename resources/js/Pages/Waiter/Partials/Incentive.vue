@@ -9,7 +9,7 @@ import { Link } from '@inertiajs/vue3';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { UploadIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
-import { transactionFormat } from '@/Composables';
+import { transactionFormat, useFileExport } from '@/Composables';
 
 const props = defineProps({
     waiter: {
@@ -35,49 +35,41 @@ const props = defineProps({
 
 const incentiveData = ref(props.incentiveData);
 const { formatAmount } = transactionFormat();
+const { exportToCSV } = useFileExport();
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const dataArr = [];
-    const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-    const waiterName = props.waiter || 'Unknown_Waiter';
-    const fileName = `Waiter_${waiterName}_Monthly Incentive Report_${currentDateTime}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-
-    if (incentiveData.value && incentiveData.value.length > 0) {
-        incentiveData.value.forEach(row => {
-            dataArr.push({
-                'Date': row.monthYear,
-                'Total': row.totalSales,
-                'Incentive': row.incentiveAmt,
-                'Status': row.status,
-            })
-        });
-
-        const myLogs = arrayToCsv(dataArr);
-        
-        downloadBlob(myLogs, fileName, contentType);
-    }
+const csvExport = () => {
+    const waiterName = props.waiter || 'Unknown Waiter';
+    const mappedData = incentiveData.value.map(data => ({
+        'Date': data.monthYear,
+        'Total': data.totalSales,
+        'Incentive': data.incentiveAmt,
+        'Status': data.status,        
+    }));
+    exportToCSV(mappedData, `${waiterName}_Monthly Incentive Report`);
 }
+
+// const exportToCSV = () => { 
+//     const dataArr = [];
+//     const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
+//     const waiterName = props.waiter || 'Unknown_Waiter';
+//     const fileName = `Waiter_${waiterName}_Monthly Incentive Report_${currentDateTime}.csv`;
+//     const contentType = 'text/csv;charset=utf-8;';
+
+//     if (incentiveData.value && incentiveData.value.length > 0) {
+//         incentiveData.value.forEach(row => {
+//             dataArr.push({
+//                 'Date': row.monthYear,
+//                 'Total': row.totalSales,
+//                 'Incentive': row.incentiveAmt,
+//                 'Status': row.status,
+//             })
+//         });
+
+//         const myLogs = arrayToCsv(dataArr);
+        
+//         downloadBlob(myLogs, fileName, contentType);
+//     }
+// }
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -113,7 +105,7 @@ const filters = ref({
                             { 'bg-primary-100': active },
                             { 'bg-grey-50 pointer-events-none': incentiveData.length === 0 },
                             'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="incentiveData.length === 0" @click="exportToCSV">
+                        ]" :disabled="incentiveData.length === 0" @click="csvExport">
                             CSV
                         </button>
                         </MenuItem>

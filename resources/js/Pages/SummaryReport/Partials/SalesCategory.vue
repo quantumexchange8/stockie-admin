@@ -2,6 +2,7 @@
 import Button from '@/Components/Button.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { DropdownIcon, UploadIcon } from '@/Components/Icons/solid';
+import { useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import Chart from 'primevue/chart';
 import { onMounted, ref, watch } from 'vue';
@@ -21,6 +22,7 @@ const chartData = ref();
 const chartOptions = ref();
 const categories = ['Beer', 'Wine', 'Liquor', 'Others'];
 const emit = defineEmits(['applySalesFilter']);
+const { exportToCSV } = useFileExport();
 
 const selectedCategory = ref(categories[0]);
 
@@ -50,48 +52,17 @@ const useYearFilter = (year, category) => {
     emit('applySalesFilter', selectedCategory.value, selectedYear.value);
 };
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const salesArr = [];
+const csvExport = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const salesYear = selectedYear.value || 'Unknown';
     const salesCategory = selectedCategory.value || 'Unknown category';
-    const fileName = `${salesYear}_Sales in ${salesCategory}.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    if (props.salesCategory && props.salesCategory.length > 0 && props.lastPeriodSales && props.lastPeriodSales.length > 0) {
-    props.salesCategory.forEach((orderCount, index) => {
-        salesArr.push({
-            'Month': months[index], 
-            'Order Count': orderCount,
-            'Last Period Order Count': props.lastPeriodSales[index]
-            });
-        });
-    }
-
-    const myLogs = arrayToCsv(salesArr);
-    
-    downloadBlob(myLogs, fileName, contentType);
-};
+    const mappedSalesCategory = props.salesCategory.map((salesCategory, index) => ({
+        'Month': months[index], 
+        'Order Count': salesCategory,
+        'Last Period Order Count': props.lastPeriodSales[index]
+    }));
+    exportToCSV(mappedSalesCategory, `${salesYear}_Sales in ${salesCategory}`);
+}
 
 const setChartData = () => {
     const salesData = props.salesCategory.map(value => parseFloat(value));
@@ -454,7 +425,7 @@ onMounted(() => {
                                     { 'bg-primary-100': active },
                                     { 'bg-grey-50 pointer-events-none': salesCategory.length === 0 && lastPeriodSales.length === 0 },
                                     'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                                ]" :disabled="salesCategory.length === 0 && lastPeriodSales.length === 0" @click="exportToCSV">
+                                ]" :disabled="salesCategory.length === 0 && lastPeriodSales.length === 0" @click="csvExport">
                                     CSV
                                 </button>
                             </MenuItem>

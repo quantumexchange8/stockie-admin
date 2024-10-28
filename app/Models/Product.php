@@ -62,6 +62,11 @@ class Product extends Model
         return $this->hasMany(OrderItem::class, 'product_id');
     }
 
+    public function discountItems(): HasMany
+    {
+        return $this->hasMany(ConfigDiscountItem::class, 'product_id');
+    }
+
     // Register the model event
     protected static function booted()
     {

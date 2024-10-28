@@ -10,6 +10,7 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions } from '@/Composables/constants';
+import { useInputValidator } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -28,6 +29,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
+const { isValidNumberKey } = useInputValidator();
 
 const categoryArr = ref(props.categoryArr);
 const inventoriesArr = ref(props.inventoriesArr);
@@ -80,14 +82,6 @@ const updateInventoryStockCount = async (index, id) => {
         }
     }
 }
-
-// Check and allows only the following keypressed
-const isNumber = (e, withDot = true) => {
-    const keysAllowed = withDot ? '0123456789.' : '0123456789';
-    if (!keysAllowed.includes(e.key)) {
-        e.preventDefault();
-    }
-};
 
 const isFormValid = computed(() => {
     return ['product_name', 'price', 'point', 'category_id', 'keep'].every(field => form[field]) && form.items.length > 0;
@@ -170,7 +164,7 @@ watch(() => form.items, (newValue) => {
                                 :iconPosition="'left'"
                                 :errorMessage="form.errors?.price || ''"
                                 v-model="form.price"
-                                @keypress="isNumber($event)"
+                                @keypress="isValidNumberKey($event, true)"
                                 class="col-span-full sm:col-span-4 [&>div>input]:text-center"
                             >
                                 <template #prefix>RM</template>
@@ -181,7 +175,7 @@ watch(() => form.items, (newValue) => {
                                 :iconPosition="'right'"
                                 :errorMessage="form.errors?.point || ''"
                                 v-model="form.point"
-                                @keypress="isNumber($event)"
+                                @keypress="isValidNumberKey($event, false)"
                                 class="col-span-full sm:col-span-4 [&>div>input]:text-center"
                             >
                                 <template #prefix>pts</template>

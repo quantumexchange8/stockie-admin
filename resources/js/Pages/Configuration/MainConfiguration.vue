@@ -1,6 +1,5 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import Stock from "./Stock/Stock.vue";
 import MerchantDetail from "./MerchantDetail/MerchantDetail.vue";
 import Commision from "./EmployeeCommission/EmployeeCommision.vue";
 import IncentiveProg from "./IncentiveProgram/IncentiveProgram.vue";
@@ -11,12 +10,13 @@ import TabView from "@/Components/TabView.vue";
 import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables";
 import PointsSettings from "./PointsSettings/PointsSettings.vue";
+import DiscountSettings from "./DiscountSettings/DiscountSettings.vue";
 
 const home = ref({
     label: 'Configuration',
 });
 
-const tabs = ref(["Stock", "Employee Commission", "Employee Incentive Programme", "Promotion", "Invoice Setting", "Points Settings"]);
+const tabs = ref(["Discount Settings", "Employee Commission", "Employee Incentive Programme", "Promotion", "Invoice Setting", "Points Settings"]);
 
 const props = defineProps({
     ActivePromotions: Array,
@@ -42,8 +42,8 @@ onMounted(() => {
         <Toast />
 
         <TabView :tabs="tabs">
-            <template #stock>
-                <Stock />
+            <template #discount-settings>
+                <DiscountSettings />
             </template>
             <template #employee-commission>
                 <Commision   

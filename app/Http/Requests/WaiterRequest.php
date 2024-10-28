@@ -24,10 +24,8 @@ class WaiterRequest extends FormRequest
         $rules = [
             'username'=>'required|string|max:255',
             'name'=>'required|string|max:255',
-            'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
-            // 'email' => 'required|email|unique:waiters',
-            // 'staffid' => 'required|string|unique:waiters,staffid',
-            'salary' => 'required|integer|min:0',
+            'phone' => 'required|string|max:255',
+            'salary' => 'required|string|min:0',
             'stockie_email' => 'required|email',
             'password' => 'required|string',
         ];
@@ -62,8 +60,8 @@ class WaiterRequest extends FormRequest
             'email.unique' => 'Email has already been taken.',
             'email.email' => 'Invalid email.',
             'role_id.unique' => 'Staff ID has already been taken.',
-            'phone.regex' => 'Invalid phone number',
-            'salary.integer' => 'Salary must be an integer value.',
+            'phone.required' => 'This field is required.',
+            // 'salary.string' => 'Salary must be an decimal value.',
             'salary.min' => 'Salary must be at least 0.',
             'worker_email.email' => 'Invalid email',
 

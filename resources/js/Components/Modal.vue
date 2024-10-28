@@ -157,10 +157,14 @@ const deleteRecord = () => {
                                     v-if="props.withHeader"
                                 >
                                     <p class="text-center text-primary-950 text-md font-medium">{{ title }}</p>
-                                    <TimesIcon
-                                        class="text-primary-900 hover:text-primary-800 hover:cursor-pointer"
+                                    <button
+                                        :type="'button'"
                                         @click="close"
-                                    />
+                                        >
+                                        <TimesIcon
+                                            class="text-primary-900 hover:text-primary-800 hover:cursor-pointer"
+                                        />
+                                    </button>
                                 </DialogTitle>
                                 <slot></slot>
                             </template>

@@ -7,6 +7,7 @@ import Table from '@/Components/Table.vue';
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import EditWaiter from './EditWaiter.vue';
+import { usePhoneUtils } from '@/Composables';
 
 const props = defineProps({
     rows: {
@@ -39,26 +40,10 @@ const form = useForm({
     stockie_password: '',
 })
 
-
+const { formatPhone } = usePhoneUtils();
 const isEditWaiterOpen = ref(false);
 const isDeleteWaiterOpen = ref(false);
 const selectedWaiter = ref(null);
-
-const formatPhone = (phone) => {
-    if (!phone || phone.length < 10) 
-        return phone; 
-
-    if (phone.startsWith('+6')) 
-        phone = phone.slice(2);
-    const totalLength = phone.length;
-    const cutPosition = totalLength - 4;
-
-    const firstPart = phone.slice(0, 3);
-    const middlePart = phone.slice(3, cutPosition)
-    const lastPart = phone.slice(cutPosition);       
-
-    return `${firstPart} ${middlePart} ${lastPart}`;
-}
 
 const showEditWaiterForm = (event, rows) => {
     handleDefaultClick(event);
@@ -119,7 +104,7 @@ const handleDefaultClick = (event) => {
         <template #full_name="rows">
             <template class="flex flex-row gap-[10px] items-center">
                 <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"></span>
-                <span class="text-grey-900 text-sm font-medium">{{ rows.full_name }}</span>
+                <span class="text-grey-900 text-sm font-medium truncate">{{ rows.full_name }}</span>
             </template>
         </template>
         <template #phone="rows">

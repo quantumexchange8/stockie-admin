@@ -5,13 +5,14 @@ import Button from '@/Components/Button.vue';
 import DateInput from "@/Components/Date.vue";
 import TextInput from '@/Components/TextInput.vue';
 import dayjs from 'dayjs';
-import { useCustomToast } from '@/Composables/index.js';
+import { useCustomToast, useInputValidator } from '@/Composables/index.js';
 
 const props = defineProps({
     reservationTable: Object
 });
 
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close']);
 
@@ -46,16 +47,6 @@ const formSubmit = () => {
     })
 };
 
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
-
 const isFormValid = computed(() => {
     return ['reservation_date', 'pax'].every(field => form[field]);
 });
@@ -81,7 +72,7 @@ watch(() => form.reservation_date, (newValue) => {
                     :placeholder="'No. of pax'"
                     :errorMessage="form.errors?.pax || ''"
                     v-model="form.pax"
-                    @keypress="isNumber($event, false)"
+                    @keypress="isValidNumberKey($event, false)"
                 />
             </div>
 

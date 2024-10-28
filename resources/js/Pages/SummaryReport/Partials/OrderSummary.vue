@@ -1,6 +1,7 @@
 <script setup>
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { DropdownIcon, UploadIcon } from '@/Components/Icons/solid';
+import { useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import Chart from 'primevue/chart';
 import { ref, onMounted, watch } from "vue";
@@ -14,6 +15,7 @@ const props = defineProps ({
 const chartData = ref();
 const chartOptions = ref();
 const emit = defineEmits(['applyYearFilter']);
+const { exportToCSV } = useFileExport();
 
 const setChartData = () => {
     const orders = props.ordersArray.map(value => parseInt(value, 10));
@@ -228,46 +230,15 @@ watch(
     { deep: true }
 );
 
-const arrayToCsv = (data) => {
-    const array = [Object.keys(data[0])].concat(data)
-
-    return array.map(it => {
-        return Object.values(it).toString()
-    }).join('\n');
-};
-
-const downloadBlob = (content, filename, contentType) => {
-    // Create a blob
-    var blob = new Blob([content], { type: contentType });
-    var url = URL.createObjectURL(blob);
-
-    // Create a link to download it
-    var pom = document.createElement('a');
-    pom.href = url;
-    pom.setAttribute('download', filename);
-    pom.click();
-};
-
-const exportToCSV = () => { 
-    const ordersArr = [];
+const csvExport = () => {
     const orderYear = selected.value || 'Unknown';
-    const fileName = `${orderYear}_Order Summary.csv`;
-    const contentType = 'text/csv;charset=utf-8;';
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    if (props.ordersArray && props.ordersArray.length > 0) {
-        props.ordersArray.forEach((orderCount, index) => {
-            ordersArr.push({
-                'Month': months[index], 
-                'Order Count': orderCount, 
-            });
-        });
-    }
-
-        const myLogs = arrayToCsv(ordersArr);
-        
-        downloadBlob(myLogs, fileName, contentType);
-}
+    const mappedOrders = props.ordersArray.map((orders, index) => ({
+        'Month': months[index], 
+        'Order Count': orders, 
+    }));
+    exportToCSV(mappedOrders, `${orderYear}_Order Summary`)
+};
 
 onMounted(() => {
     updateChart();
@@ -354,7 +325,7 @@ onMounted(() => {
                                     { 'bg-primary-100': active },
                                     { 'bg-grey-50 pointer-events-none': ordersArray.length === 0 },
                                     'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                                ]" :disabled="ordersArray.length === 0" @click="exportToCSV">
+                                ]" :disabled="ordersArray.length === 0" @click="csvExport">
                                     CSV
                                 </button>
                             </MenuItem>

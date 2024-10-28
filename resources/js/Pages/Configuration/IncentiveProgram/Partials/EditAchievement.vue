@@ -3,7 +3,7 @@ import Button from '@/Components/Button.vue';
 import Date from '@/Components/Date.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast } from '@/Composables';
+import { useCustomToast, useInputValidator } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import { computed, ref } from 'vue';
@@ -28,7 +28,7 @@ const comm_type = ref([
 ]);
 const isRate = ref(props.selectedIncent.isRate);
 const { showMessage } = useCustomToast();
-
+const { isValidNumberKey } = useInputValidator()
 
 const recurringDates = ref([...Array(31)].map((_, i) => {
     const day = i + 1;
@@ -41,7 +41,6 @@ const recurringDates = ref([...Array(31)].map((_, i) => {
     };
 }));
 
-
 const setIsRate = (type) => {
     if(type == 'fixed'){
         isRate.value = false;
@@ -50,17 +49,6 @@ const setIsRate = (type) => {
     }
 }
 
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-
-if (/^\d$/.test(key)) return;
-
-if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-
-e.preventDefault();
-};
-
 const isFormValid = computed(() => {
     return ['comm_type', 'rate', 'effective_date', 'recurring_on', 'monthly_sale'].every(field => form[field]);
 })
@@ -68,7 +56,6 @@ const isFormValid = computed(() => {
 const defaultCommType = comm_type.value.find(item => item.value === props.selectedIncent.type) || comm_type.value[0];
 const defaultRecurringOn = recurringDates.value.find(item => item.value === props.selectedIncent.recrurring_on) || recurringDates.value[0];
 const defaultEffective = dayjs(props.selectedIncent.effective_date).add(1, 'month').format('DD/MM/YYYY')
-
 
 const form = useForm({
     id: props.selectedIncent.id,
@@ -80,8 +67,6 @@ const form = useForm({
     recurring_on: defaultRecurringOn,
     monthly_sale: props.selectedIncent.monthly_sale.slice(0,-3),
 })
-
-
 
 const submit = () => {
     form.post(route('configurations.editAchievement'), {
@@ -124,7 +109,7 @@ const submit = () => {
                     iconPosition='right'
                     v-model="form.rate"
                     v-show="isRate"
-                    @keypress="isNumber($event)"
+                    @keypress="isValidNumberKey($event, true)"
                     class="col-span-4"
                 >
                     <template #prefix>%</template>
@@ -136,7 +121,7 @@ const submit = () => {
                     iconPosition="left"
                     v-model="form.rate"
                     v-show="!isRate"
-                    @keypress="isNumber($event)"
+                    @keypress="isValidNumberKey($event, true)"
                     class="col-span-4"
                 >
                     <template #prefix>RM</template>
@@ -169,7 +154,7 @@ const submit = () => {
                 :inputName="'monthly_sale'"
                 :iconPosition="'left'"
                 v-model="form.monthly_sale"
-                @keypress="isNumber($event)"
+                @keypress="isValidNumberKey($event, true)"
             >
                 <template #prefix>RM</template>
             </TextInput>

@@ -91,7 +91,7 @@ const addItem = () => {
                     <TextInput
                         :inputName="'name'"
                         :labelText="'Group name'"
-                        :placeholder="'eg: Heineken, Carlsberg etc'"
+                        :placeholder="'e.g. Beer'"
                         :errorMessage="form.errors?.name || ''"
                         v-model="form.name"
                         class="col-span-full md:col-span-8"

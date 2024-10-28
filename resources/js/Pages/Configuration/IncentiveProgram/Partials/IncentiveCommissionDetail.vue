@@ -5,7 +5,6 @@ import SearchBar from '@/Components/SearchBar.vue';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { FilterMatchMode } from 'primevue/api';
 import { computed, ref, watch } from 'vue';
 import { EmptyIllus } from '@/Components/Icons/illus';
 import AchievementDetails from './AchievementDetails.vue';

@@ -12,6 +12,7 @@ import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultPointItem } from '@/Composables/constants';
 import Label from '@/Components/Label.vue';
+import { useInputValidator } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -22,7 +23,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
-
+const { isValidNumberKey } = useInputValidator();
 const inventoriesArr = ref(props.inventoriesArr);
 
 const form = useForm({
@@ -74,18 +75,6 @@ const updateInventoryStockCount = async (index, id) => {
     }
 }
 
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
-
-
 const isFormValid = computed(() => {
     return ['name', 'point'].every(field => form[field]) && form.items.length > 0;
 });
@@ -113,13 +102,13 @@ const isFormValid = computed(() => {
                                 v-model="form.name"
                                 class="col-span-full sm:col-span-8"
                             />
-                            <TextInput
+                            <TextInput  
                                 :inputId="'point'"
                                 :labelText="'Redeemed with'"
                                 :iconPosition="'right'"
                                 :errorMessage="form.errors?.point || ''"
                                 v-model="form.point"
-                                @keypress="isNumber($event)"
+                                @keypress="isValidNumberKey($event, false)"
                                 class="col-span-full sm:col-span-4 [&>div>input]:text-center"
                             >
                                 <template #prefix>pts</template>

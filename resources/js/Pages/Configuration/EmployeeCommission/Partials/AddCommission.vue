@@ -3,7 +3,7 @@ import Button from "@/Components/Button.vue";
 import Dropdown from "@/Components/Dropdown.vue";
 import MultiSelect from "@/Components/MultiSelect.vue";
 import TextInput from "@/Components/TextInput.vue";
-import { useCustomToast } from "@/Composables";
+import { useCustomToast, useInputValidator } from "@/Composables";
 import { useForm } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 
@@ -19,6 +19,7 @@ const props = defineProps({
 })
 
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
 
 const options = props.productToAdd.map(item => ({
     text: item.product_name, 
@@ -43,17 +44,6 @@ const form = useForm({
     commRate: '',
     involvedProducts: '',
 });
-
-// Validate input to only allow numeric value to be entered
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
 
 const submit = () => {
     form.post(route('configurations.addCommission'), {
@@ -108,7 +98,7 @@ const isFormValid = computed(() => {
                     iconPosition="right"
                     v-model="form.commRate"
                     v-show="isRate"
-                    @keypress="isNumber($event)"
+                    @keypress="isValidNumberKey($event, true)"
                     
                 >
                     <template #prefix>%</template>
@@ -121,7 +111,7 @@ const isFormValid = computed(() => {
                     iconPosition="left"
                     v-model="form.commRate"
                     v-show="!isRate"
-                    @keypress="isNumber($event)"
+                    @keypress="isValidNumberKey($event, true)"
                 >
                     <template #prefix>RM</template>
                 </TextInput>

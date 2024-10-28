@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConfigCommissionController;
+use App\Http\Controllers\ConfigDiscountController;
 use App\Http\Controllers\ConfigEmployeeIncProgController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
@@ -109,6 +110,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/getStock', [ConfigPromotionController::class, 'getStock'])->name('configurations.getStock');
         Route::post('/updateStock', [ConfigPromotionController::class, 'update'])->name('configurations.updateStock');
 
+        /******* Discount Settings ********/
+        Route::get('/getDiscount', [ConfigDiscountController::class, 'getDiscount'])->name('configurations.getDiscount');
+        Route::post('/createDiscount', [ConfigDiscountController::class, 'createDiscount'])->name('configurations.createDiscount');
+        Route::get('/dateFilter', [ConfigDiscountController::class, 'dateFilter'])->name('configurations.dateFilter');
+        Route::get('/discountDetails', [ConfigDiscountController::class, 'discountDetails'])->name('configurations.discountDetails');
+        Route::delete('/deleteDiscount/{id}', [ConfigDiscountController::class, 'deleteDiscount'])->name('configurations.deleteDiscount');
+        Route::post('/editDiscount', [ConfigDiscountController::class, 'editDiscount'])->name('configurations.editDiscount');
+        Route::get('/editProductDetails/{id}', [ConfigDiscountController::class, 'editProductDetails'])->name('configurations.editProductDetails');
+
         /******* Employee Commission ********/
         Route::get('/configurations/commission', [ConfigCommissionController::class, 'index'])->name('configurations.commission');
         Route::post('/addCommission', [ConfigCommissionController::class, 'addCommission'])->name('configurations.addCommission');
@@ -142,6 +152,7 @@ Route::middleware('auth')->group(function () {
 
         /******* Points Settings ********/
         Route::post('/pointCalculate', [ConfigPromotionController::class, 'pointCalculate'])->name('configuration.pointCalculate');
+        Route::get('/getPoint', [ConfigPromotionController::class, 'getPoint'])->name('configurations.getPoint');
     });
 
     /******** Loyalty Programme **********/

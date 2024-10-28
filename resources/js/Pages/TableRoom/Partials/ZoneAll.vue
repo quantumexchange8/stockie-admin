@@ -8,7 +8,7 @@ import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import Accordion from '@/Components/Accordion.vue';
-import { useCustomToast } from '@/Composables';
+import { useCustomToast, useInputValidator } from '@/Composables';
 
 const props = defineProps({
     zones: {
@@ -21,6 +21,7 @@ const zonesDetail = ref();
 const editModal = ref(false);
 const deleteModal = ref(false);
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
 
 
 watch(() => props.zones, (newValue) => {
@@ -71,17 +72,6 @@ const closeModal = () => {
     editModal.value = false;
     deleteModal.value = false;
 }
-
-
-const isNumber = (e, withDot = true) => {
-    const { key, target: { value } } = e;
-    
-    if (/^\d$/.test(key)) return;
-
-    if (withDot && key === '.' && /\d/.test(value) && !value.includes('.')) return;
-    
-    e.preventDefault();
-};
 
 const formSubmit = () => {
     if(editModal){
@@ -183,7 +173,7 @@ const isFormValid = computed(() => {
                     :labelText="'No. of Seats Available'"
                     :placeholder="'number only (eg: 6)'"
                     :errorMessage="form.errors?.seat || ''"
-                    @keypress="isNumber($event)"
+                    @keypress="isValidNumberKey($event, false)"
                     v-model="form.seat"
                     class="col-span-full md:col-span-6"
                 />
