@@ -154,7 +154,7 @@ const filteredZones = computed(() => {
                         :users="users"
                         :customers="customers"
                         :occupiedTables="occupiedTables"
-                        @fetchZones="fetchZones"
+                        @fetchZones="fetchZones()"
                     />
                 </template>
                 <template 

@@ -24,7 +24,7 @@ const props = defineProps({
     tableStatus: String
 })
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'fetchZones']);
 
 const page = usePage();
 const userId = computed(() => page.props.auth.user.id)
@@ -77,6 +77,7 @@ const closeOverlay = () => {
 const closeKeepItemDetails = () => {
     closeOverlay();
     setTimeout(() => {
+        emit('fetchZones');
         emit('close');
     }, 300);
 }

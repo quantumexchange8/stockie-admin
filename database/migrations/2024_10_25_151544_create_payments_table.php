@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('transaction_id')->nullable()->default(NULL);
             $table->unsignedBigInteger('order_id');
+            $table->json('table_id');
             $table->string('receipt_no');
             $table->dateTime('receipt_start_date');
             $table->dateTime('receipt_end_date');
@@ -23,10 +24,12 @@ return new class extends Migration
             $table->decimal('rounding', 5, 2);
             $table->decimal('sst_amount', 13, 2);
             $table->decimal('service_tax_amount', 13, 2);
-            $table->unsignedBigInteger('discount_id');
+            $table->unsignedBigInteger('discount_id')->nullable()->default(NULL);
             $table->decimal('discount_amount', 13, 2);
-            $table->integer('points_earned');
-            $table->unsignedBigInteger('customer_id');
+            $table->integer('point_earned');
+            $table->string('pax');
+            $table->string('status');
+            $table->unsignedBigInteger('customer_id')->nullable()->default(NULL);
             $table->unsignedBigInteger('handled_by');
             $table->softDeletes();
             $table->timestamps();

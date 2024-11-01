@@ -16,6 +16,7 @@ class Payment extends Model
     protected $fillable = [
         'transaction_id',
         'order_id',
+        'table_id',
         'receipt_no',
         'receipt_start_date',
         'receipt_end_date',
@@ -26,10 +27,14 @@ class Payment extends Model
         'service_tax_amount',
         'discount_id',
         'discount_amount',
-        'points_earned',
+        'point_earned',
+        'pax',
+        'status',
         'customer_id',
         'handled_by',
     ];
+
+    protected $casts = ['table_id' => 'json'];
 
     /**
      * Get the order of the payment.

@@ -13,9 +13,14 @@ const props = defineProps({
     }
 });
 
+const emit = defineEmits(['onChange']);
+
 const selectedTab = ref(props.selectedTab);
 
-const changeTab = (index) => selectedTab.value = index;
+const changeTab = (index) => {
+    selectedTab.value = index;
+    emit('onChange', index);
+};
 
 watch(() => props.selectedTab, (newValue) => selectedTab.value = newValue);
 

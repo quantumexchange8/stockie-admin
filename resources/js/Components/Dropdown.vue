@@ -158,12 +158,13 @@ onUnmounted(() => {
                     return {
                         class: [
                             'block relative flex items-center w-full rounded-none',
-                            'placeholder-grey-200 text-grey-200 text-base font-normal bg-transparent border-0',
+                            'text-base bg-transparent border-0',
                             'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
                             'transition duration-200 focus:ring-0',
                             'focus:outline-none focus:shadow-none',
                             { 
-                                'px-4 py-3': !plainStyle,
+                                'placeholder-grey-300 text-grey-300 font-medium': plainStyle,
+                                'px-4 py-3 placeholder-grey-200 text-grey-200 font-normal': !plainStyle,
                                 'hover:text-grey-900': !state.focused && plainStyle,
                                 'text-grey-700 ': props.modelValue != null && props.modelValue !== '', 
                                 'text-grey-200': props.modelValue == null || props.modelValue !== '',

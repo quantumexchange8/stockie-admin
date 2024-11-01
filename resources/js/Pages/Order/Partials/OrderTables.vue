@@ -45,28 +45,26 @@ const drawerIsVisible = ref(false);
 //     { field: "action", header: "", width: "25", sortable: false, edit: true, delete: true },
 // ]);
 
-const rowType = {
-    rowGroups: false,
-    expandable: false,
-    groupRowsBy: "",
-};
+// const rowType = {
+//     rowGroups: false,
+//     expandable: false,
+//     groupRowsBy: "",
+// };
 
-const actions = {
-    view: () => ``,
-    replenish: () => '',
-    edit: () => '',
-    delete: (id) => `/order-management/orders/reservation/${id}`,
-};
+// const actions = {
+//     view: () => ``,
+//     replenish: () => '',
+//     edit: () => '',
+//     delete: (id) => `/order-management/orders/reservation/${id}`,
+// };
 
 const openOverlay = (event, table) => {
     selectedTable.value = table;
 
-    if (table && !table.order_table) {
-        op.value.show(event);
+    if (table && table.order_tables.length > 0) {
+        if (!drawerIsVisible.value) drawerIsVisible.value = true;
     } else {
-        if (!drawerIsVisible.value) {
-            drawerIsVisible.value = true;
-        }
+        op.value.show(event);
     }
 };
 
@@ -77,13 +75,10 @@ const closeOverlay = () => {
 
 const closeDrawer = () => {
     drawerIsVisible.value = false;
-    setTimeout(() => {
-        emit('fetchZones');
-    }, 200)
+    // setTimeout(() => emit('fetchZones'), 200)
 };
 
 const getTableClasses = (table) => ({
-    
     card: computed(() => [
         'border rounded-[5px] gap-6 mb-6 hover:cursor-pointer',
         {
@@ -186,9 +181,15 @@ const filteredZones = computed(() => {
                             : tempZones.filter(zone => zone.text === props.zoneName)[0];
 });
 
-onUnmounted(() => {
-    intervals.value.forEach(clearInterval);
-});
+onUnmounted(() => intervals.value.forEach(clearInterval));
+
+const getCurrentOrderTableDuration = (table) => {
+    let currentOrderTable = table.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1 
+            ? table.order_tables.filter((table) => table.status !== 'Pending Clearance')[0].created_at
+            : table.order_tables[0].created_at;
+
+    return setupDuration(currentOrderTable);
+};
 
 // const showReservationList = (event, table) => {
 //     event.preventDefault();
@@ -241,7 +242,7 @@ onUnmounted(() => {
                                     <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
                                         <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
                                         <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
-                                            {{ setupDuration(table.order_table.created_at) }}
+                                            {{ getCurrentOrderTableDuration(table) }}
                                         </div>
                                         <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
                                     </div>
@@ -275,7 +276,7 @@ onUnmounted(() => {
                             <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
                                 <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
                                 <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
-                                    {{ setupDuration(table.order_table.created_at) }}
+                                    {{ getCurrentOrderTableDuration(table) }}
                                 </div>
                                 <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
                             </div>

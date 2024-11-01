@@ -18,6 +18,7 @@ const props = defineProps({
     errors: Object,
     customers: Array,
     users: Array,
+    tableStatus: String,
     selectedTable: {
         type: Object,
         default: () => {}
@@ -25,10 +26,14 @@ const props = defineProps({
     order: {
         type: Object,
         default: () => {}
+    },
+    matchingOrderDetails: {
+        type: Object,
+        default: () => {}
     }
 })
 
-const emit = defineEmits(['close', 'fetchZones']);
+const emit = defineEmits(['fetchOrderDetails', 'fetchZones']);
 
 const order = computed(() => props.order);
 const drawerIsVisible = ref(false);
@@ -58,7 +63,7 @@ const openDrawer = (action) => {
 const closeDrawer = () => {
     drawerIsVisible.value = false;
     actionType.value = null;
-}
+};
 
 const openOverlay = (event, item) => {
     selectedItem.value = item;
@@ -90,19 +95,17 @@ const closeOverlay = () => {
 
 const closeOrderDetails = () => {
     closeOverlay();
-    setTimeout(() => {
-        emit('close');
-        emit('fetchZones');
-    }, 300);
-}
+    setTimeout(() => emit('fetchZones'), 200);
+    setTimeout(() => emit('fetchOrderDetails'), 300);
+};
 
 const showDeleteOrderItemOverlay = (event) => {
     op2.value.show(event);
-}
+};
 
 const hideDeleteOrderItemOverlay = () => {
     if (op2.value) op2.value.hide();
-}
+};
 
 const formSubmit = () => { 
     form.put(route('orders.items.update', form.order_item_id), {
@@ -127,7 +130,7 @@ onMounted(async() => {
 });
 
 const pendingServeItems = computed(() => {
-    if (!order.value || !order.value.order_items) {
+    if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') {
         return [];
     }
 
@@ -144,7 +147,7 @@ const pendingServeItems = computed(() => {
 });
 
 const servedItems = computed(() => {
-    if (!order.value || !order.value.order_items) {
+    if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') {
         return [];
     }
 
@@ -175,7 +178,7 @@ const getKeepItemName = (item) => {
 };
 
 const orderedBy = computed(() => {
-    if (!order.value?.order_items?.length || !props.users?.length) return [];
+    if (!order.value?.order_items?.length || !props.users?.length || props.tableStatus === 'Pending Clearance') return [];
 
     const userMap = new Map(props.users.map(({ id, full_name }) => [id, full_name]));
 
@@ -232,8 +235,10 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                 :categoryArr="categoryArr" 
                 :order="order" 
                 :selectedTable="selectedTable"
+                :matchingOrderDetails="matchingOrderDetails"
                 @fetchZones="$emit('fetchZones')"
-                @close="closeDrawer();closeOrderDetails()"
+                @fetchOrderDetails="$emit('fetchOrderDetails')"
+                @close="closeDrawer();closeOverlay()"
             />
         </template>
     </RightDrawer>
@@ -243,7 +248,8 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                 <div class="w-full flex flex-row gap-x-3 items-start">
                     <div class="basis-1/2 flex flex-col gap-2 items-start">
                         <p class="text-grey-900 text-sm font-medium">Order No.</p>
-                        <p class="text-grey-800 text-md font-semibold">#{{ order.order_no }}</p>
+                        <p class="text-grey-800 text-md font-semibold" v-if="tableStatus !== 'Pending Clearance'">#{{ order.order_no }}</p>
+                        <p class="text-grey-800 text-md font-semibold" v-else>--</p>
                     </div>
                     <div class="basis-1/2 flex flex-col gap-2 items-start">
                         <p class="text-grey-900 text-sm font-medium">No. of pax</p>
@@ -255,7 +261,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         <p class="text-grey-900 text-sm font-medium">Ordered by</p>
                         <div class="flex whitespace-nowrap items-center gap-2">
                             <div class="size-6 bg-primary-100 rounded-full" v-for="user in orderedBy"></div>
-                            <p class="text-grey-800 text-sm font-semibold" :class="{'!text-grey-200': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0] : 'No order yet' }}</p>
+                            <p class="text-grey-900 text-base font-medium" :class="{'!text-grey-300': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0] : 'No order yet' }}</p>
                             <!-- <p class="text-grey-800 text-sm font-semibold">{{ order.waiter?.full_name ?? '' }}</p> -->
                         </div>
                     </div>
@@ -268,6 +274,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             :inputArray="customers"
                             :dataValue="order.customer_id"
                             :errorMessage="updateOrderCustomerForm.errors?.customer_id || ''"
+                            :disabled="tableStatus === 'Pending Clearance'"
                             v-model="updateOrderCustomerForm.customer_id"
                             @onChange="updateOrderCustomer"
                         />
@@ -311,7 +318,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         </div>
                     </template>
                     <template v-else>
-                        <p class="text-base font-medium text-grey-900">No pending item to be served.</p>
+                        <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">No pending item to be served.</p>
                     </template>
                 </div>
 
@@ -332,7 +339,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
                                             <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ parseFloat(item.amount).toFixed(2) }}</p>
-                                            <Tag :value="item.type === 'Keep' ? 'Keep Item' : item.type === 'Redemption' ? 'Redeemed Product' : 'Entry Reward'" variant="blue" v-else/>
+                                            <Tag :value="getItemTypeName(item.type)" variant="blue" v-else/>
                                         </div>
                                     </div>
                                 </div>
@@ -347,17 +354,17 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         </div>
                     </template>
                     <template v-else>
-                        <p class="text-base font-medium text-grey-900">No item served.</p>
+                        <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">No item served.</p>
                     </template>
                 </div>
 
-                <div class="flex gap-2.5 pb-6 items-center self-stretch" v-if="selectedTable.status !== 'Pending Clearance'">
+                <div class="flex gap-2.5 pb-6 items-center self-stretch">
                     <Button
                         v-if="order.customer_id"
                         type="button"
                         variant="tertiary"
                         size="lg"
-                        :disabled="!order.id"
+                        :disabled="!order.id || tableStatus === 'Pending Clearance'"
                         @click="openDrawer('keep')"
                     >
                         Keep Item

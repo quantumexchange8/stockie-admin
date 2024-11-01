@@ -20,6 +20,10 @@ const props = defineProps({
     order: {
         type: Object,
         default: () => {}
+    },
+    matchingOrderDetails: {
+        type: Object,
+        default: () => {}
     }
 })
 
@@ -28,11 +32,12 @@ const userId = computed(() => page.props.auth.user.id)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones']);
+const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails']);
 
 const query = ref('');
 const tabs = ref(['All']);
 const products = ref([]);
+const newOrderId = ref({});
 const categories = ref(props.categoryArr.map((cat) => {
     return {
         ...cat,
@@ -44,26 +49,57 @@ const form = useForm({
     user_id: userId.value,
     order_id: props.order.id,
     action_type: '',
+    matching_order_details: props.matchingOrderDetails,
     items: [],
 });
 
-const formSubmit = () => { 
-    form.post(route('orders.items.store'), {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            const summary = `Product has been added to ${props.selectedTable.table_no} order` + (form.action_type === 'now' ? ' and served.' : '.');
-            setTimeout(() => {
-                showMessage({ 
-                    severity: 'success',
-                    summary: summary,
-                });
-            }, 200);
-            form.reset();
-            emit('fetchZones');
-            emit('close');
-        },
-    })
+const orderTableNames = computed(() => {
+    return props.order.order_table
+            ?.map((orderTable) => orderTable.table.table_no)
+            .sort((a, b) => a.localeCompare(b))
+            .join(', ') ?? '';
+});
+
+const submit = async () => { 
+    try {
+        // Post using axios and get the new order id if new order is created
+        const addItemResponse = await axios.post(route('orders.items.store'), form);
+        newOrderId.value = addItemResponse.data;
+
+        const summary = `Product has been added to ${orderTableNames.value} order` + (form.action_type === 'now' ? ' and served.' : '.');
+
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: summary,
+            });
+        }, 200);
+
+        emit('fetchZones');
+        emit('fetchOrderDetails');
+        emit('close');
+        form.reset();
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+    // form.post(route('orders.items.store'), {
+    //     preserveScroll: true,
+    //     preserveState: true,
+    //     onSuccess: () => {
+    //         const summary = `Product has been added to ${props.selectedTable.table_no} order` + (form.action_type === 'now' ? ' and served.' : '.');
+    //         setTimeout(() => {
+    //             showMessage({ 
+    //                 severity: 'success',
+    //                 summary: summary,
+    //             });
+    //         }, 200);
+    //         form.reset();
+    //         // emit('fetchZones');
+    //         emit('close');
+    //     },
+    // })
 };
 
 onMounted(async() => {
@@ -144,12 +180,10 @@ const quantityComputed = (productId) => {
     });
 };
 
-const orderTableNames = computed(() => props.order.order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '');
-
 </script>
 
 <template>
-    <form novalidate @submit.prevent="formSubmit">
+    <form novalidate @submit.prevent="submit">
         <div class="flex flex-col gap-6 items-start rounded-[5px]">
             <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
                 <ArrowLeftIcon

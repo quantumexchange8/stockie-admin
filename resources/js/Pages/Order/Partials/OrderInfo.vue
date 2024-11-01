@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import TabView from '@/Components/TabView.vue';
 import OrderDetail from './OrderDetail.vue';
 import Button from '@/Components/Button.vue';
@@ -12,6 +12,7 @@ import CustomerDetail from './CustomerDetail.vue';
 import { TimesIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import MakePaymentForm from './MakePaymentForm.vue';
+import PaymentHistory from './PaymentHistory.vue';
 
 const props = defineProps({
     errors: Object,
@@ -30,7 +31,7 @@ const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close', 'fetchZones']);
 
-const tabs = ref(['Order Detail']);
+const tabs = ref(['Order Detail', 'Payment History']);
 const order = ref({});
 const customer = ref({});
 const cancelOrderFormIsOpen = ref(false);
@@ -38,11 +39,17 @@ const orderCompleteModalIsOpen = ref(false);
 const orderInvoiceModalIsOpen = ref(false);
 const drawerIsVisible = ref(false);
 const selectedTab = ref(0);
+const currentOrderTable = ref({});
 
 const fetchOrderDetails = async () => {
     try {
-        const orderResponse = await axios.get(route('orders.getOrderWithItems', props.selectedTable.order_table.order_id));
-        order.value = orderResponse.data;
+        // currentOrderTable.value = props.selectedTable.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1
+        //         ? props.selectedTable.order_tables.filter((table) => table.status !== 'Pending Clearance')[0]
+        //         : props.selectedTable.order_tables[0];
+
+        const currentOrderTableResponse = await axios.get(route('orders.getCurrentTableOrder', props.selectedTable.id));
+        currentOrderTable.value = currentOrderTableResponse.data.currentOrderTable;
+        order.value = currentOrderTableResponse.data.order;
 
         if (order.value.customer_id) {
             const customerResponse = await axios.get(route('orders.customer', order.value.customer_id));
@@ -51,8 +58,16 @@ const fetchOrderDetails = async () => {
         
         if (order.value) {
             form.order_id = order.value.id;
-            form.customer_id = order.value.customer_id;
-            if (order.value.customer_id && !tabs.value.includes('Customer Detail')) tabs.value.push('Customer Detail');
+            form.customer_id = order.value.customer_id ?? '';
+            matchingOrderDetails.value.tables = order.value.order_table.map((orderTable) => orderTable.table.id);
+            matchingOrderDetails.value.pax = order.value.pax;
+            matchingOrderDetails.value.customer_id = order.value.customer_id;
+            matchingOrderDetails.value.assigned_waiter = order.value.user_id; 
+            matchingOrderDetails.value.current_order_completed = order.value.status === 'Order Completed' && order.value.order_table.every((table) => table.status === 'Pending Clearance');
+
+            // console.log(order.value.status === 'Order Completed');
+            // console.log(order.value.order_table.every((table) => table.status === 'Pending Clearance'));
+            if (order.value.customer_id && !tabs.value.includes('Customer Detail')) tabs.value.splice(1, 0, 'Customer Detail');
         }
     } catch (error) {
         console.error(error);
@@ -63,6 +78,14 @@ const fetchOrderDetails = async () => {
 
 onMounted(() => fetchOrderDetails());
 
+const matchingOrderDetails = ref({
+    tables: '',
+    pax: '',
+    customer_id: '',
+    assigned_waiter: '',
+    current_order_completed: ''
+})
+
 const form = useForm({
     user_id: userId.value,
     order_id: order.value.id,
@@ -70,17 +93,18 @@ const form = useForm({
     action_type: ''
 });
 
-const closeDrawer = () => {
-    emit('close');
-}
+const closeDrawer = () => emit('close');
 
 const openPaymentDrawer = () => {
     if (!drawerIsVisible.value) drawerIsVisible.value = true;
 };
 
-const closePaymentDrawer = () => {
+const closePaymentDrawer = (redirect = false) => {
     drawerIsVisible.value = false;
-    selectedTab.value = 1;
+    if (redirect) {
+        fetchOrderDetails();
+        selectedTab.value = order.value.customer_id ? 2 : 1;
+    }
 };
 
 const showOrderCompleteModal = () => {
@@ -128,24 +152,27 @@ const hideOrderInvoiceModal = () => {
 const submit = (action) => { 
     if (order.value.id) {
         if (action === 'complete') {
-            form.put(route('orders.complete', order.value.id), {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    if (form.action_type === 'complete') {
-                        showOrderCompleteModal(); 
-                    } else {
-                        setTimeout(() => {
-                            showMessage({ 
-                                severity: 'success',
-                                summary: 'Selected table is now available for next customers.',
-                            });
-                        }, 200);
-                        closeDrawer();
-                    }
-                    form.reset();
-                },
-            })
+            // if (form.action_type === 'complete' && order.value.payment)  {
+            //     openPaymentDrawer();
+            // } else {
+                form.put(route('orders.complete', order.value.id), {
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => {
+                        if (form.action_type === 'complete') {
+                            openPaymentDrawer(); 
+                        } else {
+                            setTimeout(() => {
+                                showMessage({ 
+                                    severity: 'success',
+                                    summary: 'Selected table is now available for next customers.',
+                                });
+                            }, 200);
+                            closeDrawer();
+                        }
+                        form.reset();
+                    },
+                })
         } else {
             form.put(route('orders.cancel', order.value.id), {
                 preserveScroll: true,
@@ -180,22 +207,22 @@ const isOrderCompleted = computed(() => {
                                     })
                             : [];
 
-    return mappedOrder.every((item) => item.status === 'Served' || item.status === 'Cancelled') && !form.processing;
+    return mappedOrder.every((item) => item.status === 'Served' || item.status === 'Cancelled') && !form.processing && currentOrderTable.value.status !== 'Pending Clearance';
 });
 
-const formattedOrder = computed(() => {
-    order.value['order_table'] = {
-        id: props.selectedTable.order_table.id,
-        order_id: props.selectedTable.order_table.order_id,
-        table: {
-            id: props.selectedTable.id,
-            table_no: props.selectedTable.table_no
-        },
-        table_id: props.selectedTable.order_table.table_id
-    };
+// const formattedOrder = computed(() => {
+//     order.value['order_table'] = {
+//         id: props.selectedTable.order_table.filter((table) => table.status !== 'Pending Clearance')[0].id,
+//         order_id: props.selectedTable.order_table.filter((table) => table.status !== 'Pending Clearance')[0].order_id,
+//         table: {
+//             id: props.selectedTable.id,
+//             table_no: props.selectedTable.table_no
+//         },
+//         table_id: props.selectedTable.order_table.filter((table) => table.status !== 'Pending Clearance')[0].table_id
+//     };
 
-    return order.value;
-});
+//     return order.value;
+// });
 
 const hasServedItem = computed(() => {
     return !order.value.id 
@@ -203,8 +230,18 @@ const hasServedItem = computed(() => {
         || order.value?.order_items?.some(item => item.type === 'Keep' || item.type === 'Expired');
 });
 
-const orderTableNames = computed(() => order.value.order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '');
+const orderTableNames = computed(() => {
+    return order.value.order_table
+            ?.map((orderTable) => orderTable.table.table_no)
+            .sort((a, b) => a.localeCompare(b))
+            .join(', ') ?? '';
+});
 
+const currentViewedTab = computed(() => tabs.value[selectedTab.value]);
+
+watch(selectedTab, (newValue) => {
+    if (tabs.value[newValue] === 'Order Detail') fetchOrderDetails();
+});
 </script>
 
 <template>
@@ -217,42 +254,59 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
         <MakePaymentForm 
             :order="order" 
             :selectedTable="selectedTable"
+            @fetchZones="$emit('fetchZones')"
             @close="closePaymentDrawer"
         />
     </RightDrawer>
 
     <div class="flex flex-col gap-6 items-start rounded-[5px]">
         <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
-            <span class="text-primary-950 text-center text-md font-medium">Detail - {{ orderTableNames  }}</span>
+            <span class="text-primary-950 text-center text-md font-medium">Detail - {{ orderTableNames }}</span>
             <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer" />
         </div>
 
-        <div class="px-6 py-2 w-full">
-            <TabView :tabs="tabs" :selectedTab="selectedTab">
+        <div 
+            class="py-2 w-full" 
+            :class="[
+                { 'px-6': currentViewedTab !== 'Payment History' },
+                { '[&>div:first-child]:px-6': currentViewedTab === 'Payment History' }
+            ]"
+        >
+            <TabView 
+                :tabs="tabs" 
+                :selectedTab="selectedTab" 
+                @onChange="selectedTab = $event"
+            >
                 <template #order-detail>
                     <OrderDetail 
                         :selectedTable="selectedTable" 
                         :order="order" 
                         :customers="customers" 
                         :users="users"
+                        :tableStatus="currentOrderTable.status" 
+                        :matchingOrderDetails="matchingOrderDetails"
                         @fetchZones="$emit('fetchZones')" 
-                        @close="fetchOrderDetails" 
+                        @fetchOrderDetails="fetchOrderDetails" 
                     />
                 </template>
                 <template #customer-detail v-if="order.customer_id">
                     <CustomerDetail 
                         :customer="customer" 
                         :orderId="order.id" 
-                        :tableStatus="selectedTable.status" 
+                        :tableStatus="currentOrderTable.status" 
+                        @fetchZones="$emit('fetchZones')" 
                         @close="closeDrawer"
                     />
+                </template>
+                <template #payment-history>
+                    <PaymentHistory :selectedTable="selectedTable" />
                 </template>
             </TabView>
         </div>
 
-        <form @submit.prevent="submit('complete')">
+        <form @submit.prevent="submit('complete')" v-if="currentViewedTab !== 'Payment History'">
             <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
-                <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: RM{{ order.total_amount }}</p>
+                <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: {{ currentOrderTable.status === 'Pending Clearance' ?  0.00.toFixed(2) : order.amount }}</p>
                 <div class="flex flex-col items-center self-stretch gap-3">
                     <div class="flex items-start self-stretch gap-3">
                         <Button
@@ -267,27 +321,27 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
                         <Button
                             size="lg"
                             variant="tertiary"
-                            :disabled="selectedTable.status !== 'Pending Clearance'"
+                            :disabled="currentOrderTable.status !== 'Pending Clearance'"
                             @click="form.action_type = 'clear'"
                         >
                             Free Up Table
                         </Button>
                     </div>
-                    <!-- <Button
+                    <Button
                         size="lg"
                         :disabled="!isOrderCompleted"
                         @click="form.action_type = 'complete'"
                     >
                         Make Payment
-                    </Button> -->
-                    <Button
+                    </Button>
+                    <!-- <Button
                         type="button"
                         size="lg"
                         :disabled="!isOrderCompleted"
                         @click="openPaymentDrawer"
                     >
                         Make Payment
-                    </Button>
+                    </Button> -->
                 </div>
             </div>
         </form>

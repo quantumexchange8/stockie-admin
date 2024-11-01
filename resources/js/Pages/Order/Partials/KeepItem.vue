@@ -185,11 +185,26 @@ const isNumber = (e, withDot = true, item) => {
 
 // Function to check if the input exceeds max on change
 const checkMaxValue = (value, item, subitem_id) => {
-    const maxValue = item.keep_item.oldest_keep_history.cm ?? 0;
+    console.log(item);
+    const validatedValue = value.replace(/\D+/g, '').replace(/^0+/, '');
     const formItem = form.items.find(i => i.order_item_subitem_id === subitem_id);
 
-    if (value > maxValue) formItem.amount = maxValue;
-    if (formItem.amount === '' || /^0+$/.test(formItem.amount)) formItem.amount = '0'; // Reset to a single '0'
+    // Check if there is an old history and set maxValue accordingly
+    const maxValue = item.keep_item?.oldest_keep_history?.cm ?? null;
+
+    // If maxValue is null (no history), set formItem.amount to an empty string or some default value
+    if (maxValue === null) {
+        formItem.amount = validatedValue || '0'; // or any default value you want to set
+        return; // Exit the function as no further checks are needed
+    }
+    
+    const maxValueStr = maxValue.toString();
+
+    // Remove leading zeros and trim to max digit length
+    let sanitizedValue = validatedValue.slice(0, maxValueStr.length);
+
+    // Set to maxValue if sanitizedValue exceeds maxValue numerically
+    formItem.amount = parseInt(sanitizedValue, 10) > maxValue ? maxValueStr : sanitizedValue || '0';
 };
 
 // Function to update textarea value for all subitems
