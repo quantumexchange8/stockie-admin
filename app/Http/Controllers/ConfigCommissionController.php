@@ -166,7 +166,7 @@ class ConfigCommissionController extends Controller
                     if ($comm->comm_type == 'Fixed amount per sold product') {
                         $commission = $comm->rate; 
                     } else {
-                        $commission = floor($product->price * ($comm->rate / 100)); 
+                        $commission = $product->price * ($comm->rate / 100); 
                     }
             
                     $productDetails[] = [
@@ -175,6 +175,7 @@ class ConfigCommissionController extends Controller
                         'price' => $product->price,
                         'bucket' => $product->bucket,
                         'commission' => $commission,
+                        'rate' => $comm->rate,
                     ];
                 }
             }

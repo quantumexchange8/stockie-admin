@@ -1,28 +1,27 @@
 <script setup>
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
-import { DropdownIcon } from '@/Components/Icons/solid';
-import Chart from "primevue/chart";
-import { ref, onMounted, watch } from "vue";
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import { DropdownIcon } from '@/Components/Icons/solid';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+import Chart from "primevue/chart";
+import { watch } from 'vue';
+import { onMounted, ref } from 'vue';
 
-const props = defineProps ({
-    waiterName: {
+const props = defineProps({
+    names: {
         type: Array,
-        default: () => {},
+        default: () => [],
     },
-    waiterSales: {
+    spendings: {
         type: Array,
-        default: () => {},
+        default: () => [],
     }
-})
-
+});
 const emit = defineEmits(['applyFilter']);
-const graphFilter = ref(['This month', 'This year']);
-const selected = ref(graphFilter.value[0]);
-
 const chartData = ref();
 const chartOptions = ref();
 
+const graphFilter = ref(['This month', 'This year']);
+const selected = ref(graphFilter.value[0]);
 const isSelected = (filter) => {
     return selected.value && filter === selected.value;
 };
@@ -34,12 +33,12 @@ const applyFilter = (filter) => {
 
 const setChartData = () => {
     const backgroundColor = [];
-    const sortedSales = [...props.waiterSales].sort((a, b) => b - a); 
+    const sortedSpending = [...props.spendings].sort((a, b) => b - a); 
 
-    props.waiterSales.forEach(sale => {
-        if (sale === sortedSales[0]) {
+    props.spendings.forEach(sale => {
+        if (sale === sortedSpending[0]) {
             backgroundColor.push('#48070A');
-        } else if (sale === sortedSales[1]) {
+        } else if (sale === sortedSpending[1]) {
             backgroundColor.push('#7E171B');
         } else {
             backgroundColor.push('#9F151A');
@@ -47,10 +46,10 @@ const setChartData = () => {
     });
 
     return {
-        labels: props.waiterName,
+        labels: props.names,
         datasets: [
             {
-                data: props.waiterSales,
+                data: props.spendings,
                 backgroundColor: (context) => {
                     const hoveredIndex = context.chart.hoveredIndex;
                     const index = context.index;
@@ -86,14 +85,26 @@ const setChartOptions = () => {
                 enabled: false,
                 external: customTooltipHandler,
             },
-            drawLabelsOnBarsPlugin: {
-
-            },
         },
         scales: {
             x: {
                 ticks: {
-                    display: false,
+                    color: (context) => {
+                        const hoveredIndex = context.chart.hoveredIndex;
+                        const index = context.index;
+
+                        if (hoveredIndex === null) {
+                            return '#7E171B';
+                        }
+                        return hoveredIndex === index ? '#7E171B' : '#D6DCE1';
+                    },
+                    font: {
+                        family: 'Lexend',
+                        size: 14,
+                        style: 'normal',
+                        weight: 500,
+                        lineHeight: 'normal',
+                    }
                 },
                 grid: {
                     display: false,
@@ -243,36 +254,13 @@ const customPlugin = {
     }
 };
 
-const drawLabelsOnBarsPlugin = {
-    id: 'drawLabelsOnBars',
-    afterDatasetsDraw: (chart) => {
-        const ctx = chart.ctx;
-        chart.data.datasets.forEach((dataset, datasetIndex) => {
-            const meta = chart.getDatasetMeta(datasetIndex);
-            meta.data.forEach((bar, index) => {
-                const value = dataset.data[index];
-                const x = bar.x;
-                const y = bar.y - 20; 
-                const radius = 8; // Radius of the circle
-
-                ctx.save();
-                ctx.fillStyle = '#C1141B'; // Fill color for the circle
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2); // Draw circle
-                ctx.fill();
-                ctx.restore();
-            });
-        });
-    }
-};
-
 const updateChart = () => {
     chartData.value = setChartData();
     chartOptions.value = setChartOptions(); 
 };
 
 watch(
-    [()=> props.waiterName.value, () => props.waiterSales.value],
+    [()=> props.names.value, () => props.spendings.value],
     () => {
         updateChart();
     },
@@ -285,11 +273,11 @@ onMounted(() => {
 
 </script>
 
-<template>
-    <div class="flex flex-col gap-6 w-full h-full">
-        <div class="flex justify-between items-center self-stretch whitespace-nowrap w-full">
-            <span class="text-md font-medium text-primary-900">Sales Performance</span>
 
+<template>
+<div class="flex flex-col gap-6 w-full h-full">
+        <div class="flex justify-between items-center self-stretch whitespace-nowrap w-full">
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Member Spending</span>
             <!-- menu for year filter -->
             <Menu as="div" class="relative inline-block text-left">
                 <div>
@@ -338,12 +326,12 @@ onMounted(() => {
                 </transition>
             </Menu>
         </div>
-        <template v-if="props.waiterName && props.waiterSales">
+        <template v-if="props.names && props.spendings">
             <Chart
                 type="bar"
                 :data="chartData"
                 :options="chartOptions"
-                :plugins="[customPlugin, drawLabelsOnBarsPlugin]"
+                :plugins="[customPlugin]"
                 class="h-full"
             />
         </template>
@@ -353,5 +341,5 @@ onMounted(() => {
                 <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
             </div>
         </template>
-    </div>
+    </div>     
 </template>

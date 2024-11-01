@@ -15,7 +15,7 @@ import CreateProductForm from './CreateProductForm.vue';
 import EditProductForm from './EditProductForm.vue';
 import Toggle from '@/Components/Toggle.vue';
 import { useForm } from '@inertiajs/vue3';
-import { useCustomToast } from '@/Composables';
+import { transactionFormat, useCustomToast } from '@/Composables';
 
 const props = defineProps({
     columns: {
@@ -63,6 +63,7 @@ const selectedCategory = ref(0);
 const selectedLayout = ref('grid');
 const forms = reactive({});
 const { showMessage } = useCustomToast();
+const { formatAmount } = transactionFormat();
 
 const checkedFilters = ref({
     keepStatus: [],
@@ -426,12 +427,12 @@ onMounted(() => {
                 </template>
                 <template #availability="row">
                     <Toggle 
-                        :checked="forms[row.id].id === row.id && forms[row.id].availability" 
+                        :checked="row.availability === 'Available'" 
                         :inputName="'availability'"
                         :inputId="'availability'"
                         :disabled="forms[row.id].processing"
                         v-model="forms[row.id].availability"
-                        @click="toggleAvailability($event, row)"
+                        @change="toggleAvailability($event, row)"
                     />
                 </template>
                 <template #product_name="row">
@@ -441,7 +442,11 @@ onMounted(() => {
                     </div>
                 </template>
                 <template #price="row">
-                    <span class="text-grey-900 text-sm font-medium">RM {{ row.price }}</span>
+                    <div v-for="items in row.discountItems" v-if="row.discount_id !== null" class="flex flex-col items-start">
+                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-bold ">RM {{ formatAmount(items.price_after) }}</span>
+                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ formatAmount(items.price_before) }}</span>
+                    </div>
+                    <span class="text-grey-900 text-sm font-bold" v-else>RM {{ formatAmount(row.price) }}</span>
                 </template>
                 <template #stock_left="row">
                     <span class="inline-block align-middle"

@@ -1,7 +1,6 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Head } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue'
 import Button from '@/Components/Button.vue'
 import SearchBar from '@/Components/SearchBar.vue'
@@ -16,6 +15,11 @@ const props = defineProps({
     ActivePromotions: Array,
     InactivePromotions: Array,
 })
+
+const searchQuery = ref('');
+const filteredActivePromotions = ref(props.ActivePromotions);
+const filteredInactivePromotions = ref(props.InactivePromotions);
+
 const activePromotionsCount = computed(() => {
     return props.ActivePromotions.filter(promotion => promotion.status === 'Active').length
 })
@@ -33,6 +37,48 @@ const hideCreateForm = () => {
     createFormIsOpen.value = false;
 }
 
+watch(() => searchQuery.value, (newValue) => {
+    if(newValue === '') {
+        filteredActivePromotions.value = props.ActivePromotions;
+        filteredInactivePromotions.value = props.InactivePromotions;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    filteredActivePromotions.value = props.ActivePromotions.filter(promotions => {
+        const promoDescription = promotions.description.toLowerCase();
+        const promoTitle = promotions.title.toLowerCase();
+        const promoFrom = promotions.promotion_from.toString().toLowerCase();
+        const promoTo = promotions.promotion_to.toString().toLowerCase();
+        
+        return promoDescription.includes(query) || 
+               promoTitle.includes(query) || 
+               promoFrom.includes(query) || 
+               promoTo.includes(query);
+    });
+
+    filteredInactivePromotions.value = props.InactivePromotions.filter(promotions => {
+        const promoDescription = promotions.description.toLowerCase();
+        const promoTitle = promotions.title.toLowerCase();
+        const promoFrom = promotions.promotion_from.toString().toLowerCase();
+        const promoTo = promotions.promotion_to.toString().toLowerCase();
+
+        return promoDescription.includes(query) || 
+               promoTitle.includes(query) || 
+               promoFrom.includes(query) || 
+               promoTo.includes(query);
+    });
+
+}, { immediate: true });
+
+watch(() => props.ActivePromotions, (newValue) => {
+    filteredActivePromotions.value = newValue;
+}, { immediate: true });
+
+watch(() => props.InactivePromotions, (newValue) => {
+    filteredInactivePromotions.value = newValue;
+}, { immediate: true });
 </script>
 
 <template>
@@ -49,6 +95,7 @@ const hideCreateForm = () => {
             <SearchBar
                 :inputName="'searchbar'"
                 :placeholder="'Search'"
+                v-model="searchQuery"
             />
             <Button
                 :type="'button'"
@@ -118,12 +165,12 @@ const hideCreateForm = () => {
                     <TabPanel
                         class="py-3"
                     >
-                        <Active :ActivePromotions="ActivePromotions"/>
+                        <Active :ActivePromotions="filteredActivePromotions"/>
                     </TabPanel>
                     <TabPanel
                         class="py-3"
                     >
-                        <Inactive :InactivePromotions="InactivePromotions"/>
+                        <Inactive :InactivePromotions="filteredInactivePromotions"/>
                     </TabPanel>
                 </TabPanels>
             </TabGroup>

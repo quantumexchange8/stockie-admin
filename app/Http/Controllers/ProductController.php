@@ -30,10 +30,17 @@ class ProductController extends Controller
                                 'category:id,name', 
                                 'productItems.inventoryItem:id,stock_qty,item_cat_id,status',
                                 'productItems.inventoryItem.itemCategory:id,low_stock_qty',
-                                'saleHistories'
+                                'saleHistories',
+                                'discountItems'
                             ])
                             ->orderBy('product_name')
                             ->get()
+                            ->map(function($discount){
+                                $discount->discountItems = $discount->discountItems->filter(function($item) use ($discount) {
+                                    return $item->discount_id === $discount->discount_id;
+                                });
+                                return $discount;
+                            })
                             ->map(function ($product) {
                                 $product_items = $product->productItems;
                                 $minStockCount = 0;
@@ -291,10 +298,17 @@ class ProductController extends Controller
                             'category:id,name', 
                             'productItems.inventoryItem:id,stock_qty,item_cat_id,status',
                             'productItems.inventoryItem.itemCategory:id,low_stock_qty',
-                            'saleHistories'
+                            'saleHistories',
+                            'discountItems'
                         ])
                         ->orderBy('product_name')
                         ->get()
+                        ->map(function($discount){
+                            $discount->discountItems = $discount->discountItems->filter(function($item) use ($discount) {
+                                return $item->discount_id === $discount->discount_id;
+                            });
+                            return $discount;
+                        })
                         ->map(function ($product) {
                             $product_items = $product->productItems;
                             $minStockCount = 0;
@@ -304,8 +318,8 @@ class ProductController extends Controller
 
                                 foreach ($product_items as $key => $value) {
                                     $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])
-                                                                        ->with('itemCategory:id,low_stock_qty')
-                                                                        ->find($value['inventory_item_id']);
+                                                                    ->with('itemCategory:id,low_stock_qty')
+                                                                    ->find($value['inventory_item_id']);
 
                                     $stockQty = $inventory_item->stock_qty;
                                     $stockCount = (int)round($stockQty / (int)$value['qty']);

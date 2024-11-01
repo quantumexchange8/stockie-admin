@@ -2,7 +2,7 @@
 import {transactionFormat, useCustomToast} from "@/Composables/index.js";
 import Button from "@/Components/Button.vue";
 import { DeleteIcon, EditIcon } from "@/Components/Icons/solid";
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 import Modal from "@/Components/Modal.vue";
 import Label from "@/Components/Label.vue";
 import { useForm } from "@inertiajs/vue3";
@@ -17,6 +17,7 @@ const props = defineProps({
 }) 
 
 const { showMessage } = useCustomToast();
+const { formatDate } = transactionFormat();
 
 const editModal = ref(false);
 const actionVal = ref('');
@@ -51,7 +52,6 @@ const form = useForm({
     promotion_to: '',
 })
 
-const { formatDate, formatAmount } = transactionFormat();
 
 const submit = () => {
 
@@ -70,6 +70,12 @@ const submit = () => {
             onSuccess: () => {
                 closeModal();
                 form.reset();
+                setTimeout(() => {
+                    showMessage({ 
+                        severity: 'success',
+                        summary: 'Selected promotion has been edited successfully.',
+                    });
+                }, 200)
             },
         })
     } else {
@@ -80,15 +86,19 @@ const submit = () => {
                 closeModal();
                 form.reset();
                 setTimeout(() => {
-                showMessage({ 
-                    severity: 'success',
-                    summary: 'Selected promotion has been deleted successfully.',
-                });
-            }, 200)
+                    showMessage({ 
+                        severity: 'success',
+                        summary: 'Selected promotion has been deleted successfully.',
+                    });
+                }, 200)
             },
         })
     }
 }
+
+const isFormValid = computed(() => {
+    return ['title', 'description', 'promotionPeriod'].every(field => form[field]);
+})
 </script>
 
 
@@ -153,13 +163,14 @@ const submit = () => {
                     <div class="space-y-1">
                         <Label value="Title"/>
                         <TextInput 
+                            :inputName="'title'"
                             v-model="form.title"
                         />
                     </div>
                     <div class="space-y-1">
                         <Label value="Promotion Active Period"/>
                         <DateInput
-                            :inputName="'product_name'"
+                            :inputName="'promotionPeriod'"
                             :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                             :range="true"
                             class="col-span-full xl:col-span-4"
@@ -191,7 +202,7 @@ const submit = () => {
                     <Button
                         variant="primary"
                         size="lg"
-                        :disabled="form.processing"
+                        :disabled="form.processing || !isFormValid"
                         type="submit"
                     >
                         Save Changes

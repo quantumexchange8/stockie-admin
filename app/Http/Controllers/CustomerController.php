@@ -25,7 +25,7 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $customers = Customer::with([
-                                    'rankings',
+                                    'ranking',
                                     'keepItems' => function ($query) {
                                         $query->where('status', 'Keep')
                                             ->with(['orderItemSubitem.productItem.product', 'waiter']);
@@ -55,7 +55,7 @@ class CustomerController extends Controller
 
                 return [
                 "id" => $customer->id,
-                "tier" => $customer->rankings->name ?? 'N/A', 
+                "tier" => $customer->ranking->name ?? 'N/A', 
                 "name" => $customer->full_name,
                 "email" => $customer->email,
                 "phone" => $customer->phone,
@@ -99,10 +99,10 @@ class CustomerController extends Controller
         $queries = Customer::query();
     
         if (isset($request['checkedFilters'])) {
-            $queries->with('rankings')->where(function (Builder $query) use ($request) {
+            $queries->with('ranking')->where(function (Builder $query) use ($request) {
                 // Apply filter for 'tier'
                 if (isset($request['checkedFilters']['tier']) && count($request['checkedFilters']['tier']) > 0) {
-                    $query->whereHas('rankings', function ($rankQuery) use ($request) {
+                    $query->whereHas('ranking', function ($rankQuery) use ($request) {
                         $rankQuery->whereIn('name', $request['checkedFilters']['tier']);
                     });
                 }
@@ -119,7 +119,7 @@ class CustomerController extends Controller
             }
         }
     
-        $queries->with('rankings')->withCount('keepItems');
+        $queries->with('ranking')->withCount('keepItems');
 
         $results = $queries->get();
 
@@ -143,7 +143,7 @@ class CustomerController extends Controller
 
             return [
                 "id" => $query->id,
-                "tier" => $query->rankings->name ?? 'N/A',
+                "tier" => $query->ranking->name ?? 'N/A',
                 "name" => $query->full_name,
                 "email" => $query->email,
                 "phone" => $query->phone,

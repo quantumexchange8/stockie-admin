@@ -43,11 +43,11 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="!w-full flex flex-col p-6 self-stretch max-h-dvh overflow-y-scroll scrollbar-thin scrollbar-webkit">
+    <div class="!w-full flex flex-col p-6 self-stretch max-h-[800px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
         <TabView :tabs="tabs">
             <template #all>
-                <div class="flex flex-col items-start gap-6 pb-6 self-stretch rounded-[5px]" v-for="items in redeemHistory" :key="items.id">
-                    <div class="flex items-center gap-3 self-stretch rounded-[5px]" v-if="items.earned > 0">
+                <div class="flex flex-col items-start self-stretch rounded-[5px]" v-for="items in redeemHistory" :key="items.id">
+                    <div class="flex items-center gap-3 self-stretch rounded-[5px] pt-6" v-if="items.earned > 0">
                         <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
                             <div class="flex px-[10px] py-1 items-center gap-[10px] self-stretch rounded-[2px] bg-primary-25">
                                 <span class="text-primary-900 text-sm font-medium">{{ items.created_at }}</span>
@@ -70,7 +70,7 @@ onMounted(() => {
                         </div>
                     </div>
                     <div class="flex items-center gap-3 self-stretch" v-for="item in items.used" :key="item.id">
-                        <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
+                        <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] pt-6">
                             <div class="flex px-[10px] py-1 items-center gap-[10px] self-stretch rounded-sm bg-primary-25">
                                 <span class="text-primary-900 text-sm font-medium">{{ items.created_at }}</span>
                             </div>
@@ -99,8 +99,8 @@ onMounted(() => {
                 </template>
             </template>
             <template #earned>
-                <div class="flex flex-col items-start pt-6 self-stretch rounded-[5px]" v-for="items in redeemHistory" :key="items.id">
-                    <div class="flex items-center gap-3 self-stretch rounded-[5px]" v-if="items.earned > 0">
+                <div class="flex flex-col items-start self-stretch rounded-[5px]" v-for="items in redeemHistory" :key="items.id">
+                    <div class="flex items-center gap-3 pt-6 self-stretch rounded-[5px]" v-if="items.earned > 0">
                         <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
                             <div class="flex px-[10px] py-1 items-center gap-[10px] self-stretch rounded-[2px] bg-primary-25">
                                 <span class="text-primary-900 text-sm font-medium">{{ items.created_at }}</span>

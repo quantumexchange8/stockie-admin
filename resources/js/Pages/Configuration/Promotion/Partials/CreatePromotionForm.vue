@@ -7,6 +7,7 @@ import TextInput from '@/Components/TextInput.vue';
 import DragDropImage from '@/Components/DragDropImage.vue'
 import { useCustomToast } from '@/Composables';
 import dayjs from 'dayjs';
+import { computed } from 'vue';
 
 defineProps({
     errors:Object
@@ -55,6 +56,7 @@ const formSubmit = () => {
                     detail: 'Promotion will be visible to waiter and customer during the active period.',
                 });
             }, 200)
+
         }
     })
 };
@@ -63,6 +65,10 @@ const closeForm = () => {
     form.reset();
     emit('close');
 }
+
+const isFormValid = computed(() => {
+    return ['title', 'description', 'promotionPeriod'].every(field => form[field]);
+})
 
 </script>
 
@@ -86,10 +92,11 @@ const closeForm = () => {
                         v-model="form.title"
                     />
                     <DateInput
-                        :inputName="'product_name'"
+                        :inputName="'promotionPeriod'"
                         :labelText="'Promotion Active Period'"
                         :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                         :range="true"
+                        :minDate="new Date()"
                         class="col-span-full xl:col-span-4"
                         :errorMessage="form.errors.promotionPeriod"
                         v-model="form.promotionPeriod"
@@ -117,7 +124,7 @@ const closeForm = () => {
             </Button>
             <Button
                 :size="'lg'"
-                :disabled="form.processing"
+                :disabled="form.processing || !isFormValid"
             >
                 Add
             </Button>

@@ -17,7 +17,7 @@ class ConfigEmployeeIncProgController extends Controller
 {
     public function index(Request $request)
     {
-        $allWaiters = User::select('id', 'full_name')->where('role', 'waiter')->get();
+        $allWaiters = User::select('id', 'full_name')->where('role', 'waiter')->orderBy('full_name')->get();
         $incentiveProg = ConfigIncentive::with('incentiveEmployees.waiters')
                                         ->get()
                                         ->map(function ($incentive) {
@@ -32,10 +32,10 @@ class ConfigEmployeeIncProgController extends Controller
                                                     return $employee->waiters->map(function ($waiter) {
                                                         return [
                                                             'id' => $waiter->id ?? null,
-                                                            'name' => $waiter->name ?? null,
+                                                            'name' => $waiter->full_name ?? null,
                                                         ];
                                                     });
-                                                })->unique('id'),
+                                                })->unique('id')->sortBy('name')->values(),
                                             ];
                                         });
 

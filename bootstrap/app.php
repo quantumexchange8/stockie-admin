@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
         $schedule->command('reservations:mark-no-show')->dailyAt('00:00');
         $schedule->command('configuration:update-active-promo')->dailyAt('00:00');
+        $schedule->command('configuration:update-product-discount')->dailyAt('00:00');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -50,6 +50,19 @@ class ConfigPromotionController extends Controller
         ]);
     }
 
+    public function getPromotions(){
+        $ActivePromotions = ConfigPromotion::where('status', 'Active')->get();
+        $InactivePromotions = ConfigPromotion::where('status', 'Inactive')->get();
+
+        $ActivePromotions->each(function ($active) {
+            $active->promotion_image = $active->getFirstMediaUrl('promotion');
+        });
+
+        $InactivePromotions->each(function ($inactive) {
+            $inactive->promotion_image = $inactive->getFirstMediaUrl('promotion');
+        });
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -89,7 +102,9 @@ class ConfigPromotionController extends Controller
             $promotion->addMedia($request->image)->toMediaCollection('promotion');
         }
         
-        return Redirect::route('configurations.promotions.index');
+        // return Redirect::route('configurations.promotions.index');
+        return redirect()->back();
+
     }
 
     /**
@@ -126,6 +141,9 @@ class ConfigPromotionController extends Controller
             $editPromotion->clearMediaCollection('promotion');
             $editPromotion->addMedia($request->image)->toMediaCollection('promotion');
         }
+
+        return redirect()->back();
+
     }
 
     public function delete(Request $request)
@@ -198,7 +216,7 @@ class ConfigPromotionController extends Controller
             'name' => [
                 'required',
                 'max:255',
-                Rule::unique('settings', 'name')
+                Rule::unique('settings', 'id')
                     ->whereNull('deleted_at')
                     ->ignore($newTax ? $newTax->id : null),
             ],

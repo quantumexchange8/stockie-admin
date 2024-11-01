@@ -1,8 +1,9 @@
 <script setup>
 import Table from "@/Components/Table.vue";
 import { defineProps } from "vue";
-import Button from "@/Components/Button.vue";
-import dayjs from "dayjs";
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+import { transactionFormat, useFileExport } from "@/Composables";
+import { UploadIcon } from "@/Components/Icons/solid";
 
 const props = defineProps({
     id: String,
@@ -24,21 +25,21 @@ const props = defineProps({
     },
     totalPages: Number,
     rowsPerPage: Number,
+    tierName: String,
 });
+const { formatAmount } = transactionFormat();
+const { exportToCSV } = useFileExport();
 
-const formatAmount = (num) => {
-    var str = num.toString().split('.');
-
-    if (str[0].length >= 4) {
-        str[0] = str[0].replace(/(\d)(?=(\d{3})+$)/g, '$1,');
-    }
-
-    if (str[1] && str[1].length >= 5) {
-        str[1] = str[1].replace(/(\d{3})/g, '$1 ');
-    }
-
-    return str.join('.');
+const csvExport = () => {
+    const tierName = props.tierName || 'Unknown tier';
+    const mappedMemberList = props.rows.map(member => ({
+        'Member name': member.full_name,
+        'Joined on': member.joined_on,
+        'Total spent': 'RM' + formatAmount(member.spent),
+    }));
+    exportToCSV(mappedMemberList, `${tierName}_Member List`);
 }
+
 </script>
 
 <template>
@@ -47,33 +48,48 @@ const formatAmount = (num) => {
             <span class="w-full text-primary-900 text-md font-medium whitespace-nowrap">
                 Member List ({{ rows.length }})
             </span>
-            <div class="w-fit">
-                <Button
-                    variant="tertiary"
-                    :type="'button'"
-                    :size="'md'"
-                    :iconPosition="'right'"
+            <Menu as="div" class="relative inline-block text-left">
+                <div>
+                    <MenuButton
+                        class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
+                        Export
+                        <UploadIcon class="size-4 cursor-pointer" />
+                    </MenuButton>
+                </div>
+
+                <transition 
+                    enter-active-class="transition duration-100 ease-out"
+                    enter-from-class="transform scale-95 opacity-0" 
+                    enter-to-class="transform scale-100 opacity-100"
+                    leave-active-class="transition duration-75 ease-in"
+                    leave-from-class="transform scale-100 opacity-100" 
+                    leave-to-class="transform scale-95 opacity-0"
                 >
-                    Export
-                    <template #icon>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
+                    <MenuItems
+                        class="absolute z-10 right-0 mt-2 w-32 p-1 gap-0.5 origin-top-right divide-y divide-y-grey-100 rounded-md bg-white shadow-lg"
                         >
-                            <path
-                                d="M14 10V10.8C14 11.9201 14 12.4802 13.782 12.908C13.5903 13.2843 13.2843 13.5903 12.908 13.782C12.4802 14 11.9201 14 10.8 14H5.2C4.07989 14 3.51984 14 3.09202 13.782C2.71569 13.5903 2.40973 13.2843 2.21799 12.908C2 12.4802 2 11.9201 2 10.8V10M11.3333 5.33333L8 2M8 2L4.66667 5.33333M8 2V10"
-                                stroke="#7E171B"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
-                    </template>
-                </Button>
-            </div>
+                        <MenuItem v-slot="{ active }">
+                        <button type="button" :class="[
+                            { 'bg-primary-100': active },
+                            { 'bg-grey-50 pointer-events-none': props.rows.length === 0 },
+                            'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                        ]" :disabled="props.rows.length === 0" @click="csvExport">
+                            CSV
+                        </button>
+                        </MenuItem>
+
+                        <MenuItem v-slot="{ active }">
+                        <button type="button" :class="[
+                            // { 'bg-primary-100': active },
+                            { 'bg-grey-50 pointer-events-none': props.rows.length === 0 },
+                            'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                        ]" :disabled="props.rows.length === 0">
+                            PDF
+                        </button>
+                        </MenuItem>
+                    </MenuItems>
+                </transition>
+            </Menu>
         </div>
         <Table
             :variant="'list'"
@@ -86,16 +102,16 @@ const formatAmount = (num) => {
             minWidth="min-w-[470px]"
         >
             <template #full_name="row">
-                <div class="flex gap-[10px]">
+                <div class="flex gap-[10px] items-center">
                     <div class="w-[32px] h-[32px] rounded-full bg-gray-500"></div>
-                    <span class="">{{ row.full_name }}</span>
+                    <span class="shrink-0 text-grey-900 text-sm font-medium">{{ row.full_name }}</span>
                 </div>
             </template>
             <template #created_at="row">
-                <span class=""> {{ dayjs(row.created_at).format('DD/MM/YYYY') }}</span>
+                <span class="text-grey-900 text-sm font-semibold"> {{ row.joined_on }}</span>
             </template>
             <template #total_spend="row">
-                <span class=""> RM {{ formatAmount(row.total_spend) }}</span>
+                <span class="text-grey-900 text-sm font-semibold"> RM {{ formatAmount(row.spent) }}</span>
             </template>
         </Table>
     </div>

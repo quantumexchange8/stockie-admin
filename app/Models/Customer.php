@@ -47,7 +47,7 @@ class Customer extends Model
         ];
     }
 
-    public function rankings(): BelongsTo
+    public function ranking(): BelongsTo
     {
         return $this->belongsTo(Ranking::class,'ranking', 'id');
     }

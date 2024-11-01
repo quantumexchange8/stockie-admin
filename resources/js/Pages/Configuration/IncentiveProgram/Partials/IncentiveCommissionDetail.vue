@@ -376,6 +376,7 @@ watch(() => searchQuery.value, (newValue) => {
                     :class="'w-full'"
                     template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
                     @page="onPageChange"
+                    v-if="detail.length > 0" 
                     :pt="{
                         root: {
                             class: 'flex justify-between items-center flex-wrap bg-white text-grey-500 py-3 !w-full '

@@ -10,7 +10,7 @@ import TextInput from '@/Components/TextInput.vue';
 import Tag from '@/Components/Tag.vue';
 import Paginator from 'primevue/paginator';
 import Toggle from './Toggle.vue';
-import { useCustomToast } from '@/Composables';
+import { transactionFormat, useCustomToast } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -75,6 +75,7 @@ const defaultActions = {
 };
 
 const { showMessage } = useCustomToast();
+const { formatAmount } = transactionFormat();
 
 const mergedActions = computed(() => {
     return Object.keys(props.actions).length === 0 
@@ -179,8 +180,8 @@ const totalStockByGroup = computed(() => {
 
 paginatedRows.value.forEach(item => {
     forms[item.id] = useForm({
-        id: item.id,
-        product_name: item.product_name,
+        id: item.id ?? '',
+        product_name: item.product_name ?? '',
         availability: item.availability === 'Available' ? true : false,
         availabilityWord: '',
     });
@@ -204,7 +205,7 @@ const updateAvailability = (id) => {
     const form = forms[id];
     if (form) {
         const availability = form.availability === true ? 'available' : 'unavailable';
-        
+
         form.post(route('products.updateAvailability'), {
             preserveScroll: true,
             preserveState: true,
@@ -230,7 +231,9 @@ const updateAvailability = (id) => {
     }
 };
 
-
+watch(() => props.rows, () => {
+    currentPage.value = 1;
+}, { immediate: true });
 
 onMounted(() => {
     loading.value = true;
@@ -239,9 +242,6 @@ onMounted(() => {
     }
 });
 
-// watch(() => form.availability, (newValue) => {
-//     form.availability = newValue ? newValue : form.availability;
-// }, { immediate: true });
 
 </script>
 
@@ -608,9 +608,9 @@ onMounted(() => {
             </template>
         </DataTable>
         <form @submit.prevent="updateAvailability">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-4" v-if="props.variant === 'grid'">
-            <div v-for="(item, index) in paginatedRows" :key="index" class="col-span-full md:col-span-3">
-                <div class="flex flex-col items-start gap-1 w-full">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4" v-if="props.variant === 'grid'">
+                <div v-for="(item, index) in paginatedRows" :key="index" class="col-span-full md:col-span-3">
+                    <div class="flex flex-col items-start gap-1 w-full">
                         <slot name="item-body">
                             <div 
                                 :class="[
@@ -646,20 +646,28 @@ onMounted(() => {
                                 <Tag value="Set" v-if="item.bucket === 'set'"/>
                                 <span class="w-full self-stretch text-primary-950 text-md font-semibold overflow-hidden text-ellipsis whitespace-nowrap">{{ item.product_name }}</span>
                             </div>
-                            <span class="self-stretch text-md font-normal text-primary-950">RM {{ item.price }}</span> 
+                            <div v-for="items in item.discountItems" v-if="item.discount_id !== null" class="flex items-start gap-2">
+                                <span class="line-clamp-1 text-grey-900 text-ellipsis font-normal text-md line-through">RM {{ formatAmount(items.price_before) }}</span>
+                                <span class="line-clamp-1 text-grey-900 text-ellipsis font-bold text-md ">RM {{ formatAmount(items.price_after) }}</span>
+                            </div>
+                            <div v-else>
+                                <span class="line-clamp-1 text-grey-900 text-ellipsis font-bold text-md">
+                                    RM {{ formatAmount(item.price) }}
+                                </span>
+                            </div>
                             <div class="flex items-center self-stretch gap-2">
                                 <Toggle 
-                                    :checked="forms[item.id].id === item.id && forms[item.id].availability" 
+                                    :checked="item.availability === 'Available'" 
                                     :inputName="'availability'"
                                     :inputId="'availability'"
-                                    v-model="forms[item.id].availability"
                                     @change="toggleAvailability(item)"
                                 />
                                 <span class="text-base font-medium" 
                                 :class="item.status === 'In stock' ? 'text-green-700' 
                                         : item.status === 'Low in stock' ? 'text-yellow-700' 
                                         : 'text-primary-600'">
-                                        {{ item.stock_left }} left
+                                        <p v-if="item.status === 'Out of stock'">{{ item.status }}</p>
+                                        <p v-else>{{ item.bucket === 'set' ? `${item.stock_left} set left` : `${item.stock_left} left` }}</p>
                                 </span>
                             </div>
                         </slot>

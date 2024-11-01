@@ -1,5 +1,5 @@
 <script setup>
-import {transactionFormat} from "@/Composables/index.js";
+import {transactionFormat, useCustomToast} from "@/Composables/index.js";
 import Button from "@/Components/Button.vue";
 import { DeleteIcon, EditIcon } from "@/Components/Icons/solid";
 import { ref } from "vue";
@@ -15,6 +15,9 @@ import { DeleteIllus } from "@/Components/Icons/illus";
 const props = defineProps({
     InactivePromotions: Array
 }) 
+
+const { showMessage } = useCustomToast();
+const { formatDate } = transactionFormat();
 
 const editModal = ref(false);
 const actionVal = ref('');
@@ -49,7 +52,6 @@ const form = useForm({
     promotion_to: '',
 })
 
-const { formatDate, formatAmount } = transactionFormat();
 
 const submit = () => {
 
@@ -68,6 +70,12 @@ const submit = () => {
             onSuccess: () => {
                 closeModal();
                 form.reset();
+                setTimeout(() => {
+                    showMessage({ 
+                        severity: 'success',
+                        summary: 'Selected promotion has been edited successfully.',
+                    });
+                }, 200)
             },
         })
     } else {
@@ -76,6 +84,12 @@ const submit = () => {
             onSuccess: () => {
                 closeModal();
                 form.reset();
+                setTimeout(() => {
+                    showMessage({ 
+                        severity: 'success',
+                        summary: 'Selected promotion has been deleted successfully.',
+                    });
+                }, 200)
             },
         })
     }

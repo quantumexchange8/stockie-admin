@@ -25,10 +25,19 @@ const props = defineProps({
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
-const options = props.productNames.map(item => ({
+const options = props.productToAdd.map(item => ({
     text: item.product_name, 
     value: item.id
 }));
+if (Array.isArray(props.commisionDetails.product) && Array.isArray(props.commisionDetails.productIds) && props.commisionDetails.product.length === props.commisionDetails.productIds.length) {
+    props.commisionDetails.product.forEach((productName, index) => {
+        options.push({
+            text: productName,
+            value: props.commisionDetails.productIds[index]
+        });
+    });
+}
+
 const emit = defineEmits(['closeModal', 'viewEmployeeComm']);
 const isRate = ref(true)
 const commType = [

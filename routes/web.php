@@ -165,12 +165,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/tiers/store', [LoyaltyController::class, 'storeTier'])->name('loyalty-programme.tiers.store');
         Route::put('/tiers/update/{id}', [LoyaltyController::class, 'updateTier'])->name('loyalty-programme.tiers.update');
         Route::delete('/tiers/destroy/{id}', [LoyaltyController::class, 'deleteTier'])->name('loyalty-programme.tiers.destroy');
+        Route::get('/filterMemberSpending', [LoyaltyController::class, 'filterMemberSpending'])->name('loyalty-programme.tiers.filter');
 
-        Route::get('/getShowRecords', [LoyaltyController::class, 'showRecord'])->name('loyalty-program.show');
-        // Route::get('/getIcons', [LoyaltyController::class, 'showIcons'])->name('loyalty-program.showIcons');
-        Route::get('/getMemberList', [LoyaltyController::class, 'showMemberList'])->name('loyalty-programme.getMemberList');
-        Route::get('/getTierData', [LoyaltyController::class, 'showTierData'])->name('loyalty-programme.getTierData');
-        Route::get('/getAllInventoryWithItems', [LoyaltyController::class, 'getAllInventoryWithItems'])->name('loyalty-programme.getAllInventoryWithItems');
         
         /******* Point ********/
         Route::get('/points', [LoyaltyController::class, 'index'])->name('loyalty-programme.points');

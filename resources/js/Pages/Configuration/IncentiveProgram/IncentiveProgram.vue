@@ -8,9 +8,10 @@ import Table from "@/Components/Table.vue";
 import Toast from "@/Components/Toast.vue";
 import { Head } from "@inertiajs/vue3";
 import { FilterMatchMode } from "primevue/api";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import AddAchievement from "./Partials/AddAchievement.vue";
 import EditAchievement from "./Partials/EditAchievement.vue";
+import { transactionFormat } from "@/Composables";
 
 const isLoading = ref(false);
 const rows = ref([]);
@@ -19,6 +20,7 @@ const isDeleteIncentOpen = ref(false);
 const isAddAchievementOpen = ref(false);
 const selectedIncent = ref(null);
 const waiters = ref([]);
+const { formatDate } = transactionFormat();
 
 const actions = {
     view: (incentive) => `/configurations/configurations/incentCommDetail/${incentive}`,
@@ -50,9 +52,9 @@ const getInitials = (fullName) => {
     return initials;
 }
 
-const formatDate = (date) => {
-    return date.slice(0,-9);
-}
+// const formatDate = (date) => {
+//     return date.slice(0,-9);
+// }
 
 const openEditIncent = (event, rows) => {
     handleDefaultClick(event);
@@ -85,7 +87,9 @@ const getEmployeeIncent = async () => {
         rows.value = response.data.incentiveProg.map(incentive => {
             return {
                 ...incentive, 
-                isRate: incentive.type !== 'fixed' 
+                isRate: incentive.type !== 'fixed',
+                hiddenEntitled: incentive.entitled.length > 4 ? incentive.entitled.length - 4 : null,
+                entitled: incentive.entitled.slice(0, 4),
             };
         });
     } catch (error) {
@@ -113,10 +117,6 @@ const filters = ref({
 const handleDefaultClick = (event) => {
     event.stopPropagation();
     event.preventDefault();
-}
-
-const isOverflown = ({ clientWidth, clientHeight, scrollWidth, scrollHeight }) => {
-    return scrollHeight > clientHeight || scrollWidth > clientWidth;
 }
 
 onMounted (() => {
@@ -197,9 +197,12 @@ onMounted (() => {
                     <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ formatDate(rows.effective_date) }}</span>
                 </template>
                 <template #name="rows">
-                    <div class="flex items-start pr-1" :class="'overflow-hidden'">
-                        <div v-for="(names, index) in rows.entitled" :key="index" class="flex items-start pr-1">
-                            <span class="size-6 rounded-full bg-primary-900 text-white text-center self-stretch">{{ getInitials(names.name) }}</span>
+                    <div class="flex items-center gap-[13px] overflow-hidden">
+                        <div class="flex items-start gap-1">
+                            <span v-for="(names, index) in rows.entitled" :key="index" class="size-6 rounded-full bg-primary-900 text-white text-center self-stretch">{{ getInitials(names.name) }}</span>
+                        </div>
+                        <div v-if="rows.hiddenEntitled !== null" class="flex items-start pr-1">
+                            <span class="text-grey-900 text-sm font-medium">+{{ rows.hiddenEntitled }}</span>
                         </div>
                     </div>
                 </template>

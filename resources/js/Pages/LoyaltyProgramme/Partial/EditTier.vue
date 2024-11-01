@@ -8,16 +8,12 @@ import Button from "@/Components/Button.vue";
 import DateInput from "@/Components/Date.vue";
 import NumberCounter from "@/Components/NumberCounter.vue";
 import Dropdown from "@/Components/Dropdown.vue";
-import axios from "axios";
 import TextInput from "@/Components/TextInput.vue";
 import Accordion from "@/Components/Accordion.vue";
 import { Calendar } from "@/Components/Icons/solid";
-import Carlsbeg from "../../../../assets/images/Loyalty/Carlsbeg.svg";
-import Tiger from "../../../../assets/images/Loyalty/Tiger.svg";
-// import DiscountAmount from "@/Pages/LoyaltyProgramme/Partial/DiscountAmount.vue";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
 import Toast from '@/Components/Toast.vue'
-import { useInputValidator } from "@/Composables";
+import { useCustomToast, useInputValidator } from "@/Composables";
 
 const props = defineProps({
     tier: {
@@ -28,66 +24,19 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    items: {
+        type: Array,
+        default: () => [],
+    }
 });
 
 const emit = defineEmits(["close"]);
 const { isValidNumberKey } = useInputValidator();
-// const ranking = ref({});
-// const rankingRewards = ref([]);
-
-// onMounted(() => {
-// });
+const { showMessage } = useCustomToast();
 
 //function to display the option for valid period
 const calculateValidPeriod = (fromDate, toDate) => {
-    return dayjs(toDate).diff(dayjs(fromDate), 'month');
-};
-
-const calculateDateRange = (props) => {
-    if (props.valid_period !== 0) {
-        const from = new Date(props.valid_period_from);
-        from.setMonth(from.getMonth() + props.valid_period);
-        props.valid_period_to = from.toISOString().split("T")[0];
-    }
-};
-
-//display date in format dd/mm/yyyy
-const formatDate = (date) => {
-    const d = new Date(date);
-    const day = `0${d.getDate()}`.slice(-2);
-    const month = `0${d.getMonth() + 1}`.slice(-2); // Months are zero-indexed
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-};
-
-const fetchData = () => {
-    // axios
-    //     .get(`/loyalty-programme/getTierData?id=${props.id}`)
-    //     .then((response) => {
-    //         ranking.value = response.data.ranking;
-    //         //rankingRewards.value = response.data.rankingRewards;
-    //         rankingRewards.value = response.data.rankingRewards.map(
-    //             (reward) => {
-    //                 const validPeriod = calculateValidPeriod(
-    //                     reward.valid_period_from,
-    //                     reward.valid_period_to
-    //                 );
-    //                 return {
-    //                     ...reward,
-    //                     valid_period: validPeriod,
-    //                     date_range:
-    //                         validPeriod === 0
-    //                             ? `${formatDate(
-    //                                   reward.valid_period_from
-    //                               )} - ${formatDate(reward.valid_period_to)}`
-    //                             : null,
-    //                 };
-    //             }
-    //         );
-    //     })
-    //     .catch((error) => {
-    //         console.error("Error fetching data:", error);
-    //     });
+    return dayjs(toDate).diff(dayjs(fromDate), 'month');    
 };
 
 const form = useForm({
@@ -95,19 +44,16 @@ const form = useForm({
     name: props.tier.name,
     min_amount: props.tier.min_amount.toString(),
     reward: props.tier.reward,
-    rewards: props.tier.ranking_rewards.map((reward) => {
-        const validPeriod = calculateValidPeriod(reward.valid_period_from, reward.valid_period_to);
-
+    rewards: props.inventoryItems.map((reward) => {
+        const validPeriod = calculateValidPeriod(reward.valid_period_from, reward.valid_period_to); // calculate difference in month
         reward.item_qty = reward.item_qty ? parseInt(reward.item_qty) : 1;
         reward.min_purchase_amount = reward.min_purchase_amount ? reward.min_purchase_amount.toString() : '';
+        // reward.discount = reward.reward_type === 'Discount (Percentage)' ? (reward.discount * 100).toString() : reward.discount;
 
         return {
             ...reward,
             valid_period: validPeriod,
-            date_range:
-                validPeriod === 0
-                    ? `${dayjs(reward.valid_period_from).format('DD/MM/YYYY')} - ${dayjs(reward.valid_period_to).format('DD/MM/YYYY')}`
-                    : null,
+            date_range: [new Date(reward.valid_period_from), new Date(reward.valid_period_to)],
         };
     }),
     icon: props.tier.icon,
@@ -132,7 +78,7 @@ const toggleReward = () => {
         return;
     }
     
-    addReward();
+    // addReward();
 };
 
 const toggleMinPurchase = (index) => {
@@ -166,17 +112,6 @@ const updateValidPeriod = (reward, option) => {
 }
 
 const submit = () => {
-    // axios
-    //     .post(`/loyalty-programme/updateTierData?id=${props.id}`, {
-    //         ranking: ranking.value,
-    //         rankingRewards: rankingRewards.value,
-    //     })
-    //     .then((response) => {
-    //         console.log("Form submitted successfully");
-    //     })
-    //     .catch((error) => {
-    //         console.error("Error submitting form:", error);
-    //     });
     
     form.rewards.forEach(item => {
         item.item_qty = item.item_qty ? item.item_qty.toString() : '';
@@ -187,7 +122,14 @@ const submit = () => {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
-            closeModal()
+            form.reset();
+            closeModal();
+            setTimeout(() => {
+                showMessage({
+                    severity: 'success',
+                    summary: 'Tier has been edited successfully.'
+                });
+            }, 200);
         },
     })
 };
@@ -202,7 +144,7 @@ const submit = () => {
                     <TextInput
                         :placeholder="'eg: Gold / VIP etc'"
                         :labelText="'Tier Name'"
-                        :errorMessage="form.errors?.name  ?? ''"
+                        :errorMessage="form.errors?.name ?? ''"
                         inputName="name"
                         type="'text'"
                         v-model="form.name"
@@ -242,16 +184,17 @@ const submit = () => {
                         inputId="min_amount"
                         :errorMessage="form.errors?.min_amount  ?? ''"
                         :iconPosition="'left'"
-                        type="'text'"
+                        type="'Number'"
                         v-model="form.min_amount"
+                        @keypress="isValidNumberKey($event, false)"
                     >
                         <template #prefix> RM </template>
                     </TextInput>
                 </div>
                 <div class="justify-end flex gap-3">
-                    <p class="font-normal">
+                    <span class="text-grey-900 text-base font-normal">
                         This tier is entitled to entry reward(s)
-                    </p>
+                    </span>
                     <Toggle
                         class="xl:col-span-2"
                         :checked="form.reward === 'active'"
@@ -328,7 +271,7 @@ const submit = () => {
                                                     labelText="Minimum purchase amount"
                                                     inputId="min_purchase_amount"
                                                     v-model="reward.min_purchase_amount"
-                                                    @keypress="isValidNumberKey($event, true)"
+                                                    @keypress="isValidNumberKey($event, false)"
                                                 >
                                                     <template #prefix>RM</template>
                                                 </TextInput>
@@ -367,11 +310,11 @@ const submit = () => {
                                             <div class="flex gap-3 flex-wrap sm:flex-nowrap items-end justify-center">
                                                 <Dropdown
                                                     :labelText="'Select an item'"
-                                                    :inputArray="inventoryItems"
+                                                    :inputArray="props.items"
                                                     grouped
                                                     :inputName="'free_item_' + index"
                                                     :errorMessage="form.errors ? form.errors['items.' + index + '.free_item']  : ''"
-                                                    :dataValue="reward.inventory_item?.id ?? ''"
+                                                    :dataValue="reward.free_item ?? ''"
                                                     v-model="reward.free_item"
                                                     placeholder="Select"
                                                     class="w-full"
@@ -451,6 +394,7 @@ const submit = () => {
                         variant="primary" 
                         :size="'lg'" 
                         :type="'submit'"
+                        :disabled="form.processing"
                     >
                         Save Changes
                     </Button>

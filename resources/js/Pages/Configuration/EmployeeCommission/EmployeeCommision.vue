@@ -158,12 +158,19 @@ onMounted (() => {
                 <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ rows.comm_type }}</span>
             </template>
             <template #rate="rows">
-                <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ rows.rate }}</span>
+                <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">
+                    <template v-if="rows.comm_type === 'Percentage per sold product'">
+                        {{ rows.rate }}%
+                    </template>
+                    <template v-else>
+                        RM {{ rows.rate }}
+                    </template>
+                </span>
             </template>
             <template #product="rows">
                 <div class="flex gap-2">
                     <template v-for="(product, index) in rows.product" :key="index">
-                        <div class="bg-primary-25 border-[0.2px] border-solid border-grey-100 rounded-[1px] size-10"></div>
+                        <div class="bg-primary-200 border-[0.2px] border-solid border-grey-100 rounded-[1px] size-10"></div>
                     </template>
                 </div>
             </template>

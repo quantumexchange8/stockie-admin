@@ -1,6 +1,5 @@
 <script setup>
-import axios from "axios";
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { EmptyTierIllus } from "@/Components/Icons/illus.jsx";
 import Modal from "@/Components/Modal.vue";
 import Table from "@/Components/Table.vue";
@@ -40,7 +39,6 @@ const props = defineProps({
         required: true,
     },
 });
-
 const isModalOpen = ref(false);
 const editTierFormIsOpen = ref(false);
 const deleteTierFormIsOpen = ref(false);
@@ -193,7 +191,8 @@ const formatAmount = (num) => {
                 <template v-if="selectedTier">
                     <EditTier
                         :tier="selectedTier"
-                        :inventoryItems="inventoryItems" 
+                        :inventoryItems="selectedTier.ranking_rewards" 
+                        :items="props.inventoryItems"
                         @close="hideEditTierForm"
                     />
                 </template>

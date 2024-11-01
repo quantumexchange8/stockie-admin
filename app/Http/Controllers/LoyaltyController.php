@@ -8,6 +8,7 @@ use App\Http\Requests\RankingRequest;
 use App\Http\Requests\RankingRewardRequest;
 use App\Models\Iventory;
 use App\Models\IventoryItem;
+use App\Models\Payment;
 use App\Models\PointItem;
 use App\Models\SaleHistory;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -22,6 +23,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Redirect;
+use Log;
 
 class LoyaltyController extends Controller
 {
@@ -107,10 +109,6 @@ class LoyaltyController extends Controller
 
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
-
-        // Clear the flashed messages from the session
-        // $request->session()->forget('message');
-        // $request->session()->save();
 
         return Inertia::render('LoyaltyProgramme/LoyaltyProgramme', [
             'message' => $message ?? [],
@@ -249,40 +247,96 @@ class LoyaltyController extends Controller
         return response()->json($data);
     }
 
-    public function showTierDetails(Request $request, string $id)
+    public function showTierDetails(string $id)
     {
-        // Get the flashed messages from the session
-        $message = $request->session()->get('message');
+        $tier = Ranking::with(['rankingRewards', 'customers'])->find($id); 
 
-        // Clear the flashed messages from the session
-        // $request->session()->forget('message');
-        // $request->session()->save();
+        $inventoryItems = Iventory::withWhereHas('inventoryItems')
+                                    ->select(['id', 'name'])
+                                    ->orderBy('id')
+                                    ->get()
+                                    ->map(function ($group) {
+                                        $group_items = $group->inventoryItems->map(function ($item) {
+                                            return [
+                                                'text' => $item->item_name,
+                                                'value' => $item->id,
+                                            ];
+                                        });
+
+                                        return [
+                                            'group_name' => $group->name,
+                                            'items' => $group_items
+                                        ];
+                                    });
+
+        $monthlySpent = Payment::with('customer')
+                                ->whereMonth('created_at', now()->month)
+                                ->whereYear('created_at', now()->year)
+                                ->get()
+                                ->groupBy('customer_id')
+                                ->map(function ($payments) {
+                                    return [
+                                        'full_name' => $payments->first()->customer->full_name,
+                                        'spent' => $payments->sum('grand_total'),
+                                    ];
+                                })->values(); 
+        $names = $monthlySpent->pluck('full_name')->toArray();
+        $spendings = $monthlySpent->pluck('spent')->toArray();
+        // dd($monthlySpent);
 
         return Inertia::render('LoyaltyProgramme/Partial/TierDetail', [
             'id' => $id,
-            'message' => $message ?? []
+            'tier' => $tier,
+            'reward' => $tier->rankingRewards->map(function($reward) {
+                return array_merge(
+                    $reward->toArray(),
+                    [
+                        'item_name' => $reward->inventoryItem ? $reward->inventoryItem->item_name : null,
+                    ]
+                );
+            }),
+            'customers' => $tier->customers->map(function ($customer) {
+                $spent = $customer->payments->sum('grand_total');
+                return [
+                    'full_name' => $customer->full_name,
+                    'joined_on' => Carbon::parse($customer->created_at)->format('d/m/Y'),
+                    'spent' => (int)$spent,
+                ];
+            }),
+            'inventoryItems' => $inventoryItems,
+            'names' => $names,
+            'spendings' => $spendings,
         ]);
     }
 
-    public function showMemberList(Request $request)
-    {   
-        $id = $request->query('id');
-        // $customers = Customer::where('ranking', $id)
-        //                         ->with('ranking', 'ranking.rankingRewards')
-        //                         ->get(); 
-
-        // foreach ($customers as $customer) {
-        //     $customer->total_spend = 0; //Hard core for now
-        // }
-        
-        $ranking = Ranking::with(['rankingRewards', 'customers'])->find($id); 
+    public function filterMemberSpending (Request $request)
+    {
+        $monthlySpent = Payment::with('customer')
+                                ->when($request->input('selected') === 'This month', function ($query) {
+                                            $query->whereMonth('created_at', now()->month)
+                                                ->whereYear('created_at', now()->year);
+                                        })
+                                ->when($request->input('selected') === 'This year', function ($query) {
+                                            $query->whereYear('created_at', now()->year);
+                                        })
+                                ->get()
+                                ->groupBy('customer_id')
+                                ->map(function ($payments) {
+                                    return [
+                                        'full_name' => $payments->first()->customer->full_name,
+                                        'spent' => $payments->sum('grand_total'),
+                                    ];
+                                })->values();
+        $names = $monthlySpent->pluck('full_name')->toArray();
+        $spendings = $monthlySpent->pluck('spent')->toArray();
 
         return response()->json([
-            'customers' => $ranking->customers,
-            'ranking' => $ranking,
-            'rankingRewards' => $ranking->rankingRewards,
+            'names' => $names,
+            'spendings' => $spendings,
         ]);
     }
+
+
 
     public function showTierData(Request $request)
     {   
@@ -298,6 +352,7 @@ class LoyaltyController extends Controller
 
     public function updateTier(RankingRequest $request, string $id)
     {        
+        // dd($request->all());
         // Get validated tier data
         $validatedData = $request->validated();
 
@@ -314,7 +369,7 @@ class LoyaltyController extends Controller
             switch ($reward['reward_type']) {
                 case 'Discount (Amount)':
                 case 'Discount (Percentage)':
-                    $rules['discount'] = str_replace('nullable', 'required', $rules['discount']);
+                    $rules['discount'] ??= str_replace('nullable', 'required', $rules['discount']);
 
                     if ($reward['min_purchase'] === 'active') {
                         $rules['min_purchase_amount'] = str_replace('nullable', 'required', $rules['min_purchase_amount']);

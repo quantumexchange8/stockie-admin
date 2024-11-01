@@ -6,6 +6,8 @@ import { transactionFormat } from '@/Composables';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { computed, ref } from 'vue';
 import EditDiscount from './EditDiscount.vue';
+import TextInput from '@/Components/TextInput.vue';
+import Paginator from 'primevue/paginator';
 
 const props = defineProps({
     details: {
@@ -18,6 +20,7 @@ const currentPage = ref(1);
 const isEditDiscountOpen = ref(false);
 const isDeleteDiscountOpen = ref(false);
 const selectedDiscount = ref(null);
+const totalPages = computed(() => Math.ceil((props.details?.length || 0) / 4));
 
 const computedRowsPerPage = computed(() => {
     const start = (currentPage.value - 1) * 4;
@@ -54,6 +57,17 @@ const openDeleteDiscount = (event, discountId) => {
 const closeModal = () => {
     isEditDiscountOpen.value = false;
     isDeleteDiscountOpen.value = false;
+};
+
+const onPageChange = (event) => {
+    currentPage.value = event.page + 1;
+};
+
+const goToPage = (event) => {
+    const page = parseInt(event.target.value);
+    if (page > 0 && page <= totalPages) {
+        currentPage.value = page;
+    }
 }
 
 </script>
@@ -187,6 +201,187 @@ const closeModal = () => {
             </tr>
         </tbody>
     </table>
+
+    <Paginator
+        v-if="props.details.length > 0"
+        :rows="4" 
+        :totalRecords="props.details.length"
+        template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+        @page="onPageChange"
+        :pt="{
+            root: {
+                class: 'flex justify-center items-center flex-wrap bg-white text-grey-500 py-3'
+            },
+            start: {
+                class: 'mr-auto'
+            },
+            pages: {
+                class: 'flex justify-center items-center'
+            },
+            pagebutton: ({ context }) => {
+                return {
+                    class: [
+                        'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                        {
+                            'rounded-full bg-primary-900 text-primary-50': context.active,
+                            'hover:rounded-full hover:bg-primary-50 hover:text-primary-900': !context.active,
+                        },
+                    ]
+                };
+            },
+            end: {
+                class: 'ml-auto'
+            },
+            firstpagebutton: {
+                class: [
+                    {
+                        'hidden': totalPages < 5,
+                    },
+                    'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                    'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                    'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',,
+                    'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                    'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
+                ]
+            },
+            previouspagebutton: {
+                class: [
+                    {
+                        'hidden': totalPages === 1
+                    },
+                    'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                    'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                    'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
+                ]
+            },
+            nextpagebutton: {
+                class: [
+                    {
+                        'hidden': totalPages === 1
+                    },
+                    'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                    'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                    'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
+                ]
+            },
+            lastpagebutton: {
+                class: [
+                    {
+                        'hidden': totalPages < 5
+                    },
+                    'flex w-[38px] h-[38px] py-2 px-[10px] justify-center items-center text-grey-900',
+                    'hover:rounded-full hover:bg-primary-50 hover:text-primary-900',
+                    'focus:rounded-full focus:bg-primary-900 focus:text-primary-50',
+                ]
+            },
+        }"
+    >
+        <template #start>
+            <div class="text-xs font-medium text-grey-500">
+                Showing: <span class="text-grey-900">{{ totalPages.value === 0 ? 0 : currentPage }} of {{ totalPages.value === 0 ? 0 : totalPages }}</span>
+            </div>
+        </template>
+        <template #end>
+            <div class="flex justify-center items-center gap-2 text-xs font-medium text-grey-900 whitespace-nowrap">
+                Go to Page: 
+                <TextInput
+                    :inputName="'go_to_page'"
+                    :placeholder="'eg: 12'"
+                    class="!w-20"
+                    :disabled="true"
+                    v-if="totalPages === 1"
+                />
+                <TextInput
+                    :inputName="'go_to_page'"
+                    :placeholder="'eg: 12'"
+                    class="!w-20"
+                    :disabled="false"
+                    @input="goToPage($event)"
+                    v-else
+                />
+            </div>
+        </template>
+        <template #firstpagelinkicon>
+            <svg 
+                width="15" 
+                height="12" 
+                viewBox="0 0 15 12" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path 
+                    d="M14 11L9 6L14 1" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"/>
+                <path
+                    d="M6 11L1 6L6 1" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"
+                />
+            </svg>
+        </template>
+        <template #prevpagelinkicon>
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="7" 
+                height="12" 
+                viewBox="0 0 7 12" 
+                fill="none"
+            >
+                <path 
+                    d="M6 11L1 6L6 1" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"
+                />
+            </svg>
+        </template>
+        <template #nextpagelinkicon>
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="7" 
+                height="12" 
+                viewBox="0 0 7 12" 
+                fill="none"
+            >
+                <path 
+                    d="M1 11L6 6L1 1" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"
+                />
+            </svg>
+        </template>
+        <template #lastpagelinkicon>
+            <svg 
+                width="15" 
+                height="12" 
+                viewBox="0 0 15 12" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path 
+                    d="M1 11L6 6L1 1" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"/>
+                <path
+                    d="M9 11L14 6L9 1" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"
+                />
+            </svg>
+        </template>
+    </Paginator>
 
     <Modal
         :title="'Edit Discount'"

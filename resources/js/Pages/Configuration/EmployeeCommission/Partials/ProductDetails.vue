@@ -8,7 +8,7 @@ import SearchBar from '@/Components/SearchBar.vue';
 import Table from '@/Components/Table.vue';
 import Tag from '@/Components/Tag.vue';
 import Toast from '@/Components/Toast.vue';
-import { useCustomToast } from '@/Composables';
+import { transactionFormat, useCustomToast } from '@/Composables';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { FilterMatchMode } from 'primevue/api';
@@ -40,6 +40,7 @@ const items = ref([
 ]);
 
 const { flashMessage } = useCustomToast();
+const { formatAmount } = transactionFormat();
 const rowsPerPage = ref(11);
 const totalPages = computed(() => {
     return Math.ceil(props.productDetails.productDetails.length / rowsPerPage.value);
@@ -178,10 +179,10 @@ const filters = ref({
                             </div>
                         </template>
                         <template #price="rows">
-                            <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">RM {{ rows.price }}</span>
+                            <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(rows.price) }}</span>
                         </template>
                         <template #commission="rows">
-                            <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">RM {{ rows.commission }}</span>
+                            <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(rows.commission) }}</span>
                         </template>
                         <template #deleteAction="rows">
                             <DeleteIcon
