@@ -56,7 +56,7 @@ import {
                 <SidebarLink 
                     title="Menu Management" 
                     :href="route('products.index')"
-                    :active="route().current('products.index')"
+                    :active="route().current('products.index') || route().current('products.showProductDetails')"
                 >
                     <template #icon>
                         <MenuIcon aria-hidden="true" />
@@ -73,7 +73,7 @@ import {
                 <SidebarLink 
                     title="Inventory" 
                     :href="route('inventory')"
-                    :active="route().current('inventory')"
+                    :active="route().current('inventory') || route().current('inventory.viewStockHistories')"
                 >
                     <template #icon>
                         <InventoryIcon aria-hidden="true" />
@@ -82,7 +82,7 @@ import {
                 <SidebarLink 
                     title="Waiter" 
                     :href="route('waiter')"
-                    :active="route().current('waiter')"
+                    :active="route().current('waiter') || route().current('waiter.waiter-details')"
                 >
                     <template #icon>
                         <WaiterIcon aria-hidden="true" />
@@ -108,7 +108,7 @@ import {
                 <SidebarLink 
                     title="Reservation" 
                     :href="route('reservations')"
-                    :active="route().current('reservations')"
+                    :active="route().current('reservations') || route().current('reservations.viewReservationHistory')"
                 >
                     <template #icon>
                         <ReservationIcon aria-hidden="true" />
@@ -125,7 +125,7 @@ import {
                 <SidebarLink
                     title="Loyalty Programme"
                     :href="route('loyalty-programme')"
-                    :active="route().current('loyalty-programme')"
+                    :active="route().current('loyalty-programme') || route().current('loyalty-programme.tiers.show') || route().current('loyalty-programme.points.show')"
                 >
                     <template #icon>
                         <LoyaltyIcon aria-hidden="true" />
@@ -143,7 +143,7 @@ import {
                 <SidebarLink
                     title="Configuration"
                     :href="route('configurations')"
-                    :active="route().current('configurations')"
+                    :active="route().current('configurations') || route().current('configurations.productDetails') || route().current('configuration.incentCommDetail')"
                 >
                     <template #icon>
                         <ConfigurationIcon aria-hidden="true" />

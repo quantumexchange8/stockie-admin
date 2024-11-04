@@ -77,8 +77,8 @@ class ConfigEmployeeIncProgController extends Controller
 
     public function deleteAchievement(String $id)
     {
-        ConfigIncentive::find($id)->delete();
         ConfigIncentiveEmployee::where('incentive_id', $id)->delete();
+        ConfigIncentive::find($id)->delete();
 
         $message = [
             'severity' => 'success',
@@ -116,7 +116,11 @@ class ConfigEmployeeIncProgController extends Controller
 
         $incentive = ConfigIncentive::with('incentiveEmployees')->find($id);
 
-        $sales = OrderItem::with('handledBy')
+        $sales = OrderItem::with([
+                                'handledBy' => function ($query) {
+                                    $query->where('role', 'waiter');
+                                },
+                            ])
                             ->where('status', 'Served')
                             ->where('type', 'Normal')
                             ->where('created_at', '>=', $incentive->effective_date)
@@ -147,7 +151,7 @@ class ConfigEmployeeIncProgController extends Controller
                                         // status
                                         $status = $incentive->incentiveEmployees
                                         ->where('incentive_id', $id)
-                                        ->where('user_id', $userGroup->first()->handledBy->id)
+                                        ->where('user_id', optional($userGroup->first()->handledBy)->id)
                                         ->filter(function ($employeeIncentive) use ($month) {
                                             return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
                                         })
@@ -156,25 +160,28 @@ class ConfigEmployeeIncProgController extends Controller
 
                                         $empIncentiveId = $incentive->incentiveEmployees
                                         ->where('incentive_id', $id)
-                                        ->where('user_id', $userGroup->first()->handledBy->id)
+                                        ->where('user_id', optional($userGroup->first()->handledBy)->id)
                                         ->filter(function ($employeeIncentive) use ($month) {
                                             return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
                                         })
                                         ->first() 
                                         ->id ?? null;
                                 
-                                        return [
+                                        $result = [
                                             'id' => $empIncentiveId,
-                                            'name' => $userGroup->first()->handledBy->full_name, // achiever
+                                            'name' => $userGroup->first()->handledBy->full_name ?? null, // achiever
                                             'total_sales' => $totalSales, // sales
                                             'monthly_sale' => $incentive->monthly_sale,
                                             'incentive' => round($incentiveAmt, 2), // earned
                                             'status' => $status, // status
                                         ];
+
+                                        return in_array(null, $result, true) ? null : $result;
                                     }
                                     return null;
+
                                 })->filter()->values();
-                            
+
                                 if ($data->isNotEmpty()) {
                                     return [
                                         'month' => $month, 
@@ -187,7 +194,8 @@ class ConfigEmployeeIncProgController extends Controller
                             ->values()
                             ->toArray();
 
-                        // dd($sales);
+                            // dd($sales);
+
             $waiterName = $entitled->map(function($entitleds) {
                 return $entitleds->waiters->map(function($waiter) {
                     return [

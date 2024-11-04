@@ -91,7 +91,7 @@ const openDeleteTax = (tax) => {
 }
 
 const startEditing = (event, tax, type) => {
-    event.preventDefault();
+    // event.preventDefault();
     event.stopPropagation();
     const actionCol = merchantColumn.value.find(col => col.field === 'action');
     if (actionCol) {
@@ -133,7 +133,7 @@ const startEditing = (event, tax, type) => {
 
 
 const addTax = (event) => {
-    event.preventDefault();
+    // event.preventDefault();
     event.stopPropagation();
     const actionCol = merchantColumn.value.find(col => col.field === 'action');
     if (actionCol) {
@@ -356,13 +356,15 @@ watch(() => taxes.value, (newValue) => {
                             />
                         </template>
                         <template #name="taxes">
+                            <!-- blur = check is addtax clicked? if yes, then check if both input field is not empty? -->
+                             <!-- if both not empty then return true -->
                             <span 
                                 class="flex-[1_0_0] text-grey-900 text-sm font-medium"
                                 :errorMessage="editTaxForm.errors?.name"
                                 :disabled="editTaxForm.processing"
                                 @keydown.enter.prevent="stopEditing()"
                                 @click="isAddTaxClicked ? null : startEditing($event, taxes, 'name')" 
-                                @blur="isAddTaxClicked ? null : stopEditing()"
+                                @blur="isAddTaxClicked && (!editTaxForm.name || !editTaxForm.value) ? null : stopEditing()"
                                 v-show="!isEditingName || editTaxForm.id !== taxes.id"
                             >
                                 {{ taxes.name }}
@@ -373,7 +375,7 @@ watch(() => taxes.value, (newValue) => {
                                 :errorMessage="editTaxForm.errors?.name"
                                 :disabled="editTaxForm.processing"
                                 @click="isAddTaxClicked ? null : startEditing($event, taxes, 'name')" 
-                                @blur="isAddTaxClicked ? null : stopEditing()"
+                                @blur="isAddTaxClicked && (!editTaxForm.name || !editTaxForm.value) ? null : stopEditing()"
                                 @keydown.enter.prevent="stopEditing()"
                             />
                         </template>
@@ -385,7 +387,7 @@ watch(() => taxes.value, (newValue) => {
                                 :disabled="editTaxForm.processing"
                                 iconPosition="'right'"
                                 @click="isAddTaxClicked ? null : startEditing($event, taxes, 'percentage')"
-                                @blur="isAddTaxClicked ? null : stopEditing()"
+                                @blur="isAddTaxClicked && (!editTaxForm.name || !editTaxForm.value) ? null : stopEditing()"
                                 @keydown.enter.prevent="stopEditing()"
                                 @keypress="isValidNumberKey($event, true)"
                             >

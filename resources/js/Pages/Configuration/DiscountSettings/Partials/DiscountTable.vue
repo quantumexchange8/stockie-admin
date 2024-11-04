@@ -4,7 +4,7 @@ import { DeleteIcon, EditIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import { transactionFormat } from '@/Composables';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import EditDiscount from './EditDiscount.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Paginator from 'primevue/paginator';
@@ -21,6 +21,7 @@ const isEditDiscountOpen = ref(false);
 const isDeleteDiscountOpen = ref(false);
 const selectedDiscount = ref(null);
 const totalPages = computed(() => Math.ceil((props.details?.length || 0) / 4));
+// const details = ref(props.details);
 
 const computedRowsPerPage = computed(() => {
     const start = (currentPage.value - 1) * 4;
@@ -65,10 +66,15 @@ const onPageChange = (event) => {
 
 const goToPage = (event) => {
     const page = parseInt(event.target.value);
-    if (page > 0 && page <= totalPages) {
+    if (page > 0 && page <= totalPages.value) {
         currentPage.value = page;
     }
 }
+
+watch(() => props.details, () => {
+    currentPage.value = 1;
+}, { immediate: true });
+
 
 </script>
 
@@ -111,7 +117,7 @@ const goToPage = (event) => {
         <tbody class="w-full before:content-['@'] before:table-row before:leading-3 before:indent[-99999px] before:invisible">
             <tr 
                 v-if="details.length > 0" 
-                v-for="(group, groupIndex, groupName) in computedRowsPerPage" :key="groupName" 
+                v-for="(group, groupIndex) in computedRowsPerPage" :key="groupIndex" 
                 class="rounded-[5px]"
                 :class="groupIndex % 2 === 0 ? 'bg-white' : 'bg-primary-25'"
             >

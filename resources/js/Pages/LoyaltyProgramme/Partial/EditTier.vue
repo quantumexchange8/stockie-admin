@@ -48,7 +48,7 @@ const form = useForm({
         const validPeriod = calculateValidPeriod(reward.valid_period_from, reward.valid_period_to); // calculate difference in month
         reward.item_qty = reward.item_qty ? parseInt(reward.item_qty) : 1;
         reward.min_purchase_amount = reward.min_purchase_amount ? reward.min_purchase_amount.toString() : '';
-        // reward.discount = reward.reward_type === 'Discount (Percentage)' ? (reward.discount * 100).toString() : reward.discount;
+        // reward.discount = reward.reward_type === 'Discount (Percentage)' ? reward.transformed_rate.toString() : reward.discount;
 
         return {
             ...reward,
@@ -120,7 +120,7 @@ const submit = () => {
     
     form.put(`/loyalty-programme/tiers/update/${props.tier.id}`, {
         preserveScroll: true,
-        preserveState: 'errors',
+        preserveState: true,
         onSuccess: () => {
             form.reset();
             closeModal();

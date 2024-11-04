@@ -270,8 +270,10 @@ class LoyaltyController extends Controller
                                     });
 
         $monthlySpent = Payment::with('customer')
-                                ->whereMonth('created_at', now()->month)
-                                ->whereYear('created_at', now()->year)
+                                ->whereHas('customer')
+                                ->where('status', 'Successful')
+                                ->whereMonth('receipt_end_date', now()->month)
+                                ->whereYear('receipt_end_date', now()->year)
                                 ->get()
                                 ->groupBy('customer_id')
                                 ->map(function ($payments) {
@@ -282,27 +284,31 @@ class LoyaltyController extends Controller
                                 })->values(); 
         $names = $monthlySpent->pluck('full_name')->toArray();
         $spendings = $monthlySpent->pluck('spent')->toArray();
-        // dd($monthlySpent);
+
+        $customer = $tier->customers->map(function ($customer) {
+            $spent = $customer->payments->sum('grand_total');
+            return [
+                'full_name' => $customer->full_name,
+                'joined_on' => Carbon::parse($customer->created_at)->format('d/m/Y'),
+                'spent' => (int)$spent,
+            ];
+        });
+
+        $reward = $tier->rankingRewards->map(function($reward) {
+            return array_merge(
+                $reward->toArray(),
+                [
+                    'item_name' => $reward->inventoryItem ? $reward->inventoryItem->item_name : null,
+                ]
+            );
+        });
+        // dd($reward);
 
         return Inertia::render('LoyaltyProgramme/Partial/TierDetail', [
             'id' => $id,
             'tier' => $tier,
-            'reward' => $tier->rankingRewards->map(function($reward) {
-                return array_merge(
-                    $reward->toArray(),
-                    [
-                        'item_name' => $reward->inventoryItem ? $reward->inventoryItem->item_name : null,
-                    ]
-                );
-            }),
-            'customers' => $tier->customers->map(function ($customer) {
-                $spent = $customer->payments->sum('grand_total');
-                return [
-                    'full_name' => $customer->full_name,
-                    'joined_on' => Carbon::parse($customer->created_at)->format('d/m/Y'),
-                    'spent' => (int)$spent,
-                ];
-            }),
+            'reward' => $reward,
+            'customers' => $customer,
             'inventoryItems' => $inventoryItems,
             'names' => $names,
             'spendings' => $spendings,
@@ -312,6 +318,7 @@ class LoyaltyController extends Controller
     public function filterMemberSpending (Request $request)
     {
         $monthlySpent = Payment::with('customer')
+                                ->whereHas('customer')
                                 ->when($request->input('selected') === 'This month', function ($query) {
                                             $query->whereMonth('created_at', now()->month)
                                                 ->whereYear('created_at', now()->year);

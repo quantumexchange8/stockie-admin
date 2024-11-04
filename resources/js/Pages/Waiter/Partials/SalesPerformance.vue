@@ -15,7 +15,6 @@ const props = defineProps ({
         default: () => {},
     }
 })
-
 const emit = defineEmits(['applyFilter']);
 const graphFilter = ref(['This month', 'This year']);
 const selected = ref(graphFilter.value[0]);

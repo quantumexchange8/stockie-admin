@@ -254,7 +254,7 @@ const hideDeleteTierForm = () => {
                                     RM {{ reward.discount }} Discount
                                 </template>
                                 <template v-if="reward.reward_type === 'Discount (Percentage)'">
-                                    {{ reward.discount*100 }}% Discount
+                                    {{ reward.discount }}% Discount
                                 </template>
                                 <template v-if="reward.reward_type === 'Bonus Point'">
                                     {{ reward.bonus_point }} Bonus Point
