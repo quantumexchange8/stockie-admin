@@ -344,7 +344,6 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                     </div>
                                 </div>
                                 <div class="col-span-3 flex flex-col justify-center items-end gap-2 self-stretch">
-                                    <p class="text-md font-medium text-primary-800 self-stretch truncate flex-shrink text-end" v-if="item.type === 'Normal' && order.customer_id">+{{ item.point_earned }}pts</p>
                                     <div class="flex flex-nowrap gap-1 items-center">
                                         <div class="p-2 size-4 bg-primary-100 rounded-full border-[0.3px] border-grey-100"></div>
                                         <p class="text-xs text-grey-900 font-medium">{{ item.handled_by.name }}</p>

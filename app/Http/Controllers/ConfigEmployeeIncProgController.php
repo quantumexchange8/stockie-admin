@@ -72,7 +72,7 @@ class ConfigEmployeeIncProgController extends Controller
                 'status' => 'Pending',
             ]);
         }
-        // return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
     }
 
     public function deleteAchievement(String $id)

@@ -229,7 +229,7 @@ const isFormValid = computed(() => {
                                         <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                         <span class="text-primary-900 text-2xs font-normal">Kept by</span>
                                         <span class="w-3 h-3 bg-red-900 rounded-full"></span>
-                                        <span class="text-primary-900 text-2xs font-normal">{{ item.waiter.name }}</span>
+                                        <span class="text-primary-900 text-2xs font-normal">{{ item.waiter.full_name }}</span>
                                     </div>
                                     <span class="text-grey-900 line-clamp-1 self-stretch overflow-hidden text-ellipsis text-sm font-medium">{{ item.item_name }}</span>
                                     <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.remark">

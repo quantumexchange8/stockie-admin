@@ -30,9 +30,7 @@ const selectedOrder = ref(null);
 const orderInvoiceModalIsOpen = ref(false);
 const op = ref(null);
 
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
+const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
 
 const orderStatuses = ref([...new Set(props.rows.map(row => row.status))].map(status => ({
     text: status,
@@ -60,39 +58,32 @@ const getOrderHistories = async (filters = {}) => {
     }
 }
 
-watch(() => date_filter.value, () => {
-    getOrderHistories(date_filter.value);
-})
+watch(() => date_filter.value, () => getOrderHistories(date_filter.value));
 
 const openOverlay = (event, item) => {
     selectedOrder.value = item;
-    
-    if (selectedOrder.value) {
-        op.value.show(event);
-    }
+    if (selectedOrder.value) op.value.show(event);
 };
 
 const closeOverlay = () => {
     selectedOrder.value = null;
-    if (op.value) {
-        op.value.hide();  // Ensure op.value is not null before calling hide
-    }
+    if (op.value)  op.value.hide();
 };
 
 const showOrderInvoiceModal = () => {
-    setTimeout(() => {
-        orderInvoiceModalIsOpen.value = true;
-    }, 100);
+    setTimeout(() => orderInvoiceModalIsOpen.value = true, 100);
 };
 
 const hideOrderInvoiceModal = () => {
-    setTimeout(() => {
-        selectedOrder.value = null;
-    }, 200);
+    setTimeout(() => selectedOrder.value = null, 200);
     orderInvoiceModalIsOpen.value = false;
 };
 
-const sortedRows = computed(() => rows.value.sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at))));
+const sortedRows = computed(() => {
+    return rows.value
+            .filter((row) => row.payment && row.payment.status === 'Successful') 
+            .sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
+});
 
 const getOrderTableNames = (order_table) => order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '';
 </script>
@@ -154,7 +145,7 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
                 <template #waiter="row">
                     <div class="flex whitespace-nowrap gap-1 items-center">
                         <div class="size-4 bg-primary-200 rounded-full"></div>
-                        <span class="text-grey-900 text-sm font-medium">{{ row.waiter.name }}</span>
+                        <span class="text-grey-900 text-sm font-medium">{{ row.waiter.full_name }}</span>
                     </div>
                 </template>
                 <template #status="row">

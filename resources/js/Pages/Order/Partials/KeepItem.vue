@@ -185,7 +185,6 @@ const isNumber = (e, withDot = true, item) => {
 
 // Function to check if the input exceeds max on change
 const checkMaxValue = (value, item, subitem_id) => {
-    console.log(item);
     const validatedValue = value.replace(/\D+/g, '').replace(/^0+/, '');
     const formItem = form.items.find(i => i.order_item_subitem_id === subitem_id);
 

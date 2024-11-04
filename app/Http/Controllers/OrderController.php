@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\OrderTableRequest;
 use App\Models\Category;
+use App\Models\ConfigIncentive;
+use App\Models\ConfigIncentiveEmployee;
 use App\Models\Customer;
 use App\Models\IventoryItem;
 use App\Models\KeepHistory;
@@ -15,6 +17,7 @@ use App\Models\OrderTable;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductItem;
+use App\Models\Ranking;
 use App\Models\SaleHistory;
 use App\Models\StockHistory;
 use App\Models\Table;
@@ -32,9 +35,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $zones = Zone::with([
-                            'tables.orderTables' => function ($query) {
-                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled']);
-                            },
+                            'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled']),
                             'tables.orderTables.order',
                         ])
                         ->select('id', 'name')
@@ -55,19 +56,18 @@ class OrderController extends Controller
                             'orderItems.product:id,product_name', 
                             'orderTable:id,table_id,order_id', 
                             'orderTable.table:id,table_no', 
-                            'waiter:id,name',
-                            'customer:id,point'
+                            'waiter:id,full_name',
+                            'customer:id,point',
+                            'payment:id,order_id,status'
                         ])
                         ->orderByDesc('id')
                         ->get()
-                        ->filter(function ($order) {
-                            return $order->status === 'Order Completed' || $order->status === 'Order Cancelled';
-                        })
+                        ->filter(fn ($order) => $order->status === 'Order Completed' || $order->status === 'Order Cancelled')
                         ->values();
 
         $customers = Customer::orderBy('full_name')
                                 ->get()
-                                ->map(function($customer) {
+                                ->map(function ($customer) {
                                     return [
                                         'text' => $customer->full_name,
                                         'value' => $customer->id,
@@ -290,11 +290,11 @@ class OrderController extends Controller
                         $newStockQty = $oldStockQty - $stockToBeSold;
 
                         $newStatus = match(true) {
-                            $newStockQty === 0 => 'Out of stock',
+                            $newStockQty == 0 => 'Out of stock',
                             $newStockQty <= $inventoryItem->itemCategory['low_stock_qty'] => 'Low in stock',
                             default => 'In stock'
                         };
-    
+
                         $inventoryItem->update([
                             'stock_qty' => $newStockQty,
                             'status' => $newStatus
@@ -346,7 +346,7 @@ class OrderController extends Controller
                 ]);
                 
                 // Update all tables associated with this order
-                $order->orderTable->each(function($tab) use ($orderTableStatus) {
+                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
                     $tab->table->update(['status' => $orderTableStatus]);
                     $tab->update(['status' => $orderTableStatus]);
                 });
@@ -362,6 +362,7 @@ class OrderController extends Controller
     public function getAllProducts()
     {
         $products = Product::with(['productItems', 'category:id,name'])
+                            ->where('availability', 'Available')
                             ->orderBy('id')
                             ->get()
                             ->map(function ($product) {
@@ -525,7 +526,7 @@ class OrderController extends Controller
             $existingOrder->update(['status' => 'Order Cancelled']);
 
             // Update all tables associated with this order
-            $existingOrder->orderTable->each(function($tab) {
+            $existingOrder->orderTable->each(function ($tab) {
                 $tab->table->update([
                     'status' => 'Empty Seat',
                     'order_id' => null
@@ -621,7 +622,7 @@ class OrderController extends Controller
                 }
                 
                 // Update all tables associated with this order
-                $order->orderTable->each(function($tab) use ($orderTableStatus) {
+                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
                     $table = Table::find($tab['table_id']);
                     $table->update(['status' => $orderTableStatus]);
                     $tab->update(['status' => $orderTableStatus]);
@@ -704,14 +705,17 @@ class OrderController extends Controller
             $statusArr = collect($order->orderTable->pluck('status')->unique());
 
             if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && $statusArr->first() === 'All Order Served')) {
-                $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('value', 'name');
+                $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
+                $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
+                $pointConversion = $settings->filter(fn($setting) => $setting['type'] === 'point')->first();
+
                 $sstAmount = round($order->amount * ($taxes['SST'] / 100), 2);
                 $serviceTaxAmount = round($order->amount * ($taxes['Service Tax'] / 100), 2);
 
                 $grandTotal = $this->priceRounding($order->amount + $sstAmount + $serviceTaxAmount);
                 $roundingDiff = $grandTotal - ($order->amount + $sstAmount + $serviceTaxAmount);
-                $accumulatedPoints = $order->orderItems->sum('point_earned');
-
+                $totalPoints = ($grandTotal / $pointConversion['value']) * $pointConversion['point'];
+                
                 $paymentData = [
                     'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
                     'total_amount' => $order->amount,
@@ -719,7 +723,7 @@ class OrderController extends Controller
                     'rounding' => $roundingDiff,
                     'sst_amount' => $sstAmount,
                     'service_tax_amount' => $serviceTaxAmount,
-                    'point_earned' => $accumulatedPoints,
+                    'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
                     'customer_id' => $request->customer_id,
                     'handled_by' => $request->user_id,
                     'discount_id' => null,
@@ -759,8 +763,8 @@ class OrderController extends Controller
             $uniqueOrders = $toBeClearedOrderTables->pluck('order')->unique('id');
 
             // Update all tables associated with this order
-            $uniqueOrders->each(function($order) {
-                $order->orderTable->each(function($tab) {
+            $uniqueOrders->each(function ($order) {
+                $order->orderTable->each(function ($tab) {
                     if ($tab->table['status'] !== 'Empty Seat' && $tab->table['order_id'] !== null) {
                         $tab->table->update([
                             'status' => 'Empty Seat',
@@ -792,7 +796,7 @@ class OrderController extends Controller
 
             // Apply the date filter (single date or date range)
             $query->whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
-                                    ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
+                                    ->when(count($dateFilter) > 1, function ($subQuery) use ($dateFilter) {
                                         $subQuery->whereDate('created_at', '<=', $dateFilter[1]);
                                     });
         }
@@ -802,14 +806,14 @@ class OrderController extends Controller
                             'orderItems.product:id,product_name', 
                             'orderTable:id,table_id,order_id', 
                             'orderTable.table:id,table_no', 
-                            'waiter:id,name',
+                            'waiter:id,full_name',
                             'customer:id,point',
                             'payment:id,order_id,status'
                         ])
                         ->orderBy('id', 'desc')
                         ->get()
                         ->filter(function ($order) {
-                            return in_array($order->status, ['Order Completed', 'Order Cancelled']) && $order->payment && $order->payment['status'] === 'Successful';
+                            return in_array($order->status, ['Order Completed', 'Order Cancelled']);
                         })
                         ->values();
 
@@ -948,7 +952,7 @@ class OrderController extends Controller
                 $order->update(['status' => $orderStatus]);
                 
                 // Update all tables associated with this order
-                $order->orderTable->each(function($tab) use ($orderTableStatus) {
+                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
                     $tab->table->update(['status' => $orderTableStatus]);
                     $tab->update(['status' => $orderTableStatus]);
                 });
@@ -1104,7 +1108,7 @@ class OrderController extends Controller
                 $order->update(['status' => $orderStatus]);
                 
                 // Update all tables associated with this order
-                $order->orderTable->each(function($tab) use ($orderTableStatus) {
+                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
                     $tab->table->update(['status' => $orderTableStatus]);
                     $tab->update(['status' => $orderTableStatus]);
                 });
@@ -1125,7 +1129,7 @@ class OrderController extends Controller
                                             ->with([
                                                 'orderItemSubitem.productItem:id,inventory_item_id',
                                                 'orderItemSubitem.productItem.inventoryItem:id,item_name',
-                                                'waiter:id,name'
+                                                'waiter:id,full_name'
                                             ]);
                                 }
                             ])
@@ -1148,7 +1152,7 @@ class OrderController extends Controller
         $keepHistories = KeepHistory::with([
                                         'keepItem.orderItemSubitem.productItem:id,inventory_item_id', 
                                         'keepItem.orderItemSubitem.productItem.inventoryItem:id,item_name', 
-                                        'keepItem.waiter:id,name'
+                                        'keepItem.waiter:id,full_name'
                                     ])
                                     ->whereHas('keepItem', function ($query) use ($id) {
                                         $query->where('customer_id', $id);
@@ -1237,7 +1241,7 @@ class OrderController extends Controller
             $order->update(['status' => 'Pending Serve']);
                 
             // Update all tables associated with this order
-            $order->orderTable->each(function($tab) {
+            $order->orderTable->each(function ($tab) {
                 $tab->table->update(['status' => 'Order Placed']);
                 $tab->update(['status' => 'Order Placed']);
             });
@@ -1287,28 +1291,69 @@ class OrderController extends Controller
         $payment = Payment::find($id);
         $order = Order::with([
                             'orderTable.table', 
-                            'customer', 
+                            'customer.payments:id,customer_id,grand_total', 
                             'orderItems' => fn($query) => $query->where('status', 'Served')
-                        ])->find($request->order_id);
+                        ])->findOrFail($request->order_id);
 
         // Update payment status
         $payment->update(['status' => 'Successful']);
 
         // Handle sale history for "Normal" order items
-        $order->orderItems->where('type', 'Normal')->each(function($item) {
+        $order->orderItems->where('type', 'Normal')->each(function ($item) {
             SaleHistory::create([
-                'product_id' => $item['product_id'],
-                'total_price' => $item['amount'],
-                'qty' => (int) $item['item_qty']
+                'product_id' => $item->product_id,
+                'total_price' => $item->amount,
+                'qty' => (int) $item->item_qty,
             ]);
         });
 
-        $accumulatedPoints = $order->orderItems->sum('point_earned');
+        $pointConversion = Setting::where('type', 'point')->first(['value', 'point']);
+        $totalPoints = ($payment->grand_total / $pointConversion->value) * $pointConversion->point;
+
+        $customer = $order->customer;
 
         // Add the accumulated points earned from the order to the customer
-        if ($order->customer) $order->customer->increment('point', $accumulatedPoints);
+        if ($customer) {
+            $totalSpent = $customer->payments->sum('grand_total');
+            $givenTier = Ranking::where('min_amount', '<=', $totalSpent)
+                                 ->orderBy('min_amount', 'desc')
+                                 ->value('id') ?? 0;
+
+            $customer->update([
+                'point' => $customer->point + $totalPoints,
+                'ranking', $givenTier
+            ]);
+        };
+
+        // To be discussed and completed
+        // $totalSales = OrderItem::where([
+        //                             ['user_id', $request->user_id],
+        //                             ['status', 'Served'],
+        //                             ['type', 'Normal']
+        //                         ])
+        //                         ->whereMonth('created_at', now()->month)
+        //                         ->sum('amount');
+
+        // $incentives = ConfigIncentive::where('monthly_sale', '<=', $totalSales)
+        //                                 ->orderBy('monthly_sale', 'desc')
+        //                                 ->get();
+
+        // if ($incentives) {
+        //     ConfigIncentiveEmployee::create([
+        //         'incentive_id' => $incentives->first()->id,
+        //         'user_id' => $request->user_id,
+        //         'status' => 'Pending',
+        //     ]);
+        // }
         
-        $order->orderTable->each(function($tab) {
+        // $existingAchievedIncentives = ConfigIncentiveEmployee::where('user_id', $request->user_id)
+        //                                                         ->whereMonth('created_at', now()->month)
+        //                                                         ->orderByDesc('incentive_id')
+        //                                                         ->get();
+
+        // if ($existingAchievedIncentives->count() > 1) $existingAchievedIncentives->slice(1)->each->delete();
+
+        $order->orderTable->each(function ($tab) {
             $tab->table->update(['status' => 'Pending Clearance']);
             $tab->update(['status' => 'Pending Clearance']);
         });
@@ -1334,8 +1379,8 @@ class OrderController extends Controller
                                     ])
                                     ->orderByDesc('updated_at')
                                     ->get()
-                                    ->map(function($orderTable) {
-                                        $orderTable->order->orderItems->each(function($item) {
+                                    ->map(function ($orderTable) {
+                                        $orderTable->order->orderItems->each(function ($item) {
                                             if ($item['keep_item_id']) {
                                                 $item['item_name'] = $item->subItems[0]->productItem->inventoryItem['item_name'];
                                             }
