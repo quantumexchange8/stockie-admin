@@ -642,6 +642,7 @@ class LoyaltyController extends Controller
         
         $existingPoint = isset($id) ? Point::with('pointItems')->find($id) : null;
 
+        // dd($request->all());
         // Delete point items
         if (count($request->itemsDeletedBasket) > 0 && !is_null($existingPoint)) {
             $existingPoint->pointItems()

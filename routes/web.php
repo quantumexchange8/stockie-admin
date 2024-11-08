@@ -66,18 +66,20 @@ Route::middleware('auth')->group(function () {
     /********* Menu Management **********/
     Route::prefix('menu-management')->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::post('/products/storeFromInventoryItems', [ProductController::class, 'storeFromInventoryItems'])->name('products.storeFromInventoryItems');
+        Route::post('/products/updateAvailability', [ProductController::class, 'updateAvailability'])->name('products.updateAvailability');
+        Route::put('/products/updateProduct/{id}', [ProductController::class, 'updateProduct'])->name('products.updateProduct');
+        Route::delete('/products/deleteProduct/{id}', [ProductController::class, 'deleteProduct'])->name('products.deleteProduct');
+        Route::delete('/products/deleteProductItem/{id}', [ProductController::class, 'deleteProductItem'])->name('products.deleteProductItem');
+        
+        Route::get('/products_details/{id}', [ProductController::class, 'showProductDetails'])->name('products.showProductDetails');
         Route::get('/products/getProducts', [ProductController::class, 'getProducts'])->name('products.getProducts');
         Route::get('/products/getAllCategories', [ProductController::class, 'getAllCategories']);
         Route::get('/products/getAllInventories', [ProductController::class, 'getAllInventories'])->name('products.getAllInventories');
         Route::get('/products/getTestingRecords', [ProductController::class, 'getTestingRecords'])->name('products.getTestingRecords');
-        Route::get('/products_details/{id}', [ProductController::class, 'showProductDetails'])->name('products.showProductDetails');
         Route::get('/products/getInventoryItemStock/{id}', [ProductController::class, 'getInventoryItemStock'])->name('products.getInventoryItemStock');
         Route::get('/products/getProductSaleHistories/{id}', [ProductController::class, 'getProductSaleHistories'])->name('products.getProductSaleHistories');
-        Route::put('/products/updateProduct/{id}', [ProductController::class, 'updateProduct'])->name('products.updateProduct');
-        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-        Route::delete('/products/deleteProduct/{id}', [ProductController::class, 'deleteProduct'])->name('products.deleteProduct');
-        Route::delete('/products/deleteProductItem/{id}', [ProductController::class, 'deleteProductItem'])->name('products.deleteProductItem');
-        Route::post('/products/updateAvailability', [ProductController::class, 'updateAvailability'])->name('products.updateAvailability');
     });
 
      /********* Inventory **********/

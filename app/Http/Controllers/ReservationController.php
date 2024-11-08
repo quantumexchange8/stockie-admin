@@ -75,7 +75,7 @@ class ReservationController extends Controller
         Reservation::create(attributes: [
             'reservation_no' => RunningNumberService::getID('reservation'),
             'customer_id' => $customer?->id ?? null,
-            'name' => $customer?->name ?? $request->name,
+            'name' => $customer?->full_name ?? $request->name,
             'pax' => $request->pax,
             'table_no' => $request->table_no,
             'phone' => $request->phone,
@@ -101,7 +101,7 @@ class ReservationController extends Controller
 
         $reservation->update([
             'customer_id' => $customer?->id ?? null,
-            'name' => $customer?->name ?? $request->name,
+            'name' => $customer?->full_name ?? $request->name,
             'pax' => $request->pax,
             'table_no' => $request->table_no,
             'phone' => $request->phone,

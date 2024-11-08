@@ -129,38 +129,35 @@ onMounted(async() => {
     }
 });
 
-const pendingServeItems = computed(() => {
-    if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') {
-        return [];
-    }
+const computedOrder = computed(() => {
+    if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') return [];
+    
+    return {
+        ...order.value,
+        order_items: order.value.order_items.map((item) => {
+            // Calculate total quantities
+            const total_qty = item.sub_items.reduce((total, sub_item) => total + (item.item_qty * sub_item.item_qty), 0);
+            const total_served_qty = item.sub_items.reduce((total, sub_item) => total + sub_item.serve_qty, 0);
+            
+            return {
+                ...item,
+                total_qty,
+                total_served_qty,
+            };
+        }),
+    };
+});
 
-    return order.value 
-        ? order.value.order_items
-                .map((item) => {
-                    return {
-                        ...item,
-                        total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
-                        total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
-                    };
-                }).filter((item) => item.status === 'Pending Serve') 
-        : [];
+const pendingServeItems = computed(() => {
+    return computedOrder.value?.order_items?.length 
+            ? computedOrder.value.order_items.filter((item) => item.status === 'Pending Serve') 
+            : [];
 });
 
 const servedItems = computed(() => {
-    if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') {
-        return [];
-    }
-
-    return order.value 
-        ? order.value.order_items
-                .map((item) => {
-                    return {
-                        ...item,
-                        total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
-                        total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
-                    };
-                }).filter((item) => item.status === 'Served') 
-        : [];
+    return computedOrder.value?.order_items?.length 
+            ? computedOrder.value.order_items.filter((item) => item.status === 'Served') 
+            : [];
 });
 
 // Calculate total subitem quantity by multiplying subitem item qty by order item item qty
@@ -233,7 +230,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
         <template v-if="actionType === 'add'">
             <AddOrderItems 
                 :categoryArr="categoryArr" 
-                :order="order" 
+                :order="computedOrder" 
                 :selectedTable="selectedTable"
                 :matchingOrderDetails="matchingOrderDetails"
                 @fetchZones="$emit('fetchZones')"

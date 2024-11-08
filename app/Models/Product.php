@@ -21,7 +21,7 @@ class Product extends Model
         'point',
         'category_id',
         'discount_id',
-        'keep',
+        // 'keep',
         'status',
         'availability',
     ];
@@ -87,19 +87,19 @@ class Product extends Model
         $productItem = [];
 
         // Eager load the product items and their inventory item for performance
-        $productItems = $this->productItems()->with(['inventoryItem', 'inventoryItem.itemCategory'])->get();
+        $productItems = $this->productItems()->with(['inventoryItem.itemCategory'])->get();
 
         foreach ($productItems  as $item) {
             // Check the inventory stock level for each product item
             $inventoryItem = $item->inventoryItem;
-            $threshold = $inventoryItem->itemCategory->low_stock_qty;
+            // $threshold = $inventoryItem->itemCategory->low_stock_qty;
             $requiredQuantity = (int) $item->qty;
             $availableStock = (int) $inventoryItem->stock_qty;
 
             // Determine the stock status based on the available stock and required quantity
             $stockStatuses[] = match (true) {
                 $availableStock == 0 || $availableStock < $requiredQuantity => 'Out of stock',
-                $availableStock <= $threshold => 'Low in stock',
+                $availableStock <= $inventoryItem->low_stock_qty => 'Low in stock',
                 default => 'In stock',
             };
 

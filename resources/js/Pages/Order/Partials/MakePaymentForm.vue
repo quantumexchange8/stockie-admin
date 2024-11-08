@@ -155,7 +155,7 @@ const getItemTypeName = (type) => {
             <div class="fixed bottom-0 w-full flex px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
                 <Button
                     size="lg"
-                    :disabled="form.processing"
+                    :disabled="form.processing || !paymentDetails.id"
                 >
                     Pay this Bill
                 </Button>

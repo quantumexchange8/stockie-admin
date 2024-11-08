@@ -38,9 +38,9 @@ const form = useForm({
     bucket: false,
     product_name: '',
     price: '',
-    point: '',
+    // point: '',
     category_id: '',
-    keep: '',
+    // keep: '',
     items: [{ ...defaultProductItem }],
 });
 
@@ -61,9 +61,7 @@ const cancelForm = () => {
     emit('close');
 }
 
-const addItem = () => {
-    form.items.push({ ...defaultProductItem, qty: 2 });
-}
+const addItem = () => form.items.push({ ...defaultProductItem, qty: 2 });
 
 const removeItem = (index) => {
     if (form.items.length === 1) {
@@ -80,12 +78,14 @@ const updateInventoryStockCount = async (index, id) => {
             const item = form.items[index];
             item.inventory_stock_qty = data.stock_qty;
             item.status = data.status;
+            item.formatted_item_name = data.formattedName;
+
             if (updateProductNameCounter.value === 0) {
-                form.product_name = data.item_name;
+                form.product_name = data.formattedProductName;
                 updateProductNameCounter.value++;
             }
             
-            if (item.bucket === true) {
+            if (item.bucket) {
                 item.qty = data.stock_qty >= 2 ? 2 : 0;
             }
         } catch (error) {
@@ -94,12 +94,10 @@ const updateInventoryStockCount = async (index, id) => {
     }
 }
 
-const isFormValid = computed(() => {
-    return ['product_name', 'price', 'point', 'category_id', 'keep'].every(field => form[field]) && form.items.length > 0;
-});
+const isFormValid = computed(() => ['product_name', 'price', 'category_id'].every(field => form[field]) && form.items.length > 0);
 
 watch(() => form.bucket, (newValue) => {
-    if (newValue === false) {
+    if (!newValue) {
         if (form.items.length > 1) {
             form.items.splice(0, 1);
         }
@@ -139,7 +137,7 @@ watch(() => form.bucket, (newValue) => {
                             <div class="col-span-full xl:col-span-4 flex flex-col w-full">
                                 <Dropdown
                                     :inputName="'inventory_item_id_' +  i"
-                                    :labelText="'Select item'"
+                                    :labelText="'Select an item'"
                                     :inputArray="inventoriesArr"
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"
@@ -148,6 +146,9 @@ watch(() => form.bucket, (newValue) => {
                                     class="[&>div:nth-child(3)]:!text-primary-700"
                                     @onChange="updateInventoryStockCount(i, $event)"
                                 >
+                                    <template #value>
+                                        {{ item.inventory_item_id ? item.formatted_item_name : 'Select' }}
+                                    </template>
                                     <template #optionGroup="group">
                                         <div class="flex flex-nowrap items-center gap-3">
                                             <div class="bg-grey-50 border border-grey-200 h-6 w-6"></div>
@@ -180,11 +181,9 @@ watch(() => form.bucket, (newValue) => {
                             :size="'lg'"
                             class="col-span-full"
                             @click="addItem"
-                            >
+                        >
                             <template #icon>
-                                <PlusIcon
-                                    class="w-6 h-6"
-                                />
+                                <PlusIcon class="size-6" />
                             </template>
                             Another Item
                         </Button>
@@ -199,7 +198,7 @@ watch(() => form.bucket, (newValue) => {
                             class="col-span-full xl:col-span-4"
                         />
 
-                        <div class="w-full grid grid-cols-1 sm:grid-cols-12 gap-4">
+                        <div class="w-full flex flex-row items-center justify-around gap-x-4">
                             <TextInput
                                 :inputId="'price'"
                                 :labelText="'Price'"
@@ -207,11 +206,11 @@ watch(() => form.bucket, (newValue) => {
                                 :errorMessage="form.errors?.price || ''"
                                 v-model="form.price"
                                 @keypress="isValidNumberKey($event, true)"
-                                class="col-span-full sm:col-span-4 [&>div>input]:text-center"
+                                class="[&>div>input]:text-center"
                             >
                                 <template #prefix>RM</template>
                             </TextInput>
-                            <TextInput
+                            <!-- <TextInput
                                 :inputId="'point'"
                                 :labelText="'Points can be earned'"
                                 :iconPosition="'right'"
@@ -221,23 +220,22 @@ watch(() => form.bucket, (newValue) => {
                                 class="col-span-full sm:col-span-4 [&>div>input]:text-center"
                             >
                                 <template #prefix>pts</template>
-                            </TextInput>
+                            </TextInput> -->
                             <Dropdown
                                 :inputName="'category_id'"
                                 :labelText="'Select category'"
                                 :inputArray="categoryArr"
                                 :errorMessage="form.errors?.category_id || ''"
                                 v-model="form.category_id"
-                                class="col-span-full sm:col-span-4"
                             />
                         </div>
-                        <div class="flex items-start gap-10">
+                        <!-- <div class="flex items-start gap-10">
                             <RadioButton
                                 :optionArr="keepOptions"
                                 :checked="form.keep"
                                 v-model:checked="form.keep"
                             />
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>

@@ -7,13 +7,14 @@ import Tapbar from '@/Components/Tapbar.vue';
 import AddStockForm from './AddStockForm.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import SearchBar from "@/Components/SearchBar.vue";
-import { EmptyIllus } from '@/Components/Icons/illus.jsx';
+import { EmptyIllus, OrderCompleteIllus } from '@/Components/Icons/illus.jsx';
 import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon, SquareStickerIcon, TableSortIcon } from '@/Components/Icons/solid';
 import EditInventoryForm from './EditInventoryForm.vue';
 import CreateInventoryForm from './CreateInventoryForm.vue';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import Paginator from 'primevue/paginator';
 import TextInput from '@/Components/TextInput.vue';
+import AddItemToMenuForm from './AddItemToMenuForm.vue';
 
 const props = defineProps({
     errors: Object,
@@ -34,12 +35,15 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 
 const createFormIsOpen = ref(false);
+const groupCreatedModalIsOpen = ref(false);
+const addAsProductModalIsOpen = ref(false);
 const addStockFormIsOpen = ref(false);
 const editGroupFormIsOpen = ref(false);
 const deleteGroupFormIsOpen = ref(false);
 
 const selectedGroup = ref(null);
 const selectedGroupItems = ref(null);
+const inventoryToAdd = ref({});
 const selectedCategory = ref(0);
 
 const checkedFilters = ref({
@@ -50,36 +54,77 @@ const checkedFilters = ref({
 const stockLevels = ref(['In Stock', 'Low Stock', 'Out of Stock']);
 
 const openForm = (action, id, event) => {
-    event.stopPropagation();
-    event.preventDefault();
-
-    if (action === 'create') createFormIsOpen.value = true;
-    if (id) {
-        if (action !== 'create') {
-            selectedGroup.value = props.rows.find((group) => group.id === id);
-            selectedGroupItems.value = action === 'add' || action === 'edit' ? selectedGroup.value.inventory_items : null;
-        }
-    
-        if (action === 'add') addStockFormIsOpen.value = true;
-        if (action === 'edit') editGroupFormIsOpen.value = true;
-        if (action === 'delete') deleteGroupFormIsOpen.value = true;
+    if (event.target) {
+        event.stopPropagation();
+        event.preventDefault();
     }
+
+    // if (action === 'create') createFormIsOpen.value = true;
+    // if (action === 'add-as-product') addAsProductModalIsOpen.value = true;
+    // if (id) {
+    //     if (action !== 'create') {
+    //         selectedGroup.value = props.rows.find((group) => group.id === id);
+    //         selectedGroupItems.value = action === 'add' || action === 'edit' ? selectedGroup.value.inventory_items : null;
+    //     }
+    
+    //     if (action === 'add') addStockFormIsOpen.value = true;
+    //     if (action === 'edit') editGroupFormIsOpen.value = true;
+    //     if (action === 'delete') deleteGroupFormIsOpen.value = true;
+    // }
+    
+    
+    switch (action) {
+        case 'create': 
+            createFormIsOpen.value = true;
+            break;
+        case 'group-created': 
+            inventoryToAdd.value = event ?? {};
+            groupCreatedModalIsOpen.value = true;
+            break;
+        case 'add-as-product': 
+            groupCreatedModalIsOpen.value = false;
+            setTimeout(() => addAsProductModalIsOpen.value = true, 200);
+            break;
+        case 'add': 
+            addStockFormIsOpen.value = !!id;
+            break;
+        case 'edit': 
+            editGroupFormIsOpen.value = !!id;
+            break;
+        case 'delete': 
+            deleteGroupFormIsOpen.value = !!id;
+            break;
+    }
+
+    if (id && action !== 'create' && action !== 'add-as-product' && action !== 'group-created') {
+        selectedGroup.value = props.rows.find((group) => group.id === id);
+        selectedGroupItems.value = action === 'add' || action === 'edit' ? selectedGroup.value.inventory_items : null;
+    } 
 }
 
 const closeForm = (action) => {
-    if (action === 'create') createFormIsOpen.value = false;
-    if (action === 'add') addStockFormIsOpen.value = false;
-    if (action === 'edit') editGroupFormIsOpen.value = false;
-    if (action === 'delete') deleteGroupFormIsOpen.value = false;
+    // if (action === 'create') createFormIsOpen.value = false;
+    // if (action === 'add-as-product') addAsProductModalIsOpen.value = false;
+    // if (action === 'add') addStockFormIsOpen.value = false;
+    // if (action === 'edit') editGroupFormIsOpen.value = false;
+    // if (action === 'delete') deleteGroupFormIsOpen.value = false;
 
-    if (action !== 'create') {
+    switch (action) {
+        case 'create': createFormIsOpen.value = false;
+        case 'group-created': groupCreatedModalIsOpen.value = false;
+        case 'add-as-product': addAsProductModalIsOpen.value = false;
+        case 'add': addStockFormIsOpen.value = false;
+        case 'edit': editGroupFormIsOpen.value = false;
+        case 'delete': deleteGroupFormIsOpen.value = false;
+    }
+
+    if (action !== 'create' || action !== 'add-as-product' || action !== 'group-created') {
         setTimeout(() => {
             selectedGroup.value = null;
             selectedGroupItems.value = null;
         }, 300);
-        if (action === 'edit') {
-            selectedGroupItems.value = []; // Ensure form resets to initial state on edit
-        }
+
+        if (action === 'edit') selectedGroupItems.value = []; // Ensure form resets to initial state on edit
     }
 }
 
@@ -92,7 +137,7 @@ const resetFilters = () => {
 
 const clearFilters = (close) => {
     checkedFilters.value = resetFilters();
-    emit('applyCategoryFilter', selectedCategory.value);
+    // emit('applyCategoryFilter', selectedCategory.value);
     emit('applyCheckedFilters', checkedFilters.value);
     close();
 };
@@ -120,10 +165,10 @@ const toggleStockLevel = (value) => {
     }
 };
 
-const handleFilterChange = (newFilter) => {
-    selectedCategory.value = newFilter;
-    emit('applyCategoryFilter', newFilter);
-};
+// const handleFilterChange = (newFilter) => {
+//     selectedCategory.value = newFilter;
+//     emit('applyCategoryFilter', newFilter);
+// };
 
 watch(() => searchQuery.value, (newValue) => {
     if (newValue === '') {
@@ -196,9 +241,7 @@ const sortInventories = (field) => {
         case 'item_category':
             // Sort items within each group by item category name
             props.rows.forEach(group => {
-                group.inventory_items.sort((a, b) =>
-                    compareValues(a.item_category.name.toLowerCase(), b.item_category.name.toLowerCase())
-                );
+                group.inventory_items.sort((a, b) => compareValues(a.item_category.name.toLowerCase(), b.item_category.name.toLowerCase()));
             });
             break;
 
@@ -254,21 +297,21 @@ watch(() => props.rows, (newValue) => {
     rows.value = newValue;
 }, { immediate: true });
 
-watch(() => props.categoryArr, (newValue) => {
-    categories.value = [...newValue];
-    categories.value.unshift({
-        text: 'All',
-        value: 0
-    });
-}, { immediate: true });
+// watch(() => props.categoryArr, (newValue) => {
+//     categories.value = [...newValue];
+//     categories.value.unshift({
+//         text: 'All',
+//         value: 0
+//     });
+// }, { immediate: true });
 
-onMounted(() => {
-    categories.value = [...props.categoryArr];
-    categories.value.unshift({
-        text: 'All',
-        value: 0
-    });
-})
+// onMounted(() => {
+//     categories.value = [...props.categoryArr];
+//     categories.value.unshift({
+//         text: 'All',
+//         value: 0
+//     });
+// })
 
 const computedRowsPerPage = computed(() => {
     const start = (currentPage.value - 1) * 4;
@@ -296,11 +339,11 @@ const totalInventoryItemStock = (items) => {
 
 <template>
     <div class="flex flex-col p-6 gap-6 justify-center rounded-[5px] border border-red-100">
-        <Tapbar
+        <!-- <Tapbar
             :optionArr="categories"
             :checked="selectedCategory"
             @update:checked="handleFilterChange"
-        />
+        /> -->
         <div class="flex flex-col justify-center gap-4">
             <div class="flex flex-wrap lg:flex-nowrap items-center justify-between gap-6 rounded-[5px]">
                 <SearchBar
@@ -739,9 +782,62 @@ const totalInventoryItemStock = (items) => {
             <CreateInventoryForm 
                 :itemCategoryArr="itemCategoryArr"
                 :categoryArr="categoryArr"
+                @addAsProducts="openForm('group-created', null, $event)" 
                 @close="closeForm('create')" 
             />
         </Modal>
+        <Modal 
+            :maxWidth="'2xs'" 
+            :closeable="true"
+            :withHeader="false"
+            :show="groupCreatedModalIsOpen"
+            @close="closeForm('group-created')"
+        >
+            <div class="flex flex-col gap-9 pt-36">
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] fixed top-0 w-full left-0">
+                    <OrderCompleteIllus class="mt-2.5"/>
+                </div>
+                <div class="flex flex-col gap-1" >
+                    <div class="text-primary-900 text-2xl font-medium text-center">
+                        Group created!
+                    </div>
+                    <div class="text-gray-900 text-base font-medium text-center leading-tight" >
+                        Do you want to add the item in the group to your menu?
+                    </div>
+                </div>
+                <div class="flex item-center gap-3">
+                    <Button
+                        variant="tertiary"
+                        size="lg"
+                        type="button"
+                        @click="console.log(inventoryToAdd)"
+                    >
+                        Maybe Later
+                    </Button>
+                    <Button
+                        size="lg"
+                        type="button"
+                        @click="openForm('add-as-product', null, $event)"
+                    >
+                        Add Now
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+        <Modal 
+            :title="'Add New Product'"
+            :maxWidth="'lg'" 
+            :closeable="true"
+            :show="addAsProductModalIsOpen"
+            @close="closeForm('add-as-product')"
+        >
+            <AddItemToMenuForm 
+                :inventoryToAdd="inventoryToAdd" 
+                :categoryArr="categoryArr" 
+                @close="closeForm('add-as-product')" 
+            />
+        </Modal>
+
         <Modal 
             :title="'Add New Stock'"
             :show="addStockFormIsOpen" 
@@ -757,6 +853,7 @@ const totalInventoryItemStock = (items) => {
                 />
             </template>
         </Modal>
+
         <Modal 
             :title="'Edit Group'"
             :show="editGroupFormIsOpen" 
@@ -769,11 +866,11 @@ const totalInventoryItemStock = (items) => {
                     :group="selectedGroup" 
                     :selectedGroup="selectedGroupItems"
                     :itemCategoryArr="itemCategoryArr"
-                    :categoryArr="categoryArr"
                     @close="closeForm('edit')"
                 />
             </template>
         </Modal>
+
         <Modal 
             :show="deleteGroupFormIsOpen" 
             :maxWidth="'2xs'" 

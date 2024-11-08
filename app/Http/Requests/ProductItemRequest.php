@@ -39,11 +39,10 @@ class ProductItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'inventory_item_id.required' => 'This field is required.',
-            'inventory_item_id.integer' => 'This field must be an integer.',
-            'qty.required' => 'This field is required.',
-            'qty.string' => 'This field must be a string.',
-            'qty.max' => 'This field must not exceed 255 characters.',
+            'required' => 'This field is required.',
+            'string' => 'This field must be a string.',
+            'max' => 'This field must not exceed 255 characters.',
+            'integer' => 'This field must be an integer.',
         ];
     }
 }

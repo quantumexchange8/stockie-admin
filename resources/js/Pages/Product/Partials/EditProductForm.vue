@@ -39,11 +39,16 @@ const form = useForm({
     bucket: props.product.bucket === 'set' ? true : false,
     product_name: props.product.product_name,
     price: props.product.price,
-    point: props.product.point,
+    // point: props.product.point,
     category_id: props.product.category_id,
-    keep: props.product.keep,
+    // keep: props.product.keep,
     itemsDeletedBasket: [],
-    items: props.product.product_items ? props.product.product_items : [],
+    items: props.product.product_items 
+            ?   props.product.product_items.map((item) => {
+                    item.formatted_item_name = `${item.inventory_item.inventory.name} - ${item.inventory_item.item_name}`;
+                    return item;
+                }) 
+            :   [],
 });
 
 const formSubmit = () => { 
@@ -53,7 +58,6 @@ const formSubmit = () => {
         onSuccess: () => {
             form.reset();
             emit('close');
-            
         },
     })
 };
@@ -66,7 +70,6 @@ const cancelForm = () => {
 // need to update this to delete the actual item from db
 const deleteItem = (index, itemId) => {
     form.itemsDeletedBasket.push(itemId);
-
     form.items.splice(index, 1);
 }
 
@@ -77,17 +80,16 @@ const updateInventoryStockCount = async (index, id) => {
             const item = form.items[index];
             item.inventory_stock_qty = data.stock_qty;
             item.qty = data.stock_qty >= 2 ? 2 : 0;
+            item.formatted_item_name = data.formattedName;
         } catch (error) {
             console.error(error);
         }
     }
 }
 
-const isFormValid = computed(() => {
-    return ['product_name', 'price', 'point', 'category_id', 'keep'].every(field => form[field]) && form.items.length > 0;
-});
+const isFormValid = computed(() => ['product_name', 'price', 'category_id'].every(field => form[field]) && form.items.length > 0);
 
-watch(() => form.items, (newValue) => {
+watch(form.items, (newValue) => {
     newValue.forEach(item => {
         item.inventory_stock_qty = item.inventory_item.stock_qty;
         item.qty = parseInt(item.qty);
@@ -119,7 +121,7 @@ watch(() => form.items, (newValue) => {
                             <div class="col-span-full xl:col-span-4 flex flex-col w-full">
                                 <Dropdown
                                     :inputName="'inventory_item_id_' +  i"
-                                    :labelText="'Select item'"
+                                    :labelText="'Select an item'"
                                     :inputArray="inventoriesArr"
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"
@@ -128,7 +130,17 @@ watch(() => form.items, (newValue) => {
                                     v-model="item.inventory_item_id"
                                     class="[&>div:nth-child(3)]:!text-primary-700"
                                     @onChange="updateInventoryStockCount(i, $event)"
-                                />
+                                >
+                                    <template #value>
+                                        {{ item.inventory_item_id ? item.formatted_item_name : 'Select' }}
+                                    </template>
+                                    <template #optionGroup="group">
+                                        <div class="flex flex-nowrap items-center gap-3">
+                                            <div class="bg-grey-50 border border-grey-200 h-6 w-6"></div>
+                                            <span class="text-grey-400 text-base font-bold">{{ group.group_name }}</span>
+                                        </div>
+                                    </template>
+                                </Dropdown>
                                 <InputError :message="form.errors ? form.errors['items.' + i + '.qty']  : ''" v-if="form.errors" />
                             </div>
                             <NumberCounter
@@ -157,7 +169,7 @@ watch(() => form.items, (newValue) => {
                             class="col-span-full xl:col-span-4"
                         />
 
-                        <div class="w-full grid grid-cols-1 sm:grid-cols-12 gap-4">
+                        <div class="w-full flex flex-row items-center justify-around gap-x-4">
                             <TextInput
                                 :inputId="'price'"
                                 :labelText="'Price'"
@@ -165,11 +177,11 @@ watch(() => form.items, (newValue) => {
                                 :errorMessage="form.errors?.price || ''"
                                 v-model="form.price"
                                 @keypress="isValidNumberKey($event, true)"
-                                class="col-span-full sm:col-span-4 [&>div>input]:text-center"
+                                class="[&>div>input]:text-center"
                             >
                                 <template #prefix>RM</template>
                             </TextInput>
-                            <TextInput
+                            <!-- <TextInput
                                 :inputId="'point'"
                                 :labelText="'Points can be earned'"
                                 :iconPosition="'right'"
@@ -179,7 +191,7 @@ watch(() => form.items, (newValue) => {
                                 class="col-span-full sm:col-span-4 [&>div>input]:text-center"
                             >
                                 <template #prefix>pts</template>
-                            </TextInput>
+                            </TextInput> -->
                             <Dropdown
                                 :inputName="'category_id'"
                                 :labelText="'Select category'"
@@ -187,16 +199,15 @@ watch(() => form.items, (newValue) => {
                                 :errorMessage="form.errors?.category_id || ''"
                                 :dataValue="form.category_id"
                                 v-model="form.category_id"
-                                class="col-span-full sm:col-span-4"
                             />
                         </div>
-                        <div class="flex items-start gap-10">
+                        <!-- <div class="flex items-start gap-10">
                             <RadioButton
                                 :optionArr="keepOptions"
                                 :checked="form.keep"
                                 v-model:checked="form.keep"
                             />
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>

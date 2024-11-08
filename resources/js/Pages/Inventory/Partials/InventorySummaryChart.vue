@@ -12,20 +12,14 @@ const props = defineProps({
 
 const allInventories = ref([]);
 
-watch(
-    () => props.inventories,
-    (newValue) => {
-        allInventories.value = newValue;
-    },
-    { immediate: true }
-);
+watch(props.inventories, (newValue) => allInventories.value = newValue, { immediate: true });
 
 const inStockInventories = computed(() => {
     return allInventories.value.filter(item => item.stock_qty > 1).length;
 });
 
 const lowInStockInventories = computed(() => {
-    return allInventories.value.filter(item => item.stock_qty > 1 && item.stock_qty <= item.item_category.low_stock_qty).length;
+    return allInventories.value.filter(item => item.stock_qty > 1 && item.stock_qty <= item.low_stock_qty).length;
 });
 
 const outOfStockInventories = computed(() => {

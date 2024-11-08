@@ -10,8 +10,22 @@ export const keepOptions = [
 
 export const defaultProductItem = {
     inventory_item_id: null,
+    formatted_item_name: '',
     qty: 1,
     inventory_stock_qty: 0,
+};
+
+// ----------------------------------------------------------------------------------
+//                                  INVENTORY
+// ----------------------------------------------------------------------------------
+export const defaultInventoryItem = {
+    item_name: '',
+    item_code: '',
+    item_cat_id: '',
+    stock_qty: '',
+    low_stock_qty: '',
+    keep: '',
+    status: 'In stock',
 };
 
 // ----------------------------------------------------------------------------------

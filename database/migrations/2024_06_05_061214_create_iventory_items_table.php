@@ -16,8 +16,10 @@ return new class extends Migration
             $table->unsignedBigInteger('inventory_id');
             $table->string('item_name');
             $table->string('item_code');
-            $table->double('unit')->default(0);
+            $table->unsignedBigInteger('item_cat_id');
             $table->double('stock_qty')->default(0);
+            $table->integer('low_stock_qty');
+            $table->string('keep');
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

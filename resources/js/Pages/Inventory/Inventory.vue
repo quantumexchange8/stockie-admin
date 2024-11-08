@@ -220,7 +220,7 @@ const hideAddStockForm = () => {
                                 <div class="flex flex-col gap-2 p-3">
                                     <span class="text-sm font-medium text-primary-900">Product affected</span>
                                     <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-sm border border-grey-100 bg-white"></div>
+                                        <div class="w-10 h-10 rounded-sm border border-grey-100 bg-white" v-for="(product, subIndex) in item.products" :key="subIndex"></div>
                                     </div>
                                 </div>
                                 <Button
@@ -256,8 +256,8 @@ const hideAddStockForm = () => {
             </div>
             <InventoryTable
                 :rows="inventories"
-                :categoryArr="categoryArr"
                 :itemCategoryArr="itemCategoryArr"
+                :categoryArr="categoryArr"
                 :totalPages="inventoriesTotalPages"
                 @applyCategoryFilter="applyCategoryFilter"
                 @applyCheckedFilters="applyCheckedFilters"

@@ -281,7 +281,7 @@ class OrderController extends Controller
                     $temp += round($item['price'] * $item['item_qty'], 2);
                     
                     foreach ($item['product_items'] as $key => $value) {
-                        $productItem = ProductItem::with(['inventoryItem:id,item_name,stock_qty,item_cat_id', 'inventoryItem.itemCategory:id,low_stock_qty'])->find($value['id']);
+                        $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id')->find($value['id']);
                         $inventoryItem = $productItem->inventoryItem;
     
                         // Deduct stock
@@ -291,7 +291,7 @@ class OrderController extends Controller
 
                         $newStatus = match(true) {
                             $newStockQty == 0 => 'Out of stock',
-                            $newStockQty <= $inventoryItem->itemCategory['low_stock_qty'] => 'Low in stock',
+                            $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
                             default => 'In stock'
                         };
 
@@ -398,17 +398,12 @@ class OrderController extends Controller
      */
     public function getCurrentTableOrder(string $id)
     {
-        // currentOrderTable.value = props.selectedTable.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1
-        //         ? props.selectedTable.order_tables.filter((table) => table.status !== 'Pending Clearance')[0]
-        //         : props.selectedTable.order_tables[0];
-
-
         // Fetch only the main order tables first, selecting only necessary columns
         $orderTables = OrderTable::select('id', 'table_id', 'status', 'updated_at', 'order_id')
-            ->with('table:id,table_no,status') // only fetch necessary fields
-            ->where('table_id', $id)
-            ->orderByDesc('updated_at')
-            ->get();
+                                    ->with('table:id,table_no,status') // only fetch necessary fields
+                                    ->where('table_id', $id)
+                                    ->orderByDesc('updated_at')
+                                    ->get();
 
         // Find the first non-pending clearance table
         $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled'])->firstWhere('status', '!=', 'Pending Clearance') ?? $orderTables->first();
@@ -443,28 +438,6 @@ class OrderController extends Controller
         } else {
             $data = null;
         }
-        // $order = Order::with([
-        //                     'orderItems.product.productItems.inventoryItem',
-        //                     'orderItems.handledBy:id,name',
-        //                     'orderItems.subItems.keepItems.keepHistories' => function ($query) {
-        //                         $query->where('status', 'Keep')->latest()->offset(1)->limit(100);
-        //                     },
-        //                     'orderItems.subItems.keepItems.oldestKeepHistory' => function ($query) {
-        //                         $query->where('status', 'Keep');
-        //                     },
-        //                     'orderItems.keepItem:id,qty,cm,remark,expired_from,expired_to', 
-        //                     'orderItems.keepItem.oldestKeepHistory:id,keep_item_id,qty,cm,status',
-        //                     'orderItems.keepItem.keepHistories' => function ($query) {
-        //                         $query->where('status', 'Keep')->oldest()->offset(1)->limit(100);
-        //                     },
-        //                     'waiter:id,full_name',
-        //                     'customer:id,full_name,email,phone,point',
-        //                     'orderTable:id,order_id,table_id,status',
-        //                     'orderTable.table:id,table_no',
-        //                     'payment:id,order_id'
-        //                 ])
-        //                 ->find($id);
-
 
         return response()->json($data);
     }
@@ -475,19 +448,15 @@ class OrderController extends Controller
     public function cancelOrder(string $id)
     {
         $existingOrder = Order::with([
-                                    'orderItems.subItems.productItem.inventoryItem.itemCategory', 
+                                    'orderItems.subItems.productItem.inventoryItem', 
                                     'orderTable.table',
-                                ])
-                                ->find($id);
-
-        // $table = $existingOrder->orderTable->table;
+                                ])->find($id);
 
         if ($existingOrder) {
             foreach ($existingOrder->orderItems as $item) {
                 if ($item['status'] === 'Pending Serve') {
                     foreach ($item->subItems as $subItem) {
                         $inventoryItem = $subItem->productItem->inventoryItem;
-                        $itemCategory = $inventoryItem->itemCategory;
                         
                         $qtySold = $subItem['serve_qty'];
                         $restoredQty = $item['item_qty'] * $subItem['item_qty'] - $qtySold;
@@ -497,7 +466,7 @@ class OrderController extends Controller
                         // Update inventory with restored stock
                         $newStatus = match(true) {
                             $newStockQty === 0 => 'Out of stock',
-                            $newStockQty <= $itemCategory['low_stock_qty'] => 'Low in stock',
+                            $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
                             default => 'In stock'
                         };
 
@@ -641,9 +610,7 @@ class OrderController extends Controller
     public function getAllZones()
     {
         $zones = Zone::with([
-                            'tables.orderTables' => function ($query) {
-                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled']);
-                            },
+                            'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled']),
                             'tables.orderTables.order',
                         ])
                         ->select('id', 'name')
@@ -659,7 +626,10 @@ class OrderController extends Controller
         return response()->json($zones);
     }
 
-    public function priceRounding($amount)
+    /**
+     * Rounds off the amount based on the bank negara rounding mechanism.
+     */
+    private function priceRounding(float $amount)
     {
         // Get the decimal part in cents
         $cents = round(($amount - floor($amount)) * 100);
@@ -726,7 +696,7 @@ class OrderController extends Controller
                     'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
                     'customer_id' => $request->customer_id,
                     'handled_by' => $request->user_id,
-                    'discount_id' => null,
+                    'discount_id' => $order->orderItems->first(fn ($item) => $item->discount_id)->discount_id ?? null,
                     'discount_amount' => 0.00
                 ];
 
@@ -846,8 +816,6 @@ class OrderController extends Controller
         if (isset($id)) {
             $order = Order::with(['orderItems.product', 'orderTable.table'])->find($id);
             $orderItems = $order->orderItems;
-            // $orderTable = $order->orderTable;
-            // $table = $orderTable->table;
             
             if ($orderItems) {
                 $cancelledAmount = 0;
@@ -859,7 +827,7 @@ class OrderController extends Controller
                             $subItems = OrderItemSubitem::where('order_item_id', $item['id'])->get();
                                                 
                             foreach ($subItems as $subItem) {
-                                $productItem = ProductItem::with(['inventoryItem.itemCategory'])->find($subItem->product_item_id);
+                                $productItem = ProductItem::with('inventoryItem')->find($subItem->product_item_id);
                                 $inventoryItem = $productItem->inventoryItem;
                                 
                                 // $qtySold = $subItem['serve_qty'];
@@ -870,7 +838,7 @@ class OrderController extends Controller
                                 // Update inventory with restored stock
                                 $newStatus = match(true) {
                                     $newStockQty === 0 => 'Out of stock',
-                                    $newStockQty <= $inventoryItem->itemCategory['low_stock_qty'] => 'Low in stock',
+                                    $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
                                     default => 'In stock'
                                 };
             
@@ -1324,34 +1292,6 @@ class OrderController extends Controller
                 'ranking', $givenTier
             ]);
         };
-
-        // To be discussed and completed
-        // $totalSales = OrderItem::where([
-        //                             ['user_id', $request->user_id],
-        //                             ['status', 'Served'],
-        //                             ['type', 'Normal']
-        //                         ])
-        //                         ->whereMonth('created_at', now()->month)
-        //                         ->sum('amount');
-
-        // $incentives = ConfigIncentive::where('monthly_sale', '<=', $totalSales)
-        //                                 ->orderBy('monthly_sale', 'desc')
-        //                                 ->get();
-
-        // if ($incentives) {
-        //     ConfigIncentiveEmployee::create([
-        //         'incentive_id' => $incentives->first()->id,
-        //         'user_id' => $request->user_id,
-        //         'status' => 'Pending',
-        //     ]);
-        // }
-        
-        // $existingAchievedIncentives = ConfigIncentiveEmployee::where('user_id', $request->user_id)
-        //                                                         ->whereMonth('created_at', now()->month)
-        //                                                         ->orderByDesc('incentive_id')
-        //                                                         ->get();
-
-        // if ($existingAchievedIncentives->count() > 1) $existingAchievedIncentives->slice(1)->each->delete();
 
         $order->orderTable->each(function ($tab) {
             $tab->table->update(['status' => 'Pending Clearance']);

@@ -21,10 +21,10 @@ class Category extends Model
      * Iventory Model
      * Get the inventories of the category.
      */
-    public function inventories(): HasMany
-    {
-        return $this->hasMany(Iventory::class, 'category_id');
-    }
+    // public function inventories(): HasMany
+    // {
+    //     return $this->hasMany(Iventory::class, 'category_id');
+    // }
     
     /**
      * Product Model

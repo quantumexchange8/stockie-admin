@@ -20,6 +20,8 @@ class IventoryItem extends Model
         'item_code',
         'item_cat_id',
         'stock_qty',
+        'low_stock_qty',
+        'keep',
         'status',
     ];
     

@@ -158,17 +158,17 @@ class ConfigPromotionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request)
-    {
-        $updateStock = ItemCategory::where('id', $request->id);
-        if($updateStock){
-            $updateStock->update([
-                'low_stock_qty' => $request->low_stock_qty,
-            ]);
-        }
+    // public function update(Request $request)
+    // {
+    //     $updateStock = ItemCategory::where('id', $request->id);
+    //     if($updateStock){
+    //         $updateStock->update([
+    //             'low_stock_qty' => $request->low_stock_qty,
+    //         ]);
+    //     }
 
 
-    }
+    // }
 
     /**
      * Remove the specified resource from storage.
@@ -178,18 +178,17 @@ class ConfigPromotionController extends Controller
         //
     }
 
-    public function getStock()
-    {
-        $stock = ItemCategory::query();
+    // public function getStock()
+    // {
+    //     $stock = ItemCategory::query();
 
-        $results = $stock->get();
+    //     $results = $stock->get();
 
-        return response()->json($results);
-    }
+    //     return response()->json($results);
+    // }
 
     public function updateMerchant(Request $request)
     {
-
         $request->validate([
             'merchant_name' => ['required', 'string'],
             'merchant_contact' => ['required', 'string'],
@@ -209,7 +208,6 @@ class ConfigPromotionController extends Controller
 
     public function addTax(Request $request)
     {   
-        // dd($request->all());
         $newTax = Setting::find($request->id);
 
         $request->validate([

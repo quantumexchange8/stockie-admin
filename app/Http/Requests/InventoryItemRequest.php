@@ -23,15 +23,15 @@ class InventoryItemRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            // 'inventory_id' => 'required|integer',
             'item_name' => 'required|string|max:255',
             'item_cat_id' => 'required|integer',
             'stock_qty' => 'required|decimal:0,2',
+            'low_stock_qty' => 'required|integer',
             'status' => 'required|string|max:255',
+            'keep' => 'required|string|max:255',
         ];
 
         // foreach ($this->input('items') as $index => $item) {
-            
         //     if (isset($item['id'])) {
         //         $rules["items.$index.item_code"] = [
         //             'required',
@@ -43,8 +43,6 @@ class InventoryItemRequest extends FormRequest
         //         $rules["items.$index.item_code"] = 'required|string|max:255|unique:iventory_items';
         //     }
         // }
-        
-        // dd($rules);
         return $rules;
     }
 
@@ -56,6 +54,8 @@ class InventoryItemRequest extends FormRequest
             'item_code' => 'Item Code',
             'item_cat_id' => 'Item Category ID',
             'stock_qty' => 'Stock Quantity',
+            'low_stock_qty' => 'Low Stock At',
+            'keep' => 'Keep',
             'status' => 'Status',
         ];
     }
@@ -63,22 +63,13 @@ class InventoryItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'inventory_id.required' => 'This field is required.',
-            'inventory_id.integer' => 'This field must be an integer.',
-            'item_name.required' => 'This field is required.',
-            'item_name.string' => 'This field must be a string.',
-            'item_name.max' => 'This field must not exceed 255 characters.',
-            'item_code.required' => 'This field is required.',
-            'item_code.string' => 'This field must be a string.',
-            'item_code.max' => 'This field must not exceed 255 characters.',
-            'item_code.unique' => 'This field must have a unique code.',
-            'item_cat_id.required' => 'This field is required.',
-            'item_cat_id.integer' => 'This field must be an integer.',
-            'stock_qty.required' => 'This field is required.',
-            'stock_qty.decimal' => 'This field must have a decimal point of 2.',
-            'status.required' => 'This field is required.',
-            'status.string' => 'This field must be a string.',
-            'status.max' => 'This field must not exceed 255 characters.',
+            'required' => 'This field is required.',
+            'string' => 'This field must be a string.',
+            'max' => 'This field must not exceed 255 characters.',
+            'integer' => 'This field must be an integer.',
+            'array' => 'This field must be an array.',
+            'unique' => 'This field must have a unique code.',
+            'decimal' => 'This field must have a decimal point of 2.',
         ];
     }
 }

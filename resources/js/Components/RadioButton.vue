@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import RadioButton from 'primevue/radiobutton';
+import InputError from './InputError.vue';
 
 const props = defineProps({
+    errorMessage: String,
     optionArr: {
         type: Array,
         default: () => [],
@@ -46,132 +48,137 @@ const proxyChecked = computed({
 </script>
 
 <template>
-    <div 
-        v-for="(option, index) in optionListArr" 
-        :key="index" 
-        class="flex align-items-center"
-    >
-        <RadioButton 
-            v-model="proxyChecked" 
-            :inputId="option.text" 
-            name="dynamic" 
-            :value="option.value" 
-            :disabled="disabled"
-            @change="$emit('onChange', $event.target.value)"
-            :pt="{
-                root: {
-                    class: [
-                        'relative',
+    <div class="w-full flex flex-col">
+        <div class="flex flex-row gap-x-10 items-start self-stretch">
+            <div 
+                v-for="(option, index) in optionListArr" 
+                :key="index" 
+                class="flex flex-row align-items-center"
+            >
+                <RadioButton 
+                    v-model="proxyChecked" 
+                    :inputId="option.text" 
+                    name="dynamic" 
+                    :value="option.value" 
+                    :disabled="disabled"
+                    @change="$emit('onChange', $event.target.value)"
+                    :pt="{
+                        root: {
+                            class: [
+                                'relative',
 
-                        // Flexbox & Alignment
-                        'inline-flex',
-                        'align-bottom',
+                                // Flexbox & Alignment
+                                'inline-flex',
+                                'align-bottom',
 
-                        // Size
-                        'w-[1.571rem] h-[1.571rem]',
+                                // Size
+                                'w-[1.571rem] h-[1.571rem]',
 
-                        // Misc
-                        'cursor-pointer',
-                        'select-none'
-                    ]
-                },
-                box: ({ props }) => ({
-                    class: [
-                        // Flexbox
-                        'flex justify-center items-center',
-
-                        // Size
-                        'w-[1.571rem] h-[1.571rem]',
-
-                        // Shape
-                        'border-2',
-                        'rounded-full',
-
-                        // Transition
-                        'transition duration-200 ease-in-out',
-
-                        // Colors
-                        {
-                            'text-grey-700': props.value !== props.modelValue && props.value !== undefined,
-                            'bg-grey-0': props.value !== props.modelValue && props.value !== undefined,
-                            'border-grey-300': props.value !== props.modelValue && props.value !== undefined && !props.invalid,
-                            'border-primary-900': props.value == props.modelValue && props.value !== undefined,
-                            'bg-primary-50': props.value == props.modelValue && props.value !== undefined
+                                // Misc
+                                'cursor-pointer',
+                                'select-none'
+                            ]
                         },
-                        // Invalid State
-                        { 'border-primary-500': props.invalid },
+                        box: ({ props }) => ({
+                            class: [
+                                // Flexbox
+                                'flex justify-center items-center',
 
-                        // States
-                        {
-                            'peer-hover:border-primary-100': !props.disabled && !props.invalid && props.value !== props.modelValue && props.value !== undefined,
-                            'peer-hover:border-primary-800 peer-hover:[&>div]:bg-primary-800': !props.disabled && props.value == props.modelValue && props.value !== undefined,
-                            'peer-focus-visible:border-primary-500 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-400': !props.disabled,
-                            'border-grey-200 bg-grey-100 cursor-default': props.disabled && props.value !== props.modelValue && props.value !== undefined,
-                            '!border-primary-200 cursor-default': props.disabled && props.value == props.modelValue && props.value !== undefined,
-                        }
-                    ]
-                }),
-                input: {
-                    class: [
-                        'peer',
+                                // Size
+                                'w-[1.571rem] h-[1.571rem]',
 
-                        // Size
-                        'w-full ',
-                        'h-full',
+                                // Shape
+                                'border-2',
+                                'rounded-full',
 
-                        // Position
-                        'absolute',
-                        'top-0 left-0',
-                        'z-10',
+                                // Transition
+                                'transition duration-200 ease-in-out',
 
-                        // Spacing
-                        'p-0',
-                        'm-0',
+                                // Colors
+                                {
+                                    'text-grey-700': props.value !== props.modelValue && props.value !== undefined,
+                                    'bg-grey-0': props.value !== props.modelValue && props.value !== undefined,
+                                    'border-grey-300': props.value !== props.modelValue && props.value !== undefined && !props.invalid,
+                                    'border-primary-900': props.value == props.modelValue && props.value !== undefined,
+                                    'bg-primary-50': props.value == props.modelValue && props.value !== undefined
+                                },
+                                // Invalid State
+                                { 'border-primary-500': props.invalid },
 
-                        // Shape
-                        'opacity-0',
-                        'rounded-md',
-                        'outline-none',
-                        'border border-grey-300',
+                                // States
+                                {
+                                    'peer-hover:border-primary-100': !props.disabled && !props.invalid && props.value !== props.modelValue && props.value !== undefined,
+                                    'peer-hover:border-primary-800 peer-hover:[&>div]:bg-primary-800': !props.disabled && props.value == props.modelValue && props.value !== undefined,
+                                    'peer-focus-visible:border-primary-500 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-400': !props.disabled,
+                                    'border-grey-200 bg-grey-100 cursor-default': props.disabled && props.value !== props.modelValue && props.value !== undefined,
+                                    '!border-primary-200 cursor-default': props.disabled && props.value == props.modelValue && props.value !== undefined,
+                                }
+                            ]
+                        }),
+                        input: {
+                            class: [
+                                'peer',
 
-                        // Misc
-                        'appearance-none',
-                        'cursor-pointer'
-                    ]
-                },
-                icon: ({ props }) => ({
-                    class: [
-                        'block',
+                                // Size
+                                'w-full ',
+                                'h-full',
 
-                        // Shape
-                        'rounded-full',
+                                // Position
+                                'absolute',
+                                'top-0 left-0',
+                                'z-10',
 
-                        // Size
-                        'size-2.5',
+                                // Spacing
+                                'p-0',
+                                'm-0',
 
-                        // Colors
-                        {
-                            'bg-primary-900': !props.disabled,
-                            'bg-primary-200': props.disabled,
+                                // Shape
+                                'opacity-0',
+                                'rounded-md',
+                                'outline-none',
+                                'border border-grey-300',
+
+                                // Misc
+                                'appearance-none',
+                                'cursor-pointer'
+                            ]
                         },
+                        icon: ({ props }) => ({
+                            class: [
+                                'block',
 
-                        // Conditions
-                        {
-                            'backface-hidden scale-10 invisible': props.value !== props.modelValue,
-                            'transform visible scale-[1.1]': props.value == props.modelValue
-                        },
+                                // Shape
+                                'rounded-full',
 
-                        // Transition
-                        'transition duration-200',
-                    ]
-                })
-            }"
-        />
-        <label 
-            :for="option.text" 
-            class="ml-2"
-        >
-            {{ option.text }}
-        </label>
+                                // Size
+                                'size-2.5',
+
+                                // Colors
+                                {
+                                    'bg-primary-900': !props.disabled,
+                                    'bg-primary-200': props.disabled,
+                                },
+
+                                // Conditions
+                                {
+                                    'backface-hidden scale-10 invisible': props.value !== props.modelValue,
+                                    'transform visible scale-[1.1]': props.value == props.modelValue
+                                },
+
+                                // Transition
+                                'transition duration-200',
+                            ]
+                        })
+                    }"
+                />
+                <label 
+                    :for="option.text" 
+                    class="ml-2"
+                >
+                    {{ option.text }}
+                </label>
+            </div>
+        </div>
+        <InputError :message="errorMessage" v-if="errorMessage" />
     </div>
 </template>

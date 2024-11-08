@@ -55,7 +55,6 @@ const form = useForm({
 });
     
 const formSubmit = () => { 
-    // console.log(form.items);
     form.post(route('orders.items.keep'), {
         preserveScroll: true,
         preserveState: true,
@@ -74,21 +73,27 @@ const formSubmit = () => {
 };
 
 const pendingServeItems = computed(() => {
-    if (!props.order || !props.order.order_items) {
-        return [];
-    }
+    if (!props.order || !props.order.order_items) return [];
 
-    return props.order 
-        ? props.order.order_items
-                .map((item) => {
-                    return {
-                        ...item,
-                        total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
-                        total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
-                    };
-                })
-                .filter((item) => item.product.keep === 'Active')
-        : [];
+    return props.order.order_items.map((item) => {
+        // Filter and calculate `total_qty` and `total_served_qty` within a single pass
+        const filteredSubItems = item.sub_items.filter((subItem) => 
+            item.product.product_items.some((product_item) => 
+                subItem.product_item_id === product_item.id && product_item.inventory_item.keep === 'Active'
+            )
+        );
+
+        // Calculate total quantities
+        const total_qty = filteredSubItems.reduce((total, sub_item) => total + (item.item_qty * sub_item.item_qty), 0);
+        const total_served_qty = filteredSubItems.reduce((total, sub_item) => total + sub_item.serve_qty, 0);
+
+        return {
+            ...item,
+            sub_items: filteredSubItems,
+            total_qty,
+            total_served_qty
+        };
+    });
 });
 
 const getKeptQuantity = (subItem) => {
@@ -314,7 +319,7 @@ const formatPhone = (phone) => {
                                 <template v-if="form.items.find(i => i.order_item_id === item.id)">
                                     <template v-for="(subItem, index) in item.sub_items" :key="index">
                                         <div class="flex flex-col self-stretch gap-y-2 py-3">
-                                            <div class="flex justify-between items-center self-stretch" v-if="item.sub_items.length > 1">
+                                            <div class="flex justify-between items-center self-stretch" v-if="item.product.bucket === 'set'">
                                                 <p class="text-base text-grey-900 font-medium">
                                                     {{ item.product.product_items.find(i => i.id === subItem.product_item_id).inventory_item.item_name }}
                                                 </p>

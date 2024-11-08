@@ -157,12 +157,13 @@ onUnmounted(() => {
                     var _a;
                     return {
                         class: [
-                            'block relative flex items-center w-full rounded-none',
+                            'block relative flex items-center w-full rounded-none !min-h-[44px]',
                             'text-base bg-transparent border-0',
                             'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
                             'transition duration-200 focus:ring-0',
                             'focus:outline-none focus:shadow-none',
                             { 
+                                // '!min-h-[44px]': props.modelValue === '',
                                 'placeholder-grey-300 text-grey-300 font-medium': plainStyle,
                                 'px-4 py-3 placeholder-grey-200 text-grey-200 font-normal': !plainStyle,
                                 'hover:text-grey-900': !state.focused && plainStyle,
@@ -210,6 +211,9 @@ onUnmounted(() => {
                 },
             }"
         >
+            <template #value="slotProps">
+                <slot name="value" />
+            </template>
             <template #dropdownicon>
                 <svg
                     xmlns="http://www.w3.org/2000/svg"

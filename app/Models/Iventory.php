@@ -16,7 +16,7 @@ class Iventory extends Model
 
     protected $fillable = [
         'name',
-        'category_id',
+        // 'category_id',
         'image',
     ];
     
@@ -33,10 +33,10 @@ class Iventory extends Model
      * Category Model
      * Get the category of the inventory.
      */
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class, 'category_id');
-    }
+    // public function category(): BelongsTo
+    // {
+    //     return $this->belongsTo(Category::class, 'category_id');
+    // }
 
     /**
      * StockHistory Model

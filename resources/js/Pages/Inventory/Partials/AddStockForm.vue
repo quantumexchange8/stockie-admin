@@ -22,7 +22,7 @@ const emit = defineEmits(['close'])
 
 const form = useForm({
     name: props.selectedGroup.name,
-    category_id: props.selectedGroup.category_id,
+    // category_id: props.selectedGroup.category_id,
     image: props.selectedGroup.image,
     items: [],
 });
@@ -32,8 +32,6 @@ watch(() => props.selectedGroupItems, () => {
 }, { immediate: true });
 
 const formSubmit = () => { 
-    form.keep = form.keep ? 'Active': 'Inactive';
-
     let hasAddValue = false;
     form.items.forEach(item => {
         if (item.add_stock_qty > 0 || item.add_stock_qty < 0) {
@@ -48,18 +46,17 @@ const formSubmit = () => {
             onSuccess: () => {
                 form.reset();
                 emit('close');
-                
             },
         })
     }
 };
 
 const cancelForm = () => {
-    form.reset();
     emit('close');
+    setTimeout(() =>form.reset(), 200);
 }
 
-const requiredFields = ['name', 'category_id', 'image', 'items'];
+const requiredFields = ['name', 'image', 'items'];
 
 const isFormValid = computed(() => {
     let staticFields = requiredFields.every(field => form[field]);

@@ -28,19 +28,14 @@ class ProductController extends Controller
         $products = Product::with([
                                 'productItems:id,product_id,inventory_item_id,qty', 
                                 'category:id,name', 
-                                'productItems.inventoryItem:id,stock_qty,item_cat_id,status',
-                                'productItems.inventoryItem.itemCategory:id,low_stock_qty',
+                                'productItems.inventoryItem:id,inventory_id,item_name,stock_qty,item_cat_id,status',
+                                'productItems.inventoryItem.inventory:id,name',
+                                // 'productItems.inventoryItem.itemCategory:id,low_stock_qty',
                                 'saleHistories',
                                 'discountItems'
                             ])
                             ->orderBy('product_name')
                             ->get()
-                            ->map(function($discount){
-                                $discount->discountItems = $discount->discountItems->filter(function($item) use ($discount) {
-                                    return $item->discount_id === $discount->discount_id;
-                                });
-                                return $discount;
-                            })
                             ->map(function ($product) {
                                 $product_items = $product->productItems;
                                 $minStockCount = 0;
@@ -49,10 +44,7 @@ class ProductController extends Controller
                                     $stockCountArr = [];
 
                                     foreach ($product_items as $key => $value) {
-                                        $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])
-                                                                            ->with('itemCategory:id,low_stock_qty')
-                                                                            ->find($value['inventory_item_id']);
-
+                                        $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])->find($value['inventory_item_id']);
                                         $stockQty = $inventory_item->stock_qty;
                                         $stockCount = (int)round($stockQty / (int)$value['qty']);
 
@@ -61,6 +53,8 @@ class ProductController extends Controller
                                     $minStockCount = min($stockCountArr);
                                 }
                                 $product['stock_left'] = $minStockCount;
+
+                                $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id);
 
                                 return $product;
                             });
@@ -104,12 +98,7 @@ class ProductController extends Controller
                                     : 'A minimum of 1 stock available is required.';
 
             // Validate product items data
-            $productItemValidator = Validator::make(
-                $item,
-                $rules,
-                $requestMessages,
-                $productItemRequest->attributes()
-            );
+            $productItemValidator = Validator::make($item, $rules, $requestMessages, $productItemRequest->attributes());
             
             if ($productItemValidator->fails()) {
                 // Collect the errors for each item and add to the array with item index
@@ -127,29 +116,94 @@ class ProductController extends Controller
         }
 
         // If there are any item validation errors, return them
-        if (!empty($allItemErrors)) {
-            return redirect()->back()->withErrors($allItemErrors)->withInput();
-        }
+        if (!empty($allItemErrors)) return redirect()->back()->withErrors($allItemErrors)->withInput();
         
-        $newProduct = Product::create([
-            'product_name' => $validatedData['product_name'],
-            'bucket' => $validatedData['bucket'] ? 'set' : 'single',
-            'price' => $validatedData['price'],
-            'point' => $validatedData['point'],
-            'category_id' => $validatedData['category_id'],
-            'keep' => $validatedData['keep'],
-            'status' => $this->getProductStatus($validatedProductItems),
-            'availability' => 'Available',
-        ]);
+        // $newProduct = Product::create([
+        //     'product_name' => $validatedData['product_name'],
+        //     'bucket' => $validatedData['bucket'] ? 'set' : 'single',
+        //     'price' => $validatedData['price'],
+        //     'point' => 0,
+        //     // 'point' => $validatedData['point'],
+        //     'category_id' => $validatedData['category_id'],
+        //     // 'keep' => $validatedData['keep'],
+        //     'status' => $this->getProductStatus($validatedProductItems),
+        //     'availability' => 'Available',
+        // ]);
 
-        if (count($validatedProductItems) > 0) {
-            foreach ($validatedProductItems as $key => $value) {
-                ProductItem::create([
-                    'product_id' => $newProduct->id,
-                    'inventory_item_id' => $value['inventory_item_id'],
-                    'qty' => (string) $value['qty'],
-                ]);
+        // if (count($validatedProductItems) > 0) {
+        //     foreach ($validatedProductItems as $key => $value) {
+        //         ProductItem::create(attributes: [
+        //             'product_id' => $newProduct->id,
+        //             'inventory_item_id' => $value['inventory_item_id'],
+        //             'qty' => (string) $value['qty'],
+        //         ]);
+        //     }
+        // }
+
+        $this->createProductAndItems($validatedData, $validatedProductItems);
+
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => 'Product has been successfully added to your menu.'
+        ];
+
+        return redirect()->back()->with(['message' => $message]);
+    }
+    
+    /**
+     * Store newly created product from inventory items
+     */
+    public function storeFromInventoryItems(Request $request)
+    {
+        // Get 
+        $productsData = $request->input('items');
+        
+        $productRequest = new ProductRequest();
+        $productItemRequest = new ProductItemRequest();
+        $validatedItems = [];
+        $allItemErrors = [];
+
+        $rules = array_merge($productRequest->rules(), $productItemRequest->rules());
+        $requestMessages = array_merge($productRequest->messages(), $productItemRequest->messages());
+        $requestAttributes = array_merge($productRequest->attributes(), $productItemRequest->attributes());
+
+        foreach ($productsData as $index => $item) {
+            // Validate product items data
+            $productValidator = Validator::make($item, $rules, $requestMessages, $requestAttributes);
+            
+            if ($productValidator->fails()) {
+                // Collect the errors for each item and add to the array with item index
+                foreach ($productValidator->errors()->messages() as $field => $messages) {
+                    $allItemErrors["items.$index.$field"] = $messages;
+                }
+            } else {
+                // Collect the validated item and manually add the 'id' field back
+                $validatedItem = $productValidator->validated();
+                if (isset($item['id'])) {
+                    $validatedItem['id'] = $item['id'];
+                }
+                $validatedItems[] = $validatedItem;
             }
+        }
+
+        // If there are any item validation errors, return them
+        if (!empty($allItemErrors)) return redirect()->back()->withErrors($allItemErrors)->withInput();
+
+        // Separate items into two arrays in a single loop
+        $validatedData = [];
+        $validatedProductItems = [];
+
+        foreach ($validatedItems as $item) {
+            $validatedData[] = array_diff_key($item, array_flip(['inventory_item_id', 'qty']));
+
+            $validatedProductItems[] = [
+                'inventory_item_id' => $item['inventory_item_id'],
+                'qty' => $item['qty'],
+            ];
+        }
+
+        foreach ($validatedData as $key => $value) {
+            $this->createProductAndItems($validatedData[$key], [$validatedProductItems[$key]]);
         }
 
         $message = [ 
@@ -160,12 +214,39 @@ class ProductController extends Controller
         return redirect()->back()->with(['message' => $message]);
     }
 
+    private function createProductAndItems($validatedData, $validatedProductItems)
+    {
+        $newProduct = Product::create([
+            'product_name' => $validatedData['product_name'],
+            'bucket' => $validatedData['bucket'] ? 'set' : 'single',
+            'price' => $validatedData['price'],
+            'point' => 0,
+            // 'point' => $validatedData['point'],
+            'category_id' => $validatedData['category_id'],
+            // 'keep' => $validatedData['keep'],
+            'status' => $this->getProductStatus($validatedProductItems),
+            'availability' => 'Available',
+        ]);
+
+        if (count($validatedProductItems) > 0) {
+            foreach ($validatedProductItems as $key => $value) {
+                ProductItem::create(attributes: [
+                    'product_id' => $newProduct->id,
+                    'inventory_item_id' => $value['inventory_item_id'],
+                    'qty' => (string) $value['qty'],
+                ]);
+            }
+        }
+
+        return;
+    }
+
     private function getProductStatus(array $product_items)
     {
         // Get inventory items with required stock quantities
         $inventoryItems = IventoryItem::whereIn('id', array_column($product_items, 'inventory_item_id'))
-            ->get(['id', 'stock_qty'])
-            ->keyBy('id');
+                                        ->get(['id', 'stock_qty'])
+                                        ->keyBy('id');
     
         // Calculate stock status for each item
         $stockStatuses = collect($product_items)->map(function ($item) use ($inventoryItems) {
@@ -264,9 +345,9 @@ class ProductController extends Controller
         if (isset($request['checkedFilters'])) {
             $queries->where(function (Builder $query) use ($request) {
                 // // Check if there are any item category filter option selected
-                if (isset($request['checkedFilters']['keepStatus']) && count($request['checkedFilters']['keepStatus']) > 0) {
-                    $query->whereIn('keep', $request['checkedFilters']['keepStatus']);
-                }
+                // if (isset($request['checkedFilters']['keepStatus']) && count($request['checkedFilters']['keepStatus']) > 0) {
+                //     $query->whereIn('keep', $request['checkedFilters']['keepStatus']);
+                // }
                 
                 // Check if there are any stock level filter option selected
                 if (isset($request['checkedFilters']['stockLevel']) && count($request['checkedFilters']['stockLevel']) > 0) {
@@ -296,19 +377,14 @@ class ProductController extends Controller
         $data = $queries->with([
                             'productItems:id,product_id,inventory_item_id,qty', 
                             'category:id,name', 
-                            'productItems.inventoryItem:id,stock_qty,item_cat_id,status',
-                            'productItems.inventoryItem.itemCategory:id,low_stock_qty',
+                            'productItems.inventoryItem:id,inventory_id,item_name,stock_qty,item_cat_id,status',
+                            'productItems.inventoryItem.inventory:id,name',
+                            // 'productItems.inventoryItem.itemCategory:id,low_stock_qty',
                             'saleHistories',
                             'discountItems'
                         ])
                         ->orderBy('product_name')
                         ->get()
-                        ->map(function($discount){
-                            $discount->discountItems = $discount->discountItems->filter(function($item) use ($discount) {
-                                return $item->discount_id === $discount->discount_id;
-                            });
-                            return $discount;
-                        })
                         ->map(function ($product) {
                             $product_items = $product->productItems;
                             $minStockCount = 0;
@@ -317,10 +393,7 @@ class ProductController extends Controller
                                 $stockCountArr = [];
 
                                 foreach ($product_items as $key => $value) {
-                                    $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])
-                                                                    ->with('itemCategory:id,low_stock_qty')
-                                                                    ->find($value['inventory_item_id']);
-
+                                    $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])->find($value['inventory_item_id']);
                                     $stockQty = $inventory_item->stock_qty;
                                     $stockCount = (int)round($stockQty / (int)$value['qty']);
 
@@ -329,6 +402,8 @@ class ProductController extends Controller
                                 $minStockCount = min($stockCountArr);
                             }
                             $product['stock_left'] = $minStockCount;
+
+                            $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id);
 
                             return $product;
                         });
@@ -365,9 +440,18 @@ class ProductController extends Controller
      */
     public function getInventoryItemStock(string $id)
     {
-        $data = IventoryItem::select(['item_name', 'stock_qty', 'status'])
-                                ->find($id);
-        
+        $data = IventoryItem::with(['inventory:id,name', 'itemCategory:id,name'])
+                            ->select(['inventory_id', 'item_name', 'item_cat_id', 'stock_qty', 'status'])
+                            ->find($id);
+
+        if ($data) {
+            $groupName = $data->inventory->name;
+            $unitName = $data->itemCategory->name;
+
+            $data->formattedName = "$groupName - $data->item_name";
+            $data->formattedProductName = "$data->item_name ($unitName)";
+        }
+
         return response()->json($data);
     }
     
@@ -448,9 +532,10 @@ class ProductController extends Controller
                 'product_name' => $validatedData['product_name'],
                 'bucket' => $validatedData['bucket'] ? 'set' : 'single',
                 'price' => $validatedData['price'],
-                'point' => $validatedData['point'],
+                'point' => 0,
+                // 'point' => $validatedData['point'],
                 'category_id' => $validatedData['category_id'],
-                'keep' => $validatedData['keep'],
+                // 'keep' => $validatedData['keep'],
             ]);
         }
 

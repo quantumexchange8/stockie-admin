@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('point');
             $table->unsignedInteger('category_id');
             $table->unsignedBigInteger('discount_id');
-            $table->string('keep');
+            // $table->string('keep');
             $table->string('status');
             $table->string('availability');
             $table->softDeletes();

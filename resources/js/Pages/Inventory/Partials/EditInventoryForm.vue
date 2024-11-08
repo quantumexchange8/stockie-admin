@@ -1,11 +1,13 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
 import DragDropImage from '@/Components/DragDropImage.vue'
-import { PlusIcon } from '@/Components/Icons/solid';
+import { DeleteIcon, PlusIcon } from '@/Components/Icons/solid';
+import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
+import RadioButton from '@/Components/RadioButton.vue';
 
 const props = defineProps({
     errors: Object,
@@ -17,10 +19,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-    categoryArr: {
-        type: Array,
-        default: () => [],
-    },
+    // categoryArr: {
+    //     type: Array,
+    //     default: () => [],
+    // },
     itemCategoryArr: {
         type: Array,
         default: () => [],
@@ -32,9 +34,14 @@ const emit = defineEmits(['close'])
 const form = useForm({
     id: props.group.id,
     name: props.group.name,
-    category_id: parseInt(props.group.category_id),
+    // category_id: parseInt(props.group.category_id),
     image: props.group.image,
-    items: props.selectedGroup ? props.selectedGroup : [],
+    items: props.selectedGroup 
+            ?   props.selectedGroup.map((item) => {
+                    item.low_stock_qty = item.low_stock_qty.toString();
+                    return item;
+                })
+            :   [],
 });
 
 const formSubmit = () => { 
@@ -44,7 +51,6 @@ const formSubmit = () => {
         onSuccess: () => {
             form.reset();
             emit('close');
-            
         },
     })
 };
@@ -54,20 +60,20 @@ const cancelForm = () => {
     emit('close');
 }
 
-const requiredFields = ['name', 'category_id', 'image', 'items'];
+const requiredFields = ['name', 'image', 'items'];
 
 const isFormValid = computed(() => requiredFields.every(field => form[field]));
 
-const addItem = () => {
-    form.items.push({
-        inventory_id: props.group.id,
-        item_name: '',
-        item_code: '',
-        item_cat_id: '',
-        stock_qty: 0,
-        status: 'In stock',
-    });
+const addItem = () => form.items.push({ ...defaultInventoryItem, inventory_id: props.group.id });
+
+const removeItem = (index) => {
+    if (form.items.length === 1) {
+        Object.assign(form.items[0], { ...defaultInventoryItem, inventory_id: props.group.id });
+    } else {
+        form.items.splice(index, 1);
+    }
 }
+
 </script>
 
 <template>
@@ -75,15 +81,14 @@ const addItem = () => {
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[60vh] overflow-y-scroll scrollbar-thin scrollbar-webkit">
             <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div>
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 self-stretch">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 self-stretch">
-                    <TextInput
-                        :inputName="'name'"
-                        :labelText="'Group name'"
-                        :placeholder="'eg: Heineken, Carlsberg etc'"
-                        :errorMessage="form.errors?.name || ''"
-                        v-model="form.name"
-                        class="col-span-full md:col-span-9"
-                    />
+                <TextInput
+                    :inputName="'name'"
+                    :labelText="'Group name'"
+                    :placeholder="'eg: Beer'"
+                    :errorMessage="form.errors?.name || ''"
+                    v-model="form.name"
+                />
+                <!-- <div class="grid grid-cols-1 md:grid-cols-12 gap-3 self-stretch">
                     <Dropdown
                         :inputName="'category_id'"
                         :labelText="'Category'"
@@ -93,34 +98,56 @@ const addItem = () => {
                         v-model="form.category_id"
                         class="col-span-full md:col-span-3"
                     />
-                </div>
+                </div> -->
                 <div class="flex flex-col items-end gap-4 self-stretch">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 self-stretch" v-for="(item, i) in form.items" :key="i">
-                        <TextInput
-                            :inputName="'items.'+ i +'.item_name'"
-                            :labelText="'Item '+ (i + 1) +' name'"
-                            :placeholder="'eg: Heineken Bottle 500ml'"
-                            :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_name']  : ''"
-                            v-model="item.item_name"
-                            class="col-span-full md:col-span-8"
-                        />
-                        <TextInput
-                            :inputName="'items.'+ i +'.item_code'"
-                            :labelText="'Item code'"
-                            :placeholder="'eg: H001'"
-                            :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_code']  : ''"
-                            v-model="item.item_code"
-                            class="col-span-full md:col-span-2"
-                        />
-                        <Dropdown
-                            :inputName="'items.'+ i +'.item_cat_id'"
-                            :labelText="'Unit'"
-                            :inputArray="props.itemCategoryArr"
-                            :dataValue="item.item_cat_id"
-                            :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_cat_id']  : ''"
-                            v-model="item.item_cat_id"
-                            class="col-span-full md:col-span-2"
-                        />
+                    <div class="flex flex-col gap-4 self-stretch" v-for="(item, i) in form.items" :key="i">
+                        <div class="flex flex-row items-center justify-between self-stretch">
+                            <p class="text-grey-950 font-semibold text-md">Item {{ i + 1 }}</p>
+                            <DeleteIcon class="size-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer" @click="removeItem(i)" />
+                        </div>
+
+                        <div class="flex flex-col items-start gap-y-3 self-stretch">
+                            <div class="flex flex-row items-start gap-x-3 self-stretch">
+                                <TextInput
+                                    :inputName="'items.'+ i +'.item_name'"
+                                    :labelText="'Item '+ (i + 1) +' name'"
+                                    :placeholder="'eg: Heineken Bottle 500ml'"
+                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_name']  : ''"
+                                    v-model="item.item_name"
+                                />
+                                <Dropdown
+                                    :inputName="'items.'+ i +'.item_cat_id'"
+                                    :labelText="'Unit'"
+                                    :inputArray="props.itemCategoryArr"
+                                    :dataValue="item.item_cat_id"
+                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_cat_id']  : ''"
+                                    v-model="item.item_cat_id"
+                                />
+                            </div>
+                            <div class="flex flex-row items-start justify-around gap-x-3 self-stretch">
+                                <TextInput
+                                    :inputName="'items.'+ i +'.item_code'"
+                                    :labelText="'Item code'"
+                                    :placeholder="'eg: H001'"
+                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_code']  : ''"
+                                    v-model="item.item_code"
+                                />
+                                <TextInput
+                                    :inputName="'item_'+ i +'_low_stock_qty'"
+                                    :labelText="'Show low stock at'"
+                                    :placeholder="'e.g. 25'"
+                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_low_stock_qty']  : ''"
+                                    v-model="item.low_stock_qty"
+                                />
+                           </div>
+                            <div class="flex items-start gap-10">
+                                <RadioButton
+                                    :optionArr="keepOptions"
+                                    :checked="item.keep"
+                                    v-model:checked="item.keep"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <Button
@@ -130,11 +157,9 @@ const addItem = () => {
                     :size="'lg'"
                     class="col-span-full"
                     @click="addItem"
-                    >
+                >
                     <template #icon>
-                        <PlusIcon
-                            class="w-6 h-6"
-                        />
+                        <PlusIcon class="size-6 flex-shrink-0" />
                     </template>
                     New Item
                 </Button>

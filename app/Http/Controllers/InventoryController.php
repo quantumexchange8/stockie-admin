@@ -22,26 +22,43 @@ class InventoryController extends Controller
 {
     public function index(Request $request)
     {
-        $inventories = Iventory::with(['inventoryItems', 'inventoryItems.itemCategory:id,name,low_stock_qty'])
+        $inventories = Iventory::with([
+                                    'inventoryItems.itemCategory:id,name',
+                                    'inventoryItems.productItems:id,inventory_item_id,product_id',
+                                    'inventoryItems.productItems.product:id',
+                                ])
                                 ->orderBy('id')
-                                ->get();
+                                ->get()
+                                ->map(function ($group) {
+                                    $group->inventoryItems->each(function ($item) {
+                                        // Collect unique product and assign to $item->products
+                                        $item->products = $item->productItems
+                                                ->pluck('product')
+                                                ->unique('id')
+                                                ->map(fn($product) => [
+                                                    'id' => $product->id,
+                                                    'image' => 'image' //get product media
+                                                ])
+                                                ->values();
+                            
+                                        unset($item->productItems);
+                                    });
+
+                                    return $group;
+                                });
 
         $endDate = Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
         $startDate = Carbon::now()->subDays(30)->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
 
         $recentKeepHistories = KeepHistory::with([
-                                                'keepItem', 
-                                                'keepItem.orderItemSubitem', 
-                                                'keepItem.orderItemSubitem.productItem', 
                                                 'keepItem.orderItemSubitem.productItem.inventoryItem',
                                                 'keepItem.customer:id,full_name', 
                                             ])
                                             ->whereBetween('created_at', [$startDate, $endDate])
                                             ->limit(5)
                                             ->get()
-                                            ->map(function ($history) {
+                                            ->transform(function ($history) {
                                                 $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
-                                    
                                                 unset($history->keepItem->orderItemSubitem);
 
                                                 return $history;
@@ -73,6 +90,7 @@ class InventoryController extends Controller
         return Inertia::render('Inventory/Inventory', [
             'message' => $message ?? [],
             'inventories' => $inventories,
+            // 'outOfStockItems' => $outOfStockItems,
             'recentKeepHistories' => $recentKeepHistories,
             'categories' => $categories,
             'itemCategories' => $itemCategories,
@@ -96,12 +114,7 @@ class InventoryController extends Controller
             $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
 
             // Validate inventory items data
-            $inventoryItemValidator = Validator::make(
-                $item,
-                $rules,
-                $inventoryItemRequest->messages(),
-                $inventoryItemRequest->attributes()
-            );
+            $inventoryItemValidator = Validator::make($item, $rules, $inventoryItemRequest->messages(), $inventoryItemRequest->attributes());
             
             if ($inventoryItemValidator->fails()) {
                 // Collect the errors for each item and add to the array with item index
@@ -127,17 +140,15 @@ class InventoryController extends Controller
 
         $newGroup = Iventory::create([
             'name' => $validatedData['name'],
-            'category_id' => $validatedData['category_id'],
+            // 'category_id' => $validatedData['category_id'],
             'image' => $image,
         ]);
 
         if (count($validatedInventoryItems) > 0) {
             foreach ($validatedInventoryItems as $key => $value) {
-                $itemCategory = ItemCategory::select('low_stock_qty')->find($value['item_cat_id']);
-
                 if ($value['stock_qty'] === 0) {
                     $newStatus = 'Out of stock';
-                } elseif ($value['stock_qty'] <= $itemCategory->low_stock_qty) {
+                } elseif ($value['stock_qty'] <= $value['low_stock_qty']) {
                     $newStatus = 'Low in stock';
                 } else {
                     $newStatus = 'In stock';
@@ -149,6 +160,8 @@ class InventoryController extends Controller
                     'item_code' => $value['item_code'],
                     'item_cat_id' => $value['item_cat_id'],
                     'stock_qty' => $value['stock_qty'],
+                    'low_stock_qty' => $value['low_stock_qty'],
+                    'keep' => $value['keep'],
                     'status' => $newStatus,
                 ]);    
 
@@ -165,13 +178,19 @@ class InventoryController extends Controller
             }
         }
 
-        $message = [ 
-            'severity' => 'success', 
-            'summary' => 'Group added successfully.',
-            'detail' => 'You can always add new stock to this group.'
-        ];
+        // $message = [ 
+        //     'severity' => 'success', 
+        //     'summary' => 'Group added successfully.',
+        //     'detail' => 'You can always add new stock to this group.'
+        // ];
 
-        return redirect()->back()->with(['message' => $message]);
+        $newInventory = Iventory::select(['id', 'name', 'image'])
+                                ->with([
+                                    'inventoryItems:id,inventory_id,item_name,item_cat_id', 
+                                    'inventoryItems.itemCategory:id,name'
+                                ])->find($newGroup->id);
+        return response()->json($newInventory);
+        // return redirect()->back();
     }
     
     /**
@@ -181,11 +200,8 @@ class InventoryController extends Controller
     {
         $filters = $request->input('checkedFilters', []);
 
-        $selectedCategory = (int) $request->input('selectedCategory', 0);
-
-        $allCategories = Category::select(['id'])
-                                ->orderBy('id')
-                                ->get();
+        // $selectedCategory = (int) $request->input('selectedCategory', 0);
+        // $allCategories = Category::select(['id'])->orderBy('id')->get();
 
         // Base query for filtering inventory items
         $itemQuery = IventoryItem::query();
@@ -201,12 +217,13 @@ class InventoryController extends Controller
                 foreach ($filters['stockLevel'] as $level) {
                     switch ($level) {
                         case 'In Stock':
-                            $subQuery->orWhere('stock_qty', '>', 0);
+                            $subQuery->orWhere(function ($lowStockQuery) {
+                                $lowStockQuery->whereColumn('stock_qty', '>', 'low_stock_qty');
+                            });
                             break;
                         case 'Low Stock':
                             $subQuery->orWhere(function ($lowStockQuery) {
-                                $lowStockQuery->where('stock_qty', '>', 0)
-                                            ->whereRaw('stock_qty <= (SELECT low_stock_qty FROM item_categories WHERE item_categories.id = item_cat_id)');
+                                $lowStockQuery->where('stock_qty', '>', 0)->whereColumn('stock_qty', '<=', 'low_stock_qty');
                             });
                             break;
                         case 'Out of Stock':
@@ -218,7 +235,7 @@ class InventoryController extends Controller
         }
 
         // Get filtered inventory items with their item category
-        $filteredItems = $itemQuery->with('itemCategory:id,name,low_stock_qty')->get();
+        $filteredItems = $itemQuery->with('itemCategory:id,name')->get();
 
         // Get inventory IDs with matching items
         $inventoryIds = $filteredItems->pluck('inventory_id')->unique();
@@ -226,19 +243,19 @@ class InventoryController extends Controller
         // Get inventories with matching items
         $inventoryQuery  = Iventory::query();
 
-        if ($selectedCategory) {
-            if ($selectedCategory === 0) {
-                $inventoryQuery->whereIn('category_id', $allCategories);
-            } else {
-                $inventoryQuery->where('category_id', $selectedCategory);
-            }
-        }
+        // if ($selectedCategory) {
+        //     if ($selectedCategory === 0) {
+        //         $inventoryQuery->whereIn('category_id', $allCategories);
+        //     } else {
+        //         $inventoryQuery->where('category_id', $selectedCategory);
+        //     }
+        // }
     
         // Get inventories with filtered items
         $data = $inventoryQuery->whereIn('id', $inventoryIds)
-                                ->with(['inventoryItems' => function ($query) use ($filteredItems) {
-                                    $query->whereIn('id', $filteredItems->pluck('id'));
-                                }, 'inventoryItems.itemCategory:id,name,low_stock_qty'])
+                                ->with([
+                                    'inventoryItems' => fn ($query) => $query->whereIn('id', $filteredItems->pluck('id')), 
+                                    'inventoryItems.itemCategory:id,name'])
                                 ->orderBy('id')
                                 ->get();
 
@@ -250,8 +267,7 @@ class InventoryController extends Controller
      */
     public function getInventoryItems(string $id)
     {
-        $data = Iventory::with('inventoryItems')
-                        ->find($id);
+        $data = Iventory::with('inventoryItems')->find($id);
 
         return response()->json($data);
     }
@@ -271,13 +287,13 @@ class InventoryController extends Controller
 
                 $calculatedStock = $value['stock_qty'] + $value['add_stock_qty'];
 
-                $existingItem = IventoryItem::with('itemCategory:id,low_stock_qty')->find($value['id']);
+                $existingItem = IventoryItem::find($value['id']);
 
                 // if ($key === 2) dd($calculatedStock);
                 
                 if ($calculatedStock === 0) {
                     $newStatus = 'Out of stock';
-                } elseif ($calculatedStock <= $existingItem->itemCategory['low_stock_qty']) {
+                } elseif ($calculatedStock <= $existingItem->low_stock_qty) {
                     $newStatus = 'Low in stock';
                 } else {
                     $newStatus = 'In stock';
@@ -341,26 +357,9 @@ class InventoryController extends Controller
                                             Rule::unique('iventory_items')->ignore($item['id'], 'id'),
                                         ]
                                     : $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
-            // if (isset($item['id'])) {
-            //     // Add unique rule while igoring self
-            //     $rules['item_code'] = [
-            //         'required',
-            //         'string',
-            //         'max:255',
-            //         Rule::unique('iventory_items')->ignore($item['id'], 'id'),
-            //     ];
-            // } else {
-            //     // Add unique rule 
-            //     $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
-            // }
 
             // Validate inventory items data
-            $inventoryItemValidator = Validator::make(
-                $item,
-                $rules,
-                $inventoryItemRequest->messages(),
-                $inventoryItemRequest->attributes()
-            );
+            $inventoryItemValidator = Validator::make($item, $rules, $inventoryItemRequest->messages(), $inventoryItemRequest->attributes());
             
             if ($inventoryItemValidator->fails()) {
                 // Collect the errors for each item and add to the array with item index
@@ -388,18 +387,16 @@ class InventoryController extends Controller
 
             $existingGroup->update([
                 'name' => $inventoryData['name'],
-                'category_id' => $inventoryData['category_id'],
+                // 'category_id' => $inventoryData['category_id'],
             ]);
         }
 
         // Update inventory items data
         if (count($validatedInventoryItems) > 0) {
             foreach ($validatedInventoryItems as $key => $value) {
-                $itemCategory = ItemCategory::select('low_stock_qty')->find($value['item_cat_id']);
-
                 if ($value['stock_qty'] === 0) {
                     $newStatus = 'Out of stock';
-                } elseif ($value['stock_qty'] <= $itemCategory->low_stock_qty) {
+                } elseif ($value['stock_qty'] <= $value['low_stock_qty']) {
                     $newStatus = 'Low in stock';
                 } else {
                     $newStatus = 'In stock';
@@ -413,6 +410,8 @@ class InventoryController extends Controller
                         'item_code' => $value['item_code'],
                         'item_cat_id' => $value['item_cat_id'],
                         'stock_qty' => $value['stock_qty'],
+                        'low_stock_qty' => $value['low_stock_qty'],
+                        'keep' => $value['keep'],
                         'status' => $newStatus,
                     ]);
                 } else {
@@ -422,6 +421,8 @@ class InventoryController extends Controller
                         'item_code' => $value['item_code'],
                         'item_cat_id' => $value['item_cat_id'],
                         'stock_qty' => $value['stock_qty'],
+                        'low_stock_qty' => $value['low_stock_qty'],
+                        'keep' => $value['keep'],
                         'status' => $newStatus,
                     ]);
                 }
@@ -441,18 +442,13 @@ class InventoryController extends Controller
      */
     public function deleteInventory(Request $request, string $id)
     {
-        $data = $request->all();
-
-        $existingGroup = Iventory::with('inventoryItems')
-                                    ->find($id);
-
+        $existingGroup = Iventory::with('inventoryItems')->find($id);
         $existingGroupItems = $existingGroup->inventoryItems;
         
         if (count($existingGroupItems) > 0) {
             foreach ($existingGroupItems as $key => $value) {
                 if (isset($value['id'])) {
                     $existingItem = IventoryItem::find($value['id']);
-    
                     $existingItem->delete();
                 }
             }
@@ -479,9 +475,6 @@ class InventoryController extends Controller
         ];
 
         $keepHistories = KeepHistory::with([
-                                            'keepItem', 
-                                            'keepItem.orderItemSubitem', 
-                                            'keepItem.orderItemSubitem.productItem', 
                                             'keepItem.orderItemSubitem.productItem.inventoryItem',
                                             'keepItem.customer:id,full_name', 
                                         ])
@@ -489,15 +482,12 @@ class InventoryController extends Controller
                                         ->where('status', 'Keep')
                                         ->orderBy('created_at', 'desc')
                                         ->get()
-                                        ->map(function ($history) {
+                                        ->transform(function ($history) {
                                             $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
-                                
                                             unset($history->keepItem->orderItemSubitem);
 
                                             return $history;
                                         });
-
-        // dd($keepHistories);
 
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
@@ -532,18 +522,14 @@ class InventoryController extends Controller
         }
 
         $data = $query->with([
-                            'keepItem', 
-                            'keepItem.orderItemSubitem', 
-                            'keepItem.orderItemSubitem.productItem', 
                             'keepItem.orderItemSubitem.productItem.inventoryItem',
                             'keepItem.customer:id,full_name', 
                         ])
                         ->where('status', 'Keep')
                         ->orderBy('created_at', 'desc')
                         ->get()
-                        ->map(function ($history) {
+                        ->transform(function ($history) {
                             $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
-                
                             unset($history->keepItem->orderItemSubitem);
 
                             return $history;
@@ -606,7 +592,6 @@ class InventoryController extends Controller
                         
         return response()->json($data);
     }
-
 
     /**
      * Testing get data for dropdown grouped option.

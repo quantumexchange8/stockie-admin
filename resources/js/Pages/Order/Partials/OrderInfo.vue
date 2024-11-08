@@ -111,16 +111,16 @@ const showOrderCompleteModal = () => {
     orderCompleteModalIsOpen.value = true;
 }
 
-const hideOrderCompleteModal = () => {
-    setTimeout(() => {
-        showMessage({ 
-            severity: 'success',
-            summary: 'Selected order has been completed successfully.',
-        });
-    }, 200);
-    closeDrawer();
-    orderCompleteModalIsOpen.value = false;
-}
+// const hideOrderCompleteModal = () => {
+//     setTimeout(() => {
+//         showMessage({ 
+//             severity: 'success',
+//             summary: 'Selected order has been completed successfully.',
+//         });
+//     }, 200);
+//     closeDrawer();
+//     orderCompleteModalIsOpen.value = false;
+// }
 
 const showCancelOrderForm = () => {
     cancelOrderFormIsOpen.value = true;
@@ -347,7 +347,7 @@ watch(selectedTab, (newValue) => {
         </form>
     </div>
     
-    <Modal 
+    <!-- <Modal 
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="orderCompleteModalIsOpen"
@@ -384,7 +384,7 @@ watch(selectedTab, (newValue) => {
                 </Button>
             </div>
         </div>
-    </Modal>
+    </Modal> -->
 
     <Modal 
         :maxWidth="'2xs'" 

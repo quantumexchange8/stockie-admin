@@ -41,7 +41,7 @@ class ReservationRequest extends FormRequest
             'pax' => 'Pax',
             'name' => 'Name',
             'phone' => 'Contact no.',
-            'table_no' => 'Keep',
+            'table_no' => 'Table',
         ];
     }
 
