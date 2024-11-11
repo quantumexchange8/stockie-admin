@@ -4,6 +4,7 @@ import Modal from '@/Components/Modal.vue';
 import { onMounted, ref } from 'vue';
 import EditAchievement from './EditAchievement.vue';
 import { transactionFormat } from '@/Composables';
+import dayjs from 'dayjs';
 
 const props = defineProps ({
     achievementDetails: {
@@ -15,7 +16,8 @@ const props = defineProps ({
         required: true,
     }
 })
-const { formatDate } = transactionFormat();
+const { formatDate, formatAmount } = transactionFormat();
+const emit = defineEmits(['getEmployeeIncent', 'getIncentDetail']);
 
 const isDeleteWaiterOpen = ref(false);
 const isEditAchievementOpen = ref(false);
@@ -27,35 +29,24 @@ const isRate = ref({
     isRate: props.achievementDetails.type !== 'fixed'
 });
 
-const waiters = ref([]);
-const isLoading = ref(false);
-
-const formatNumbers = (number) => {
-    number = number.substring(0, number.length - 3);
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-const formatRate = (rate) => {
-    rate = rate * 100;
-    return rate;
-}
-
 const getSuffix = (day) => {
-    switch(day)
-    {
-        case 1:
-        case 21:
-        case 31:
-            return day+"st";
-        case 2:
-        case 22:
-            return day+"nd";
-        case 3:
-        case 23:
-            return day+"rd";
-        default:
-            return day+"th";
+    let suffix;
+
+    if (day % 10 === 1 && day % 100 !== 11) {
+        suffix = 'st';
+    } else if (day % 10 === 2 && day % 100 !== 12) {
+        suffix = 'nd';
+    } else if (day % 10 === 3 && day % 100 !== 13) {
+        suffix = 'rd';
+    } else {
+        suffix = 'th';
     }
+
+    return day+suffix;
+}
+
+const getEmployeeIncent = () => {
+    emit('getEmployeeIncent', props.achievementDetails.id);
 }
 
 const showEditAchievement = (achievement) => {
@@ -79,24 +70,6 @@ const closeModal = () => {
     isDeleteAchievementOpen.value = false;
 }
 
-const getEmployeeIncent = async () => {
-    isLoading.value = true;
-    try {
-        const response = await axios.get('/configurations/configurations/incentive');
-        rows.value = response.data.incentiveProg;
-        waiters.value = response.data.waiters;
-        rows.value = response.data.incentiveProg.map(incentive => {
-            return {
-                ...incentive, 
-                isRate: incentive.type !== 'fixed' 
-            };
-        });
-    } catch (error) {
-        console.error(error);
-    } finally {
-        isLoading.value = false;
-    }
-}
 </script>
 
 <template>
@@ -126,7 +99,7 @@ const getEmployeeIncent = async () => {
                     </template>
 
                     <template v-else> 
-                        <span class="flex justify-center items-center gap-2.5 shrink-0 rounded-[2px] bg-primary-25">{{ formatRate(props.achievementDetails.rate) }}% / monthly sales</span>
+                        <span class="flex justify-center items-center gap-2.5 shrink-0 rounded-[2px] bg-primary-25">{{ parseInt(props.achievementDetails.rate * 100) }}% / monthly sales</span>
                     </template>
                 </div>
 
@@ -135,7 +108,7 @@ const getEmployeeIncent = async () => {
                         <TargetIcon/>
                     </div>
                     <span class="flex-[1_0_0] text-grey-900 text-base font-medium">Sales hits 
-                        <span class="text-primary-900 text-base font-medium">RM{{ formatNumbers(props.achievementDetails.monthly_sale) }}</span>
+                        <span class="text-primary-900 text-base font-medium">RM{{ formatAmount(props.achievementDetails.monthly_sale) }}</span>
                     </span>
                 </div>
 
@@ -144,7 +117,7 @@ const getEmployeeIncent = async () => {
                         <CalendarIcon />
                     </div>
                     <span class="flex-[1_0_0] text-grey-900 text-base font-medium">Starting from
-                        <span class="text-primary-900 text-base font-medium">{{ formatDate(props.achievementDetails.effective_date) }}</span>
+                        <span class="text-primary-900 text-base font-medium">{{ dayjs(props.achievementDetails.effective_date).format('DD/MM/YYYY') }}</span>
                     </span>
                 </div>
 
@@ -175,7 +148,13 @@ const getEmployeeIncent = async () => {
                             :class="(index + 1) % 2 === 0 ? 'bg-primary-25' : 'bg-white'"
                         >
                             <div class="flex items-center gap-2.5 flex-[1_0_0]">
-                                <div class="size-7 rounded-full bg-primary-700"></div>
+                                <!-- <div class="size-7 rounded-full bg-primary-700"></div> -->
+                                <img 
+                                    :src="waiter.image ? waiter.image 
+                                                    : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt=""
+                                    class="size-7 rounded-full"
+                                >
                                 <span class="text-grey-900 text-sm font-medium">{{ waiter.name }}</span>
                             </div>
                             <DeleteIcon 
@@ -200,7 +179,7 @@ const getEmployeeIncent = async () => {
             :selectedIncent="selectedAchievement"
             @closeModal="closeModal"
             @getEmployeeIncent="getEmployeeIncent"
-            />
+        />
     </Modal>
 
     <Modal 

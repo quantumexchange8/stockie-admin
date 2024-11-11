@@ -31,6 +31,10 @@ class ConfigDiscountController extends Controller
                                                 ->orWhere('discount_to', '<', Carbon::today());
                                         })
                                     ->get();
+        
+        $productsAvailable->each(function ($productAvailable){
+            $productAvailable->image = $productAvailable->getFirstMediaUrl('product');
+        });
 
         return response()->json([
             'categories' => $categories,
@@ -118,6 +122,7 @@ class ConfigDiscountController extends Controller
                     'type' => $discountDetails->type,
                     'product_id' => $discountItemDetails->product->id,
                     'original_data' => $discountItemDetails->product,
+                    'image' => $discountItemDetails->product->getFirstMediaUrl('product'),
                 ];
             })->toArray();
         
@@ -145,6 +150,8 @@ class ConfigDiscountController extends Controller
     }
 
     public function editDiscount(DiscountRequest $request) {
+
+        // dd($request);
         $discount = ConfigDiscount::findOrFail($request->discount_id);
         
         //update main discount details
@@ -193,11 +200,17 @@ class ConfigDiscountController extends Controller
 
     public function editProductDetails (String $id){
 
-        $discountItem = ConfigDiscountItem::where('discount_id', $id)
+        $discountItems = ConfigDiscountItem::where('discount_id', $id)
                                             ->with('product')
                                             ->get()
                                             ->pluck('product');
 
-        return response()->json($discountItem);
+        $discountItems->each(function ($product) {
+            if ($product) {
+                $product->image = $product->getFirstMediaUrl('product');
+            }
+        });
+
+        return response()->json($discountItems);
     }
 }

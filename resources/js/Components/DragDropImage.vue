@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import FileUpload from 'primevue/fileupload';
 import Button from './Button.vue';
 import { CircledTimesIcon } from './Icons/solid';
+import InputError from './InputError.vue';
 
 const props = defineProps({
     inputName: String,
@@ -36,6 +37,15 @@ const removeFile = (removeFileCallback) => {
     emit('update:modelValue', '');
 }
 
+const updateUpload = (files, chooseCallback) => {
+    files.length = 0;
+    setTimeout(() => {
+        chooseCallback();
+    }, 50);
+    hasFile.value = false;
+    emit('update:modelValue', '');
+}
+
 const imageClasses = computed(() => [
     'w-full h-full object-contain rounded-[5px]',
     props.imageClass
@@ -43,24 +53,25 @@ const imageClasses = computed(() => [
 </script>
 
 <template>
+    <div class="w-full flex flex-col items-start justify-center">
     <div 
-        class="w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"
+        class="w-full h-full flex flex-col items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"
     >
         <FileUpload 
             :name="props.inputName" 
-            @select="selectFile($event.files)" 
+            @select="selectFile($event.files);" 
             accept="image/*" 
             :maxFileSize="6000000"
             :fileLimit="1"
             :disabled="hasFile"
             :class="[
                 {
-                    'hover:cursor-no-drop': hasFile
+                    'hidden h-full': hasFile
                 }
             ]"
             :pt="{
                 root: {
-                    class: 'relative w-full h-full'
+                    class: 'relative w-full h-full group'
                 },
                 message: {
                     class: 'absolute flex flex-row justify-between self-stretch w-full border border-primary-800 bg-blue'
@@ -78,43 +89,64 @@ const imageClasses = computed(() => [
                     return {
                         class: [
                             {
-                                'hidden': hasFile
+                                'absolute inset-0': hasFile
                             }
                         ]
                     }
                 },
             }"
         >
-            <template #header="{ chooseCallback, uploadCallback, clearCallback, files }">
+            <template #header="{ chooseCallback, uploadCallback, clearCallback, uploadedFiles, files }">
                 <div class="flex justify-center items-center w-full">
                     <Button 
                         @click="chooseCallback()" 
                         :type="'button'"
                         :size="'md'"
                         class="!w-fit absolute top-[calc(50%+2.5rem)]"
+                        v-if="!hasFile"
                     >
                         Select an image
                     </Button>
+                    <Button 
+                        @click="updateUpload(files, chooseCallback)" 
+                        :type="'button'"
+                        :size="'md'"
+                        class="!w-fit absolute top-[calc(50%)] group-hover:!z-10 hidden group-hover:flex"
+                        v-if="hasFile"
+                    >
+                        Change image
+                    
+                    </Button>
+                    
                 </div>
             </template>
             <template #content="{ files, uploadedFiles, removeUploadedFileCallback, removeFileCallback }">
                 <div 
                     v-if="files.length > 0"
-                    class="relative w-full h-full flex self-stretch" 
+                    class="relative w-full h-full flex self-stretch items-center justify-center group" 
                     :class="[
                         {
-                            'hover:cursor-no-drop': hasFile
+                            // 'hover:opacity-40': hasFile
                         }
                     ]">
+                    <!-- <Button 
+                        @click="editFile($event, removeFileCallback, files)" 
+                        :type="'button'"
+                        :size="'md'"
+                        class="!w-fit absolute !z-10 hidden group-hover:flex"
+                    >
+                        Change image
+                    </Button> -->
                     <img 
                         role="presentation" 
                         :alt="files[0].name" 
                         :src="files[0].objectURL" 
                         :class="imageClasses"
+                        class="group-hover:opacity-40"
                     />
                     <CircledTimesIcon 
                         class="absolute top-2 right-2 w-6 h-6 fill-white text-primary-900 hover:text-primary-500 cursor-pointer"
-                        @click="removeFile(removeFileCallback); hasFile = false;"  
+                        @click="removeFile(removeFileCallback); hasFile = false; selectFile(files)"  
                     />
                 </div>
             </template>
@@ -149,4 +181,6 @@ const imageClasses = computed(() => [
             </template>
         </FileUpload>
     </div>
+    <InputError :message="props.errorMessage" v-if="props.errorMessage" />
+</div>
 </template>

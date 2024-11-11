@@ -14,12 +14,12 @@ const props = defineProps ({
     user: {
         type: Object,
         required: true,
-    }
+    },
 })
 const emit = defineEmits(['close']);
 const isAccountDetailOpen = ref(false);
 const isEditModalOpen = ref(false);
-const { flashMessage } = useCustomToast();
+const { showMessage } = useCustomToast();
 
 
 const showAccountDetail = () => {
@@ -47,6 +47,11 @@ const form = useForm({
     name: props.user.name,
 })
 
+const profileForm = useForm({
+    image: props.user.image ? props.user.image : '',
+    id: props.user.id,
+})
+
 const submit = () => {
     form.post(route('profile.update'), {
         preserveScroll: true,
@@ -54,6 +59,12 @@ const submit = () => {
         onSuccess: () => {
             form.reset();
             emit('close');
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Changes saved.',
+                });
+            }, 200);
         },
         onError: (errors) => {
             console.error('Form submission error. ', errors);
@@ -65,9 +76,26 @@ const changeImage = () => {
     console.log('change image');
 }
 
-onMounted(async()=> {
-    flashMessage();
-})
+const changeProfilePic = () => {
+    profileForm.post(route('profile.updateProfile'), {
+        preserveScroll: true,
+        preserveState: 'errors',
+        onSuccess: () => {
+            profileForm.reset();
+            emit('close');
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'You’ve successfully changed your profile picture.',
+                });
+            }, 200);
+        },
+        onError: (errors) => {
+            console.error('Form submission error. ', errors);
+        }
+    })
+};
+
 </script>
 
 <template>
@@ -94,12 +122,13 @@ onMounted(async()=> {
         :title="'Account Detail'"
         @close="closeModal"
     >
-        <div class="flex items-start gap-6 self-stretch">
+        <form class="flex items-start gap-6 self-stretch" @submit.prevent="changeProfilePic">
             <DragDropImage
                 :inputName="'image'"
-                :errorMessage="form.errors.image"
-                v-model="form.image"
+                :errorMessage="profileForm.errors.image"
+                v-model="profileForm.image"
                 class="!size-[373px]"
+                @change="changeProfilePic"
             />
             <div class="flex flex-col items-start flex-[1_0_0] divide-y divide-grey-100">
                 <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
@@ -125,7 +154,7 @@ onMounted(async()=> {
                     />
                 </div>
             </div>
-        </div>
+        </form>
     </Modal>
 
     <Modal

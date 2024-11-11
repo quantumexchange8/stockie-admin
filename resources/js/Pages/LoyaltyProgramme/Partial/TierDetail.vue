@@ -212,7 +212,12 @@ const hideDeleteTierForm = () => {
                     </div>
                 </div>
                 <div class="flex gap-4 items-center self-stretch">
-                    <div class="w-6 h-6 rounded-full bg-[#FFE279]"></div>
+                    <!-- <div class="w-6 h-6 rounded-full bg-[#FFE279]"></div> -->
+                    <img 
+                        :src="props.tier.image ? props.tier.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                        alt="" 
+                        class="w-6 h-6 rounded-full"
+                    />
                     <span class="flex-[1_0_0] text-grey-900 text-md font-medium">{{ props.tier.name }}</span>
                 </div>
                 <div class="rounded-[5px] border-primary-100 border-[1px] flex gap-4 p-3 items-center">
@@ -248,7 +253,7 @@ const hideDeleteTierForm = () => {
                             </template>
                         </div>
                         <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                            <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ props.reward.name }}</span>
+                            <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ props.tier.name }}</span>
                             <span class="self-stretch text-primary-950 text-base font-medium">
                                 <template v-if="reward.reward_type === 'Discount (Amount)'">
                                     RM {{ reward.discount }} Discount

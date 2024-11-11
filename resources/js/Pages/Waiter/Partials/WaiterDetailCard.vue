@@ -5,6 +5,7 @@ import { ref, watch } from 'vue';
 import EditWaiter from './EditWaiter.vue';
 import Button from '@/Components/Button.vue';
 import Tag from '@/Components/Tag.vue';
+import { transactionFormat, usePhoneUtils } from '@/Composables';
 
 const props = defineProps({
     waiter: {
@@ -12,42 +13,12 @@ const props = defineProps({
         default: () => {},
     }
 })
-
 const waiterDetail = ref();
 const isEditWaiterOpen = ref(false);
 const isDeleteWaiterOpen = ref(false);
 const selectedWaiter = ref(null);
-
-const formatPhone = (phone) => {
-    if (!phone || phone.length < 10) 
-        return phone; 
-    
-    if (phone.startsWith('+60')) 
-        phone = phone.slice(3);
-
-        let firstPart, middlePart, lastPart;
-
-    if (phone.startsWith('11')) {
-        firstPart = phone.slice(0, 2);
-        middlePart = phone.slice(2, 6);
-        lastPart = phone.slice(6);
-    } else {
-        firstPart = phone.slice(0, 2);
-        middlePart = phone.slice(2, 5);
-        lastPart = phone.slice(5);
-    }
-        return `${firstPart} ${middlePart} ${lastPart}`;
-}
-
-const formatSalary = (salary) => {
-    if (!salary)
-        return salary;
-
-    if(salary.endsWith('.00'))
-        salary = salary.slice(0, -3);
-
-    return salary;
-}
+const { formatPhone } = usePhoneUtils();
+const { formatAmount } = transactionFormat();
 
 const showEditWaiterForm = (waiterDetail) => {
     isEditWaiterOpen.value = true;
@@ -88,10 +59,10 @@ watch( () => props.waiter, (newValue) => {
 
         <div class="flex flex-col justify-between">
             <div class="p-3 flex flex-row gap-6">
-                <div 
-                    class="w-[95px] h-[95px] rounded-[1.734px] bg-red-300"
-                >
-                </div>
+                <!-- <div class="w-[95px] h-[95px] rounded-[1.734px] bg-red-300"></div> -->
+                <img :src="waiterDetail.image ? waiterDetail.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                    alt=""
+                    class="w-[95px] h-[95px] rounded-[1.734px] bg-red-300">
                 <div 
                     class="flex flex-col bg-white gap-1"
                 >
@@ -109,7 +80,7 @@ watch( () => props.waiter, (newValue) => {
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">
                         <PhoneIcon class="text-primary-900"></PhoneIcon>
                     </div>
-                    <span class="font-md text-grey-900 py-[14px]">+60 {{ formatPhone(waiterDetail.phone) }}</span>
+                    <span class="font-md text-grey-900 py-[14px]">{{ formatPhone(waiterDetail.phone) }}</span>
                 </div>
                 <div class="w-full flex flex-row row-span-1 gap-4 items-center">
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">
@@ -121,7 +92,7 @@ watch( () => props.waiter, (newValue) => {
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">
                         <SalaryIcon class="text-primary-900"/>
                     </div>
-                    <span class="font-md text-grey-900 py-[14px]">RM {{ formatSalary(waiterDetail.salary) }}</span>
+                    <span class="font-md text-grey-900 py-[14px]">RM {{ formatAmount(waiterDetail.salary) }}</span>
                 </div>
             </div>
         </div>
@@ -139,6 +110,7 @@ watch( () => props.waiter, (newValue) => {
         <template v-if="selectedWaiter">
             <EditWaiter 
                 :waiters="selectedWaiter"
+                @close="hideForm"
             />
         </template>
     </Modal>

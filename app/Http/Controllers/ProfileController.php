@@ -46,13 +46,19 @@ class ProfileController extends Controller
             $user->update([
                 'name' => $request->name,
             ]);
-            $message = [
-                'severity' => 'success',
-                'summary' => 'Changes saved.'
-            ];
         }
 
-        return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = User::find($request->id);
+        if($request->hasFile('image') && $user){
+            $user->clearMediaCollection('user');
+            $user->addMedia($request->image)->toMediaCollection('user');
+        }
+
     }
 
     /**

@@ -23,7 +23,7 @@ const emit = defineEmits(['close'])
 const form = useForm({
     name: props.selectedGroup.name,
     // category_id: props.selectedGroup.category_id,
-    image: props.selectedGroup.image,
+    image: props.selectedGroup.image ? props.selectedGroup.image : '',
     items: [],
 });
 
@@ -40,7 +40,7 @@ const formSubmit = () => {
     });
 
     if (hasAddValue === true) {
-        form.put(route('inventory.updateInventoryItemStock', props.selectedGroup.id), {
+        form.post(route('inventory.updateInventoryItemStock', props.selectedGroup.id), {
             preserveScroll: true,
             preserveState: 'errors',
             onSuccess: () => {
@@ -76,7 +76,9 @@ const isFormValid = computed(() => {
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
-            <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div>
+            <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200">
+                <img :src="selectedGroup.image ? selectedGroup.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
+            </div>
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                 <div class="grid grid-cols-12 items-center self-stretch" v-for="(item, i) in form.items" :key="i">
                     <div class="col-span-10 flex flex-col justify-between items-start">

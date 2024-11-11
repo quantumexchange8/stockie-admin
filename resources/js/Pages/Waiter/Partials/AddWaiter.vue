@@ -34,6 +34,7 @@ const form = useForm({
     salary: "",
     stockie_email: "",
     password: "",
+    image: "",
 });
 
 const submit = () => {

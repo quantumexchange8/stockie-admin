@@ -22,10 +22,15 @@ const props = defineProps ({
             <div class="flex flex-col px-4 py-3 items-start flex-[1_0_0] rounded-tl-[5px] rounded-bl-[5px] bg-white shadow-[0_10px_11.2px_0px_rgba(75,12,14,0.52)]">
                 <div class="flex flex-col items-start self-stretch rounded-[5px]">
                     <template v-if="props.onDuty.length > 0">
-                        <template v-for="waiter in props.onDuty.slice(0, 5)" :key="waiter.id">
+                        <template v-for="waiter in props.onDuty.slice(0,5)" :key="waiter.id">
                             <div class="flex py-2 justify-between items-center self-stretch">
                                 <div class="flex items-center gap-[10px]">
-                                    <div class="w-10 h-10 shrink-0 rounded-full bg-primary-900"></div>
+                                    <!-- <div class="w-10 h-10 shrink-0 rounded-full bg-primary-900"></div> -->
+                                    <img 
+                                        :src="waiter.image ? waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        alt=""
+                                        class="w-10 h-10 shrink-0 rounded-full"
+                                    >
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
                                         <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ waiter.waiter_name }}</span>
                                         <template v-if="waiter.status !== 'No Record'">

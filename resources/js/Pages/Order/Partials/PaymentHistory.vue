@@ -72,7 +72,13 @@ const getKeepItemName = (item) => {
                             <p class="text-grey-900 text-base font-normal">#{{ order.order_no }}</p>
                             <span class="text-grey-200">&#x2022;</span>
                             <div class="flex flex-row gap-x-2 items-center">
-                                <div class="size-6 bg-primary-100 rounded-full" v-if="order.customer"></div>
+                                <!-- <div class="size-6 bg-primary-100 rounded-full" v-if="order.customer"></div> -->
+                                <img 
+                                    :src="order.customer?.image ? order.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt=""
+                                    class="size-6 rounded-full"
+                                    v-if="order.customer"
+                                >
                                 <p class="text-grey-900 text-base font-normal">{{ order.customer?.full_name ?? 'Guest' }}</p>
                             </div>
                         </div>
@@ -85,7 +91,12 @@ const getKeepItemName = (item) => {
                 <div class="w-full flex flex-col gap-y-2 items-start self-stretch">
                     <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
                         <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
-                            <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
+                            <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
+                            <img 
+                                :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                alt=""
+                                class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                            >
                             <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                 <div class="flex flex-row gap-x-2 self-stretch items-center">
                                     <Tag :value="getItemTypeName(item.type)" variant="blue" v-if="item.type !== 'Normal'"/>

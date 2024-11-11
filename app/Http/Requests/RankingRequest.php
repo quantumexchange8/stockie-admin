@@ -26,6 +26,7 @@ class RankingRequest extends FormRequest
             'min_amount' => 'required|integer',
             'reward' => 'required|string|max:255',
             // 'icon' => 'required|string|max:255',
+            'image' => 'required|image',
         ];
 
         $rules['name'] = $this->input('id') 
@@ -61,6 +62,8 @@ class RankingRequest extends FormRequest
             'reward.required' => 'This field is required.',
             'reward.string' => 'This field must be a string.',
             'reward.max' => 'This field must not exceed 255 characters.',
+            'image.image' => 'Invalid format.',
+            'image.required' => 'Icon is required.'
         ];
     }
 }

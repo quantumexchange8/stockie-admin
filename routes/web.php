@@ -69,7 +69,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
         Route::post('/products/storeFromInventoryItems', [ProductController::class, 'storeFromInventoryItems'])->name('products.storeFromInventoryItems');
         Route::post('/products/updateAvailability', [ProductController::class, 'updateAvailability'])->name('products.updateAvailability');
-        Route::put('/products/updateProduct/{id}', [ProductController::class, 'updateProduct'])->name('products.updateProduct');
+        Route::post('/products/updateProduct/{id}', [ProductController::class, 'updateProduct'])->name('products.updateProduct');
         Route::delete('/products/deleteProduct/{id}', [ProductController::class, 'deleteProduct'])->name('products.deleteProduct');
         Route::delete('/products/deleteProductItem/{id}', [ProductController::class, 'deleteProductItem'])->name('products.deleteProductItem');
         
@@ -80,14 +80,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/products/getTestingRecords', [ProductController::class, 'getTestingRecords'])->name('products.getTestingRecords');
         Route::get('/products/getInventoryItemStock/{id}', [ProductController::class, 'getInventoryItemStock'])->name('products.getInventoryItemStock');
         Route::get('/products/getProductSaleHistories/{id}', [ProductController::class, 'getProductSaleHistories'])->name('products.getProductSaleHistories');
+        Route::put('/products/updateProduct/{id}', [ProductController::class, 'updateProduct'])->name('products.updateProduct');
+        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::delete('/products/deleteProduct/{id}', [ProductController::class, 'deleteProduct'])->name('products.deleteProduct');
+        Route::delete('/products/deleteProductItem/{id}', [ProductController::class, 'deleteProductItem'])->name('products.deleteProductItem');
+        Route::post('/products/updateAvailability', [ProductController::class, 'updateAvailability'])->name('products.updateAvailability');
     });
 
      /********* Inventory **********/
      Route::prefix('inventory')->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
         Route::post('/inventory/store', [InventoryController::class, 'store'])->name('inventory.store');
-        Route::put('/inventory/updateInventoryItemStock/{id}', [InventoryController::class, 'updateInventoryItemStock'])->name('inventory.updateInventoryItemStock');
-        Route::put('/inventory/updateInventoryAndItems/{id}', [InventoryController::class, 'updateInventoryAndItems'])->name('inventory.updateInventoryAndItems');
+        Route::post('/inventory/updateInventoryItemStock/{id}', [InventoryController::class, 'updateInventoryItemStock'])->name('inventory.updateInventoryItemStock');
+        Route::post('/inventory/updateInventoryAndItems/{id}', [InventoryController::class, 'updateInventoryAndItems'])->name('inventory.updateInventoryAndItems');
         Route::delete('/inventory/deleteInventory/{id}', [InventoryController::class, 'deleteInventory'])->name('inventory.deleteInventory');
         
         Route::get('/inventory/keep_history', [InventoryController::class, 'viewKeepHistories'])->name('inventory.viewKeepHistories');
@@ -102,6 +107,7 @@ Route::middleware('auth')->group(function () {
     /******* Profile ********/
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/updateProfile', [ProfileController::class, 'updateProfile'])->name('profile.updateProfile');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     /******* Configuration ********/
@@ -139,6 +145,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/configurations/incentCommDetail/{id}', [ConfigEmployeeIncProgController::class, 'incentCommDetail'])->name('configuration.incentCommDetail');
         Route::delete('/configurations/deleteEntitled/{achievement}/{id}', [ConfigEmployeeIncProgController::class, 'deleteEntitled'])->name('configuration.deleteEntitled');
         Route::get('/configurations/updateStatus', [ConfigEmployeeIncProgController::class, 'updateStatus'])->name('configurations.updateStatus');
+        Route::get('/configurations/getIncentDetail', [ConfigEmployeeIncProgController::class, 'getIncentDetail'])->name('configurations.getIncentDetail');
 
         /******* Promotion ********/
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');
@@ -175,7 +182,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/point_details/{id}', [LoyaltyController::class, 'showPointDetails'])->name('loyalty-programme.points.show');
         Route::get('/points/recent_redemptions', [LoyaltyController::class, 'showRecentRedemptions'])->name('loyalty-programme.points.showRecentRedemptions');
         Route::post('/points', [LoyaltyController::class, 'storePoint'])->name('loyalty-programme.points.store');
-        Route::put('/points/{id}', [LoyaltyController::class, 'updatePoint'])->name('loyalty-programme.points.update');
+        Route::post('/points/{id}', [LoyaltyController::class, 'updatePoint'])->name('loyalty-programme.points.update');
         Route::delete('/points/{id}', [LoyaltyController::class, 'deletePoint'])->name('loyalty-programme.points.deletePoint');
         
         Route::get('/getPointHistories/{id?}', [LoyaltyController::class, 'getPointHistories'])->name('loyalty-programme.getPointHistories');

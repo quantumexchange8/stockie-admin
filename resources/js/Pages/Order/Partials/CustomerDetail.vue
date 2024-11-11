@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, getCurrentScope } from 'vue';
 import Tag from '@/Components/Tag.vue';
 import Button from '@/Components/Button.vue';
 import AddOrderItems from './AddOrderItems.vue';
@@ -9,9 +9,6 @@ import axios from 'axios';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import Modal from '@/Components/Modal.vue';
-import RemoveOrderItem from './RemoveOrderItem.vue';
-import KeepItem from './KeepItem.vue';
 import dayjs from 'dayjs';
 import KeepHistory from './KeepHistory.vue';
 
@@ -150,7 +147,12 @@ const isFormValid = computed(() => {
 
     <div class="w-full flex flex-col gap-6 items-start rounded-[5px] py-4 pr-1 max-h-[calc(100dvh-23rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="w-full flex flex-col items-center gap-3 pt-6">
-            <EmptyProfilePic />
+            <img 
+                :src="customer.image" 
+                alt=""
+                v-if="customer.image"
+            >
+            <EmptyProfilePic v-else/>
             <div class="w-full flex flex-col items-center gap-2">
                 <span class="text-primary-900 text-base font-semibold">{{ customer.full_name }}</span>
                 <div class="flex justify-center items-center gap-2">
@@ -187,12 +189,16 @@ const isFormValid = computed(() => {
                         @click="" />
                 </div>
                 <div class="w-full flex flex-col justify-center items-start gap-1 self-stretch">
-                    <div v-if="customer.tier !== 'No Tier'">
+                    <div v-if="customer.rank.name !== 'No Tier'">
                         <div class="flex flex-col justify-center items-center gap-[10px]">
-                            <CrownImage />
+                            <img 
+                                :src="customer.rank.image ? customer.rank.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                alt=""
+                                class="size-[48px]"
+                            >
                         </div>
                         <div class="flex flex-col justify-center items-center gap-2">
-                            <span class="text-primary-900 text-lg font-medium">{{ customer.tier }}</span>
+                            <span class="text-primary-900 text-lg font-medium">{{ customer.rank.name }}</span>
                         </div>
                     </div>
                     <div v-else>
@@ -222,13 +228,23 @@ const isFormValid = computed(() => {
                         </div>
                         <div class="flex items-center gap-3 self-stretch">
                             <div class="w-full flex items-start gap-3 self-stretch">
-                                <div class="rounded-[1.5px] size-[60px] bg-primary-25"></div>
+                                <!-- <div class="rounded-[1.5px] size-[60px] bg-primary-25"></div> -->
+                                <img 
+                                    :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt=""
+                                    class="rounded-[1.5px] size-[60px]"
+                                >
                                 <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                     <div class="flex items-center gap-1 self-stretch">
                                         <span class="text-grey-400 text-2xs font-normal">{{ item.expired_to ? `Expire on ${dayjs(item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
                                         <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                         <span class="text-primary-900 text-2xs font-normal">Kept by</span>
-                                        <span class="w-3 h-3 bg-red-900 rounded-full"></span>
+                                        <!-- <span class="w-3 h-3 bg-red-900 rounded-full"></span> -->
+                                        <img 
+                                            :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-3 h-3 rounded-full"
+                                        >
                                         <span class="text-primary-900 text-2xs font-normal">{{ item.waiter.full_name }}</span>
                                     </div>
                                     <span class="text-grey-900 line-clamp-1 self-stretch overflow-hidden text-ellipsis text-sm font-medium">{{ item.item_name }}</span>
@@ -271,7 +287,12 @@ const isFormValid = computed(() => {
                     <div class="flex flex-col gap-y-6">
                         <div class="w-full flex gap-x-2 items-center justify-between">
                             <div class="flex gap-x-3 items-center">
-                                <div class="rounded-[1.5px] size-[60px] bg-primary-25"></div>
+                                <!-- <div class="rounded-[1.5px] size-[60px] bg-primary-25"></div> -->
+                                <img 
+                                    :src="selectedItem.image ? selectedItem.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt=""
+                                    class="rounded-[1.5px] size-[60px]"
+                                >
                                 <p class="text-base text-grey-900 font-medium">
                                     {{ selectedItem.item_name }}
                                 </p>

@@ -27,7 +27,7 @@ const inventoriesArr = ref(props.inventoriesArr);
 
 const form = useForm({
     id: props.point.id,
-    image: props.point.image,
+    image: props.point.image ?? '',
     name: props.point.name,
     point: props.point.point.toString(),
     itemsDeletedBasket: [],
@@ -39,7 +39,7 @@ const form = useForm({
 });
 
 const formSubmit = () => { 
-    form.put(route('loyalty-programme.points.update', form.id), {
+    form.post(route('loyalty-programme.points.update', form.id), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => cancelForm(),
@@ -82,7 +82,8 @@ const isFormValid = computed(() => {
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[650px] pl-1 pr-2 py-1 overflow-y-scroll scrollbar-thin scrollbar-webkit">
             <DragDropImage
                 :inputName="'image'"
-                :errorMessage="form.errors.image"
+                :errorMessage="form.errors?.image || ''"
+                :modelValue="form.image"
                 v-model="form.image"
                 class="col-span-full md:col-span-4 h-[372px]"
             />

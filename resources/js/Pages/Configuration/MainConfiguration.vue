@@ -23,7 +23,6 @@ const props = defineProps({
     InactivePromotions: Array,
     merchant: Object,
 })
-
 const { flashMessage } = useCustomToast();
 
 onMounted(() => {

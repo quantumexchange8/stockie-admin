@@ -84,11 +84,9 @@ class InventoryController extends Controller
                                         ];
                                     });
 
-        // Get the flashed messages from the session
-        $message = $request->session()->get('message');
+        
 
         return Inertia::render('Inventory/Inventory', [
-            'message' => $message ?? [],
             'inventories' => $inventories,
             // 'outOfStockItems' => $outOfStockItems,
             'recentKeepHistories' => $recentKeepHistories,
@@ -137,13 +135,16 @@ class InventoryController extends Controller
         }
 
         $image = $request->hasFile('image') ? $request->file('image')->getClientOriginalName() : '';
-
+        
         $newGroup = Iventory::create([
             'name' => $validatedData['name'],
+            'category_id' => $validatedData['category_id'],
             // 'category_id' => $validatedData['category_id'],
             'image' => $image,
         ]);
 
+        $validatedData->hasFile('image') ? $newGroup->addMedia($validatedData->image)->toMediaCollection('inventory') : '';
+        
         if (count($validatedInventoryItems) > 0) {
             foreach ($validatedInventoryItems as $key => $value) {
                 if ($value['stock_qty'] === 0) {
@@ -278,7 +279,6 @@ class InventoryController extends Controller
     public function updateInventoryItemStock(Request $request, string $id)
     {
         $data = $request->all();
-        
         $replenishedItem = [];
 
         if (isset($id) && count($data['items']) > 0) {
@@ -387,8 +387,14 @@ class InventoryController extends Controller
 
             $existingGroup->update([
                 'name' => $inventoryData['name'],
-                // 'category_id' => $inventoryData['category_id'],
+            // 'category_id' => $inventoryData['category_id'],
             ]);
+
+            if($inventoryData->hasFile('image'))
+            {
+                $existingGroup->clearMediaCollection('inventory');
+                $existingGroup->addMedia($inventoryData->image)->toMediaCollection('inventory');
+            }
         }
 
         // Update inventory items data
@@ -548,11 +554,17 @@ class InventoryController extends Controller
             now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d')
         ];
 
-        $stockHistories = StockHistory::with('inventory:id,name')
+        $stockHistories = StockHistory::with('inventory:id,name,image')
                                         ->whereDate('created_at', '>=', $dateFilter[0])
                                         ->whereDate('created_at', '<=', $dateFilter[1])
                                         ->orderBy('created_at', 'desc')
                                         ->get();
+
+        $stockHistories->each(function ($stockHistory) {
+            if ($stockHistory->inventory) {
+                $stockHistory->inventory->image = $stockHistory->inventory->getFirstMediaUrl('inventory');
+            }
+        });
 
         // Get the flashed messages from the session
         $message = $request->session()->get('message');

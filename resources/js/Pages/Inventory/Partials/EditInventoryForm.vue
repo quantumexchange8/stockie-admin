@@ -35,7 +35,7 @@ const form = useForm({
     id: props.group.id,
     name: props.group.name,
     // category_id: parseInt(props.group.category_id),
-    image: props.group.image,
+    image: props.group.image ? props.group.image : '',
     items: props.selectedGroup 
             ?   props.selectedGroup.map((item) => {
                     item.low_stock_qty = item.low_stock_qty.toString();
@@ -45,7 +45,7 @@ const form = useForm({
 });
 
 const formSubmit = () => { 
-    form.put(route('inventory.updateInventoryAndItems', props.group.id), {
+    form.post(route('inventory.updateInventoryAndItems', props.group.id), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
@@ -79,7 +79,15 @@ const removeItem = (index) => {
 <template>
     <form class="flex flex-col gap-6 min-h-full max-h-screen" novalidate @submit.prevent="formSubmit">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[60vh] overflow-y-scroll scrollbar-thin scrollbar-webkit">
-            <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div>
+            <!-- <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div> -->
+             <DragDropImage
+                :inputName="'image'"
+                :remarks="'Suggested image size: 1200 x 1200 pixel'"
+                :model="form.image"
+                :errorMessage="form.errors.image"
+                v-model="form.image"
+                class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"
+             />
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 self-stretch">
                 <TextInput
                     :inputName="'name'"

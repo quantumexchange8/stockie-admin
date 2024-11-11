@@ -12,9 +12,9 @@ const props = defineProps({
     tiers: Array,
     redeemableItems: Array,
     inventoryItems: Array,
-    totalPointsGivenAway: Number
+    totalPointsGivenAway: Number,
+    logos: Array,
 });
-
 const home = ref({
     label: 'Loyalty Programme',
 });
@@ -105,6 +105,7 @@ onMounted(() => {
                     :columns="tiersColumns"
                     :rows="tiers"
                     :rowType="rowType"
+                    :logos="logos"
                     :actions="actions[1]"
                     :totalPages="tiersTotalPages"
                     :rowsPerPage="tiersRowsPerPage"

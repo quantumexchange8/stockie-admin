@@ -198,7 +198,13 @@ onMounted(() => {
             <div class="flex flex-col items-start max-h-[316px] gap-0.5 self-stretch divide-y divide-grey-50 overflow-auto scrollbar-webkit">
                 <template v-for="items in filteredProducts">
                     <div class="flex p-2 items-center gap-3 self-stretch">
-                        <div class="size-10 bg-primary-200"></div>
+                        <!-- <div class="size-10 bg-primary-200"></div> -->
+                        <img 
+                            :src="items.image ? items.image 
+                                            : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt=""
+                            class="size-10"
+                        />
                         <span class="line-clamp-1 flex-[1_0_0] text-grey-900 text-ellipsis text-sm font-medium">{{ items.product_name }}</span>
                         <Checkbox 
                             :checked="selectedProducts.some(product => product.id === items.id)"

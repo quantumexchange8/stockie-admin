@@ -48,29 +48,6 @@ const csvExport = () => {
     exportToCSV(mappedData, `${waiterName}_Monthly Incentive Report`);
 }
 
-// const exportToCSV = () => { 
-//     const dataArr = [];
-//     const currentDateTime = dayjs().format('YYYYMMDDhhmmss');
-//     const waiterName = props.waiter || 'Unknown_Waiter';
-//     const fileName = `Waiter_${waiterName}_Monthly Incentive Report_${currentDateTime}.csv`;
-//     const contentType = 'text/csv;charset=utf-8;';
-
-//     if (incentiveData.value && incentiveData.value.length > 0) {
-//         incentiveData.value.forEach(row => {
-//             dataArr.push({
-//                 'Date': row.monthYear,
-//                 'Total': row.totalSales,
-//                 'Incentive': row.incentiveAmt,
-//                 'Status': row.status,
-//             })
-//         });
-
-//         const myLogs = arrayToCsv(dataArr);
-        
-//         downloadBlob(myLogs, fileName, contentType);
-//     }
-// }
-
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
@@ -160,7 +137,7 @@ const filters = ref({
                                     ( RM {{ incentiveData.rate }} of total sales )
                                 </template>
                                 <template v-if="incentiveData.type == 'percentage'">
-                                     ( {{ incentiveData.rate * 100 }}% of total sales )
+                                     ( {{ parseInt(incentiveData.rate * 100) }}% of total sales )
                                 </template>
                             </span>
                     </div>

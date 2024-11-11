@@ -177,7 +177,7 @@ const getKeepItemName = (item) => {
 const orderedBy = computed(() => {
     if (!order.value?.order_items?.length || !props.users?.length || props.tableStatus === 'Pending Clearance') return [];
 
-    const userMap = new Map(props.users.map(({ id, full_name }) => [id, full_name]));
+    const userMap = new Map(props.users.map(({ id, full_name, image }) => [id, {full_name, image}]));
 
     const uniqueUsers = [...new Set(order.value.order_items.map(({ user_id }) => user_id))];
 
@@ -257,8 +257,15 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                     <div class="basis-1/2 flex flex-col gap-2 items-start">
                         <p class="text-grey-900 text-sm font-medium">Ordered by</p>
                         <div class="flex whitespace-nowrap items-center gap-2">
-                            <div class="size-6 bg-primary-100 rounded-full" v-for="user in orderedBy"></div>
-                            <p class="text-grey-900 text-base font-medium" :class="{'!text-grey-300': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0] : 'No order yet' }}</p>
+                            <!-- <div class="size-6 bg-primary-100 rounded-full" v-for="user in orderedBy"></div> -->
+                             <template  v-for="user in orderedBy" >
+                                <img 
+                                    :src="user.image ? user.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt=""
+                                    class="size-6 rounded-full"
+                                >
+                             </template>
+                            <p class="text-grey-900 text-base font-medium" :class="{'!text-grey-300': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0].full_name : 'No order yet' }}</p>
                             <!-- <p class="text-grey-800 text-sm font-semibold">{{ order.waiter?.full_name ?? '' }}</p> -->
                         </div>
                     </div>
@@ -292,7 +299,12 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in pendingServeItems" :key="index">
                                 <div class="col-span-1"><div class="size-[30px] flex items-center justify-center bg-primary-900 rounded-[5px] text-primary-25 text-2xs font-semibold">x{{ item.item_qty }}</div></div>
                                 <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
-                                    <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
+                                    <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
+                                    <img 
+                                        :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        alt=""
+                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                    >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
                                             <span class="text-primary-800">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Normal' ? item.product.product_name : getKeepItemName(item) }}
@@ -328,7 +340,12 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in servedItems" :key="index">
                                 <div class="col-span-1"><div class="size-[30px] flex items-center justify-center bg-primary-900 rounded-[5px] text-primary-25 text-2xs font-semibold">x{{ item.item_qty }}</div></div>
                                 <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
-                                    <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
+                                    <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
+                                    <img 
+                                        :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        alt=""
+                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                    >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
                                             <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Normal' ? item.product.product_name : getKeepItemName(item) }}
@@ -342,8 +359,13 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                 </div>
                                 <div class="col-span-3 flex flex-col justify-center items-end gap-2 self-stretch">
                                     <div class="flex flex-nowrap gap-1 items-center">
-                                        <div class="p-2 size-4 bg-primary-100 rounded-full border-[0.3px] border-grey-100"></div>
-                                        <p class="text-xs text-grey-900 font-medium">{{ item.handled_by.name }}</p>
+                                        <!-- <div class="p-2 size-4 bg-primary-100 rounded-full border-[0.3px] border-grey-100"></div> -->
+                                        <img 
+                                            :src="item.handled_by.image ? item.handled_by.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="p-2 size-4 rounded-full border-[0.3px] border-grey-100"
+                                        >
+                                        <p class="text-xs text-grey-900 font-medium">{{ item.handled_by.full_name }}</p>
                                     </div>
                                 </div>
                             </div>

@@ -24,8 +24,9 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
+
         $customers = Customer::with([
-                                    'ranking',
+                                    'rank:id,name',
                                     'keepItems' => function ($query) {
                                         $query->where('status', 'Keep')
                                             ->with(['orderItemSubitem.productItem.product', 'waiter']);
@@ -36,6 +37,7 @@ class CustomerController extends Controller
                                     }
                                 ])->get();
 
+        // dd($customers);                            
         $customers = $customers->map(function ($customer) {
             $activeKeepItems = $customer->keepItems
                 ->where('qty', '>', 0)
@@ -50,21 +52,27 @@ class CustomerController extends Controller
                         'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
                         'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
                         'waiter_name' => $keepItem->waiter->full_name ?? 'N/A',
+                        'image' => $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product'),
+                        'waiter_pic' => $keepItem->waiter->getFirstMediaUrl('user'),
                     ];
                 })->toArray(); 
 
                 return [
-                "id" => $customer->id,
-                "tier" => $customer->ranking->name ?? 'N/A', 
-                "name" => $customer->full_name,
-                "email" => $customer->email,
-                "phone" => $customer->phone,
-                "points" => $customer->point,
-                "keep" => $customer->keep_items_count,
-                "keep_items" => $activeKeepItems,
-                "created_at" => $customer->created_at->format("d/m/Y"),
-            ];
+                    "id" => $customer->id,
+                    "tier" => $customer->rank->name, 
+                    "name" => $customer->full_name,
+                    "email" => $customer->email,
+                    "phone" => $customer->phone,
+                    "points" => $customer->point,
+                    "keep" => $customer->keep_items_count,
+                    "keep_items" => $activeKeepItems,
+                    "created_at" => $customer->created_at->format("d/m/Y"),
+                    "image" => $customer->getFirstMediaUrl('user'),
+                    "tier_image" => $customer->rank->getFirstMediaUrl('ranking'),
+                ];
         });
+
+        // dd($customers);
         $message = $request->session()->get('message');
 
         return Inertia::render("Customer/Customer", [
@@ -99,10 +107,10 @@ class CustomerController extends Controller
         $queries = Customer::query();
     
         if (isset($request['checkedFilters'])) {
-            $queries->with('ranking')->where(function (Builder $query) use ($request) {
+            $queries->with('rank')->where(function (Builder $query) use ($request) {
                 // Apply filter for 'tier'
                 if (isset($request['checkedFilters']['tier']) && count($request['checkedFilters']['tier']) > 0) {
-                    $query->whereHas('ranking', function ($rankQuery) use ($request) {
+                    $query->whereHas('rank', function ($rankQuery) use ($request) {
                         $rankQuery->whereIn('name', $request['checkedFilters']['tier']);
                     });
                 }
@@ -119,7 +127,7 @@ class CustomerController extends Controller
             }
         }
     
-        $queries->with('ranking')->withCount('keepItems');
+        $queries->with('rank')->withCount('keepItems');
 
         $results = $queries->get();
 
@@ -215,6 +223,9 @@ class CustomerController extends Controller
 
     public function customerPoints () {
         $redeemables = Point::select('id','name', 'point')->get();
+        $redeemables->each(function($redeemable){
+            $redeemable->image = $redeemable->getFirstMediaUrl('point');
+        });
         
         return response()->json($redeemables);
     }
@@ -233,6 +244,7 @@ class CustomerController extends Controller
                     return [
                         "id" => $item->point->id,
                         "name" => $item->point->name ?? 'N/A',
+                        "image" => $item->point->getFirstMediaUrl('point'),
                         "qty" => $item->item_qty,
                         "redeemed" => ($item->point_redeemed * $item->item_qty),
                     ];

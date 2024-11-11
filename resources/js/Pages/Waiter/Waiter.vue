@@ -32,6 +32,10 @@ const props = defineProps({
         type: Array,
         default: () => {},
     },
+    image: {
+        type: Array,
+        default: () => {},
+    },
     waiterNames: {
         type: Array,
         default: () => {},
@@ -51,6 +55,7 @@ const rowType = {
 
 const waiterIds = ref(props.waiterIds);
 const waiterSales = ref(props.waiterSales);
+const waiterImages = ref(props.image);
 const waiterNames = ref(props.waiterNames);
 const waiterCommission = ref(props.waiterCommission);
 const selected = ref('This month');
@@ -161,6 +166,7 @@ const filters = ref({
                         <SalesPerformance 
                             :waiterName="waiterIds"
                             :waiterSales="waiterSales"
+                            :waiterImages="waiterImages"
                             @applyFilter="applyFilter"
                         />
                     </div>

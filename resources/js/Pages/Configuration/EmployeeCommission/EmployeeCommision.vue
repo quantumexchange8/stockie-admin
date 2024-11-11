@@ -169,8 +169,14 @@ onMounted (() => {
             </template>
             <template #product="rows">
                 <div class="flex gap-2">
-                    <template v-for="(product, index) in rows.product" :key="index">
-                        <div class="bg-primary-200 border-[0.2px] border-solid border-grey-100 rounded-[1px] size-10"></div>
+                    <template v-for="(image, index) in rows.image" :key="index">
+                        <!-- <div class="bg-primary-200 border-[0.2px] border-solid border-grey-100 rounded-[1px] size-10"></div> -->
+                        <img 
+                            :src="image ? image 
+                                        : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt=""
+                            class="border-[0.2px] border-solid border-grey-100 rounded-[1px] size-10"
+                        />
                     </template>
                 </div>
             </template>

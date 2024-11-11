@@ -122,7 +122,17 @@ const isFormValid = computed(() => {
                     :inputArray="options"
                     :labelText="'Product with this commission'"
                     v-model="form.involvedProducts"
-                />
+                >
+                    <template #optionLabel>
+                        <!-- <div class="size-7 bg-primary-700 rounded-full"></div> -->
+                        <img 
+                            :src="props.productToAdd.image ? props.productToAdd.image 
+                                                            : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt=""
+                            class="size-7 rounded-full"
+                        >
+                    </template>  
+                </MultiSelect>
             </div>
         </div>
 

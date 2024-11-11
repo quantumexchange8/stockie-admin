@@ -169,7 +169,13 @@ const closeOverlay = () => op.value.hide();
                 <template #res_time="row">{{ dayjs(row.reservation_date).format('HH:mm') }}</template>
                 <template #name="row">
                     <div class="flex items-center gap-x-2">
-                        <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div>
+                        <!-- <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div> -->
+                        <img 
+                            :src="row.reserved_for.image ? row.reserved_for.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt=""
+                            class="size-4 rounded-full"
+                            v-if="row.customer_id"
+                        >
                         {{ row.name }}
                     </div>
                 </template>

@@ -24,7 +24,7 @@ class InventoryRequest extends FormRequest
     {
         $rules = [
             // 'category_id' => 'required|integer',
-            // 'image' => 'required|image',
+            'image' => 'required|image',
         ];
 
         if ($this->input('id')) {
@@ -58,6 +58,7 @@ class InventoryRequest extends FormRequest
             'max' => 'This field must not exceed 255 characters.',
             'unique' => 'This field must have a unique name.',
             'integer' => 'This field must be an integer.',
+            'image' => 'Invalid format.'
         ];
     }
 }

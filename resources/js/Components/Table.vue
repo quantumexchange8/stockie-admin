@@ -623,10 +623,17 @@ onMounted(() => {
                                 ]"
                             >
                                 <div 
-                                    class="w-full h-[168px] cursor-pointer"
-                                    :class="{'hover:bg-primary-50': item.stock_left !== 0 }"
+                                    class="w-full cursor-pointer"
+                                    :class="{'hover:bg-primary-50 h-[168px] ': item.stock_left !== 0 }"
                                     @click="redirectAction(mergedActions.view(item.id))"
                                 >
+                                <img 
+                                    :src="item.stock_left > 0 
+                                            ? (item.image || 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png') 
+                                            : ''" 
+                                    alt="" 
+                                    :class="item.stock_left > 0 ? 'h-full w-full' : ''"
+                                    />
                                 </div>
                                 <span class="absolute top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.stock_left === 0">Out of Stock</span>
                                 <div class="flex p-[2px] items-start flex-shrink-0 gap-0.5" v-if="item.stock_left > 0">

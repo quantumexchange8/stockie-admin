@@ -52,7 +52,10 @@ const props = defineProps({
                 </template>
                 <template #product="row">
                     <div class="flex flex-nowrap items-start gap-4">
-                        <div class="bg-grey-50 border border-grey-200 h-10 w-10"></div>
+                        <img class="bg-grey-50 border border-grey-200 h-10 w-10" 
+                            :src="row.image ? row.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                            alt=""
+                        />
                         <div class="flex flex-col flex-nowrap items-start justify-center gap-1">
                             <span class="text-grey-900 text-sm font-medium overflow-hidden text-ellipsis">{{ row.product_name }}</span>
                             <span class="text-grey-500 text-xs font-medium">RM {{ row.price }}</span>

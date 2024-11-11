@@ -24,6 +24,7 @@ class PointRequest extends FormRequest
     {
         $rules = [
             'point' => 'required|integer',
+            'image' => 'required|image'
         ];
 
         $rules['name'] = $this->input('id') 
@@ -43,6 +44,7 @@ class PointRequest extends FormRequest
         return [
             'name' => 'Item Name',
             'point' => 'Point',
+            'image' => 'Image',
         ];
     }
 
@@ -55,6 +57,8 @@ class PointRequest extends FormRequest
             'name.unique' => 'This field must have a unique code.',
             'point.required' => 'This field is required.',
             'point.integer' => 'This field must be an integer.',
+            'image.required' => 'Image is required.',
+            'image.image' => 'Invalid format.',
         ];
     }
 }

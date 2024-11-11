@@ -13,6 +13,10 @@ const props = defineProps ({
     waiterSales: {
         type: Array,
         default: () => {},
+    },
+    waiterImages: {
+        type: Array,
+        default: () => {},
     }
 })
 const emit = defineEmits(['applyFilter']);

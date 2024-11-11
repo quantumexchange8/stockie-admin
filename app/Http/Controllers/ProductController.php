@@ -62,6 +62,10 @@ class ProductController extends Controller
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
 
+        $products->each(function($product){
+            $product->image = $product->getFirstMediaUrl('products');
+        });
+
         return Inertia::render('Product/Product', [
             'message' => $message ?? [],
             'products' => $products,
@@ -227,6 +231,10 @@ class ProductController extends Controller
             'status' => $this->getProductStatus($validatedProductItems),
             'availability' => 'Available',
         ]);
+
+        if (isset($validatedData['image']) && $validatedData['image'] instanceof \Illuminate\Http\UploadedFile) {
+            $newProduct->addMedia($validatedData['image'])->toMediaCollection('product');
+        }
 
         if (count($validatedProductItems) > 0) {
             foreach ($validatedProductItems as $key => $value) {
@@ -462,6 +470,7 @@ class ProductController extends Controller
     {
         // Get validated product data
         $validatedData = $request->validated();
+        // dd($request->all()) ;
 
         // Get product items
         $productItemData = $request->input('items');
@@ -521,7 +530,7 @@ class ProductController extends Controller
         $existingProduct = isset($id) ? Product::with('productItems')->find($id) : null;
         
         // Delete product items
-        if (count($request->itemsDeletedBasket) > 0 && !is_null($existingProduct)) {
+        if ($request->bucket && $request->itemsDeletedBasket && count($request->itemsDeletedBasket) > 0 && $existingProduct) {
             $existingProduct->productItems()
                             ->whereIn('id', $request->itemsDeletedBasket)
                             ->delete();
@@ -537,6 +546,11 @@ class ProductController extends Controller
                 'category_id' => $validatedData['category_id'],
                 // 'keep' => $validatedData['keep'],
             ]);
+
+            if (isset($validatedData['image']) && $validatedData['image'] instanceof \Illuminate\Http\UploadedFile) {
+                $existingProduct->clearMediaCollection('product');
+                $existingProduct->addMedia($validatedData['image'])->toMediaCollection('product');
+            }
         }
 
         if (count($validatedProductItems) > 0) {

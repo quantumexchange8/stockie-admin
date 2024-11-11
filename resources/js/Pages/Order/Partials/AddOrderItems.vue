@@ -210,7 +210,12 @@ const quantityComputed = (productId) => {
                                 <template v-if="filteredProducts.length > 0">
                                     <div class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3" v-for="product in filteredProducts">
                                         <div class="col-span-full sm:col-span-8 flex items-center gap-3">
-                                            <div class="size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
+                                            <!-- <div class="size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
+                                            <img 
+                                                :src="product.image ? product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                alt=""
+                                                class="size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                            >
                                             <div class="flex flex-col justify-center items-start self-stretch gap-2">
                                                 <p class="text-grey-900 text-ellipsis overflow-hidden text-base font-medium self-stretch">{{ product.product_name }}</p>
                                                 <div class="flex items-center gap-2">
@@ -254,7 +259,12 @@ const quantityComputed = (productId) => {
                                         :key="product.id" 
                                     >
                                         <div class="col-span-full sm:col-span-8 flex items-center gap-3">
-                                            <div class="size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
+                                            <!-- <div class="size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
+                                            <img 
+                                                :src="product.image ? product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                alt=""
+                                                class="size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                            >
                                             <div class="flex flex-col justify-center items-start self-stretch gap-2">
                                                 <p class="text-grey-900 text-ellipsis overflow-hidden text-base font-medium self-stretch">{{ product.product_name }}</p>
                                                 <div class="flex items-center gap-2">

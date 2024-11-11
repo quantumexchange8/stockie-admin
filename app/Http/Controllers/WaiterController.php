@@ -4,13 +4,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\WaiterRequest;
 use App\Models\ConfigEmployeeComm;
 use App\Models\ConfigEmployeeCommItem;
-use App\Models\ConfigIncentive;
 use App\Models\ConfigIncentiveEmployee;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
-use App\Models\Waiter;
 use App\Models\WaiterAttendance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,12 +24,17 @@ class WaiterController extends Controller
    public function waiter(Request $request)
    {
         $waiters = User::where('role', 'waiter')->get();
-        // dd($waiters);
+        $waiters->each(function($waiter){
+            $waiter->image = $waiter->getFirstMediaUrl('user');
+        });
 
         $message = $request->session()->get('message');
 
         //for sales performance graph 
-        $allWaiters = User::where('role', 'waiter')->select('id', 'full_name')->get()->keyBy('id');
+        $allWaiters = User::where('role', 'waiter')
+                            ->select('id', 'full_name', 'profile_photo')
+                            ->get()
+                            ->keyBy('id');
 
         $waitersSalesDetail = OrderItem::with('order.waiter')
                                         ->where('status', 'Served')
@@ -54,12 +57,14 @@ class WaiterController extends Controller
             $waitersDetail[] = [
                 'waiter_name' => $waiter->full_name,
                 'total_sales' => $salesDetail ? (int)$salesDetail['total_sales'] : 0,
+                'image' => $waiter->getFirstMediaUrl('user'),
             ];
         }
 
         // dd($allWaiters);
         $waiterIds = array_column($waitersDetail, 'waiter_name');
         $waiterSales = array_column($waitersDetail, 'total_sales');
+        $waiterImages = array_column($waitersDetail, 'image');
 
         //for commission earned
         //step 1: get the purchased items
@@ -69,21 +74,25 @@ class WaiterController extends Controller
                                 ->whereMonth('created_at', now()->month)
                                 ->whereYear('created_at', now()->year)
                                 ->get();
+        
         $waitersList = User::where('role', 'waiter')->get()->keyBy('id'); 
         $result = [];
 
+        //prepare for each waiter
         foreach ($waitersList as $waiter) {
             $result[$waiter->id] = [
                 'waiterId' => $waiter->id,
                 'waiterName' => $waiter->full_name,
                 'commission' => 0, 
             ];
+            // dd($result[$waiter->id]);
         }
-        foreach ($purchased as $order) {
 
+        foreach ($purchased as $order) {
             $waiterId = $order->user_id;
             $itemQty = $order->item_qty;
             $productPrice = $order->product->price;
+            
             $commId = ConfigEmployeeCommItem::where('item', $order->product_id)
                                             ->where('created_at', '<=', $order->created_at)
                                             ->pluck('comm_id');
@@ -93,6 +102,7 @@ class WaiterController extends Controller
                                             ->get()
                                             ->toArray();
             foreach ($commType as $comm) {
+                // Log::info($order->handledBy->role);
                 $rate = $comm['rate']; 
                 $commTypeValue = $comm['comm_type']; 
                 if ($commTypeValue === 'Fixed amount per sold product') {
@@ -101,17 +111,15 @@ class WaiterController extends Controller
                     $commission = $productPrice * $rate / 100 * $itemQty;
                 }
 
-                if (isset($result[$waiterId])) {
+                if (isset($result[$waiterId]) && $order->handledBy->role === 'waiter') {
                     $result[$waiterId]['commission'] += $commission; 
                 }
             }
         }
 
-        // dd($purchased);
-
         $name = array_column($result, 'waiterName');
         $commission = array_map(function($value) {
-            return (float)number_format(ceil($value * 100) / 100, 2, '.', '');
+            return (float)number_format(ceil($value * 100) / 100, 2, '.', ',');
         }, array_column($result, 'commission'));
 
 
@@ -120,6 +128,7 @@ class WaiterController extends Controller
             'message'=> $message ?? [],
             'waiterIds' => $waiterIds,
             'waiterSales' => $waiterSales,
+            'image' => $waiterImages,
             'waiterNames' => $name,
             'waiterCommission' => $commission,
         ]);
@@ -133,17 +142,23 @@ class WaiterController extends Controller
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
         ]);
 
-       User::create([
-            'name' => $request->username,
-            'full_name' => $request->name,
-            'phone' => $request->phone,
-            'email'=>$request->email,
-            'role_id' => $request->role_id,
-            'role' => 'waiter',
-            'salary'=> $request->salary,
-            'worker_email' => $request->stockie_email,
-            'password' => Hash::make($request->stockie_password),
-       ]);
+       $newWaiter = User::create([
+                'name' => $request->username,
+                'full_name' => $request->name,
+                'phone' => $request->phone,
+                'email'=>$request->email,
+                'role_id' => $request->role_id,
+                'role' => 'waiter',
+                'salary'=> $request->salary,
+                'worker_email' => $request->stockie_email,
+                'password' => Hash::make($request->stockie_password),
+                'profile_photo' => $request->image,
+        ]);
+
+       if($request->hasFile('image'))
+       {
+            $newWaiter->addMedia($request->image)->toMediaCollection('user');
+       }
 
        return redirect()->route('waiter');
    }
@@ -174,7 +189,12 @@ class WaiterController extends Controller
             'worker_email' => $request->input('stockie_email'),
             'password' => $request->input('password'),
         ]);
-        // dd($request->all());
+
+        if($request->hasFile('image')){
+            $editWaiter->clearMediaCollection('user');
+            $editWaiter->addMedia($request->image)->toMediaCollection('user');
+        }
+
         return redirect()->route('waiter');
    }
 
@@ -182,8 +202,7 @@ class WaiterController extends Controller
    {    
         //waiter
         $waiterDetail = User::find($id);
-                            // ->where('role', 'waiter')
-                            // ->get();
+        $waiterDetail->image = $waiterDetail->getFirstMediaUrl('user');
         
         //attendance
         $attendance = WaiterAttendance::where('user_id', $id)
@@ -604,56 +623,56 @@ class WaiterController extends Controller
     public function filterCommEarned (Request $request)
     {
         //step 1: get the purchased items
-        $purchased = Order::with(['orderItems.product'])
-                            ->when($request->input('selectedFilter') === 'This month', function ($query) {
-                                $query->whereMonth('created_at', now()->month)
-                                    ->whereYear('created_at', now()->year);
-                            })
-                            ->when($request->input('selectedFilter') === 'This year', function ($query) {
-                                $query->whereYear('created_at', now()->year);
-                            })
-                            ->where('status', 'Order Completed')
-                            ->get();
+        $purchased = OrderItem::with('product.productItems.commItems.configComms', 'handledBy')
+                                ->where('status', 'Served')
+                                ->where('type', 'Normal')
+                                ->when($request->input('selectedFilter') === 'This month', function ($query) {
+                                    $query->whereMonth('created_at', now()->month)
+                                        ->whereYear('created_at', now()->year);
+                                })
+                                ->when($request->input('selectedFilter') === 'This year', function ($query) {
+                                    $query->whereYear('created_at', now()->year);
+                                })
+                                ->get();
+        
         $waitersList = User::where('role', 'waiter')->get()->keyBy('id'); 
         $result = [];
 
+        //prepare for each waiter
         foreach ($waitersList as $waiter) {
             $result[$waiter->id] = [
                 'waiterId' => $waiter->id,
                 'waiterName' => $waiter->full_name,
                 'commission' => 0, 
             ];
+            // dd($result[$waiter->id]);
         }
-
-        // $purchased = Order::with(['orderItems.product'])->get();
 
         foreach ($purchased as $order) {
             $waiterId = $order->user_id;
+            $itemQty = $order->item_qty;
+            $productPrice = $order->product->price;
+            
+            $commId = ConfigEmployeeCommItem::where('item', $order->product_id)
+                                            ->where('created_at', '<=', $order->created_at)
+                                            ->pluck('comm_id');
 
-            foreach ($order->orderItems as $orderItem) {
-                $itemQty = $orderItem->item_qty;
-                $productPrice = $orderItem->product->price;
-                $commId = ConfigEmployeeCommItem::where('item', $orderItem->product_id)
-                                                ->where('created_at', '<=', $orderItem->created_at)
-                                                ->pluck('comm_id');
+            $commType = ConfigEmployeeComm::whereIn('id', $commId)
+                                            ->select('comm_type', 'rate')
+                                            ->get()
+                                            ->toArray();
+            foreach ($commType as $comm) {
+                // Log::info($order->handledBy->role);
+                $rate = $comm['rate']; 
+                $commTypeValue = $comm['comm_type']; 
+                if ($commTypeValue === 'Fixed amount per sold product') {
+                    $commission = $rate * $itemQty;
+                } else {
+                    $commission = $productPrice * $rate / 100 * $itemQty;
+                }
 
-                $commType = ConfigEmployeeComm::whereIn('id', $commId)
-                                                ->select('comm_type', 'rate')
-                                                ->get()
-                                                ->toArray();
-
-                foreach ($commType as $comm) {
-                    $rate = $comm['rate']; 
-                    $commTypeValue = $comm['comm_type']; 
-                    if ($commTypeValue === 'Fixed amount per sold product') {
-                        $commission = $rate * $itemQty;
-                    } else {
-                        $commission = $productPrice * $rate / 100 * $itemQty;
-                    }
-
-                    if (isset($result[$waiterId])) {
-                        $result[$waiterId]['commission'] += $commission; 
-                    }
+                if (isset($result[$waiterId]) && $order->handledBy->role === 'waiter') {
+                    $result[$waiterId]['commission'] += $commission; 
                 }
             }
         }

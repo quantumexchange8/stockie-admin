@@ -9,6 +9,7 @@ import Toast from "@/Components/Toast.vue";
 import Table from "@/Components/Table.vue";
 import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
 import { DeleteIllus } from "@/Components/Icons/illus";
+import DragDropImage from "@/Components/DragDropImage.vue";
 
 const props = defineProps({
     merchant: Object,
@@ -45,6 +46,7 @@ const form = useForm({
     merchant_id: props.merchant.id ?? '',
     merchant_name: props.merchant.merchant_name ?? '',
     merchant_contact: props.merchant.merchant_contact ?? '',
+    merchant_image: props.merchant.merchant_image ?? null,
     merchant_contact_temp: formatPhone(props.merchant.merchant_contact, true, true),
     merchant_address: props.merchant.merchant_address ?? '',
     name: '',
@@ -301,8 +303,8 @@ watch(() => taxes.value, (newValue) => {
                 <EditIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="editDetails" />
             </div>
             <div class="w-full flex items-center gap-6 ">
-                <div class="w-[240px] h-[240px] bg-gray-200">
-                
+                <div class="!w-[240px] !h-[240px]">
+                    <img :src="form.merchant_image ? form.merchant_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
                 </div>
                 <div class="w-full flex flex-col justify-between items-start flex-[1_0_0] self-stretch divide-y divide-grey-100">
                     <div class="flex h-full justify-between items-center self-stretch">
@@ -428,10 +430,19 @@ watch(() => taxes.value, (newValue) => {
         :closeable="true" 
         @close="closeEditDetails"
     >
-        <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
+        <form class="flex flex-col gap-6" @submit.prevent="formSubmit">
             <div class="flex gap-6">
-                <div class="w-1/3 h-[372px] bg-gray-200">
-                    
+                <div class="!size-[373px]">
+                    <!-- <img :src="form.merchant_image ? form.merchant_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt=""
+                        class="hover:bg-grey-900"
+                    > -->
+                    <DragDropImage
+                        inputName="merchant_image"
+                        remarks="Suggested image size: 1920 x 1080 pixel"
+                        :errorMessage="form.errors.merchant_image"
+                        v-model="form.merchant_image"
+                        class="object-contain h-full"
+                    />
                 </div>
                 <div class="flex flex-col gap-4 w-2/3">
                     <div>

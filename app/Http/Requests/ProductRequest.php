@@ -28,6 +28,7 @@ class ProductRequest extends FormRequest
             // 'point' => 'required|string|max:255',
             'category_id' => 'required|integer',
             // 'keep' => 'required|string|max:255',
+            'image' => 'required|image'
         ];
     }
 
@@ -49,6 +50,7 @@ class ProductRequest extends FormRequest
             'string' => 'This field must be a string.',
             'max' => 'This field must not exceed 255 characters.',
             'integer' => 'This field must be an integer.',
+            'image' => 'Invalid format.'
         ];
     }
 }

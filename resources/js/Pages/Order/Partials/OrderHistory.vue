@@ -22,7 +22,6 @@ const props = defineProps({
     rowsPerPage: Number,
 });
 
-
 const rows = ref(props.rows);  
 const date_filter = ref('');  
 const status = ref('');
@@ -144,7 +143,12 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
                 </template>
                 <template #waiter="row">
                     <div class="flex whitespace-nowrap gap-1 items-center">
-                        <div class="size-4 bg-primary-200 rounded-full"></div>
+                        <!-- <div class="size-4 bg-primary-200 rounded-full"></div> -->
+                        <img 
+                            :src="row.waiter.image ? row.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt=""
+                            class="size-4 rounded-full"
+                        >
                         <span class="text-grey-900 text-sm font-medium">{{ row.waiter.full_name }}</span>
                     </div>
                 </template>

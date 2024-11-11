@@ -103,7 +103,12 @@ const handleDefaultClick = (event) => {
         </template>
         <template #full_name="rows">
             <template class="flex flex-row gap-[10px] items-center">
-                <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"></span>
+                <!-- <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"></span> -->
+                <img 
+                    :src="rows.image ? rows.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                    alt=""
+                    class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"
+                />
                 <span class="text-grey-900 text-sm font-medium truncate">{{ rows.full_name }}</span>
             </template>
         </template>

@@ -20,18 +20,13 @@ const isDeleteIncentOpen = ref(false);
 const isAddAchievementOpen = ref(false);
 const selectedIncent = ref(null);
 const waiters = ref([]);
-const { formatDate } = transactionFormat();
+const { formatDate, formatAmount } = transactionFormat();
 
 const actions = {
     view: (incentive) => `/configurations/configurations/incentCommDetail/${incentive}`,
     edit: () => ``,
     delete: () => ``,
 };
-
-const formatNumbers = (number) => {
-    number = number.substring(0, number.length - 3);
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
 
 const formatType = (type) => {
     if (type == 'fixed'){
@@ -40,21 +35,6 @@ const formatType = (type) => {
         return 'Percentage of monthly sales';
     }
 }
-
-const getInitials = (fullName) => {
-    const allNames = fullName.trim().split(' ');
-    const initials = allNames.reduce((acc, curr, index) => {
-        if(index === 0 || index === allNames.length - 1){
-        acc = `${acc}${curr.charAt(0).toUpperCase()}`;
-        }
-        return acc;
-    }, '');
-    return initials;
-}
-
-// const formatDate = (date) => {
-//     return date.slice(0,-9);
-// }
 
 const openEditIncent = (event, rows) => {
     handleDefaultClick(event);
@@ -82,7 +62,6 @@ const getEmployeeIncent = async () => {
     isLoading.value = true;
     try {
         const response = await axios.get('/configurations/configurations/incentive');
-        rows.value = response.data.incentiveProg;
         waiters.value = response.data.waiters;
         rows.value = response.data.incentiveProg.map(incentive => {
             return {
@@ -178,7 +157,7 @@ onMounted (() => {
                     </div>
                 </template>
                 <template #monthly_sale="rows">
-                    <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">RM {{ formatNumbers(rows.monthly_sale) }}</span>
+                    <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">RM {{ formatAmount(rows.monthly_sale) }}</span>
                 </template>
                 <template #type="rows">
                     <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ formatType(rows.type) }}</span>
@@ -199,7 +178,13 @@ onMounted (() => {
                 <template #name="rows">
                     <div class="flex items-center gap-[13px] overflow-hidden">
                         <div class="flex items-start gap-1">
-                            <span v-for="(names, index) in rows.entitled" :key="index" class="size-6 rounded-full bg-primary-900 text-white text-center self-stretch">{{ getInitials(names.name) }}</span>
+                            <template v-for="image in rows.entitled">
+                                <img 
+                                    :src="image.image ? image.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt=""
+                                    class="size-6 rounded-full"
+                                />
+                            </template>
                         </div>
                         <div v-if="rows.hiddenEntitled !== null" class="flex items-start pr-1">
                             <span class="text-grey-900 text-sm font-medium">+{{ rows.hiddenEntitled }}</span>

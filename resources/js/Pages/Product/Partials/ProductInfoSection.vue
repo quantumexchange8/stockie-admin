@@ -90,7 +90,7 @@ watch( () => props.product, (newValue) => {
             </div>
         </div>
 
-        <div class="w-full h-72 bg-primary-50 border border-grey-100 rounded-md"></div>
+        <img :src="productInfo.image ? productInfo.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
 
         <div class="flex flex-col items-start self-stretch gap-4">
             <Tag

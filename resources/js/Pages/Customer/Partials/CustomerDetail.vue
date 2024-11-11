@@ -8,6 +8,7 @@ import OverlayPanel from '@/Components/OverlayPanel.vue';
 import ReturnItem from './ReturnItem.vue';
 import PointsDrawer from './PointsDrawer.vue';
 import TierDrawer from './TierDrawer.vue';
+import { usePhoneUtils } from '@/Composables';
 
 const props = defineProps ({
     customers: {
@@ -15,7 +16,6 @@ const props = defineProps ({
         required: true,
     }
 })
-
 const selectedCustomer = ref(null);
 const selectedItem = ref(null);
 const returnItemOverlay = ref(null);
@@ -23,6 +23,7 @@ const isPointDrawerOpen = ref(false);
 const isTierDrawerOpen = ref(false);
 const isHistoryDrawerOpen = ref(false);
 
+const { formatPhone } = usePhoneUtils();
 const openHistoryDrawer = (customers) => {
     isHistoryDrawerOpen.value = true;
     selectedCustomer.value = customers;
@@ -54,29 +55,9 @@ const closeItemOverlay = () => {
     returnItemOverlay.value.hide();
 };
 
-function formatPhone(phone) {
-    if (!phone) 
-        return phone; 
-    
-    // Remove the '+6' prefix if it exists
-    if (phone.startsWith('+6')) 
-        phone = phone.slice(2);
-
-    // Slice the number into parts
-    const totalLength = phone.length;
-    const cutPosition = totalLength - 4;
-    // const cut2Position = cutPosition - 4;
-
-    const firstPart = phone.slice(0, 2);
-    const secondPart = phone.slice(2, cutPosition)
-    const lastFour = phone.slice(cutPosition);
-
-    return `${firstPart} ${secondPart} ${lastFour}`;
-}
-
 const formatPoints = (points) => {
-  const pointsStr = points.toString();
-  return pointsStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const pointsStr = points.toString();
+    return pointsStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
 
@@ -89,14 +70,17 @@ const formatPoints = (points) => {
             <!-- avatar -->
             <div class="w-full flex flex-col items-center gap-3">
                 <!-- <div class="w-[80px] h-[80px]"> -->
-                    <EmptyProfilePic />
+                    <!-- <EmptyProfilePic /> -->
                 <!-- </div> -->
+                <img :src="customers.image ? customers.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt="" 
+                        class="size-[80px] rounded-full"/>
                 <div class="w-full flex flex-col items-center gap-2">
                     <span class="text-primary-900 text-base font-semibold">{{ customers.name }}</span>
                     <div class="flex justify-center items-center gap-2">
                         <span class="text-primary-950 text-sm font-medium">{{ customers.email }}</span>
                         <span class="w-1 h-1 rounded-full bg-grey-300"></span>
-                        <span class="text-primary-950 text-sm font-medium">(+60 {{ formatPhone(customers.phone) }})</span>
+                        <span class="text-primary-950 text-sm font-medium">({{ formatPhone(customers.phone) }})</span>
                     </div>
                 </div>
             </div>
@@ -129,7 +113,11 @@ const formatPoints = (points) => {
                     <div class="w-full flex flex-col justify-center items-start gap-1 self-stretch">
                         <div v-if="customers.tier !== 'No Tier'">
                             <div class="flex flex-col justify-center items-center gap-[10px]">
-                                <CrownImage />
+                                <img 
+                                    :src="customers.tier_image ? customers.tier_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt=""
+                                    class="h-12 w-full"
+                                />
                             </div>
                             <div class="flex flex-col justify-center items-center gap-2">
                                 <span class="text-primary-900 text-lg font-medium">{{ customers.tier }}</span>
@@ -155,8 +143,7 @@ const formatPoints = (points) => {
                     </div>
                 </div>
                 <div class="flex flex-col justify-end items-start gap-2 self-stretch">
-                    <div class="flex py-3 items-center gap-3 self-stretch" v-for="item in customers.keep_items"
-                        :key="item.id">
+                    <div class="flex py-3 items-center gap-3 self-stretch" v-for="item in customers.keep_items" :key="item.id">
                         <div class="flex flex-col justify-center items-start gap-3 flex-[1_0_0]">
                             <div class="flex px-[10px] py-1 items-center gap-[10px] self-stretch rounded-sm bg-primary-25">
                                 <span class="text-primary-900 text-sm font-medium">{{ item.created_at }}</span>
@@ -164,14 +151,23 @@ const formatPoints = (points) => {
                             <div class="flex items-center gap-3 self-stretch">
                                 <div class="flex flex-col items-start gap-3 flex-[1_0_0]">
                                     <div class="flex items-start gap-3 self-stretch">
-                                        <div class="flex rounded-[1.5px] overflow-x-hidden w-[60px] h-[60px] bg-primary-900">
-                                        </div>
+                                        <!-- <div class="flex rounded-[1.5px] overflow-x-hidden w-[60px] h-[60px] bg-primary-900"></div> -->
+                                        <img 
+                                            :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="flex rounded-[1.5px] overflow-x-hidden w-[60px] h-[60px] bg-primary-900"
+                                        />
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">
                                                 <span class="text-grey-400 text-2xs font-normal">Expire on {{ item.expired_to }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                                 <span class="text-primary-900 text-2xs font-normal">by</span>
-                                                <span class="w-3 h-3 bg-red-900 rounded-full"></span>
+                                                <!-- <span class="w-3 h-3 bg-red-900 rounded-full"></span> -->
+                                                <img 
+                                                    :src="item.waiter_pic ? item.waiter_pic : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                                                    alt="" 
+                                                    class="w-3 h-3 bg-red-900 rounded-full"
+                                                />
                                                 <span class="text-primary-900 text-2xs font-normal">{{ item.waiter_name }}</span>
                                             </div>
                                             <span

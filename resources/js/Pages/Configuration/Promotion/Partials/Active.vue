@@ -11,11 +11,11 @@ import DateInput from '@/Components/Date.vue';
 import Textarea from '@/Components/Textarea.vue';
 import { PromotionsNoVal } from "@/Components/NoDatas/Images";
 import { DeleteIllus } from "@/Components/Icons/illus";
+import DragDropImage from "@/Components/DragDropImage.vue";
 
 const props = defineProps({
     ActivePromotions: Array
 }) 
-
 const { showMessage } = useCustomToast();
 const { formatDate } = transactionFormat();
 
@@ -32,6 +32,7 @@ const openEditModal = (promotion, actionType) => {
     form.id = modalDetails.value.id;
     form.promotion_from = modalDetails.value.promotion_from;
     form.promotion_to = modalDetails.value.promotion_to;
+    form.promotion_image = modalDetails.value.promotion_image;
     
     form.promotionPeriod = [
         new Date(modalDetails.value.promotion_from),
@@ -50,6 +51,7 @@ const form = useForm({
     promotionPeriod: '',
     promotion_from: '',
     promotion_to: '',
+    promotion_image: '',
 })
 
 
@@ -157,7 +159,14 @@ const isFormValid = computed(() => {
         <form @submit.prevent="submit">
             <div class="flex flex-col gap-6">
                 <div class=" w-full h-56">
-                    <img src="" alt="" >
+                    <DragDropImage
+                        inputName="image"
+                        remarks="Suggested image size: 1920 x 1080 pixel"
+                        :modelValue="form.promotion_image"
+                        :errorMessage="form.errors.promotion_image"
+                        v-model="form.promotion_image"
+                        class="w-full h-full object-contain rounded-[5px]"
+                    />
                 </div>
                 <div class="flex flex-col gap-4">
                     <div class="space-y-1">

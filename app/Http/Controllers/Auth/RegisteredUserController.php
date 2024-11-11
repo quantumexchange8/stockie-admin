@@ -51,6 +51,8 @@ class RegisteredUserController extends Controller
 
     public function getUser()
     {
-        return response()->json(Auth::user());
+        $user = Auth::user();
+        $user->image = $user->getFirstMediaUrl('user');
+        return response()->json($user);
     }
 }

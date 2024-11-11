@@ -60,12 +60,17 @@ onMounted(() => {
                                 </div>
                                 <div class="w-full flex justify-between items-center self-stretch">
                                     <div class="flex w-full self-stretch items-start gap-3">
-                                        <div class="w-[60px] h-[60px] bg-primary-900">
+                                        <div class="w-[60px] h-[60px] relative bg-primary-25">
                                             <Tag 
                                                 :variant="item.status === 'keep' ? 'default' : item.status === 'returned' ? 'green' : 'grey'"
                                                 :value="formatStatus(item.status)"
-                                                class="!px-1.5 !py-1 !text-[6.8px] !m-0.5"
+                                                class="!px-1.5 !py-1 !text-[6.8px] !m-0.5 absolute"
                                             />
+                                            <img 
+                                                :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                alt=""
+                                                class="h-full w-full"
+                                            >
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">
@@ -116,12 +121,17 @@ onMounted(() => {
                                 </div>
                                 <div class="w-full flex justify-between items-center self-stretch">
                                     <div class="flex w-full self-stretch items-start gap-3">
-                                        <div class="w-[60px] h-[60px] bg-primary-900">
+                                        <div class="w-[60px] h-[60px] relative bg-primary-25">
                                             <Tag 
                                                 :variant="item.status === 'keep' ? 'default' : item.status === 'returned' ? 'green' : 'grey'"
                                                 :value="formatStatus(item.status)"
-                                                class="!px-1.5 !py-1 !text-[6.8px] !m-0.5"
+                                                class="!px-1.5 !py-1 !text-[6.8px] !m-0.5 absolute"
                                             />
+                                             <img 
+                                                :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                alt=""
+                                                class="h-full w-full"
+                                            >
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">

@@ -42,6 +42,7 @@ class ConfigPromotionController extends Controller
         });
 
         $merchant = ConfigMerchant::first();
+        $merchant->merchant_image = $merchant->getFirstMediaUrl('merchant_settings');
 
         return Inertia::render('Configuration/MainConfiguration', [
             'ActivePromotions' => $ActivePromotions,
@@ -76,9 +77,7 @@ class ConfigPromotionController extends Controller
      */
     public function store(Request $request)
     {
-        
         $data = $request->all();
-        // dd($data);
         $todayDate = now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
         // dd($todayDate);
         if ($todayDate >= $request->promotion_from && $todayDate < $request->promotion_to) {
@@ -95,7 +94,6 @@ class ConfigPromotionController extends Controller
             'image' => $data['image'],
             'status' => $status,
         ]);
-        // dd($promotion);
 
         if ($request->hasfile('image'))
         {
@@ -120,7 +118,6 @@ class ConfigPromotionController extends Controller
      */
     public function edit(Request $request)
     {
-
         $todayDate = date('Y/m/d');
         if (($todayDate >= $request->promotion_from) && ($todayDate <= $request->todayDate)) {
             $status = 'Active';
@@ -193,6 +190,7 @@ class ConfigPromotionController extends Controller
             'merchant_name' => ['required', 'string'],
             'merchant_contact' => ['required', 'string'],
             'merchant_address' => ['required', 'max:255'],
+            'merchant_image' => ['required', 'image'],
         ]);
 
         $config_merchant = ConfigMerchant::find($request->merchant_id);
@@ -202,6 +200,11 @@ class ConfigPromotionController extends Controller
             'merchant_contact' => $request->merchant_contact,
             'merchant_address' => $request->merchant_address,
         ]);
+
+        if($request->hasFile('merchant_image')){
+            $config_merchant->clearMediaCollection('merchant_settings');
+            $config_merchant->addMedia($request->merchant_image)->toMediaCollection('merchant_settings');
+        }
 
         return redirect()->back()->with('updated succesfully');
     }

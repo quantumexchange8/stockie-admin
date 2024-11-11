@@ -103,7 +103,12 @@ const csvExport = () => {
         >
             <template #full_name="row">
                 <div class="flex gap-[10px] items-center">
-                    <div class="w-[32px] h-[32px] rounded-full bg-gray-500"></div>
+                    <!-- <div class="w-[32px] h-[32px] rounded-full bg-gray-500"></div> -->
+                    <img 
+                        :src="row.image ? row.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                        alt="" 
+                        class="w-[32px] h-[32px] rounded-full"
+                    />
                     <span class="shrink-0 text-grey-900 text-sm font-medium">{{ row.full_name }}</span>
                 </div>
             </template>

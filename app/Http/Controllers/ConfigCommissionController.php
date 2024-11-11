@@ -21,10 +21,12 @@ class ConfigCommissionController extends Controller
         $commission = $commission->map(function($involved) {
             $products = [];
             $productIds = [];
+            $productImage = [];
             foreach ($involved->configCommItems as $configItem) {
                 foreach ($configItem->productItems as $productItem) {
                     $products[] = $productItem->product->product_name;
                     $productIds[] = $productItem->product->id;
+                    $productImage[] = $productItem->product->getFirstMediaUrl('product');
                 }
             }
             return [
@@ -33,17 +35,17 @@ class ConfigCommissionController extends Controller
                 'rate' => $involved->rate,
                 'product' => $products,
                 'productIds' => $productIds,
+                'image' => $productImage,
             ];
         });
 
-        // dd($commission);
-
-
         $productNames = Product::select('id', 'product_name')->get();
-        // dd($productNames);
 
         $items = ProductItem::whereDoesntHave('commItems')->pluck('product_id');
         $productsToAdd = Product::whereIn('id', $items)->get(['id', 'product_name']);
+        $productsToAdd->each(function ($product){
+            $product->image = $product->getFirstMediaUrl('product');
+        });
 
         return response()->json([
             'commission' => $commission,

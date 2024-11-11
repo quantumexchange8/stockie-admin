@@ -11,19 +11,15 @@ use App\Models\IventoryItem;
 use App\Models\Payment;
 use App\Models\PointItem;
 use App\Models\SaleHistory;
-use Illuminate\Foundation\Validation\ValidatesRequests;
 use App\Models\Ranking;
 use App\Models\RankingReward;
-use App\Models\Customer;
 use App\Models\Point;
 use App\Models\PointHistory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Redirect;
-use Log;
 
 class LoyaltyController extends Controller
 {
@@ -45,6 +41,13 @@ class LoyaltyController extends Controller
                                 
                                 return $rank;
                             }); 
+        $tiers->each(function($tier){
+            $tier->image = $tier->getFirstMediaUrl('ranking');
+        });
+
+        $existingIcons = Ranking::all()->flatMap(function ($ranking){
+            return $ranking->getMedia('ranking');
+        });
 
         $redeemableItems = Point::with([
                                     'pointItems',
@@ -57,6 +60,7 @@ class LoyaltyController extends Controller
                                 ->map(function ($point) {
                                     $pointItems = $point->pointItems;
                                     $minStockCount = 0;
+                                    $point['image'] = $point->getFirstMediaUrl('point');
 
                                     if (count($pointItems) > 0) {
                                         $stockCountArr = [];
@@ -113,6 +117,7 @@ class LoyaltyController extends Controller
         return Inertia::render('LoyaltyProgramme/LoyaltyProgramme', [
             'message' => $message ?? [],
             'tiers' => $tiers,
+            'logos' => $existingIcons,
             'redeemableItems' => $redeemableItems,
             'inventoryItems' => $inventoryItems,
             'totalPointsGivenAway' => $totalPointsGivenAway[0] ?? 0,
@@ -132,56 +137,58 @@ class LoyaltyController extends Controller
         $validatedRankingRewards = [];
         $allItemErrors = [];
 
-        foreach ($rewardsData as $index => $reward) {
-            $rules = $rankingRewardRequest->rules();
-
-            switch ($reward['reward_type']) {
-                case 'Discount (Amount)':
-                case 'Discount (Percentage)':
-                    $rules['discount'] = str_replace('nullable', 'required', $rules['discount']);
-
-                    if ($reward['min_purchase'] === 'active') {
-                        $rules['min_purchase_amount'] = str_replace('nullable', 'required', $rules['min_purchase_amount']);
+        if($rewardsData){
+            foreach ($rewardsData as $index => $reward) {
+                $rules = $rankingRewardRequest->rules();
+    
+                switch ($reward['reward_type']) {
+                    case 'Discount (Amount)':
+                    case 'Discount (Percentage)':
+                        $rules['discount'] = str_replace('nullable', 'required', $rules['discount']);
+    
+                        if ($reward['min_purchase'] === 'active') {
+                            $rules['min_purchase_amount'] = str_replace('nullable', 'required', $rules['min_purchase_amount']);
+                        }
+    
+                        break;
+                    case 'Bonus Point':
+                        $rules['bonus_point'] = str_replace('nullable', 'required', $rules['bonus_point']);
+                        
+                        break;
+                    case 'Free Item':
+                        $rules['free_item'] = str_replace('nullable', 'required', $rules['free_item']);
+                        
+                        break;
+                }
+    
+                if ($reward['reward_type'] !== 'Bonus Point') {
+                    $rules['valid_period_from'] = str_replace('nullable', 'required', $rules['valid_period_from']);
+                    $rules['valid_period_to'] = str_replace('nullable', 'required', $rules['valid_period_to']);
+                }
+    
+                $requestMessages = $rankingRewardRequest->messages();
+    
+                // Validate ranking rewards data
+                $rankingRewardsValidator = Validator::make(
+                    $reward,
+                    $rules,
+                    $requestMessages,
+                    $rankingRewardRequest->attributes()
+                );
+                
+                if ($rankingRewardsValidator->fails()) {
+                    // Collect the errors for each reward and add to the array with reward index
+                    foreach ($rankingRewardsValidator->errors()->messages() as $field => $messages) {
+                        $allItemErrors["items.$index.$field"] = $messages;
                     }
-
-                    break;
-                case 'Bonus Point':
-                    $rules['bonus_point'] = str_replace('nullable', 'required', $rules['bonus_point']);
-                    
-                    break;
-                case 'Free Item':
-                    $rules['free_item'] = str_replace('nullable', 'required', $rules['free_item']);
-                    
-                    break;
-            }
-
-            if ($reward['reward_type'] !== 'Bonus Point') {
-                $rules['valid_period_from'] = str_replace('nullable', 'required', $rules['valid_period_from']);
-                $rules['valid_period_to'] = str_replace('nullable', 'required', $rules['valid_period_to']);
-            }
-
-            $requestMessages = $rankingRewardRequest->messages();
-
-            // Validate ranking rewards data
-            $rankingRewardsValidator = Validator::make(
-                $reward,
-                $rules,
-                $requestMessages,
-                $rankingRewardRequest->attributes()
-            );
-            
-            if ($rankingRewardsValidator->fails()) {
-                // Collect the errors for each reward and add to the array with reward index
-                foreach ($rankingRewardsValidator->errors()->messages() as $field => $messages) {
-                    $allItemErrors["items.$index.$field"] = $messages;
+                } else {
+                    // Collect the validated reward and manually add the 'id' field back
+                    $validatedReward = $rankingRewardsValidator->validated();
+                    if (isset($reward['id'])) {
+                        $validatedReward['id'] = $reward['id'];
+                    }
+                    $validatedRankingRewards[] = $validatedReward;
                 }
-            } else {
-                // Collect the validated reward and manually add the 'id' field back
-                $validatedReward = $rankingRewardsValidator->validated();
-                if (isset($reward['id'])) {
-                    $validatedReward['id'] = $reward['id'];
-                }
-                $validatedRankingRewards[] = $validatedReward;
             }
         }
 
@@ -196,6 +203,11 @@ class LoyaltyController extends Controller
             'reward' => $validatedData['reward'],
             'icon' => ''
         ]);
+
+        if($validatedData->hasFile('icon'))
+        {
+            $ranking->addMedia($validatedData->icon)->toMediaCollection('ranking');
+        }
 
         // dd($validatedRankingRewards);
 
@@ -250,6 +262,7 @@ class LoyaltyController extends Controller
     public function showTierDetails(string $id)
     {
         $tier = Ranking::with(['rankingRewards', 'customers'])->find($id); 
+        $tier->image = $tier->getFirstMediaUrl('ranking');
 
         $inventoryItems = Iventory::withWhereHas('inventoryItems')
                                     ->select(['id', 'name'])
@@ -287,10 +300,12 @@ class LoyaltyController extends Controller
 
         $customer = $tier->customers->map(function ($customer) {
             $spent = $customer->payments->sum('grand_total');
+            $image = $customer->getFirstMediaUrl('customer');
             return [
                 'full_name' => $customer->full_name,
                 'joined_on' => Carbon::parse($customer->created_at)->format('d/m/Y'),
                 'spent' => (int)$spent,
+                'image' => $image,
             ];
         });
 
@@ -359,7 +374,6 @@ class LoyaltyController extends Controller
 
     public function updateTier(RankingRequest $request, string $id)
     {        
-        // dd($request->all());
         // Get validated tier data
         $validatedData = $request->validated();
 
@@ -580,6 +594,10 @@ class LoyaltyController extends Controller
                 'name'=>$validatedData['name'],
                 'point' => (int) $validatedData['point'],
             ]);
+
+            if (isset($validatedData['image']) && $validatedData['image'] instanceof \Illuminate\Http\UploadedFile) {
+                $point->addMedia($validatedData['image'])->toMediaCollection('point');
+            }
     
             if(count($validatedItems) > 0) {
                 foreach ($validatedItems as $value) {
@@ -644,7 +662,7 @@ class LoyaltyController extends Controller
 
         // dd($request->all());
         // Delete point items
-        if (count($request->itemsDeletedBasket) > 0 && !is_null($existingPoint)) {
+        if ($request->itemsDeletedBasket && count($request->itemsDeletedBasket) > 0 && $existingPoint) {
             $existingPoint->pointItems()
                             ->whereIn('id', $request->itemsDeletedBasket)
                             ->delete();
@@ -656,6 +674,12 @@ class LoyaltyController extends Controller
                 'name'=>$validatedData['name'],
                 'point' => $validatedData['point'],
             ]);
+
+            if($validatedData->hasFile('image'))
+            {
+                $existingPoint->clearMediaCollection('point');
+                $existingPoint->addMedia($validatedData->image)->toMediaCollection('point');
+            }
         }
 
         // Update point item(s) details
@@ -750,6 +774,7 @@ class LoyaltyController extends Controller
                                             ->get();
 
         $redeemableItem = Point::with(['pointItems', 'pointItems.inventoryItem'])->find($id);
+        $redeemableItem->image = $redeemableItem->getFirstMediaUrl('point');
 
         // Get the flashed messages from the session
         $message = $request->session()->get('message');

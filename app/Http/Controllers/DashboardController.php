@@ -81,7 +81,6 @@ class DashboardController extends Controller
                         ->get();
 
         $allProducts = $allProducts->map(function ($product) {
-
             return $product->productItems->map(function ($productItem) use ($product) {
                 $inventoryItem = $productItem->inventoryItem;
                 $categoryName = $inventoryItem && $inventoryItem->itemCategory ? $inventoryItem->itemCategory->name : null;
@@ -93,6 +92,7 @@ class DashboardController extends Controller
                     'stock_qty' => $inventoryItem ? $inventoryItem->stock_qty : null,
                     'category' => $categoryName, 
                     'product_name' => $product->product_name,
+                    'image' => $product->getFirstMediaUrl('product'),
                 ];
         
             })->toArray(); 
@@ -126,12 +126,15 @@ class DashboardController extends Controller
                         break;
                 }
             };
+
+            $waiter->image = $waiter->getFirstMediaUrl('user');
         
             $onDuty[] = [
                 'id' => $waiter->id,
                 'waiter_name' => $waiter->full_name,
                 'time' => $time,
                 'status' => $status,
+                'image' => $waiter->image,
             ];
         }
 
@@ -159,10 +162,11 @@ class DashboardController extends Controller
 
         
         $products = collect($allProducts)
-                    ->sortByDesc('stock_qty')
+                    ->sortBy('stock_qty')
+                    ->take(4)
                     ->values()
                     ->all();
-                    
+   
         $todayReservations = Reservation::with([
                                                 'reservedFor.reservations', 
                                                 'reservedFor.reservationCancelled', 
@@ -185,6 +189,13 @@ class DashboardController extends Controller
                                             })
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
                                             ->get();
+
+        $todayReservations->each(function ($todayReservation){
+            if($todayReservation->reservedFor)
+            {
+                $todayReservation->reservedFor->image = $todayReservation->reservedFor->getFirstMediaUrl('customer');
+            }
+        });
 
         $waiters = User::where('role', 'waiter')
                         ->get(['id', 'full_name'])

@@ -110,7 +110,13 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                     <div class="w-1/2 flex flex-col gap-y-1 items-start">
                         <p class="text-grey-900 text-base font-normal self-stretch">Guest name</p>
                         <div class="flex items-center gap-x-2">
-                            <div class="size-4 bg-primary-100 rounded-full" v-if="reservation.reserved_for"></div>
+                            <!-- <div class="size-4 bg-primary-100 rounded-full" v-if="reservation.reserved_for"></div> -->
+                            <img 
+                                :src="reservation.reserved_for?.image ? reservation.reserved_for.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                                alt="" 
+                                class="size-4 bg-primary-100 rounded-full"
+                                v-if="reservation.reserved_for"
+                            />
                             <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.name }}</p>
                         </div>
                     </div>

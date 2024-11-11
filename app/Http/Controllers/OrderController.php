@@ -50,6 +50,9 @@ class OrderController extends Controller
 
         // $waiters = Waiter::orderBy('id')->get();
         $users = User::select(['id', 'full_name', 'role'])->orderBy('id')->get();
+        $users->each(function($user){
+            $user->image = $user->getFirstMediaUrl('user');
+        });
 
         $orders = Order::with([
                             'orderItems:id,order_id,product_id,item_qty,amount,point_earned,status', 
@@ -65,12 +68,19 @@ class OrderController extends Controller
                         ->filter(fn ($order) => $order->status === 'Order Completed' || $order->status === 'Order Cancelled')
                         ->values();
 
+        $orders->each(function($order){
+            if($order->waiter){
+                $order->waiter->image = $order->waiter->getFirstMediaUrl('user');
+            };
+        });
+
         $customers = Customer::orderBy('full_name')
                                 ->get()
                                 ->map(function ($customer) {
                                     return [
                                         'text' => $customer->full_name,
                                         'value' => $customer->id,
+                                        'image' => $customer->getFirstMediaUrl('customer'),
                                     ];
                                 });
         
@@ -368,6 +378,7 @@ class OrderController extends Controller
                             ->map(function ($product) {
                                 $product_items = $product->productItems;
                                 $minStockCount = 0;
+                                $product->image = $product->getFirstMediaUrl('product');
 
                                 if (count($product_items) > 0) {
                                     $stockCountArr = [];
@@ -412,7 +423,7 @@ class OrderController extends Controller
             // Lazy load relationships only for the selected table
             $currentOrderTable->load([
                 'order.orderItems.product.productItems.inventoryItem', // load only required fields
-                'order.orderItems.handledBy:id,name',
+                'order.orderItems.handledBy:id,full_name',
                 'order.orderItems.subItems.keepItems.keepHistories' => function ($query) {
                     $query->where('status', 'Keep')->latest()->offset(1)->limit(100);
                 },
@@ -430,6 +441,13 @@ class OrderController extends Controller
                 'order.orderTable.table:id,table_no',
                 'order.payment:id,order_id'
             ]);
+
+            if ($currentOrderTable->order->orderItems) {
+                foreach ($currentOrderTable->order->orderItems as $orderItem) {
+                    $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
+                    $orderItem->handledBy->image = $orderItem->handledBy->getFirstMediaUrl('user');
+                }
+            }
             
             $data = [
                 'currentOrderTable' => $currentOrderTable->table,
@@ -1103,10 +1121,20 @@ class OrderController extends Controller
                             ])
                             ->find($id);
 
+        $customer->image = $customer->getFirstMediaUrl('customer');
+        $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
+
         
         foreach ($customer->keepItems as $key => $keepItem) {
             $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
             unset($keepItem->orderItemSubitem);
+
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+
         }
 
         return response()->json($customer);
@@ -1333,8 +1361,22 @@ class OrderController extends Controller
                                         return $orderTable;
                                     });
 
+        foreach ($orderTables as $orderTable) {
+            if ($orderTable->order) {  
+                foreach ($orderTable->order->orderItems as $orderItem) {
+                    if ($orderItem->product) { 
+                        $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
+                    }
+                }
+            }
+        }
+
         // Get unique orders and include each order's payment details
         $uniqueOrders = $orderTables->pluck('order')->unique('id')->map(function ($order) {
+            if($order->customer)
+            {
+                $order->customer->image = $order->customer->getFirstMediaUrl('customer');
+            }
             return [
                 'order_id' => $order->id,
                 'order_no' => $order->order_no,

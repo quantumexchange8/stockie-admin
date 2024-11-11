@@ -252,7 +252,13 @@ onUnmounted(() => {
             </template>
             <template #option="slotProps">
                 <div class="flex flex-nowrap items-center gap-2">
-                    <div class="size-5 bg-primary-100 rounded-full" v-if="imageOption"></div>
+                    <!-- <div class="size-5 bg-primary-100 rounded-full" v-if="imageOption"></div> -->
+                    <img 
+                        :src="slotProps.option.image ? slotProps.option.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                        alt=''
+                        class="size-5 rounded-full"
+                        v-if="imageOption"
+                    />
                     <span>{{ slotProps.option.text }}</span>
                     <span
                         class="absolute right-0 pr-4"

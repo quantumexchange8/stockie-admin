@@ -39,7 +39,11 @@ onMounted(() => {
             <div class="flex flex-col justify-center items-center gap-4 relative">
                 <span class="text-grey-900 text-base font-medium">Current Tier</span>
                 <div class="flex flex-col justify-center items-center gap-2">
-                    <CrownImage />
+                    <img 
+                        :src="customers.tier_image ? customers.tier_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="h-12 w-full"
+                    />
                     <span class="text-primary-950 text-base font-medium">{{ customers.tier }}</span>
                 </div>
                 <TierIllust class="absolute"/>

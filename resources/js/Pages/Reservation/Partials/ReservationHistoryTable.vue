@@ -22,7 +22,7 @@ const props = defineProps({
         default: () => {},
     },
 });
-
+console.log(props.rows);
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
 const { exportToCSV } = useFileExport();
@@ -151,7 +151,13 @@ const getStatusVariant = (status) => {
             <template #res_time="row">{{ dayjs(row.reservation_date).format('HH:mm') }}</template>
             <template #name="row">
                 <div class="flex items-center gap-x-2">
-                    <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div>
+                    <!-- <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div> -->
+                    <img 
+                        :src="row.reserved_for?.image ? row.reserved_for.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                        alt="" 
+                        class="size-4 bg-primary-100 rounded-full"
+                        v-if="row.reserved_for"
+                    />
                     {{ row.name }}
                 </div>
             </template>

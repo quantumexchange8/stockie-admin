@@ -49,7 +49,12 @@ const closeItemOverlay = () => {
 
         <div class="flex flex-col items-center gap-[20px] self-stretch">
             <div class="flex items-center gap-3 self-stretch">
-                <div class="flex w-10 h-10 bg-primary-900"></div>
+                <!-- <div class="flex w-10 h-10 bg-primary-900"></div> -->
+                <img 
+                    :src="props.item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                    alt=""
+                    class="flex w-10 h-10 bg-primary-900"
+                >
                 <div class="flex justify-between pr-3 items-center gap-2 flex-[1_0_0]">
                     <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-base font-medium">{{ item.item }}</div>
                     <div class="flex flex-col justify-center self-stretch text-primary-800 text-right text-md font-medium">x{{ initialAmount }}</div>

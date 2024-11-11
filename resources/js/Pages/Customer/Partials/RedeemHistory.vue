@@ -11,17 +11,19 @@ const props = defineProps({
         required: true
     },
 })
-
 const redeemHistory = ref([]);
 const tabs = ref(['All', 'Earned', 'Used']);
+const isLoading = ref(false);
 
 const getRedeemHistory = async (id) => {
-        try {
-            const response = await axios.get(`customer/redeemHistory/${id}`);
-            redeemHistory.value = response.data;
-        } catch(error){
-            console.error(error)
-        } finally {
+    isLoading.value = true;
+    try {
+        const response = await axios.get(`customer/redeemHistory/${id}`);
+        redeemHistory.value = response.data;
+    } catch(error){
+        console.error(error)
+    } finally {
+        isLoading.value = false;
     }
 }
 
@@ -77,7 +79,12 @@ onMounted(() => {
                             <div class="flex justify-between items-center self-stretch">
                                 <div class="flex flex-col items-start gap-3">
                                     <div class="flex items-start gap-3 self-stretch">
-                                        <div class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"></div>
+                                        <!-- <div class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"></div> -->
+                                        <img 
+                                            :src="items.image ? items.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"
+                                        >
                                         <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0] self-stretch">
                                             <span class="overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ item.name }}</span>
                                             <span class="text-primary-950 text-base font-medium">x{{ item.qty }}</span>
@@ -140,7 +147,12 @@ onMounted(() => {
                             <div class="flex justify-between items-center self-stretch">
                                 <div class="flex flex-col items-start gap-3">
                                     <div class="flex items-start gap-3 self-stretch">
-                                        <div class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"></div>
+                                        <!-- <div class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"></div> -->
+                                        <img 
+                                            :src="items.image ? items.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"
+                                        >
                                         <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0] self-stretch">
                                             <span class="overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ item.name }}</span>
                                             <span class="text-primary-950 text-base font-medium">x{{ item.qty }}</span>

@@ -38,6 +38,10 @@ const props = defineProps({
         type: Number,
         required: true,
     },
+    logos: {
+        type: Array,
+        default: () => {},
+    }
 });
 const isModalOpen = ref(false);
 const editTierFormIsOpen = ref(false);
@@ -159,7 +163,12 @@ const formatAmount = (num) => {
                     />
                 </template>
                 <template #icon="row">
-                    <div class="w-6 h-6 rounded-full bg-gray-500"></div>
+                    <!-- <div class="w-6 h-6 rounded-full bg-gray-500"></div> -->
+                    <img 
+                        :src="row.image ? row.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="w-6 h-6 rounded-full bg-gray-500"
+                    />
                 </template>
                 <template #min_amount="row">
                     <span class="text-primary-900 text-sm font-medium">RM {{ formatAmount(row.min_amount) }}</span>
@@ -178,7 +187,8 @@ const formatAmount = (num) => {
                 @close="closeModal"
             >
                 <AddTier 
-                    :inventoryItems="inventoryItems" 
+                    :inventoryItems="inventoryItems"
+                    :logos="logos" 
                     @close="closeModal" 
                 />
             </Modal>
@@ -191,6 +201,7 @@ const formatAmount = (num) => {
                 <template v-if="selectedTier">
                     <EditTier
                         :tier="selectedTier"
+                        :logos="logos"
                         :inventoryItems="selectedTier.ranking_rewards" 
                         :items="props.inventoryItems"
                         @close="hideEditTierForm"

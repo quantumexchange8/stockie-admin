@@ -13,7 +13,6 @@ import { FilterMatchMode } from "primevue/api";
 import { ref } from "vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import Slider from "@/Components/Slider.vue";
-import dayjs from "dayjs";
 import RightDrawer from "@/Components/RightDrawer/RightDrawer.vue";
 import CustomerDetail from "./CustomerDetail.vue";
 import { useFileExport } from "@/Composables";
@@ -300,7 +299,11 @@ const formatPoints = (points) => {
                 </template>
                 <template #name="customers">
                     <template class="flex flex-row gap-[10px] items-center">
-                        <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"></span>
+                        <!-- <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"></span> -->
+                        <img :src="customers.image ? customers.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                alt=""
+                                class="w-[32px] h-[32px] flex-shrink-0 rounded-full"
+                        />
                         <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ customers.name }}</span>
                     </template>
                 </template>
@@ -373,6 +376,8 @@ const formatPoints = (points) => {
         :show="isSidebarOpen"
         @close="hideSideBar"
      >
-        <CustomerDetail :customers="selectedCustomer" />
+        <CustomerDetail 
+            :customers="selectedCustomer" 
+        />
      </RightDrawer>
 </template>

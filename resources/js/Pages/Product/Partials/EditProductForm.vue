@@ -11,6 +11,7 @@ import InputError from "@/Components/InputError.vue";
 import { DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions } from '@/Composables/constants';
 import { useInputValidator } from '@/Composables';
+import DragDropImage from '@/Components/DragDropImage.vue';
 
 const props = defineProps({
     errors: Object,
@@ -27,7 +28,6 @@ const props = defineProps({
         default: () => [],
     },
 });
-
 const emit = defineEmits(['close']);
 const { isValidNumberKey } = useInputValidator();
 
@@ -35,7 +35,6 @@ const categoryArr = ref(props.categoryArr);
 const inventoriesArr = ref(props.inventoriesArr);
 
 const form = useForm({
-    image:'',
     bucket: props.product.bucket === 'set' ? true : false,
     product_name: props.product.product_name,
     price: props.product.price,
@@ -49,10 +48,11 @@ const form = useForm({
                     return item;
                 }) 
             :   [],
+    image: props.product.image ? props.product.image : '',
 });
 
 const formSubmit = () => { 
-    form.put(route('products.updateProduct', props.product.id), {
+    form.post(route('products.updateProduct', props.product.id), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
@@ -98,9 +98,17 @@ watch(form.items, (newValue) => {
 </script>
 
 <template>
-    <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
+    <form class="flex flex-col gap-6" @submit.prevent="formSubmit">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[650px] pl-1 pr-2 py-1 overflow-y-scroll scrollbar-thin scrollbar-webkit">
-            <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div>
+            <DragDropImage 
+                :inputName="'image'"
+                :remarks="'Suggested image size: 1200 x 1200 pixel'"
+                :modelValue="form.image"
+                :errorMessage="form.errors.image"
+                v-model="form.image"
+                class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"
+            />
+
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                 <div class="flex items-start gap-6 self-stretch">
                     <p class="text-grey-900 font-normal text-base">This product comes in a set (Bucket Product)</p>

@@ -182,7 +182,13 @@ watch(() => props.details, () => {
                                 >
                                     <div class="w-[6%] py-2 px-3"></div>
                                     <div class="w-[25.5%] py-2 px-3 truncate flex gap-2.5 items-center">
-                                        <div class="size-8 rounded-full bg-primary-300"></div>
+                                        <!-- <div class="size-8 rounded-full bg-primary-300"></div> -->
+                                        <img 
+                                            :src="data.image ? data.image 
+                                                            : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="size-8 rounded-full"
+                                        />
                                         {{ data.product }}
                                     </div>
                                     <div class="w-[11.5%] py-2 px-3">RM {{ formatAmount(data.before) }}</div>

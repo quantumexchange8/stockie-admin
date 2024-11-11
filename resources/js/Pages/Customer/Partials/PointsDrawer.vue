@@ -12,7 +12,6 @@ const props = defineProps({
         required: true,
     }
 })
-
 const selectedCustomer = ref(null);
 const redeemables = ref([]);
 const isPointHistoryDrawerOpen = ref(false);
@@ -83,7 +82,12 @@ onMounted(() => {
                 <div class="flex flex-col justify-end items-start self-stretch" v-for="items in redeemables" :key="items.id">
                     <div class="flex items-center p-3 gap-3 self-stretch">
                         <div class="flex items-center gap-3">
-                            <div class="w-[60px] h-[60px] bg-primary-25 rounded-[1.5px] border-[0.3px] border-solid border-grey-100"></div>
+                            <!-- <div class="w-[60px] h-[60px] bg-primary-25 rounded-[1.5px] border-[0.3px] border-solid border-grey-100"></div> -->
+                            <img 
+                                :src="items.image ? items.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                alt=""
+                                class="w-[60px] h-[60px] bg-primary-25 rounded-[1.5px] border-[0.3px] border-solid border-grey-100"
+                            >
                             <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] self-stretch">
                                 <span class="line-clamp-1 overflow-hidden text-grey-900 ellipsis text-base font-medium">{{ items.name }}</span>
                                 <span class="overflow-hidden text-red-950 text-base font-medium">{{ formatPoints(items.point) }} pts</span>

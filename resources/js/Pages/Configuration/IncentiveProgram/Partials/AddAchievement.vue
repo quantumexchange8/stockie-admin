@@ -14,7 +14,6 @@ const props = defineProps({
         required: true,
     }
 })
-
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
@@ -163,7 +162,13 @@ const submit = () => {
                 v-model="form.entitled"
             >
                 <template #optionLabel>
-                    <div class="size-7 bg-primary-700 rounded-full"></div>
+                    <!-- <div class="size-7 bg-primary-700 rounded-full"></div> -->
+                    <img 
+                        :src="props.waiters.image ? props.waiters.image 
+                                                : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="size-7 rounded-full"
+                    >
                 </template>      
             </MultiSelect>
 

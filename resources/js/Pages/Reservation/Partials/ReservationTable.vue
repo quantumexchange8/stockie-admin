@@ -39,7 +39,6 @@ const props = defineProps({
     },
 });
 
-
 const page = usePage();
 const userId = computed(() => page.props.auth.user.id)
 
@@ -263,7 +262,13 @@ const getStatusVariant = (status) => {
                 <template #res_time="row">{{ dayjs(row.status === 'Delayed' && row.action_date ? row.action_date : row.reservation_date).format('HH:mm') }}</template>
                 <template #name="row">
                     <div class="flex items-center gap-x-2">
-                        <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div>
+                        <!-- <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div> -->
+                        <img 
+                            :src="row.reserved_for?.image ? row.reserved_for.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                            alt="" 
+                            class="w-3 h-3 bg-red-900 rounded-full"
+                            v-if="row.customer_id"
+                        />
                         {{ row.name }}
                     </div>
                 </template>

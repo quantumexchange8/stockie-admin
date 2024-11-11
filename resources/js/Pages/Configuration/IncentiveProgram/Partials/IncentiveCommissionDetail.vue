@@ -12,6 +12,7 @@ import Toast from '@/Components/Toast.vue';
 import { transactionFormat, useCustomToast } from '@/Composables';
 import Paginator from 'primevue/paginator';
 import TextInput from '@/Components/TextInput.vue';
+import axios from 'axios';
 
 const home = ref({
     label: 'Configuration',
@@ -36,7 +37,6 @@ const props = defineProps({
         required: true,
     }
 })
-
 const detail = ref(props.details);
 const sortField = ref('');
 const sortOrder = ref(1);
@@ -45,6 +45,8 @@ const statuses = ['Paid', 'Pending'];
 const isLoading = ref(false);
 const totalPages = ref(Math.ceil(props.details.length /4));
 const searchQuery = ref('');
+const rows = ref([]);
+const waiters = ref([]);
 
 const { formatAmount } = transactionFormat();
 const { showMessage } = useCustomToast();
@@ -65,6 +67,29 @@ const computedRowsPerPage = computed(() => {
     const end = start + 4;
     return detail.value.slice(start, end);
 });
+
+const getEmployeeIncent = async (id = 0) => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get('/configurations/configurations/getIncentDetail', {
+            method: 'GET',
+            params: {
+                id: id,
+            }
+        });
+        waiters.value = response.data.waiters;
+        detail.value = response.data.incentiveProg.map(incentive => {
+            return {
+                ...incentive, 
+                isRate: incentive.type !== 'fixed' 
+            };
+        });
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+}
 
 const updateStatus = async (selectedStatus = null, id = 0, achievementId = 0) => {
     isLoading.value = true;
@@ -296,7 +321,13 @@ watch(() => searchQuery.value, (newValue) => {
                                                     v-for="(data, index) in group.data" :key="index"
                                                 >
                                                     <div class="w-[29%] py-2 px-3 truncate flex gap-2.5 items-center">
-                                                        <div class="size-8 rounded-full bg-primary-300"></div>
+                                                        <!-- <div class="size-8 rounded-full bg-primary-300"></div> -->
+                                                        <img 
+                                                            :src="data.image ? data.image 
+                                                                            : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                            alt=""
+                                                            class="size-8 rounded-full"
+                                                        >
                                                         {{ data.name }}
                                                     </div>
                                                     <div class="w-[24%] py-2 px-3">RM {{ formatAmount(data.total_sales) }}</div>
@@ -556,6 +587,7 @@ watch(() => searchQuery.value, (newValue) => {
             <AchievementDetails 
                 :achievementDetails="achievementDetails"
                 :waiterName="waiterName"
+                @getEmployeeIncent="getEmployeeIncent"
             />
         </div>
     </AuthenticatedLayout>

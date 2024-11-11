@@ -45,9 +45,14 @@ const props = defineProps({
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
                 <template #product_name="rows">
-                    <div class="flex items-start gap-4">
-                        <div class="w-10 h-10 bg-primary-900"></div>
-                        <span class="self-center overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ rows.product_name }}</span>                    
+                    <div class="flex items-start gap-4 overflow-hidden">
+                        <!-- <div class="w-10 h-10 bg-primary-900 shrink-0"></div> -->
+                        <img 
+                            :src="rows.image ? rows.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt=""
+                            class="w-10 h-10 shrink-0"
+                        />
+                        <span class="self-center text-grey-900 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium">{{ rows.product_name }}</span>                    
                     </div>
                 </template>
                 <template #category="rows">

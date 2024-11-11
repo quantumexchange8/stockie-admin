@@ -10,7 +10,7 @@ import NumberCounter from "@/Components/NumberCounter.vue";
 import Dropdown from "@/Components/Dropdown.vue";
 import TextInput from "@/Components/TextInput.vue";
 import Accordion from "@/Components/Accordion.vue";
-import { Calendar } from "@/Components/Icons/solid";
+import { Calendar, UploadLogoIcon } from "@/Components/Icons/solid";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
 import Toast from '@/Components/Toast.vue'
 import { useCustomToast, useInputValidator } from "@/Composables";
@@ -27,8 +27,16 @@ const props = defineProps({
     items: {
         type: Array,
         default: () => [],
+    },
+    logos: {
+        type: Array,
+        default: () => [],
     }
 });
+
+const logoPreview = ref(props.logos);
+const fileInput = ref(null);
+const selectedLogo = ref(props.tier.icon);
 
 const emit = defineEmits(["close"]);
 const { isValidNumberKey } = useInputValidator();
@@ -56,7 +64,7 @@ const form = useForm({
             date_range: [new Date(reward.valid_period_from), new Date(reward.valid_period_to)],
         };
     }),
-    icon: props.tier.icon,
+    icon: props.tier.icon ?? '',
 });
 
 const addReward = () => {
@@ -134,6 +142,24 @@ const submit = () => {
     })
 };
 
+const handleLogoUpload = () => {
+    fileInput.value.click()
+}
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0]
+//   console.log(file);
+  if (file && file.type.startsWith('image/')) { 
+        const previewUrl = file;
+        logoPreview.value.push(previewUrl);
+        selectedLogo.value = previewUrl;
+  }
+}
+
+const selectLogo = (logo) => {
+    selectedLogo.value = logo;
+}
+
 </script>
 
 <template>
@@ -153,26 +179,32 @@ const submit = () => {
                 <div class="w-full flex flex-wrap sm:flex-nowrap gap-6">
                     <div class="flex flex-col gap-1">
                         <p class="text-xs">Select an icon</p>
+                        <div class="w-[308px] flex flex-wrap gap-4 items-end">
+                            <!-- Existing icons from database -->
+                                <!-- <img :src="logoPreview.value" alt="" /> -->
+                            <template v-for="logo in logoPreview" v-if="logoPreview">
+                                <div class="w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center"
+                                    :class="logo === selectedLogo ? 'border-primary-900 !border-solid border-[2px]' : ''"
+                                    @click="selectLogo(logo)"
+                                >
+                                </div>
+                            </template>
 
-                        <div class="w-[308px] flex flex-wrap gap-4 items-center">
                             <!-- Icons  -->
                             <div class="flex flex-col gap-4 items-center">
                                 <div class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                    >
-                                        <path
-                                            d="M4 16.2422C2.79401 15.435 2 14.0602 2 12.5C2 10.1564 3.79151 8.23129 6.07974 8.01937C6.54781 5.17213 9.02024 3 12 3C14.9798 3 17.4522 5.17213 17.9203 8.01937C20.2085 8.23129 22 10.1564 22 12.5C22 14.0602 21.206 15.435 20 16.2422M8 16L12 12M12 12L16 16M12 12V21"
-                                            stroke="#B2BEC7"
-                                            stroke-width="1.4"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        />
-                                    </svg>
+                                    <UploadLogoIcon 
+                                        @click="handleLogoUpload"
+                                        class="cursor-pointer"
+                                    />
+
+                                    <input 
+                                        type="file" 
+                                        ref="fileInput" 
+                                        @change="handleFileSelect" 
+                                        accept="image/*" 
+                                        class="hidden" 
+                                    />
                                 </div>
                             </div>
                         </div>

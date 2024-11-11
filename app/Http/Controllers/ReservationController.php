@@ -47,12 +47,19 @@ class ReservationController extends Controller
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
                                             ->get();
 
+        $upcomingReservations->each(function ($upcomingReservation){
+            if($upcomingReservation->reservedFor)
+            {
+                $upcomingReservation->reservedFor->image = $upcomingReservation->reservedFor->getFirstMediaUrl('customer');
+            }
+        });
+
         $waiters = User::where('role', 'waiter')
                         ->get(['id', 'full_name'])
                         ->map(function ($waiter) { 
                             return [
                                 'text' => $waiter->full_name,
-                                'value' => $waiter->id
+                                'value' => $waiter->id,
                             ];
                         });
 
@@ -286,6 +293,13 @@ class ReservationController extends Controller
                                             ->whereIn('status', ['Checked in', 'Completed', 'No show', 'Cancelled'])
                                             ->orderBy('id')
                                             ->get();
+
+        $pastReservations->each(function ($pastReservation){
+            if($pastReservation->reservedFor)
+            {
+                $pastReservation->reservedFor->image = $pastReservation->reservedFor->getFirstMediaUrl('customer');
+            }
+        });
 
         return Inertia::render('Reservation/Partials/ViewReservationHistory', [
             'reservations' => $pastReservations,
