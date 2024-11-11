@@ -148,7 +148,6 @@ const formatPoints = (points) => {
 </script>
 
 <template>
-    <Head title="Configuration" />
     <div class="flex flex-col gap-5">
         <div class="flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]">
             <div class="inline-flex items-center w-full justify-between gap-2.5">

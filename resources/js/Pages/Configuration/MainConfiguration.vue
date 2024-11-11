@@ -11,6 +11,7 @@ import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables";
 import PointsSettings from "./PointsSettings/PointsSettings.vue";
 import DiscountSettings from "./DiscountSettings/DiscountSettings.vue";
+import { Head } from "@inertiajs/vue3";
 
 const home = ref({
     label: 'Configuration',
@@ -31,6 +32,8 @@ onMounted(() => {
 </script>
 
 <template>
+    <Head title="Configuration" />
+
     <AuthenticatedLayout>
         <template #header>
             <Breadcrumb 

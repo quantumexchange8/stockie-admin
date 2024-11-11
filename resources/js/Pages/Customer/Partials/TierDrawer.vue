@@ -38,13 +38,18 @@ onMounted(() => {
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
                 <span class="text-grey-900 text-base font-medium">Current Tier</span>
-                <div class="flex flex-col justify-center items-center gap-2">
-                    <img 
-                        :src="customers.tier_image ? customers.tier_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                        alt=""
-                        class="h-12 w-full"
-                    />
-                    <span class="text-primary-950 text-base font-medium">{{ customers.tier }}</span>
+                <template v-if="customers.tier !== 'No Tier'">
+                    <div class="flex flex-col justify-center items-center gap-2">
+                        <img 
+                            :src="customers.tier_image ? customers.tier_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt=""
+                            class="h-12 w-full"
+                        />
+                        <span class="text-primary-950 text-base font-medium">{{ customers.tier }}</span>
+                    </div>
+                </template>
+                <div v-else>
+                    <span class="text-primary-900 text-lg font-medium"> - </span>
                 </div>
                 <TierIllust class="absolute"/>
             </div>

@@ -85,8 +85,6 @@ onMounted (() => {
 </script>
 
 <template>
-    <Head title="Configuration" />
-
     <div class="flex flex-col p-6 items-center self-stretch gap-6 border border-primary-100 rounded-[5px]">
         <div class="flex flex-col justify-center flex-start gap-2.5 self-stretch">
             <span class="text-md font-medium text-primary-900">

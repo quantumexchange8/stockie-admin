@@ -77,7 +77,7 @@ watch(() => date_filter.value, () => {
 </script>
 
 <template>
-    <Head title="Inventory - Stock History" />
+    <Head title="Inventory - Keep History" />
 
     <AuthenticatedLayout>
         <template #header>

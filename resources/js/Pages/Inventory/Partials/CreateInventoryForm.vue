@@ -89,7 +89,12 @@ const formSubmit = async () => {
 
     
     try {
-        const response = await axios.post(route('inventory.store'), form);
+        const response = await axios.post(route('inventory.store'), {
+                name: form.name,
+                image: form.image,
+                items: form.items
+            }, { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
 
         // let inventoryToAdd = {
         //     inventory_name: form.name,
@@ -112,7 +117,12 @@ const formSubmit = async () => {
         form.reset();
         emit('addAsProducts', response.data);
     } catch (error) {
-        console.error(error);
+        // Check for validation errors in the response
+        if (error.response && error.response.status === 422) {
+            form.errors = error.response.data.errors;
+        } else {
+            console.error('An unexpected error occurred:', error);
+        }
     } finally {
 
     }
@@ -179,14 +189,14 @@ const removeItem = (index) => {
                                     :inputName="'item_'+ i +'_name'"
                                     :labelText="'Name'"
                                     :placeholder="'e.g. Danish Pilsner'"
-                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_name']  : ''"
+                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.item_name'][0] : ''"
                                     v-model="item.item_name"
                                 />
                                 <Dropdown
                                     :inputName="'item_'+ i +'_cat_id'"
                                     :labelText="'Unit'"
                                     :inputArray="props.itemCategoryArr"
-                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_cat_id']  : ''"
+                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.item_cat_id'][0] : ''"
                                     v-model="item.item_cat_id"
                                 />
                             </div>
@@ -195,13 +205,13 @@ const removeItem = (index) => {
                                     :inputName="'item_'+ i +'_code'"
                                     :labelText="'Code'"
                                     :placeholder="'e.g. C0001'"
-                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_code']  : ''"
+                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.item_code'][0] : ''"
                                     v-model="item.item_code"
                                 />
                                 <!-- <NumberCounter
                                     :inputName="'item_'+ i +'_stock_qty'"
                                     :labelText="'Stock (per unit)'"
-                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.stock_qty']  : ''"
+                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.stock_qty']  : ''"
                                     v-model="item.stock_qty"
                                     class="col-span-full md:col-span-3"
                                 /> -->
@@ -209,21 +219,21 @@ const removeItem = (index) => {
                                     :inputName="'item_'+ i +'_stock_qty'"
                                     :labelText="'Current stock'"
                                     :placeholder="'e.g. 100'"
-                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.stock_qty']  : ''"
+                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.stock_qty'][0] : ''"
                                     v-model="item.stock_qty"
                                 />
                                 <TextInput
                                     :inputName="'item_'+ i +'_low_stock_qty'"
                                     :labelText="'Show low stock at'"
                                     :placeholder="'e.g. 25'"
-                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.low_stock_qty']  : ''"
+                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.low_stock_qty'][0] : ''"
                                     v-model="item.low_stock_qty"
                                 />
                             </div>
                             <RadioButton
                                 :optionArr="keepOptions"
                                 :checked="item.keep"
-                                :errorMessage="(form.errors) ? form.errors['items.' + i + '.keep']  : ''"
+                                :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.keep'][0] : ''"
                                 v-model:checked="item.keep"
                             />
                         </div>

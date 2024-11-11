@@ -7,6 +7,7 @@ import Breadcrumb from '@/Components/Breadcrumb.vue';
 import Point from "./Partial/Point.vue";
 import Toast from '@/Components/Toast.vue'
 import { useCustomToast } from '@/Composables/index.js';
+import { Head } from "@inertiajs/vue3";
 
 const props = defineProps({
     tiers: Array,
@@ -77,6 +78,8 @@ onMounted(() => {
 </script>
 
 <template>
+    <Head title="Loyalty Programme" />
+
     <AuthenticatedLayout>
         <template #header>
             <Breadcrumb 

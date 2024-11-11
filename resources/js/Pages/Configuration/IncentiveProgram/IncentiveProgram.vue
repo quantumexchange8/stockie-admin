@@ -104,7 +104,6 @@ onMounted (() => {
 </script>
 
 <template>
-    <Head title="Configuration" />
         <div class="w-full flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]">
             <div class="flex flex-col justify-center gap-[10px]">
                 <span class="text-md font-medium text-primary-900">

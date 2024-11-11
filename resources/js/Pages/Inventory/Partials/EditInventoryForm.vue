@@ -144,7 +144,7 @@ const removeItem = (index) => {
                                     :inputName="'item_'+ i +'_low_stock_qty'"
                                     :labelText="'Show low stock at'"
                                     :placeholder="'e.g. 25'"
-                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_low_stock_qty']  : ''"
+                                    :errorMessage="(form.errors) ? form.errors['items.' + i + '.low_stock_qty']  : ''"
                                     v-model="item.low_stock_qty"
                                 />
                            </div>

@@ -14,6 +14,7 @@ import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables";
 import { FilterMatchMode } from "primevue/api";
 import axios from "axios";
+import { Head } from "@inertiajs/vue3";
 
 const home = ref({
     label: 'Waiter',
@@ -148,6 +149,8 @@ const filters = ref({
 </script>
 
 <template>
+    <Head title="Waiter" />
+
     <AuthenticatedLayout>
         <template #header>
             <Breadcrumb 

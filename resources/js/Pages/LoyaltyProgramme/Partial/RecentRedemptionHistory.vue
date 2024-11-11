@@ -71,7 +71,7 @@ const totalPages = computed(() => {
 </script>
 
 <template>
-    <Head title="Loyalty Programme - Recent Redemption" />
+    <Head title="Recent Redemption" />
 
     <AuthenticatedLayout>
         <template #header>

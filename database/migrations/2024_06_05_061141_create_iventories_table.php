@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             // $table->string('category_id');
-            $table->string('image');
+            $table->string('image')->nullable()->default(NULL);
             $table->softDeletes();
             $table->timestamps();
         });

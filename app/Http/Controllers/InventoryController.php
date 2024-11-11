@@ -9,6 +9,7 @@ use App\Models\IventoryItem;
 use App\Http\Requests\InventoryItemRequest;
 use App\Http\Requests\InventoryRequest;
 use App\Models\KeepHistory;
+use App\Models\KeepItem;
 use App\Models\StockHistory;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -23,9 +24,17 @@ class InventoryController extends Controller
     public function index(Request $request)
     {
         $inventories = Iventory::with([
+                                    'inventoryItems' => function ($query) {
+                                        $query->selectRaw('iventory_items.*, SUM(keep_items.qty) as total_keep_qty')
+                                                ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
+                                                ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
+                                                ->leftJoin('keep_items', 'order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                                ->groupBy('iventory_items.id');
+                                    },
                                     'inventoryItems.itemCategory:id,name',
                                     'inventoryItems.productItems:id,inventory_item_id,product_id',
                                     'inventoryItems.productItems.product:id',
+                                    'inventoryItems.productItems.orderSubitems:id,product_item_id',
                                 ])
                                 ->orderBy('id')
                                 ->get()
@@ -40,6 +49,8 @@ class InventoryController extends Controller
                                                     'image' => 'image' //get product media
                                                 ])
                                                 ->values();
+
+                                        $item->total_keep_qty = $item->total_keep_qty ?? 0;
                             
                                         unset($item->productItems);
                                     });
@@ -131,7 +142,7 @@ class InventoryController extends Controller
 
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) {
-            return redirect()->back()->withErrors($allItemErrors)->withInput();
+            return response()->json(['errors' => $allItemErrors], 422);
         }
 
         $image = $request->hasFile('image') ? $request->file('image')->getClientOriginalName() : '';
@@ -390,10 +401,10 @@ class InventoryController extends Controller
             // 'category_id' => $inventoryData['category_id'],
             ]);
 
-            if($inventoryData->hasFile('image'))
+            if(isset($inventoryData['image']) && $inventoryData['image'] instanceof \Illuminate\Http\UploadedFile)
             {
                 $existingGroup->clearMediaCollection('inventory');
-                $existingGroup->addMedia($inventoryData->image)->toMediaCollection('inventory');
+                $existingGroup->addMedia($inventoryData['image'])->toMediaCollection('inventory');
             }
         }
 

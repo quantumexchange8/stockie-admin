@@ -67,8 +67,6 @@ const stopSetting = () => {
 
 
 <template>
-    <Head title="Configuration" />
-
     <Toast 
         inline
         severity="info"

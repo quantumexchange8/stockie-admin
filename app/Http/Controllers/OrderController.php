@@ -1317,7 +1317,7 @@ class OrderController extends Controller
 
             $customer->update([
                 'point' => $customer->point + $totalPoints,
-                'ranking', $givenTier
+                'ranking'=> $givenTier
             ]);
         };
 

@@ -117,7 +117,7 @@ const getTotalServedQty = (item) => {
         return servedQty > 0 || count > 1 ? totalServedQty.push(servedQty) : totalServedQty.push(0);
     });
 
-    return Math.max(...totalServedQty);
+    return totalServedQty.length > 0 ? Math.max(...totalServedQty) : 0;
 };
 
 const getLeftoverQuantity = (item) => {

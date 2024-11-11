@@ -3,7 +3,6 @@ import { Head } from "@inertiajs/vue3";
 </script>
 
 <template>
-    <Head title="Configuration" />
     <div class="flex flex-col gap-5">
         <div
             class="flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]"

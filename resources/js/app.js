@@ -13,7 +13,8 @@ import Tooltip from 'primevue/tooltip';
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    // title: (title) => `${title} - ${appName}`,
+    title: (title) => `${title} - Stockie`,
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.vue`,

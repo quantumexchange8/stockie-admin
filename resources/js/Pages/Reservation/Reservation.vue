@@ -4,6 +4,7 @@ import Toast from "@/Components/Toast.vue";
 import Breadcrumb from "@/Components/Breadcrumb.vue";
 import ReservationTable from "./Partials/ReservationTable.vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import { Head } from "@inertiajs/vue3";
 
 const home = ref({
     label: 'Reservation',
@@ -59,6 +60,8 @@ const fetchReservations = async () => {
 </script>
 
 <template>
+    <Head title="Reservation" />
+
     <AuthenticatedLayout>
         <template #header>
             <Breadcrumb :home="home" />

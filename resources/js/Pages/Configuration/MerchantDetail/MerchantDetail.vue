@@ -282,8 +282,6 @@ watch(() => taxes.value, (newValue) => {
 </script>
 
 <template>
-    <Head title="Configuration" />
-
     <div class="w-full flex flex-col gap-5">
         <Toast
             inline

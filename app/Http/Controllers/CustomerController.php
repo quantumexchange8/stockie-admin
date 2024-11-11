@@ -59,7 +59,7 @@ class CustomerController extends Controller
 
                 return [
                     "id" => $customer->id,
-                    "tier" => $customer->rank->name, 
+                    "tier" => $customer->rank->name ?? 'No Tier', 
                     "name" => $customer->full_name,
                     "email" => $customer->email,
                     "phone" => $customer->phone,
@@ -68,7 +68,7 @@ class CustomerController extends Controller
                     "keep_items" => $activeKeepItems,
                     "created_at" => $customer->created_at->format("d/m/Y"),
                     "image" => $customer->getFirstMediaUrl('user'),
-                    "tier_image" => $customer->rank->getFirstMediaUrl('ranking'),
+                    "tier_image" => $customer->rank?->getFirstMediaUrl('ranking'),
                 ];
         });
 

@@ -556,7 +556,7 @@ const totalInventoryItemStock = (items) => {
                                             <div class="w-[11%] py-2 px-3">{{ item.item_code }}</div>
                                             <div class="w-[10%] py-2 px-3">{{ item.item_category.name }}</div>
                                             <div class="w-[11%] py-2 px-3">{{ item.stock_qty }}</div>
-                                            <div class="w-[11%] py-2 px-3">{{ 0 }}</div>
+                                            <div class="w-[11%] py-2 px-3">{{ item.total_keep_qty }}</div>
                                             <div class="w-[14%] py-2 px-3">
                                                 <Tag
                                                     :variant="item.status === 'In stock' 
@@ -813,7 +813,7 @@ const totalInventoryItemStock = (items) => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="console.log(inventoryToAdd)"
+                        @click="closeForm('group-created')"
                     >
                         Maybe Later
                     </Button>

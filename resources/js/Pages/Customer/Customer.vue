@@ -6,6 +6,7 @@ import CustomerTable from "./Partials/CustomerTable.vue";
 import axios from "axios";
 import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables/index";
+import { Head } from "@inertiajs/vue3";
 
 const home = ref({
     label: 'Customer',
@@ -84,6 +85,8 @@ onMounted(() => {
 </script>
 
 <template>
+    <Head title="Customer" />
+
     <AuthenticatedLayout>
         <template #header>
             <Breadcrumb 
