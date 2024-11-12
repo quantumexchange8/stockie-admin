@@ -24,6 +24,7 @@ const { showMessage } = useCustomToast();
 
 const showAccountDetail = () => {
     isAccountDetailOpen.value = true;
+    profileForm.id = props.user.id;
 }
 
 const showEditModal = (name, id) => {
@@ -72,10 +73,6 @@ const submit = () => {
     })
 };
 
-const changeImage = () => {
-    console.log('change image');
-}
-
 const changeProfilePic = () => {
     profileForm.post(route('profile.updateProfile'), {
         preserveScroll: true,
@@ -101,11 +98,17 @@ const changeProfilePic = () => {
 <template>
     <div class="flex items-center justify-between flex-shrink-0 p-4 hover:bg-[#ffe1e261] hover:shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] group cursor-pointer" v-show="sidebarState.isOpen" @click="showAccountDetail()">
         <div class="flex gap-[16px]">
-            <div 
+            <!-- <div 
                 class="rounded-[100px] bg-primary-900 shadow-[0px_0px_24.2px_0px_rgba(203,60,60,0.30)] 
                         flex w-[46px] pt-[7px] pr-[1.38px] pl-[2px] justify-center items-center"
+            > -->
+            <img 
+                :src="props.user.image ? props.user.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                alt=""
+                class="rounded-[100px] shadow-[0px_0px_24.2px_0px_rgba(203,60,60,0.30)] 
+                        flex w-[46px] pt-[7px] pr-[1.38px] pl-[2px] justify-center items-center"
             >
-            </div>
+            <!-- </div> -->
             <div class="flex flex-col" v-if="props.user">
                 <p class="self-stretch text-primary-900 text-md font-medium  group-hover:text-primary-700">{{ props.user.full_name }}</p>
                 <p class="self-stretch text-primary-950 text-xs font-normal  group-hover:text-primary-800">ID: {{ props.user.role_id }}</p>

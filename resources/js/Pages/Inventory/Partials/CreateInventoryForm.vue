@@ -13,7 +13,7 @@ import RadioButton from '@/Components/RadioButton.vue';
 import Modal from '@/Components/Modal.vue';
 import { OrderCompleteIllus } from '@/Components/Icons/illus';
 import AddItemToMenuForm from './AddItemToMenuForm.vue';
-import { useCustomToast } from '@/Composables/index.js';
+import { useCustomToast, useInputValidator } from '@/Composables/index.js';
 
 const props = defineProps({
     errors: Object,
@@ -30,6 +30,7 @@ const props = defineProps({
 const emit = defineEmits(['addAsProducts', 'close']);
 
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
 
 const groupCreatedModalIsOpen = ref(false);
 const addAsProductModalIsOpen = ref(false);
@@ -154,7 +155,7 @@ const removeItem = (index) => {
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
             <DragDropImage
                 :inputName="'image'"
-                :errorMessage="form.errors.image"
+                :errorMessage="form.errors?.image || ''"
                 v-model="form.image"
                 class="col-span-full md:col-span-4 h-[372px]"
             />
@@ -228,6 +229,7 @@ const removeItem = (index) => {
                                     :placeholder="'e.g. 25'"
                                     :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.low_stock_qty'][0] : ''"
                                     v-model="item.low_stock_qty"
+                                    @keypress="isValidNumberKey($event, false)"
                                 />
                             </div>
                             <RadioButton

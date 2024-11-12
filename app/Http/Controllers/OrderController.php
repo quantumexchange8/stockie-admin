@@ -448,6 +448,10 @@ class OrderController extends Controller
                     $orderItem->handledBy->image = $orderItem->handledBy->getFirstMediaUrl('user');
                 }
             }
+
+            if($currentOrderTable->order->customer) {
+                $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
+            }
             
             $data = [
                 'currentOrderTable' => $currentOrderTable->table,

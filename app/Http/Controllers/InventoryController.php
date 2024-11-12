@@ -46,7 +46,7 @@ class InventoryController extends Controller
                                                 ->unique('id')
                                                 ->map(fn($product) => [
                                                     'id' => $product->id,
-                                                    'image' => 'image' //get product media
+                                                    'image' => $product->getFirstMediaUrl('product') //get product media
                                                 ])
                                                 ->values();
 

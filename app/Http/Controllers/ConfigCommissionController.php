@@ -178,6 +178,7 @@ class ConfigCommissionController extends Controller
                         'bucket' => $product->bucket,
                         'commission' => $commission,
                         'rate' => $comm->rate,
+                        'image' => $product->getFirstMediaUrl('product')
                     ];
                 }
             }

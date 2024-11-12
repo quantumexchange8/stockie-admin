@@ -104,7 +104,6 @@ const rowGroupedByDates = computed(() => {
 // watch(() => props.rows, () => {
 //     filteredRowsCount.value = props.rows.length;
 // })
-
 </script>
 
 <template>
@@ -165,9 +164,9 @@ const rowGroupedByDates = computed(() => {
                                 <div class="flex items-center gap-3">
                                     <!-- <span class="w-[60px] h-[60px] flex-shrink-0 rounded-full bg-primary-700"></span> -->
                                     <img 
-                                        :src="row.inventory?.image ?? 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        :src="row.inventory?.image ? row.inventory.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt=""
-                                        class="w-[60px] h-[60px] flex-shrink-0 rounded-full bg-primary-700"
+                                        class="w-[60px] h-[60px] flex flex-shrink-0 rounded-full bg-primary-700"
                                     />
                                     <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ row.inventory?.name ?? '' }}</span>
                                 </div>

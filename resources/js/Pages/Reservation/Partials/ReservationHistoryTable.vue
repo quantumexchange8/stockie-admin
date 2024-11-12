@@ -22,7 +22,6 @@ const props = defineProps({
         default: () => {},
     },
 });
-console.log(props.rows);
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
 const { exportToCSV } = useFileExport();

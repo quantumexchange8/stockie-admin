@@ -19,7 +19,7 @@ import AddProduct from './AddProduct.vue';
 const props = defineProps({
     productDetails: {
         type: Object,
-        required: true,
+        default: () => {},
     },
     commissionDetails: {
         type: Object,
@@ -168,7 +168,12 @@ const filters = ref({
                         </template>
                         <template #product_name="rows">
                             <div class="flex items-center gap-3">
-                                <div class="size-10 rounded-[1px] border-[0.2px] border-solid border-grey-100 bg-white"></div>
+                                <!-- <div class="size-10 rounded-[1px] border-[0.2px] border-solid border-grey-100 bg-white"></div> -->
+                                <img 
+                                    :src="rows.image ? rows.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt=""
+                                    class="size-10 rounded-[1px] border-[0.2px] border-solid border-grey-100"
+                                >
                                 <Tag
                                     :variant="'default'"
                                     :value="'Set'"

@@ -278,7 +278,12 @@ const formatPhone = (phone) => {
         <div class="flex flex-col gap-y-6 items-start rounded-[5px]">
             <div class="flex flex-col justify-center items-start gap-y-3 px-6 py-3 w-full">
                 <div class="flex flex-col gap-y-3 py-6 justify-center items-center w-full bg-[rgba(255,_249,_249,_0.90)] rounded-[5px]">
-                    <div class="bg-primary-700 rounded-full size-20"></div>
+                    <!-- <div class="bg-primary-700 rounded-full size-20"></div> -->
+                    <img 
+                        :src="order.customer.image ? order.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="rounded-full size-20"
+                    >
                     <div class="flex flex-col gap-y-2 items-center">
                         <p class="text-primary-900 text-base font-semibold">{{ order.customer.full_name }}</p>
                         <div class="flex items-center justify-center gap-x-2">
@@ -295,7 +300,12 @@ const formatPhone = (phone) => {
                             <div class="flex flex-col gap-y-2 py-3" v-for="(item, index) in pendingServeItems" :key="index">
                                 <div class="flex justify-between items-center gap-x-3">
                                     <div class="flex flex-nowrap gap-x-3 items-center">
-                                        <div class="p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
+                                        <!-- <div class="p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
+                                        <img 
+                                            :src="pendingServeItems.image ? pendingServeItems.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                        >
                                         <div class="flex flex-col gap-y-2 items-start justify-center self-stretch">
                                             <div class="flex flex-nowrap gap-x-2 items-center">
                                                 <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>

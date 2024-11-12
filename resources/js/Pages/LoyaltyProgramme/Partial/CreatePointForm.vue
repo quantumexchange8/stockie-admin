@@ -76,7 +76,7 @@ const updateInventoryStockCount = async (index, id) => {
 }
 
 const isFormValid = computed(() => {
-    return ['name', 'point'].every(field => form[field]) && form.items.length > 0;
+    return ['name', 'point', 'image'].every(field => form[field]) && form.items.length > 0;
 });
 
 </script>
