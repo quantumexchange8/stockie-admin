@@ -46,17 +46,20 @@ class InventoryController extends Controller
                                                 ->unique('id')
                                                 ->map(fn($product) => [
                                                     'id' => $product->id,
-                                                    'image' => $product->getFirstMediaUrl('product') //get product media
                                                 ])
                                                 ->values();
 
                                         $item->total_keep_qty = $item->total_keep_qty ?? 0;
                             
                                         unset($item->productItems);
+                                        
                                     });
 
                                     return $group;
                                 });
+        $inventories->each(function($inventory){
+            $inventory->inventory_image = $inventory->getFirstMediaUrl('inventory');
+        });
 
         $endDate = Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
         $startDate = Carbon::now()->subDays(30)->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
@@ -149,7 +152,7 @@ class InventoryController extends Controller
         
         $newGroup = Iventory::create([
             'name' => $validatedData['name'],
-            'category_id' => $validatedData['category_id'],
+            // 'category_id' => $validatedData['category_id'],
             // 'category_id' => $validatedData['category_id'],
             'image' => $image,
         ]);

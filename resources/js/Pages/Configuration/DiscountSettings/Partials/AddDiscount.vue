@@ -158,7 +158,12 @@ watch(() => invalidDates.value, (newValue) => {
                 <template v-else>
                     <div class="flex flex-col h-[300px] items-start flex-[1_0_0] self-stretch divide-y divide-grey-100 overflow-auto scrollbar-webkit">
                         <div class="flex py-3 items-center gap-3 self-stretch" v-for="products in selectedProducts">
-                            <div class="size-11 bg-primary-200"></div>
+                            <!-- <div class="size-11 bg-primary-200"></div> -->
+                            <img 
+                                :src="products.image ? products.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                alt=""
+                                class="size-11"
+                            >
                             <div class="flex flex-col justify-center items-start flex-[1_0_0]">
                                 <span class="self-stretch overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ products.product_name }}</span>
                                 <span class="line-clamp-1 text-grey-900 text-ellipsis text-base font-bold">RM {{ formatAmount(products.price) }}</span>

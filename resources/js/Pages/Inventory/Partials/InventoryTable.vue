@@ -509,7 +509,7 @@ const totalInventoryItemStock = (items) => {
                                                 </td>
                                                 <td class="w-[79%]">
                                                     <div class="flex items-center gap-3">
-                                                        <img :src="group.image ? group.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                        <img :src="group.inventory_image ? group.inventory_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                             alt="" 
                                                             class="w-[60px] h-[60px] flex-shrink-0 rounded-full" 
                                                         />

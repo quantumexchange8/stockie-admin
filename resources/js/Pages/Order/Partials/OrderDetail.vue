@@ -301,7 +301,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                 <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
                                     <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                     <img 
-                                        :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt=""
                                         class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                                     >
@@ -342,7 +342,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                 <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
                                     <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                     <img 
-                                        :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt=""
                                         class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                                     >

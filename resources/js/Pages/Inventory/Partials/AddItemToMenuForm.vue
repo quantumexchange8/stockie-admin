@@ -144,6 +144,17 @@ const isFormValid = computed(() => {
                                     <template #value>
                                         {{ item.formattedItemName }}
                                     </template>
+                                    <template #optionGroup="group">
+                                        <div class="flex flex-nowrap items-center gap-3">
+                                            <!-- <div class="bg-grey-50 border border-grey-200 h-6 w-6"></div> -->
+                                            <!-- <img 
+                                                :src="group.group_image ? group.group_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                alt=""
+                                                class="bg-grey-50 border border-grey-200 h-6 w-6"
+                                            > -->
+                                            <span class="text-grey-400 text-base font-bold">{{ group }}</span>
+                                        </div>
+                                    </template>
                                 </Dropdown>
                                 <!-- <TextInput
                                     :inputName="'item_name_' +  i"

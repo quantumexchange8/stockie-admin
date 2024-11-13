@@ -105,8 +105,8 @@ const changeProfilePic = () => {
             <img 
                 :src="props.user.image ? props.user.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                 alt=""
-                class="rounded-[100px] shadow-[0px_0px_24.2px_0px_rgba(203,60,60,0.30)] 
-                        flex w-[46px] pt-[7px] pr-[1.38px] pl-[2px] justify-center items-center"
+                class="rounded-[100px] object-fit shadow-[0px_0px_24.2px_0px_rgba(203,60,60,0.30)] 
+                        flex w-[46px] justify-center items-center"
             >
             <!-- </div> -->
             <div class="flex flex-col" v-if="props.user">

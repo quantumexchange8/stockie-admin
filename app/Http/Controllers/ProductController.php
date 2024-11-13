@@ -39,6 +39,7 @@ class ProductController extends Controller
                             ->map(function ($product) {
                                 $product_items = $product->productItems;
                                 $minStockCount = 0;
+                                $product->image = $product->getFirstMediaUrl('product');
 
                                 if (count($product_items) > 0) {
                                     $stockCountArr = [];
@@ -61,10 +62,6 @@ class ProductController extends Controller
 
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
-
-        $products->each(function($product){
-            $product->image = $product->getFirstMediaUrl('products');
-        });
 
         return Inertia::render('Product/Product', [
             'message' => $message ?? [],
@@ -296,12 +293,14 @@ class ProductController extends Controller
 
         $product = Product::with([
                                 'category:id,name',
-                                'productItems',
-                                'productItems.inventoryItem:id,item_name,stock_qty',
+                                'productItems.inventoryItem:id,inventory_id,item_name,stock_qty',
+                                'productItems.inventoryItem.inventory',
                                 'saleHistories'
                             ])
                             ->orderBy('created_at', 'desc')
                             ->find($id);
+
+        $product->image = $product->getFirstMediaUrl('product');
         
         $saleHistories = $product->saleHistories()->whereDate('created_at', '>=', $dateFilter[0])
                                                 ->whereDate('created_at', '<=', $dateFilter[1])
@@ -396,6 +395,7 @@ class ProductController extends Controller
                         ->map(function ($product) {
                             $product_items = $product->productItems;
                             $minStockCount = 0;
+                            $product->image = $product->getFirstMediaUrl('product');
 
                             if (count($product_items) > 0) {
                                 $stockCountArr = [];
@@ -438,7 +438,8 @@ class ProductController extends Controller
 
                             return [
                                 'group_name' => $group->name,
-                                'items' => $group_items
+                                'items' => $group_items,
+                                'group_image' => $group->getFirstMediaUrl('inventory'),
                             ];
                         });
     }

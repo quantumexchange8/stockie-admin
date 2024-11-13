@@ -95,7 +95,7 @@ const getKeepItemName = (item) => {
                             <img 
                                 :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt=""
-                                class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                class="col-span-3 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                             >
                             <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                 <div class="flex flex-row gap-x-2 self-stretch items-center">

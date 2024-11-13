@@ -95,6 +95,7 @@ const pendingServeItems = computed(() => {
         };
     });
 });
+console.log(pendingServeItems);
 
 const getKeptQuantity = (subItem) => {
     return subItem.keep_items?.reduce((totalKeeps, keepItem) => totalKeeps + parseInt(keepItem.oldest_keep_history.qty) + (parseFloat(keepItem.oldest_keep_history.cm) > 0 ? 1 : 0), 0) ?? 0;
@@ -302,9 +303,9 @@ const formatPhone = (phone) => {
                                     <div class="flex flex-nowrap gap-x-3 items-center">
                                         <!-- <div class="p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                         <img 
-                                            :src="pendingServeItems.image ? pendingServeItems.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            :src="pendingServeItems.product.image ? pendingServeItems.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                             alt=""
-                                            class="p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                            class="size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                                         >
                                         <div class="flex flex-col gap-y-2 items-start justify-center self-stretch">
                                             <div class="flex flex-nowrap gap-x-2 items-center">

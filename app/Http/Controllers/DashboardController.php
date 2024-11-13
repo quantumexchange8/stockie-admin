@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Log;
+use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
@@ -159,7 +160,6 @@ class DashboardController extends Controller
                                             ->map(function ($value) {
                                                 return (float) $value;
                                             })->toArray();
-
         
         $products = collect($allProducts)
                     ->sortBy('stock_qty')
@@ -293,6 +293,30 @@ class DashboardController extends Controller
                             ->get();
 
         return response()->json($activeTables);                            
+    }
+
+    public function getActivities ()
+    {
+        $activityLogs = Activity::whereIn('event', ['check in', 'assign to serve', 'place to order'])
+                                ->where('log_name', 'Order')
+                                ->orderByDesc('created_at')
+                                ->take(6)
+                                ->get();
+
+        // $activityLogs->each(function ($activityLog){
+        //     switch($activityLog->event){
+        //         case 'check-in': 
+        //             $activityLog->image = $activityLog->getFirstMediaUrl('activity');
+                
+        //         case 'assign to serve':
+        //             $activityLog->image = $activityLog->getFirstMediaUrl('activity');
+
+        //         case 'place to order':
+        //             $activityLog->image = $activityLog->getFirstMediaUrl('activity');
+        //     }
+        // });
+
+        return response()->json($activityLogs);
     }
 
 }

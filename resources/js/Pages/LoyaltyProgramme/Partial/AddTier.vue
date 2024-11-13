@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import dayjs from 'dayjs';
 import { useForm } from "@inertiajs/vue3";
 import Toggle from "@/Components/Toggle.vue";
@@ -9,10 +9,9 @@ import Dropdown from "@/Components/Dropdown.vue";
 import TextInput from "@/Components/TextInput.vue";
 import { Calendar, UploadLogoIcon } from "@/Components/Icons/solid";
 import Accordion from "@/Components/Accordion.vue";
-// import Carlsbeg from "../../../../assets/images/Loyalty/Carlsbeg.svg";
-// import Tiger from "../../../../assets/images/Loyalty/Tiger.svg";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
-import { useInputValidator } from "@/Composables";
+import { useCustomToast, useInputValidator } from "@/Composables";
+import InputError from "@/Components/InputError.vue";
 
 const props = defineProps({
     inventoryItems: {
@@ -26,12 +25,12 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close"]);
-
 const rewardList = ref([]);
-const logoPreview = ref(props.logos);
+const logoPreview = ref([]);
 const fileInput = ref(null);
 const selectedLogo = ref(null);
 
+const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 const toggleMinPurchase = (index) => {
     const reward = rewardList.value[index];
@@ -65,7 +64,6 @@ const form = useForm({
 
 const submit = () => {
     form.rewards = rewardList.value;
-    form.icon = selectedLogo.value;
     form.rewards.forEach(item => {
         item.item_qty = item.free_item ? '1' : '';
         item.free_item = item.free_item.toString();
@@ -76,6 +74,13 @@ const submit = () => {
         preserveState: 'errors',
         onSuccess: () => {
             closeModal();
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Tier successfully added.',
+                });
+                form.reset();
+            }, 200);
         },
     });
 };
@@ -112,11 +117,12 @@ const handleLogoUpload = () => {
 
 const handleFileSelect = (event) => {
   const file = event.target.files[0]
-//   console.log(file);
+
   if (file && file.type.startsWith('image/')) { 
-        const previewUrl = file;
-        logoPreview.value.push(previewUrl);
-        selectedLogo.value = previewUrl;
+      const previewUrl = URL.createObjectURL(file);
+      logoPreview.value.push(previewUrl);
+      selectedLogo.value = previewUrl;
+      form.icon = file;
   }
 }
 
@@ -124,6 +130,9 @@ const selectLogo = (logo) => {
     selectedLogo.value = logo;
 }
 
+onMounted(() => {
+    logoPreview.value = props.logos.map((logo) => URL.createObjectURL(logo));
+});
 </script>
 
 <template>
@@ -146,31 +155,32 @@ const selectLogo = (logo) => {
                             <div class="w-[308px] flex flex-wrap gap-4 items-end">
                                 <!-- Existing icons from database -->
                                     <!-- <img :src="logoPreview.value" alt="" /> -->
-                                <template v-for="logo in logoPreview" v-if="logoPreview">
+                                <template v-for="logo in logoPreview" :key="logo" v-if="logoPreview.length > 0">
                                     <div class="w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center"
                                         :class="logo === selectedLogo ? 'border-primary-900 !border-solid border-[2px]' : ''"
                                         @click="selectLogo(logo)"
                                     >
+                                        <img :src="logo" alt="logo" class="w-full h-full object-cover"/>
                                     </div>
                                 </template>
 
                                 <!-- Icons  -->
                                 <div class="flex flex-col gap-4 items-center">
                                     <div class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center">
-                                        <UploadLogoIcon 
-                                            @click="handleLogoUpload"
-                                            class="cursor-pointer"
-                                        />
-
-                                        <input 
-                                            type="file" 
-                                            ref="fileInput" 
-                                            @change="handleFileSelect" 
-                                            accept="image/*" 
-                                            class="hidden" 
-                                        />
+                                    <UploadLogoIcon 
+                                        @click="handleLogoUpload"
+                                        class="cursor-pointer"
+                                    />
+                                    <input 
+                                        type="file" 
+                                        ref="fileInput" 
+                                        @change="handleFileSelect" 
+                                        accept="image/*" 
+                                        class="hidden" 
+                                    />
                                     </div>
                                 </div>
+                                <InputError :message="form.errors.image" v-if="form.errors.image" />
                             </div>
                         </div>
 
@@ -299,7 +309,19 @@ const selectLogo = (logo) => {
                                                     v-model="reward.free_item"
                                                     placeholder="Select"
                                                     class="w-full"
-                                                />
+                                                >
+                                                    <template #optionGroup="group">
+                                                        <div class="flex flex-nowrap items-center gap-3">
+                                                            <!-- <div class="bg-grey-50 border border-grey-200 h-6 w-6"></div> -->
+                                                            <img 
+                                                                :src="group.group_image ? group.group_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                                alt=""
+                                                                class="bg-grey-50 border border-grey-200 h-6 w-6"
+                                                            >
+                                                            <span class="text-grey-400 text-base font-bold">{{ group.group_name }}</span>
+                                                        </div>
+                                                    </template>
+                                                </Dropdown>
                                             </div>
                                         </template>
 

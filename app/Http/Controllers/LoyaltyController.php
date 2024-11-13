@@ -95,7 +95,8 @@ class LoyaltyController extends Controller
 
                                         return [
                                             'group_name' => $group->name,
-                                            'items' => $group_items
+                                            'items' => $group_items,
+                                            'group_image' => $group->getFirstMediaUrl('inventory')
                                         ];
                                     });
 
@@ -204,9 +205,10 @@ class LoyaltyController extends Controller
             'icon' => ''
         ]);
 
-        if($validatedData->hasFile('icon'))
+        if(isset($validatedData['icon']) && $validatedData['icon'] instanceof \Illuminate\Http\UploadedFile)
         {
-            $ranking->addMedia($validatedData->icon)->toMediaCollection('ranking');
+            $ranking->clearMediaCollection('inventory');
+            $ranking->addMedia($validatedData['icon'])->toMediaCollection('ranking');
         }
 
         // dd($validatedRankingRewards);

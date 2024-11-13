@@ -36,9 +36,9 @@ class WaiterRequest extends FormRequest
                     [
                         'required',
                         'email',
-                        Rule::unique('users')->ignore($this->input('id')),
+                        Rule::unique('users')->ignore($this->input('id'))->whereNull('deleted_at'),
                     ]
-                : 'required|email|unique:users';
+                : 'required|email|unique:users,email,NULL,id,deleted_at,NULL';
 
 
         $rules['role_id'] = $this->input('id') 
@@ -46,9 +46,9 @@ class WaiterRequest extends FormRequest
                     [
                         'required',
                         'string',
-                        Rule::unique('users')->ignore($this->input('id')),
+                        Rule::unique('users')->ignore($this->input('id'))->whereNull('deleted_at'),
                     ]
-                : 'required|string|unique:users';
+                : 'required|string|unique:users,role_id,NULL,id,deleted_at,NULL';
 
         return $rules;
     }

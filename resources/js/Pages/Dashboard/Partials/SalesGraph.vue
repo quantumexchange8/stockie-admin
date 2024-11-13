@@ -243,7 +243,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col p-6 items-start gap-8 rounded-[5px] border border-red-100 overflow-hidden h-full">
+    <div class="flex flex-col p-6 items-start gap-8 rounded-[5px] border border-red-100 overflow-hidden min-h-[350px]">
         <div class="w-full flex justify-center items-center">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Sales</span>
             <div class="card flex flex-row flex-start gap-3">

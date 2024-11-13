@@ -351,7 +351,19 @@ const selectLogo = (logo) => {
                                                     placeholder="Select"
                                                     class="w-full"
                                                     @onChange="initializeMinItemQty($event, index)"
-                                                />
+                                                >
+
+                                                <template #optionGroup="items">
+                                                    <div class="flex flex-nowrap items-center gap-3">
+                                                        <img 
+                                                            :src="items.group_item ? items.group_item : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                            alt=""
+                                                            class="bg-grey-50 border border-grey-200 h-6 w-6"
+                                                        >
+                                                        <span class="text-grey-400 text-base font-bold">{{ items.group_name }}</span>
+                                                    </div>
+                                                </template>
+                                                </Dropdown>
                                                 <div 
                                                     v-if="reward.free_item !== ''"
                                                     class="w-fit flex max-h-[44px]" 

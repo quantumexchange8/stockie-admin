@@ -97,6 +97,7 @@ class ConfigDiscountController extends Controller
                     $dateFilter = array_merge($dateFilter, $dateRange);
                 }
             }
+
         }
 
         return response()->json($dateFilter);
@@ -105,7 +106,7 @@ class ConfigDiscountController extends Controller
     public function discountDetails() {
         $discount = ConfigDiscount::with('discountItems.product')
                                     ->whereHas('discountItems')
-                                    ->orderByDesc('discount_to')
+                                    ->orderBy('discount_from')
                                     ->get();
 
         $detailedDiscount = [];

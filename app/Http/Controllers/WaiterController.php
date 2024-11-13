@@ -165,13 +165,20 @@ class WaiterController extends Controller
 
    public function deleteWaiter (String $id)
    {
-        $deleteWaiter = User::find($id);
+       $deleteWaiter = User::find($id);
+
+    //    activity()->useLog('fire')
+    //             ->performedOn($deleteWaiter)
+    //             ->event('fired')
+    //             ->log("$deleteWaiter->full_name is leaving us and we now have $deleteWaiter->salary more to spend, oh yeah");
+
         $deleteWaiter->delete();
 
         $message = [ 
             'severity' => 'success', 
             'summary' => 'Selected waiter has been successfully deleted.'
         ];
+
 
         return Redirect::route('waiter')->with(['message' => $message]);
    }

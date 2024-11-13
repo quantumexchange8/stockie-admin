@@ -56,7 +56,6 @@ const props = defineProps({
         default: ''
     }
 });
-
 const dt = ref();
 const currentPage = ref(1);
 const loading = ref(false);
@@ -629,7 +628,7 @@ onMounted(() => {
                                 >
                                 <img 
                                     :src="item.stock_left > 0 
-                                            ? (item.image || 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png') 
+                                            ? ( item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png') 
                                             : ''" 
                                     alt="" 
                                     :class="item.stock_left > 0 ? 'h-full w-full' : ''"

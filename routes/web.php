@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/filterSale', [DashboardController::class, 'filterSales'])->name('dashboard.filter-sales');
         Route::get('/activeTables', [DashboardController::class, 'getActiveTables'])->name('dashboard.active-tables');
+        Route::get('/getActivities', [DashboardController::class, 'getActivities'])->name('dashboard.activity-log');
     });
 
     /********* Components **********/

@@ -104,6 +104,17 @@ class OrderController extends Controller
     {
         $validatedData = $request->validated();
 
+        $waiter = User::find($validatedData['assigned_waiter']);
+        $waiter->image = $waiter->getFirstMediaUrl('user');
+        
+        $assignedWaiter = User::where('id', $validatedData['assigned_waiter'])->value('full_name');
+        $orderTables = array_map(function ($table) {
+            return Table::where('id', $table)->pluck('table_no')->first();
+        }, $validatedData['tables']);
+        
+        $tableString = implode(', ', $orderTables);
+        
+        
         $newOrder = Order::create([
             'order_no' => RunningNumberService::getID('order'),
             'pax' => $validatedData['pax'],
@@ -127,7 +138,33 @@ class OrderController extends Controller
                 'status' => 'Pending Order',
                 'order_id' => $newOrder->id
             ]);
+            
         }
+
+        //check in
+        activity()->useLog('Order')
+                    ->performedOn($newOrder)
+                    ->event('check in')
+                    ->withProperties([
+                        'waiter_name' => $assignedWaiter,
+                        'table_name' => $tableString, 
+                        'waiter_image' => $waiter->image
+                    ])
+                    ->log("New customer check-in by :properties.waiter_name.");
+
+        //assign to serve
+        activity()->useLog('Order')
+                    ->performedOn($newOrder)
+                    ->event('assign to serve')
+                    ->withProperties([
+                        'waiter_name' => $assignedWaiter,
+                        'waiter_image' => $waiter->image,
+                        'table_name' => $tableString, 
+                        'assigned_by' => auth()->user()->full_name,
+                        'assigner_image' => auth()->user()->getFirstMediaUrl('user'),
+                    ])
+                    ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
+
 
         return redirect()->back();
     }
@@ -210,6 +247,16 @@ class OrderController extends Controller
         $addNewOrder = $fixedOrderDetails['current_order_completed'];
         $serveNow = $request->action_type === 'now' ? true : false;
 
+        $orderTables = array_map(function ($table) {
+            return Table::where('id', $table)->pluck('table_no')->first();
+        }, $fixedOrderDetails['tables']);
+        
+        $tableString = implode(', ', $orderTables);
+
+        $waiter = User::find($request->user_id);
+        $waiter->image = $waiter->getFirstMediaUrl('user');
+        $assignedWaiter = User::where('id', $request->user_id)->value('full_name');
+
         foreach ($orderItems as $index => $item) {
             $rules = ['item_qty' => 'required|integer'];
             $requestMessages = ['item_qty.required' => 'This field is required.', 'item_qty.integer' => 'This field must be an integer.'];
@@ -268,7 +315,6 @@ class OrderController extends Controller
                         'order_id' => $newOrder->id
                     ]);
                 }
-
                 $newOrder->refresh();
             }
 
@@ -286,6 +332,17 @@ class OrderController extends Controller
                     'point_earned' => $item['point'] * $item['item_qty'],
                     'status' => $status,
                 ]);
+
+                // placed an order for {{table name}}.
+                activity()->useLog('Order')
+                            ->performedOn($new_order_item)
+                            ->event('place to order')
+                            ->withProperties([
+                                'waiter_name' => $assignedWaiter, 
+                                'table_name' => $tableString,
+                                'waiter_image' => $waiter->image,
+                            ])
+                            ->log("placed an order for :properties.table_name.");
 
                 if (count($item['product_items']) > 0) {
                     $temp += round($item['price'] * $item['item_qty'], 2);
@@ -362,6 +419,8 @@ class OrderController extends Controller
                 });
             }
         }
+
+    
 
         return response()->json($order->id);
     }

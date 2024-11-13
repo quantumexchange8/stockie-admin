@@ -26,7 +26,7 @@ class RankingRequest extends FormRequest
             'min_amount' => 'required|integer',
             'reward' => 'required|string|max:255',
             // 'icon' => 'required|string|max:255',
-            'image' => 'required|image',
+            'icon' => 'required|image',
         ];
 
         $rules['name'] = $this->input('id') 
@@ -34,9 +34,9 @@ class RankingRequest extends FormRequest
                                 'required',
                                 'string',
                                 'max:255',
-                                Rule::unique('rankings')->ignore($this->input('id')),
+                                Rule::unique('rankings')->ignore($this->input('id'))->whereNull('deleted_at'),
                             ]
-                        : 'required|string|max:255|unique:rankings';
+                        : 'required|string|max:255|unique:rankings,name,NULL,id,deleted_at,NULL';
 
         return $rules;
     }
@@ -47,6 +47,7 @@ class RankingRequest extends FormRequest
             'name' => 'Ranking Name',
             'min_amount' => 'Minimum Amount',
             'reward' => 'Reward',
+            'icon' => 'Icon'
         ];
     }
 
@@ -62,8 +63,8 @@ class RankingRequest extends FormRequest
             'reward.required' => 'This field is required.',
             'reward.string' => 'This field must be a string.',
             'reward.max' => 'This field must not exceed 255 characters.',
-            'image.image' => 'Invalid format.',
-            'image.required' => 'Icon is required.'
+            'icon.image' => 'Invalid format.',
+            'icon.required' => 'Icon is required.'
         ];
     }
 }
