@@ -5,6 +5,7 @@ use App\Http\Controllers\ConfigCommissionController;
 use App\Http\Controllers\ConfigDiscountController;
 use App\Http\Controllers\ConfigEmployeeIncProgController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SummaryReportController;
@@ -37,6 +38,7 @@ Route::middleware('auth')->group(function () {
     //     return Inertia::render('Dashboard/Dashboard');
     // })->name('dashboard');
     Route::get('/userDetails', [RegisteredUserController::class, 'getUser'])->name('user-details');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
 
     Route::prefix('dashboard')->group(function(){
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');

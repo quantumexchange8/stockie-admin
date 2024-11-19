@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
 import { sidebarState, rightSidebarState } from '@/Composables'
 import { NumberedNotificationIcon, LanguageIcon, LogOutIcon, CheckIcon } from '@/Components/Icons/solid';
@@ -8,14 +8,34 @@ import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
 import { LogoutIllust } from '@/Components/Icons/illus';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+import NotificationsOverlay from './NotificationsOverlay.vue';
+import OverlayPanel from '@/Components/OverlayPanel.vue';
+import axios from 'axios';
 
 defineProps({
     title: String
 })
 
-const form = useForm({
+const order_notifications = ref([]);
+const inventory_notifications = ref([]);
+const waiter_notifications = ref([]);
+const notificationLength = ref(0);
 
-});
+const getNotifications = async () => {
+    try {
+        const response = await axios.get('/notifications');
+        order_notifications.value = response.data.order_notifications;
+        inventory_notifications.value = response.data.inventory_notifications;
+        waiter_notifications.value = response.data.waiter_notifications;
+
+        notificationLength.value =  Object.keys(inventory_notifications.value).length + 
+                                    Object.keys(order_notifications.value).length +
+                                    Object.keys(waiter_notifications.value).length;
+
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 const languages = [ 
     { name: 'Bahasa Melayu', language: 'ms' },
@@ -24,6 +44,7 @@ const languages = [
 ];
 
 const selected = ref(languages[1]);
+const op = ref(null);
 
 const changeLanguage = (lang) => {
     selected.value = languages.find(language => language.language === lang);
@@ -32,6 +53,14 @@ const changeLanguage = (lang) => {
 const isSelected = (language) => {
     return selected.value && language.language === selected.value.language;
 };
+
+const openOverlay = (event) => {
+    op.value.show(event);
+}
+
+const closeOverlay = () => {
+    op.value.hide();
+}
 
 const submit = () => {
     form.post(route('logout'), {
@@ -57,7 +86,8 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-    rightSidebarState.isOpen = false
+    rightSidebarState.isOpen = false;
+    getNotifications();
 })
 </script>
 
@@ -121,11 +151,16 @@ onMounted(() => {
                                 <slot name="header"/>
                             </div>
                             <div class="flex items-start gap-8">
-                                <NumberedNotificationIcon 
-                                    class="text-primary-900 hover:text-primary-800"
-                                    :notificationValue="10"
-                                    aria-hidden="true" 
-                                />
+                                <button
+                                    :type="'button'"
+                                    @click="openOverlay($event)"    
+                                >
+                                    <NumberedNotificationIcon 
+                                        class="text-primary-900 hover:text-primary-800"
+                                        :notificationValue="notificationLength"
+                                        aria-hidden="true" 
+                                    />
+                                </button>
                                 <Menu as="div" class="relative inline-block text-left">
                                     <div>
                                         <MenuButton>
@@ -238,5 +273,17 @@ onMounted(() => {
             </div>
         </form>
     </Modal>
+
+    <OverlayPanel ref="op"
+        :disabled="order_notifications.length === 0 || inventory_notifications.length > 0 || waiter_notifications.length > 0"
+    >
+        <NotificationsOverlay 
+            :order_notifications="order_notifications"
+            :inventory_notifications="inventory_notifications"
+            :waiter_notifications="waiter_notifications"
+            :notificationLength="notificationLength"
+            @close="closeOverlay"
+        />
+    </OverlayPanel>
     
 </template>

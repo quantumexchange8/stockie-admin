@@ -23,12 +23,17 @@ use App\Models\StockHistory;
 use App\Models\Table;
 use App\Models\Setting;
 use App\Models\User;
+use App\Notifications\InventoryOutOfStock;
+use App\Notifications\InventoryRunningOutOfStock;
+use App\Notifications\OrderCheckInCustomer;
+use App\Notifications\OrderPlaced;
 use Illuminate\Http\Request;
 use App\Models\Zone;
 use App\Services\RunningNumberService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
+use Notification;
 
 class OrderController extends Controller
 {
@@ -107,7 +112,6 @@ class OrderController extends Controller
         $waiter = User::find($validatedData['assigned_waiter']);
         $waiter->image = $waiter->getFirstMediaUrl('user');
         
-        $assignedWaiter = User::where('id', $validatedData['assigned_waiter'])->value('full_name');
         $orderTables = array_map(function ($table) {
             return Table::where('id', $table)->pluck('table_no')->first();
         }, $validatedData['tables']);
@@ -146,18 +150,21 @@ class OrderController extends Controller
                     ->performedOn($newOrder)
                     ->event('check in')
                     ->withProperties([
-                        'waiter_name' => $assignedWaiter,
+                        'waiter_name' => $waiter->full_name,
                         'table_name' => $tableString, 
                         'waiter_image' => $waiter->image
                     ])
                     ->log("New customer check-in by :properties.waiter_name.");
+
+        Notification::send(User::all(), new OrderCheckInCustomer($tableString, $waiter->full_name, $waiter->id));
+        
 
         //assign to serve
         activity()->useLog('Order')
                     ->performedOn($newOrder)
                     ->event('assign to serve')
                     ->withProperties([
-                        'waiter_name' => $assignedWaiter,
+                        'waiter_name' => $waiter->full_name,
                         'waiter_image' => $waiter->image,
                         'table_name' => $tableString, 
                         'assigned_by' => auth()->user()->full_name,
@@ -255,7 +262,6 @@ class OrderController extends Controller
 
         $waiter = User::find($request->user_id);
         $waiter->image = $waiter->getFirstMediaUrl('user');
-        $assignedWaiter = User::where('id', $request->user_id)->value('full_name');
 
         foreach ($orderItems as $index => $item) {
             $rules = ['item_qty' => 'required|integer'];
@@ -333,12 +339,14 @@ class OrderController extends Controller
                     'status' => $status,
                 ]);
 
+                Notification::send(User::all(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
+
                 // placed an order for {{table name}}.
                 activity()->useLog('Order')
                             ->performedOn($new_order_item)
                             ->event('place to order')
                             ->withProperties([
-                                'waiter_name' => $assignedWaiter, 
+                                'waiter_name' => $waiter->full_name, 
                                 'table_name' => $tableString,
                                 'waiter_image' => $waiter->image,
                             ])
@@ -384,6 +392,14 @@ class OrderController extends Controller
                             'item_qty' => $value['qty'],
                             'serve_qty' => $serveQty,
                         ]);
+
+                        if($newStatus === 'Out of stock'){
+                            Notification::send(User::where('role','admin')->get(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                        };
+
+                        if($newStatus === 'Low in stock'){
+                            Notification::send(User::where('role','admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                        }
                     }
                 }
             }

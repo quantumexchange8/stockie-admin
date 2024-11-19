@@ -18,7 +18,6 @@ const getActivities = async () => {
     try {
         const activityResponse = await axios.get(route('dashboard.activity-log'));
         activities.value = activityResponse.data;
-        console.log(activities.value)
     } catch (error) {
         console.error(error);
     } finally {
