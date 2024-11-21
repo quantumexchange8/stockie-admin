@@ -755,6 +755,7 @@ export const NumberedNotificationIcon = defineComponent({
                     height="9"
                     rx="4.5"
                     fill="#F83B42"
+                    display={props.notificationValue > 0 ? null : "none" }
                 />
                 <rect
                     x="13.498"
@@ -763,6 +764,7 @@ export const NumberedNotificationIcon = defineComponent({
                     height="9"
                     rx="4.5"
                     stroke="white"
+                    display={props.notificationValue > 0 ? null : "none" }
                 />
                 <text
                     x="18" // Half of the rect width plus x position
@@ -771,6 +773,7 @@ export const NumberedNotificationIcon = defineComponent({
                     text-anchor="middle"
                     fill="#FFF9F9"
                     font-size="5px"
+                    display={props.notificationValue > 0 ? null : "none" }
                 >
                     {props.notificationValue}
                 </text>

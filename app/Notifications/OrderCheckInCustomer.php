@@ -48,4 +48,14 @@ class OrderCheckInCustomer extends Notification
             'waiter_id' => $this->waiterID,
         ];
     }
+
+    /**
+     * Get the notification's database type.
+     *
+     * @return string
+     */
+    public function databaseType(object $notifiable): string
+    {
+        return 'OrderCheckInCustomer';
+    }
 }

@@ -7,20 +7,23 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class WaiterCheckIn extends Notification
+class OrderAssignedWaiter extends Notification
 {
     use Queueable;
 
-    private $waiter;
-    private $checkIn;
+    private string $tableNo;
+    private int $assignerID;
+    private int $waiterID;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($waiter, $checkIn)
+    public function __construct(string $tableNo, int $assignerID, int $waiterID)
     {
-        $this->waiter = $waiter;
-        $this->checkIn = $checkIn;
+        //
+        $this->tableNo = $tableNo;
+        $this->assignerID = $assignerID;
+        $this->waiterID = $waiterID;
     }
 
     /**
@@ -38,13 +41,15 @@ class WaiterCheckIn extends Notification
      *
      * @return array<string, mixed>
      */
-    public function toDatabase(object $notifiable): array
+    public function toArray(object $notifiable): array
     {
         return [
-            'data' => 'Checked in at ' . $this->checkIn . '.'
+            'assigner_id' => $this->assignerID,
+            'table_no' => $this->tableNo,
+            'waiter_id' => $this->waiterID,
         ];
     }
-    
+
     /**
      * Get the notification's database type.
      *
@@ -52,6 +57,6 @@ class WaiterCheckIn extends Notification
      */
     public function databaseType(object $notifiable): string
     {
-        return 'WaiterCheckIn';
+        return 'OrderAssigned';
     }
 }

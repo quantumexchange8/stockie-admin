@@ -27,6 +27,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\InventoryOutOfStock;
 use App\Notifications\InventoryRunningOutOfStock;
+use App\Notifications\OrderAssignedWaiter;
 use App\Notifications\OrderCheckInCustomer;
 use App\Notifications\OrderPlaced;
 use Illuminate\Http\Request;
@@ -169,6 +170,7 @@ class OrderController extends Controller
                     ])
                     ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
 
+        Notification::send(User::all(), new OrderAssignedWaiter($tableString, auth()->user()->id, $waiter->id));
 
         return redirect()->back();
     }
@@ -399,11 +401,11 @@ class OrderController extends Controller
                         ]);
 
                         if($newStatus === 'Out of stock'){
-                            Notification::send(User::where('role','admin')->get(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                            Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                         };
 
                         if($newStatus === 'Low in stock'){
-                            Notification::send(User::where('role','admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                            Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                         }
                     }
                 }

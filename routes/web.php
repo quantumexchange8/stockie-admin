@@ -38,7 +38,10 @@ Route::middleware('auth')->group(function () {
     //     return Inertia::render('Dashboard/Dashboard');
     // })->name('dashboard');
     Route::get('/userDetails', [RegisteredUserController::class, 'getUser'])->name('user-details');
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
+    Route::get('/allNotifications', [NotificationController::class, 'index'])->name('notifications');
+    Route::get('/notifications/latestNotification', [NotificationController::class, 'latestNotification'])->name('notifications.latest-notifications');
+    Route::get('/notifications/filterNotification', [NotificationController::class, 'filterNotification'])->name('notifications.filter-notifications');
+    Route::post('/notifications/markAsRead', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
 
     Route::prefix('dashboard')->group(function(){
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');

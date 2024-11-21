@@ -45,4 +45,14 @@ class InventoryRunningOutOfStock extends Notification
             'inventory_id' => $this->inventoryID,
         ];
     }
+
+    /**
+     * Get the notification's database type.
+     *
+     * @return string
+     */
+    public function databaseType(object $notifiable): string
+    {
+        return 'InventoryRunningOutOfStock';
+    }
 }

@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
 import { sidebarState, rightSidebarState } from '@/Composables'
 import { NumberedNotificationIcon, LanguageIcon, LogOutIcon, CheckIcon } from '@/Components/Icons/solid';
@@ -20,13 +20,15 @@ const order_notifications = ref([]);
 const inventory_notifications = ref([]);
 const waiter_notifications = ref([]);
 const notificationLength = ref(0);
+const all_notifications = ref(0);
 
 const getNotifications = async () => {
     try {
-        const response = await axios.get('/notifications');
+        const response = await axios.get('/notifications/latestNotification');
         order_notifications.value = response.data.order_notifications;
         inventory_notifications.value = response.data.inventory_notifications;
         waiter_notifications.value = response.data.waiter_notifications;
+        all_notifications.value = response.data.all_notifications;
 
         notificationLength.value =  Object.keys(inventory_notifications.value).length + 
                                     Object.keys(order_notifications.value).length +
@@ -36,6 +38,21 @@ const getNotifications = async () => {
         console.error(error);
     }
 }
+
+const markAllAsRead = async () => {
+    try {
+        const notificationsToMarkAsRead = [
+            ... (Array.isArray(order_notifications.value) ? order_notifications.value : []),
+            ... (Array.isArray(inventory_notifications.value) ? inventory_notifications.value : []),
+            ... (Array.isArray(waiter_notifications.value) ? waiter_notifications.value : [])
+        ];
+
+        // Send a request to the backend to mark notifications as read
+        await axios.post('/notifications/markAsRead', { notifications: notificationsToMarkAsRead });
+    } catch (error) {
+        console.error(error);
+    }
+};
 
 const languages = [ 
     { name: 'Bahasa Melayu', language: 'ms' },
@@ -56,10 +73,12 @@ const isSelected = (language) => {
 
 const openOverlay = (event) => {
     op.value.show(event);
+    markAllAsRead();
 }
 
 const closeOverlay = () => {
     op.value.hide();
+    notificationLength.value = 0;
 }
 
 const submit = () => {
@@ -84,6 +103,10 @@ const logout = () => {
 const closeModal = () => {
     isLogoutModal.value = false;
 }
+
+watch(() => notificationLength.value, (newValue) => {
+    notificationLength.value = newValue;
+}, { immediate: true });
 
 onMounted(() => {
     rightSidebarState.isOpen = false;
@@ -157,7 +180,7 @@ onMounted(() => {
                                 >
                                     <NumberedNotificationIcon 
                                         class="text-primary-900 hover:text-primary-800"
-                                        :notificationValue="notificationLength"
+                                        :notificationValue="all_notifications > 0 ? all_notifications : 0"
                                         aria-hidden="true" 
                                     />
                                 </button>
@@ -275,12 +298,13 @@ onMounted(() => {
     </Modal>
 
     <OverlayPanel ref="op"
-        :disabled="order_notifications.length === 0 || inventory_notifications.length > 0 || waiter_notifications.length > 0"
+        
     >
         <NotificationsOverlay 
             :order_notifications="order_notifications"
             :inventory_notifications="inventory_notifications"
             :waiter_notifications="waiter_notifications"
+            :all_notifications="all_notifications"
             :notificationLength="notificationLength"
             @close="closeOverlay"
         />

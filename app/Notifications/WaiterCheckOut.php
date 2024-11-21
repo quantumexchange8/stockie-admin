@@ -11,12 +11,16 @@ class WaiterCheckOut extends Notification
 {
     use Queueable;
 
+    private $waiter;
+    private $checkOut;
+
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct($waiter, $checkOut)
     {
-        //
+        $this->waiter = $waiter;
+        $this->checkOut = $checkOut;
     }
 
     /**
@@ -26,18 +30,7 @@ class WaiterCheckOut extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
-    }
-
-    /**
-     * Get the mail representation of the notification.
-     */
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-                    ->line('The introduction to the notification.')
-                    ->action('Notification Action', url('/'))
-                    ->line('Thank you for using our application!');
+        return ['database'];
     }
 
     /**
@@ -45,10 +38,20 @@ class WaiterCheckOut extends Notification
      *
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toDatabase(object $notifiable): array
     {
         return [
-            //
+            'data' => 'Checked out at ' . $this->checkOut . '.'
         ];
+    }
+    
+    /**
+     * Get the notification's database type.
+     *
+     * @return string
+     */
+    public function databaseType(object $notifiable): string
+    {
+        return 'WaiterCheckOut';
     }
 }
