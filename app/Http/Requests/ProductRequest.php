@@ -52,7 +52,7 @@ class ProductRequest extends FormRequest
             'string' => 'This field must be a string.',
             'max' => 'This field must not exceed 255 characters.',
             'integer' => 'This field must be an integer.',
-            'image' => 'Invalid format.'
+            'image' => 'Image is required.'
         ];
     }
 }

@@ -257,7 +257,7 @@ const calcTimeDiff = (created_at) => {
                                         placed an order for <span class="text-grey-900 text-sm font-semibold">{{ firstOrder.data.table_no }}</span>.
                                     </span>
                                     <span class="text-grey-900 text-sm font-normal" v-else>
-                                        New customer check-in by <span class="text-grey-900 text-sm font-semibold">{{ firstOrder }}</span>.
+                                        New customer check-in by <span class="text-grey-900 text-sm font-semibold">{{ firstOrder.data.waiter_name }}</span>.
                                     </span>
                                 </div>
                             </div>

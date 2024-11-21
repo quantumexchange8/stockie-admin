@@ -229,7 +229,7 @@ class ProductController extends Controller
             'availability' => 'Available',
         ]);
 
-        if (isset($validatedData['image']) && $validatedData['image'] instanceof \Illuminate\Http\UploadedFile) {
+        if (isset($validatedData['image'])) {
             $newProduct->addMedia($validatedData['image'])->toMediaCollection('product');
         }
 
@@ -556,10 +556,10 @@ class ProductController extends Controller
                 'category_id' => $validatedData['category_id'],
             ]);
 
-            // if (isset($validatedData['image']) && $validatedData['image'] instanceof \Illuminate\Http\UploadedFile) {
-            //     $existingProduct->clearMediaCollection('product');
-            //     $existingProduct->addMedia($validatedData['image'])->toMediaCollection('product');
-            // }
+            if ($request->hasFile('image')) {
+                $existingProduct->clearMediaCollection('product');
+                $existingProduct->addMedia($validatedData['image'])->toMediaCollection('product');
+            }
         }
 
         if (count($validatedProductItems) > 0) {

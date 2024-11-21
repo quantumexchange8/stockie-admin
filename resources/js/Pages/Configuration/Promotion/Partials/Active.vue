@@ -22,6 +22,8 @@ const { formatDate } = transactionFormat();
 const editModal = ref(false);
 const actionVal = ref('');
 const modalDetails = ref();
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 
 const openEditModal = (promotion, actionType) => {
     editModal.value = true;
@@ -40,8 +42,31 @@ const openEditModal = (promotion, actionType) => {
     ];
 }
 
-const closeModal = () => {
+const closeEditModal = () => {
+    if(
+        form.title === modalDetails.value.title ||
+        form.description === modalDetails.value.description ||
+        form.promotion_from === modalDetails.value.promotion_from ||
+        form.promotion_to === modalDetails.value.promotion_to
+    ){
+        editModal.value = false;
+    } else {
+        isUnsavedChangesOpen.value = true;
+
+    }
+}
+
+const closeDeleteModal = () => {
     editModal.value = false;
+}
+
+const stayModal = () => {
+    isUnsavedChangesOpen.value = false;
+}
+
+const leaveModal = () => {
+    isUnsavedChangesOpen.value = false;
+    editModal.value = false;    
 }
 
 const form = useForm({
@@ -70,7 +95,7 @@ const submit = () => {
         form.post(route('configurations.promotion.edit'), {
             preserveScroll: true,
             onSuccess: () => {
-                closeModal();
+                leaveModal();
                 form.reset();
                 setTimeout(() => {
                     showMessage({ 
@@ -85,7 +110,7 @@ const submit = () => {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                closeModal();
+                closeDeleteModal();
                 form.reset();
                 setTimeout(() => {
                     showMessage({ 
@@ -101,6 +126,9 @@ const submit = () => {
 const isFormValid = computed(() => {
     return ['title', 'description', 'promotionPeriod'].every(field => form[field]);
 })
+
+watch(form, (newValue) => isDirty.value = newValue.isDirty);
+
 </script>
 
 
@@ -111,38 +139,44 @@ const isFormValid = computed(() => {
             You haven’t added any promotion yet...
         </div>
     </div>
-    <div v-else class="grid grid-cols-3 gap-5 select-none">
+    <div v-else class="grid grid-cols-3 gap-5 select-none h-full">
         <div v-for="promotion in ActivePromotions" >
-            <div class="flex flex-col" >
+            <div class="flex flex-col h-full justify-between" >
                 <div class="p-3">
-                    <img :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
-                </div>
-                <div class="pb-2 px-3 flex flex-col gap-1">
-                    <div class="text-gray-500 text-2xs font-medium leading-tight" >
-                        Active Period: {{ formatDate(promotion.promotion_from) }} - {{ formatDate(promotion.promotion_to) }}
-                    </div>
-                    <div class="text-base text-gray-900 font-semibold leading-tight">
-                        {{ promotion.title }}
-                    </div>
-                    <div class="h-9 text-gray-700 text-xs font-medium overflow-hidden text-ellipsis whitespace-nowrap " >
-                        {{ promotion.description }}
-                    </div>
-                </div>
-                <div class="flex items-center">
-                    <Button
-                        class="bg-primary-100 hover:bg-primary-50"
-                        variant="secondary"
-                        @click="openEditModal(promotion, 'edit')"
+                    <img 
+                        :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="object-contain"
                     >
-                        <EditIcon class="text-primary-900"/>
-                    </Button>
-                    <Button
-                        class="bg-primary-600 hover:bg-primary-700"
-                        variant="secondary"
-                        @click="openEditModal(promotion, 'delete')"
-                    >
-                        <DeleteIcon class="text-white"/>
-                    </Button>
+                </div>
+                <div class="">
+                    <div class="pb-2 px-3 flex flex-col gap-1">
+                        <div class="text-gray-500 text-2xs font-medium leading-tight" >
+                            Active Period: {{ formatDate(promotion.promotion_from) }} - {{ formatDate(promotion.promotion_to) }}
+                        </div>
+                        <div class="text-base text-gray-900 font-semibold leading-tight">
+                            {{ promotion.title }}
+                        </div>
+                        <div class="h-9 text-gray-700 text-xs font-medium overflow-hidden text-ellipsis whitespace-nowrap " >
+                            {{ promotion.description }}
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <Button
+                            class="bg-primary-100 hover:bg-primary-50"
+                            variant="secondary"
+                            @click="openEditModal(promotion, 'edit')"
+                        >
+                            <EditIcon class="text-primary-900"/>
+                        </Button>
+                        <Button
+                            class="bg-primary-600 hover:bg-primary-700"
+                            variant="secondary"
+                            @click="openEditModal(promotion, 'delete')"
+                        >
+                            <DeleteIcon class="text-white"/>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -153,7 +187,7 @@ const isFormValid = computed(() => {
         :maxWidth="'md'" 
         :closeable="true"
         :show="editModal"
-        @close="closeModal"
+        @close="closeEditModal"
         v-if="actionVal === 'edit'"
     >
         <form @submit.prevent="submit">
@@ -204,7 +238,7 @@ const isFormValid = computed(() => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeModal"
+                        @click="closeEditModal"
                     >
                         Cancel
                     </Button>
@@ -225,7 +259,7 @@ const isFormValid = computed(() => {
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="editModal"
-        @close="closeModal"
+        @close="closeDeleteModal"
         v-if="actionVal === 'delete'"
         :withHeader="false"
     >
@@ -247,7 +281,7 @@ const isFormValid = computed(() => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeModal"
+                        @click="closeDeleteModal()"
                     >
                         Keep
                     </Button>
@@ -263,4 +297,13 @@ const isFormValid = computed(() => {
             </div>
         </form>
     </Modal>
+
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="stayModal"
+        @leave="leaveModal"
+    />
 </template>

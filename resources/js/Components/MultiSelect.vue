@@ -25,6 +25,10 @@ const props = defineProps({
     inputArray: {
         type: [Array, Object],
         default: () => [],
+    },
+    withImages: {
+        type: Boolean,
+        default: false,
     }
 })
 
@@ -33,6 +37,7 @@ const open = ref(false);
 const isOverlayOpen = ref(false);
 const localValue = ref(props.dataValue);
 const options = ref(props.inputArray);
+
 
 watch(
   () => props.inputArray,
@@ -334,9 +339,15 @@ onUnmounted(() => {
                 </svg>
             </template>
 
-            <template #option="slotProps">
+            <template #option="slotProps" v-if="props.withImages">
                 <div class="flex items-center gap-[10px]">
                     <slot name="optionLabel"></slot>
+                    <img 
+                        :src="slotProps.option.image ? slotProps.option.image 
+                                                    : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="size-7 rounded-full"
+                    >
                     <div>{{ slotProps.option.text }}</div>
                 </div>
             </template>

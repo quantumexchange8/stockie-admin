@@ -112,7 +112,7 @@ const imageClasses = computed(() => [
                         />
                     </div>
                 </template>
-                <template #empty>
+                <template #empty v-if="!hasFile && !modelValue">
                     <div class="flex flex-col justify-center gap-3 p-3 w-full h-full self-stretch items-center">
                         <div class="flex flex-col justify-center items-center pt-2">
                             <svg 

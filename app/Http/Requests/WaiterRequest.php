@@ -28,7 +28,7 @@ class WaiterRequest extends FormRequest
             'salary' => 'required|string|min:0',
             'stockie_email' => 'required|email',
             'password' => 'required|string',
-            'image' => 'required|image',
+            'image' => 'required',
         ];
 
         $rules['email'] = $this->input('id') 
@@ -65,7 +65,6 @@ class WaiterRequest extends FormRequest
             // 'salary.string' => 'Salary must be an decimal value.',
             'salary.min' => 'Salary must be at least 0.',
             'worker_email.email' => 'Invalid email',
-            'image.image' => 'Invalid format.',
             'image.required' => 'Image is required.',
 
         ];

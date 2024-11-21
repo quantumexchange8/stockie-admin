@@ -110,36 +110,41 @@ const submit = () => {
     </div>
     <div v-else class="grid grid-cols-3 gap-5 select-none">
         <div v-for="promotion in InactivePromotions" >
-            <div class="flex flex-col" >
+            <div class="flex flex-col h-full justify-between">
                 <div class="p-3">
-                    <img :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
-                </div>
-                <div class="pb-2 px-3 flex flex-col gap-1">
-                    <div class="text-gray-500 text-2xs font-medium leading-tight" >
-                        Active Period: {{ formatDate(promotion.promotion_from) }} - {{ formatDate(promotion.promotion_to) }}
-                    </div>
-                    <div class="text-base text-gray-900 font-semibold leading-tight">
-                        {{ promotion.title }}
-                    </div>
-                    <div class="h-9 text-gray-700 text-xs font-medium overflow-hidden" >
-                        {{ promotion.description }}
-                    </div>
-                </div>
-                <div class="flex items-center">
-                    <Button
-                        class="bg-primary-100 hover:bg-primary-50"
-                        variant="secondary"
-                        @click="openEditModal(promotion, 'edit')"
+                    <img :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="object-contain"
                     >
-                        <EditIcon class="text-primary-900"/>
-                    </Button>
-                    <Button
-                        class="bg-primary-600 hover:bg-primary-700"
-                        variant="secondary"
-                        @click="openEditModal(promotion, 'delete')"
-                    >
-                        <DeleteIcon class="text-white"/>
-                    </Button>
+                </div>
+                <div class="">
+                    <div class="pb-2 px-3 flex flex-col gap-1">
+                        <div class="text-gray-500 text-2xs font-medium leading-tight" >
+                            Active Period: {{ formatDate(promotion.promotion_from) }} - {{ formatDate(promotion.promotion_to) }}
+                        </div>
+                        <div class="text-base text-gray-900 font-semibold leading-tight">
+                            {{ promotion.title }}
+                        </div>
+                        <div class="h-9 text-gray-700 text-xs font-medium overflow-hidden" >
+                            {{ promotion.description }}
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <Button
+                            class="bg-primary-100 hover:bg-primary-50"
+                            variant="secondary"
+                            @click="openEditModal(promotion, 'edit')"
+                        >
+                            <EditIcon class="text-primary-900"/>
+                        </Button>
+                        <Button
+                            class="bg-primary-600 hover:bg-primary-700"
+                            variant="secondary"
+                            @click="openEditModal(promotion, 'delete')"
+                        >
+                            <DeleteIcon class="text-white"/>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
