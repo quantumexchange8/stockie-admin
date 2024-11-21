@@ -308,7 +308,7 @@ onMounted(() => {
                 <Menu as="div" class="relative inline-block text-left">
                     <div>
                         <MenuButton class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
-                            <span class="text-primary-900 font-base text-medium">{{ selectedFilter }}</span>
+                            <span class="text-primary-900 font-base text-md">{{ selectedFilter }}</span>
                             <DropdownIcon class="rotate-180 text-primary-900"/>
                         </MenuButton>
                     </div>

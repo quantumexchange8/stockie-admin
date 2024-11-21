@@ -10,7 +10,7 @@ import Toggle from '@/Components/Toggle.vue'
 import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
-import { keepOptions, defaultProductItem } from '@/Composables/constants';
+import { redeemOptions, defaultProductItem } from '@/Composables/constants';
 import { useInputValidator } from '@/Composables';
 
 const props = defineProps({
@@ -37,9 +37,9 @@ const form = useForm({
     bucket: false,
     product_name: '',
     price: '',
-    // point: '',
+    is_redeemable: false,
+    point: '0',
     category_id: '',
-    // keep: '',
     items: [{ ...defaultProductItem }],
 });
 
@@ -214,17 +214,6 @@ watch(() => form.bucket, (newValue) => {
                             >
                                 <template #prefix>RM</template>
                             </TextInput>
-                            <!-- <TextInput
-                                :inputId="'point'"
-                                :labelText="'Points can be earned'"
-                                :iconPosition="'right'"
-                                :errorMessage="form.errors?.point || ''"
-                                v-model="form.point"
-                                @keypress="isValidNumberKey($event, false)"
-                                class="col-span-full sm:col-span-4 [&>div>input]:text-center"
-                            >
-                                <template #prefix>pts</template>
-                            </TextInput> -->
                             <Dropdown
                                 :inputName="'category_id'"
                                 :labelText="'Select category'"
@@ -233,13 +222,23 @@ watch(() => form.bucket, (newValue) => {
                                 v-model="form.category_id"
                             />
                         </div>
-                        <!-- <div class="flex items-start gap-10">
-                            <RadioButton
-                                :optionArr="keepOptions"
-                                :checked="form.keep"
-                                v-model:checked="form.keep"
-                            />
-                        </div> -->
+                        <RadioButton
+                            :optionArr="redeemOptions"
+                            :checked="form.is_redeemable"
+                            v-model:checked="form.is_redeemable"
+                        />
+                        <TextInput  
+                            v-if="form.is_redeemable"
+                            :inputId="'point'"
+                            :labelText="'Redeemed with'"
+                            :iconPosition="'right'"
+                            class="!w-1/3 [&>div>input]:text-center"
+                            :errorMessage="form.errors?.point || ''"
+                            v-model="form.point"
+                            @keypress="isValidNumberKey($event, false)"
+                        >
+                            <template #prefix>pts</template>
+                        </TextInput>
                     </div>
                 </div>
             </div>

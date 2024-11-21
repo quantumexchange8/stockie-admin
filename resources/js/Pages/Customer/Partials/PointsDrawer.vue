@@ -64,7 +64,7 @@ onMounted(() => {
         <!-- Redeem product -->
          <div class="flex flex-col items-center gap-3 self-stretch">
             <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
-                <span class="flex-[1_0_0] text-primary-900 text-medium font-semibold ">Redeem Product</span>
+                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold ">Redeem Product</span>
                 <div class="flex items-center gap-2 cursor-pointer" @click="openHistoryDrawer(customers.id)">
                     <HistoryIcon class="w-4 h-4" />
                     <div class="text-primary-900 text-sm font-medium">View History</div>

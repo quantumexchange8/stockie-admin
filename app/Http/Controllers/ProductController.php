@@ -7,6 +7,7 @@ use App\Http\Requests\ProductRequest;
 use App\Models\Category;
 use App\Models\Iventory;
 use App\Models\IventoryItem;
+use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\SaleHistory;
@@ -221,10 +222,9 @@ class ProductController extends Controller
             'product_name' => $validatedData['product_name'],
             'bucket' => $validatedData['bucket'] ? 'set' : 'single',
             'price' => $validatedData['price'],
-            'point' => 0,
-            // 'point' => $validatedData['point'],
+            'is_redeemable' => $validatedData['is_redeemable'],
+            'point' => $validatedData['point'],
             'category_id' => $validatedData['category_id'],
-            // 'keep' => $validatedData['keep'],
             'status' => $this->getProductStatus($validatedProductItems),
             'availability' => 'Available',
         ]);
@@ -295,7 +295,8 @@ class ProductController extends Controller
                                 'category:id,name',
                                 'productItems.inventoryItem:id,inventory_id,item_name,stock_qty',
                                 'productItems.inventoryItem.inventory',
-                                'saleHistories'
+                                'saleHistories',
+                                'pointHistories'
                             ])
                             ->orderBy('created_at', 'desc')
                             ->find($id);
@@ -307,7 +308,12 @@ class ProductController extends Controller
                                                 ->orderBy('created_at', 'desc')
                                                 ->get();
 
-        
+        $redemptionHistories = $product->pointHistories()->whereDate('created_at', '>=', $dateFilter[0])
+                                                        ->whereDate('created_at', '<=', $dateFilter[1])
+                                                        ->with(['redeemableItem:id,product_name', 'handledBy:id,name'])
+                                                        ->orderBy('created_at', 'desc')
+                                                        ->get();
+    
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
 
@@ -315,6 +321,7 @@ class ProductController extends Controller
             'message' => $message ?? [],
             'product' => $product,
             'saleHistories' => $saleHistories,
+            'redemptionHistories' => $redemptionHistories,
             'defaultDateFilter' => $dateFilter,
             'inventories' => $this->getAllInventories(),
             'categories' => $this->getAllCategories(),
@@ -469,6 +476,8 @@ class ProductController extends Controller
      */
     public function updateProduct(ProductRequest $request, string $id)
     {
+
+        // dd($request->hasFile('image'));
         // Get validated product data
         $validatedData = $request->validated();
         // dd($request->all()) ;
@@ -542,16 +551,15 @@ class ProductController extends Controller
                 'product_name' => $validatedData['product_name'],
                 'bucket' => $validatedData['bucket'] ? 'set' : 'single',
                 'price' => $validatedData['price'],
-                'point' => 0,
-                // 'point' => $validatedData['point'],
+                'is_redeemable' => $validatedData['is_redeemable'],
+                'point' => $validatedData['point'],
                 'category_id' => $validatedData['category_id'],
-                // 'keep' => $validatedData['keep'],
             ]);
 
-            if (isset($validatedData['image']) && $validatedData['image'] instanceof \Illuminate\Http\UploadedFile) {
-                $existingProduct->clearMediaCollection('product');
-                $existingProduct->addMedia($validatedData['image'])->toMediaCollection('product');
-            }
+            // if (isset($validatedData['image']) && $validatedData['image'] instanceof \Illuminate\Http\UploadedFile) {
+            //     $existingProduct->clearMediaCollection('product');
+            //     $existingProduct->addMedia($validatedData['image'])->toMediaCollection('product');
+            // }
         }
 
         if (count($validatedProductItems) > 0) {
@@ -646,49 +654,41 @@ class ProductController extends Controller
         return response()->json($data);
     }
 
-    // /**
-    //  * Testing get table records.
-    //  */
-    // public function getTestingRecords()
-    // {
 
-    //     $data = Product::with('productItems:id,product_id,qty')
-    //                     ->orderBy('id')
-    //                     ->get()
-    //                     ->map(function ($product) {
-    //                         $totalQty = 0;
+     /**
+     * Get the redemption histories of the product.
+     */
+    public function getRedemptionHistories(Request $request, string $id)
+    {
+        $dateFilter = $request->input('dateFilter');
+        
+        $dateFilter = array_map(function ($date) {
+                            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+                        }, $dateFilter);
 
-    //                         foreach ($product->productItems as $key => $value) {
-    //                             $totalQty += $value->qty;
-    //                         }
+        // Apply the date filter (single date or date range)
+        $query = PointHistory::whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
+                                ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
+                                    $subQuery->whereDate('created_at', '<=', $dateFilter[1]);
+                                });
 
-    //                         return [
-    //                             'id' => $product->id,
-    //                             'product_name' => $product->product_name,
-    //                             'price' => $product->price,
-    //                             'point' => $product->point,
-    //                             'keep' => $product->keep,
-    //                             'qty' => $totalQty,
-    //                             'stock_qty' => $totalQty,
-    //                         ];
-    //                     });
+        $data = $query->with(['redeemableItem:id,product_name', 'handledBy:id,name'])
+                        ->where('product_id', $id)
+                        ->orderBy('created_at', 'desc')
+                        ->get();
 
-    //     // dd($data);
-
-    //     return response()->json($data);
-    // }
+        return response()->json($data);
+    }
 
     public function updateAvailability(Request $request)
     {
-        // dd($request->all());
         $selectedProduct = Product::find($request->id);
 
         if ($selectedProduct) {
-            $selectedProduct->update([
-                'availability' => $request->availabilityWord,
-            ]);
-        } else {
+            $selectedProduct->update(['availability' => $request->availabilityWord]);
         }
+
+        return redirect()->back();
     }
 
 }

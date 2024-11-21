@@ -30,9 +30,9 @@ const items = ref([
 
 const redemptionHistoriesColumns = ref([
     {field: 'redemption_date', header: 'Date', width: '20', sortable: false},
-    {field: 'point.point', header: 'Redeemed with', width: '45', sortable: true},
+    {field: 'amount', header: 'Redeemed with', width: '45', sortable: true},
     {field: 'redeemed_qty', header: 'Quantity', width: '15', sortable: false},
-    {field: 'user.name', header: 'Redeemed by', width: '20', sortable: false},
+    {field: 'handled_by', header: 'Redeemed by', width: '20', sortable: false},
 ]);
 
 const pointItemsColumns = ref([
@@ -60,9 +60,9 @@ const actions = {
     delete: (id) => `/loyalty-programme/points/${id}`,
 };
 
-const getPointHistories = async (filters = []) => {
+const getRecentRedemptionHistories = async (filters = []) => {
     try {
-        const pointHistoriesResponse = await axios.get(route('loyalty-programme.getPointHistories', props.redeemableItem.id), {
+        const pointHistoriesResponse = await axios.get(route('loyalty-programme.getRecentRedemptionHistories', props.redeemableItem.id), {
             params: {
                 dateFilter: filters,
             }
@@ -81,7 +81,7 @@ const csvExport = () => {
         'Date': dayjs(redemptionHistory.redemption_date).format('DD/MM/YYYY'),
         'Redeemable_Item': redemptionHistory.point.name,
         'Quantity': redemptionHistory.qty,
-        'Redeemed_By': redemptionHistory.redeem_by,
+        'Redeemed_By': redemptionHistory.handled_by,
     }));
     exportToCSV(mappedRedemptions, 'Redeemable Item');
 }
@@ -178,7 +178,7 @@ onMounted(async() => {
                     :rowsPerPage="redemptionHistoriesRowsPerPage"
                     :rowType="rowType"
                     :actions="actions"
-                    @applyDateFilter="getPointHistories($event)"
+                    @applyDateFilter="getRecentRedemptionHistories($event)"
                     class="w-full"
                 />
             </div>

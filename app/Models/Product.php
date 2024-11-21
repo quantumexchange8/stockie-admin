@@ -24,6 +24,7 @@ class Product extends Model implements HasMedia
         'category_id',
         'discount_id',
         // 'keep',
+        'is_redeemable',
         'status',
         'availability',
         'image',
@@ -68,6 +69,24 @@ class Product extends Model implements HasMedia
     public function discountItems(): HasMany
     {
         return $this->hasMany(ConfigDiscountItem::class, 'product_id');
+    }
+
+    /**
+     * PointHistory Model
+     * Get the order items of the product.
+     */
+    public function pointHistories(): HasMany
+    {
+        return $this->hasMany(PointHistory::class, 'product_id');
+    }
+    
+    /**
+     * RankingReward Model
+     * Get the ranking rewards of the product.
+     */
+    public function rankingRewards(): HasMany
+    {
+        return $this->hasMany(RankingReward::class, 'free_item');
     }
 
     // Register the model event

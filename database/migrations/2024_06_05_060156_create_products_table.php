@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('product_name');
             $table->string('price');
+            $table->string('bucket');
+            $table->boolean('is_redeemable');
             $table->string('point');
             $table->unsignedInteger('category_id');
             $table->unsignedBigInteger('discount_id');

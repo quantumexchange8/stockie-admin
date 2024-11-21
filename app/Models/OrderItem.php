@@ -80,10 +80,10 @@ class OrderItem extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function point(): BelongsTo
-    {
-        return $this->belongsTo(Point::class, 'product_id');
-    }
+    // public function point(): BelongsTo
+    // {
+    //     return $this->belongsTo(Point::class, 'product_id');
+    // }
 
     /**
      * KeepItem Model

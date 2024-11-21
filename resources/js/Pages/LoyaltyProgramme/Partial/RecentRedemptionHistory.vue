@@ -21,9 +21,9 @@ const items = ref([
 
 const columns = ref([
     {field: 'redemption_date', header: 'Date', width: '20', sortable: false},
-    {field: 'point.name', header: 'Redeemed Item', width: '45', sortable: true},
+    {field: 'redeemable_item', header: 'Redeemed Item', width: '45', sortable: true},
     {field: 'qty', header: 'Quantity', width: '15', sortable: false},
-    {field: 'user.name', header: 'Redeemed by', width: '20', sortable: false},
+    {field: 'handled_by', header: 'Redeemed by', width: '20', sortable: false},
 ]);
 
 const redemptionHistories = ref(props.redemptionHistories);
@@ -44,9 +44,9 @@ const actions = {
 };
 
 // Get filtered inventories
-const getPointHistories = async (filters = {}) => {
+const getRecentRedemptionHistories = async (filters = {}) => {
     try {
-        const redemptionHistoriesResponse = await axios.get(route('loyalty-programme.getPointHistories'), {
+        const redemptionHistoriesResponse = await axios.get(route('loyalty-programme.getRecentRedemptionHistories'), {
             params: {
                 dateFilter: filters,
             }
@@ -61,7 +61,7 @@ const getPointHistories = async (filters = {}) => {
 }
 
 const totalPages = computed(() => {
-    return Math.ceil(props.redemptionHistories.length / rowsPerPage.value);
+    return Math.ceil(redemptionHistories.value.length / rowsPerPage.value);
 })
 
 // watch(() => pointHistories.value, (newValue) => {
@@ -89,7 +89,7 @@ const totalPages = computed(() => {
             :actions="actions"
             :totalPages="totalPages"
             :rowsPerPage="rowsPerPage"
-            @applyDateFilter="getPointHistories($event)"
+            @applyDateFilter="getRecentRedemptionHistories($event)"
         />
 
     </AuthenticatedLayout>

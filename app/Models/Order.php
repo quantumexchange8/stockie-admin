@@ -63,10 +63,10 @@ class Order extends Model
     }
 
     
-    public function pointHistories(): HasMany
-    {
-        return $this->hasMany(PointHistory::class, 'redeem_by', 'customer_id');
-    }
+    // public function pointHistories(): HasMany
+    // {
+    //     return $this->hasMany(PointHistory::class, 'handled_by', 'customer_id');
+    // }
 
     /**
      * Get the customer of the order.

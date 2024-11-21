@@ -74,7 +74,7 @@ class User extends Authenticatable implements HasMedia
      */
     public function pointHistories(): HasMany
     {
-        return $this->hasMany(PointHistory::class, 'redeem_by');
+        return $this->hasMany(PointHistory::class, 'handled_by');
     }
 
     /**

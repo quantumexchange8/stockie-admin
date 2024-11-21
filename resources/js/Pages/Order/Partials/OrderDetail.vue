@@ -33,12 +33,12 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['fetchOrderDetails', 'fetchZones']);
+const emit = defineEmits(['fetchOrderDetails', 'fetchZones', 'update:customerKeepItems']);
 
 const order = computed(() => props.order);
 const drawerIsVisible = ref(false);
 const actionType = ref(null);
-const categoryArr = ref([]);
+// const categoryArr = ref([]);
 const op = ref(null);
 const op2 = ref(null);
 const selectedItem = ref();
@@ -118,16 +118,16 @@ const formSubmit = () => {
     })
 };
 
-onMounted(async() => {
-    try {
-        const categoryResponse = await axios.get(route('orders.getAllCategories'));
-        categoryArr.value = categoryResponse.data;
-    } catch (error) {
-        console.error(error);
-    } finally {
+// onMounted(async() => {
+//     try {
+//         const categoryResponse = await axios.get(route('orders.getAllCategories'));
+//         categoryArr.value = categoryResponse.data;
+//     } catch (error) {
+//         console.error(error);
+//     } finally {
 
-    }
-});
+//     }
+// });
 
 const computedOrder = computed(() => {
     if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') return [];
@@ -224,12 +224,12 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
             <KeepItem 
                 :order="order" 
                 :selectedTable="selectedTable"
+                @update:customerKeepItems="$emit('update:customerKeepItems', $event)"
                 @close="closeDrawer();closeOrderDetails()"
             />
         </template>
         <template v-if="actionType === 'add'">
             <AddOrderItems 
-                :categoryArr="categoryArr" 
                 :order="computedOrder" 
                 :selectedTable="selectedTable"
                 :matchingOrderDetails="matchingOrderDetails"
@@ -258,7 +258,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         <p class="text-grey-900 text-sm font-medium">Ordered by</p>
                         <div class="flex whitespace-nowrap items-center gap-2">
                             <!-- <div class="size-6 bg-primary-100 rounded-full" v-for="user in orderedBy"></div> -->
-                             <template  v-for="user in orderedBy" >
+                             <template v-for="user in orderedBy" >
                                 <img 
                                     :src="user.image ? user.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt=""
@@ -382,7 +382,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         type="button"
                         variant="tertiary"
                         size="lg"
-                        :disabled="!order.id || tableStatus === 'Pending Clearance'"
+                        :disabled="!order.id || tableStatus === 'Pending Clearance' || !matchingOrderDetails.tables"
                         @click="openDrawer('keep')"
                     >
                         Keep Item
@@ -392,7 +392,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         variant="secondary"
                         iconPosition="left"
                         size="lg"
-                        :disabled="!order.id"
+                        :disabled="!order.id || !matchingOrderDetails.tables"
                         @click="openDrawer('add')"
                     >
                         <template #icon>

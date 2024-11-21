@@ -221,10 +221,12 @@ const hideAddStockForm = () => {
                                     <span class="text-sm font-medium text-primary-900">Product affected</span>
                                     <div class="flex items-center gap-3">
                                         <!-- <div class="w-10 h-10 rounded-sm border border-grey-100 bg-white" v-for="(product, subIndex) in item.products" :key="subIndex"></div> -->
-                                        <img class="bg-grey-50 border border-grey-200 h-10 w-10" 
-                                            :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                                            alt=""
-                                        />
+                                         <template v-for="(productItem, index) in item.products" :key="index">
+                                            <img class="bg-grey-50 border border-grey-200 h-10 w-10" 
+                                                :src="productItem.image ? productItem.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                                alt=""
+                                            />
+                                         </template>
                                     </div>
                                 </div>
                                 <Button

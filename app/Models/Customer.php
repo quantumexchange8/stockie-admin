@@ -86,4 +86,12 @@ class Customer extends Model implements HasMedia
     {
         return $this->hasMany(Payment::class, 'customer_id');
     }
+
+    /**
+     * Get the point histories of the customer.
+     */
+    public function pointHistories(): HasMany
+    {
+        return $this->hasMany(PointHistory::class, 'customer_id');
+    }
 }

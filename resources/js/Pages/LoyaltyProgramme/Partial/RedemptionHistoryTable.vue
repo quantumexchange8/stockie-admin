@@ -91,14 +91,11 @@ watch(() => date_filter.value, (newValue) => {
             <template #redeemed_qty="row">
                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.qty }}</span>
             </template>
-            <template #point.name="row">
-                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.point.name }}</span>
+            <template #redeemable_item="row">
+                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.redeemable_item.product_name }}</span>
             </template>
-            <template #point.point="row">
-                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.point.point * row.qty }} pts</span>
-            </template>
-            <template #user.name="row">
-                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.user.name }}</span>
+            <template #handled_by="row">
+                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.handled_by.name }}</span>
             </template>
         </Table>
     </div>

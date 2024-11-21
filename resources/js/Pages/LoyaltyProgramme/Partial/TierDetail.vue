@@ -13,30 +13,14 @@ import MemberSpending from "./MemberSpending.vue";
 
 const props = defineProps({
     id: String,
-    tier: {
-        type: Object,
-        required: true,
-    },
-    reward: {
-        type: Array,
-        default: () => [],
-    },
-    customers: {
-        type: Array,
-        default: () => [],
-    },
-    inventoryItems: {
-        type: Array,
-        default: () => [],
-    },
-    names: {
-        type: Array,
-        default: () => [],
-    },
-    spendings: {
-        type: Array,
-        default: () => [],
-    }
+    tier: Object,
+    reward: Array,
+    customers: Array,
+    products: Array,
+    logos: Array,
+    inventoryItems: Array,
+    names: Array,
+    spendings: Array
 });
 
 const home = ref({
@@ -293,8 +277,9 @@ const hideDeleteTierForm = () => {
                 <template v-if="props.id">
                     <EditTier
                         :tier="props.tier"
+                        :logos="logos"
                         :inventoryItems="props.reward"
-                        :items="props.inventoryItems"
+                        :items="products"
                         @close="hideEditTierForm"
                     />
                 </template>

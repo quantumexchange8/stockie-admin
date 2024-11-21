@@ -15,6 +15,8 @@ use App\Models\OrderItem;
 use App\Models\OrderItemSubitem;
 use App\Models\OrderTable;
 use App\Models\Payment;
+use App\Models\Point;
+use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\Ranking;
@@ -33,7 +35,8 @@ use App\Services\RunningNumberService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
-use Notification;
+// use Notification;
+use Illuminate\Support\Facades\Notification;
 
 class OrderController extends Controller
 {
@@ -109,15 +112,10 @@ class OrderController extends Controller
     {
         $validatedData = $request->validated();
 
-        $waiter = User::find($validatedData['assigned_waiter']);
+        $waiter = User::select('id', 'full_name')->find($validatedData['assigned_waiter']);
         $waiter->image = $waiter->getFirstMediaUrl('user');
         
-        $orderTables = array_map(function ($table) {
-            return Table::where('id', $table)->pluck('table_no')->first();
-        }, $validatedData['tables']);
-        
-        $tableString = implode(', ', $orderTables);
-        
+        $tableString = $this->getTableName($validatedData['tables']);
         
         $newOrder = Order::create([
             'order_no' => RunningNumberService::getID('order'),
@@ -157,7 +155,6 @@ class OrderController extends Controller
                     ->log("New customer check-in by :properties.waiter_name.");
 
         Notification::send(User::all(), new OrderCheckInCustomer($tableString, $waiter->full_name, $waiter->id));
-        
 
         //assign to serve
         activity()->useLog('Order')
@@ -245,6 +242,18 @@ class OrderController extends Controller
     /**
      * Store new item into order.
      */
+    private function getTableName(array $tables) 
+    {
+        $orderTables = array_map(function ($table) {
+            return Table::where('id', $table)->pluck('table_no')->first();
+        }, $tables);
+        
+        return implode(', ', $orderTables);
+    }
+
+    /**
+     * Store new item into order.
+     */
     public function storeOrderItem(Request $request)
     {
         $orderItems = $request->items;
@@ -254,11 +263,7 @@ class OrderController extends Controller
         $addNewOrder = $fixedOrderDetails['current_order_completed'];
         $serveNow = $request->action_type === 'now' ? true : false;
 
-        $orderTables = array_map(function ($table) {
-            return Table::where('id', $table)->pluck('table_no')->first();
-        }, $fixedOrderDetails['tables']);
-        
-        $tableString = implode(', ', $orderTables);
+        $tableString = $this->getTableName($fixedOrderDetails['tables']);
 
         $waiter = User::find($request->user_id);
         $waiter->image = $waiter->getFirstMediaUrl('user');
@@ -356,7 +361,7 @@ class OrderController extends Controller
                     $temp += round($item['price'] * $item['item_qty'], 2);
                     
                     foreach ($item['product_items'] as $key => $value) {
-                        $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id')->find($value['id']);
+                        $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id')->find($value['id']);
                         $inventoryItem = $productItem->inventoryItem;
     
                         // Deduct stock
@@ -377,7 +382,7 @@ class OrderController extends Controller
                         $inventoryItem->refresh();
     
                         StockHistory::create([
-                            'inventory_id' => $inventoryItem->id,
+                            'inventory_id' => $inventoryItem->inventory_id,
                             'inventory_item' => $inventoryItem->item_name,
                             'old_stock' => $oldStockQty,
                             'in' => 0,
@@ -435,9 +440,7 @@ class OrderController extends Controller
                 });
             }
         }
-
     
-
         return response()->json($order->id);
     }
 
@@ -492,7 +495,9 @@ class OrderController extends Controller
                                     ->get();
 
         // Find the first non-pending clearance table
-        $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled'])->firstWhere('status', '!=', 'Pending Clearance') ?? $orderTables->first();
+        $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled'])
+                                            ->firstWhere('status', '!=', 'Pending Clearance') 
+                            ?? $orderTables->first();
 
         if (!!$currentOrderTable) {
             // Lazy load relationships only for the selected table
@@ -545,7 +550,7 @@ class OrderController extends Controller
     public function cancelOrder(string $id)
     {
         $existingOrder = Order::with([
-                                    'orderItems.subItems.productItem.inventoryItem', 
+                                    'orderItems.subItems.productItem.inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id', 
                                     'orderTable.table',
                                 ])->find($id);
 
@@ -575,7 +580,7 @@ class OrderController extends Controller
     
                         if ($restoredQty > 0) {
                             StockHistory::create([
-                                'inventory_id' => $inventoryItem->id,
+                                'inventory_id' => $inventoryItem->inventory_id,
                                 'inventory_item' => $inventoryItem->item_name,
                                 'old_stock' => $oldStockQty,
                                 'in' => $restoredQty,
@@ -924,7 +929,7 @@ class OrderController extends Controller
                             $subItems = OrderItemSubitem::where('order_item_id', $item['id'])->get();
                                                 
                             foreach ($subItems as $subItem) {
-                                $productItem = ProductItem::with('inventoryItem')->find($subItem->product_item_id);
+                                $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id')->find($subItem->product_item_id);
                                 $inventoryItem = $productItem->inventoryItem;
                                 
                                 // $qtySold = $subItem['serve_qty'];
@@ -946,7 +951,7 @@ class OrderController extends Controller
                                 $inventoryItem->refresh();
 
                                 StockHistory::create([
-                                    'inventory_id' => $inventoryItem->id,
+                                    'inventory_id' => $inventoryItem->inventory_id,
                                     'inventory_item' => $inventoryItem->item_name,
                                     'old_stock' => $oldStockQty,
                                     'in' => $restoredQty,
@@ -1044,13 +1049,11 @@ class OrderController extends Controller
             'expired_to' => 'nullable|date_format:Y-m-d',
         ];
         $requestMessages = [
-            'order_item_subitem_id.required' => 'This field is required.',
-            'order_item_subitem_id.integer' => 'This field must be an integer.',
-            'amount.required' => 'This field is required.',
-            'amount.decimal' => 'This field must be a decimal number.',
-            'remark.string' => 'This field must be an string.',
-            'expired_from.date_format' => 'This field must be in a date format: Y-m-d.',
-            'expired_to.date_format' => 'This field must be in a date format: Y-m-d.',
+            'required' => 'This field is required.',
+            'integer' => 'This field must be an integer.',
+            'decimal' => 'This field must be a decimal number.',
+            'string' => 'This field must be an string.',
+            'date_format' => 'This field must be in a date format: Y-m-d.',
         ];
 
         foreach ($items as $index => $item) {
@@ -1179,8 +1182,32 @@ class OrderController extends Controller
                 });
             }
         }
+        
+        $customer = Customer::with([
+                                'keepItems' => function ($query) {
+                                    $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
+                                            ->where('status', 'Keep')
+                                            ->with([
+                                                'orderItemSubitem.productItem:id,inventory_item_id',
+                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                'waiter:id,full_name'
+                                            ]);
+                                }
+                            ])
+                            ->find($request->customer_id);
+        
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            unset($keepItem->orderItemSubitem);
+            
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+            
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+        }
 
-        return redirect()->back();
+        return response()->json($customer->keepItems);
     }
 
     /**
@@ -1189,6 +1216,7 @@ class OrderController extends Controller
     public function getCustomerDetails(string $id) 
     {
         $customer = Customer::with([
+                                'rank:id,name',
                                 'keepItems' => function ($query) {
                                     $query->where('status', 'Keep')
                                             ->with([
@@ -1201,8 +1229,9 @@ class OrderController extends Controller
                             ->find($id);
 
         $customer->image = $customer->getFirstMediaUrl('customer');
-        $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
-
+        if ($customer->rank) {
+            $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
+        }
         
         foreach ($customer->keepItems as $key => $keepItem) {
             $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
@@ -1322,7 +1351,31 @@ class OrderController extends Controller
             });
         }
 
-        return redirect()->back();
+        $customer = Customer::with([
+                                'keepItems' => function ($query) {
+                                    $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
+                                            ->where('status', 'Keep')
+                                            ->with([
+                                                'orderItemSubitem.productItem:id,inventory_item_id',
+                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                'waiter:id,full_name'
+                                            ]);
+                                }
+                            ])
+                            ->find($request->customer_id);
+
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            unset($keepItem->orderItemSubitem);
+
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+        }
+
+        return response()->json($customer->keepItems);
     }
 
     /**
@@ -1383,7 +1436,7 @@ class OrderController extends Controller
         });
 
         $pointConversion = Setting::where('type', 'point')->first(['value', 'point']);
-        $totalPoints = ($payment->grand_total / $pointConversion->value) * $pointConversion->point;
+        $totalPoints = (int) round(($payment->grand_total / $pointConversion->value) * $pointConversion->point);
 
         $customer = $order->customer;
 
@@ -1393,10 +1446,27 @@ class OrderController extends Controller
             $givenTier = Ranking::where('min_amount', '<=', $totalSpent)
                                  ->orderBy('min_amount', 'desc')
                                  ->value('id') ?? 0;
-
+                                 
+            $oldBalance = $customer->point;
+                                 
             $customer->update([
-                'point' => $customer->point + $totalPoints,
+                'point' => $oldBalance + $totalPoints,
                 'ranking'=> $givenTier
+            ]);
+
+            $customer->refresh();
+
+            PointHistory::create([
+                'product_id' => null,
+                'payment_id' => $id,
+                'type' => 'Earned',
+                'qty' => 0,
+                'amount' => $totalPoints,
+                'old_balance' => $oldBalance,
+                'new_balance' => $customer->point,
+                'customer_id' => $customer->id,
+                'handled_by' => $request->user_id,
+                'redemption_date' => now()
             ]);
         };
 
@@ -1474,5 +1544,210 @@ class OrderController extends Controller
         ];
 
         return response()->json($data);
+    }
+
+    /**
+     * Get all redeemable items.
+     */
+    public function getRedeemableItems() {
+        $redeemables = Product::select('id','product_name', 'point')->where('is_redeemable', true)->get();
+        $redeemables->each(function($redeemable){
+            $redeemable->image = $redeemable->getFirstMediaUrl('product');
+        });
+        
+        return response()->json($redeemables);
+    }
+
+    /**
+     * Get customer's redemption histories.
+     */
+    public function getCustomerPointHistories(string $id)
+    {
+        $pointHistories = PointHistory::with([
+                                            'payment:id,order_id,point_earned',
+                                            'payment.order:id,order_no',
+                                            'redeemableItem:id,product_name'
+                                        ]) 
+                                        ->where('customer_id', $id)
+                                        ->orderBy('created_at','desc')
+                                        ->get();
+
+        $pointHistories->each(function ($record) {
+            $record->image = $record->redeemableItem?->getFirstMediaUrl('product');
+        });
+
+        return response()->json($pointHistories);
+    }
+
+    /**
+     * Redeem item and add to current order.
+     */
+    public function redeemItemToOrder(Request $request, string $id)
+    {
+        $validatedData = $request->validate(
+            [
+                // 'order_id' => 'required|integer',
+                'user_id' => 'required|integer',
+                'customer_id' => 'required|integer',
+                // 'redeemable_item_id' => 'required|integer',
+                'redeem_qty' => 'required|integer',
+                'selected_item' => 'required|array',
+            ], 
+            ['required' => 'This field is required.']
+        );
+
+        $fixedOrderDetails = $request->matching_order_details;
+        $addNewOrder = $fixedOrderDetails['current_order_completed'];
+
+        $tableString = $this->getTableName($fixedOrderDetails['tables']);
+        $pointSpent = 0;
+
+        $waiter = User::select(['id', 'full_name'])->find($validatedData['user_id']);
+        $waiter->image = $waiter->getFirstMediaUrl('user');
+
+        if ($validatedData) {
+            if ($addNewOrder) {
+                $newOrder = Order::create([
+                    'order_no' => RunningNumberService::getID('order'),
+                    'pax' => $fixedOrderDetails['pax'],
+                    'user_id' => $fixedOrderDetails['assigned_waiter'],
+                    'customer_id' => $fixedOrderDetails['customer_id'],
+                    'amount' => 0.00,
+                    'total_amount' => 0.00,
+                    'status' => 'Pending Serve',
+                ]);
+        
+                foreach ($fixedOrderDetails['tables'] as $selectedTable) {
+                    $table = Table::find($selectedTable);
+                    $table->update([
+                        'status' => 'Pending Order',
+                        'order_id' => $newOrder->id
+                    ]);
+            
+                    OrderTable::create([
+                        'table_id' => $selectedTable,
+                        'pax' => $fixedOrderDetails['pax'],
+                        'user_id' => $request->user_id,
+                        'status' => 'Pending Order',
+                        'order_id' => $newOrder->id
+                    ]);
+                }
+                $newOrder->refresh();
+            }
+
+            $redeemableItem = Product::with([
+                                            'productItems:id,product_id,inventory_item_id,qty',
+                                            'productItems.inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id'
+                                        ])
+                                        ->find($validatedData['selected_item']['id']);
+
+            $newOrderItem = OrderItem::create([
+                'order_id' => $addNewOrder ? $newOrder->id : $id,
+                'user_id' => $validatedData['user_id'],
+                'type' => 'Redemption',
+                'product_id' => $redeemableItem->id,
+                'item_qty' => $validatedData['redeem_qty'],
+                'amount' => 0,
+                'point_earned' => 0,
+                'status' => 'Pending Serve',
+            ]);
+
+            activity()->useLog('Order')
+                            ->performedOn($newOrderItem)
+                            ->event('place to order')
+                            ->withProperties([
+                                'waiter_name' => $waiter->full_name, 
+                                'table_name' => $tableString,
+                                'waiter_image' => $waiter->image,
+                            ])
+                            ->log("placed an order for :properties.table_name.");
+            
+            $redeemableItem->productItems->each(function ($item) use ($newOrderItem) {
+                $inventoryItem = $item->inventoryItem;
+
+                // Deduct stock
+                $stockToBeSold = $newOrderItem->item_qty * $item->qty;
+                $oldStockQty = $inventoryItem->stock_qty;
+                $newStockQty = $oldStockQty - $stockToBeSold;
+
+                $newStatus = match(true) {
+                    $newStockQty == 0 => 'Out of stock',
+                    $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
+                    default => 'In stock'
+                };
+
+                $inventoryItem->update([
+                    'stock_qty' => $newStockQty,
+                    'status' => $newStatus
+                ]);
+                $inventoryItem->refresh();
+
+                StockHistory::create([
+                    'inventory_id' => $inventoryItem->inventory_id,
+                    'inventory_item' => $inventoryItem->item_name,
+                    'old_stock' => $oldStockQty,
+                    'in' => 0,
+                    'out' => $stockToBeSold,
+                    'current_stock' => $inventoryItem->stock_qty,
+                ]);
+
+                OrderItemSubitem::create([
+                    'order_item_id' => $newOrderItem->id,
+                    'product_item_id' => $item->id,
+                    'item_qty' => $item->qty,
+                    'serve_qty' => 0,
+                ]);
+            });
+
+            $customer = Customer::select(['id', 'point'])->find($validatedData['customer_id']);
+            $pointSpent = $validatedData['redeem_qty'] * $redeemableItem->point;
+
+            PointHistory::create([
+                'product_id' => $redeemableItem->id,
+                'payment_id' => null,
+                'type' => 'Used',
+                'qty' => $validatedData['redeem_qty'],
+                'amount' => $pointSpent,
+                'old_balance' => $customer->point,
+                'new_balance' => $customer->point - $pointSpent,
+                'customer_id' => $customer->id,
+                'handled_by' => $validatedData['user_id'],
+                'redemption_date' => now()
+            ]);
+
+            $customer->decrement('point', $pointSpent);
+
+            $order = Order::with(['orderTable.table'])->find($id);
+            
+            if ($order) {
+                $statusArr = collect($order->orderItems->pluck('status')->unique());
+                $orderStatus = 'Pending Serve';
+                $orderTableStatus = 'Pending Order';
+            
+                if ($statusArr->contains('Pending Serve')) {
+                    $orderStatus = 'Pending Serve';
+                    $orderTableStatus = 'Order Placed';
+                } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+                    $orderStatus = 'Order Served';
+                    $orderTableStatus = 'All Order Served';
+                } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+                    $orderStatus = 'Order Served';
+                    $orderTableStatus = 'All Order Served';
+                }
+
+                $order->update(['status' => $orderStatus]);
+                
+                // Update all tables associated with this order
+                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
+                    $tab->table->update(['status' => $orderTableStatus]);
+                    $tab->update(['status' => $orderTableStatus]);
+                });
+            };
+        }
+
+        return response()->json([
+            'pointSpent' => $pointSpent,
+            'customerPoint' => $customer->point
+        ]);
     }
 }

@@ -83,6 +83,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/products/getTestingRecords', [ProductController::class, 'getTestingRecords'])->name('products.getTestingRecords');
         Route::get('/products/getInventoryItemStock/{id}', [ProductController::class, 'getInventoryItemStock'])->name('products.getInventoryItemStock');
         Route::get('/products/getProductSaleHistories/{id}', [ProductController::class, 'getProductSaleHistories'])->name('products.getProductSaleHistories');
+        Route::get('/products/getRedemptionHistories/{id}', [ProductController::class, 'getRedemptionHistories'])->name('products.getRedemptionHistories');
     });
 
      /********* Inventory **********/
@@ -100,6 +101,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/inventory/getInventoryItems/{id}', [InventoryController::class, 'getInventoryItems']);
         Route::get('/inventory/getAllStockHistory', [InventoryController::class, 'getAllStockHistory']);
         Route::get('/inventory/getAllKeepHistory', [InventoryController::class, 'getAllKeepHistory']);
+        Route::get('/inventory/getLatestInventory', [InventoryController::class, 'getLatestInventory']);
     });
 
     /******* Profile ********/
@@ -183,7 +185,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/points/{id}', [LoyaltyController::class, 'updatePoint'])->name('loyalty-programme.points.update');
         Route::delete('/points/{id}', [LoyaltyController::class, 'deletePoint'])->name('loyalty-programme.points.deletePoint');
         
-        Route::get('/getPointHistories/{id?}', [LoyaltyController::class, 'getPointHistories'])->name('loyalty-programme.getPointHistories');
+        Route::get('/getRecentRedemptionHistories/{id?}', [LoyaltyController::class, 'getRecentRedemptionHistories'])->name('loyalty-programme.getRecentRedemptionHistories');
         
     });
 
@@ -224,8 +226,11 @@ Route::middleware('auth')->group(function () {
         // Order's customer
         Route::get('/orders/customer/{id}', [OrderController::class, 'getCustomerDetails'])->name('orders.customer');
         Route::get('/orders/customer/keep/getCustomerKeepHistories/{id}', [OrderController::class, 'getCustomerKeepHistories'])->name('orders.customer.keep.getCustomerKeepHistories');
+        Route::get('/orders/customer/point/getCustomerPointHistories/{id}', [OrderController::class, 'getCustomerPointHistories'])->name('orders.customer.point.getCustomerPointHistories');
         Route::post('/orders/customer/keep/addKeptItemToOrder/{id}', [OrderController::class, 'addKeptItemToOrder'])->name('orders.customer.keep.addKeptItemToOrder');
+        Route::post('/orders/customer/point/redeemItemToOrder/{id}', [OrderController::class, 'redeemItemToOrder'])->name('orders.customer.point.redeemItemToOrder');
 
+        Route::get('/getRedeemableItems', [OrderController::class, 'getRedeemableItems'])->name('orders.getRedeemableItems');
         Route::get('/getAllZones', [OrderController::class, 'getAllZones'])->name('orders.getAllZones');
         Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');
         Route::get('/getCurrentTableOrder/{id}', [OrderController::class, 'getCurrentTableOrder'])->name('orders.getCurrentTableOrder');

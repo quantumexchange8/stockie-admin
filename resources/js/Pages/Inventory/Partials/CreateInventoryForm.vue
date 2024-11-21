@@ -3,16 +3,12 @@ import axios from 'axios';
 import { ref, computed, onMounted } from 'vue'
 import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
-import NumberCounter from '@/Components/NumberCounter.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
 import DragDropImage from '@/Components/DragDropImage.vue'
 import { DeleteIcon, PlusIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
-import Modal from '@/Components/Modal.vue';
-import { OrderCompleteIllus } from '@/Components/Icons/illus';
-import AddItemToMenuForm from './AddItemToMenuForm.vue';
 import { useCustomToast, useInputValidator } from '@/Composables/index.js';
 
 const props = defineProps({
@@ -34,6 +30,7 @@ const { isValidNumberKey } = useInputValidator();
 
 const groupCreatedModalIsOpen = ref(false);
 const addAsProductModalIsOpen = ref(false);
+const newInventoryData = ref({});
 // const inventoryToAdd = ref({});
 
 const form = useForm({
@@ -58,75 +55,77 @@ const hideGroupCreatedModal = () => groupCreatedModalIsOpen.value = false;
 
 // const hideAddAsProductModal = () => addAsProductModalIsOpen.value = false;
 
+const getNewInventory = async () => {
+    try { 
+        const response = await axios.get('/inventory/inventory/getLatestInventory');
+        newInventoryData.value = response.data;
+    } catch (error) {
+        if (error.response) console.error('An unexpected error occurred:', error.response.data.errors);
+    }
+}
+
 const formSubmit = async () => { 
-    // form.keep = form.keep ? 'Active': 'Inactive';
-
-    // form.post(route('inventory.store'), {
-    //     preserveScroll: true,
-    //     preserveState: true,
-    //     onSuccess: (page) => {
-    //         console.log(page);
-
-    //         let inventoryToAdd = {
-    //             inventory_name: form.name,
-    //             inventory_image: form.iamge,
-    //             inventory_items: form.items.map((item) => {
-    //                 item.unit = props.itemCategoryArr.find((itemCat) => item.item_cat_id === itemCat.value).text;
-    //                 return item;
-    //             })
-    //         };
-    //         setTimeout(() => {
-    //             showMessage({ 
-    //                 severity: 'success',
-    //                 summary: 'Group added successfully.',
-    //                 detail: 'You can always add new stock to this group.',
-    //             });
-    //         }, 200);
-    //         emit('close');
-    //         form.reset();
-    //         emit('addAsProducts', inventoryToAdd);
-    //     },
-    // });
+    form.post(route('inventory.store'), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            return Promise.all([
+                getNewInventory(),
+                setTimeout(() => {
+                    showMessage({ 
+                        severity: 'success',
+                        summary: 'Group added successfully.',
+                        detail: 'You can always add new stock to this group.',
+                    });
+                }, 200)
+            ])
+        },
+        onFinish: () => {
+            emit('close');
+            form.reset();
+            emit('addAsProducts', newInventoryData.value);
+        },
+    });
 
     
-    try {
-        const response = await axios.post(route('inventory.store'), {
-                name: form.name,
-                image: form.image,
-                items: form.items
-            }, { headers: { 'Content-Type': 'multipart/form-data' } }
-        );
+    // try { 
+    //     const response = await axios.post(route('inventory.store'), {
+    //             name: form.name,
+    //             image: form.image,
+    //             items: form.items
+    //         }, { headers: { 'Content-Type': 'multipart/form-data' } }
+    //     );
 
-        // let inventoryToAdd = {
-        //     inventory_name: form.name,
-        //     inventory_image: form.image,
-        //     inventory_items: form.items.map((item) => {
-        //         item.unit = props.itemCategoryArr.find((itemCat) => item.item_cat_id === itemCat.value).text;
-        //         return item;
-        //     })
-        // };
+    //     // let inventoryToAdd = {
+    //     //     inventory_name: form.name,
+    //     //     inventory_image: form.image,
+    //     //     inventory_items: form.items.map((item) => {
+    //     //         item.unit = props.itemCategoryArr.find((itemCat) => item.item_cat_id === itemCat.value).text;
+    //     //         return item;
+    //     //     })
+    //     // };
 
-        setTimeout(() => {
-            showMessage({ 
-                severity: 'success',
-                summary: 'Group added successfully.',
-                detail: 'You can always add new stock to this group.',
-            });
-        }, 200);
+    //     setTimeout(() => {
+    //         showMessage({ 
+    //             severity: 'success',
+    //             summary: 'Group added successfully.',
+    //             detail: 'You can always add new stock to this group.',
+    //         });
+    //     }, 200);
 
-        emit('close');
-        form.reset();
-        emit('addAsProducts', response.data);
-    } catch (error) {
-        // Check for validation errors in the response
-        if (error.response && error.response.status === 422) {
-            form.errors = error.response.data.errors;
-        } else {
-            console.error('An unexpected error occurred:', error);
-        }
-    } finally {
+    //     emit('close');
+    //     form.reset();
+    //     emit('addAsProducts', response.data);
+    // } catch (error) {
+    //     // Check for validation errors in the response
+    //     if (error.response) {
+    //         form.errors = error.response.data.errors;
+    //     } else {
+    //         console.error('An unexpected error occurred:', error);
+    //     }
+    // } finally {
 
-    }
+    // }
 };
 
 const cancelForm = () => {
@@ -190,14 +189,14 @@ const removeItem = (index) => {
                                     :inputName="'item_'+ i +'_name'"
                                     :labelText="'Name'"
                                     :placeholder="'e.g. Danish Pilsner'"
-                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.item_name'][0] : ''"
+                                    :errorMessage="form.errors ? form.errors['items.' + i + '.item_name'] : ''"
                                     v-model="item.item_name"
                                 />
                                 <Dropdown
                                     :inputName="'item_'+ i +'_cat_id'"
                                     :labelText="'Unit'"
                                     :inputArray="props.itemCategoryArr"
-                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.item_cat_id'][0] : ''"
+                                    :errorMessage="form.errors ? form.errors['items.' + i + '.item_cat_id'] : ''"
                                     v-model="item.item_cat_id"
                                 />
                             </div>
@@ -206,7 +205,7 @@ const removeItem = (index) => {
                                     :inputName="'item_'+ i +'_code'"
                                     :labelText="'Code'"
                                     :placeholder="'e.g. C0001'"
-                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.item_code'][0] : ''"
+                                    :errorMessage="form.errors ? form.errors['items.' + i + '.item_code'] : ''"
                                     v-model="item.item_code"
                                 />
                                 <!-- <NumberCounter
@@ -220,14 +219,15 @@ const removeItem = (index) => {
                                     :inputName="'item_'+ i +'_stock_qty'"
                                     :labelText="'Current stock'"
                                     :placeholder="'e.g. 100'"
-                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.stock_qty'][0] : ''"
+                                    :errorMessage="form.errors ? form.errors['items.' + i + '.stock_qty'] : ''"
                                     v-model="item.stock_qty"
+                                    @keypress="isValidNumberKey($event, false)"
                                 />
                                 <TextInput
                                     :inputName="'item_'+ i +'_low_stock_qty'"
                                     :labelText="'Show low stock at'"
                                     :placeholder="'e.g. 25'"
-                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.low_stock_qty'][0] : ''"
+                                    :errorMessage="form.errors ? form.errors['items.' + i + '.low_stock_qty'] : ''"
                                     v-model="item.low_stock_qty"
                                     @keypress="isValidNumberKey($event, false)"
                                 />
@@ -235,7 +235,7 @@ const removeItem = (index) => {
                             <RadioButton
                                 :optionArr="keepOptions"
                                 :checked="item.keep"
-                                :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.keep'][0] : ''"
+                                :errorMessage="form.errors ? form.errors['items.' + i + '.keep'] : ''"
                                 v-model:checked="item.keep"
                             />
                         </div>
@@ -261,7 +261,7 @@ const removeItem = (index) => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click=""
+                @click="console.log(form)"
             >
                 Cancel
             </Button>

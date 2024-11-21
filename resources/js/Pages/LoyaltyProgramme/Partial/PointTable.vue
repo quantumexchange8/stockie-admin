@@ -101,7 +101,7 @@ const hideDeletePointForm = () => {
                     v-model="filters['global'].value"
                 />
 
-                <Button
+                <!-- <Button
                     :type="'button'"
                     :size="'lg'"
                     :iconPosition="'left'"
@@ -112,7 +112,7 @@ const hideDeletePointForm = () => {
                         <PlusIcon />
                     </template>
                     Redeemable Item
-                </Button>
+                </Button> -->
             </div>
             <!--CurrentTierTable-->
             <Table
@@ -133,7 +133,7 @@ const hideDeletePointForm = () => {
                         <span class="text-primary-900 text-sm font-medium">You haven't added any redeemable item yet...</span>
                     </div>
                 </template>
-                <template #editAction="row">
+                <!-- <template #editAction="row">
                     <EditIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                         @click="showEditPointForm($event, row)"
@@ -144,7 +144,7 @@ const hideDeletePointForm = () => {
                         class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
                             @click="showDeletePointForm($event, row.id)"
                     />
-                </template>
+                </template> -->
                 <template #name="row">
                     <div class="flex flex-nowrap items-center gap-3">
                         <!-- <div class="bg-grey-50 border border-grey-200 h-14 w-14"></div> -->
@@ -153,17 +153,17 @@ const hideDeletePointForm = () => {
                             alt="" 
                             class="bg-grey-50 border border-grey-200 h-14 w-14"
                         />
-                        <span class="text-grey-900 text-sm font-medium">{{ row.name }}</span>
+                        <span class="text-grey-900 text-sm font-medium">{{ row.product_name }}</span>
                     </div>
                 </template>
                 <template #point="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.point || 0 }} pts</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ row.point }} pts</span>
                 </template>
                 <template #stock_left="row">
                     <span class="text-primary-600 inline-block align-middle">{{ row.stock_left }}</span>
                 </template>
             </Table>
-            <Modal
+            <!-- <Modal
                 :show="isPointFormOpen"
                 :title="'Add Redeemable Item'"
                 :maxWidth="'lg'"
@@ -198,7 +198,7 @@ const hideDeletePointForm = () => {
                 :confirmationMessage="'Are you sure you want to delete the selected redeemable item? This action cannot be undone.'"
                 @close="hideDeletePointForm"
                 v-if="selectedPoint"
-            />
+            /> -->
         </div>
     </div>
 </template>

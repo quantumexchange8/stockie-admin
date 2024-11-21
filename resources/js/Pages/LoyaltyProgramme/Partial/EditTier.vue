@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import dayjs from "dayjs";
 import { defineProps } from "vue";
 import Toggle from "@/Components/Toggle.vue";
@@ -14,6 +14,7 @@ import { Calendar, UploadLogoIcon } from "@/Components/Icons/solid";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
 import Toast from '@/Components/Toast.vue'
 import { useCustomToast, useInputValidator } from "@/Composables";
+import InputError from "@/Components/InputError.vue";
 
 const props = defineProps({
     tier: {
@@ -34,7 +35,8 @@ const props = defineProps({
     }
 });
 
-const logoPreview = ref(props.logos);
+const logoPreview = ref([]);
+const initialLogos = ref([...props.logos]);
 const fileInput = ref(null);
 const selectedLogo = ref(props.tier.icon);
 
@@ -48,7 +50,7 @@ const calculateValidPeriod = (fromDate, toDate) => {
 };
 
 const form = useForm({
-    id:props.tier.id,
+    id: props.tier.id,
     name: props.tier.name,
     min_amount: props.tier.min_amount.toString(),
     reward: props.tier.reward,
@@ -56,6 +58,7 @@ const form = useForm({
         const validPeriod = calculateValidPeriod(reward.valid_period_from, reward.valid_period_to); // calculate difference in month
         reward.item_qty = reward.item_qty ? parseInt(reward.item_qty) : 1;
         reward.min_purchase_amount = reward.min_purchase_amount ? reward.min_purchase_amount.toString() : '';
+        reward.free_item = parseInt(reward.free_item);
         // reward.discount = reward.reward_type === 'Discount (Percentage)' ? reward.transformed_rate.toString() : reward.discount;
 
         return {
@@ -67,13 +70,15 @@ const form = useForm({
     icon: props.tier.icon ?? '',
 });
 
-const addReward = () => {
-    form.rewards.push(emptyReward());
-};
+const addReward = () => form.rewards.push(emptyReward());
 
 const closeModal = () => {
-    form.reset();
-    form.errors = {};
+    setTimeout(() => {
+        form.reset();
+        logoPreview.value = [...initialLogos.value];
+        selectedLogo.value = null;
+        if (fileInput.value) fileInput.value.value = "";
+    }, 200);
     emit("close");
 };
 
@@ -85,8 +90,6 @@ const toggleReward = () => {
         form.rewards = [];
         return;
     }
-    
-    // addReward();
 };
 
 const toggleMinPurchase = (index) => {
@@ -105,22 +108,20 @@ const initializeMinItemQty = (value, index) => {
 }
 
 const updateValidPeriod = (reward, option) => {
-    reward.valid_period_from = '';
-    reward.valid_period_to = '';
-    
-    if (reward.valid_period === 0 && typeof option === 'object') {
-        reward.valid_period_from = dayjs(option[0]).format('YYYY-MM-DD HH:mm:ss');
-        reward.valid_period_to = dayjs(option[1]).format('YYYY-MM-DD HH:mm:ss');
-    }
+    reward.valid_period_from = reward.valid_period === 0 && typeof option === 'object'
+            ? dayjs(option[0]).format('YYYY-MM-DD HH:mm:ss')
+            : reward.valid_period !== 0
+                    ? dayjs().format('YYYY-MM-DD HH:mm:ss')
+                    : '';
 
-    if (reward.valid_period !== 0) {
-        reward.valid_period_from = dayjs().format('YYYY-MM-DD HH:mm:ss');
-        reward.valid_period_to = dayjs().add(option, 'month').format('YYYY-MM-DD HH:mm:ss');
-    }
+    reward.valid_period_to = reward.valid_period === 0 && typeof option === 'object'
+            ? dayjs(option[1]).format('YYYY-MM-DD HH:mm:ss')
+            : reward.valid_period !== 0
+                    ? dayjs().add(option, 'month').format('YYYY-MM-DD HH:mm:ss')
+                    : '';
 }
 
 const submit = () => {
-    
     form.rewards.forEach(item => {
         item.item_qty = item.item_qty ? item.item_qty.toString() : '';
         item.free_item = item.free_item ? item.free_item.toString() : '';
@@ -142,23 +143,43 @@ const submit = () => {
     })
 };
 
-const handleLogoUpload = () => {
-    fileInput.value.click()
-}
+const handleLogoUpload = () => fileInput.value.click();
 
 const handleFileSelect = (event) => {
   const file = event.target.files[0]
-//   console.log(file);
+
   if (file && file.type.startsWith('image/')) { 
-        const previewUrl = file;
-        logoPreview.value.push(previewUrl);
-        selectedLogo.value = previewUrl;
+        logoPreview.value.push(file);
+        selectLogo(file);
   }
 }
 
-const selectLogo = (logo) => {
-    selectedLogo.value = logo;
-}
+const selectLogo = (logo) => (selectedLogo.value = checkFileInstance(logo) ? logo : selectedLogo.value);
+
+watch(selectedLogo, (newValue) => form.icon = newValue, { immediate: true });
+
+watch(() => props.logos, (newLogos) => {
+    logoPreview.value = [...newLogos];
+    initialLogos.value = [...newLogos];
+});
+
+onMounted(() => logoPreview.value = [...props.logos]);
+
+const getObjectURL = (image) => URL.createObjectURL(image);
+
+const checkFileInstance = (file) => file instanceof File;
+
+const checkSelectedIcon = (logo) => {
+    if (selectedLogo.value.id != 'undefined' && selectedLogo.value.id != null) {
+        return selectedLogo.model_id === logo.model_id
+            && selectedLogo.model_type === logo.model_type
+            && selectedLogo.original_url === logo.original_url;
+    }
+    
+    return logo === selectedLogo.value;
+};
+
+const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field => form[field]) && !form.processing);
 
 </script>
 
@@ -181,23 +202,27 @@ const selectLogo = (logo) => {
                         <p class="text-xs">Select an icon</p>
                         <div class="w-[308px] flex flex-wrap gap-4 items-end">
                             <!-- Existing icons from database -->
-                                <!-- <img :src="logoPreview.value" alt="" /> -->
-                            <template v-for="logo in logoPreview" v-if="logoPreview">
-                                <div class="w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center"
-                                    :class="logo === selectedLogo ? 'border-primary-900 !border-solid border-[2px]' : ''"
+                            <template v-for="logo in logoPreview" :key="logo" v-if="logoPreview.length > 0">
+                                <div :class="[
+                                        'size-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center',
+                                        { 'border-primary-900 !border-solid border-[2px]': checkSelectedIcon(logo) },
+                                        { 'cursor-not-allowed opacity-30': !checkFileInstance(logo) && !checkSelectedIcon(logo)},
+                                        { 'cursor-pointer transition ease-in-out delay-50 hover:-translate-y-1 hover:scale-110 duration-200': checkFileInstance(logo) },
+                                    ]"
                                     @click="selectLogo(logo)"
                                 >
+                                    <img 
+                                        :src="logo.original_url ?? getObjectURL(logo)" 
+                                        alt="logo" 
+                                        class="size-full object-contain"
+                                    />
                                 </div>
                             </template>
 
                             <!-- Icons  -->
                             <div class="flex flex-col gap-4 items-center">
-                                <div class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center">
-                                    <UploadLogoIcon 
-                                        @click="handleLogoUpload"
-                                        class="cursor-pointer"
-                                    />
-
+                                <div class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center cursor-pointer" @click="handleLogoUpload">
+                                    <UploadLogoIcon class="flex-shrink-0" />
                                     <input 
                                         type="file" 
                                         ref="fileInput" 
@@ -208,6 +233,7 @@ const selectLogo = (logo) => {
                                 </div>
                             </div>
                         </div>
+                        <InputError :message="form.errors.icon" v-if="form.errors.icon" />
                     </div>
 
                     <TextInput
@@ -339,34 +365,23 @@ const selectLogo = (logo) => {
 
                                         <!--Free Item-->
                                         <template v-if="reward.reward_type === 'Free Item'">
-                                            <div class="flex gap-3 flex-wrap sm:flex-nowrap items-end justify-center">
+                                            <div class="flex gap-3 flex-wrap sm:flex-nowrap items-start justify-center">
+                                                {{ console.log(items) }}
                                                 <Dropdown
-                                                    :labelText="'Select an item'"
-                                                    :inputArray="props.items"
-                                                    grouped
+                                                    :labelText="'Select a product'"
+                                                    :inputArray="items"
+                                                    imageOption
                                                     :inputName="'free_item_' + index"
                                                     :errorMessage="form.errors ? form.errors['items.' + index + '.free_item']  : ''"
-                                                    :dataValue="reward.free_item ?? ''"
+                                                    :dataValue="reward.free_item"
                                                     v-model="reward.free_item"
                                                     placeholder="Select"
                                                     class="w-full"
                                                     @onChange="initializeMinItemQty($event, index)"
-                                                >
-
-                                                <template #optionGroup="items">
-                                                    <div class="flex flex-nowrap items-center gap-3">
-                                                        <img 
-                                                            :src="items.group_item ? items.group_item : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                            alt=""
-                                                            class="bg-grey-50 border border-grey-200 h-6 w-6"
-                                                        >
-                                                        <span class="text-grey-400 text-base font-bold">{{ items.group_name }}</span>
-                                                    </div>
-                                                </template>
-                                                </Dropdown>
+                                                />
                                                 <div 
                                                     v-if="reward.free_item !== ''"
-                                                    class="w-fit flex max-h-[44px]" 
+                                                    class="w-fit flex max-h-[44px] pt-[22px]" 
                                                 >
                                                     <NumberCounter
                                                         :labelText="''"
@@ -374,6 +389,7 @@ const selectLogo = (logo) => {
                                                         :errorMessage="form.errors ? form.errors['items.' + index + '.item_qty']  : ''"
                                                         :dataValue="reward.item_qty || 1"
                                                         :minValue="1"
+                                                        :maxValue="items.find((item) => item.value === reward.free_item).stock_left"
                                                         v-model="reward.item_qty"
                                                     />
                                                 </div>
@@ -429,6 +445,7 @@ const selectLogo = (logo) => {
                 <div class="flex gap-4 pt-3">
                     <Button
                         variant="tertiary"
+                        :type="'button'"
                         :size="'lg'"
                         @click="closeModal"
                     >
@@ -438,7 +455,7 @@ const selectLogo = (logo) => {
                         variant="primary" 
                         :size="'lg'" 
                         :type="'submit'"
-                        :disabled="form.processing"
+                        :disabled="!isFormValid"
                     >
                         Save Changes
                     </Button>

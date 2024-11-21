@@ -8,6 +8,7 @@ import DragDropImage from '@/Components/DragDropImage.vue'
 import { DeleteIcon, PlusIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
+import { useInputValidator } from '@/Composables/index.js';
 
 const props = defineProps({
     errors: Object,
@@ -30,6 +31,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close'])
+
+const { isValidNumberKey } = useInputValidator();
 
 const form = useForm({
     id: props.group.id,
@@ -146,6 +149,7 @@ const removeItem = (index) => {
                                     :placeholder="'e.g. 25'"
                                     :errorMessage="(form.errors) ? form.errors['items.' + i + '.low_stock_qty']  : ''"
                                     v-model="item.low_stock_qty"
+                                    @keypress="isValidNumberKey($event, false)"
                                 />
                            </div>
                             <div class="flex items-start gap-10">

@@ -8,6 +8,11 @@ export const keepOptions = [
     { text: 'Keep is not allowed', value: 'Inactive' },
 ];
 
+export const redeemOptions = [
+    { text: 'Redemption is allowed', value: true },
+    { text: 'Redemption is not allowed', value: false },
+];
+
 export const defaultProductItem = {
     inventory_item_id: null,
     formatted_item_name: '',

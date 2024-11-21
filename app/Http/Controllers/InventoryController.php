@@ -46,6 +46,7 @@ class InventoryController extends Controller
                                                 ->unique('id')
                                                 ->map(fn($product) => [
                                                     'id' => $product->id,
+                                                    'image' => $product->getFirstMediaUrl('product'),
                                                 ])
                                                 ->values();
 
@@ -57,6 +58,7 @@ class InventoryController extends Controller
 
                                     return $group;
                                 });
+
         $inventories->each(function($inventory){
             $inventory->inventory_image = $inventory->getFirstMediaUrl('inventory');
         });
@@ -145,7 +147,7 @@ class InventoryController extends Controller
 
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) {
-            return response()->json(['errors' => $allItemErrors], 422);
+            return redirect()->back()->withErrors($allItemErrors);
         }
 
         $image = $request->hasFile('image') ? $request->file('image')->getClientOriginalName() : '';
@@ -153,11 +155,12 @@ class InventoryController extends Controller
         $newGroup = Iventory::create([
             'name' => $validatedData['name'],
             // 'category_id' => $validatedData['category_id'],
-            // 'category_id' => $validatedData['category_id'],
             'image' => $image,
         ]);
 
-        $validatedData->hasFile('image') ? $newGroup->addMedia($validatedData->image)->toMediaCollection('inventory') : '';
+        if ($validatedData->hasFile('image')) {
+            $newGroup->addMedia($validatedData->image)->toMediaCollection('inventory');
+        };
         
         if (count($validatedInventoryItems) > 0) {
             foreach ($validatedInventoryItems as $key => $value) {
@@ -199,13 +202,31 @@ class InventoryController extends Controller
         //     'detail' => 'You can always add new stock to this group.'
         // ];
 
-        $newInventory = Iventory::select(['id', 'name', 'image'])
-                                ->with([
-                                    'inventoryItems:id,inventory_id,item_name,item_cat_id', 
-                                    'inventoryItems.itemCategory:id,name'
-                                ])->find($newGroup->id);
-        return response()->json($newInventory);
-        // return redirect()->back();
+        // $newInventory = Iventory::select(['id', 'name', 'image'])
+        //                         ->with([
+        //                             'inventoryItems:id,inventory_id,item_name,item_cat_id', 
+        //                             'inventoryItems.itemCategory:id,name'
+        //                         ])->find(1);
+                                
+        // return response()->json(['newInventory' => $newInventory], 303);
+        return redirect()->back();
+    }
+
+    /**
+     * Get the newly created inventory and its items.
+     */
+    public function getLatestInventory()
+    {
+        $data = Iventory::select(['id', 'name', 'image'])
+                        ->with([
+                            'inventoryItems:id,inventory_id,item_name,item_cat_id', 
+                            'inventoryItems.itemCategory:id,name'
+                        ])
+                        ->limit(1)
+                        ->latest()
+                        ->get();
+
+        return response()->json($data[0]);
     }
     
     /**
@@ -392,7 +413,7 @@ class InventoryController extends Controller
 
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) {
-            return redirect()->back()->withErrors($allItemErrors)->withInput();
+            return redirect()->back()->withErrors($allItemErrors);
         }
 
         // Update inventory data

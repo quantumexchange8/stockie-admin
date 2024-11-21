@@ -54,17 +54,12 @@ class RankingRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'This field is required.',
-            'name.string' => 'This field must be a string.',
-            'name.max' => 'This field must not exceed 255 characters.',
-            'name.unique' => 'This field must be unique.',
-            'min_amount.required' => 'This field is required.',
-            'min_amount.integer' => 'This field must be an integer.',
-            'reward.required' => 'This field is required.',
-            'reward.string' => 'This field must be a string.',
-            'reward.max' => 'This field must not exceed 255 characters.',
-            'icon.image' => 'Invalid format.',
-            'icon.required' => 'Icon is required.'
+            'required' => 'This field is required.',
+            'string' => 'This field must be a string.',
+            'max' => 'This field must not exceed 255 characters.',
+            'unique' => 'This field must be unique.',
+            'integer' => 'This field must be an integer.',
+            'image' => 'This field must have a valid format of an image.',
         ];
     }
 }

@@ -122,6 +122,7 @@ const isFormValid = computed(() => {
                                 <Dropdown
                                     :inputName="'inventory_item_id_' +  i"
                                     :labelText="'Select item'"
+                                    imageOption
                                     :inputArray="inventoriesArr"
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"

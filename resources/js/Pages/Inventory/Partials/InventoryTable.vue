@@ -58,27 +58,13 @@ const openForm = (action, id, event) => {
         event.stopPropagation();
         event.preventDefault();
     }
-
-    // if (action === 'create') createFormIsOpen.value = true;
-    // if (action === 'add-as-product') addAsProductModalIsOpen.value = true;
-    // if (id) {
-    //     if (action !== 'create') {
-    //         selectedGroup.value = props.rows.find((group) => group.id === id);
-    //         selectedGroupItems.value = action === 'add' || action === 'edit' ? selectedGroup.value.inventory_items : null;
-    //     }
-    
-    //     if (action === 'add') addStockFormIsOpen.value = true;
-    //     if (action === 'edit') editGroupFormIsOpen.value = true;
-    //     if (action === 'delete') deleteGroupFormIsOpen.value = true;
-    // }
-    
     
     switch (action) {
         case 'create': 
             createFormIsOpen.value = true;
             break;
         case 'group-created': 
-            inventoryToAdd.value = event ?? {};
+            inventoryToAdd.value = event;
             groupCreatedModalIsOpen.value = true;
             break;
         case 'add-as-product': 
@@ -103,12 +89,6 @@ const openForm = (action, id, event) => {
 }
 
 const closeForm = (action) => {
-    // if (action === 'create') createFormIsOpen.value = false;
-    // if (action === 'add-as-product') addAsProductModalIsOpen.value = false;
-    // if (action === 'add') addStockFormIsOpen.value = false;
-    // if (action === 'edit') editGroupFormIsOpen.value = false;
-    // if (action === 'delete') deleteGroupFormIsOpen.value = false;
-
     switch (action) {
         case 'create': createFormIsOpen.value = false;
         case 'group-created': groupCreatedModalIsOpen.value = false;
@@ -183,16 +163,18 @@ watch(() => searchQuery.value, (newValue) => {
         .map(group => {
             // Filter inventory items in the group
             const filteredItems = group.inventory_items.filter(item => {
+                const groupName = group.name.toLowerCase();
                 const itemName = item.item_name.toLowerCase();
                 const itemCode = item.item_code.toLowerCase();
                 const itemCategory = item.item_category.name.toLowerCase();
                 const itemStatus = item.status.toLowerCase();
                 const stockQty = item.stock_qty.toString().toLowerCase();
-                return itemName.includes(query) ||
-                       itemCode.includes(query) ||
-                       itemCategory.includes(query) ||
-                       itemStatus.includes(query) ||
-                       stockQty.includes(query);
+                return groupName.includes(query) || 
+                        itemName.includes(query) ||
+                        itemCode.includes(query) ||
+                        itemCategory.includes(query) ||
+                        itemStatus.includes(query) ||
+                        stockQty.includes(query);
             });
 
             // Return the group with only matching items
@@ -834,11 +816,13 @@ const totalInventoryItemStock = (items) => {
             :show="addAsProductModalIsOpen"
             @close="closeForm('add-as-product')"
         >
-            <AddItemToMenuForm 
-                :inventoryToAdd="inventoryToAdd" 
-                :categoryArr="categoryArr" 
-                @close="closeForm('add-as-product')" 
-            />
+            <template v-if="inventoryToAdd">
+                <AddItemToMenuForm 
+                    :inventoryToAdd="inventoryToAdd" 
+                    :categoryArr="categoryArr" 
+                    @close="closeForm('add-as-product')" 
+                />
+            </template>
         </Modal>
 
         <Modal 

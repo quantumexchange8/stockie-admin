@@ -2,7 +2,7 @@
 import { useForm, usePage } from '@inertiajs/vue3';
 import { onMounted, ref, computed, watch } from 'vue';
 import Button from '@/Components/Button.vue';
-import { useCustomToast } from '@/Composables/index.js';
+import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import Tag from '@/Components/Tag.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
@@ -31,8 +31,9 @@ const page = usePage();
 const userId = computed(() => page.props.auth.user.id)
 
 const { showMessage } = useCustomToast();
+const { formatPhone } = usePhoneUtils();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'update:customerKeepItems']);
 
 const keepTypes = [
     { text: 'in quantity', value: 'qty' },
@@ -54,22 +55,42 @@ const form = useForm({
     items: [],
 });
     
-const formSubmit = () => { 
-    form.post(route('orders.items.keep'), {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            setTimeout(() => {
-                showMessage({ 
-                    severity: 'success',
-                    summary: 'Item kept successfully.',
-                    detail: "You can always refer back the keep item in 'Customer detail'.",
-                });
-            }, 200);
-            form.reset();
-            emit('close');
-        },
-    })
+const submit = async () => { 
+    form.processing = true;
+    try {
+        const response = await axios.post(`/order-management/orders/addItemToKeep`, form);
+
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: 'Item kept successfully.',
+                detail: "You can always refer back the keep item in 'Customer detail'.",
+            });
+        }, 200);
+
+        emit('update:customerKeepItems', response.data);
+        emit('close');
+        form.reset();
+    } catch (error) {
+        console.error(error);
+    } finally {
+        form.processing = false;
+    }
+    // form.post(route('orders.items.keep'), {
+    //     preserveScroll: true,
+    //     preserveState: true,
+    //     onSuccess: () => {
+    //         setTimeout(() => {
+    //             showMessage({ 
+    //                 severity: 'success',
+    //                 summary: 'Item kept successfully.',
+    //                 detail: "You can always refer back the keep item in 'Customer detail'.",
+    //             });
+    //         }, 200);
+    //         form.reset();
+    //         emit('close');
+    //     },
+    // })
 };
 
 const pendingServeItems = computed(() => {
@@ -95,14 +116,13 @@ const pendingServeItems = computed(() => {
         };
     });
 });
-console.log(pendingServeItems);
 
 const getKeptQuantity = (subItem) => {
     return subItem.keep_items?.reduce((totalKeeps, keepItem) => totalKeeps + parseInt(keepItem.oldest_keep_history.qty) + (parseFloat(keepItem.oldest_keep_history.cm) > 0 ? 1 : 0), 0) ?? 0;
 };
 
 const getTotalKeptQuantity = (item) => {
-    return item.type === 'Normal' 
+    return item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
             ? item.sub_items?.reduce((total, subItem) => total + getKeptQuantity(subItem), 0 ) ?? 0
             : item.keep_item.keep_histories?.reduce((total, history) => total + parseInt(history.qty) + (parseFloat(history.cm) > 0 ? 1 : 0), 0) ?? 0;
 };
@@ -140,22 +160,22 @@ const addItemToList = (item) => {
             form.items.push({
                 order_item_id: item.id,
                 order_item_subitem_id: subItem.id,
-                type: item.type === 'Normal' 
+                type: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward'
                         ? 'qty' 
                         : parseFloat(item.keep_item.oldest_keep_history.qty) > parseFloat(item.keep_item.oldest_keep_history.cm) 
                             ? 'qty'
                             : 'cm',
-                amount: item.type === 'Normal' 
+                amount: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
                         ? (subItem.item_qty * item.item_qty) - getKeptQuantity(subItem) 
                         : parseFloat(item.keep_item.oldest_keep_history.qty) > parseFloat(item.keep_item.oldest_keep_history.cm) 
                             ? (subItem.item_qty * item.item_qty) - getTotalKeptQuantity(item)
                             : item.keep_item.oldest_keep_history.cm,
-                remark: item.type === 'Normal' ? '' : item.keep_item.remark ? item.keep_item.remark : '',
-                expiration: item.type === 'Normal' ? false : item.keep_item.expired_from ? true : false,
-                expired_period: item.type === 'Normal' ? '' : item.keep_item.expired_from ? 0 : '',
-                date_range: item.type === 'Normal' ? '' : item.keep_item.expired_from ? [dayjs(item.keep_item.expired_from).toDate(), dayjs(item.keep_item.expired_to).toDate()] : '',
-                expired_from: item.type === 'Normal' ? '' : item.keep_item.expired_from ? dayjs(item.keep_item.expired_from).format('YYYY-MM-DD') : '',
-                expired_to: item.type === 'Normal' ? '' : item.keep_item.expired_to ? dayjs(item.keep_item.expired_to).format('YYYY-MM-DD') : '',
+                remark: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.remark ? item.keep_item.remark : '',
+                expiration: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? false : item.keep_item.expired_from ? true : false,
+                expired_period: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? 0 : '',
+                date_range: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? [dayjs(item.keep_item.expired_from).toDate(), dayjs(item.keep_item.expired_to).toDate()] : '',
+                expired_from: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? dayjs(item.keep_item.expired_from).format('YYYY-MM-DD') : '',
+                expired_to: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_to ? dayjs(item.keep_item.expired_to).format('YYYY-MM-DD') : '',
                 keep_id: item.type === 'Keep' ? item.keep_item_id : null
             });
         });
@@ -255,31 +275,13 @@ const getKeepItemName = (item) => {
     });
     if (itemName) return itemName;
 };
-
-const formatPhone = (phone) => {
-    if (!phone) return phone; 
-    
-    // Remove the '+6' prefix if it exists
-    if (phone.startsWith('+6')) phone = phone.slice(2);
-
-    // Slice the number into parts
-    const totalLength = phone.length;
-    const cutPosition = totalLength - 4;
-
-    const firstPart = phone.slice(0, 2);
-    const secondPart = phone.slice(2, cutPosition)
-    const lastFour = phone.slice(cutPosition);
-
-    return `${firstPart} ${secondPart} ${lastFour}`;
-};
 </script>
 
 <template>
-    <form novalidate @submit.prevent="formSubmit">
+    <form novalidate @submit.prevent="submit">
         <div class="flex flex-col gap-y-6 items-start rounded-[5px]">
             <div class="flex flex-col justify-center items-start gap-y-3 px-6 py-3 w-full">
                 <div class="flex flex-col gap-y-3 py-6 justify-center items-center w-full bg-[rgba(255,_249,_249,_0.90)] rounded-[5px]">
-                    <!-- <div class="bg-primary-700 rounded-full size-20"></div> -->
                     <img 
                         :src="order.customer.image ? order.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                         alt=""
@@ -303,14 +305,14 @@ const formatPhone = (phone) => {
                                     <div class="flex flex-nowrap gap-x-3 items-center">
                                         <!-- <div class="p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                         <img 
-                                            :src="pendingServeItems.product.image ? pendingServeItems.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                             alt=""
                                             class="size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                                         >
                                         <div class="flex flex-col gap-y-2 items-start justify-center self-stretch">
                                             <div class="flex flex-nowrap gap-x-2 items-center">
                                                 <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
-                                                <p class="text-base font-medium text-grey-900 truncate flex-shrink">{{ item.type === 'Normal' ? item.product.product_name : getKeepItemName(item) }}</p>
+                                                <p class="text-base font-medium text-grey-900 truncate flex-shrink">{{ item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? item.product.product_name : getKeepItemName(item) }}</p>
                                             </div>
                                             <div class="flex flex-nowrap gap-x-2 items-center">
                                                 <p class="text-sm font-medium text-primary-950">{{ item.product.bucket === 'set' ? 'Quantity in set:' : 'Quantity:' }} {{ item.item_qty }}</p>
@@ -354,9 +356,9 @@ const formatPhone = (phone) => {
                                                 <NumberCounter
                                                     v-if="form.items.find(i => i.order_item_subitem_id === subItem.id).type === 'qty'"
                                                     :inputName="`item_${subItem.id}.amount`"
-                                                    :maxValue="totalSubItemQty(item, subItem) - (item.type === 'Normal' ? getKeptQuantity(subItem) : getTotalKeptQuantity(item))"
+                                                    :maxValue="totalSubItemQty(item, subItem) - (item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? getKeptQuantity(subItem) : getTotalKeptQuantity(item))"
                                                     :errorMessage="form.errors ? form.errors['items.' + index + '.amount']  : ''"
-                                                    :disabled="totalSubItemQty(item, subItem) === (item.type === 'Normal' ? getKeptQuantity(subItem) : getTotalKeptQuantity(item))"
+                                                    :disabled="totalSubItemQty(item, subItem) === (item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? getKeptQuantity(subItem) : getTotalKeptQuantity(item))"
                                                     v-model="form.items.find(i => i.order_item_subitem_id === subItem.id).amount"
                                                     class="!w-36"
                                                 />
@@ -365,7 +367,7 @@ const formatPhone = (phone) => {
                                                     :inputName="`item_${subItem.id}.amount`"
                                                     :iconPosition="'right'"
                                                     :errorMessage="form.errors ? form.errors['items.' + index + '.amount']  : ''"
-                                                    :disabled="totalSubItemQty(item, subItem) === (item.type === 'Normal' ? getKeptQuantity(subItem) : getTotalKeptQuantity(item))"
+                                                    :disabled="totalSubItemQty(item, subItem) === (item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? getKeptQuantity(subItem) : getTotalKeptQuantity(item))"
                                                     v-model="form.items.find(i => i.order_item_subitem_id === subItem.id).amount"
                                                     @keypress="isNumber($event, true, item)"
                                                     @update:modelValue="checkMaxValue($event, item, subItem.id)"

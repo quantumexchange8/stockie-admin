@@ -12,7 +12,7 @@ import { ArrowLeftIcon } from '@/Components/Icons/solid';
 
 const props = defineProps({
     errors: Object,
-    categoryArr: Array,
+    // categoryArr: Array,
     selectedTable: {
         type: Object,
         default: () => {}
@@ -38,12 +38,7 @@ const query = ref('');
 const tabs = ref(['All']);
 const products = ref([]);
 const newOrderId = ref({});
-const categories = ref(props.categoryArr.map((cat) => {
-    return {
-        ...cat,
-        downsizedText: cat.text.toLowerCase()
-    }
-}));
+const categories = ref([]);
 
 const form = useForm({
     user_id: userId.value,
@@ -61,6 +56,7 @@ const orderTableNames = computed(() => {
 });
 
 const submit = async () => { 
+    form.processing = true;
     try {
         // Post using axios and get the new order id if new order is created
         const addItemResponse = await axios.post(route('orders.items.store'), form);
@@ -82,7 +78,7 @@ const submit = async () => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        form.processing = false;
     }
     // form.post(route('orders.items.store'), {
     //     preserveScroll: true,
@@ -104,10 +100,18 @@ const submit = async () => {
 
 onMounted(async() => {
     try {
-        const productsResponse = await axios.get(route('orders.getAllProducts'));
-        products.value = productsResponse.data;
+        const categoryResponse = await axios.get(route('orders.getAllCategories'));
+        categories.value = categoryResponse.data.map((cat) => {
+            return {
+                ...cat,
+                downsizedText: cat.text.toLowerCase()
+            }
+        })
         
         categories.value.forEach(category => tabs.value.push(category.text));
+
+        const productsResponse = await axios.get(route('orders.getAllProducts'));
+        products.value = productsResponse.data;        
     } catch (error) {
         console.error(error);
     } finally {
@@ -179,6 +183,10 @@ const quantityComputed = (productId) => {
         set: (value) => updateProductQuantity(productId, value)
     });
 };
+
+const isFormValid = computed(() => {
+    return form.items.length > 0 && !form.processing;
+});
 
 </script>
 
@@ -304,14 +312,14 @@ const quantityComputed = (productId) => {
                     <Button
                         size="lg"
                         variant="secondary"
-                        :disabled="form.items.length === 0 || form.processing"
+                        :disabled="!isFormValid"
                         @click="form.action_type = 'later'"
                     >
                         Serve Later
                     </Button>
                     <Button
                         size="lg"
-                        :disabled="form.items.length === 0 || form.processing"
+                        :disabled="!isFormValid"
                         @click="form.action_type = 'now'"
                     >
                         Serve Now

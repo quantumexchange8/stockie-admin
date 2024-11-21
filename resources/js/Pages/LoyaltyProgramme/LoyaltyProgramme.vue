@@ -12,7 +12,7 @@ import { Head } from "@inertiajs/vue3";
 const props = defineProps({
     tiers: Array,
     redeemableItems: Array,
-    inventoryItems: Array,
+    products: Array,
     totalPointsGivenAway: Number,
     logos: Array,
 });
@@ -36,10 +36,9 @@ const tiersColumns = ref([
 ]);
 
 const redeemableItemsColumns = ref([
-    { field: "name", header: "Product Name", width: "45", sortable: true },
+    { field: "name", header: "Product Name", width: "58", sortable: true },
     { field: "point", header: "Redeemed with", width: "25", sortable: true },
-    { field: "stock_left", header: "Left", width: "15", sortable: true },
-    { field: "action", header: "", width: "15", sortable: false, edit: true, delete: true },
+    { field: "stock_left", header: "Left", width: "17", sortable: true },
 ]);
 
 const rowType = {
@@ -50,10 +49,10 @@ const rowType = {
 
 const actions = [
     {
-        view: (id) => `/loyalty-programme/point_details/${id}`,
+        view: (id) => `/menu-management/products_details/${id}`,
         replenish: () => '',
         edit: () => '',
-        delete: (id) => `/loyalty-programme/points/${id}`,
+        delete: () => ``,
     },
     {
         view: (id) => `/loyalty-programme/tier_details/${id}`,
@@ -71,9 +70,7 @@ const redeemableItemsTotalPages = computed(() => {
     return Math.ceil(props.redeemableItems.length / redeemableItemsRowsPerPage.value);
 })
 
-onMounted(() => {
-    flashMessage();
-});
+onMounted(() => flashMessage());
 
 </script>
 
@@ -89,10 +86,10 @@ onMounted(() => {
 
         <Toast />
 
-        <TabView :tabs="tabs">
+        <TabView :tabs="tabs" :selectedTab="1">
             <template #points>
                 <Point
-                    :inventoryItems="inventoryItems"
+                    :products="products"
                     :totalPointsGivenAway="totalPointsGivenAway"
                     :columns="redeemableItemsColumns"
                     :rows="redeemableItems"
@@ -104,7 +101,7 @@ onMounted(() => {
             </template>
             <template #tier>
                 <Tier 
-                    :inventoryItems="inventoryItems"
+                    :products="products"
                     :columns="tiersColumns"
                     :rows="tiers"
                     :rowType="rowType"

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import dayjs from 'dayjs';
 import { useForm } from "@inertiajs/vue3";
 import Toggle from "@/Components/Toggle.vue";
@@ -14,7 +14,7 @@ import { useCustomToast, useInputValidator } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
 
 const props = defineProps({
-    inventoryItems: {
+    products: {
         type: Array,
         default: [],
     },
@@ -27,20 +27,20 @@ const props = defineProps({
 const emit = defineEmits(["close"]);
 const rewardList = ref([]);
 const logoPreview = ref([]);
+const initialLogos = ref([...props.logos]);
 const fileInput = ref(null);
 const selectedLogo = ref(null);
 
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
+
 const toggleMinPurchase = (index) => {
     const reward = rewardList.value[index];
     reward.min_purchase = reward.min_purchase === "active" ? "inactive" : "active";
     reward.min_purchase_amount = '';
 };
 
-const addReward = () => {
-    rewardList.value.push(emptyReward());
-};
+const addReward = () => rewardList.value.push(emptyReward());
 
 const toggleReward = () => {
     const isActive = form.reward === "active";
@@ -71,7 +71,7 @@ const submit = () => {
 
     form.post(route("loyalty-programme.tiers.store"), {
         preserveScroll: true,
-        preserveState: 'errors',
+        preserveState: true,
         onSuccess: () => {
             closeModal();
             setTimeout(() => {
@@ -86,8 +86,12 @@ const submit = () => {
 };
 
 const closeModal = () => {
-    form.reset();
-    form.errors = {};
+    setTimeout(() => {
+        form.reset();
+        logoPreview.value = [...initialLogos.value];
+        selectedLogo.value = null;
+        if (fileInput.value) fileInput.value.value = "";
+    }, 200);
     emit("close");
 };
 
@@ -97,42 +101,49 @@ const resetReward = (value, index) => {
 }
 
 const updateValidPeriod = (reward, option) => {
-    reward.valid_period_from = '';
-    reward.valid_period_to = '';
-    
-    if (reward.valid_period === 0 && typeof option === 'object') {
-        reward.valid_period_from = dayjs(option[0]).format('YYYY-MM-DD HH:mm:ss');
-        reward.valid_period_to = dayjs(option[1]).format('YYYY-MM-DD HH:mm:ss');
-    }
+    reward.valid_period_from = reward.valid_period === 0 && typeof option === 'object'
+            ? dayjs(option[0]).format('YYYY-MM-DD HH:mm:ss')
+            : reward.valid_period !== 0
+                    ? dayjs().format('YYYY-MM-DD HH:mm:ss')
+                    : '';
 
-    if (reward.valid_period !== 0) {
-        reward.valid_period_from = dayjs().format('YYYY-MM-DD HH:mm:ss');
-        reward.valid_period_to = dayjs().add(option, 'month').format('YYYY-MM-DD HH:mm:ss');
-    }
+    reward.valid_period_to = reward.valid_period === 0 && typeof option === 'object'
+            ? dayjs(option[1]).format('YYYY-MM-DD HH:mm:ss')
+            : reward.valid_period !== 0
+                    ? dayjs().add(option, 'month').format('YYYY-MM-DD HH:mm:ss')
+                    : '';
 }
 
-const handleLogoUpload = () => {
-    fileInput.value.click()
-}
+const handleLogoUpload = () => fileInput.value.click();
 
 const handleFileSelect = (event) => {
-  const file = event.target.files[0]
-
-  if (file && file.type.startsWith('image/')) { 
-      const previewUrl = URL.createObjectURL(file);
-      logoPreview.value.push(previewUrl);
-      selectedLogo.value = previewUrl;
-      form.icon = file;
-  }
+    const file = event.target.files[0];
+    
+    if (file && file.type.startsWith('image/')) { 
+        logoPreview.value.push(file);
+        selectLogo(file);
+    }
 }
 
-const selectLogo = (logo) => {
-    selectedLogo.value = logo;
-}
+const selectLogo = (logo) => (selectedLogo.value = checkFileInstance(logo) ? logo : selectedLogo.value);
 
-onMounted(() => {
-    logoPreview.value = props.logos.map((logo) => URL.createObjectURL(logo));
+watch(selectedLogo, (newValue) => form.icon = newValue, { immediate: false });
+
+// watch(() => props.logos, (newValue) => logoPreview.value = newValue);
+
+watch(() => props.logos, (newLogos) => {
+    logoPreview.value = [...newLogos];
+    initialLogos.value = [...newLogos];
 });
+
+onMounted(() => logoPreview.value = [...props.logos]);
+
+const getObjectURL = (image) => URL.createObjectURL(image);
+
+const checkFileInstance = (file) => file instanceof File;
+
+const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field => form[field]) && !form.processing);
+
 </script>
 
 <template>
@@ -154,34 +165,38 @@ onMounted(() => {
                             <p class="text-xs">Select an icon</p>
                             <div class="w-[308px] flex flex-wrap gap-4 items-end">
                                 <!-- Existing icons from database -->
-                                    <!-- <img :src="logoPreview.value" alt="" /> -->
                                 <template v-for="logo in logoPreview" :key="logo" v-if="logoPreview.length > 0">
-                                    <div class="w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center"
-                                        :class="logo === selectedLogo ? 'border-primary-900 !border-solid border-[2px]' : ''"
+                                    <div :class="[
+                                            'size-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center',
+                                            { 'border-primary-900 !border-solid border-[2px]': logo === selectedLogo },
+                                            { 'cursor-not-allowed opacity-30': !checkFileInstance(logo) },
+                                            { 'cursor-pointer transition ease-in-out delay-50 hover:-translate-y-1 hover:scale-110 duration-200': checkFileInstance(logo) },
+                                        ]"
                                         @click="selectLogo(logo)"
                                     >
-                                        <img :src="logo" alt="logo" class="w-full h-full object-cover"/>
+                                        <img 
+                                            :src="logo.original_url ?? getObjectURL(logo)" 
+                                            alt="logo" 
+                                            class="size-full object-contain"
+                                        />
                                     </div>
                                 </template>
 
                                 <!-- Icons  -->
                                 <div class="flex flex-col gap-4 items-center">
-                                    <div class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center">
-                                    <UploadLogoIcon 
-                                        @click="handleLogoUpload"
-                                        class="cursor-pointer"
-                                    />
-                                    <input 
-                                        type="file" 
-                                        ref="fileInput" 
-                                        @change="handleFileSelect" 
-                                        accept="image/*" 
-                                        class="hidden" 
-                                    />
+                                    <div class="flex w-[44px] h-[44px] border-grey-100 border-dashed border-[1px] rounded-[5px] bg-grey-25 items-center justify-center cursor-pointer" @click="handleLogoUpload">
+                                        <UploadLogoIcon class="flex-shrink-0" />
+                                        <input 
+                                            type="file" 
+                                            ref="fileInput" 
+                                            @change="handleFileSelect" 
+                                            accept="image/*" 
+                                            class="hidden" 
+                                        />
                                     </div>
                                 </div>
-                                <InputError :message="form.errors.image" v-if="form.errors.image" />
                             </div>
+                            <InputError :message="form.errors.icon" v-if="form.errors.icon" />
                         </div>
 
                         <TextInput
@@ -301,27 +316,15 @@ onMounted(() => {
                                         <template v-if="reward.reward_type === 'Free Item'">
                                             <div class="flex gap-4 items-center">
                                                 <Dropdown
-                                                    :labelText="'Select an item'"
-                                                    :inputArray="inventoryItems"
-                                                    grouped
+                                                    :labelText="'Select a product'"
+                                                    imageOption
+                                                    :inputArray="products"
                                                     :inputName="'free_item_' + index"
                                                     :errorMessage="form.errors ? form.errors['items.' + index + '.free_item']  : ''"
                                                     v-model="reward.free_item"
                                                     placeholder="Select"
                                                     class="w-full"
-                                                >
-                                                    <template #optionGroup="group">
-                                                        <div class="flex flex-nowrap items-center gap-3">
-                                                            <!-- <div class="bg-grey-50 border border-grey-200 h-6 w-6"></div> -->
-                                                            <img 
-                                                                :src="group.group_image ? group.group_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                                alt=""
-                                                                class="bg-grey-50 border border-grey-200 h-6 w-6"
-                                                            >
-                                                            <span class="text-grey-400 text-base font-bold">{{ group.group_name }}</span>
-                                                        </div>
-                                                    </template>
-                                                </Dropdown>
+                                                />
                                             </div>
                                         </template>
 
@@ -385,6 +388,7 @@ onMounted(() => {
                         variant="primary"
                         :size="'lg'"
                         :type="'submit'"
+                        :disabled="!isFormValid"
                     >
                         Add
                     </Button>

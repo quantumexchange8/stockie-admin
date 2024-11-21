@@ -20,14 +20,9 @@ const props = defineProps({
 });
 
 const totalRedemptionCount = computed(() => {
-    let count = 0;
-
-    props.rows.forEach(row => {
-        row.point_histories.forEach(record => {
-            count += record.qty;
-        });
-    });
-    return count;
+    return props.rows.reduce((totalRedemptionCount, row) => {
+        return row.point_histories.reduce((totalRedeemedQty, record) => totalRedeemedQty + record.qty, 0);
+    }, 0);
 });
 
 </script>

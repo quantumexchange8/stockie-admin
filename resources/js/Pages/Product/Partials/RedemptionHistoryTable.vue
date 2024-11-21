@@ -1,14 +1,16 @@
 <script setup>
-import dayjs from 'dayjs';
-import { computed, ref, watch } from 'vue'
-import Table from '@/Components/Table.vue'
-import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
+import { ref, watch } from 'vue';
+import { FilterMatchMode } from 'primevue/api';
+import Table from '@/Components/Table.vue';
 import DateInput from '@/Components/Date.vue';
+import SearchBar from '@/Components/SearchBar.vue';
+import { UndetectableIllus } from '@/Components/Icons/illus';
+import dayjs from 'dayjs';
 import { useFileExport } from '@/Composables/index.js';
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { UploadIcon } from '@/Components/Icons/solid';
 
 const props = defineProps({
-    errors: Object,
     dateFilter: Array,
     columns: {
         type: Array,
@@ -30,7 +32,7 @@ const props = defineProps({
         type: Number,
         required: true,
     },
-})
+});
 
 const { exportToCSV } = useFileExport();
 
@@ -38,38 +40,35 @@ const emit = defineEmits(["applyDateFilter"]);
 
 const date_filter = ref(props.dateFilter); 
 
+const filters = ref({
+    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
+});
+
 watch(() => date_filter.value, (newValue) => {
     emit('applyDateFilter', newValue);
 })
 
 const csvExport = () => {
-    const mappedData =  saleHistories.value.map(salesHistory => ({
-        'Date': dayjs(salesHistory.created_at).format('DD/MM/YYYY'),
-        'Time': dayjs(salesHistory.created_at).format('hh:mm A'),
-        'Amount': 'RM ' + salesHistory.total_price.toFixed(2),
-        'Quantity': salesHistory.qty,
+    const mappedData =  props.rows.map(redemptionHistory => ({
+        'Date': dayjs(redemptionHistory.redemption_date).format('DD/MM/YYYY'),
+        'Redeemable_Item': redemptionHistory.Redeemable_Item.product_name,
+        'Quantity': redemptionHistory.qty,
+        'Redeemed_By': redemptionHistory.handled_by,
     }));
     exportToCSV(mappedData, 'Sale History');
 }
 </script>
 
 <template>
-    <div class="flex flex-col w-full gap-6">
-        <div class="w-full flex flex-row gap-x-4 justify-between">
-            <DateInput
-                :inputName="'date_filter'"
-                :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
-                :range="true"
-                class="w-60"
-                v-model="date_filter"
-            />
-            <Menu as="div" class="relative inline-block text-left col-span-full lg:col-span-2">
+    <div class="flex flex-col gap-6">
+        <div class="flex items-center justify-end w-full">
+            <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton
                         class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800"
                     >
                         Export
-                        <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                        <UploadIcon class="size-4 cursor-pointer"/>
                     </MenuButton>
                 </div>
 
@@ -89,10 +88,10 @@ const csvExport = () => {
                                 type="button"
                                 :class="[
                                     { 'bg-primary-100': active },
-                                    { 'bg-grey-50 pointer-events-none': saleHistories.length === 0 },
+                                    { 'bg-grey-50 pointer-events-none': redemptionHistories.length === 0 },
                                     'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                 ]"
-                                :disabled="saleHistories.length === 0"
+                                :disabled="redemptionHistories.length === 0"
                                 @click="csvExport"
                             >
                                 CSV
@@ -104,10 +103,10 @@ const csvExport = () => {
                                 type="button"
                                 :class="[
                                     // { 'bg-primary-100': active },
-                                    { 'bg-grey-50 pointer-events-none': saleHistories.length === 0 },
+                                    { 'bg-grey-50 pointer-events-none': redemptionHistories.length === 0 },
                                     'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                 ]"
-                                :disabled="saleHistories.length === 0"
+                                :disabled="redemptionHistories.length === 0"
                             >
                                 PDF
                             </button>
@@ -117,6 +116,22 @@ const csvExport = () => {
             </Menu>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+            <SearchBar
+                placeholder="Search"
+                :showFilter="false"
+                v-model="filters['global'].value"
+                class="col-span-full md:col-span-7"
+            />
+            <DateInput
+                :inputName="'date_filter'"
+                :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                :range="true"
+                class="col-span-full md:col-span-5"
+                v-model="date_filter"
+            />
+        </div>
+
         <Table 
             :variant="'list'"
             :rows="rows"
@@ -124,16 +139,22 @@ const csvExport = () => {
             :columns="columns"
             :rowsPerPage="rowsPerPage"
             :rowType="rowType"
-            minWidth="min-w-[465px]"
+            :searchFilter="true"
+            :filters="filters"
+            minWidth="min-w-[675px]"
         >
-            <template #date="row">
-                <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.created_at).format('DD/MM/YYYY') }}</span>
+            <template #empty>
+                <UndetectableIllus />
+                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
             </template>
-            <template #time="row">
-                <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.created_at).format('hh:mm A') }}</span>
+            <template #redemption_date="row">
+                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ dayjs(row.redemption_date).format('YYYY/MM/DD') }}</span>
             </template>
-            <template #total_price="row">
-                <span class="text-grey-900 text-sm font-medium">RM {{ row.total_price }}</span>
+            <template #amount="row">
+                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.amount }} pts</span>
+            </template>
+            <template #handled_by="row">
+                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.handled_by.name }}</span>
             </template>
         </Table>
     </div>

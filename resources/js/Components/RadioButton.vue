@@ -10,7 +10,7 @@ const props = defineProps({
         default: () => [],
     },
     checked:  {
-        type: String,
+        type: [String, Boolean],
         default: ''
     },
     disabled:  {

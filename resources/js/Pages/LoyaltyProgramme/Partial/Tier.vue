@@ -19,7 +19,7 @@ const props = defineProps({
         type: Array,
         required: true,
     },
-    inventoryItems: {
+    products: {
         type: Array,
     },
     rowType: {
@@ -187,7 +187,7 @@ const formatAmount = (num) => {
                 @close="closeModal"
             >
                 <AddTier 
-                    :inventoryItems="inventoryItems"
+                    :products="products"
                     :logos="logos" 
                     @close="closeModal" 
                 />
@@ -203,7 +203,7 @@ const formatAmount = (num) => {
                         :tier="selectedTier"
                         :logos="logos"
                         :inventoryItems="selectedTier.ranking_rewards" 
-                        :items="props.inventoryItems"
+                        :items="products"
                         @close="hideEditTierForm"
                     />
                 </template>

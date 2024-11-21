@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import { CircledArrowHeadRightIcon2 } from '@/Components/Icons/solid';
-import { GiftsIllus } from '@/Components/Icons/illus';
+import { GiftsIllus, UndetectableIllus } from '@/Components/Icons/illus';
 import dayjs from 'dayjs';
 import { computed } from 'vue';
 
@@ -10,16 +10,15 @@ const props = defineProps({
 });
 
 const recentRedemptions = computed(() => {
-    let redemptions = [];
-
-    props.redeemableItems.forEach(row => {
-        row.point_histories.forEach(record => {
-            record.product_name = row.name;
-            redemptions.push(record);
-        });
-    });
-
-    return redemptions.sort((a, b) => dayjs(b.redemption_date).diff(dayjs(a.redemption_date))).slice(0, 3);
+    return props.redeemableItems
+            .flatMap(row =>
+                row.point_histories.map(record => ({
+                    ...record,
+                    product_name: row.product_name,
+                }))
+            )
+            .sort((a, b) => dayjs(b.redemption_date).diff(dayjs(a.redemption_date)))
+            .slice(0, 3)
 });
 </script>
 
@@ -34,16 +33,16 @@ const recentRedemptions = computed(() => {
             </Link>
         </div>
 
-        <div class="flex flex-col gap-3 self-stretch">
+        <div class="flex flex-col gap-3 self-stretch" v-if="recentRedemptions.length > 0">
             <div class="flex flex-col justify-between items-start self-stretch gap-1 overflow-x-auto">
                 <div 
                     class="w-full flex flex-nowrap items-center justify-between p-2 min-w-[440px] odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900"
                     v-for="(item, index) in recentRedemptions" :key="index"
                 >
                     <span class="text-sm text-grey-900 font-medium">{{ dayjs(item.redemption_date).format('YYYY/MM/DD') }}</span>
-                    <span class="text-sm text-grey-900 font-medium">{{ item.product_name }}</span>
+                    <span class="text-sm text-grey-900 font-medium">{{ item.product_name }}</span>  
                     <span class="text-sm text-grey-900 font-medium">x 1</span>
-                    <span class="text-sm text-grey-900 font-medium">{{ item.user.name }}</span>
+                    <span class="text-sm text-grey-900 font-medium">{{ item.handled_by.name }}</span>
                 </div>
             </div>
 
@@ -57,5 +56,11 @@ const recentRedemptions = computed(() => {
                 <GiftsIllus class="flex-shrink-0 w-40 h-24"/>
             </div>
         </div>
+        <template v-else>
+            <div class="flex w-full flex-col items-center justify-center gap-5">
+                <UndetectableIllus />
+                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            </div>
+        </template>
     </div>
 </template>

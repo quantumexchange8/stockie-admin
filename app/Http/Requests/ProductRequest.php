@@ -25,21 +25,23 @@ class ProductRequest extends FormRequest
             'bucket' => 'required|boolean',
             'product_name' => 'required|string|max:255',
             'price' => 'required|string|max:255',
-            // 'point' => 'required|string|max:255',
+            'point' => 'required|string|max:255',
             'category_id' => 'required|integer',
-            // 'keep' => 'required|string|max:255',
-            'image' => 'required|image'
+            'is_redeemable' => 'required|boolean',
+            'image' => 'required'
         ];
     }
 
     public function attributes(): array
     {
         return [
+            'bucket' => 'Bucket',
             'product_name' => 'Product Name',
             'price' => 'Price',
-            // 'point' => 'Point',
+            'point' => 'Point',
             'category_id' => 'Category',
-            // 'keep' => 'Keep',
+            'is_redeemable' => 'Redeemable',
+            'image' => 'Image',
         ];
     }
 

@@ -31,7 +31,11 @@ const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close', 'fetchZones']);
 
-const tabs = ref(['Order Detail', 'Payment History']);
+const tabs = ref([
+    { title: 'Order Detail', disabled: false }, 
+    { title: 'Customer Detail', disabled: true }, 
+    { title: 'Payment History', disabled: false }
+]);
 const order = ref({});
 const customer = ref({});
 const cancelOrderFormIsOpen = ref(false);
@@ -43,18 +47,9 @@ const currentOrderTable = ref({});
 
 const fetchOrderDetails = async () => {
     try {
-        // currentOrderTable.value = props.selectedTable.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1
-        //         ? props.selectedTable.order_tables.filter((table) => table.status !== 'Pending Clearance')[0]
-        //         : props.selectedTable.order_tables[0];
-
         const currentOrderTableResponse = await axios.get(route('orders.getCurrentTableOrder', props.selectedTable.id));
         currentOrderTable.value = currentOrderTableResponse.data.currentOrderTable;
         order.value = currentOrderTableResponse.data.order;
-
-        if (order.value.customer_id) {
-            const customerResponse = await axios.get(route('orders.customer', order.value.customer_id));
-            customer.value = customerResponse.data;
-        }
         
         if (order.value) {
             form.order_id = order.value.id;
@@ -65,9 +60,8 @@ const fetchOrderDetails = async () => {
             matchingOrderDetails.value.assigned_waiter = order.value.user_id; 
             matchingOrderDetails.value.current_order_completed = order.value.status === 'Order Completed' && order.value.order_table.every((table) => table.status === 'Pending Clearance');
 
-            // console.log(order.value.status === 'Order Completed');
-            // console.log(order.value.order_table.every((table) => table.status === 'Pending Clearance'));
-            if (order.value.customer_id && !tabs.value.includes('Customer Detail')) tabs.value.splice(1, 0, 'Customer Detail');
+            // if (order.value.customer_id && !tabs.value.includes('Customer Detail')) tabs.value.splice(1, 0, 'Customer Detail');
+            // if (order.value.customer_id) tabs.value[1].disabled = false;
         }
     } catch (error) {
         console.error(error);
@@ -76,7 +70,18 @@ const fetchOrderDetails = async () => {
     }
 };
 
-onMounted(() => fetchOrderDetails());
+const fetchCustomerDetails = async () => {
+    try {
+        const customerResponse = await axios.get(route('orders.customer', order.value.customer_id));
+        customer.value = customerResponse.data;
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+};
+
+onMounted(async () => await fetchOrderDetails());
 
 const matchingOrderDetails = ref({
     tables: '',
@@ -239,8 +244,21 @@ const orderTableNames = computed(() => {
 
 const currentViewedTab = computed(() => tabs.value[selectedTab.value]);
 
+watch(
+    () => order.value.customer_id,
+    async (newCustomerId) => {
+        if (newCustomerId) {
+            await fetchCustomerDetails();
+            tabs.value[1].disabled = !newCustomerId;
+        }
+    },
+    { immediate: true } // Run the watcher immediately on mount
+);
+
+// watch(paymentInfo, (newValue) => tabs.value[2].disabled = newValue);
+
 watch(selectedTab, (newValue) => {
-    if (tabs.value[newValue] === 'Order Detail') fetchOrderDetails();
+    if (tabs.value[newValue].title === 'Order Detail') fetchOrderDetails();
 });
 </script>
 
@@ -273,6 +291,7 @@ watch(selectedTab, (newValue) => {
             ]"
         >
             <TabView 
+                :withDisabled="true"
                 :tabs="tabs" 
                 :selectedTab="selectedTab" 
                 @onChange="selectedTab = $event"
@@ -287,6 +306,7 @@ watch(selectedTab, (newValue) => {
                         :matchingOrderDetails="matchingOrderDetails"
                         @fetchZones="$emit('fetchZones')" 
                         @fetchOrderDetails="fetchOrderDetails" 
+                        @update:customerKeepItems="customer.keep_items = $event"
                     />
                 </template>
                 <template #customer-detail v-if="order.customer_id">
@@ -294,8 +314,12 @@ watch(selectedTab, (newValue) => {
                         :customer="customer" 
                         :orderId="order.id" 
                         :tableStatus="currentOrderTable.status" 
+                        :matchingOrderDetails="matchingOrderDetails"
                         @fetchZones="$emit('fetchZones')" 
-                        @close="closeDrawer"
+                        @fetchOrderDetails="fetchOrderDetails" 
+                        @update:customerPoint="customer.point = $event"
+                        @update:customerKeepItems="customer.keep_items = $event"
+                        @close="selectedTab = 0"
                     />
                 </template>
                 <template #payment-history>

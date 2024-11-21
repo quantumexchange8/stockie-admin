@@ -10,6 +10,7 @@ use App\Models\Iventory;
 use App\Models\IventoryItem;
 use App\Models\Payment;
 use App\Models\PointItem;
+use App\Models\Product;
 use App\Models\SaleHistory;
 use App\Models\Ranking;
 use App\Models\RankingReward;
@@ -26,7 +27,7 @@ class LoyaltyController extends Controller
     public function index(Request $request){
         $tiers = Ranking::with([
                                 'rankingRewards', 
-                                'rankingRewards.inventoryItem',
+                                'rankingRewards.product',
                                 'customers'
                             ])
                             ->orderBy('id')
@@ -39,78 +40,113 @@ class LoyaltyController extends Controller
 
                                 $rank['member'] = $rank->customers->count();
                                 
+                                $rank->icon = $rank->getFirstMediaUrl('ranking');
+
                                 return $rank;
                             }); 
-        $tiers->each(function($tier){
-            $tier->image = $tier->getFirstMediaUrl('ranking');
+
+        $existingIcons = Product::all()->flatMap(function ($ranking){
+            return $ranking->getMedia('product');
         });
 
-        $existingIcons = Ranking::all()->flatMap(function ($ranking){
-            return $ranking->getMedia('ranking');
-        });
-
-        $redeemableItems = Point::with([
-                                    'pointItems',
-                                    'pointItems.inventoryItem:id,stock_qty',
-                                    'pointHistories',
-                                    'pointHistories.user:id,name'
-                                ])
-                                ->orderBy('id')
-                                ->get()
-                                ->map(function ($point) {
-                                    $pointItems = $point->pointItems;
-                                    $minStockCount = 0;
-                                    $point['image'] = $point->getFirstMediaUrl('point');
-
-                                    if (count($pointItems) > 0) {
-                                        $stockCountArr = [];
-
-                                        foreach ($pointItems as $key => $value) {
-                                            $inventory_item = IventoryItem::select('stock_qty')
-                                                                                ->find($value['inventory_item_id']);
-
-                                            $stockQty = $inventory_item->stock_qty;
-                                            
-                                            $stockCount = (int)round($stockQty / $value['item_qty']);
-                                            array_push($stockCountArr, $stockCount);
-                                        }
-                                        $minStockCount = min($stockCountArr);
-                                    }
-                                    $point['stock_left'] = $minStockCount; 
-
-                                    return $point;
-                                }); 
-
-        $inventoryItems = Iventory::withWhereHas('inventoryItems')
-                                    ->select(['id', 'name'])
+        $redeemableItems = Product::select(['id', 'product_name', 'point'])
+                                    ->where('is_redeemable', true)
+                                    ->with([
+                                        'productItems:id,product_id,inventory_item_id,qty',
+                                        'productItems.inventoryItem:id,stock_qty',
+                                        'pointHistories',
+                                        'pointHistories.handledBy:id,name'
+                                    ])
                                     ->orderBy('id')
                                     ->get()
-                                    ->map(function ($group) {
-                                        $group_items = $group->inventoryItems->map(function ($item) {
-                                            return [
-                                                'text' => $item->item_name,
-                                                'value' => $item->id,
-                                            ];
-                                        });
+                                    ->map(function ($product) {
+                                        $product->image = $product->getFirstMediaUrl('product');
+                                        $product_items = $product->productItems;
+                                        $minStockCount = 0;
+        
+                                        if (count($product_items) > 0) {
+                                            $stockCountArr = [];
+        
+                                            foreach ($product_items as $key => $value) {
+                                                $stockQty = $value->inventoryItem->stock_qty;
+                                                $stockCount = (int)round($stockQty / (int)$value['qty']);
+        
+                                                array_push($stockCountArr, $stockCount);
+                                            }
+                                            $minStockCount = min($stockCountArr);
+                                        }
+                                        $product['stock_left'] = $minStockCount;
 
-                                        return [
-                                            'group_name' => $group->name,
-                                            'items' => $group_items,
-                                            'group_image' => $group->getFirstMediaUrl('inventory')
-                                        ];
-                                    });
+                                        return $product;
+                                    }); 
 
-        $totalPointsGivenAway = SaleHistory::with('product:id,point')
-                                            ->orderBy('id')
-                                            ->get()
-                                            ->map(function ($sale) {
-                                                $product = $sale->product;
-                                                $totalPointsGivenAway = 0;
+        $products = Product::select(['id', 'product_name'])
+                            ->with([
+                                'productItems:id,product_id,inventory_item_id,qty',
+                                'productItems.inventoryItem:id,stock_qty'
+                            ])
+                            ->where([['availability', 'Available'], ['status', '!=', 'Out of stock']])
+                            ->orderBy('id')
+                            ->get()
+                            ->map(function ($product) {
+                                $product_items = $product->productItems;
+                                $minStockCount = 0;
 
-                                                $totalPointsGivenAway += $sale['qty'] * (int)$product['point'];
+                                if (count($product_items) > 0) {
+                                    $stockCountArr = [];
 
-                                                return $totalPointsGivenAway;
-                                            });
+                                    foreach ($product_items as $key => $value) {
+                                        $stockQty = $value->inventoryItem->stock_qty;
+                                        $stockCount = (int)round($stockQty / (int)$value['qty']);
+
+                                        array_push($stockCountArr, $stockCount);
+                                    }
+                                    $minStockCount = min($stockCountArr);
+                                }
+
+                                unset($product->productItems);
+
+                                return [
+                                    'text' => $product->product_name,
+                                    'value' => $product->id,
+                                    'image' => $product->getFirstMediaUrl('product'),
+                                    'stock_left' => $minStockCount
+
+                                ];
+                            });
+
+        // $inventoryItems = Iventory::withWhereHas('inventoryItems')
+        //                             ->select(['id', 'name'])
+        //                             ->orderBy('id')
+        //                             ->get()
+        //                             ->map(function ($group) {
+        //                                 $group_items = $group->inventoryItems->map(function ($item) {
+        //                                     return [
+        //                                         'text' => $item->item_name,
+        //                                         'value' => $item->id,
+        //                                     ];
+        //                                 });
+
+        //                                 return [
+        //                                     'group_name' => $group->name,
+        //                                     'items' => $group_items,
+        //                                     'group_image' => $group->getFirstMediaUrl('inventory')
+        //                                 ];
+        //                             });
+
+        // $totalPointsGivenAway = SaleHistory::with('product:id,point')
+        //                                     ->orderBy('id')
+        //                                     ->get()
+        //                                     ->map(function ($sale) {
+        //                                         $product = $sale->product;
+        //                                         $totalPointsGivenAway = 0;
+
+        //                                         $totalPointsGivenAway += $sale['qty'] * (int)$product['point'];
+
+        //                                         return $totalPointsGivenAway;
+        //                                     });
+
+        $totalPointsGivenAway = PointHistory::where('type', 'Earned')->sum('amount');
 
         // Get the flashed messages from the session
         $message = $request->session()->get('message');
@@ -120,8 +156,8 @@ class LoyaltyController extends Controller
             'tiers' => $tiers,
             'logos' => $existingIcons,
             'redeemableItems' => $redeemableItems,
-            'inventoryItems' => $inventoryItems,
-            'totalPointsGivenAway' => $totalPointsGivenAway[0] ?? 0,
+            'products' => $products,
+            'totalPointsGivenAway' => (int)$totalPointsGivenAway,
         ]);
     }
 
@@ -195,7 +231,7 @@ class LoyaltyController extends Controller
 
         // If there are any reward validation errors, return them
         if (!empty($allItemErrors)) {
-            return redirect()->back()->withErrors($allItemErrors)->withInput();
+            return redirect()->back()->withErrors($allItemErrors);
         }
 
         $ranking = Ranking::create([
@@ -205,13 +241,9 @@ class LoyaltyController extends Controller
             'icon' => ''
         ]);
 
-        if(isset($validatedData['icon']) && $validatedData['icon'] instanceof \Illuminate\Http\UploadedFile)
-        {
-            $ranking->clearMediaCollection('inventory');
+        if($request->hasFile('icon')) {
             $ranking->addMedia($validatedData['icon'])->toMediaCollection('ranking');
         }
-
-        // dd($validatedRankingRewards);
 
         if($validatedData['reward'] === 'active' && count($validatedRankingRewards) > 0) {
             foreach ($validatedRankingRewards as $value) {
@@ -220,12 +252,12 @@ class LoyaltyController extends Controller
                     'reward_type' => $value['reward_type'],
                     'discount' => $value['discount'],
                     'min_purchase_amount' => $value['min_purchase_amount'],
-                    'valid_period_from'=>$value['valid_period_from'],
-                    'valid_period_to'=>$value['valid_period_to'],
-                    'bonus_point'=>$value['bonus_point'],
-                    'min_purchase'=>$value['min_purchase'],
-                    'free_item'=>$value['free_item'],
-                    'item_qty'=>$value['item_qty'],
+                    'valid_period_from' => $value['valid_period_from'],
+                    'valid_period_to' => $value['valid_period_to'],
+                    'bonus_point' => $value['bonus_point'],
+                    'min_purchase' => $value['min_purchase'],
+                    'free_item' => $value['free_item'],
+                    'item_qty' => $value['item_qty'],
                 ]);
             }
         }
@@ -264,25 +296,48 @@ class LoyaltyController extends Controller
     public function showTierDetails(string $id)
     {
         $tier = Ranking::with(['rankingRewards', 'customers'])->find($id); 
-        $tier->image = $tier->getFirstMediaUrl('ranking');
+        $tier->icon = $tier->getFirstMediaUrl('ranking');
 
-        $inventoryItems = Iventory::withWhereHas('inventoryItems')
-                                    ->select(['id', 'name'])
-                                    ->orderBy('id')
-                                    ->get()
-                                    ->map(function ($group) {
-                                        $group_items = $group->inventoryItems->map(function ($item) {
-                                            return [
-                                                'text' => $item->item_name,
-                                                'value' => $item->id,
-                                            ];
-                                        });
+        $reward = $tier->rankingRewards->map(function($reward) {
+            return array_merge(
+                $reward->toArray(),
+                [ 'item_name' => $reward->product?->product_name ]
+            );
+        });
+        
+        $existingIcons = Product::all()->flatMap(function ($ranking){
+            return $ranking->getMedia('product');
+        });
 
-                                        return [
-                                            'group_name' => $group->name,
-                                            'items' => $group_items
-                                        ];
-                                    });
+        // $inventoryItems = Iventory::withWhereHas('inventoryItems')
+        //                             ->select(['id', 'name'])
+        //                             ->orderBy('id')
+        //                             ->get()
+        //                             ->map(function ($group) {
+        //                                 $group_items = $group->inventoryItems->map(function ($item) {
+        //                                     return [
+        //                                         'text' => $item->item_name,
+        //                                         'value' => $item->id,
+        //                                     ];
+        //                                 });
+
+        //                                 return [
+        //                                     'group_name' => $group->name,
+        //                                     'items' => $group_items
+        //                                 ];
+        //                             });
+
+        $products = Product::select(['id', 'product_name'])
+                            ->where([['availability', 'Available'], ['status', '!=', 'Out of stock']])
+                            ->orderBy('id')
+                            ->get()
+                            ->map(function ($product) {
+                                return [
+                                    'text' => $product->product_name,
+                                    'value' => $product->id,
+                                    'image' => $product->getFirstMediaUrl('product')
+                                ];
+                            });
 
         $monthlySpent = Payment::with('customer')
                                 ->whereHas('customer')
@@ -311,22 +366,14 @@ class LoyaltyController extends Controller
             ];
         });
 
-        $reward = $tier->rankingRewards->map(function($reward) {
-            return array_merge(
-                $reward->toArray(),
-                [
-                    'item_name' => $reward->inventoryItem ? $reward->inventoryItem->item_name : null,
-                ]
-            );
-        });
-        // dd($reward);
-
         return Inertia::render('LoyaltyProgramme/Partial/TierDetail', [
             'id' => $id,
             'tier' => $tier,
             'reward' => $reward,
             'customers' => $customer,
-            'inventoryItems' => $inventoryItems,
+            // 'inventoryItems' => $inventoryItems,
+            'logos' => $existingIcons,
+            'products' => $products,
             'names' => $names,
             'spendings' => $spendings,
         ]);
@@ -359,8 +406,6 @@ class LoyaltyController extends Controller
             'spendings' => $spendings,
         ]);
     }
-
-
 
     public function showTierData(Request $request)
     {   
@@ -440,9 +485,7 @@ class LoyaltyController extends Controller
         }
 
         // If there are any reward validation errors, return them
-        if (!empty($allItemErrors)) {
-            return redirect()->back()->withErrors($allItemErrors)->withInput();
-        }
+        if (!empty($allItemErrors)) redirect()->back()->withErrors($allItemErrors);
 
         if (isset($id)) {
             $existingRanking = Ranking::find($id);
@@ -453,6 +496,10 @@ class LoyaltyController extends Controller
                 'reward' => $validatedData['reward'],
                 'icon' => ''
             ]);
+
+            if($request->hasFile('icon')) {
+                $existingRanking->addMedia($validatedData['icon'])->toMediaCollection('ranking');
+            }
         }
 
         if($validatedData['reward'] === 'active' && count($validatedRankingRewards) > 0) {
@@ -749,10 +796,10 @@ class LoyaltyController extends Controller
         // Apply the date filter (single date or date range)
         $redemptionHistories = PointHistory::whereDate('created_at', '>=', $dateFilter[0])
                                             ->whereDate('created_at', '<=', $dateFilter[1])
-                                            ->with(['point:id,name', 'user:id,name'])
+                                            ->with(['redeemableItem:id,product_name', 'handledBy:id,name'])
+                                            ->where('type', 'Used')
                                             ->orderBy('created_at', 'desc')
                                             ->get();
-
 
         return Inertia::render('LoyaltyProgramme/Partial/RecentRedemptionHistory', [
             'redemptionHistories' => $redemptionHistories,
@@ -771,7 +818,7 @@ class LoyaltyController extends Controller
         $redemptionHistories = PointHistory::where('point_id', $id)
                                             ->whereDate('created_at', '>=', $dateFilter[0])
                                             ->whereDate('created_at', '<=', $dateFilter[1])
-                                            ->with(['point:id,name,point', 'user:id,name'])
+                                            ->with(['point:id,name,point', 'handledBy:id,name'])
                                             ->orderBy('created_at', 'desc')
                                             ->get();
 
@@ -794,7 +841,7 @@ class LoyaltyController extends Controller
         ]);
     }
 
-    public function getPointHistories(Request $request, string $id = null)
+    public function getRecentRedemptionHistories(Request $request, string $id = null)
     {
         $dateFilter = $request->input('dateFilter');
         
@@ -809,10 +856,11 @@ class LoyaltyController extends Controller
                                 });
 
         if ($id !== null) {
-            $query->where('point_id', $id);
+            $query->where('product_id', $id);
         }
 
-        $data = $query->with(['point:id,name', 'user:id,name'])
+        $data = $query->with(['redeemableItem:id,product_name', 'handledBy:id,name'])
+                        ->where('type', 'Used')
                         ->orderBy('created_at', 'desc')
                         ->get();
 

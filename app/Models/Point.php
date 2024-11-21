@@ -33,10 +33,10 @@ class Point extends Model implements HasMedia
      * PointHistory Model
      * Get the histories of the point(redeemable item).
      */
-    public function pointHistories(): HasMany
-    {
-        return $this->hasMany(PointHistory::class, 'point_id');
-    }
+    // public function pointHistories(): HasMany
+    // {
+    //     return $this->hasMany(PointHistory::class, 'point_id');
+    // }
 
     public function orderItems(): HasMany
     {

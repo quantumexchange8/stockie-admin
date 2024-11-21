@@ -21,6 +21,7 @@ const emit = defineEmits(['close']);
 const { isValidNumberKey } = useInputValidator();
 
 const categoryArr = ref(props.categoryArr);
+const inventoryToAdd = ref(props.inventoryToAdd);
 const open = ref(false);
 const updateProductNameCounter = ref(0);
 // const inventoriesArr = ref([{ text: , value: }]);
@@ -30,18 +31,18 @@ const getInventoryItemArr = (item) => {
 };
 
 const form = useForm({
-    items: props.inventoryToAdd.inventory_items.map((item) => {
+    items: inventoryToAdd.value?.inventory_items?.map((item) => {
         return {
             bucket: false,
-            formattedItemName: `${props.inventoryToAdd.name} - ${item.item_name}`,
+            formattedItemName: `${inventoryToAdd.value.name} - ${item.item_name}`,
             product_name: `${item.item_name} (${item.item_category.name})`,
-            image: props.inventoryToAdd.image,
+            image: inventoryToAdd.value.image,
             price: '',
             category_id: '',
             qty: 1,
             inventory_item_id: item.id
         };
-    }),
+    }) ?? [],
 });
 
 const formSubmit = () => { 

@@ -11,9 +11,15 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import KeepHistory from './KeepHistory.vue';
+import CustomerPoint from './CustomerPoint.vue';
+import { usePhoneUtils } from '@/Composables/index.js';
 
 const props = defineProps({
     customer: {
+        type: Object,
+        default: () => {}
+    },
+    matchingOrderDetails: {
         type: Object,
         default: () => {}
     },
@@ -21,21 +27,21 @@ const props = defineProps({
     tableStatus: String
 })
 
-const emit = defineEmits(['close', 'fetchZones']);
+const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails', 'update:customerPoint', 'update:customerKeepItems']);
 
 const page = usePage();
 const userId = computed(() => page.props.auth.user.id)
+const { formatPhone } = usePhoneUtils();
 
 const drawerIsVisible = ref(false);
 const viewType = ref(null);
-const customer = ref(props.customer);
-const categoryArr = ref([]);
 const op = ref(null);
 const selectedItem = ref();
 
 const form = useForm({
     order_id: props.orderId,
     user_id: userId.value,
+    customer_id: props.customer.id,
     type: '',
     return_qty: 0,
 });
@@ -79,19 +85,29 @@ const closeKeepItemDetails = () => {
     }, 300);
 }
 
-const formSubmit = () => { 
-    form.post(route('orders.customer.keep.addKeptItemToOrder', selectedItem.value.id), {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            form.reset();
-            closeKeepItemDetails();
-        },
-    })
-};
+const submit = async () => { 
+    form.processing = true;
+    try {
+        const response = await axios.post(`/order-management/orders/customer/keep/addKeptItemToOrder/${selectedItem.value.id}`, form);
 
-onMounted(async() => {
-});
+        emit('update:customerKeepItems', response.data);
+        closeKeepItemDetails();
+        form.reset();
+    } catch (error) {
+        console.error(error);
+    } finally {
+        form.processing = false;
+    }
+
+    // form.post(route('orders.customer.keep.addKeptItemToOrder', selectedItem.value.id), {
+    //     preserveScroll: true,
+    //     preserveState: true,
+    //     onSuccess: () => {
+    //         form.reset();
+    //         closeKeepItemDetails();
+    //     },
+    // })
+};
 
 const formatKeepItems = (keepItems) => {
     return keepItems.map((item) => {
@@ -101,23 +117,6 @@ const formatKeepItems = (keepItems) => {
     }).sort((a, b) => dayjs(b.created_at).diff(dayjs(a.created_at)));
 };
 
-const formatPhone = (phone) => {
-    if (!phone) return phone; 
-    
-    // Remove the '+6' prefix if it exists
-    if (phone.startsWith('+6')) phone = phone.slice(2);
-
-    // Slice the number into parts
-    const totalLength = phone.length;
-    const cutPosition = totalLength - 4;
-
-    const firstPart = phone.slice(0, 2);
-    const secondPart = phone.slice(2, cutPosition)
-    const lastFour = phone.slice(cutPosition);
-
-    return `${firstPart} ${secondPart} ${lastFour}`;
-};
-
 const formatPoints = (points) => {
   const pointsStr = points.toString();
   
@@ -125,8 +124,10 @@ const formatPoints = (points) => {
 };
 
 const isFormValid = computed(() => {
-    return ['type', 'return_qty'].every(field => form[field]) && !form.processing;
+    return ['type', 'return_qty'].every(field => form[field]) && form.processing;
 });
+
+// const customerPoint = ref(props.customer.point);
 </script>
 
 <template>
@@ -140,6 +141,16 @@ const isFormValid = computed(() => {
             <KeepHistory :customer="customer" />
         </template>
         <template v-else-if="viewType === 'currentPoints'">
+            <!-- :customerPoint="customerPoint" -->
+            <CustomerPoint 
+                :orderId="orderId"
+                :customer="customer" 
+                :tableStatus="tableStatus" 
+                :matchingOrderDetails="matchingOrderDetails"
+                @fetchZones="$emit('fetchZones')"
+                @update:customerPoint="$emit('update:customerPoint', $event)"
+                @close="closeDrawer()"
+            />
         </template>
         <template v-else>
         </template>
@@ -158,7 +169,7 @@ const isFormValid = computed(() => {
                 <div class="flex justify-center items-center gap-2">
                     <span class="text-primary-950 text-sm font-medium">{{ customer.email }}</span>
                     <span class="w-1 h-1 rounded-full bg-grey-300"></span>
-                    <span class="text-primary-950 text-sm font-medium">(+60 {{ formatPhone(customer.phone) }})</span>
+                    <span class="text-primary-950 text-sm font-medium">{{ formatPhone(customer.phone) }}</span>
                 </div>
             </div>
         </div>
@@ -169,8 +180,9 @@ const isFormValid = computed(() => {
                 <div class="w-full flex justify-between items-center">
                     <span class="text-base font-semibold text-primary-25 whitespace-nowrap w-full">Current Points</span>
                     <CircledArrowHeadRightIcon2
-                        class="w-6 h-6 text-primary-900 [&>rect]:fill-primary-25 [&>rect]:hover:fill-primary-800 cursor-pointer z-10"
-                        @click="" />
+                        class="size-6 text-primary-900 [&>rect]:fill-primary-25 [&>rect]:hover:fill-primary-800 cursor-pointer z-10"
+                        @click="openDrawer('currentPoints')" 
+                    />
                 </div>
                 <div class="flex flex-col items-start gap-1">
                     <span class="text-white text-[36px] leading-normal font-light tracking-[-0.72px]">{{ formatPoints(customer.point) }}</span>
@@ -185,11 +197,12 @@ const isFormValid = computed(() => {
                 <div class="w-full flex justify-between items-center">
                     <span class="text-base font-semibold text-primary-900 whitespace-nowrap w-full">Current Tier</span>
                     <CircledArrowHeadRightIcon2
-                        class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer z-10"
-                        @click="" />
+                        class="size-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer z-10"
+                        @click="openDrawer('currentTier')" 
+                    />
                 </div>
                 <div class="w-full flex flex-col justify-center items-start gap-1 self-stretch">
-                    <div v-if="customer.rank.name !== 'No Tier'">
+                    <div v-if="customer.rank && customer.rank.name !== 'No Tier'">
                         <div class="flex flex-col justify-center items-center gap-[10px]">
                             <img 
                                 :src="customer.rank.image ? customer.rank.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
@@ -275,7 +288,7 @@ const isFormValid = computed(() => {
     <!-- Add Keep item to order -->
     <OverlayPanel ref="op" @close="closeOverlay">
         <template v-if="selectedItem">
-            <form novalidate @submit.prevent="formSubmit">
+            <form novalidate @submit.prevent="submit">
                 <div class="flex flex-col gap-6 w-96">
                     <div class="flex items-center justify-between">
                         <span class="text-primary-950 text-center text-md font-medium">Select Quantity</span>

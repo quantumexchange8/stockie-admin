@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
@@ -58,5 +59,13 @@ class Payment extends Model
     public function handledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'handled_by');
+    }
+
+    /**
+     * Get the point history created upon order payment.
+     */
+    public function pointHistory(): HasOne
+    {
+        return $this->hasOne(PointHistory::class, 'payment_id');
     }
 }

@@ -13,9 +13,15 @@ return new class extends Migration
     {
         Schema::create('point_histories', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('point_id');
+            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('payment_id');
+            $table->string('type');
             $table->integer('qty');
-            $table->string('redeem_by');
+            $table->integer('amount');
+            $table->integer('old_balance');
+            $table->integer('new_balance');
+            $table->unsignedBigInteger('customer_id');
+            $table->unsignedBigInteger('handled_by');
             $table->dateTime('redemption_date');
             $table->softDeletes();
             $table->timestamps();
