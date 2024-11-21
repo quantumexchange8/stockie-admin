@@ -52,11 +52,6 @@ const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
 
-const handleDefaultClick = (event) => {
-    event.stopPropagation();
-    event.preventDefault();
-};
-
 const openModal = () => {
     isModalOpen.value = true;
 };
@@ -65,8 +60,7 @@ const closeModal = () => {
     isModalOpen.value = false;
 };
 
-const showEditTierForm = (event, tier) => {
-    handleDefaultClick(event);
+const showEditTierForm = (tier) => {
     selectedTier.value = tier;
     editTierFormIsOpen.value = true;
 }
@@ -78,8 +72,7 @@ const hideEditTierForm = () => {
     }, 300);
 }
 
-const showDeleteTierForm = (event, id) => {
-    handleDefaultClick(event);
+const showDeleteTierForm = (id) => {
     selectedTier.value = id;
     deleteTierFormIsOpen.value = true;
 }
@@ -153,13 +146,13 @@ const formatAmount = (num) => {
                 <template #editAction="row">
                     <EditIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="showEditTierForm($event, row)"
+                        @click.stop.prevent="showEditTierForm(row)"
                     />
                 </template>
                 <template #deleteAction="row">
                     <DeleteIcon
                         class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                            @click="showDeleteTierForm($event, row.id)"
+                            @click.stop.prevent="showDeleteTierForm(row.id)"
                     />
                 </template>
                 <template #icon="row">

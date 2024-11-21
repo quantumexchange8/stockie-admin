@@ -115,16 +115,16 @@ const getItemTypeName = (type) => {
                         </div>
                     </div>
                 </div>
-                <div class="w-full flex flex-col gap-y-3 max-h-[calc(100dvh-20.5rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <div class="w-full flex flex-col gap-y-3">
                     <p class="text-grey-950 text-md font-bold">Bill #{{ paymentDetails.receipt_no }}</p>
-                    <div class="flex flex-col gap-y-3 items-start self-stretch">
+                    <div class="flex flex-col gap-y-6 items-start self-stretch">
                         <div class="flex flex-row items-center self-stretch gap-x-3">
                             <p class="w-8/12 text-grey-950 text-sm font-normal">Product Name & Quantity </p>
                             <p class="w-1/12 text-grey-950 text-sm font-normal">Qty</p>
                             <p class="w-3/12 text-grey-950 text-sm font-normal text-right">Price</p>
                         </div>
 
-                        <div class="flex flex-col gap-y-6 items-start self-stretch">
+                        <div class="flex flex-col gap-y-6 items-start self-stretch max-h-[calc(100dvh-40.5rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
                             <div class="flex flex-col gap-y-2 items-start self-stretch">
                                 <div class="flex flex-row items-center self-stretch gap-x-3" v-for="row in order.order_items.filter((item) => item.status === 'Served')">
                                     <p class="w-8/12 text-grey-950 text-base font-medium truncate self-stretch"> {{ row.type === 'Normal' ? '' : `(${getItemTypeName(row.type)})`  }} {{ row.product.product_name }}</p>
@@ -132,20 +132,20 @@ const getItemTypeName = (type) => {
                                     <p class="w-3/12 text-grey-950 text-base font-medium text-right">RM {{ parseFloat(row.amount ?? 0).toFixed(2) }}</p>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="flex flex-col gap-y-1 items-start self-stretch">
-                                <div class="flex flex-row justify-between items-start self-stretch">
-                                    <p class="text-grey-900 text-base font-normal">Sub-total</p>
-                                    <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.total_amount ?? 0).toFixed(2) }}</p>
-                                </div>
-                                <div class="flex flex-row justify-between items-start self-stretch">
-                                    <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST'] ?? 0) }}%)</p>
-                                    <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.sst_amount ?? 0).toFixed(2) }}</p>
-                                </div>
-                                <div class="flex flex-row justify-between items-start self-stretch">
-                                    <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p>
-                                    <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.service_tax_amount ?? 0).toFixed(2) }}</p>
-                                </div>
+                        <div class="flex flex-col gap-y-1 items-start self-stretch">
+                            <div class="flex flex-row justify-between items-start self-stretch">
+                                <p class="text-grey-900 text-base font-normal">Sub-total</p>
+                                <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.total_amount ?? 0).toFixed(2) }}</p>
+                            </div>
+                            <div class="flex flex-row justify-between items-start self-stretch">
+                                <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST'] ?? 0) }}%)</p>
+                                <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.sst_amount ?? 0).toFixed(2) }}</p>
+                            </div>
+                            <div class="flex flex-row justify-between items-start self-stretch">
+                                <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p>
+                                <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.service_tax_amount ?? 0).toFixed(2) }}</p>
                             </div>
                         </div>
                     </div>

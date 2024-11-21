@@ -30,8 +30,8 @@ class RankingRewardRequest extends FormRequest
             'bonus_point' => 'nullable|string|max:255',
             'free_item' => 'nullable|string|max:255',
             'item_qty' => 'nullable|string|max:255',
-            'valid_period_from' => 'nullable|date_format:Y-m-d H:i:s',
-            'valid_period_to' => 'nullable|date_format:Y-m-d H:i:s',
+            // 'valid_period_from' => 'nullable|date_format:Y-m-d H:i:s',
+            // 'valid_period_to' => 'nullable|date_format:Y-m-d H:i:s',
         ];
     }
 
@@ -46,40 +46,19 @@ class RankingRewardRequest extends FormRequest
             'bonus_point' => 'Bonus Point',
             'free_item' => 'Item',
             'item_qty' => 'Item Quantity',
-            'valid_period_from' => 'Valid Period Start',
-            'valid_period_to' => 'Valid Period End',
+            // 'valid_period_from' => 'Valid Period Start',
+            // 'valid_period_to' => 'Valid Period End',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'ranking_id.required' => 'This field is required.',
-            'ranking_id.integer' => 'This field must be an integer.',
-            'reward_type.required' => 'This field is required.',
-            'reward_type.string' => 'This field must be a string.',
-            'reward_type.max' => 'This field must not exceed 255 characters.',
-            'min_purchase.required' => 'This field is required.',
-            'min_purchase.string' => 'This field must be a string.',
-            'min_purchase.max' => 'This field must not exceed 255 characters.',
-            'discount.required' => 'This field is required.',
-            'discount.string' => 'This field must be a string.',
-            'discount.max' => 'This field must not exceed 255 characters.',
-            'min_purchase_amount.required' => 'This field is required.',
-            'min_purchase_amount.integer' => 'This field must be an integer.',
-            'min_purchase_amount.max' => 'This field must not exceed 255 characters.',
-            'bonus_point.required' => 'This field is required.',
-            'bonus_point.string' => 'This field must be a string.',
-            'bonus_point.max' => 'This field must not exceed 255 characters.',
-            'free_item.required' => 'This field is required.',
-            'free_item.string' => 'This field must be a string.',
-            'free_item.max' => 'This field must not exceed 255 characters.',
-            'item_qty.string' => 'This field must be a string.',
-            'item_qty.max' => 'This field must not exceed 255 characters.',
-            'valid_period_from.required' => 'This field is required.',
-            'valid_period_from.date_format' => 'This field must be a date with time.',
-            'valid_period_to.required' => 'This field is required.',
-            'valid_period_to.date_format' => 'This field must be a date with time.',
+            'required' => 'This field is required.',
+            'integer' => 'This field must be an integer.',
+            'string' => 'This field must be a string.',
+            'max' => 'This field must not exceed 255 characters.',
+            'date_format' => 'This field must be a date with time.',
         ];
     }
 }

@@ -45,8 +45,8 @@ class LoyaltyController extends Controller
                                 return $rank;
                             }); 
 
-        $existingIcons = Product::all()->flatMap(function ($ranking){
-            return $ranking->getMedia('product');
+        $existingIcons = Ranking::all()->flatMap(function ($ranking){
+            return $ranking->getMedia('ranking');
         });
 
         $redeemableItems = Product::select(['id', 'product_name', 'point'])
@@ -198,10 +198,11 @@ class LoyaltyController extends Controller
                         break;
                 }
     
-                if ($reward['reward_type'] !== 'Bonus Point') {
-                    $rules['valid_period_from'] = str_replace('nullable', 'required', $rules['valid_period_from']);
-                    $rules['valid_period_to'] = str_replace('nullable', 'required', $rules['valid_period_to']);
-                }
+                // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                // if ($reward['reward_type'] !== 'Bonus Point') {
+                //     $rules['valid_period_from'] = str_replace('nullable', 'required', $rules['valid_period_from']);
+                //     $rules['valid_period_to'] = str_replace('nullable', 'required', $rules['valid_period_to']);
+                // }
     
                 $requestMessages = $rankingRewardRequest->messages();
     
@@ -252,8 +253,8 @@ class LoyaltyController extends Controller
                     'reward_type' => $value['reward_type'],
                     'discount' => $value['discount'],
                     'min_purchase_amount' => $value['min_purchase_amount'],
-                    'valid_period_from' => $value['valid_period_from'],
-                    'valid_period_to' => $value['valid_period_to'],
+                    // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                    // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
                     'bonus_point' => $value['bonus_point'],
                     'min_purchase' => $value['min_purchase'],
                     'free_item' => $value['free_item'],
@@ -305,8 +306,8 @@ class LoyaltyController extends Controller
             );
         });
         
-        $existingIcons = Product::all()->flatMap(function ($ranking){
-            return $ranking->getMedia('product');
+        $existingIcons = Ranking::all()->flatMap(function ($ranking){
+            return $ranking->getMedia('ranking');
         });
 
         // $inventoryItems = Iventory::withWhereHas('inventoryItems')
@@ -454,10 +455,11 @@ class LoyaltyController extends Controller
                     break;
             }
 
-            if ($reward['reward_type'] !== 'Bonus Point') {
-                $rules['valid_period_from'] = str_replace('nullable', 'required', $rules['valid_period_from']);
-                $rules['valid_period_to'] = str_replace('nullable', 'required', $rules['valid_period_to']);
-            }
+            // DO NOT REMOVE code that has until confirmed is not needed by requirements
+            // if ($reward['reward_type'] !== 'Bonus Point') {
+            //     $rules['valid_period_from'] = str_replace('nullable', 'required', $rules['valid_period_from']);
+            //     $rules['valid_period_to'] = str_replace('nullable', 'required', $rules['valid_period_to']);
+            // }
 
             $requestMessages = $rankingRewardRequest->messages();
 
@@ -497,7 +499,8 @@ class LoyaltyController extends Controller
                 'icon' => ''
             ]);
 
-            if($request->hasFile('icon')) {
+            if($request->hasFile('icon')) {                
+                $existingRanking->clearMediaCollection('ranking');
                 $existingRanking->addMedia($validatedData['icon'])->toMediaCollection('ranking');
             }
         }
@@ -512,12 +515,12 @@ class LoyaltyController extends Controller
                         'reward_type' => $value['reward_type'],
                         'discount' => $value['discount'],
                         'min_purchase_amount' => $value['min_purchase_amount'],
-                        'valid_period_from'=>$value['valid_period_from'],
-                        'valid_period_to'=>$value['valid_period_to'],
-                        'bonus_point'=>$value['bonus_point'],
-                        'min_purchase'=>$value['min_purchase'],
-                        'free_item'=>$value['free_item'],
-                        'item_qty'=>$value['item_qty'],
+                        // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                        // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                        'bonus_point' => $value['bonus_point'],
+                        'min_purchase' => $value['min_purchase'],
+                        'free_item' => $value['free_item'],
+                        'item_qty' => $value['item_qty'],
                     ]);
                 } else {
                     RankingReward::create([
@@ -525,12 +528,12 @@ class LoyaltyController extends Controller
                         'reward_type' => $value['reward_type'],
                         'discount' => $value['discount'],
                         'min_purchase_amount' => $value['min_purchase_amount'],
-                        'valid_period_from'=>$value['valid_period_from'],
-                        'valid_period_to'=>$value['valid_period_to'],
-                        'bonus_point'=>$value['bonus_point'],
-                        'min_purchase'=>$value['min_purchase'],
-                        'free_item'=>$value['free_item'],
-                        'item_qty'=>$value['item_qty'],
+                        // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                        // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                        'bonus_point' => $value['bonus_point'],
+                        'min_purchase' => $value['min_purchase'],
+                        'free_item' => $value['free_item'],
+                        'item_qty' => $value['item_qty'],
                     ]);
                 }
             }

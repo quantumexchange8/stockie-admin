@@ -23,6 +23,7 @@ const props = defineProps({
     orders: Array,
     occupiedTables: Array,
     customers: Array,
+    merchant: Object
 });
 
 const zones = ref(props.zones);
@@ -188,6 +189,7 @@ const filteredZones = computed(() => {
                 :totalPages="orderHistoriesTotalPages"
                 :rowsPerPage="orderHistoriesRowsPerPage"
                 :rowType="rowType"
+                :merchant="merchant"
             />
         </Modal>
     </AuthenticatedLayout>

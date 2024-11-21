@@ -63,7 +63,6 @@ const updateSelectedOption = (option) => {
 const handleClickOutside = (event) => {
     // const multiSelectWrapper = document.querySelector(".p-multiselect");
     // const multiSelectOverlay = document.querySelector(".p-multiselect-panel");
-    // console.log(event.target.closest('.p-multiselect-panel'));
     // Close only if click happens outside the dropdown and overlay
     // open.value = true;
     // if (event.target.closest('.p-multiselect')) {
@@ -80,7 +79,6 @@ const closeOverlay = () => {
 //         el.clickOutsideEvent = (event) => {
 //             // Check if the click is outside the multiselect component but inside the modal
 //             const modal = el.closest('.modal-panel'); // Replace '.modal-class' with the actual modal's class
-//             console.log(el.contains(event.target));
 
 //             // Close only if the click is outside the multiselect and still inside the modal
 //             if (!(el.contains(event.target)) && modal && modal.contains(event.target)) {
@@ -215,7 +213,6 @@ onUnmounted(() => {
                     }
                 },
                 panel:  ({ props, state, global, context, parent, instance }) => {
-                    // console.log(instance.focused);
                     // state.focused = open;
                     // state.overlayVisible = open;
                     // state.overlayVisible = !open || !state.focused || !state.clicked ? false : true;
@@ -282,7 +279,6 @@ onUnmounted(() => {
                 //     class: 'flex max-h-[44px] px-4 py-2 items-center gap-[10px] self-stretch rounded-t-0.5'
                 // },
                 itemCheckbox: ({ props, state, global, context, parent, instance }) => {
-                    // console.log(context.disabled);
                     return {
                         root: 'flex size-5 justify-center items-center',
                         input: [

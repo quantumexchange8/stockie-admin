@@ -476,11 +476,8 @@ class ProductController extends Controller
      */
     public function updateProduct(ProductRequest $request, string $id)
     {
-
-        // dd($request->hasFile('image'));
         // Get validated product data
         $validatedData = $request->validated();
-        // dd($request->all()) ;
 
         // Get product items
         $productItemData = $request->input('items');

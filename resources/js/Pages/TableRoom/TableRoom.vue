@@ -98,7 +98,6 @@ const closeModal = () => {
 
 // Transform the zones instance's zone text to be lower case and separated by hyphens (-) instead
 const tranformedZones = computed(() => {
-    // console.log(zones.value);
     if (zones.value) {
         return zones.value.map((zone) => {
             zone.name = zone.text.toLowerCase().replace(/ /g,"-");

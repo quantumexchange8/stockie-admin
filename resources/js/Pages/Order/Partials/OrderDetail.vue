@@ -319,6 +319,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                 <Button
                                     type="button"
                                     class="!w-fit col-span-3"
+                                    :disabled="form.processing"
                                     @click="openOverlay($event, item)"
                                 >
                                     Serve Now

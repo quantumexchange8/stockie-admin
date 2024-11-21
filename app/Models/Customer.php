@@ -25,6 +25,7 @@ class Customer extends Model implements HasMedia
         'ranking',
         'role',
         'point',
+        'total_spending'
     ];
 
     /**

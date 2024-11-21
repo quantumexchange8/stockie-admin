@@ -286,7 +286,6 @@ const hoverEffectPlugin = {
         const elements = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
 
         chart.data.datasets.forEach((dataset, datasetIndex) => {
-            // console.log(dataset);
             dataset.data.forEach((value, dataIndex) => {
                 const element = chart.getDatasetMeta(datasetIndex).data[dataIndex];
                 // element.shadow

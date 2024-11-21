@@ -13,6 +13,10 @@ import { periodOption, rewardOption, emptyReward } from "@/Composables/constants
 import { useCustomToast, useInputValidator } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
 
+//------------------------
+// DNR = DO NOT REMOVE code that has until confirmed is not needed by requirements
+//------------------------
+
 const props = defineProps({
     products: {
         type: Array,
@@ -100,19 +104,19 @@ const resetReward = (value, index) => {
     rewardList.value[index].reward_type = value;
 }
 
-const updateValidPeriod = (reward, option) => {
-    reward.valid_period_from = reward.valid_period === 0 && typeof option === 'object'
-            ? dayjs(option[0]).format('YYYY-MM-DD HH:mm:ss')
-            : reward.valid_period !== 0
-                    ? dayjs().format('YYYY-MM-DD HH:mm:ss')
-                    : '';
+// const updateValidPeriod = (reward, option) => {
+//     reward.valid_period_from = reward.valid_period === 0 && typeof option === 'object'
+//             ? dayjs(option[0]).format('YYYY-MM-DD HH:mm:ss')
+//             : reward.valid_period !== 0
+//                     ? dayjs().format('YYYY-MM-DD HH:mm:ss')
+//                     : '';
 
-    reward.valid_period_to = reward.valid_period === 0 && typeof option === 'object'
-            ? dayjs(option[1]).format('YYYY-MM-DD HH:mm:ss')
-            : reward.valid_period !== 0
-                    ? dayjs().add(option, 'month').format('YYYY-MM-DD HH:mm:ss')
-                    : '';
-}
+//     reward.valid_period_to = reward.valid_period === 0 && typeof option === 'object'
+//             ? dayjs(option[1]).format('YYYY-MM-DD HH:mm:ss')
+//             : reward.valid_period !== 0
+//                     ? dayjs().add(option, 'month').format('YYYY-MM-DD HH:mm:ss')
+//                     : '';
+// }
 
 const handleLogoUpload = () => fileInput.value.click();
 
@@ -329,6 +333,7 @@ const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field =>
                                         </template>
 
                                         <!-- All except Bonus Point -->
+                                        <!-- *DNR*                                          
                                         <template v-if="reward.reward_type !== 'Bonus Point'">
                                             <div class="flex flex-wrap sm:flex-nowrap gap-3 items-start">
                                                 <Dropdown
@@ -357,7 +362,7 @@ const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field =>
                                                     v-model="reward.date_range"
                                                 />
                                             </div>
-                                        </template>
+                                        </template> -->
                                     </div>
                                 </div>
                             </div>

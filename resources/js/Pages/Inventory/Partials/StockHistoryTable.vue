@@ -97,7 +97,6 @@ const rowGroupedByDates = computed(() => {
 });
 
 // const updateFilteredRowsCount = (event) => {
-//     console.log(event);
 //     filteredRowsCount.value = event.length;
 // }
 

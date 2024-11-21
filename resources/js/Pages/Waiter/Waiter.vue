@@ -94,7 +94,6 @@ const closeModal = () => {
 };
 
 const filterSalesPerformance = async (filters) => {
-    // console.log(filters);
     try {
         const response = await axios.get('/waiter/filterSalesPerformance', {
             method: 'GET',

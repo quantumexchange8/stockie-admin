@@ -57,8 +57,8 @@ const getKeepItemName = (item) => {
 </script>
 
 <template>
-    <div class="w-full max-h-[calc(100dvh-9.5rem)] pr-2 overflow-y-auto scrollbar-thin scrollbar-webkit">
-        <div class="flex flex-col gap-y-6 px-6 py-4 items-start rounded-[5px]">
+    <div class="w-full max-h-[calc(100dvh-23.6rem)] pr-2 overflow-y-auto scrollbar-thin scrollbar-webkit">
+        <div class="flex flex-col gap-y-6 pr-1 py-4 items-start rounded-[5px]">
             <div 
                 v-if="tableOrders && tableOrders.length > 0"
                 v-for="(order, index) in tableOrders" 
@@ -72,7 +72,6 @@ const getKeepItemName = (item) => {
                             <p class="text-grey-900 text-base font-normal">#{{ order.order_no }}</p>
                             <span class="text-grey-200">&#x2022;</span>
                             <div class="flex flex-row gap-x-2 items-center">
-                                <!-- <div class="size-6 bg-primary-100 rounded-full" v-if="order.customer"></div> -->
                                 <img 
                                     :src="order.customer?.image ? order.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt=""
@@ -89,25 +88,24 @@ const getKeepItemName = (item) => {
                     </div>
                 </div>
                 <div class="w-full flex flex-col gap-y-2 items-start self-stretch">
-                    <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
-                        <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
-                            <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
+                    <div class="w-full grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
+                        <div class="col-span-9 grid grid-cols-12 gap-3 items-center">
                             <img 
                                 :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt=""
                                 class="col-span-3 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                             >
-                            <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
+                            <div class="col-span-9 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                 <div class="flex flex-row gap-x-2 self-stretch items-center">
                                     <Tag :value="getItemTypeName(item.type)" variant="blue" v-if="item.type !== 'Normal'"/>
-                                    <p class="text-sm font-medium text-grey-900 truncate flex-shrink">{{ item.type === 'Normal' ? item.product.product_name : item.item_name }}</p>
+                                    <p class="text-sm font-medium text-grey-900 truncate flex-shrink">{{ item.type === 'Normal' || item.type === 'Redemption' ? item.product.product_name : item.item_name }}</p>
                                 </div>
 
                                 <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink">x{{ item.item_qty }}</p>
                             </div>
                         </div>
 
-                        <p class="col-span-4 text-grey-950 text-base font-medium text-right">RM {{ parseFloat(item.amount ?? 0).toFixed(2) }}</p>
+                        <p class="col-span-3 text-grey-950 text-base font-medium text-right">RM {{ parseFloat(item.amount ?? 0).toFixed(2) }}</p>
                     </div>
                 </div>
 

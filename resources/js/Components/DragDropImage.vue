@@ -75,7 +75,7 @@ const imageClasses = computed(() => [
                     buttonbar: { class: [{ 'absolute inset-0': hasFile }] },
                 }"
             >
-                <template #header="{ chooseCallback, uploadCallback, clearCallback, uploadedFiles, files }">
+                <template #header="{ chooseCallback, files }">
                     <div class="flex justify-center items-center w-full">
                         <Button 
                             @click="chooseCallback()" 
@@ -97,8 +97,8 @@ const imageClasses = computed(() => [
                         </Button>
                     </div>
                 </template>
-                <template #content="{ files, uploadedFiles, removeUploadedFileCallback, removeFileCallback }">
-                    <div v-if="files && modelValue" class="relative w-full h-full flex self-stretch items-center justify-center group" >
+                <template #content="{ files, removeFileCallback }">
+                    <div v-if="files && modelValue" class="relative w-full h-full flex self-stretch items-center justify-center group">
                         <img 
                             role="presentation" 
                             alt="selectedImage" 

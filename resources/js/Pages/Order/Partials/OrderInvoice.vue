@@ -5,11 +5,15 @@ import Table from '@/Components/Table.vue';
 import { WineBackgroundIllus1 } from '@/Components/Icons/illus';
 import MerchantLogo from "../../../../assets/images/MerchantLogo.svg";
 import StockieLogo from "../../../../../public/favicon.ico";
+import { usePhoneUtils } from '@/Composables/index.js';
 
 const props = defineProps({
     errors: Object,
     order: Object,
+    merchant: Object
 });
+
+const { formatPhone } = usePhoneUtils();
 
 const order = ref(props.order);
 
@@ -47,11 +51,11 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
             <div class="flex flex-col gap-y-10 justify-center">
                 <div class="flex items-start px-1">
                     <div class="flex flex-col justify-center items-start gap-y-1 pr-1">
-                        <p class="text-primary-100 text-md font-medium self-stretch">88BAR</p>
-                        <p class="text-primary-25 text-sm font-normal self-stretch">32, Jalan Jejaka, Maluri, 55100 Kuala Lumpur, Wilayah Persekutuan Kuala Lumpur</p>
-                        <p class="text-primary-25 text-sm font-normal self-stretch">+6011-2367 8790</p>
+                        <p class="text-primary-100 text-md font-medium self-stretch">{{ merchant.merchant_name }}</p>
+                        <p class="text-primary-25 text-sm font-normal self-stretch">{{ merchant.merchant_address }}</p>
+                        <p class="text-primary-25 text-sm font-normal self-stretch">{{ formatPhone(merchant.merchant_contact) }}</p>
                     </div>
-                    <img :src="MerchantLogo" alt="MerchantLogo" width="64" height="64" class="flex-shrink-0 rounded-full"/>
+                    <img :src="merchant.image" alt="MerchantLogo" width="64" height="64" class="flex-shrink-0 rounded-full"/>
                 </div>
 
                 <div class="flex flex-col bg-primary-25 rounded-md items-center px-4 py-6">

@@ -16,6 +16,10 @@ import Toast from '@/Components/Toast.vue'
 import { useCustomToast, useInputValidator } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
 
+//------------------------
+// DNR = DO NOT REMOVE code that has until confirmed is not needed by requirements
+//------------------------
+
 const props = defineProps({
     tier: {
         type: Object,
@@ -44,10 +48,9 @@ const emit = defineEmits(["close"]);
 const { isValidNumberKey } = useInputValidator();
 const { showMessage } = useCustomToast();
 
-//function to display the option for valid period
-const calculateValidPeriod = (fromDate, toDate) => {
-    return dayjs(toDate).diff(dayjs(fromDate), 'month');    
-};
+// *DNR*
+// Calculates difference in month
+// const calculateValidPeriod = (fromDate, toDate) => dayjs(toDate).diff(dayjs(fromDate), 'month');
 
 const form = useForm({
     id: props.tier.id,
@@ -55,16 +58,17 @@ const form = useForm({
     min_amount: props.tier.min_amount.toString(),
     reward: props.tier.reward,
     rewards: props.inventoryItems.map((reward) => {
-        const validPeriod = calculateValidPeriod(reward.valid_period_from, reward.valid_period_to); // calculate difference in month
+        // const validPeriod = calculateValidPeriod(reward.valid_period_from, reward.valid_period_to); // *DNR*
         reward.item_qty = reward.item_qty ? parseInt(reward.item_qty) : 1;
         reward.min_purchase_amount = reward.min_purchase_amount ? reward.min_purchase_amount.toString() : '';
         reward.free_item = parseInt(reward.free_item);
-        // reward.discount = reward.reward_type === 'Discount (Percentage)' ? reward.transformed_rate.toString() : reward.discount;
 
         return {
             ...reward,
-            valid_period: validPeriod,
-            date_range: [new Date(reward.valid_period_from), new Date(reward.valid_period_to)],
+            // valid_period: validPeriod, // *DNR*
+            // date_range: [new Date(reward.valid_period_from), new Date(reward.valid_period_to)], // *DNR*
+            valid_period: null,
+            date_range: null,
         };
     }),
     icon: props.tier.icon ?? '',
@@ -101,25 +105,26 @@ const toggleMinPurchase = (index) => {
 const resetReward = (value, index) => {
     form.rewards[index] = emptyReward();
     form.rewards[index].reward_type = value;
-}
+};
 
 const initializeMinItemQty = (value, index) => {
     form.rewards[index].item_qty = value !== '' ? 1 : '';
-}
+};
 
-const updateValidPeriod = (reward, option) => {
-    reward.valid_period_from = reward.valid_period === 0 && typeof option === 'object'
-            ? dayjs(option[0]).format('YYYY-MM-DD HH:mm:ss')
-            : reward.valid_period !== 0
-                    ? dayjs().format('YYYY-MM-DD HH:mm:ss')
-                    : '';
+// *DNR*
+// const updateValidPeriod = (reward, option) => {
+//     reward.valid_period_from = reward.valid_period === 0 && typeof option === 'object'
+//             ? dayjs(option[0]).format('YYYY-MM-DD HH:mm:ss')
+//             : reward.valid_period !== 0
+//                     ? dayjs().format('YYYY-MM-DD HH:mm:ss')
+//                     : '';
 
-    reward.valid_period_to = reward.valid_period === 0 && typeof option === 'object'
-            ? dayjs(option[1]).format('YYYY-MM-DD HH:mm:ss')
-            : reward.valid_period !== 0
-                    ? dayjs().add(option, 'month').format('YYYY-MM-DD HH:mm:ss')
-                    : '';
-}
+//     reward.valid_period_to = reward.valid_period === 0 && typeof option === 'object'
+//             ? dayjs(option[1]).format('YYYY-MM-DD HH:mm:ss')
+//             : reward.valid_period !== 0
+//                     ? dayjs().add(option, 'month').format('YYYY-MM-DD HH:mm:ss')
+//                     : '';
+// }
 
 const submit = () => {
     form.rewards.forEach(item => {
@@ -152,7 +157,7 @@ const handleFileSelect = (event) => {
         logoPreview.value.push(file);
         selectLogo(file);
   }
-}
+};
 
 const selectLogo = (logo) => (selectedLogo.value = checkFileInstance(logo) ? logo : selectedLogo.value);
 
@@ -366,7 +371,6 @@ const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field =>
                                         <!--Free Item-->
                                         <template v-if="reward.reward_type === 'Free Item'">
                                             <div class="flex gap-3 flex-wrap sm:flex-nowrap items-start justify-center">
-                                                {{ console.log(items) }}
                                                 <Dropdown
                                                     :labelText="'Select a product'"
                                                     :inputArray="items"
@@ -397,6 +401,7 @@ const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field =>
                                         </template>
 
                                         <!-- All except Bonus Point -->
+                                        <!-- *DNR*
                                         <template v-if="reward.reward_type !== 'Bonus Point'">
                                             <div class="flex gap-3 flex-wrap sm:flex-nowrap items-end">
                                                 <Dropdown
@@ -423,7 +428,7 @@ const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field =>
                                                     v-model="reward.date_range"
                                                 />
                                             </div>
-                                        </template>
+                                        </template> -->
                                     </div>
                                 </div>
                             </div>

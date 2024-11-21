@@ -20,6 +20,7 @@ const props = defineProps({
     rowType: Object,
     totalPages: Number,
     rowsPerPage: Number,
+    merchant: Object
 });
 
 const rows = ref(props.rows);  
@@ -204,6 +205,6 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
         :show="orderInvoiceModalIsOpen"
         @close="hideOrderInvoiceModal"
     >
-        <OrderInvoice :order="selectedOrder" />
+        <OrderInvoice :order="selectedOrder" :merchant="merchant" />
     </Modal>
 </template>

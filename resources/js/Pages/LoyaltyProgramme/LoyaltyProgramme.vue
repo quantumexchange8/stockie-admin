@@ -86,7 +86,7 @@ onMounted(() => flashMessage());
 
         <Toast />
 
-        <TabView :tabs="tabs" :selectedTab="1">
+        <TabView :tabs="tabs">
             <template #points>
                 <Point
                     :products="products"

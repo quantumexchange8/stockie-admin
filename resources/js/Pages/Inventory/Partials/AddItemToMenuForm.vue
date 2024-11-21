@@ -109,7 +109,6 @@ const isFormValid = computed(() => {
                 class="col-span-full md:col-span-4 h-[372px]"
             />  -->
             <div class="flex flex-col items-start gap-y-6 self-stretch">
-                <!-- {{ console.log(categoryArr) }} -->
                 <div class="flex flex-col gap-y-4 self-stretch" v-for="(item, i) in form.items" :key="i">
                     <div class="flex flex-row items-center justify-between self-stretch">
                         <p class="text-grey-950 font-semibold text-md">Item {{ i + 1 }}</p>

@@ -261,7 +261,7 @@ const removeItem = (index) => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="console.log(form)"
+                @click="cancelForm"
             >
                 Cancel
             </Button>

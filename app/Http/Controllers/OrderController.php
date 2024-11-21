@@ -6,6 +6,7 @@ use App\Http\Requests\OrderTableRequest;
 use App\Models\Category;
 use App\Models\ConfigIncentive;
 use App\Models\ConfigIncentiveEmployee;
+use App\Models\ConfigMerchant;
 use App\Models\Customer;
 use App\Models\IventoryItem;
 use App\Models\KeepHistory;
@@ -92,6 +93,10 @@ class OrderController extends Controller
                                         'image' => $customer->getFirstMediaUrl('customer'),
                                     ];
                                 });
+
+        $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address')->first();
+
+        $merchant->image = $merchant->getFirstMediaUrl('merchant_settings');
         
         // Get the flashed messages from the session
         // $message = $request->session()->get('message');
@@ -102,7 +107,8 @@ class OrderController extends Controller
             'users' => $users,
             'orders' => $orders,
             'occupiedTables' => Table::where('status', '!=', 'Empty Seat')->get(),
-            'customers' => $customers
+            'customers' => $customers,
+            'merchant' => $merchant
         ]);
     }
 
@@ -1421,7 +1427,7 @@ class OrderController extends Controller
         $payment = Payment::find($id);
         $order = Order::with([
                             'orderTable.table', 
-                            'customer.payments:id,customer_id,grand_total', 
+                            'customer:id,point,total_spending', 
                             'orderItems' => fn($query) => $query->where('status', 'Served')
                         ])->findOrFail($request->order_id);
 
@@ -1444,16 +1450,16 @@ class OrderController extends Controller
 
         // Add the accumulated points earned from the order to the customer
         if ($customer) {
-            $totalSpent = $customer->payments->sum('grand_total');
-            $givenTier = Ranking::where('min_amount', '<=', $totalSpent)
-                                 ->orderBy('min_amount', 'desc')
-                                 ->value('id') ?? 0;
+            $givenTier = Ranking::where('min_amount', '<=', $customer->total_spending)
+                                ->orderBy('min_amount', 'desc')
+                                ->value('id') ?? null;
                                  
             $oldBalance = $customer->point;
                                  
             $customer->update([
+                'ranking'=> $givenTier,
                 'point' => $oldBalance + $totalPoints,
-                'ranking'=> $givenTier
+                'total_spending' => $customer->total_spending + $payment->grand_total
             ]);
 
             $customer->refresh();
