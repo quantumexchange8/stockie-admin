@@ -257,12 +257,23 @@ class NotificationController extends Controller
 
         foreach ($orderNotifications as $notification) {
             $orderData = $notification->data;
-        
-            if (isset($orderData['waiter_id'])) {
+
+            if(isset($orderData['waiter_id'])){
                 $waiter = User::find($orderData['waiter_id']);
-                $orderData['image'] = $waiter->getFirstMediaUrl('user');
-                $notification->data = $orderData;
+                if($waiter){
+                    $orderData['waiter_image'] = $waiter->getFirstMediaUrl('user');
+                    $orderData['waiter_name'] = $waiter->full_name;
+                }
             }
+            if(isset($orderData['assigner_id'])){
+                $assigner = User::find($orderData['assigner_id']);
+                if($assigner){
+                    $orderData['assigner_image'] = $assigner->getFirstMediaUrl('user');
+                    $orderData['assigner_name'] = $assigner->full_name;
+                }
+            }
+
+            $notification->data = $orderData;
         }
 
         $inventoryNotifications = $notifications->filter(function ($notification) {

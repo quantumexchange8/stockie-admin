@@ -223,7 +223,7 @@ const calcTimeDiff = (created_at) => {
                             <span class="line-clamp-1 text-primary-900 text-ellipsis text-sm font-medium">Table / Room Activity</span>
                         </div>
                         <div class="flex flex-col items-end gap-[13px] self-stretch rounded-[5px] bg-white hover:bg-[#fff1f280] p-3" v-if="!showMoreOrder">
-                            <div class="flex items-end gap-[13px] self-stretch">
+                            <div class="flex items-end gap-[13px] self-stretch"  v-if="firstOrder.type === 'OrderPlaced'">
                                 <div class="flex justify-start items-start gap-[13px] self-stretch size-9">
                                     <img :src="firstOrder.data.image ? firstOrder.data.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
                                         alt=""
@@ -246,11 +246,11 @@ const calcTimeDiff = (created_at) => {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]" v-if="firstOrder.type === 'OrderPlaced'">
                                     <div class="flex items-center gap-1 self-stretch">
-                                        <div class="size-2 rounded-full bg-green-600" v-if="firstOrder.type === 'OrderPlaced'"></div>
+                                        <div class="size-2 rounded-full bg-green-600"></div>
                                         <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-primary-900 text-xs font-medium">
-                                            {{ firstOrder.type === 'OrderPlaced' ? firstOrder.data.waiter_name : firstOrder.data.table_no }}
+                                            {{ firstOrder.type !== 'CheckInCustomer' ? firstOrder.data.waiter_name : firstOrder.data.table_no }}
                                         </span>
                                     </div>
                                     <span class="text-grey-900 text-sm font-normal" v-if="firstOrder.type === 'OrderPlaced'">
@@ -258,6 +258,65 @@ const calcTimeDiff = (created_at) => {
                                     </span>
                                     <span class="text-grey-900 text-sm font-normal" v-else>
                                         New customer check-in by <span class="text-grey-900 text-sm font-semibold">{{ firstOrder.data.waiter_name }}</span>.
+                                    </span>
+                                    
+                                </div>
+                            </div>
+                            <div class="flex items-end gap-[13px] self-stretch"  v-if="firstOrder.type === 'OrderCheckInCustomer'">
+                                <div class="flex justify-start items-start gap-[13px] self-stretch size-9">
+                                    <div class="flex relative size-9">
+                                        <img 
+                                            :src="firstOrder.data.waiter_image ? firstOrder.data.waiter_image
+                                                                            : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-6 h-6 rounded-full left-0 top-0 absolute"
+                                        >
+                                        <div class="flex justify-center items-center border border-solid border-white bg-primary-800 
+                                                    w-6 h-6 rounded-full absolute right-0 bottom-0"
+                                        >
+                                            <span class="text-primary-25 text-2xs font-medium">
+                                                {{ firstOrder.data.table_no.split(',')[0].trim() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                    <div class="flex items-center gap-1 self-stretch">
+                                        <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-primary-900 text-xs font-medium">
+                                            {{ firstOrder.data.table_no }}
+                                        </span>
+                                    </div>
+                                    <span class="text-grey-900 text-sm font-normal">New customer check-in by 
+                                        <span class="text-grey-900 text-sm font-semibold">{{ firstOrder.data.waiter_name }}.</span>
+                                    </span>
+                                    
+                                </div>
+                            </div>
+                            <div class="flex items-end gap-[13px] self-stretch"  v-if="firstOrder.type === 'OrderAssigned'">
+                                <div class="flex justify-start items-start gap-[13px] self-stretch size-9">
+                                    <div class="flex relative size-9">
+                                        <img 
+                                            :src="firstOrder.data.assigner_image ? firstOrder.data.assigner_image
+                                                                        : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-6 h-6 rounded-full left-0 top-0 absolute"
+                                        >
+                                        <img 
+                                            :src="firstOrder.data.waiter_image ? firstOrder.data.waiter_image
+                                                                                    : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-6 h-6 rounded-full right-0 bottom-0 absolute"
+                                        >
+                                    </div>
+                                </div>
+                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                    <div class="flex items-center gap-1 self-stretch">
+                                        <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-xs font-medium text-primary-900">{{ firstOrder.data.assigner_name }}</span>
+                                    </div>
+                                    <span class="text-grey-900 text-sm font-normal">Assigned
+                                        <span class="text-grey-900 text-sm font-semibold">{{ firstOrder.data.waiter_name }}</span>
+                                        to serve
+                                        <span class="text-grey-900 text-sm font-semibold">{{ firstOrder.data.table_no }}.</span>
                                     </span>
                                 </div>
                             </div>
@@ -267,7 +326,7 @@ const calcTimeDiff = (created_at) => {
                         </div>
 
                         <div class="flex flex-col items-end gap-[13px] self-stretch rounded-[5px] bg-white hover:bg-[#fff1f280] p-3" v-for="orders in props.order_notifications" v-if="showMoreOrder">
-                            <div class="flex items-end gap-[13px] self-stretch">
+                            <div class="flex items-end gap-[13px] self-stretch"  v-if="orders.type === 'OrderPlaced'">
                                 <div class="flex justify-start items-start gap-[13px] self-stretch size-9">
                                     <img :src="orders.data.image ? orders.data.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
                                         alt=""
@@ -290,11 +349,11 @@ const calcTimeDiff = (created_at) => {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]" v-if="orders.type === 'OrderPlaced'">
                                     <div class="flex items-center gap-1 self-stretch">
-                                        <div class="size-2 rounded-full bg-green-600" v-if="orders.type === 'OrderPlaced'"></div>
+                                        <div class="size-2 rounded-full bg-green-600"></div>
                                         <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-primary-900 text-xs font-medium">
-                                            {{ orders.type === 'OrderPlaced' ? orders.data.waiter_name : orders.data.table_no }}
+                                            {{ orders.type !== 'CheckInCustomer' ? orders.data.waiter_name : orders.data.table_no }}
                                         </span>
                                     </div>
                                     <span class="text-grey-900 text-sm font-normal" v-if="orders.type === 'OrderPlaced'">
@@ -302,6 +361,65 @@ const calcTimeDiff = (created_at) => {
                                     </span>
                                     <span class="text-grey-900 text-sm font-normal" v-else>
                                         New customer check-in by <span class="text-grey-900 text-sm font-semibold">{{ orders.data.waiter_name }}</span>.
+                                    </span>
+                                    
+                                </div>
+                            </div>
+                            <div class="flex items-end gap-[13px] self-stretch"  v-if="orders.type === 'OrderCheckInCustomer'">
+                                <div class="flex justify-start items-start gap-[13px] self-stretch size-9">
+                                    <div class="flex relative size-9">
+                                        <img 
+                                            :src="orders.data.waiter_image ? orders.data.waiter_image
+                                                                            : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-6 h-6 rounded-full left-0 top-0 absolute"
+                                        >
+                                        <div class="flex justify-center items-center border border-solid border-white bg-primary-800 
+                                                    w-6 h-6 rounded-full absolute right-0 bottom-0"
+                                        >
+                                            <span class="text-primary-25 text-2xs font-medium">
+                                                {{ orders.data.table_no.split(',')[0].trim() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                    <div class="flex items-center gap-1 self-stretch">
+                                        <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-primary-900 text-xs font-medium">
+                                            {{ orders.data.table_no }}
+                                        </span>
+                                    </div>
+                                    <span class="text-grey-900 text-sm font-normal">New customer check-in by 
+                                        <span class="text-grey-900 text-sm font-semibold">{{ orders.data.waiter_name }}.</span>
+                                    </span>
+                                    
+                                </div>
+                            </div>
+                            <div class="flex items-end gap-[13px] self-stretch"  v-if="orders.type === 'OrderAssigned'">
+                                <div class="flex justify-start items-start gap-[13px] self-stretch size-9">
+                                    <div class="flex relative size-9">
+                                        <img 
+                                            :src="orders.data.assigner_image ? orders.data.assigner_image
+                                                                        : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-6 h-6 rounded-full left-0 top-0 absolute"
+                                        >
+                                        <img 
+                                            :src="orders.data.waiter_image ? orders.data.waiter_image
+                                                                                    : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-6 h-6 rounded-full right-0 bottom-0 absolute"
+                                        >
+                                    </div>
+                                </div>
+                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                    <div class="flex items-center gap-1 self-stretch">
+                                        <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-xs font-medium text-primary-900">{{ orders.data.assigner_name }}</span>
+                                    </div>
+                                    <span class="text-grey-900 text-sm font-normal">Assigned
+                                        <span class="text-grey-900 text-sm font-semibold">{{ orders.data.waiter_name }}</span>
+                                        to serve
+                                        <span class="text-grey-900 text-sm font-semibold">{{ orders.data.table_no }}.</span>
                                     </span>
                                 </div>
                             </div>
