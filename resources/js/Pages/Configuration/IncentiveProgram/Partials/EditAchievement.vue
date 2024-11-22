@@ -2,6 +2,7 @@
 import Button from '@/Components/Button.vue';
 import Date from '@/Components/Date.vue';
 import Dropdown from '@/Components/Dropdown.vue';
+import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast, useInputValidator } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
@@ -14,15 +15,25 @@ const props = defineProps({
         required: true,
     },
 })
-const emit = defineEmits(['closeModal', 'getEmployeeIncent', 'getIncentDetail']);
+const emit = defineEmits(['stay', 'leave', 'isDirty', 'closeModal', 'getEmployeeIncent']);
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator()
 const closeModal = () => {
     emit('closeModal');
-};
+}
+
+const stayModal = () => {
+    emit('stay');
+}
+
+const leaveModal = () => {
+    emit('leave');
+}
+
 
 const isRate = ref(props.selectedIncent.isRate);
 const selectedIncent = ref(props.selectedIncent);
+const isUnsavedChangesOpen = ref(false);
 const comm_type = ref([
     { text: 'Fixed amount', value: 'fixed'},
     { text: 'Percentage of monthly sales', value: 'percentage'}
@@ -86,7 +97,7 @@ const submit = () => {
                     detail: `Changes will take effect from '${toastMessage}'.`,
                 });
             }, 200);
-            closeModal();
+            leaveModal();
             form.reset();
             emit('getEmployeeIncent', selectedIncent.value.id);
         }
@@ -96,6 +107,8 @@ const submit = () => {
 watch(() => props.selectedIncent, (newValue) => {
     selectedIncent.value = newValue;
 }, { immediate: true });
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -191,5 +204,14 @@ watch(() => props.selectedIncent, (newValue) => {
             </Button>
         </div>
     </form>
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="stayModal"
+        @leave="leaveModal"
+    >
+    </Modal>
 </template>
 

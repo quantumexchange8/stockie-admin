@@ -9,10 +9,12 @@ import AddDiscount from './Partials/AddDiscount.vue';
 import DiscountTable from './Partials/DiscountTable.vue';
 
 const isAddDiscountOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
 const details = ref([]);
 const detailsBackup = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
+const isDirty = ref(false);
 
 const discountDetails = async () => {
     isLoading.value = true;
@@ -28,11 +30,28 @@ const discountDetails = async () => {
 }
 
 const openAddDiscount = () => {
+    isDirty.value = false;
     isAddDiscountOpen.value = true;
 }
 
-const closeModal = () => {
-    isAddDiscountOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            isUnsavedChangesOpen.value = isDirty.value ? true : false;
+            isAddDiscountOpen.value = !isDirty.value ? false : true;
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isAddDiscountOpen.value = false;
+            break;
+        }
+
+    }
 }
 
 watch(() => details.value, (newValue) => {
@@ -49,13 +68,15 @@ watch(() => searchQuery.value, (newValue) => {
 
     details.value = details.value.map(group => {
         const filteredDetails = group.details.filter(item => {
+            const groupName = group.discount.toLowerCase();
             const productName = item.product.toLowerCase();
             const productStartOn = item.start_on.toString().toLowerCase();
             const productEndOn = item.end_on.toString().toLowerCase();
             const productType = item.type.toLowerCase();
             const productBefore = item.before.toString().toLowerCase();
             const productAfter = item.after.toString().toLowerCase();
-            return  productName.includes(query) ||
+            return  groupName.includes(query) ||
+                    productName.includes(query) ||
                     productStartOn.includes(query) ||
                     productEndOn.includes(query) ||
                     productType.includes(query) ||
@@ -120,12 +141,22 @@ onMounted(() => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Add Discount'"
-        @close="closeModal"
+        @close="() => closeModal('close')"
     >
         <AddDiscount 
             @close="closeModal"
+            @isDirty="isDirty = $event"
             @discountDetails="discountDetails"
         />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
     </Modal>
+
 </template>
 

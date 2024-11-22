@@ -19,6 +19,8 @@ const { formatAmount } = transactionFormat();
 const currentPage = ref(1);
 const isEditDiscountOpen = ref(false);
 const isDeleteDiscountOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 const selectedDiscount = ref(null);
 const totalPages = computed(() => Math.ceil((props.details?.length || 0) / 4));
 // const details = ref(props.details);
@@ -55,10 +57,33 @@ const openDeleteDiscount = (event, discountId) => {
     selectedDiscount.value = discountId;
 };
 
-const closeModal = () => {
-    isEditDiscountOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isEditDiscountOpen.value = false;
+            }
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isEditDiscountOpen.value = false;
+            isDeleteDiscountOpen.value = false;
+            break;
+        }
+
+    }
+}
+
+const hideDeleteModal = () => {
     isDeleteDiscountOpen.value = false;
-};
+}
 
 const onPageChange = (event) => {
     currentPage.value = event.page + 1;
@@ -400,13 +425,24 @@ watch(() => props.details, () => {
         :maxWidth="'md'"
         :closeable="true"
         :show="isEditDiscountOpen"
-        @close="closeModal"
+        @close="closeModal('close')"
     >
         <EditDiscount 
             :details="selectedDiscount"
             @close="closeModal"
+            @isDirty="isDirty = $event"
             @discountDetails="discountDetails"
         />
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
 
     </Modal>
 
@@ -419,7 +455,8 @@ watch(() => props.details, () => {
         :confirmationTitle="'Delete this discount?'"
         :confirmationMessage="'Deleting this discount will also remove discount from related products. Are you sure?'"
         :toastMessage="'Discount has been deleted.'"
-        @close="closeModal"
+        @close="hideDeleteModal"
     />
+
 </template>
 

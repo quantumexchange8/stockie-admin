@@ -631,7 +631,7 @@ onMounted(() => {
                                             ? ( item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png') 
                                             : ''" 
                                     alt="" 
-                                    :class="item.stock_left > 0 ? 'h-full w-full' : ''"
+                                    :class="item.stock_left > 0 ? 'h-full w-full object-contain' : ''"
                                     />
                                 </div>
                                 <span class="absolute top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.stock_left === 0">Out of Stock</span>

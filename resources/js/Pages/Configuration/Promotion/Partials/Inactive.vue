@@ -110,11 +110,11 @@ const submit = () => {
     </div>
     <div v-else class="grid grid-cols-3 gap-5 select-none">
         <div v-for="promotion in InactivePromotions" >
-            <div class="flex flex-col h-full justify-between">
+            <div class="flex flex-col">
                 <div class="p-3">
                     <img :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                         alt=""
-                        class="object-contain"
+                        class="object-contain min-h-[296px]"
                     >
                 </div>
                 <div class="">

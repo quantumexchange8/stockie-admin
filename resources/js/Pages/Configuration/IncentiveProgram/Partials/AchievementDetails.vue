@@ -23,6 +23,8 @@ const isDeleteWaiterOpen = ref(false);
 const isEditAchievementOpen = ref(false);
 const isDeleteAchievementOpen = ref(false);
 const selectedAchievement = ref(null);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 const selectedWaiter = ref(null);
 const isRate = ref({
     ...props.achievementDetails,
@@ -64,10 +66,26 @@ const showDeleteWaiter = (id) => {
     selectedWaiter.value = id;
 }
 
-const closeModal = () => {
-    isEditAchievementOpen.value = false;
+const closeEditModal = () => {
+    isUnsavedChangesOpen.value = isDirty.value ? true : false;
+    isEditAchievementOpen.value = !isDirty.value ? false : true;
+}
+
+const closeDeleteWaiter = () => {
     isDeleteWaiterOpen.value = false;
+}
+
+const closeDeleteAchievement = () => {
     isDeleteAchievementOpen.value = false;
+}
+
+const stayModal = () => {
+    isUnsavedChangesOpen.value = false;
+}
+
+const leaveModal = () => {
+    isUnsavedChangesOpen.value = false;
+    isEditAchievementOpen.value = false;
 }
 
 </script>
@@ -173,11 +191,14 @@ const closeModal = () => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Edit Achievement'"
-        @close="closeModal"
+        @close="closeEditModal($event)"
     >
         <EditAchievement
             :selectedIncent="selectedAchievement"
-            @closeModal="closeModal"
+            @stay="stayModal"
+            @leave="leaveModal"
+            @isDirty="isDirty = $event"
+            @closeModal="closeEditModal($event)"
             @getEmployeeIncent="getEmployeeIncent"
         />
     </Modal>
@@ -190,7 +211,7 @@ const closeModal = () => {
         :deleteUrl="`/configurations/configurations/deleteAchievement/${selectedAchievement}`"
         :confirmationTitle="'Delete achievement?'"
         :confirmationMessage="'Are you sure you want to delete this achievement? All the data in this achievement will be lost.'"
-        @close="closeModal"
+        @close="closeDeleteAchievement"
         v-if="selectedAchievement"
     />
 
@@ -203,8 +224,18 @@ const closeModal = () => {
         :confirmationTitle="'Delete this entitled employee?'"
         :confirmationMessage="'Starting from next recurring date, the selected employee will no longer be entitled to this incentive commission.'"
         :toastMessage="'Selected employee has been removed from this achievement. '"
-        @close="closeModal"
+        @close="closeDeleteWaiter"
         v-if="selectedWaiter"
     />
+
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="stayModal"
+        @leave="leaveModal"
+    >
+    </Modal>
 </template>
 

@@ -94,31 +94,32 @@ const selectProduct = (product) => {
 const selectAllProduct = (category) => {
     let categoryProducts;
 
-    // if passed in is 0 then get all
+    // If passed in is 0, select all products
     if (category === 0) { 
         categoryProducts = filteredProducts.value;
     } else {
         categoryProducts = filteredProducts.value.filter(product => product.category_id === category);
     }
 
-    // check if all the selected products are of the selected category
-    const allProductsSelected = categoryProducts.every(product => 
+    // Check if all products in the category are already selected
+    const allSelected = categoryProducts.every(product => 
         selectedProducts.value.some(selected => selected.id === product.id)
     );
 
-    if (allProductsSelected) {
-        // if all products are selected (the checkbox is checked), remove all the selected product
+    if (allSelected) {
+        // If all are selected, remove them
         selectedProducts.value = selectedProducts.value.filter(
             selected => !categoryProducts.some(product => product.id === selected.id)
         );
     } else {
-        // add all the products of the selected category
+        // Otherwise, add only those not already in selectedProducts
         const newProducts = categoryProducts.filter(product => 
             !selectedProducts.value.some(selected => selected.id === product.id)
         );
         selectedProducts.value = [...selectedProducts.value, ...newProducts];
     }
-}
+};
+
 
 const isAllSelected = (category) => {
     if (category === 0) {
@@ -203,7 +204,7 @@ onMounted(() => {
                             :src="items.image ? items.image 
                                             : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                             alt=""
-                            class="size-10"
+                            class="size-10 object-contain"
                         />
                         <span class="line-clamp-1 flex-[1_0_0] text-grey-900 text-ellipsis text-sm font-medium">{{ items.product_name }}</span>
                         <Checkbox 

@@ -54,20 +54,19 @@ const applyCheckedFilters = (close) => {
     if(checkedFilters.value.date.length > 0){
         // Single date filter
         if (checkedFilters.value.date[1] === null) {
-            const selectedDate = new Date(checkedFilters.value.date[0]).toISOString().split('T')[0]; 
-            
+            const selectedDate = new Date(checkedFilters.value.date[0]).toLocaleDateString('en-US'); 
             // Filter notifications by created_at date
             notifications.value = notifications.value.filter(notification => {
-                const notificationDate = new Date(notification.created_at).toISOString().split('T')[0]; 
+                const notificationDate = new Date(notification.created_at).toLocaleDateString('en-US'); 
                 return notificationDate === selectedDate;
             });
     
         } else {
-            const startDate = new Date(checkedFilters.value.date[0]).toISOString().split('T')[0]; 
-            const endDate = new Date(checkedFilters.value.date[1]).toISOString().split('T')[0]; 
+            const startDate = new Date(checkedFilters.value.date[0]).toLocaleDateString('en-US'); 
+            const endDate = new Date(checkedFilters.value.date[1]).toLocaleDateString('en-US'); 
     
             notifications.value = notifications.value.filter(notification => {
-                const notificationDate = new Date(notification.created_at).toISOString().split('T')[0]; 
+                const notificationDate = new Date(notification.created_at).toLocaleDateString('en-US'); 
                 return startDate <= notificationDate && notificationDate <= endDate;
             });
     

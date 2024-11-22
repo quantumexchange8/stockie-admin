@@ -7,14 +7,17 @@ import TextInput from '@/Components/TextInput.vue';
 import DragDropImage from '@/Components/DragDropImage.vue'
 import { useCustomToast } from '@/Composables';
 import dayjs from 'dayjs';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import Modal from '@/Components/Modal.vue';
 
 defineProps({
     errors:Object
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['stay', 'leave', 'isDirty', 'close'])
 const { showMessage } = useCustomToast();
+const isUnsavedChangesOpen = ref(false);
+
 const form = useForm({
     title: '',
     description: '',
@@ -62,13 +65,23 @@ const formSubmit = () => {
 };
 
 const closeForm = () => {
-    form.reset();
     emit('close');
+    form.reset();
+}
+
+const stayModal = () => {
+    emit('stay');
+}
+
+const leaveModal = () => {
+    emit('leave');
 }
 
 const isFormValid = computed(() => {
     return ['title', 'description', 'promotionPeriod'].every(field => form[field]);
 })
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -130,4 +143,13 @@ const isFormValid = computed(() => {
             </Button>
         </div>
     </form>
+    
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="stayModal"
+        @leave="leaveModal"
+    />
 </template>

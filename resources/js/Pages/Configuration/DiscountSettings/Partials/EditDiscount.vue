@@ -19,13 +19,16 @@ const props = defineProps({
 })
 const isSelectProductOpen = ref(false);
 const isDeleteModalOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
 const deletingProduct = ref(null);
 const selectedType = ref(props.details.type);
 const selectedProducts = ref([]);
+const copySelectedProducts = ref([]);
+const isDirty = ref(false);
 const isLoading = ref(false);
 const invalidDates = ref([]);
 
-const emit = defineEmits(["close", "discountDetails"]);
+const emit = defineEmits(["stay", "leave", "close", "discountDetails", 'isDirty']);
 const { isValidNumberKey } = useInputValidator();
 const { formatAmount } = transactionFormat();
 const { showMessage } = useCustomToast();
@@ -49,6 +52,7 @@ const getProductDetails = async () => {
     try {
         const response = await axios.get(`/configurations/editProductDetails/${props.details.id}`);
         selectedProducts.value = response.data;
+        copySelectedProducts.value = [...response.data];
     } catch (error) {
         console.error(error);
     } finally {
@@ -56,7 +60,7 @@ const getProductDetails = async () => {
     }
 }
 
-function parseDate(dateString) {
+const parseDate = (dateString) => {
     const [day, month, year] = dateString.split('/');
     return new Date(`${year}-${month}-${day}`);
 }
@@ -67,10 +71,12 @@ const form = useForm({
     discount_type: props.details.type,
     discount_rate: props.details.rate,
     discount_period: [parseDate(props.details.start_on), parseDate(props.details.end_on)],
-    discount_product: selectedProducts.value,
+    discount_product: Array.isArray(selectedProducts.value) ? [...selectedProducts.value] : [],
     discount_from: parseDate(props.details.start_on),
     discount_to: parseDate(props.details.end_on),
 })
+
+const initialForm = JSON.parse(JSON.stringify(form));
 
 const setType = (type) => {
     selectedType.value = type;
@@ -106,8 +112,38 @@ const removeSelectProduct = (productId) => {
     dateFilter(selectedProducts.value);
 }
 
+const excludeIsDirty = (formData) => {
+    const { isDirty, discount_product, ...rest } = formData;
+    return rest;
+};
+
+const arraysAreEqual = (array1, array2) => {
+    if (array1.length !== array2.length) return false;
+
+    const sortedArray1 = [...array1].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+    const sortedArray2 = [...array2].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+
+    return sortedArray1.every((value, index) => JSON.stringify(value) === JSON.stringify(sortedArray2[index]));
+};
+
 const closeModal = () => {
-    emit("close");
+    if (isDirty.value) {
+        emit('close');
+    } else {
+        emit('leave');
+    }
+};
+
+const stayModal = () => {
+    emit('stay');
+}
+
+const leaveModal = () => {
+    emit('leave');
+}
+
+const unsaved = (status) => {
+    emit('close', status);
 }
 
 const submit = () => {
@@ -130,10 +166,11 @@ const submit = () => {
             form.discount_to = temp;
         }
     }
+
     form.post(route('configurations.editDiscount'), {
         preserveState: true,
         onSuccess: () => {
-            closeModal();
+            emit('leave');
             setTimeout(() => {
                 showMessage({
                     severity: 'success',
@@ -172,9 +209,24 @@ watch(() => selectedProducts.value, (newValue) => {
     form.discount_product = newValue;
 }, { immediate: true });
 
+watch(() => selectedProducts.value, (newValue) => {
+    initialForm.discount_product = newValue;
+}, { immediate: true });
+
 watch(() => invalidDates.value, (newValue) => {
     invalidDates.value = newValue;
 }, { immediate: true });
+
+watch(form, () => {
+    const initialDataWithoutDirty = excludeIsDirty(initialForm);
+    const currentDataWithoutDirty = excludeIsDirty(form);
+
+    isDirty.value = 
+        JSON.stringify(initialDataWithoutDirty) !== JSON.stringify(currentDataWithoutDirty) || 
+        !arraysAreEqual(copySelectedProducts.value, selectedProducts.value);
+
+    emit('isDirty', isDirty.value);
+}, { deep: true });
 
 onMounted(() => {
     getProductDetails();
@@ -320,7 +372,7 @@ onMounted(() => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="closeModal"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -388,6 +440,16 @@ onMounted(() => {
                 </Button>
             </div>
         </div>
+    </Modal>
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :closeable="true"
+        :show="isUnsavedChangesOpen"
+        @close="unsaved('stay')"
+        @leave="unsaved('leave')"
+    >
     </Modal>
 </template>
 

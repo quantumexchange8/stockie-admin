@@ -60,7 +60,7 @@ const calcTimeDiff = (created_at) => {
 </script>
 
 <template>
-    <div class="flex flex-col w-[calc(100dvw-62.5rem)] max-h-[calc(100dvh-20.5rem)] justify-between items-center shrink-0 rounded-[5px] bg-white/80 overflow-auto scrollbar-webkit scrollbar-thin">
+    <div class="flex flex-col max-w-80 max-h-[calc(100dvh-20.5rem)] justify-between items-center shrink-0 rounded-[5px] bg-white/80 overflow-auto scrollbar-webkit scrollbar-thin">
         <div class="flex flex-col items-center shrink-0 self-stretch gap-6">
             <div class="flex items-start self-stretch sticky top-0 z-10 bg-white">
                 <span class="text-primary-950 text-center text-md font-medium">Latest Notification</span>
@@ -429,9 +429,9 @@ const calcTimeDiff = (created_at) => {
                         </div>
                     </div>
                 </template>
-                <div class="flex flex-col justify-center items-center gap-[13px] shrink-0 self-stretch" v-else>
+                <div class="flex flex-col justify-center items-center gap-[13px] shrink-0 self-stretch w-80 min-h-[calc(100dvh-32.5rem)]" v-else>
                     <UndrawFreshIllust />
-                    <span class="text-primary-900 text-center text-sm font-medium">No notification yet...</span>
+                    <span class="text-primary-900 text-center text-sm font-medium">No new notification yet...</span>
                 </div>
             </div>
 
@@ -445,7 +445,7 @@ const calcTimeDiff = (created_at) => {
                         :href="route('notifications')"
                         class="absolute bottom-0"
                     >
-                        View all notification ({{ props.all_notifications }})
+                        View all notification  <span v-if="all_notifications > 0"> ({{ props.all_notifications }})</span>
                     </Button>
                 </div>
         </div>

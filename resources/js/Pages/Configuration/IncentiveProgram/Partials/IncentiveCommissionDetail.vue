@@ -13,6 +13,7 @@ import { transactionFormat, useCustomToast } from '@/Composables';
 import Paginator from 'primevue/paginator';
 import TextInput from '@/Components/TextInput.vue';
 import axios from 'axios';
+import { Head } from '@inertiajs/vue3';
 
 const home = ref({
     label: 'Configuration',
@@ -212,6 +213,8 @@ watch(() => searchQuery.value, (newValue) => {
 </script>
 
 <template>
+    <Head title="Incentive Commission Detail" />
+
     <AuthenticatedLayout>
         <template #header>
             <Breadcrumb

@@ -66,13 +66,34 @@ const selectedProduct = ref(null);
 const removingFrom = ref(props.commissionDetails.id);
 const isDeleteModalOpen = ref(false);
 const isProductModalOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 
 const showProductModal = () => {
     isProductModalOpen.value = true;
+    isDirty.value = false;
 }
 
-const hideProductModal = () => {
-    isProductModalOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isProductModalOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isProductModalOpen.value = false;
+            break;
+        }
+    }
 }
 
 const showDeleteModal = (id) => {
@@ -255,15 +276,23 @@ const filters = ref({
             :maxWidth="'md'"
             :closeable="true"
             :show="isProductModalOpen"
-            @close="hideProductModal"
-            v-if="isProductModalOpen"
+            @close="() => closeModal('close')"
         >
-            <AddProduct 
+            <AddProduct
                 :id="commissionDetails.id"
                 :productsToAdd="productsToAdd"
-                @hideProductModal="hideProductModal"
+                @closeModal="closeModal"
+                @isDirty="isDirty = $event"
             />
 
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeModal('stay')"
+                @leave="closeModal('leave')"
+            />
         </Modal>
         
     </AuthenticatedLayout>

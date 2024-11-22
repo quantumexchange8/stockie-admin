@@ -221,6 +221,9 @@ class ConfigCommissionController extends Controller
 
         $productItems = ProductItem::whereDoesntHave('commItems')->pluck('product_id');
         $productsToAdd = Product::whereIn('id', $productItems)->get(['id', 'product_name']);
+        $productsToAdd->each(function($productToAdd){
+            $productToAdd->image = $productToAdd->getFirstMediaUrl('product');
+        });
 
         return Inertia::render('Configuration/EmployeeCommission/Partials/ProductDetails', [
             'message' => $message ?? [],

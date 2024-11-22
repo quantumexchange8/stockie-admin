@@ -125,6 +125,7 @@ onUnmounted(() => {
             optionLabel="text"
             optionValue="value"
             optionDisabled="disabled"
+            :disabled="disabled"
             :placeholder="placeholder"
             :maxSelectedLabels="7" 
             display="chip"
@@ -342,7 +343,7 @@ onUnmounted(() => {
                         :src="slotProps.option.image ? slotProps.option.image 
                                                     : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                         alt=""
-                        class="size-7 rounded-full"
+                        class="size-7 rounded-full object-contain"
                     >
                     <div>{{ slotProps.option.text }}</div>
                 </div>

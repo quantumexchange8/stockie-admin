@@ -1,6 +1,7 @@
 <script setup>
 import Button from "@/Components/Button.vue";
 import Dropdown from "@/Components/Dropdown.vue";
+import Modal from "@/Components/Modal.vue";
 import MultiSelect from "@/Components/MultiSelect.vue";
 import TextInput from "@/Components/TextInput.vue";
 import { useCustomToast, useInputValidator } from "@/Composables";
@@ -26,7 +27,8 @@ const { isValidNumberKey } = useInputValidator();
 
 const options = props.productToAdd.map(item => ({
     text: item.product_name, 
-    value: item.id
+    value: item.id,
+    image: item.image
 }));
 if (Array.isArray(props.commisionDetails.product) && Array.isArray(props.commisionDetails.productIds) && props.commisionDetails.product.length === props.commisionDetails.productIds.length) {
     props.commisionDetails.product.forEach((productName, index) => {
@@ -37,8 +39,9 @@ if (Array.isArray(props.commisionDetails.product) && Array.isArray(props.commisi
     });
 }
 
-const emit = defineEmits(['closeModal', 'viewEmployeeComm']);
+const emit = defineEmits(['stay', 'leave', 'close', 'viewEmployeeComm', 'isDirty']);
 const isRate = ref(true)
+const isUnsavedChangesOpen = ref(false);
 const commType = [
   { text: 'Fixed amount per sold product', value: 'Fixed amount per sold product' },
   { text: 'Percentage per sold product', value: 'Percentage per sold product' }
@@ -78,11 +81,18 @@ const submit = () => {
 }
 
 const closeModal = () => {
-    form.reset();
-    emit('closeModal');
-    emit('viewEmployeeComm');
-
+    emit('close');
 }
+
+const stayModal = () => {
+    emit('stay');
+}
+
+const leaveModal = () => {
+    emit('leave');
+}
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 const isFormValid = computed(() => {
     return ['commType', 'commRate', 'involvedProducts'].every(field => form[field]);
@@ -137,17 +147,9 @@ const isFormValid = computed(() => {
                     :inputArray="options"
                     :labelText="'Product with this commission'"
                     :dataValue="form.involvedProducts"
+                    withImages
                     v-model="form.involvedProducts"
                 >
-                    <template #optionLabel>
-                        <!-- <div class="size-7 bg-primary-700 rounded-full"></div> -->
-                        <img 
-                            :src="props.productToAdd.image ? props.productToAdd.image 
-                                                            : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                            alt=""
-                            class="size-7 rounded-full"
-                        >
-                    </template> 
                 </MultiSelect>
             </div>
         </div>
@@ -170,4 +172,13 @@ const isFormValid = computed(() => {
             </Button>
         </div>
     </form>
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="stayModal"
+        @leave="leaveModal"
+    >
+    </Modal>
 </template>

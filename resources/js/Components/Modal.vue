@@ -1,8 +1,8 @@
 <script setup>
 import { router } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { TimesIcon } from '@/Components/Icons/solid';
-import { DeleteIllus } from '@/Components/Icons/illus';
+import { DeleteIllus, UnsavedIllust } from '@/Components/Icons/illus';
 import { useCustomToast } from '@/Composables/index.js';
 import Button from './Button.vue';
 import {
@@ -51,11 +51,14 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    unsaved: {
+        type: Boolean,
+        default: false,
+    }
 });
 
 const { showMessage } = useCustomToast();
-
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'leave']);
 
 watch(
     () => props.show,
@@ -65,8 +68,14 @@ watch(
         } else {
             document.body.style.overflow = null;
         }
+    });
+
+
+const leave = () => {
+    if(props.unsaved) {
+        emit('leave');
     }
-);
+}
 
 const close = () => {
     if (props.closeable) {
@@ -147,7 +156,7 @@ const deleteRecord = () => {
                             class="transform w-full max-h-[95%] fixed rounded-[5px] bg-white text-left align-middle shadow-xl transition-all"
                             :class="[
                                 maxWidthClass,
-                                !props.deleteConfirmation ? 'p-6' : 'flex flex-col gap-9',
+                                !props.deleteConfirmation && !props.unsaved ? 'p-6' : 'flex flex-col gap-9',
                             ]"
                         >
                             <template v-if="!props.deleteConfirmation">
@@ -168,7 +177,39 @@ const deleteRecord = () => {
                                 </DialogTitle>
                                 <slot></slot>
                             </template>
-                            <template v-else>
+                            <template v-if="props.unsaved">
+                                <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                                    <slot name="unsavedimage">
+                                        <UnsavedIllust />
+                                    </slot>
+                                </div>
+                                <DialogTitle
+                                    :as="'div'"
+                                    class="flex flex-col justify-center items-center self-stretch gap-1 px-6"
+                                >
+                                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">You’ve unsaved changes</p>
+                                    <p class="text-center text-grey-900 text-base font-medium self-stretch">Are you sure you want to leave this page? The changes you made will not be saved.</p>
+                                </DialogTitle>
+                                <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                                    <Button
+                                        :type="'button'"
+                                        :variant="'tertiary'"
+                                        :size="'lg'"
+                                        @click="close"
+                                    >
+                                        Stay
+                                    </Button>
+                                    <Button
+                                        :type="'button'"
+                                        :variant="'red'"
+                                        :size="'lg'"
+                                        @click="leave"
+                                    >
+                                        Leave
+                                    </Button>
+                                </div>
+                            </template>
+                            <template v-if="props.deleteConfirmation">
                                 <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
                                     <slot name="deleteimage">
                                         <DeleteIllus/>

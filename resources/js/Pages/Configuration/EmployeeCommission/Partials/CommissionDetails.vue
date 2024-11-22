@@ -24,6 +24,7 @@ const { isValidNumberKey } = useInputValidator();
 
 const isEditCommOpen = ref(false);
 const isDeleteCommOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
 const isRate = ref(props.commissionDetails.comm_type === 'Fixed amount per sold product' ? false : true);
 const deletingComm = ref(null);
 
@@ -39,11 +40,31 @@ const form = useForm({
 const requiredFields = ['commType', 'rate'];
 
 const showEditComm = () => {
+    form.reset();
     isEditCommOpen.value = true;
 }
 
-const hideEditComm = () => {
-    isEditCommOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(form.isDirty){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isEditCommOpen.value = false;
+            }
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isEditCommOpen.value = false;
+            break;
+        }
+
+    }
 }
 
 const showDeleteComm = (id) => {
@@ -134,7 +155,7 @@ const isFormValid = computed(() => {
         :title="'Edit Commission Type'"
         :closeable="true"
         :show="isEditCommOpen"
-        @close="hideEditComm"
+        @close="closeModal('close')"
     >
         <form @submit.prevent="submit">
             <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
@@ -182,7 +203,7 @@ const isFormValid = computed(() => {
                         :type="'button'"
                         :variant="'tertiary'"
                         :size="'lg'"
-                        @click="hideEditComm"
+                        @click="closeModal('close')"
                     >
                         Cancel
                     </Button>
@@ -196,6 +217,15 @@ const isFormValid = computed(() => {
                     </Button>
                 </div>
             </div>
+
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeModal('stay')"
+                @leave="closeModal('leave')"
+            />
         </form>
     </Modal>
 
@@ -209,8 +239,8 @@ const isFormValid = computed(() => {
         :deleteUrl="`/configurations/deleteCommission/${deletingComm}`"
         @close="hideDeleteComm"
         v-if="deletingComm"
-    >
+    />
 
-    </Modal>
+
 </template>
 

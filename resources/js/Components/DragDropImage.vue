@@ -50,7 +50,7 @@ const updateUpload = (files, chooseCallback) => {
 }
 
 const imageClasses = computed(() => [
-    'w-full h-full object-contain rounded-[5px]',
+    'w-full h-full object-contain rounded-[5px] p-1',
     props.imageClass
 ])
 </script>

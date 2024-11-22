@@ -19,6 +19,9 @@ const props = defineProps({
 const searchQuery = ref('');
 const filteredActivePromotions = ref(props.ActivePromotions);
 const filteredInactivePromotions = ref(props.InactivePromotions);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
+const createFormIsOpen = ref(false);
 
 const activePromotionsCount = computed(() => {
     return props.ActivePromotions.filter(promotion => promotion.status === 'Active').length
@@ -27,13 +30,22 @@ const InactivePromotionsCount = computed(() => {
     return props.InactivePromotions.filter(promotion => promotion.status === 'Inactive').length
 })
 
-const createFormIsOpen = ref(false);
 
 const showCreateForm = () => {
     createFormIsOpen.value = true;
 }
 
 const hideCreateForm = () => {
+    isUnsavedChangesOpen.value = isDirty.value ? true : false;
+    createFormIsOpen.value = !isDirty.value ? false : true;
+}
+
+const stayModal = () => {
+    isUnsavedChangesOpen.value = false;
+}
+
+const leaveModal = () => {
+    isUnsavedChangesOpen.value = false;
     createFormIsOpen.value = false;
 }
 
@@ -113,10 +125,13 @@ watch(() => props.InactivePromotions, (newValue) => {
                 :show="createFormIsOpen" 
                 :maxWidth="'md'" 
                 :closeable="true" 
-                @close="hideCreateForm"
+                @close="hideCreateForm($event)"
             >
-                <CreatePromotionForm 
-                    @close="hideCreateForm"
+                <CreatePromotionForm
+                    @stay="stayModal"
+                    @leave="leaveModal"
+                    @close="hideCreateForm($event)"
+                    @isDirty="isDirty = $event"
                 />
             </Modal>
         </div>
@@ -175,4 +190,13 @@ watch(() => props.InactivePromotions, (newValue) => {
 
         <div></div>
     </div>
+
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="stayModal"
+        @leave="leaveModal"
+    />
 </template>

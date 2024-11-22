@@ -13,13 +13,14 @@ import { CancelIllus } from '@/Components/Icons/illus';
 
 const isSelectProductOpen = ref(false);
 const isDeleteModalOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
 const deletingProduct = ref(null);
 const selectedType = ref('percentage');
 const selectedProducts = ref([]);
 const isLoading = ref(false);
 const invalidDates = ref([]);
 
-const emit = defineEmits(["close", "discountDetails"]);
+const emit = defineEmits(["close", "discountDetails", 'isDirty']);
 const { isValidNumberKey } = useInputValidator();
 const { formatAmount } = transactionFormat();
 const { showMessage } = useCustomToast();
@@ -68,8 +69,8 @@ const removeSelectProduct = (productId) => {
     dateFilter(selectedProducts.value);
 }
 
-const closeModal = () => {
-    emit("close");
+const unsaved = (status) => {
+    emit('close', status);
 }
 
 const submit = () => {
@@ -96,7 +97,7 @@ const submit = () => {
     form.post(route('configurations.createDiscount'), {
         preserveScroll: true,
         onSuccess: () => {
-            closeModal();
+            unsaved('leave');
             emit('discountDetails');
             setTimeout(() => {
                 showMessage({
@@ -138,6 +139,8 @@ watch(() => selectedProducts.value, (newValue) => {
 watch(() => invalidDates.value, (newValue) => {
     invalidDates.value = newValue;
 }, { immediate: true });
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -276,7 +279,7 @@ watch(() => invalidDates.value, (newValue) => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="closeModal"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -345,5 +348,13 @@ watch(() => invalidDates.value, (newValue) => {
             </div>
         </div>
     </Modal>
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="unsaved('stay')"
+        @leave="unsaved('leave')"
+    />
 </template>
 

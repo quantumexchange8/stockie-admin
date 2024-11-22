@@ -1,6 +1,7 @@
 <script setup>
 import Button from "@/Components/Button.vue";
 import Dropdown from "@/Components/Dropdown.vue";
+import Modal from "@/Components/Modal.vue";
 import MultiSelect from "@/Components/MultiSelect.vue";
 import TextInput from "@/Components/TextInput.vue";
 import { useCustomToast, useInputValidator } from "@/Composables";
@@ -21,12 +22,16 @@ const props = defineProps({
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
-const options = props.productToAdd.map(item => ({
-    text: item.product_name, 
-    value: item.id
-}));
-const emit = defineEmits(['closeModal', 'viewEmployeeComm']);
+const options = computed(() =>
+    props.productToAdd.map(item => ({
+        text: item.product_name,
+        value: item.id,
+        image: item.image,
+    }))
+);
+const emit = defineEmits(['closeModal', 'viewEmployeeComm', 'isDirty']);
 const isRate = ref(true)
+const isUnsavedChangesOpen = ref(false);
 const commType = [
   { text: 'Fixed amount per sold product', value: 'Fixed amount per sold product' },
   { text: 'Percentage per sold product', value: 'Percentage per sold product' }
@@ -50,7 +55,15 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            closeModal();
+            unsaved('leave');
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'New commission type has been successfully added.',
+                });
+                emit('viewEmployeeComm');
+            }, 200)
+            form.reset();
         },
         onError: (errors) => {
             console.error('Form submission error: ', errors);
@@ -58,21 +71,15 @@ const submit = () => {
     })
 }
 
-const closeModal = () => {
-    form.reset();
-    emit('closeModal');
-    setTimeout(() => {
-        showMessage({ 
-            severity: 'success',
-            summary: 'New commission type has been successfully added.',
-        });
-        emit('viewEmployeeComm');
-    }, 200)
+const unsaved = (status) => {
+    emit('closeModal', status);
 }
 
 const isFormValid = computed(() => {
     return ['commType', 'commRate', 'involvedProducts'].every(field => form[field]);
 });
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 
 </script>
@@ -120,18 +127,11 @@ const isFormValid = computed(() => {
             <div class="flex flex-col items-start gap-1 self-stretch">
                 <MultiSelect 
                     :inputArray="options"
+                    :disabled="!options.length"
                     :labelText="'Product with this commission'"
                     v-model="form.involvedProducts"
+                    :withImages="true"
                 >
-                    <template #optionLabel>
-                        <!-- <div class="size-7 bg-primary-700 rounded-full"></div> -->
-                        <img 
-                            :src="props.productToAdd.image ? props.productToAdd.image 
-                                                            : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                            alt=""
-                            class="size-7 rounded-full"
-                        >
-                    </template>  
                 </MultiSelect>
             </div>
         </div>
@@ -141,7 +141,7 @@ const isFormValid = computed(() => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="closeModal"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -154,4 +154,13 @@ const isFormValid = computed(() => {
             </Button>
         </div>
     </form>
+
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="unsaved('stay')"
+        @leave="unsaved('leave')"
+    />
 </template>

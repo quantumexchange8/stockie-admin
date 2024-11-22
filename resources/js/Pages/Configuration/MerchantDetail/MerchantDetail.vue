@@ -14,6 +14,7 @@ import DragDropImage from "@/Components/DragDropImage.vue";
 const props = defineProps({
     merchant: Object,
 })
+console.log(props.merchant)
 
 const taxes = ref([]);
 const isLoading = ref(false);
@@ -302,7 +303,7 @@ watch(() => taxes.value, (newValue) => {
             </div>
             <div class="w-full flex items-center gap-6 ">
                 <div class="!w-[240px] !h-[240px]">
-                    <img :src="form.merchant_image ? form.merchant_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
+                    <img :src="props.merchant.merchant_image ? props.merchant.merchant_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
                 </div>
                 <div class="w-full flex flex-col justify-between items-start flex-[1_0_0] self-stretch divide-y divide-grey-100">
                     <div class="flex h-full justify-between items-center self-stretch">

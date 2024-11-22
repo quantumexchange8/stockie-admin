@@ -396,11 +396,15 @@ class ConfigEmployeeIncProgController extends Controller
 
         $incentive = ConfigIncentive::with('incentiveEmployees')->find($achievementId);
 
-        $sales = OrderItem::with('handledBy')
-                            ->where('status', 'Served')
-                            ->where('type', 'Normal')
-                            ->where('created_at', '>=', $incentive->effective_date)
+        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('role', 'waiter')])
+                            ->where([
+                                ['status', 'Served'],
+                                ['type', 'Normal'],
+                                ['created_at', '>=', $incentive->effective_date],
+                            ])
                             ->get()
+
+                            // group item according to reccuring date
                             ->groupBy(function ($order) use ($incentive) {
                                 $orderDate = Carbon::parse($order->created_at);
                                 $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recrurring_on);
@@ -412,10 +416,12 @@ class ConfigEmployeeIncProgController extends Controller
                                     return $startOfMonth->subMonth()->format('F Y');
                                 }
                             })
-                            ->map(function ($dateGroup, $month) use ($incentive, $achievementId) {
-                                $data = $dateGroup->groupBy('user_id')->map(function ($userGroup) use ($incentive, $achievementId, $month) {
+
+                            //start matching respective orders to their waiter
+                            ->map(function ($dateGroup, $month) use ($incentive, $id) {
+                                $data = $dateGroup->groupBy('user_id')->map(function ($userGroup) use ($incentive, $id, $month) {
                                     $totalSales = $userGroup->sum('amount');
-                                
+                                    
                                     if ($totalSales > $incentive->monthly_sale) {
                                         // calculate incentive amount
                                         if ($incentive->type === 'fixed') {
@@ -426,35 +432,39 @@ class ConfigEmployeeIncProgController extends Controller
                                 
                                         // status
                                         $status = $incentive->incentiveEmployees
-                                        ->where('incentive_id', $achievementId)
-                                        ->where('user_id', $userGroup->first()->handledBy->id)
-                                        ->filter(function ($employeeIncentive) use ($month) {
-                                            return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
-                                        })
-                                        ->first() 
-                                        ->status ?? 'not found';
+                                                    ->where('incentive_id', $id)
+                                                    ->where('user_id', optional($userGroup->first()->handledBy)->id)
+                                                    ->filter(function ($employeeIncentive) use ($month) {
+                                                        return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
+                                                    })
+                                                    ->first() 
+                                                    ->status ?? 'not found';
 
                                         $empIncentiveId = $incentive->incentiveEmployees
-                                        ->where('incentive_id', $achievementId)
-                                        ->where('user_id', $userGroup->first()->handledBy->id)
-                                        ->filter(function ($employeeIncentive) use ($month) {
-                                            return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
-                                        })
-                                        ->first() 
-                                        ->id ?? null;
+                                                        ->where('incentive_id', $id)
+                                                        ->where('user_id', optional($userGroup->first()->handledBy)->id)
+                                                        ->filter(function ($employeeIncentive) use ($month) {
+                                                            return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
+                                                        })
+                                                        ->first() 
+                                                        ->id ?? null;
                                 
-                                        return [
+                                        $result = [
                                             'id' => $empIncentiveId,
-                                            'name' => $userGroup->first()->handledBy->full_name, // achiever
+                                            'name' => $userGroup->first()->handledBy->full_name ?? null, // achiever
                                             'total_sales' => $totalSales, // sales
                                             'monthly_sale' => $incentive->monthly_sale,
                                             'incentive' => round($incentiveAmt, 2), // earned
                                             'status' => $status, // status
+                                            'image' => $userGroup->first()->handledBy ? $userGroup->first()->handledBy->getFirstMediaUrl('user') : null,
                                         ];
+
+                                        return in_array(null, $result, true) ? null : $result;
                                     }
                                     return null;
+
                                 })->filter()->values();
-                            
+
                                 if ($data->isNotEmpty()) {
                                     return [
                                         'month' => $month, 

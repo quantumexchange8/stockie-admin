@@ -2,11 +2,12 @@
 import Button from '@/Components/Button.vue';
 import Date from '@/Components/Date.vue';
 import Dropdown from '@/Components/Dropdown.vue';
+import Modal from '@/Components/Modal.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast, useInputValidator } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
     waiters: {
@@ -16,17 +17,16 @@ const props = defineProps({
 })
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
+const isUnsavedChangesOpen = ref(false);
+const waiters = computed(() =>
+    props.waiters.map(item => ({
+        text: item.full_name,
+        value: item.id,
+        image: item.image,
+    }))
+);
 
-const waiters = props.waiters.map(item => ({
-    text: item.full_name,
-    value: item.id
-}));
-
-const emit = defineEmits(['closeModal', 'getEmployeeIncent']);
-const closeModal = () => {
-    emit('closeModal');
-    emit('getEmployeeIncent');
-}
+const emit = defineEmits(['stay', 'leave', 'isDirty', 'closeModal', 'getEmployeeIncent']);
 
 const isRate = ref(false);
 const comm_type = ref([
@@ -54,6 +54,18 @@ const setIsRate = (type) => {
     }
 }
 
+const closeModal = () => {
+    emit('closeModal');
+}
+
+const stayModal = () => {
+    emit('stay');
+}
+
+const leaveModal = () => {
+    emit('leave');
+}
+
 const isFormValid = computed(() => {
     return ['comm_type', 'rate', 'effective_date', 'recurring_on', 'monthly_sale', 'entitled'].every(field => form[field]);
 })
@@ -73,7 +85,8 @@ const submit = () => {
         preserveState: true,
         onSuccess: () => {
             form.reset();
-            closeModal();
+            emit('closeModal');
+            emit('getEmployeeIncent');
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
@@ -83,6 +96,9 @@ const submit = () => {
         }
     })
 }
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
+
 </script>
 
 <template>
@@ -159,17 +175,10 @@ const submit = () => {
                 :inputArray="waiters"
                 :inputName="'entitled'"
                 :labelText="'Employee entitled to achieve this commission'"
+                :withImages="true"
+                :disabled="!waiters.length"
                 v-model="form.entitled"
-            >
-                <template #optionLabel>
-                    <!-- <div class="size-7 bg-primary-700 rounded-full"></div> -->
-                    <img 
-                        :src="props.waiters.image ? props.waiters.image 
-                                                : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                        alt=""
-                        class="size-7 rounded-full"
-                    >
-                </template>      
+            >   
             </MultiSelect>
 
         </div>
@@ -193,5 +202,14 @@ const submit = () => {
             </Button>
         </div>
     </form>
+
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="stayModal"
+        @leave="leaveModal"
+    />
 </template>
 

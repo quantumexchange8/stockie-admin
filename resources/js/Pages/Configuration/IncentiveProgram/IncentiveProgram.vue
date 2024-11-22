@@ -6,7 +6,6 @@ import Modal from "@/Components/Modal.vue";
 import SearchBar from "@/Components/SearchBar.vue";
 import Table from "@/Components/Table.vue";
 import Toast from "@/Components/Toast.vue";
-import { Head } from "@inertiajs/vue3";
 import { FilterMatchMode } from "primevue/api";
 import { computed, onMounted, ref } from "vue";
 import AddAchievement from "./Partials/AddAchievement.vue";
@@ -18,6 +17,8 @@ const rows = ref([]);
 const isEditIncentOpen = ref(false);
 const isDeleteIncentOpen = ref(false);
 const isAddAchievementOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 const selectedIncent = ref(null);
 const waiters = ref([]);
 const { formatDate, formatAmount } = transactionFormat();
@@ -52,9 +53,50 @@ const openAddAchieve = () => {
     isAddAchievementOpen.value = true;
 }
 
-const closeModal = () => {
-    isAddAchievementOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isAddAchievementOpen.value = false;
+                isEditIncentOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave' :{
+            isUnsavedChangesOpen.value = false;
+            isAddAchievementOpen.value = false;
+            isEditIncentOpen.value = false;
+        }
+    }
+} 
+
+const closeAddAchievementModal = () => {
+    isUnsavedChangesOpen.value = isDirty.value ? true : false;
+    isAddAchievementOpen.value = !isDirty.value ? false : true;
+}
+
+const closeDeleteAchivementModal = () => {
     isDeleteIncentOpen.value = false;
+}
+
+const closeEditAchievementModal = () => {
+    isUnsavedChangesOpen.value = isDirty.value ? true : false;
+    isEditIncentOpen.value = !isDirty.value ? false : true;
+}
+
+const stayModal = () => {
+    isUnsavedChangesOpen.value = false;
+}
+
+const leaveModal = () => {
+    isUnsavedChangesOpen.value = false;
+    isAddAchievementOpen.value = false;
     isEditIncentOpen.value = false;
 }
 
@@ -210,11 +252,14 @@ onMounted (() => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Add Achievement'"
-        @close="closeModal"
+        @close="closeAddAchievementModal($event)"
     >
         <AddAchievement 
             :waiters="waiters"
-            @closeModal="closeModal"
+            @stay="stayModal"
+            @leave="leaveModal"
+            @closeModal="closeAddAchievementModal($event)"
+            @isDirty="isDirty = $event"
             @getEmployeeIncent="getEmployeeIncent"
         />
     </Modal>
@@ -224,11 +269,14 @@ onMounted (() => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Edit Achievement'"
-        @close="closeModal"
+        @close="closeEditAchievementModal($event)"
     >
         <EditAchievement 
             :selectedIncent="selectedIncent"
-            @closeModal="closeModal"
+            @stay="stayModal"
+            @leave="leaveModal"
+            @isDirty="isDirty = $event"
+            @closeModal="closeEditAchievementModal($event)"
             @getEmployeeIncent="getEmployeeIncent"
         />
 
@@ -242,8 +290,17 @@ onMounted (() => {
         :deleteUrl="`/configurations/configurations/deleteAchievement/${selectedIncent}`"
         :confirmationTitle="'Delete achievement?'"
         :confirmationMessage="'Are you sure you want to delete this achievement? All the data in this achievement will be lost.'"
-        @close="closeModal"
+        @close="closeDeleteAchivementModal"
         v-if="selectedIncent"
     />
 
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="stayModal"
+        @leave="leaveModal"
+    >
+    </Modal>
 </template>

@@ -20,6 +20,8 @@ const isLoading = ref(false);
 const productNames = ref([]);
 const productToAdd = ref([]);
 const rows = ref([]);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 
 const actions = {
     view: (productId) => `/configurations/productDetails/${productId}`,
@@ -50,6 +52,7 @@ const viewEmployeeComm = async () => {
 
 const openEditComm = (event, rows) => {
     handleDefaultClick(event);
+    isDirty.value = false;
     isEditCommOpen.value = true;
     selectedProduct.value = rows;
 }
@@ -62,12 +65,37 @@ const openDeleteComm = (event, id) => {
 
 const openModal = () => {
     isNewCommissionOpen.value = true;
+    isDirty.value = false;
 }
 
-const closeModal = () => {
-    isNewCommissionOpen.value = false;
-    isDeleteCommOpen.value = false;
-    isEditCommOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            isUnsavedChangesOpen.value = isDirty.value ? true : false;
+            isNewCommissionOpen.value = !isDirty.value ? false : true;
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isEditCommOpen.value = false;
+            isNewCommissionOpen.value = false;
+            break;
+        }
+
+    }
+}
+
+const closeEditModal = () => {
+    if(isDirty.value){
+        isUnsavedChangesOpen.value = true;
+    } else {
+        isUnsavedChangesOpen.value = false;
+        isEditCommOpen.value = false;
+    }
 }
 
 const filters = ref({
@@ -112,7 +140,7 @@ onMounted (() => {
                 Commission Type
                 <Modal
                     :show="isNewCommissionOpen"
-                    @close="closeModal"
+                    @close="closeModal('close')"
                     :title="'Add Commission Type'"
                     :maxWidth="'md'"
                 >
@@ -120,9 +148,19 @@ onMounted (() => {
                         :productNames="productNames"
                         :productToAdd="productToAdd"
                         @closeModal="closeModal"
+                        @isDirty="isDirty = $event"
                         @viewEmployeeComm="viewEmployeeComm"
                     />
+                    <Modal
+                        :unsaved="true"
+                        :maxWidth="'2xs'"
+                        :withHeader="false"
+                        :show="isUnsavedChangesOpen"
+                        @close="closeModal('stay')"
+                        @leave="closeModal('leave')"
+                    />
                 </Modal>
+
             </Button>
         </div>
 
@@ -198,15 +236,26 @@ onMounted (() => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Edit Commission Type'"
-        @close="closeModal"
+        @close="closeEditModal"
     >
         <EditCommission 
             :productNames="productNames"
             :productToAdd="productToAdd"
             :commisionDetails="selectedProduct"
-            @closeModal="closeModal"
+            @close="closeEditModal"
+            @isDirty="isDirty = $event"
             @viewEmployeeComm="viewEmployeeComm"
         />
+    </Modal>
+
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="closeModal('stay')"
+        @leave="closeModal('leave')"
+    >
     </Modal>
 
 </template>
