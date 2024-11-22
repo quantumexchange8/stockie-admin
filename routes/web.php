@@ -230,6 +230,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders/customer/{id}', [OrderController::class, 'getCustomerDetails'])->name('orders.customer');
         Route::get('/orders/customer/keep/getCustomerKeepHistories/{id}', [OrderController::class, 'getCustomerKeepHistories'])->name('orders.customer.keep.getCustomerKeepHistories');
         Route::get('/orders/customer/point/getCustomerPointHistories/{id}', [OrderController::class, 'getCustomerPointHistories'])->name('orders.customer.point.getCustomerPointHistories');
+        Route::get('/orders/customer/tier/getCustomerTierRewards/{id}', [OrderController::class, 'getCustomerTierRewards'])->name('orders.customer.tier.getCustomerTierRewards');
         Route::post('/orders/customer/keep/addKeptItemToOrder/{id}', [OrderController::class, 'addKeptItemToOrder'])->name('orders.customer.keep.addKeptItemToOrder');
         Route::post('/orders/customer/point/redeemItemToOrder/{id}', [OrderController::class, 'redeemItemToOrder'])->name('orders.customer.point.redeemItemToOrder');
 

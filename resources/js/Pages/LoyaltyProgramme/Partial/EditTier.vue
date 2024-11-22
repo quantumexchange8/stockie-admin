@@ -61,7 +61,7 @@ const form = useForm({
         // const validPeriod = calculateValidPeriod(reward.valid_period_from, reward.valid_period_to); // *DNR*
         reward.item_qty = reward.item_qty ? parseInt(reward.item_qty) : 1;
         reward.min_purchase_amount = reward.min_purchase_amount ? reward.min_purchase_amount.toString() : '';
-        reward.free_item = parseInt(reward.free_item);
+        reward.free_item = reward.free_item;
 
         return {
             ...reward,
@@ -94,6 +94,8 @@ const toggleReward = () => {
         form.rewards = [];
         return;
     }
+
+    addReward();
 };
 
 const toggleMinPurchase = (index) => {
@@ -129,7 +131,6 @@ const initializeMinItemQty = (value, index) => {
 const submit = () => {
     form.rewards.forEach(item => {
         item.item_qty = item.item_qty ? item.item_qty.toString() : '';
-        item.free_item = item.free_item ? item.free_item.toString() : '';
     });
     
     form.put(`/loyalty-programme/tiers/update/${props.tier.id}`, {
@@ -145,6 +146,12 @@ const submit = () => {
                 });
             }, 200);
         },
+        // onError: () => {
+        //     form.rewards.forEach(item => {
+        //         item.item_qty = item.item_qty ? parseInt(item.item_qty) : '';
+        //         item.free_item = item.free_item ? parseInt(item.free_item) : '';
+        //     });
+        // },
     })
 };
 
@@ -184,7 +191,11 @@ const checkSelectedIcon = (logo) => {
     return logo === selectedLogo.value;
 };
 
-const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field => form[field]) && !form.processing);
+// const getProductStockLeft = (freeItem) => {
+//     return ;
+// }
+
+const isFormValid = computed(() => ['name', 'min_amount'].every(field => form[field]) && !form.processing);
 
 </script>
 
@@ -383,17 +394,14 @@ const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field =>
                                                     class="w-full"
                                                     @onChange="initializeMinItemQty($event, index)"
                                                 />
-                                                <div 
-                                                    v-if="reward.free_item !== ''"
-                                                    class="w-fit flex max-h-[44px] pt-[22px]" 
-                                                >
+                                                <div v-if="reward.free_item" class="w-fit flex max-h-[44px] pt-[22px]">
                                                     <NumberCounter
                                                         :labelText="''"
                                                         :inputName="'item_qty_' + index"
                                                         :errorMessage="form.errors ? form.errors['items.' + index + '.item_qty']  : ''"
-                                                        :dataValue="reward.item_qty || 1"
+                                                        :dataValue="parseInt(reward.item_qty) || 1"
                                                         :minValue="1"
-                                                        :maxValue="items.find((item) => item.value === reward.free_item).stock_left"
+                                                        :maxValue="props.items.find((item) => item.value === reward.free_item)?.stock_left"
                                                         v-model="reward.item_qty"
                                                     />
                                                 </div>

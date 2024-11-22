@@ -25,7 +25,6 @@ class RankingRequest extends FormRequest
         $rules = [
             'min_amount' => 'required|integer',
             'reward' => 'required|string|max:255',
-            // 'icon' => 'required|string|max:255',
             'icon' => 'required|image',
         ];
 

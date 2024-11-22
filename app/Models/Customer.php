@@ -95,4 +95,12 @@ class Customer extends Model implements HasMedia
     {
         return $this->hasMany(PointHistory::class, 'customer_id');
     }
+
+    /**
+     * Get the ranking rewards of the customer.
+     */
+    public function rewards(): HasMany
+    {
+        return $this->hasMany(CustomerReward::class, 'customer_id');
+    }
 }

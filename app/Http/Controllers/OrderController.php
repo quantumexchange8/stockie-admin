@@ -8,6 +8,7 @@ use App\Models\ConfigIncentive;
 use App\Models\ConfigIncentiveEmployee;
 use App\Models\ConfigMerchant;
 use App\Models\Customer;
+use App\Models\CustomerReward;
 use App\Models\IventoryItem;
 use App\Models\KeepHistory;
 use App\Models\KeepItem;
@@ -1427,7 +1428,7 @@ class OrderController extends Controller
         $payment = Payment::find($id);
         $order = Order::with([
                             'orderTable.table', 
-                            'customer:id,point,total_spending', 
+                            'customer:id,point,total_spending,ranking', 
                             'orderItems' => fn($query) => $query->where('status', 'Served')
                         ])->findOrFail($request->order_id);
 
@@ -1450,31 +1451,55 @@ class OrderController extends Controller
 
         // Add the accumulated points earned from the order to the customer
         if ($customer) {
-            $givenTier = Ranking::where('min_amount', '<=', $customer->total_spending)
-                                ->orderBy('min_amount', 'desc')
-                                ->value('id') ?? null;
-                                 
-            $oldBalance = $customer->point;
-                                 
+            $oldTotalSpending = $customer->total_spending;
+            $newTotalSpending = $oldTotalSpending + $payment->grand_total;
+            $oldRanking = $customer->ranking;
+
+            // Determine the new rank based on the new total spending 
+            $newRanking = Ranking::where('min_amount', '<=', $newTotalSpending) 
+                                    ->orderBy('min_amount', 'desc') 
+                                    ->value('id');
+
+            // Update customer points and total spending
             $customer->update([
-                'ranking'=> $givenTier,
-                'point' => $oldBalance + $totalPoints,
-                'total_spending' => $customer->total_spending + $payment->grand_total
+                'point' => $customer->point + $totalPoints,
+                'total_spending' => $newTotalSpending,
+                'ranking' => $newRanking
             ]);
 
-            $customer->refresh();
+            // Grant rewards for rank up 
+            if ($newRanking && $newRanking != $oldRanking) { 
+                $ranks = Ranking::select('id')
+                                ->with('rankingRewards:id,ranking_id')
+                                ->where([
+                                    ['reward', 'active'],
+                                    ['min_amount', '<=', $newTotalSpending],
+                                    ['min_amount', '>', $oldTotalSpending]
+                                ]) 
+                                ->orderBy('min_amount', 'asc') 
+                                ->get(); 
 
-            PointHistory::create([
-                'product_id' => null,
-                'payment_id' => $id,
-                'type' => 'Earned',
-                'qty' => 0,
-                'amount' => $totalPoints,
-                'old_balance' => $oldBalance,
-                'new_balance' => $customer->point,
-                'customer_id' => $customer->id,
-                'handled_by' => $request->user_id,
-                'redemption_date' => now()
+                foreach ($ranks as $rank) { 
+                    $rank->rankingRewards->each(fn ($reward) => CustomerReward::create([ 
+                        'customer_id' => $customer->id, 
+                        'ranking_reward_id' => $reward->id, 
+                        'status' => 'Active' 
+                    ])); 
+                };
+            };
+
+            // Log point history 
+            PointHistory::create([ 
+                'product_id' => null, 
+                'payment_id' => $id, 
+                'type' => 'Earned', 
+                'qty' => 0, 
+                'amount' => $totalPoints, 
+                'old_balance' => $customer->point - $totalPoints, 
+                'new_balance' => $customer->point, 
+                'customer_id' => $customer->id, 
+                'handled_by' => $request->user_id, 
+                'redemption_date' => now() 
             ]);
         };
 
@@ -1757,5 +1782,20 @@ class OrderController extends Controller
             'pointSpent' => $pointSpent,
             'customerPoint' => $customer->point
         ]);
+    }
+
+    /**
+     * Get customer's tier rewards.
+     */
+    public function getCustomerTierRewards(string $id)
+    {
+        $customer = Customer::select('id')
+                            ->with([
+                                'rewards:id,customer_id,ranking_reward_id,status',
+                                'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty',
+                            ])
+                            ->find($id);
+
+        return response()->json($customer->rewards);
     }
 }

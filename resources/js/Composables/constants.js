@@ -70,7 +70,7 @@ export const emptyReward = () => {
         discount: "",
         min_purchase_amount: "",
         bonus_point: "",
-        free_item: "",
+        free_item: null,
         item_qty: '',
         date_range: "",
         valid_period: "",

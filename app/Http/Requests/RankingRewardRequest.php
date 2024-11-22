@@ -28,7 +28,7 @@ class RankingRewardRequest extends FormRequest
             'min_purchase_amount' => 'nullable|integer',
             'discount' => 'nullable|string|max:255',
             'bonus_point' => 'nullable|string|max:255',
-            'free_item' => 'nullable|string|max:255',
+            'free_item' => 'nullable|integer',
             'item_qty' => 'nullable|string|max:255',
             // 'valid_period_from' => 'nullable|date_format:Y-m-d H:i:s',
             // 'valid_period_to' => 'nullable|date_format:Y-m-d H:i:s',

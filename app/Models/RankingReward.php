@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RankingReward extends Model
@@ -47,5 +48,14 @@ class RankingReward extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'free_item');
+    }
+
+    /**
+     * CustomerReward Model
+     * Get rewards that belongs to customers.
+     */
+    public function customerReward(): HasMany
+    {
+        return $this->hasMany(CustomerReward::class, 'ranking_reward_id');
     }
 }

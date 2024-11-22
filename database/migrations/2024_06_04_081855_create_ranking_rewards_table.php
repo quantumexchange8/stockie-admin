@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('discount')->nullable()->default(NULL);
             $table->bigInteger('min_purchase_amount')->nullable()->default(NULL);
             $table->string('bonus_point')->nullable()->default(NULL);
-            $table->string('free_item')->nullable()->default(NULL);
+            $table->unsignedBigInteger('free_item')->nullable()->default(NULL);
             $table->string('item_qty')->nullable()->default(NULL);
             $table->dateTime('valid_period_from')->nullable()->default(NULL);
             $table->dateTime('valid_period_to')->nullable()->default(NULL);

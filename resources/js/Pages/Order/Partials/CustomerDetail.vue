@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 import KeepHistory from './KeepHistory.vue';
 import CustomerPoint from './CustomerPoint.vue';
 import { usePhoneUtils } from '@/Composables/index.js';
+import CustomerTier from './CustomerTier.vue';
 
 const props = defineProps({
     customer: {
@@ -153,6 +154,14 @@ const isFormValid = computed(() => {
             />
         </template>
         <template v-else>
+            <CustomerTier
+                :orderId="orderId"
+                :customer="customer" 
+                :tableStatus="tableStatus" 
+                :matchingOrderDetails="matchingOrderDetails"
+                @fetchZones="$emit('fetchZones')"
+                @close="closeDrawer()"
+            />
         </template>
     </RightDrawer>
 
@@ -202,7 +211,7 @@ const isFormValid = computed(() => {
                     />
                 </div>
                 <div class="w-full flex flex-col justify-center items-start gap-1 self-stretch">
-                    <div v-if="customer.rank && customer.rank.name !== 'No Tier'">
+                    <template v-if="customer.rank && customer.rank.name !== 'No Tier'">
                         <div class="flex flex-col justify-center items-center gap-[10px]">
                             <img 
                                 :src="customer.rank.image ? customer.rank.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
@@ -210,13 +219,13 @@ const isFormValid = computed(() => {
                                 class="size-[48px]"
                             >
                         </div>
-                        <div class="flex flex-col justify-center items-center gap-2">
+                        <div class="flex flex-col justify-center items-center gap-2 !z-10">
                             <span class="text-primary-900 text-lg font-medium">{{ customer.rank.name }}</span>
                         </div>
-                    </div>
-                    <div v-else>
+                    </template>
+                    <template v-else>
                         <span class="text-primary-900 text-lg font-medium"> - </span>
-                    </div>
+                    </template>
                     <div class="absolute bottom-0 right-0">
                         <MedalImage />
                     </div>
