@@ -31,7 +31,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails', 'update:customerPoint', 'update:customerKeepItems']);
 
 const page = usePage();
-const userId = computed(() => page.props.auth.user.id)
+const userId = computed(() => page.props.auth.user.data.id)
 const { formatPhone } = usePhoneUtils();
 
 const drawerIsVisible = ref(false);

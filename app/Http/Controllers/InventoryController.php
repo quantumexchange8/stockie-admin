@@ -150,16 +150,10 @@ class InventoryController extends Controller
             return redirect()->back()->withErrors($allItemErrors);
         }
 
-        $image = $request->hasFile('image') ? $request->file('image')->getClientOriginalName() : '';
-        
-        $newGroup = Iventory::create([
-            'name' => $validatedData['name'],
-            // 'category_id' => $validatedData['category_id'],
-            'image' => $image,
-        ]);
+        $newGroup = Iventory::create(['name' => $validatedData['name']]);
 
-        if ($validatedData->hasFile('image')) {
-            $newGroup->addMedia($validatedData->image)->toMediaCollection('inventory');
+        if ($request->hasFile('image')) {
+            $newGroup->addMedia($validatedData['image'])->toMediaCollection('inventory');
         };
         
         if (count($validatedInventoryItems) > 0) {

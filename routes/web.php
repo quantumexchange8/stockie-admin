@@ -233,6 +233,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders/customer/tier/getCustomerTierRewards/{id}', [OrderController::class, 'getCustomerTierRewards'])->name('orders.customer.tier.getCustomerTierRewards');
         Route::post('/orders/customer/keep/addKeptItemToOrder/{id}', [OrderController::class, 'addKeptItemToOrder'])->name('orders.customer.keep.addKeptItemToOrder');
         Route::post('/orders/customer/point/redeemItemToOrder/{id}', [OrderController::class, 'redeemItemToOrder'])->name('orders.customer.point.redeemItemToOrder');
+        Route::post('/orders/customer/reward/redeemEntryRewardToOrder/{id}', [OrderController::class, 'redeemEntryRewardToOrder'])->name('orders.customer.reward.redeemEntryRewardToOrder');
 
         Route::get('/getRedeemableItems', [OrderController::class, 'getRedeemableItems'])->name('orders.getRedeemableItems');
         Route::get('/getAllZones', [OrderController::class, 'getAllZones'])->name('orders.getAllZones');

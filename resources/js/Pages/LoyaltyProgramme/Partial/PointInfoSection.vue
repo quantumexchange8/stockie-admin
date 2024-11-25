@@ -1,7 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { EditIcon, DeleteIcon, AppsIcon, PriceTagIcon, PointsIcon, PointsBoxIcon, ProductQualityIcon } from '@/Components/Icons/solid.jsx';
-import Tag from '@/Components/Tag.vue';
+import { EditIcon, DeleteIcon, PointsBoxIcon } from '@/Components/Icons/solid.jsx';
 import Table from '@/Components/Table.vue';
 import Modal from '@/Components/Modal.vue';
 import EditPointForm from './EditPointForm.vue';

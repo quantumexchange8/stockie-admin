@@ -227,13 +227,13 @@ const hideDeleteTierForm = () => {
                     <div class="flex items-start gap-3 self-stretch" v-for="reward in props.reward">
                         <div class="flex w-[60px] h-[60px] justify-center items-center rounded-[1.5px] border border-solid border-primary-100 bg-primary-50">
                             <template v-if="reward.reward_type === 'Discount (Amount)' || reward.reward_type === 'Discount (Percentage)'">
-                                <CouponIcon />
+                                <CouponIcon class="text-primary-900" />
                             </template>
                             <template v-if="reward.reward_type === 'Bonus Point'">
-                                <PointsIcon />
+                                <PointsIcon class="text-primary-900" />
                             </template>
                             <template v-if="reward.reward_type === 'Free Item'">
-                                <ProductQualityIcon />
+                                <ProductQualityIcon class="text-primary-900" />
                             </template>
                         </div>
                         <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">

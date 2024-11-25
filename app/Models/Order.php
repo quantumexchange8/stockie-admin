@@ -91,4 +91,13 @@ class Order extends Model
     {
         return $this->hasOne(Payment::class, 'order_id');
     }
+
+    /**
+     * RankingReward Model
+     * Get the associated voucher(ranking reward).
+     */
+    public function voucher(): BelongsTo
+    {
+        return $this->belongsTo(RankingReward::class,'voucher_id');
+    }
 }

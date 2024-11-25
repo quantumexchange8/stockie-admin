@@ -40,7 +40,7 @@ const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
 
 const page = usePage();
-const userId = computed(() => page.props.auth.user.id);
+const userId = computed(() => page.props.auth.user.data.id);
 
 const selectedReservation = ref(null);
 const reservationDetailIsOpen = ref(false);

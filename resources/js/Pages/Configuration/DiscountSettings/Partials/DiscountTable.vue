@@ -104,7 +104,7 @@ watch(() => props.details, () => {
 </script>
 
 <template>
-    <table class="w-full border-spacing-3 border-collapse min-w-[755px]">
+    <table class="w-full border-spacing-3 border-collapse min-w-[900px]">
         <thead class="w-full bg-primary-50">
             <tr>
                 <th class="w-[31%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
@@ -112,22 +112,22 @@ watch(() => props.details, () => {
                         Product
                     </span>
                 </th>
-                <th class="w-[11.5%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
+                <th class="w-[13%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
                         Before
                     </span>
                 </th>
-                <th class="w-[12%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
+                <th class="w-[9%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
                         Discount
                     </span>
                 </th>
-                <th class="w-[10.5%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
+                <th class="w-[13%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
                         After
                     </span>
                 </th>
-                <th class="w-[14%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
+                <th class="w-[13%] py-2 px-3 transition ease-in-out hover:bg-primary-200">
                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
                         Start on
                     </span>
@@ -216,11 +216,11 @@ watch(() => props.details, () => {
                                         />
                                         {{ data.product }}
                                     </div>
-                                    <div class="w-[11.5%] py-2 px-3">RM {{ formatAmount(data.before) }}</div>
-                                    <div class="w-[11.5%] py-2 px-3">{{ formatRate(data.discount, data.type) }}</div>
-                                    <div class="w-[10.5%] py-2 px-3">RM {{ formatAmount(data.after) }}</div>
-                                    <div class="w-[14%] py-2 px-3">{{ data.start_on }}</div>
-                                    <div class="w-[14%] py-2 px-3">{{ data.end_on }}</div>
+                                    <div class="w-[13%] py-2 px-3">RM {{ formatAmount(data.before) }}</div>
+                                    <div class="w-[9.5%] py-2 px-3">{{ formatRate(data.discount, data.type) }}</div>
+                                    <div class="w-[13%] py-2 px-3">RM {{ formatAmount(data.after) }}</div>
+                                    <div class="w-[13%] py-2 px-3">{{ data.start_on }}</div>
+                                    <div class="w-[13%] py-2 px-3">{{ data.end_on }}</div>
                                     <div class="w-[7%] py-2 px-3"></div>
                                 </div>
                             </DisclosurePanel>

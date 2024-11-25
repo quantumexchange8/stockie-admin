@@ -25,7 +25,7 @@ const props = defineProps({
 })
 
 const page = usePage();
-const userId = computed(() => page.props.auth.user.id)
+const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
 
@@ -56,6 +56,7 @@ const fetchOrderDetails = async () => {
             form.customer_id = order.value.customer_id ?? '';
             matchingOrderDetails.value.tables = order.value.order_table.map((orderTable) => orderTable.table.id);
             matchingOrderDetails.value.pax = order.value.pax;
+            matchingOrderDetails.value.amount = order.value.amount;
             matchingOrderDetails.value.customer_id = order.value.customer_id;
             matchingOrderDetails.value.assigned_waiter = order.value.user_id; 
             matchingOrderDetails.value.current_order_completed = order.value.status === 'Order Completed' && order.value.order_table.every((table) => table.status === 'Pending Clearance');

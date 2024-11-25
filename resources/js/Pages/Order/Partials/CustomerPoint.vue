@@ -25,7 +25,7 @@ const props = defineProps({
 })
 
 const page = usePage();
-const userId = computed(() => page.props.auth.user.id)
+const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
 
