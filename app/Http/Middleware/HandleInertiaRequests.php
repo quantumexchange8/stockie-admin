@@ -31,10 +31,13 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // Get the authenticated user 
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => new UserResource(User::findOrFail($request->user()->id)),
+                'user' => $user ? new UserResource($user) : null,
             ],
         ];
     }
