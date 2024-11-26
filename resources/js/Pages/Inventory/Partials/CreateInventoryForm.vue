@@ -55,35 +55,32 @@ const hideGroupCreatedModal = () => groupCreatedModalIsOpen.value = false;
 
 // const hideAddAsProductModal = () => addAsProductModalIsOpen.value = false;
 
-const getNewInventory = async () => {
-    try { 
-        const response = await axios.get('/inventory/inventory/getLatestInventory');
-        newInventoryData.value = response.data;
-    } catch (error) {
-        if (error.response) console.error('An unexpected error occurred:', error.response.data.errors);
-    }
-}
-
 const formSubmit = async () => { 
     form.post(route('inventory.store'), {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
-            return Promise.all([
-                getNewInventory(),
-                setTimeout(() => {
-                    showMessage({ 
-                        severity: 'success',
-                        summary: 'Group added successfully.',
-                        detail: 'You can always add new stock to this group.',
-                    });
-                }, 200)
-            ])
-        },
-        onFinish: () => {
-            emit('close');
-            form.reset();
-            emit('addAsProducts', newInventoryData.value);
+        onSuccess: async () => {
+            try {
+                // Fetch the latest inventory
+                const response = await axios.get('/inventory/inventory/getLatestInventory');
+                newInventoryData.value = response.data;
+
+                // Display success message
+                showMessage({
+                    severity: 'success',
+                    summary: 'Group added successfully.',
+                    detail: 'You can always add new stock to this group.',
+                });
+
+                // Reset the form and emit necessary events
+                form.reset();
+                emit('close');
+                emit('addAsProducts', newInventoryData.value);
+            } catch (error) {
+                if (error.response) {
+                    console.error('An unexpected error occurred:', error.response.data.errors);
+                }
+            }
         },
     });
 
