@@ -1,6 +1,6 @@
 <script setup>
 import dayjs from 'dayjs';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import Button from '@/Components/Button.vue';
 import DateInput from "@/Components/Date.vue";
@@ -17,12 +17,13 @@ const props = defineProps({
 
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
+const isUnsavedChangesOpen = ref(false);
 
 const { showMessage } = useCustomToast();
 const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();
 
-const emit = defineEmits(['close', 'fetchReservations']);
+const emit = defineEmits(['close', 'fetchReservations', 'isDirty']);
 
 const form = useForm({
     reserved_by: userId.value,
@@ -34,6 +35,10 @@ const form = useForm({
     table_no: props.reservation.table_no,
     tables: props.reservation.table_no.map((table) => table.id),
 });
+
+const unsaved = (status) => {
+    emit('close', status);
+}
 
 const submit = () => { 
     form.reservation_date = form.reservation_date ? dayjs(form.reservation_date).format('YYYY-MM-DD HH:mm:ss') : '';
@@ -53,7 +58,7 @@ const submit = () => {
                 });
                 form.reset();
             }, 200);
-            emit('close');
+            unsaved('leave');
             emit('fetchReservations');
         },
     })
@@ -80,6 +85,8 @@ const tablesArr = computed(() => {
 const isFormValid = computed(() => {
     return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables'].every(field => form[field]) && !form.processing;
 });
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -148,7 +155,7 @@ const isFormValid = computed(() => {
                     type="button"
                     variant="tertiary"
                     size="lg"
-                    @click="$emit('close')"
+                    @click="unsaved('close')"
                 >
                     Cancel
                 </Button>

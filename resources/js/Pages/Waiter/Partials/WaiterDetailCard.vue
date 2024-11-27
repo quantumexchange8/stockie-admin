@@ -17,6 +17,8 @@ const waiterDetail = ref();
 const isEditWaiterOpen = ref(false);
 const isDeleteWaiterOpen = ref(false);
 const selectedWaiter = ref(null);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 const { formatPhone } = usePhoneUtils();
 const { formatAmount } = transactionFormat();
 
@@ -30,9 +32,28 @@ const showDeleteWaiterForm = (id) => {
     selectedWaiter.value = id;
 }
 
-const hideForm = () => {
-    isEditWaiterOpen.value = false;
-    isDeleteWaiterOpen.value = false;
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isEditWaiterOpen.value = false;
+            }
+            break;
+        }
+        case 'stay':{
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave':{
+            isUnsavedChangesOpen.value = false;
+            isEditWaiterOpen.value = false;
+            isDeleteWaiterOpen.value = false;
+            isDirty.value = false;
+        }
+    }
 }
 
 watch( () => props.waiter, (newValue) => {
@@ -104,29 +125,38 @@ watch( () => props.waiter, (newValue) => {
         :maxWidth="'lg'"
         :closeable="true"
         :show="isEditWaiterOpen"
-        @close="hideForm"
-        v-if="isEditWaiterOpen"
+        @close="closeModal('close')"
     >
         <template v-if="selectedWaiter">
             <EditWaiter 
                 :waiters="selectedWaiter"
-                @close="hideForm"
+                @close="closeModal"
+                @isDirty="isDirty = $event"
+            />
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeModal('stay')"
+                @leave="closeModal('leave')"
             />
         </template>
+
     </Modal>
 
     <!-- delete modal -->
     <Modal 
-    :maxWidth="'2xs'" 
-    :closeable="true"
-    :show="isDeleteWaiterOpen"
-    :deleteConfirmation="true"
-    :deleteUrl="`/waiter/deleteWaiter/${selectedWaiter}`"
-    :confirmationTitle="`Delete this waiter?`"
-    :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
-    @close="hideForm"
-    v-if="isDeleteWaiterOpen"
-    :withHeader="false"
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="isDeleteWaiterOpen"
+        :deleteConfirmation="true"
+        :deleteUrl="`/waiter/deleteWaiter/${selectedWaiter}`"
+        :confirmationTitle="`Delete this waiter?`"
+        :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
+        @close="closeModal('leave')"
+        v-if="isDeleteWaiterOpen"
+        :withHeader="false"
     >
         <form @submit.prevent="submit">
             <div class="flex flex-col gap-9" >
@@ -135,7 +165,7 @@ watch( () => props.waiter, (newValue) => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="hideForm"
+                        @click="closeModal('stay')"
                     >
                         Keep
                     </Button>

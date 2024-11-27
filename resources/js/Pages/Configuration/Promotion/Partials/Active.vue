@@ -22,6 +22,7 @@ const { formatDate } = transactionFormat();
 const editModal = ref(false);
 const actionVal = ref('');
 const modalDetails = ref();
+const initialForm = ref(null);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
 
@@ -34,39 +35,37 @@ const openEditModal = (promotion, actionType) => {
     form.id = modalDetails.value.id;
     form.promotion_from = modalDetails.value.promotion_from;
     form.promotion_to = modalDetails.value.promotion_to;
-    form.promotion_image = modalDetails.value.promotion_image;
     
     form.promotionPeriod = [
         new Date(modalDetails.value.promotion_from),
         new Date(modalDetails.value.promotion_to)
     ];
+
+    initialForm.value = JSON.parse(JSON.stringify(form));
+
 }
 
-const closeEditModal = () => {
-    if(
-        form.title === modalDetails.value.title ||
-        form.description === modalDetails.value.description ||
-        form.promotion_from === modalDetails.value.promotion_from ||
-        form.promotion_to === modalDetails.value.promotion_to
-    ){
-        editModal.value = false;
-    } else {
-        isUnsavedChangesOpen.value = true;
-
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                editModal.value = false;
+            }
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        };
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            editModal.value = false;
+            break;
+        }
     }
-}
-
-const closeDeleteModal = () => {
-    editModal.value = false;
-}
-
-const stayModal = () => {
-    isUnsavedChangesOpen.value = false;
-}
-
-const leaveModal = () => {
-    isUnsavedChangesOpen.value = false;
-    editModal.value = false;    
+    
 }
 
 const form = useForm({
@@ -95,7 +94,7 @@ const submit = () => {
         form.post(route('configurations.promotion.edit'), {
             preserveScroll: true,
             onSuccess: () => {
-                leaveModal();
+                closeModal('leave');
                 form.reset();
                 setTimeout(() => {
                     showMessage({ 
@@ -110,7 +109,7 @@ const submit = () => {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                closeDeleteModal();
+                closeModal('leave');
                 form.reset();
                 setTimeout(() => {
                     showMessage({ 
@@ -127,7 +126,14 @@ const isFormValid = computed(() => {
     return ['title', 'description', 'promotionPeriod'].every(field => form[field]);
 })
 
-watch(form, (newValue) => isDirty.value = newValue.isDirty);
+const excludeIsDirty = (formData) => {
+    const { isDirty, ...rest } = formData;
+    return rest;
+}
+
+watch(form, () => {
+    isDirty.value = JSON.stringify(excludeIsDirty(form)) !== JSON.stringify(excludeIsDirty(initialForm.value));
+}, { deep: true });
 
 </script>
 
@@ -187,7 +193,7 @@ watch(form, (newValue) => isDirty.value = newValue.isDirty);
         :maxWidth="'md'" 
         :closeable="true"
         :show="editModal"
-        @close="closeEditModal"
+        @close="closeModal('close')"
         v-if="actionVal === 'edit'"
     >
         <form @submit.prevent="submit">
@@ -238,7 +244,7 @@ watch(form, (newValue) => isDirty.value = newValue.isDirty);
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeEditModal"
+                        @click="closeModal('close')"
                     >
                         Cancel
                     </Button>
@@ -253,13 +259,21 @@ watch(form, (newValue) => isDirty.value = newValue.isDirty);
                 </div>
             </div>
         </form>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
     </Modal>
 
     <Modal 
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="editModal"
-        @close="closeDeleteModal"
+        @close="closeModal('leave')"
         v-if="actionVal === 'delete'"
         :withHeader="false"
     >
@@ -298,12 +312,5 @@ watch(form, (newValue) => isDirty.value = newValue.isDirty);
         </form>
     </Modal>
 
-    <Modal
-        :unsaved="true"
-        :maxWidth="'2xs'"
-        :withHeader="false"
-        :show="isUnsavedChangesOpen"
-        @close="stayModal"
-        @leave="leaveModal"
-    />
+
 </template>

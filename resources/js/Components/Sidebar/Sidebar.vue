@@ -3,25 +3,8 @@ import { onMounted, ref, watch, onUnmounted } from 'vue'
 import { sidebarState } from '@/Composables'
 import SidebarHeader from '@/Components/Sidebar/SidebarHeader.vue'
 import SidebarContent from '@/Components/Sidebar/SidebarContent.vue'
-import SidebarFooter from '@/Components/Sidebar/SidebarFooter.vue'
-import { TimesIcon } from '../Icons/solid';
-import axios from 'axios'
 
-const user = ref({});
 const screenWidth = ref(window.innerWidth);
-
-const getUserDetail = async () => {
-    try {
-        const response = await axios.get('/userDetails', {
-            method: 'GET',
-        });
-        user.value = response.data;
-    } catch (error) {
-        console.error(error);
-    } finally {
-
-    }
-};
 
 onMounted(() => {
     window.addEventListener('resize', updateScreenWidth)
@@ -31,7 +14,6 @@ onMounted(() => {
     } else {
         sidebarState.isOpen = true
     }
-    getUserDetail();
 });
 
 onUnmounted(() => {
@@ -99,7 +81,7 @@ watch(screenWidth, (newValue) => {
             </button>
         </div>
         <div class="flex flex-col gap-8">
-            <SidebarHeader :user="user"/>
+            <SidebarHeader />
             <SidebarContent/>
         </div>
 

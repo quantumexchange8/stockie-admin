@@ -1,11 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue'
 import TextInput from '@/Components/TextInput.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
 import { useCustomToast, useInputValidator } from '@/Composables/index.js';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     reservation: Object,
@@ -20,10 +21,11 @@ const userId = computed(() => page.props.auth.user.data.id);
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'isDirty']);
 
 const hasChangedTables = ref(false);
 const newSelectedTables = ref('');
+const isUnsavedChangesOpen = ref(false);
 
 const selectedTables = computed(() => {
     return props.reservation.table_no.map((table) => {
@@ -64,7 +66,7 @@ const submit = () => {
                 });
                 form.reset();
             }, 200);
-            emit('close');
+            unsaved('leave');
             window.location.href = 'order-management/orders';
         },
     })
@@ -90,6 +92,11 @@ const updateSelectedTables = (event) => {
                     .join(', ');
 };
 
+const unsaved = (status) => {
+    emit('close', status);
+}
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 </script>
 
 <template>
@@ -150,7 +157,7 @@ const updateSelectedTables = (event) => {
                     type="button"
                     variant="tertiary"
                     size="lg"
-                    @click="$emit('close')"
+                    @click="unsaved('close')"
                 >
                     Cancel
                 </Button>
@@ -163,4 +170,14 @@ const updateSelectedTables = (event) => {
             </div>
         </div>
     </form>
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :closeable="true"
+        :show="isUnsavedChangesOpen"
+        @close="unsaved('stay')"
+        @leave="unsaved('leave')"
+    >
+    </Modal>
 </template>

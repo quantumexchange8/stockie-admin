@@ -40,6 +40,8 @@ const addAsProductModalIsOpen = ref(false);
 const addStockFormIsOpen = ref(false);
 const editGroupFormIsOpen = ref(false);
 const deleteGroupFormIsOpen = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const selectedGroup = ref(null);
 const selectedGroupItems = ref(null);
@@ -54,6 +56,7 @@ const checkedFilters = ref({
 const stockLevels = ref(['In Stock', 'Low Stock', 'Out of Stock']);
 
 const openForm = (action, id, event) => {
+    isDirty.value = false;
     if (event.target) {
         event.stopPropagation();
         event.preventDefault();
@@ -88,24 +91,48 @@ const openForm = (action, id, event) => {
     } 
 }
 
-const closeForm = (action) => {
-    switch (action) {
-        case 'create': createFormIsOpen.value = false;
-        case 'group-created': groupCreatedModalIsOpen.value = false;
-        case 'add-as-product': addAsProductModalIsOpen.value = false;
-        case 'add': addStockFormIsOpen.value = false;
-        case 'edit': editGroupFormIsOpen.value = false;
-        case 'delete': deleteGroupFormIsOpen.value = false;
+const closeForm = (action, status) => {
+    switch(status) {
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                if(action === 'create') createFormIsOpen.value = false;
+                if(action === 'group-created') groupCreatedModalIsOpen.value = false;
+                if(action === 'add-as-product') addAsProductModalIsOpen.value = false;
+                if(action === 'add') addStockFormIsOpen.value = false;
+                if(action === 'edit') editGroupFormIsOpen.value = false;
+                if(action === 'delete') deleteGroupFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+
+            if(action === 'create') createFormIsOpen.value = false;
+            if(action === 'group-created') groupCreatedModalIsOpen.value = false;
+            if(action === 'add-as-product') addAsProductModalIsOpen.value = false;
+            if(action === 'add') addStockFormIsOpen.value = false;
+            if(action === 'edit') editGroupFormIsOpen.value = false;
+            if(action === 'delete') deleteGroupFormIsOpen.value = false;
+            
+            if (action !== 'create' || action !== 'add-as-product' || action !== 'group-created') {
+                // setTimeout(() => {
+                //     selectedGroup.value = null;
+                //     selectedGroupItems.value = null;
+                // }, 300);
+        
+                if (action === 'edit') selectedGroupItems.value = []; // Ensure form resets to initial state on edit
+            }
+
+            break;
+        }
     }
 
-    if (action !== 'create' || action !== 'add-as-product' || action !== 'group-created') {
-        setTimeout(() => {
-            selectedGroup.value = null;
-            selectedGroupItems.value = null;
-        }, 300);
-
-        if (action === 'edit') selectedGroupItems.value = []; // Ensure form resets to initial state on edit
-    }
 }
 
 const resetFilters = () => {
@@ -144,11 +171,6 @@ const toggleStockLevel = (value) => {
         checkedFilters.value.stockLevel.push(value);
     }
 };
-
-// const handleFilterChange = (newFilter) => {
-//     selectedCategory.value = newFilter;
-//     emit('applyCategoryFilter', newFilter);
-// };
 
 watch(() => searchQuery.value, (newValue) => {
     if (newValue === '') {
@@ -278,22 +300,6 @@ const goToPage = (event) => {
 watch(() => props.rows, (newValue) => {
     rows.value = newValue;
 }, { immediate: true });
-
-// watch(() => props.categoryArr, (newValue) => {
-//     categories.value = [...newValue];
-//     categories.value.unshift({
-//         text: 'All',
-//         value: 0
-//     });
-// }, { immediate: true });
-
-// onMounted(() => {
-//     categories.value = [...props.categoryArr];
-//     categories.value.unshift({
-//         text: 'All',
-//         value: 0
-//     });
-// })
 
 const computedRowsPerPage = computed(() => {
     const start = (currentPage.value - 1) * 4;
@@ -762,13 +768,23 @@ const totalInventoryItemStock = (items) => {
             :show="createFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
-            @close="closeForm('create')"
+            @close="closeForm('create', 'close')"
         >
             <CreateInventoryForm 
                 :itemCategoryArr="itemCategoryArr"
                 :categoryArr="categoryArr"
                 @addAsProducts="openForm('group-created', null, $event)" 
-                @close="closeForm('create')" 
+                @close="closeForm" 
+                @isDirty="isDirty=$event"
+            />
+
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeForm('create', 'stay')"
+                @leave="closeForm('create', 'leave')"
             />
         </Modal>
         <Modal 
@@ -814,13 +830,22 @@ const totalInventoryItemStock = (items) => {
             :maxWidth="'lg'" 
             :closeable="true"
             :show="addAsProductModalIsOpen"
-            @close="closeForm('add-as-product')"
+            @close="closeForm('add-as-product', 'close')"
         >
             <template v-if="inventoryToAdd">
                 <AddItemToMenuForm 
                     :inventoryToAdd="inventoryToAdd" 
                     :categoryArr="categoryArr" 
-                    @close="closeForm('add-as-product')" 
+                    @close="closeForm" 
+                    @isDirty="isDirty=$event"
+                />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeForm('add-as-product', 'stay')"
+                    @leave="closeForm('add-as-product', 'leave')"
                 />
             </template>
         </Modal>
@@ -830,15 +855,24 @@ const totalInventoryItemStock = (items) => {
             :show="addStockFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
-            @close="closeForm('add')"
+            @close="closeForm('add', 'close')"
         >
             <template v-if="selectedGroup">
                 <AddStockForm 
                     :selectedGroup="selectedGroup" 
                     :selectedGroupItems="selectedGroupItems"
-                    @close="closeForm('add')"
+                    @close="closeForm"
+                    @isDirty="isDirty=$event"
                 />
             </template>
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeForm('add', 'stay')"
+                @leave="closeForm('add', 'leave')"
+            />
         </Modal>
 
         <Modal 
@@ -846,16 +880,25 @@ const totalInventoryItemStock = (items) => {
             :show="editGroupFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
-            @close="closeForm('edit')"
+            @close="closeForm('edit', 'close')"
         >
             <template v-if="selectedGroup">
                 <EditInventoryForm 
                     :group="selectedGroup" 
                     :selectedGroup="selectedGroupItems"
                     :itemCategoryArr="itemCategoryArr"
-                    @close="closeForm('edit')"
+                    @close="closeForm"
+                    @isDirty="isDirty=$event"
                 />
             </template>
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeForm('edit', 'stay')"
+                @leave="closeForm('edit', 'leave')"
+            />
         </Modal>
 
         <Modal 

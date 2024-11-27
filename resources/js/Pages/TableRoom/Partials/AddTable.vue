@@ -7,6 +7,7 @@ import Dropdown from '@/Components/Dropdown.vue'
 import RadioButton from '@/Components/RadioButton.vue';
 import { tableType } from '@/Composables/constants';
 import { useCustomToast, useInputValidator } from '@/Composables';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     errors: Object,
@@ -18,8 +19,9 @@ const props = defineProps({
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'isDirty']);
 const zones = ref();
+const isUnsavedChangesOpen = ref(false);
 
 watch(() => props.zonesArr, (newValue) => {
     zones.value = newValue ? newValue : {};
@@ -37,8 +39,8 @@ const formSubmit = () => {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
+            emit('close', 'leave');
             form.reset();
-            emit('close');
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
@@ -57,12 +59,17 @@ const cancelForm = () => {
     emit('close');
 }
 
+const unsaved = (status) => {
+    emit('close', status)
+}
+
 const requiredFields = ['type', 'table_no', 'seat', 'zone_id'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
 });
 
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -111,7 +118,7 @@ const isFormValid = computed(() => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="cancelForm"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -124,6 +131,14 @@ const isFormValid = computed(() => {
                 Add
             </Button>
         </div>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="unsaved('stay')"
+            @leave="unsaved('leave')"
+        />
     </form>
 </template>
 

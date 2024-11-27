@@ -48,11 +48,4 @@ class RegisteredUserController extends Controller
 
         return redirect(route('dashboard', absolute: false));
     }
-
-    public function getUser()
-    {
-        $user = Auth::user();
-        $user->image = $user->getFirstMediaUrl('user');
-        return response()->json($user);
-    }
 }

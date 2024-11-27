@@ -5,6 +5,7 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import Button from '@/Components/Button.vue'
 import DragDropImage from '@/Components/DragDropImage.vue'
 import Label from '@/Components/Label.vue';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     errors: Object,
@@ -17,8 +18,11 @@ const props = defineProps({
         default: () => [],
     },
 });
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
+const initialData = ref();
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'isDirty'])
 
 const form = useForm({
     name: props.selectedGroup.name,
@@ -27,8 +31,16 @@ const form = useForm({
     items: [],
 });
 
+
 watch(() => props.selectedGroupItems, () => {
     form.items = props.selectedGroupItems.map((item) => reactive({ ...item, add_stock_qty: 0 }));
+    initialData.value = JSON.parse(
+        JSON.stringify({
+            name: form.name,
+            image: form.image,
+            items: form.items,
+        })
+    );
 }, { immediate: true });
 
 const formSubmit = () => { 
@@ -45,18 +57,17 @@ const formSubmit = () => {
             preserveState: 'errors',
             onSuccess: () => {
                 form.reset();
-                emit('close');
+                unsaved('leave');
             },
         })
     }
 };
 
-const cancelForm = () => {
-    emit('close');
-    setTimeout(() =>form.reset(), 200);
+const unsaved = (status) => {
+    emit('close', status);
 }
 
-const requiredFields = ['name', 'image', 'items'];
+const requiredFields = ['name', 'items'];
 
 const isFormValid = computed(() => {
     let staticFields = requiredFields.every(field => form[field]);
@@ -71,6 +82,19 @@ const isFormValid = computed(() => {
     return staticFields && hasAddValue;
 });
 
+watch(
+    form,
+    () => {
+        const currentData = ({
+            name: form.name,
+            image: form.image,
+            items: form.items,
+        })
+        isDirty.value = JSON.stringify(currentData) !== JSON.stringify(initialData.value);
+        emit('isDirty', isDirty.value)
+    },
+    { deep: true }
+);
 </script>
 
 <template>
@@ -108,7 +132,7 @@ const isFormValid = computed(() => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="cancelForm"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -119,5 +143,13 @@ const isFormValid = computed(() => {
                 Save
             </Button>
         </div>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="unsaved('stay')"
+            @leave="unsaved('leave')"
+        />
     </form>
 </template>

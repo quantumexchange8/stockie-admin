@@ -39,6 +39,7 @@ const formatType = (type) => {
 
 const openEditIncent = (event, rows) => {
     handleDefaultClick(event);
+    isDirty.value = false;
     isEditIncentOpen.value = true;
     selectedIncent.value = rows;
 }
@@ -50,6 +51,7 @@ const openDeleteIncent = (event, id) => {
 }
 
 const openAddAchieve = () => {
+    isDirty.value = false;
     isAddAchievementOpen.value = true;
 }
 
@@ -75,11 +77,6 @@ const closeModal = (status) => {
         }
     }
 } 
-
-const closeAddAchievementModal = () => {
-    isUnsavedChangesOpen.value = isDirty.value ? true : false;
-    isAddAchievementOpen.value = !isDirty.value ? false : true;
-}
 
 const closeDeleteAchivementModal = () => {
     isDeleteIncentOpen.value = false;
@@ -252,13 +249,11 @@ onMounted (() => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Add Achievement'"
-        @close="closeAddAchievementModal($event)"
+        @close="closeModal('close')"
     >
         <AddAchievement 
             :waiters="waiters"
-            @stay="stayModal"
-            @leave="leaveModal"
-            @closeModal="closeAddAchievementModal($event)"
+            @closeModal="closeModal"
             @isDirty="isDirty = $event"
             @getEmployeeIncent="getEmployeeIncent"
         />
@@ -269,14 +264,12 @@ onMounted (() => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Edit Achievement'"
-        @close="closeEditAchievementModal($event)"
+        @close="closeModal('close')"
     >
         <EditAchievement 
             :selectedIncent="selectedIncent"
-            @stay="stayModal"
-            @leave="leaveModal"
             @isDirty="isDirty = $event"
-            @closeModal="closeEditAchievementModal($event)"
+            @closeModal="closeModal"
             @getEmployeeIncent="getEmployeeIncent"
         />
 

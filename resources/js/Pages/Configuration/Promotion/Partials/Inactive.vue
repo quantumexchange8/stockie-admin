@@ -2,7 +2,7 @@
 import {transactionFormat, useCustomToast} from "@/Composables/index.js";
 import Button from "@/Components/Button.vue";
 import { DeleteIcon, EditIcon } from "@/Components/Icons/solid";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import Modal from "@/Components/Modal.vue";
 import Label from "@/Components/Label.vue";
 import { useForm } from "@inertiajs/vue3";
@@ -23,6 +23,9 @@ const { formatDate } = transactionFormat();
 const editModal = ref(false);
 const actionVal = ref('');
 const modalDetails = ref();
+const initialForm = ref(null);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 
 const openEditModal = (promotion, actionType) => {
     editModal.value = true;
@@ -39,10 +42,32 @@ const openEditModal = (promotion, actionType) => {
         new Date(modalDetails.value.promotion_from),
         new Date(modalDetails.value.promotion_to)
     ];
+ 
+    initialForm.value = JSON.parse(JSON.stringify(form));
+
 }
 
-const closeModal = () => {
-    editModal.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                editModal.value = false;
+            }
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        };
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            editModal.value = false;
+            break;
+        }
+    }
+    
 }
 
 const form = useForm({
@@ -71,7 +96,7 @@ const submit = () => {
         form.post(route('configurations.promotion.edit'), {
             preserveScroll: true,
             onSuccess: () => {
-                closeModal();
+                closeModal('leave');
                 form.reset();
                 setTimeout(() => {
                     showMessage({ 
@@ -85,7 +110,7 @@ const submit = () => {
         form.post(route('configurations.promotion.delete'), {
             preserveScroll: true,
             onSuccess: () => {
-                closeModal();
+                closeModal('leave');
                 form.reset();
                 setTimeout(() => {
                     showMessage({ 
@@ -98,6 +123,14 @@ const submit = () => {
     }
 }
 
+const excludeIsDirty = (formData) => {
+    const { isDirty, ...rest } = formData;
+    return rest;
+}
+
+watch(form, () => {
+    isDirty.value = JSON.stringify(excludeIsDirty(form)) !== JSON.stringify(excludeIsDirty(initialForm.value));
+}, { deep: true });
 </script>
 
 
@@ -155,7 +188,7 @@ const submit = () => {
         :maxWidth="'md'" 
         :closeable="true"
         :show="editModal"
-        @close="closeModal"
+        @close="closeModal('close')"
         v-if="actionVal === 'edit'"
     >
         <form @submit.prevent="submit">
@@ -205,7 +238,7 @@ const submit = () => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeModal"
+                        @click="closeModal('close')"
                     >
                         Cancel
                     </Button>
@@ -219,13 +252,22 @@ const submit = () => {
                 </div>
             </div>
         </form>
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
     </Modal>
 
     <Modal 
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="editModal"
-        @close="closeModal"
+        @close="closeModal('close')"
         v-if="actionVal === 'delete'"
         :withHeader="false"
     >

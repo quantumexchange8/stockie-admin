@@ -52,6 +52,7 @@ const getEmployeeIncent = () => {
 }
 
 const showEditAchievement = (achievement) => {
+    isDirty.value = false;
     isEditAchievementOpen.value = true;
     selectedAchievement.value = achievement;
 }
@@ -69,6 +70,28 @@ const showDeleteWaiter = (id) => {
 const closeEditModal = () => {
     isUnsavedChangesOpen.value = isDirty.value ? true : false;
     isEditAchievementOpen.value = !isDirty.value ? false : true;
+}
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isEditAchievementOpen.value = false;
+            }
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        };
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isEditAchievementOpen.value = false;
+            break;
+        }
+    }
 }
 
 const closeDeleteWaiter = () => {
@@ -191,14 +214,12 @@ const leaveModal = () => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Edit Achievement'"
-        @close="closeEditModal($event)"
+        @close="closeModal('close')"
     >
         <EditAchievement
             :selectedIncent="selectedAchievement"
-            @stay="stayModal"
-            @leave="leaveModal"
             @isDirty="isDirty = $event"
-            @closeModal="closeEditModal($event)"
+            @closeModal="closeModal"
             @getEmployeeIncent="getEmployeeIncent"
         />
     </Modal>

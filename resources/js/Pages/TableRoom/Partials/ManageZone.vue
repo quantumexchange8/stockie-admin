@@ -5,6 +5,7 @@ import { useForm } from "@inertiajs/vue3";
 import { nextTick, ref, watch } from "vue";
 import { DeleteIcon, Menu2Icon, PlusIcon } from '@/Components/Icons/solid.jsx';
 import Modal from '@/Components/Modal.vue';
+import { useCustomToast } from "@/Composables";
 
 const props = defineProps({
     zonesArr: {
@@ -14,6 +15,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close", 'getZoneDetails']);
+const { showMessage } = useCustomToast();
 
 const deleteProductFormIsOpen = ref(false);
 const selectedZone = ref(null);
@@ -47,6 +49,12 @@ const submit = (id) => {
                 isEditing.value = false;
                 isTextInputVisible.value = false;
                 form.reset();
+                setTimeout(() => {
+                showMessage({
+                    severity: 'success',
+                    summary: 'Zone name has been edited successfully.'
+                });
+            }, 200);
                 emit('getZoneDetails');
             }
         })
@@ -137,7 +145,7 @@ watch(() => props.zonesArr, (newValue) => {
                                 v-model="form.edit_name"
                                 ref="editZoneNameInput"
                                 @blur="submit(zonesArr.value)"
-                                @keydown.enter.prevent="submit(zonesArr.value)"
+                                @keydown.enter.prevent.stop="submit(zonesArr.value)"
                             />
                         </template>
                     </div>

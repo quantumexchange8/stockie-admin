@@ -12,6 +12,7 @@ import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { redeemOptions, defaultProductItem } from '@/Composables/constants';
 import { useInputValidator } from '@/Composables';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     errors: Object,
@@ -24,11 +25,12 @@ const props = defineProps({
         default: () => [],
     },
 });
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'isDirty']);
 const { isValidNumberKey } = useInputValidator();
 
 const categoryArr = ref(props.categoryArr);
 const inventoriesArr = ref(props.inventoriesArr);
+const isUnsavedChangesOpen = ref(false)
 const open = ref(false);
 const updateProductNameCounter = ref(0);
 
@@ -55,9 +57,9 @@ const formSubmit = () => {
     })
 };
 
-const cancelForm = () => {
-    form.reset();
-    emit('close');
+const unsaved = (status) => {
+    // form.reset();
+    emit('close', status);
 }
 
 const addItem = () => form.items.push({ ...defaultProductItem, qty: 2 });
@@ -105,6 +107,8 @@ watch(() => form.bucket, (newValue) => {
         form.items[0].qty = 2;
     }
 }, { immediate: true });
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -248,7 +252,7 @@ watch(() => form.bucket, (newValue) => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="cancelForm"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -259,5 +263,14 @@ watch(() => form.bucket, (newValue) => {
                 Add
             </Button>
         </div>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="unsaved('stay')"
+            @leave="unsaved('leave')"
+        >
+        </Modal>
     </form>
 </template>

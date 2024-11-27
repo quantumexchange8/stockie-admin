@@ -58,6 +58,9 @@ const reservationDetailIsOpen = ref(false);
 const checkInFormIsOpen = ref(false);
 const delayReservationFormIsOpen = ref(false);
 const cancelReservationFormIsOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
+const closeType = ref(null);
 
 const form = useForm({ handled_by: userId.value });
 
@@ -95,6 +98,7 @@ const markReservationAsNoShow = (id) => {
 
 const openForm = (action, reservation) => {
     actionType.value = action;
+    isDirty.value = false;
 
     if (actionType.value === 'create') makeReservationFormIsOpen.value = true;
     if (reservation) {
@@ -110,17 +114,66 @@ const openForm = (action, reservation) => {
     }
 }
 
-const closeForm = () => {
-    if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
-    if (actionType.value === 'show') reservationDetailIsOpen.value = false;
-    if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
-    if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
-    if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
-    
-    // Reset value of selected reservation on close
-    if (actionType.value !== 'create') setTimeout(() => selectedReservation.value = null, 300);
+// const closeForm = (type) => {
+//     closeType.value = type;
 
-    actionType.value = '';
+//     if (actionType.value === 'create') {
+//         if(closeType === 'close') {
+//             if(isDirty.value){
+//                 isUnsavedChangesOpen.value = true;
+//             } else {
+//                 makeReservationFormIsOpen.value = false;
+//             }
+//         };
+//         if(closeType === 'stay') {
+//             isUnsavedChangesOpen.value = false;
+//         };
+//         if(closeType === 'leave') {
+//             isUnsavedChangesOpen.value = false;
+//             makeReservationFormIsOpen.value = false;
+//         }
+//     }
+//     if (actionType.value === 'show') reservationDetailIsOpen.value = false;
+//     if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
+//     if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
+//     if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+    
+//     // Reset value of selected reservation on close
+//     if (actionType.value !== 'create') setTimeout(() => selectedReservation.value = null, 300);
+
+//     actionType.value = '';
+// }
+
+const closeForm = (type) => {
+    closeType.value = type;
+
+    switch(type){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
+                if (actionType.value === 'show') reservationDetailIsOpen.value = false;
+                if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
+                if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
+                if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': isUnsavedChangesOpen.value = false; break;
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
+            if (actionType.value === 'show') reservationDetailIsOpen.value = false;
+            if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
+            if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
+            if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+            break;
+        }
+    }
+
+    // if (actionType.value !== 'create') setTimeout(() => selectedReservation.value = null, 300);
+    // actionType.value = '';
 }
 
 const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
@@ -312,14 +365,16 @@ const getStatusVariant = (status) => {
                 :show="makeReservationFormIsOpen"
                 :title="'Make Reservation'"
                 :maxWidth="'sm'"
-                @close="closeForm"
+                @close="closeForm('close')"
             >
                 <MakeReservationForm
                     :customers="customers" 
                     :tables="tables" 
-                    @close="closeForm" 
+                    @close="closeForm"
+                    @isDirty="isDirty = $event" 
                     @fetchReservations="$emit('fetchReservations')"
                 />
+
             </Modal>
             
             <!-- View reservation detail -->
@@ -327,7 +382,7 @@ const getStatusVariant = (status) => {
                 :title="'Reservation Detail'"
                 :show="reservationDetailIsOpen" 
                 :maxWidth="'sm'" 
-                @close="closeForm"
+                @close="closeForm('close')"
             >
                 <ReservationDetail
                     :reservation="selectedReservation" 
@@ -343,13 +398,14 @@ const getStatusVariant = (status) => {
                 :title="'Assign Seat'"
                 :show="checkInFormIsOpen" 
                 :maxWidth="'xs'" 
-                @close="closeForm"
+                @close="closeForm('close')"
             >
                 <CheckInGuestForm 
                     :reservation="selectedReservation" 
                     :waiters="waiters" 
                     :tables="tables" 
                     :occupiedTables="occupiedTables" 
+                    @isDirty="isDirty=$event"
                     @close="closeForm" 
                 />
             </Modal>
@@ -358,11 +414,12 @@ const getStatusVariant = (status) => {
                 :title="'Delay Reservation'"
                 :show="delayReservationFormIsOpen" 
                 :maxWidth="'2xs'" 
-                @close="closeForm"
+                @close="closeForm('close')"
             >
                 <DelayReservationForm 
                     :reservation="selectedReservation" 
                     @close="closeForm" 
+                    @isDirty="isDirty=$event"
                     @fetchReservations="$emit('fetchReservations')"
                 />
             </Modal>
@@ -371,14 +428,23 @@ const getStatusVariant = (status) => {
                 :title="'Cancel Reservation'"
                 :show="cancelReservationFormIsOpen" 
                 :maxWidth="'sm'" 
-                @close="closeForm"
+                @close="closeForm('close')"
             >
                 <CancelReservationForm 
                     :reservation="selectedReservation" 
                     @close="closeForm" 
+                    @isDirty="isDirty=$event"
                     @fetchReservations="$emit('fetchReservations')"
                 />
             </Modal>
         </div>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeForm('stay')"
+            @leave="closeForm('leave')"
+        />
     </div>
 </template>

@@ -47,6 +47,8 @@ const productInfo = ref();
 const category = ref();
 const editProductFormIsOpen = ref(false);
 const deleteProductFormIsOpen = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const showEditGroupForm = (event) => {
     editProductFormIsOpen.value = true;
@@ -62,6 +64,28 @@ const showDeleteGroupForm = () => {
 
 const hideDeleteProductForm = () => {
     deleteProductFormIsOpen.value = false;
+}
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                editProductFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            editProductFormIsOpen.value = false;
+            deleteProductFormIsOpen.value = false;
+        }
+    }
 }
 
 watch( () => props.product, (newValue) => {
@@ -158,16 +182,26 @@ watch( () => props.product, (newValue) => {
         :show="editProductFormIsOpen" 
         :maxWidth="'lg'" 
         :closeable="true" 
-        @close="hideEditProductForm"
+        @close="closeModal('close')"
     >
         <template v-if="product">
             <EditProductForm 
                 :product="product"
                 :categoryArr="categoryArr"
                 :inventoriesArr="inventoriesArr"
-                @close="hideEditProductForm"
+                @close="closeModal"
+                @isDirty="isDirty = $event"
             />
         </template>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
     </Modal>
     <Modal 
         :show="deleteProductFormIsOpen" 
@@ -177,7 +211,7 @@ watch( () => props.product, (newValue) => {
         :deleteUrl="`/menu-management/products/deleteProduct/${product.id}`"
         :confirmationTitle="'Delete this product?'"
         :confirmationMessage="'Are you sure you want to delete the selected product? This action cannot be undone.'"
-        @close="hideDeleteProductForm"
+        @close="closeModal('leave')"
         v-if="product"
     />
 </template>

@@ -16,6 +16,10 @@ defineProps({
     title: String
 })
 
+const form = useForm({
+
+});
+
 const order_notifications = ref([]);
 const inventory_notifications = ref([]);
 const waiter_notifications = ref([]);

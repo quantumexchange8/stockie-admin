@@ -1,11 +1,12 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue'
 import { useCustomToast } from '@/Composables/index.js';
 import { cancelTypes } from '@/Composables/constants.js';
 import Textarea from '@/Components/Textarea.vue';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     reservation: Object,
@@ -13,10 +14,15 @@ const props = defineProps({
 
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
+const isUnsavedChangesOpen = ref(false)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchReservations']);
+const emit = defineEmits(['close', 'fetchReservations', 'isDirty']);
+
+const unsaved = (status) => {
+    emit('close', status)
+};
 
 const form = useForm({
     handled_by: userId.value,  
@@ -37,7 +43,7 @@ const submit = () => {
                 form.reset();
             }, 200);
             emit('fetchReservations');
-            emit('close');
+            unsaved('leave');
         },
     })
 };
@@ -45,6 +51,8 @@ const submit = () => {
 const isFormValid = computed(() => {
     return ['cancel_type'].every(field => form[field]) && !form.processing;
 });
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -75,7 +83,7 @@ const isFormValid = computed(() => {
                     type="button"
                     variant="tertiary"
                     size="lg"
-                    @click="$emit('close')"
+                    @click="unsaved('close')"
                 >
                     Maybe Later
                 </Button>
@@ -88,4 +96,14 @@ const isFormValid = computed(() => {
             </div>
         </div>
     </form>
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :closeable="true"
+        :show="isUnsavedChangesOpen"
+        @close="unsaved('stay')"
+        @leave="unsaved('leave')"
+    >
+    </Modal>
 </template>

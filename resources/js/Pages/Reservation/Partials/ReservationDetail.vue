@@ -29,15 +29,38 @@ const editReservationIsOpen = ref(false);
 const customers = computed(() => props.customers ?? []);
 const tables = computed(() => props.tables);
 const deleteReservationFormIsOpen = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const handleDefaultClick = (event) => {
     event.stopPropagation();
     event.preventDefault();
 };
 
-const showEditReservationForm = () => editReservationIsOpen.value = true;
+const showEditReservationForm = () => {
+    editReservationIsOpen.value = true; 
+    isDirty.value = false;
+}
 
-const hideEditReservationForm = () => setTimeout(() => editReservationIsOpen.value = false, 100);
+const unsaved = (status) => {
+    emit('close', status)
+}
+
+const hideEditReservationForm = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value) isUnsavedChangesOpen.value = true;
+            else setTimeout(() => editReservationIsOpen.value = false, 100);
+            break;
+        }
+        case 'stay': isUnsavedChangesOpen.value = false; break;
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            setTimeout(() => editReservationIsOpen.value = false, 100);
+            break;
+        }
+    }
+};
 
 const getStatusVariant = (status) => {
     switch (status) {
@@ -206,17 +229,27 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
         :title="'Edit Reservation'"
         :show="editReservationIsOpen" 
         :maxWidth="'sm'" 
-        @close="hideEditReservationForm"
+        @close="hideEditReservationForm('close')"
     >
         <template v-if="reservation">
             <EditReservationForm 
                 :reservation="reservation" 
                 :customers="customers" 
                 :tables="tables" 
+                @isDirty="isDirty=$event"
                 @close="hideEditReservationForm" 
                 @fetchReservations="fetchReservations"
             />
         </template>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="hideEditReservationForm('stay')"
+            @leave="hideEditReservationForm('leave')"
+        >
+        </Modal>
     </Modal>
 
     <Modal 

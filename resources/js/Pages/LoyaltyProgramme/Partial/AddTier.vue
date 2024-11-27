@@ -12,6 +12,7 @@ import Accordion from "@/Components/Accordion.vue";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
 import { useCustomToast, useInputValidator } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
+import Modal from "@/Components/Modal.vue";
 
 //------------------------
 // DNR = DO NOT REMOVE code that has until confirmed is not needed by requirements
@@ -28,12 +29,13 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits(["close", "isDirty"]);
 const rewardList = ref([]);
 const logoPreview = ref([]);
 const initialLogos = ref([...props.logos]);
 const fileInput = ref(null);
 const selectedLogo = ref(null);
+const isUnsavedChangesOpen = ref(false);
 
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
@@ -77,7 +79,7 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            closeModal();
+            closeModal('leave');
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
@@ -89,14 +91,14 @@ const submit = () => {
     });
 };
 
-const closeModal = () => {
+const closeModal = (status) => {
+    emit("close", status);
     setTimeout(() => {
-        form.reset();
+        // form.reset();
         logoPreview.value = [...initialLogos.value];
         selectedLogo.value = null;
         if (fileInput.value) fileInput.value.value = "";
     }, 200);
-    emit("close");
 };
 
 const resetReward = (value, index) => {
@@ -147,6 +149,8 @@ const getObjectURL = (image) => URL.createObjectURL(image);
 const checkFileInstance = (file) => file instanceof File;
 
 const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field => form[field]) && !form.processing);
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -385,7 +389,7 @@ const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field =>
                         type="button"
                         variant="tertiary"
                         :size="'lg'"
-                        @click="closeModal"
+                        @click="closeModal('close')"
                     >
                         Cancel
                     </Button>
@@ -399,6 +403,16 @@ const isFormValid = computed(() => ['name', 'min_amount', 'icon'].every(field =>
                     </Button>
                 </div>
             </div>
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :closeable="true"
+                :show="isUnsavedChangesOpen"
+                @close="closeModal('stay')"
+                @leave="closeModal('leave')"
+            >
+            </Modal>
         </div>
     </form>
 </template>

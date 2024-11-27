@@ -47,20 +47,47 @@ const isModalOpen = ref(false);
 const editTierFormIsOpen = ref(false);
 const deleteTierFormIsOpen = ref(false);
 const selectedTier = ref(null);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
 
 const openModal = () => {
+    isDirty.value = false;
     isModalOpen.value = true;
 };
 
-const closeModal = () => {
-    isModalOpen.value = false;
-};
+// const closeModal = () => {
+//     isModalOpen.value = false;
+// };
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isModalOpen.value = false;
+                editTierFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false; 
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isModalOpen.value = false;
+            editTierFormIsOpen.value = false;
+        }
+    }
+}
 
 const showEditTierForm = (tier) => {
+    isDirty.value = false;
     selectedTier.value = tier;
     editTierFormIsOpen.value = true;
 }
@@ -177,11 +204,12 @@ const formatAmount = (num) => {
                 :show="isModalOpen"
                 :title="'Add New Tier'"
                 :maxWidth="'md'"
-                @close="closeModal"
+                @close="closeModal('close')"
             >
                 <AddTier 
                     :products="products"
                     :logos="logos" 
+                    @isDirty="isDirty=$event"
                     @close="closeModal" 
                 />
             </Modal>
@@ -189,7 +217,7 @@ const formatAmount = (num) => {
                 :title="'Edit Tier'"
                 :show="editTierFormIsOpen" 
                 :maxWidth="'md'" 
-                @close="hideEditTierForm"
+                @close="closeModal('close')"
             >
                 <template v-if="selectedTier">
                     <EditTier
@@ -197,7 +225,8 @@ const formatAmount = (num) => {
                         :logos="logos"
                         :inventoryItems="selectedTier.ranking_rewards" 
                         :items="products"
-                        @close="hideEditTierForm"
+                        @isDirty="isDirty=$event"
+                        @close="closeModal"
                     />
                 </template>
             </Modal>
@@ -214,4 +243,13 @@ const formatAmount = (num) => {
             />
         </div>
     </div>
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="closeModal('stay')"
+        @leave="closeModal('leave')"
+    >
+    </Modal>
 </template>

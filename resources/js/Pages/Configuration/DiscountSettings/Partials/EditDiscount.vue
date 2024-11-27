@@ -28,7 +28,7 @@ const isDirty = ref(false);
 const isLoading = ref(false);
 const invalidDates = ref([]);
 
-const emit = defineEmits(["stay", "leave", "close", "discountDetails", 'isDirty']);
+const emit = defineEmits(["close", "discountDetails", 'isDirty']);
 const { isValidNumberKey } = useInputValidator();
 const { formatAmount } = transactionFormat();
 const { showMessage } = useCustomToast();
@@ -126,22 +126,6 @@ const arraysAreEqual = (array1, array2) => {
     return sortedArray1.every((value, index) => JSON.stringify(value) === JSON.stringify(sortedArray2[index]));
 };
 
-const closeModal = () => {
-    if (isDirty.value) {
-        emit('close');
-    } else {
-        emit('leave');
-    }
-};
-
-const stayModal = () => {
-    emit('stay');
-}
-
-const leaveModal = () => {
-    emit('leave');
-}
-
 const unsaved = (status) => {
     emit('close', status);
 }
@@ -170,7 +154,7 @@ const submit = () => {
     form.post(route('configurations.editDiscount'), {
         preserveState: true,
         onSuccess: () => {
-            emit('leave');
+            unsaved('leave');
             setTimeout(() => {
                 showMessage({
                     severity: 'success',

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
@@ -9,6 +9,7 @@ import { DeleteIcon, PlusIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
 import { useInputValidator } from '@/Composables/index.js';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     errors: Object,
@@ -30,9 +31,12 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['close'])
-
+const isUnsavedChangesOpen = ref(false);
+const emit = defineEmits(['close', 'isDirty'])
 const { isValidNumberKey } = useInputValidator();
+const cancelForm = (status) => {
+    emit('close', 'edit', status)
+}
 
 const form = useForm({
     id: props.group.id,
@@ -53,15 +57,10 @@ const formSubmit = () => {
         preserveState: 'errors',
         onSuccess: () => {
             form.reset();
-            emit('close');
+            cancelForm('leave');
         },
     })
 };
-
-const cancelForm = () => {
-    form.reset();
-    emit('close');
-}
 
 const requiredFields = ['name', 'image', 'items'];
 
@@ -77,6 +76,7 @@ const removeItem = (index) => {
     }
 }
 
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 </script>
 
 <template>
@@ -182,7 +182,7 @@ const removeItem = (index) => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="cancelForm"
+                @click="cancelForm('close')"
             >
                 Discard
             </Button>
@@ -193,5 +193,13 @@ const removeItem = (index) => {
                 Save Changes
             </Button>
         </div>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="close('create', 'stay')"
+            @leave="close('create', 'leave')"
+        />
     </form>
 </template>

@@ -22,6 +22,9 @@ const emit = defineEmits(['close']);
 const zonesDetail = ref();
 const editModal = ref(false);
 const deleteModal = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const initialData = ref(null);
 const tabs = ref([]);
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
@@ -73,7 +76,14 @@ const openEditModal = (table) => {
     form.seat = table.seat.toString(),
     form.zone_id = table.zone_id,
     editModal.value = true
+    
+    initialData.value = ({
+        table_no: form.table_no,
+        seat: form.seat,
+        zone_id: form.zone_id
+    })
 };
+
 
 const openDeleteModal = (type, id) => {
     form.type = type;
@@ -81,9 +91,33 @@ const openDeleteModal = (type, id) => {
     deleteModal.value = true;
 }
 
-const closeModal = () => {
-    editModal.value = false;
-    deleteModal.value = false;
+// const closeModal = () => {
+//     editModal.value = false;
+//     deleteModal.value = false;
+// }
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                editModal.value = false;
+                deleteModal.value = false;
+            }
+            break;
+        }
+        case 'stay':{
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave':{
+            isUnsavedChangesOpen.value = false;
+            editModal.value = false;
+            deleteModal.value = false;
+            break;
+        }
+    }
 }
 
 const formSubmit = () => {
@@ -92,8 +126,8 @@ const formSubmit = () => {
             preserveScroll: true,
             preserveState: 'errors',
             onSuccess: () => {
+                closeModal('leave');
                 form.reset();
-                emit('close');
                 setTimeout(() => {
                     showMessage({ 
                         severity: 'success',
@@ -113,6 +147,15 @@ const isFormValid = computed(() => {
     return valid;
 });
 
+watch(form, () => {
+    const currentData = ({
+        table_no: form.table_no,
+        seat: form.seat,
+        zone_id: form.zone_id,
+    })
+    isDirty.value = JSON.stringify(currentData) !== JSON.stringify(initialData.value);
+}, { deep: true });
+
 </script>
 
 <template>
@@ -121,35 +164,33 @@ const isFormValid = computed(() => {
             <div class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-x-6">
                 <div v-for="table in zone.tables" :key="table.id">
                     <div v-if="table.zone_id === activeTab">
-                        <Card 
-                            style="overflow: hidden;" 
-                            class="border rounded-[5px] gap-6 mb-6">
-                                <template #title>
-                                    <div class="flex flex-col text-center items-center p-6 gap-2">
-                                        <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
-                                        <div class="text-base text-grey-900 font-medium">{{ table.seat }} seats</div>
-                                    </div>
-                                </template>
-                                <template #footer>
-                                    <div class="flex flex-nowrap">
-                                        <Button 
-                                            :type="'button'" 
-                                            :size="'md'"
-                                            @click="openEditModal(table)"
-                                            class="!bg-primary-100 hover:!bg-primary-200 rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[5px]">
-                                            <EditIcon 
-                                                class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer" />
-                                        </Button>
-                                        <Button 
-                                            :type="'button'" 
-                                            :size="'md'"
-                                            @click="openDeleteModal(table.type, table.id)"
-                                            class="!bg-primary-600 hover:!bg-primary-700 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[5px]">
-                                            <DeleteIcon
-                                                class="w-5 h-5 text-primary-100 hover:text-primary-50 cursor-pointer pointer-events-none" />
-                                        </Button>
-                                    </div>
-                                </template>
+                        <Card class="border rounded-[5px] gap-6 mb-6 overflow-hidden">
+                            <template #title>
+                                <div class="flex flex-col text-center items-center p-6 gap-2">
+                                    <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
+                                    <div class="text-base text-grey-900 font-medium">{{ table.seat }} seats</div>
+                                </div>
+                            </template>
+                            <template #footer>
+                                <div class="flex flex-nowrap">
+                                    <Button 
+                                        :type="'button'" 
+                                        :size="'md'"
+                                        @click="openEditModal(table)"
+                                        class="!bg-primary-100 hover:!bg-primary-200 rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[5px]">
+                                        <EditIcon 
+                                            class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer" />
+                                    </Button>
+                                    <Button 
+                                        :type="'button'" 
+                                        :size="'md'"
+                                        @click="openDeleteModal(table.type, table.id)"
+                                        class="!bg-primary-600 hover:!bg-primary-700 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[5px]">
+                                        <DeleteIcon
+                                            class="w-5 h-5 text-primary-100 hover:text-primary-50 cursor-pointer pointer-events-none" />
+                                    </Button>
+                                </div>
+                            </template>
                         </Card>
                     </div>
                 </div>
@@ -162,8 +203,7 @@ const isFormValid = computed(() => {
         :maxWidth="'md'"
         :closeable="true"
         :show="editModal"
-        @close="closeModal"
-        v-if="editModal"
+        @close="closeModal('close')"
     >
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
         <div class="gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
@@ -204,7 +244,7 @@ const isFormValid = computed(() => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="closeModal"
+                @click="closeModal('close')"
             >
                 Cancel
             </Button>
@@ -216,19 +256,26 @@ const isFormValid = computed(() => {
                 Save Changes
             </Button>
         </div>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
     </form>
     </Modal>
 
     <Modal 
         :maxWidth="'2xs'" 
-        :closeable="true"
         :show="deleteModal"
         :deleteConfirmation="true"
         :deleteUrl="`/table-room/table-room/deleteTable/${form.id}`"
         :confirmationTitle="`Delete this ${form.type}?`"
         :confirmationMessage="`Are you sure you want to delete the selected ${form.type}? This action cannot be undone.`"
-        @close="closeModal"
-        v-if="deleteModal"
+        @close="closeModal('leave')"
         :withHeader="false"
     >
         <form @submit.prevent="submit">
@@ -238,7 +285,7 @@ const isFormValid = computed(() => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeModal"
+                        @click="closeModal('close')"
                     >
                         Keep
                     </Button>

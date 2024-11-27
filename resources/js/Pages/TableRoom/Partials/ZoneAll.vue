@@ -20,6 +20,9 @@ const emit = defineEmits(['close']);
 const zonesDetail = ref();
 const editModal = ref(false);
 const deleteModal = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const initialData = ref(null);
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
@@ -60,6 +63,12 @@ const openEditModal = (table, zone) => {
     form.zone_id = table.zone_id,
     form.zone_name = zone.text,
     editModal.value = true
+
+    initialData.value = ({
+        table_no: form.table_no,
+        seat: form.seat,
+        zone_id: form.zone_id
+    })
 };
 
 const openDeleteModal = (type, id) => {
@@ -68,9 +77,28 @@ const openDeleteModal = (type, id) => {
     deleteModal.value = true;
 }
 
-const closeModal = () => {
-    editModal.value = false;
-    deleteModal.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                editModal.value = false;
+                deleteModal.value = false;
+            }
+            break;
+        }
+        case 'stay':{
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave':{
+            isUnsavedChangesOpen.value = false;
+            editModal.value = false;
+            deleteModal.value = false;
+            break;
+        }
+    }
 }
 
 const formSubmit = () => {
@@ -79,8 +107,8 @@ const formSubmit = () => {
             preserveScroll: true,
             preserveState: 'errors',
             onSuccess: () => {
+                closeModal('leave');
                 form.reset();
-                emit('close');
                 setTimeout(() => {
                     showMessage({ 
                         severity: 'success',
@@ -99,6 +127,15 @@ const isFormValid = computed(() => {
     const valid = requiredFields.every(field => Boolean(form[field]));
     return valid;
 });
+
+watch(form, () => {
+    const currentData = ({
+        table_no: form.table_no,
+        seat: form.seat,
+        zone_id: form.zone_id,
+    })
+    isDirty.value = JSON.stringify(currentData) !== JSON.stringify(initialData.value);
+}, { deep: true });
 
 </script>
 
@@ -153,62 +190,61 @@ const isFormValid = computed(() => {
         :maxWidth="'md'"
         :closeable="true"
         :show="editModal"
-        @close="closeModal"
-        v-if="editModal"
+        @close="closeModal('close')"
     >
-    <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
-        <div class="gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
-            <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
-                <TextInput
-                    :inputName="'table_no'"
-                    :labelText="formatLabel(form.type)"
-                    :placeholder="'eg: 1'"
-                    :errorMessage="form.errors?.table_no || ''"
-                    v-model="form.table_no"
-                    class="col-span-full md:col-span-8"
-                />
-                <div class="grid grid-cols-2 md:grid-cols-12 gap-3 self-stretch">
-                <TextInput
-                    :inputName="'seat'"
-                    :labelText="'No. of Seats Available'"
-                    :placeholder="'number only (eg: 6)'"
-                    :errorMessage="form.errors?.seat || ''"
-                    @keypress="isValidNumberKey($event, false)"
-                    v-model="form.seat"
-                    class="col-span-full md:col-span-6"
-                />
-                <Dropdown
-                    :inputName="'zone_id'"
-                    :labelText="'Select Zone'"
-                    :placeholder="form.zone_name"
-                    :inputArray="zones"
-                    :dataValue="form.zone_id"
-                    :errorMessage="form.errors?.zone_id || ''"
-                    v-model="form.zone_id"
-                    class="col-span-full md:col-span-6"
-                />
+        <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
+            <div class="gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
+                <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
+                    <TextInput
+                        :inputName="'table_no'"
+                        :labelText="formatLabel(form.type)"
+                        :placeholder="'eg: 1'"
+                        :errorMessage="form.errors?.table_no || ''"
+                        v-model="form.table_no"
+                        class="col-span-full md:col-span-8"
+                    />
+                    <div class="grid grid-cols-2 md:grid-cols-12 gap-3 self-stretch">
+                    <TextInput
+                        :inputName="'seat'"
+                        :labelText="'No. of Seats Available'"
+                        :placeholder="'number only (eg: 6)'"
+                        :errorMessage="form.errors?.seat || ''"
+                        @keypress="isValidNumberKey($event, false)"
+                        v-model="form.seat"
+                        class="col-span-full md:col-span-6"
+                    />
+                    <Dropdown
+                        :inputName="'zone_id'"
+                        :labelText="'Select Zone'"
+                        :placeholder="form.zone_name"
+                        :inputArray="zones"
+                        :dataValue="form.zone_id"
+                        :errorMessage="form.errors?.zone_id || ''"
+                        v-model="form.zone_id"
+                        class="col-span-full md:col-span-6"
+                    />
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="flex pt-4 justify-center items-end gap-4 self-stretch">
-            <Button
-                :type="'button'"
-                :variant="'tertiary'"
-                :size="'lg'"
-                @click="closeModal"
-            >
-                Cancel
-            </Button>
-            <Button
-                :size="'lg'"
-                :disabled="!isFormValid || form.processing"
-                :type="'submit'"
-                :class="{ 'opacity-25': form.processing }"
-            >
-                Save Changes
-            </Button>
-        </div>
-    </form>
+            <div class="flex pt-4 justify-center items-end gap-4 self-stretch">
+                <Button
+                    :type="'button'"
+                    :variant="'tertiary'"
+                    :size="'lg'"
+                    @click="closeModal('close')"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    :size="'lg'"
+                    :disabled="!isFormValid || form.processing"
+                    :type="'submit'"
+                    :class="{ 'opacity-25': form.processing }"
+                >
+                    Save Changes
+                </Button>
+            </div>
+        </form>
     </Modal>
 
     <Modal 
@@ -219,8 +255,7 @@ const isFormValid = computed(() => {
         :deleteUrl="`/table-room/table-room/deleteTable/${form.id}`"
         :confirmationTitle="`Delete this ${form.type}?`"
         :confirmationMessage="`Are you sure you want to delete the selected ${form.type}? This action cannot be undone.`"
-        @close="closeModal"
-        v-if="deleteModal"
+        @close="closeModal('leave')"
         :withHeader="false"
     >
         <form @submit.prevent="submit">
@@ -230,7 +265,7 @@ const isFormValid = computed(() => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeModal"
+                        @click="closeModal('stay')"
                     >
                         Keep
                     </Button>
@@ -245,5 +280,14 @@ const isFormValid = computed(() => {
                 </div>
             </div>
         </form>
+    </Modal>
+    <Modal
+        :unsaved="true"
+        :maxWidth="'2xs'"
+        :withHeader="false"
+        :show="isUnsavedChangesOpen"
+        @close="closeModal('stay')"
+        @leave="closeModal('leave')"
+    >
     </Modal>
 </template>

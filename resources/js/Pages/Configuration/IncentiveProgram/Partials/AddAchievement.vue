@@ -26,7 +26,7 @@ const waiters = computed(() =>
     }))
 );
 
-const emit = defineEmits(['stay', 'leave', 'isDirty', 'closeModal', 'getEmployeeIncent']);
+const emit = defineEmits(['isDirty', 'closeModal', 'getEmployeeIncent']);
 
 const isRate = ref(false);
 const comm_type = ref([
@@ -54,16 +54,8 @@ const setIsRate = (type) => {
     }
 }
 
-const closeModal = () => {
-    emit('closeModal');
-}
-
-const stayModal = () => {
-    emit('stay');
-}
-
-const leaveModal = () => {
-    emit('leave');
+const unsaved = (status) => {
+    emit('closeModal', status);
 }
 
 const isFormValid = computed(() => {
@@ -85,7 +77,7 @@ const submit = () => {
         preserveState: true,
         onSuccess: () => {
             form.reset();
-            emit('closeModal');
+            unsaved('leave');
             emit('getEmployeeIncent');
             setTimeout(() => {
                 showMessage({ 
@@ -188,7 +180,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="closeModal"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -208,8 +200,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
         :maxWidth="'2xs'"
         :withHeader="false"
         :show="isUnsavedChangesOpen"
-        @close="stayModal"
-        @leave="leaveModal"
+        @close="unsaved('stay')"
+        @leave="unsaved('leave')"
     />
 </template>
 

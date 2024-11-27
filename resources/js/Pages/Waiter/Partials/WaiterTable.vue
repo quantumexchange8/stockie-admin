@@ -44,16 +44,41 @@ const { formatPhone } = usePhoneUtils();
 const isEditWaiterOpen = ref(false);
 const isDeleteWaiterOpen = ref(false);
 const selectedWaiter = ref(null);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const showEditWaiterForm = (event, rows) => {
     handleDefaultClick(event);
+    isDirty.value = false;
     isEditWaiterOpen.value = true;
     selectedWaiter.value = rows;
 }
 
-const closeModal = () => {
-    isEditWaiterOpen.value = false;
-    isDeleteWaiterOpen.value = false;
+// const closeModal = () => {
+//     isEditWaiterOpen.value = false;
+//     isDeleteWaiterOpen.value = false;
+// }
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isEditWaiterOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isEditWaiterOpen.value = false;
+            isDeleteWaiterOpen.value = false;
+        }
+    }
 }
 
 const showDeleteWaiterForm = (event, id) => {
@@ -126,29 +151,38 @@ const handleDefaultClick = (event) => {
         :maxWidth="'lg'"
         :closeable="true"
         :show="isEditWaiterOpen"
-        @close="closeModal"
+        @close="closeModal('close')"
         class="!h-[373px]"
-        v-if="isEditWaiterOpen"
     >
         <template v-if="selectedWaiter">
             <EditWaiter 
                 :waiters="selectedWaiter"
+                @close="closeModal"
+                @isDirty="isDirty = $event"
             />
         </template>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
     </Modal>
 
     <!-- delete modal -->
     <Modal 
-    :maxWidth="'2xs'" 
-    :closeable="true"
-    :show="isDeleteWaiterOpen"
-    :deleteConfirmation="true"
-    :deleteUrl="`/waiter/deleteWaiter/${form.id}`"
-    :confirmationTitle="`Delete this waiter?`"
-    :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
-    @close="closeModal"
-    v-if="isDeleteWaiterOpen"
-    :withHeader="false"
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="isDeleteWaiterOpen"
+        :deleteConfirmation="true"
+        :deleteUrl="`/waiter/deleteWaiter/${form.id}`"
+        :confirmationTitle="`Delete this waiter?`"
+        :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
+        @close="closeModal"
+        v-if="isDeleteWaiterOpen"
+        :withHeader="false"
     >
         <form @submit.prevent="submit">
             <div class="flex flex-col gap-9" >

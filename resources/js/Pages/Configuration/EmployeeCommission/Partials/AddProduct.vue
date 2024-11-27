@@ -60,7 +60,6 @@ const submit = () => {
 }
 
 const unsaved = (status) => {
-    console.log(status)
     emit('closeModal', status);
 }
 

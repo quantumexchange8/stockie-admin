@@ -1,6 +1,6 @@
 <script setup>
 import axios from 'axios';
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
@@ -10,6 +10,7 @@ import { DeleteIcon, PlusIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast, useInputValidator } from '@/Composables/index.js';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     errors: Object,
@@ -23,7 +24,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['addAsProducts', 'close']);
+const emit = defineEmits(['addAsProducts', 'close', 'isDirty']);
 
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
@@ -31,6 +32,7 @@ const { isValidNumberKey } = useInputValidator();
 const groupCreatedModalIsOpen = ref(false);
 const addAsProductModalIsOpen = ref(false);
 const newInventoryData = ref({});
+const isUnsavedChangesOpen = ref(false);
 // const inventoryToAdd = ref({});
 
 const form = useForm({
@@ -125,9 +127,13 @@ const formSubmit = async () => {
     // }
 };
 
-const cancelForm = () => {
-    emit('close');
-    setTimeout(() => form.reset(), 200);
+// const cancelForm = () => {
+//     emit('close');
+//     setTimeout(() => form.reset(), 200);
+// }
+
+const close = (status) => {
+    emit('close', 'create', status)
 }
 
 const requiredFields = ['name', 'image', 'items'];
@@ -143,6 +149,8 @@ const removeItem = (index) => {
         form.items.splice(index, 1);
     }
 }
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 
@@ -258,7 +266,7 @@ const removeItem = (index) => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="cancelForm"
+                @click="close('close')"
             >
                 Cancel
             </Button>
@@ -269,5 +277,13 @@ const removeItem = (index) => {
                 Add
             </Button>
         </div>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="close('create', 'stay')"
+            @leave="close('create', 'leave')"
+        />
     </form>
 </template>

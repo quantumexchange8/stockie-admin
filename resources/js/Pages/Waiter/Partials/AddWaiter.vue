@@ -4,8 +4,9 @@ import TextInput from "@/Components/TextInput.vue";
 import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
+import Modal from "@/Components/Modal.vue";
 
 const props = defineProps({
     waiters: {
@@ -16,12 +17,12 @@ const props = defineProps({
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();
+const isUnsavedChangesOpen = ref(false);
 
-const emit = defineEmits(["close"]);
-const closeModal = () => {
-    form.reset(); //Reset form field
-    form.errors = {}; // Clear all errors
-    emit("close");
+const emit = defineEmits(["close", "isDirty"]);
+
+const unsaved = (status) => {
+    emit('close', status)
 };
 
 const form = useForm({
@@ -43,7 +44,7 @@ const submit = () => {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
-            closeModal();
+            unsaved('leave');
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
@@ -62,6 +63,9 @@ const requiredFields = ['username', 'name', 'phone_temp', 'email', 'role_id', 's
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
 })
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
+
 </script>
 <template>
     <div class="w-full flex flex-col overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
@@ -211,7 +215,7 @@ const isFormValid = computed(() => {
                     <Button
                         variant="tertiary"
                         type="button"
-                        @click="form.reset()"
+                        @click="unsaved('close')"
                         :size="'lg'"
                     >
                         Cancel
@@ -227,6 +231,14 @@ const isFormValid = computed(() => {
                     </Button>
                 </div>
             </div>
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="unsaved('stay')"
+                @leave="unsaved('leave')"
+            />
         </form>
     </div>
 </template>

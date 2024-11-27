@@ -4,8 +4,9 @@ import TextInput from "@/Components/TextInput.vue";
 import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
+import Modal from "@/Components/Modal.vue";
 
 const props = defineProps({
     waiters: {
@@ -16,12 +17,13 @@ const props = defineProps({
 const { showMessage } = useCustomToast();
 const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();
+const isUnsavedChangesOpen = ref(false);
 
-const emit = defineEmits(["close"]);
-const closeModal = () => {
-    emit("close");
-};
+const emit = defineEmits(["close", "isDirty"]);
 
+const unsaved = (status) => {
+    emit('close', status);
+}
 
 const form = useForm({
     id: props.waiters.id,
@@ -32,7 +34,7 @@ const form = useForm({
     email: props.waiters.email,
     role_id: props.waiters.role_id,
     salary: props.waiters.salary,
-    stockie_email: props.waiters.stockie_email,
+    stockie_email: props.waiters.worker_email,
     password: '',
     image: props.waiters.image ? props.waiters.image : '',
 });
@@ -43,7 +45,7 @@ const submit = () => {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
-            closeModal();
+            unsaved('leave');
             setTimeout(() => {
                 showMessage({
                     severity: 'success',
@@ -62,6 +64,8 @@ const requiredFields = ['name', 'phone_temp', 'email', 'role_id', 'salary', 'sto
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
 })
+
+watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 </script>
 <template>
     <div class="w-full flex flex-col max-h-[650px] overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
@@ -212,7 +216,7 @@ const isFormValid = computed(() => {
                     <Button
                         variant="tertiary"
                         type="button"
-                        @click="closeModal"
+                        @click="unsaved('close')"
                         :size="'lg'"
                         >Discard</Button
                     >
@@ -226,6 +230,14 @@ const isFormValid = computed(() => {
                     >
                 </div>
             </div>
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="unsaved('stay')"
+                @leave="unsaved('leave')"
+            />
         </form>
     </div>
 </template>

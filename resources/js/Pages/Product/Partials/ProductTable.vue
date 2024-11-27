@@ -62,6 +62,8 @@ const categories = ref([]);
 const selectedCategory = ref(0);
 const selectedLayout = ref('grid');
 const forms = reactive({});
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 const { showMessage } = useCustomToast();
 const { formatAmount } = transactionFormat();
 
@@ -132,15 +134,37 @@ const updateAvailability = (id) => {
 };
 
 const showCreateForm = () => {
+    isDirty.value = false;
     createFormIsOpen.value = true;
 };
 
-const hideCreateForm = () => {
-    createFormIsOpen.value = false;
-};
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                createFormIsOpen.value = false;
+                editProductFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            createFormIsOpen.value = false;
+            editProductFormIsOpen.value = false;
+            deleteProductFormIsOpen.value = false;
+        }
+    }
+}
 
 const showEditGroupForm = (event, product) => {
     handleDefaultClick(event);
+    isDirty.value = false;
     selectedProduct.value = product;
     editProductFormIsOpen.value = true;
 }
@@ -168,7 +192,6 @@ const hideDeleteProductForm = () => {
 const handleDefaultClick = (event) => {
     event.stopPropagation();  // Prevent the row selection event
     event.preventDefault();   // Prevent the default link action
-    // window.location.href = event.currentTarget.href;  // Manually handle the link navigation
 };
 
 const resetFilters = () => {
@@ -465,12 +488,13 @@ onMounted(() => {
             :show="createFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
-            @close="hideCreateForm"
+            @close="closeModal('close')"
         >
             <CreateProductForm 
                 :categoryArr="categoryArr"
                 :inventoriesArr="inventoriesArr"
-                @close="hideCreateForm"
+                @close="closeModal"
+                @isDirty="isDirty = $event"
             />
         </Modal>
         <Modal 
@@ -478,14 +502,15 @@ onMounted(() => {
             :show="editProductFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
-            @close="hideEditProductForm"
+            @close="closeModal('close')"
         >
             <template v-if="selectedProduct">
                 <EditProductForm 
                     :product="selectedProduct"
                     :categoryArr="categoryArr"
                     :inventoriesArr="inventoriesArr"
-                    @close="hideEditProductForm"
+                    @close="closeModal"
+                    @isDirty="isDirty = $event"
                 />
             </template>
         </Modal>
@@ -497,8 +522,17 @@ onMounted(() => {
             :deleteUrl="`/menu-management/products/deleteProduct/${selectedProduct}`"
             :confirmationTitle="'Delete this product?'"
             :confirmationMessage="'Are you sure you want to delete the selected product? This action cannot be undone.'"
-            @close="hideDeleteProductForm"
+            @close="closeModal('leave')"
             v-if="selectedProduct"
         />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
     </div>
 </template>

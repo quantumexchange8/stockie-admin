@@ -37,7 +37,6 @@ Route::middleware('auth')->group(function () {
     // Route::get('/dashboard', function () {
     //     return Inertia::render('Dashboard/Dashboard');
     // })->name('dashboard');
-    Route::get('/userDetails', [RegisteredUserController::class, 'getUser'])->name('user-details');
     Route::get('/allNotifications', [NotificationController::class, 'index'])->name('notifications');
     Route::get('/notifications/latestNotification', [NotificationController::class, 'latestNotification'])->name('notifications.latest-notifications');
     Route::get('/notifications/filterNotification', [NotificationController::class, 'filterNotification'])->name('notifications.filter-notifications');

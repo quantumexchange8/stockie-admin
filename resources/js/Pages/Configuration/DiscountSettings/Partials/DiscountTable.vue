@@ -46,6 +46,7 @@ const formatRate = (rate, type) => {
 const openEditDiscount = (event, discount) => {
     event.preventDefault();
     event.stopPropagation();
+    isDirty.value = false;
     isEditDiscountOpen.value = true;
     selectedDiscount.value = discount;
 };
@@ -77,7 +78,6 @@ const closeModal = (status) => {
             isDeleteDiscountOpen.value = false;
             break;
         }
-
     }
 }
 

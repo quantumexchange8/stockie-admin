@@ -62,6 +62,9 @@ const waiterCommission = ref(props.waiterCommission);
 const selected = ref('This month');
 const selectedFilter = ref('This month');
 const waitersRowsPerPage = ref(6);
+const isModalOpen = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const waitersTotalPages = computed(() => {
     return Math.ceil(props.waiters.length / waitersRowsPerPage.value);
@@ -83,15 +86,34 @@ const actions = {
     delete: () => ``,
 };
 
-const isModalOpen = ref(false);
-
 const openModal = () => {
     isModalOpen.value = true;
 };
 
-const closeModal = () => {
-    isModalOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isModalOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isModalOpen.value = false;
+            isDirty.value = false;
+            break;
+        }
+    }
 };
+
+
 
 const filterSalesPerformance = async (filters) => {
     try {
@@ -207,11 +229,23 @@ const filters = ref({
                             New Waiter
                             <Modal
                                 :show="isModalOpen"
-                                @close="closeModal"
+                                @close="closeModal('close')"
                                 :title="'Add New Waiter'"
                                 :maxWidth="'lg'"
                             >
-                                <AddWaiter @close="closeModal" :waiters="waiters" />
+                                <AddWaiter 
+                                    @close="closeModal" 
+                                    @isDirty="isDirty = $event"
+                                    :waiters="waiters" 
+                                />
+                                <Modal
+                                    :unsaved="true"
+                                    :maxWidth="'2xs'"
+                                    :withHeader="false"
+                                    :show="isUnsavedChangesOpen"
+                                    @close="closeModal('stay')"
+                                    @leave="closeModal('leave')"
+                                />
                             </Modal>
                         </Button>
                     </div>

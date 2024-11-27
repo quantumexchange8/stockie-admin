@@ -46,6 +46,8 @@ const addStockFormIsOpen = ref(false);
 const selectedGroup = ref(null);
 const selectedGroupItems = ref(null);
 const selectedCategory = ref(0);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const checkedFilters = ref({
     itemCategory: [],
@@ -129,12 +131,34 @@ const showAddStockForm = (id) => {
     addStockFormIsOpen.value = true;
 }
 
-const hideAddStockForm = () => {
-    addStockFormIsOpen.value = false;
-    setTimeout(() => {
-        selectedGroupItems.value = null;
-        selectedGroup.value = null;
-    }, 300);
+const hideAddStockForm = (status) => {
+    // addStockFormIsOpen.value = false;
+    // setTimeout(() => {
+    //     selectedGroupItems.value = null;
+    //     selectedGroup.value = null;
+    // }, 300);
+    switch(status){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                addStockFormIsOpen.value = false;
+                setTimeout(() => {
+                    selectedGroupItems.value = null;
+                    selectedGroup.value = null;
+                }, 300);
+            }
+            break;
+        }
+        case 'stay':{
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave':{
+            isUnsavedChangesOpen.value = false;
+            addStockFormIsOpen.value = false;
+        }
+    }
 }
 </script>
 
@@ -249,15 +273,24 @@ const hideAddStockForm = () => {
                     :show="addStockFormIsOpen" 
                     :maxWidth="'lg'" 
                     :closeable="true" 
-                    @close="hideAddStockForm"
+                    @close="hideAddStockForm('close')"
                 >
                     <template v-if="selectedGroup">
                         <AddStockForm 
                             :selectedGroup="selectedGroup" 
                             :selectedGroupItems="selectedGroupItems"
                             @close="hideAddStockForm"
+                            @isDirty = "isDirty = $event"
                         />
                     </template>
+                    <Modal
+                        :unsaved="true"
+                        :maxWidth="'2xs'"
+                        :withHeader="false"
+                        :show="isUnsavedChangesOpen"
+                        @close="hideAddStockForm('stay')"
+                        @leave="hideAddStockForm('leave')"
+                    />
                 </Modal>
             </div>
             <InventoryTable

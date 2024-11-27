@@ -37,6 +37,8 @@ const tables = ref([]);
 const tabs = ref([]);
 const isModalOpen = ref(false);
 const createFormIsOpen = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -84,16 +86,33 @@ const showCreateForm = () => {
     createFormIsOpen.value = true;
 }
 
-const hideCreateForm = () => {
-    createFormIsOpen.value = false;
-}
-
 const openModal = () => {
     isModalOpen.value = true;
 };
 
-const closeModal = () => {
-    isModalOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isModalOpen.value = false;
+                createFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay':{
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave':{
+            isUnsavedChangesOpen.value = false;
+            createFormIsOpen.value = false;
+            isModalOpen.value = false;
+            isDirty.value = false;
+            break;
+        }
+    }
 };
 
 // Transform the zones instance's zone text to be lower case and separated by hyphens (-) instead
@@ -166,11 +185,20 @@ const filteredZones = computed(() => {
                 :show="createFormIsOpen"
                 :maxWidth="'md'"
                 :closeable="true"
-                @close="hideCreateForm"
+                @close="closeModal('close')"
             >
                 <AddTable
                     :zonesArr="zones"
-                    @close="hideCreateForm"
+                    @close="closeModal"
+                    @isDirty="isDirty = $event"
+                />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeModal('stay')"
+                    @leave="closeModal('leave')"
                 />
             </Modal>
         </div>
@@ -194,13 +222,13 @@ const filteredZones = computed(() => {
                 </Button>
                 <Modal
                     :show="isModalOpen"
-                    @close="closeModal"
+                    @close="closeModal('leave')"
                     :title="'Manage Zone'"
                     :maxWidth="'md'"
                 >
                     <ManageZone 
                         @getZoneDetails="getZoneDetails"
-                        @close="closeModal" 
+                        @close="closeModal('leave')" 
                         :zonesArr="zones"
                     />
                 </Modal>

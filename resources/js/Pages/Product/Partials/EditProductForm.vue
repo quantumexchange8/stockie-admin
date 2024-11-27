@@ -12,6 +12,7 @@ import { DeleteIcon } from '@/Components/Icons/solid';
 import { redeemOptions } from '@/Composables/constants';
 import { useInputValidator } from '@/Composables';
 import DragDropImage from '@/Components/DragDropImage.vue';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     errors: Object,
@@ -28,11 +29,14 @@ const props = defineProps({
         default: () => [],
     },
 });
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'isDirty']);
 const { isValidNumberKey } = useInputValidator();
 
 const categoryArr = ref(props.categoryArr);
 const inventoriesArr = ref(props.inventoriesArr);
+const isUnsavedChangesOpen = ref(false);
+const initialData = ref();
+const isDirty = ref(false);
 
 const form = useForm({
     bucket: props.product.bucket === 'set' ? true : false,
@@ -49,22 +53,31 @@ const form = useForm({
                 }) 
             :   [],
     image: props.product.image ? props.product.image : '',
+
 });
+
+initialData.value = ({
+    bucket: form.bucket,
+    items: form.items,
+    product_name: form.product_name,
+    price: form.price,
+    category_id: form.category_id,
+    is_redeemable: form.is_redeemable,
+})
 
 const formSubmit = () => { 
     form.post(route('products.updateProduct', props.product.id), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
-            form.reset();
             emit('close');
+            form.reset();
         },
     })
 };
 
-const cancelForm = () => {
-    form.reset();
-    emit('close');
+const unsaved = (status) => {
+    emit('close', status)
 }
 
 // need to update this to delete the actual item from db
@@ -95,6 +108,23 @@ watch(form.items, (newValue) => {
         item.qty = parseInt(item.qty);
     });
 }, { immediate: true });
+
+watch(
+    form,
+    () => {
+        const currentData = ({
+            bucket: form.bucket,
+            items: form.items,
+            product_name: form.product_name,
+            price: form.price,
+            category_id: form.category_id,
+            is_redeemable: form.is_redeemable,
+        })
+        isDirty.value = JSON.stringify(currentData) !== JSON.stringify(initialData.value);
+        emit('isDirty', isDirty.value);
+
+    }, { deep: true }
+);
 </script>
 
 <template>
@@ -229,7 +259,7 @@ watch(form.items, (newValue) => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="cancelForm"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -240,5 +270,14 @@ watch(form.items, (newValue) => {
                 Save Changes
             </Button>
         </div>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="unsaved('stay')"
+            @leave="unsaved('leave')"
+        >
+        </Modal>
     </form>
 </template>

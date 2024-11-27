@@ -45,6 +45,9 @@ const selected = ref('This month');
 const isLoading = ref(false);
 const names = ref(props.names);
 const spendings = ref(props.spendings);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
+
 const { formatAmount } = transactionFormat();
 
 const totalPages = computed(() => {
@@ -125,21 +128,38 @@ const handleDefaultClick = (event) => {
 };
 
 const showEditTierForm = (event) => {
+    isDirty.value = false;
     handleDefaultClick(event);
     editTierFormIsOpen.value = true;
 }
 
-const hideEditTierForm = () => {
-    editTierFormIsOpen.value = false;
+const closeModal = (status) => {
+    switch(status) {
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                editTierFormIsOpen.value = false;
+                deleteTierFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            editTierFormIsOpen.value = false;
+            deleteTierFormIsOpen.value = false;
+            break;
+        }
+    }
 }
 
 const showDeleteTierForm = (event) => {
     handleDefaultClick(event);
     deleteTierFormIsOpen.value = true;
-}
-
-const hideDeleteTierForm = () => {
-    deleteTierFormIsOpen.value = false;
 }
 </script>
 
@@ -272,7 +292,7 @@ const hideDeleteTierForm = () => {
                 :title="'Edit Tier'"
                 :show="editTierFormIsOpen" 
                 :maxWidth="'md'" 
-                @close="hideEditTierForm"
+                @close="closeModal('close')"
             >
                 <template v-if="props.id">
                     <EditTier
@@ -280,8 +300,19 @@ const hideDeleteTierForm = () => {
                         :logos="logos"
                         :inventoryItems="props.reward"
                         :items="products"
-                        @close="hideEditTierForm"
+                        @isDirty="isDirty=$event"
+                        @close="closeModal"
                     />
+
+                    <Modal
+                        :unsaved="true"
+                        :maxWidth="'2xs'"
+                        :withHeader="false"
+                        :show="isUnsavedChangesOpen"
+                        @close="closeModal('stay')"
+                        @leave="closeModal('leave')"
+                    >
+                    </Modal>
                 </template>
             </Modal>
             <Modal 
@@ -292,7 +323,7 @@ const hideDeleteTierForm = () => {
                 :deleteUrl="`/loyalty-programme/tiers/destroy/${props.id}`"
                 :confirmationTitle="'Delete this tier?'"
                 :confirmationMessage="'All the member in this tier will not be entitled to any tier. Are you sure you want to delete this tier?'"
-                @close="hideDeleteTierForm"
+                @close="closeModal('leave')"
                 v-if="props.id"
             />
         </div>

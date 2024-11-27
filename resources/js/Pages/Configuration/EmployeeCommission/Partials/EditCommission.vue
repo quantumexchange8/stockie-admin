@@ -39,7 +39,7 @@ if (Array.isArray(props.commisionDetails.product) && Array.isArray(props.commisi
     });
 }
 
-const emit = defineEmits(['stay', 'leave', 'close', 'viewEmployeeComm', 'isDirty']);
+const emit = defineEmits(['close', 'viewEmployeeComm', 'isDirty']);
 const isRate = ref(true)
 const isUnsavedChangesOpen = ref(false);
 const commType = [
@@ -80,16 +80,8 @@ const submit = () => {
     })
 }
 
-const closeModal = () => {
-    emit('close');
-}
-
-const stayModal = () => {
-    emit('stay');
-}
-
-const leaveModal = () => {
-    emit('leave');
+const closeModal = (status) => {
+    emit('close', status);
 }
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
@@ -159,7 +151,7 @@ const isFormValid = computed(() => {
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="closeModal"
+                @click="closeModal('close')"
             >
                 Cancel
             </Button>
@@ -177,8 +169,8 @@ const isFormValid = computed(() => {
         :maxWidth="'2xs'"
         :withHeader="false"
         :show="isUnsavedChangesOpen"
-        @close="stayModal"
-        @leave="leaveModal"
+        @close="closeModal('stay')"
+        @leave="closeModal('leave')"
     >
     </Modal>
 </template>

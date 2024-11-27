@@ -1,30 +1,28 @@
 <script setup>
-import { Link, useForm } from '@inertiajs/vue3'
+import { Link, useForm, usePage } from '@inertiajs/vue3'
 import { sidebarState, rightSidebarState, useCustomToast } from '@/Composables'
 import Modal from "@/Components/Modal.vue";
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import DragDropImage from '../DragDropImage.vue';
 import { EditIcon } from '../Icons/solid';
 import TextInput from '../TextInput.vue';
 import Button from '../Button.vue';
-import Toast from '../Toast.vue';
 
-
-const props = defineProps ({
-    user: {
-        type: Object,
-        required: true,
-    },
-})
 const emit = defineEmits(['close']);
 const isAccountDetailOpen = ref(false);
 const isEditModalOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const page = usePage();
 const { showMessage } = useCustomToast();
 
+const userName = computed(() => page.props.auth.user.data.full_name);
+const userId = computed(() => page.props.auth.user.data.id);
+const userImage = computed(() => page.props.auth.user.data.image);
+const userRoleId = computed(() => page.props.auth.user.data.role_id);
 
 const showAccountDetail = () => {
     isAccountDetailOpen.value = true;
-    profileForm.id = props.user.id;
+    profileForm.id = userId;
 }
 
 const showEditModal = (name, id) => {
@@ -34,9 +32,31 @@ const showEditModal = (name, id) => {
     form.id = id;
 }
 
-const closeEditModal = () => {
-    isAccountDetailOpen.value = true;
-    isEditModalOpen.value = false;
+const closeEditModal = (status) => {
+    // isAccountDetailOpen.value = true; //edit profile pic
+    // isEditModalOpen.value = false; //edit name 
+    
+    switch(status) {
+        case 'close': {
+            if(form.isDirty){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isEditModalOpen.value = false;
+                isAccountDetailOpen.value = true;
+            }
+            break;
+        }
+        case 'stay':{
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave':{
+            isUnsavedChangesOpen.value = false;
+            isEditModalOpen.value = false;
+            isAccountDetailOpen.value = true;
+            break;
+        }
+    }
 }
 
 const closeModal = () => {
@@ -44,13 +64,13 @@ const closeModal = () => {
 }
 
 const form = useForm({
-    id: props.user.id,
-    name: props.user.name,
+    id: userId.value,
+    name: userName.value,
 })
 
 const profileForm = useForm({
-    image: props.user.image ? props.user.image : '',
-    id: props.user.id,
+    image: userImage.value ? userImage.value : '',
+    id: userId.value,
 })
 
 const submit = () => {
@@ -103,15 +123,15 @@ const changeProfilePic = () => {
                         flex w-[46px] pt-[7px] pr-[1.38px] pl-[2px] justify-center items-center"
             > -->
             <img 
-                :src="props.user.image ? props.user.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                :src="userImage ? userImage : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                 alt=""
                 class="rounded-[100px] object-fit shadow-[0px_0px_24.2px_0px_rgba(203,60,60,0.30)] 
                         flex w-[46px] justify-center items-center"
             >
             <!-- </div> -->
-            <div class="flex flex-col" v-if="props.user">
-                <p class="self-stretch text-primary-900 text-md font-medium  group-hover:text-primary-700">{{ props.user.full_name }}</p>
-                <p class="self-stretch text-primary-950 text-xs font-normal  group-hover:text-primary-800">ID: {{ props.user.role_id }}</p>
+            <div class="flex flex-col">
+                <p class="self-stretch text-primary-900 text-md font-medium  group-hover:text-primary-700">{{ userName }}</p>
+                <p class="self-stretch text-primary-950 text-xs font-normal  group-hover:text-primary-800">ID: {{ userRoleId }}</p>
             </div>
         </div>
     </div>
@@ -136,7 +156,7 @@ const changeProfilePic = () => {
             <div class="flex flex-col items-start flex-[1_0_0] divide-y divide-grey-100">
                 <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
                     <span class="text-grey-600 items-center text-sm font-medium">ID</span>
-                    <span class="text-grey-900 items-center text-md font-medium">{{ props.user.role_id }}</span>
+                    <span class="text-grey-900 items-center text-md font-medium">{{ userRoleId }}</span>
                 </div>
                 <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
                     <span class="text-grey-600 items-center text-sm font-medium">Password</span>
@@ -149,11 +169,11 @@ const changeProfilePic = () => {
                 <div class="flex items-center gap-6 self-stretch">
                     <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
                         <span class="text-grey-600 items-center text-sm font-medium">Display name</span>
-                        <span class="text-grey-900 items-center text-md font-medium">{{ props.user.name }}</span>
+                        <span class="text-grey-900 items-center text-md font-medium">{{ userName }}</span>
                     </div>
                     <EditIcon 
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="showEditModal(props.user.name, props.user.id)"
+                        @click="showEditModal(userName, userId)"
                     />
                 </div>
             </div>
@@ -164,31 +184,40 @@ const changeProfilePic = () => {
         :title="'Edit display name'"
         :show="isEditModalOpen"
         :maxWidth="'xs'"
-        @close="closeEditModal"
+        @close="closeEditModal('close')"
     >
-    <form class="flex flex-col gap-6" @submit.prevent="submit">
-        <TextInput
-            :inputName="'name'"
-            :labelText="'Display name'"
-            :errorMessage="form.errors?.name || ''"
-            v-model="form.name"
-        />
-        <div class="flex pt-4 justify-center items-end gap-4 self-stretch">
-            <Button
-                :type="'button'"
-                :variant="'tertiary'"
-                :size="'lg'"
-                @click="closeEditModal"
-            >
-                Cancel
-            </Button>
-            <Button
-                :size="'lg'"
-                :type="'submit'"
-            >
-                Save
-            </Button>
-        </div>
-    </form>
+        <form class="flex flex-col gap-6" @submit.prevent="submit">
+            <TextInput
+                :inputName="'name'"
+                :labelText="'Display name'"
+                :errorMessage="form.errors?.name || ''"
+                v-model="form.name"
+            />
+            <div class="flex pt-4 justify-center items-end gap-4 self-stretch">
+                <Button
+                    :type="'button'"
+                    :variant="'tertiary'"
+                    :size="'lg'"
+                    @click="closeEditModal('close')"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    :size="'lg'"
+                    :type="'submit'"
+                >
+                    Save
+                </Button>
+            </div>
+        </form>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeEditModal('stay')"
+            @leave="closeEditModal('leave')"
+        >
+        </Modal>
     </Modal>
 </template>

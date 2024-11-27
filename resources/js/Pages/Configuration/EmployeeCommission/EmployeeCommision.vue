@@ -71,8 +71,12 @@ const openModal = () => {
 const closeModal = (status) => {
     switch(status){
         case 'close': {
-            isUnsavedChangesOpen.value = isDirty.value ? true : false;
-            isNewCommissionOpen.value = !isDirty.value ? false : true;
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isEditCommOpen.value = false;
+                isNewCommissionOpen.value = false;
+            }
             break;
         };
         case 'stay': {
@@ -236,7 +240,7 @@ onMounted (() => {
         :maxWidth="'md'"
         :closeable="true"
         :title="'Edit Commission Type'"
-        @close="closeEditModal"
+        @close="closeModal('close')"
     >
         <EditCommission 
             :productNames="productNames"

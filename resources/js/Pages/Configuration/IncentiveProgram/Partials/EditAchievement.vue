@@ -15,7 +15,7 @@ const props = defineProps({
         required: true,
     },
 })
-const emit = defineEmits(['stay', 'leave', 'isDirty', 'closeModal', 'getEmployeeIncent']);
+const emit = defineEmits(['isDirty', 'closeModal', 'getEmployeeIncent']);
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator()
 const closeModal = () => {
@@ -30,6 +30,9 @@ const leaveModal = () => {
     emit('leave');
 }
 
+const unsaved = (status) => {
+    emit('closeModal', status)
+}
 
 const isRate = ref(props.selectedIncent.isRate);
 const selectedIncent = ref(props.selectedIncent);
@@ -190,7 +193,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="closeModal"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
@@ -209,8 +212,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
         :maxWidth="'2xs'"
         :withHeader="false"
         :show="isUnsavedChangesOpen"
-        @close="stayModal"
-        @leave="leaveModal"
+        @close="unsaved('stay')"
+        @leave="unsaved('leave')"
     >
     </Modal>
 </template>

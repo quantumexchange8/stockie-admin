@@ -14,7 +14,6 @@ import DragDropImage from "@/Components/DragDropImage.vue";
 const props = defineProps({
     merchant: Object,
 })
-console.log(props.merchant)
 
 const taxes = ref([]);
 const isLoading = ref(false);
@@ -25,6 +24,7 @@ const isEditingName = ref(false);
 const isEditingPercentage = ref(false);
 const isAddTaxClicked = ref(false);
 const actionVal = ref(null);
+const isUnsavedChangesOpen = ref(false);
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
@@ -83,9 +83,29 @@ const editDetails = () => {
     merchantDetailsModal.value = true;
 }
 
-const closeEditDetails = () => {
-    merchantDetailsModal.value = false;
-    isDeleteTaxOpen.value = false;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(form.isDirty){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                merchantDetailsModal.value = false;
+            }
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            merchantDetailsModal.value = false;
+            form.reset();
+            isDeleteTaxOpen.value = false;
+            break;
+        }
+
+    }
 }
 
 const openDeleteTax = (tax) => {
@@ -204,7 +224,7 @@ const formSubmit = () => {
                     closeable: false,
                 });
             }, 200);
-            closeEditDetails();
+            closeModal('leave');
         }
     })
 };
@@ -257,7 +277,7 @@ const deleteSubmit = () => {
                         summary: 'Tax type deleted successfully.',
                     });
                 }, 200)
-                closeEditDetails();
+                closeModal('leave');
                 getResults();
             },
             onError: () => {
@@ -279,6 +299,11 @@ getResults()
 watch(() => taxes.value, (newValue) => {
     taxes.value = newValue ? newValue : {};
 }, { immediate: true });
+
+// watch(() => form, (newValue) => {
+//     console.log(form.isDirty);
+// }, { immediate: true, deep: true });
+
 
 </script>
 
@@ -427,14 +452,11 @@ watch(() => taxes.value, (newValue) => {
         :show="merchantDetailsModal" 
         :maxWidth="'lg'" 
         :closeable="true" 
-        @close="closeEditDetails"
+        @close="closeModal('close')"
     >
         <form class="flex flex-col gap-6" @submit.prevent="formSubmit">
             <div class="flex gap-6">
                 <div class="!size-[373px]">
-                    <!-- <img :src="form.merchant_image ? form.merchant_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt=""
-                        class="hover:bg-grey-900"
-                    > -->
                     <DragDropImage
                         inputName="merchant_image"
                         remarks="Suggested image size: 1920 x 1080 pixel"
@@ -487,7 +509,7 @@ watch(() => taxes.value, (newValue) => {
                     :type="'button'"
                     :variant="'tertiary'"
                     :size="'lg'"
-                    @click="closeEditDetails"
+                    @click="closeModal('close')"
                 >
                     Cancel
                 </Button>
@@ -499,13 +521,22 @@ watch(() => taxes.value, (newValue) => {
                 </Button>
             </div>
         </form>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
     </Modal>
 
     <Modal 
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="isDeleteTaxOpen"
-        @close="closeEditDetails"
+        @close="closeModal('leave')"
         :withHeader="false"
     >
         <form @submit.prevent="deleteSubmit">
@@ -526,7 +557,7 @@ watch(() => taxes.value, (newValue) => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeEditDetails"
+                        @click="closeModal('leave')"
                     >
                         Keep
                     </Button>
