@@ -14,6 +14,10 @@ const props = defineProps ({
     waiterCommission: {
         type: Array,
         default: () => {},
+    },
+    waiterImages: {
+        type: Array,
+        default: () => {},
     }
 })
 
@@ -22,8 +26,13 @@ const graphFilter = ref(['This month', 'This year']);
 const selectedFilter = ref(graphFilter.value[0]);
 const { formatAmount } = transactionFormat();
 // const formattedCommission = props.waiterCommission.map(value => formatAmount(value));
+const preloadedImages = props.waiterImages.map((src) => {
+    const img = new Image();
+    img.src = src;
+    return img;
+});
 
-const chartData = ref();
+const chartData = ref([]);
 const chartOptions = ref();
 
 const isSelected = (filter) => {
@@ -68,8 +77,8 @@ const setChartData = () => {
                 },
                 borderColor: '#7E171B',
                 borderRadius: 5,
-                hoverRadius: 5,
-                hitRadius: 5,
+                hoverRadius: 10,
+                hitRadius: 10,
             }
         ]
     };
@@ -93,9 +102,9 @@ const setChartOptions = () => {
                 enabled: false,
                 external: customTooltipHandler,
             },
-            ticksAsCirclesPlugin: {
-
-            }
+            drawYLabelsWithImagesPlugin: drawYLabelsWithImagesPlugin,
+            userImages: props.waiterImages,
+            horizontalYAxisTitlePlugin,
         },
         scales: {
             x: {
@@ -141,7 +150,6 @@ const setChartOptions = () => {
                 },
                 title: {
                     display: true,
-                    text: 'Waiter',
                     align: 'end',
                     color: '#48070A',
                     font: {
@@ -150,35 +158,42 @@ const setChartOptions = () => {
                         style: 'normal',
                         weight: 700,
                         lineHeight: 'normal',
-                    }
+                    },
                 },
-            }
+                beginAtZero: true,
+            },
         },
-        
     };
-    
 };
 
 function customTooltipHandler(context) {
     // Tooltip element creation or selection
     let tooltipEl = document.getElementById('chartjs-tooltip');
-
+    
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
         tooltipEl.id = 'chartjs-tooltip';
         tooltipEl.innerHTML = '<div></div>';
         document.body.appendChild(tooltipEl);
     }
-
+    
     // Hide if no tooltip
     const tooltipModel = context.tooltip;
     if (tooltipModel.opacity === 0) {
         tooltipEl.style.opacity = 0;
         return;
     }
+    
+    if (!tooltipEl || !tooltipModel || !tooltipModel.dataPoints) {
+        return; // Safely exit if there's no data
+    }
 
-        // Clear previous alignment classes
-        tooltipEl.classList.remove('top', 'bottom', 'center', 'no-transform');
+    // Determine data index and fetch user image
+    const dataIndex = tooltipModel.dataPoints?.[0]?.dataIndex;
+    const userImage = props.waiterImages?.[dataIndex] || 'default-image-url.jpg'; // Fallback for missing images
+
+    // Clear previous alignment classes
+    tooltipEl.classList.remove('top', 'bottom', 'center', 'no-transform');
 
     if (tooltipModel.yAlign) {
         tooltipEl.classList.add(tooltipModel.yAlign);
@@ -186,6 +201,7 @@ function customTooltipHandler(context) {
         tooltipEl.classList.add('no-transform');
     }
 
+    // Construct tooltip body
     if (tooltipModel.body) {
         const body = tooltipModel.body.map(item => item.lines);
 
@@ -199,63 +215,72 @@ function customTooltipHandler(context) {
             gap: 4px;
             align-items: center; 
             pointer-events: none;
-            box-shadow: 3px -10px 36.7px 0px rgba(151, 97, 99, 0.13);
+            box-shadow: 3px -10px 36.7px rgba(151, 97, 99, 0.13);
         ">`;
-
+        
+        // Add tooltip body (e.g., sales amount)
+        innerHtml += `<div style="
+        font-size: 16px; 
+        font-weight: 600; 
+        text-align: center;
+        ">RM ${body}`;
 
         innerHtml += `<div style="
-            font-size: 16px; 
-            font-weight: 600; 
-            text-align: right;
-        ">RM ${body}</div>`;
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        gap: 4px;">`;
 
-        if (tooltipModel.title) {
-        const title = tooltipModel.title.join('<br>');
-        innerHtml += `<div style="
-            font-size: 12px; 
-            font-weight: 400; 
-            text-align: right;
-            color: #7E171B;
-            margin-bottom: 8px; 
-            display: flex;
-            gap: 4px;
-        ">
-        <div style="
+        // Add user image
+        innerHtml += `<img src="${userImage}" alt="User Image" style="
             width: 20px;
             height: 20px;
-            border-radius: 20px;
-            background: #C1141B;
-            border: 1px solid var(--White-fixed, #FFF);
-        "></div>
-        ${title}</div>`;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 8px;
+        " />`;
+
+        // Add tooltip title (e.g., waiter name)
+        if (tooltipModel.title) {
+            const title = tooltipModel.title.join('<br>');
+            innerHtml += `<div style="
+                font-size: 12px; 
+                font-weight: 400; 
+                text-align: center;
+                color: #7E171B;
+                margin-bottom: 8px; 
+                display: flex;
+                gap: 4px;
+            ">
+            ${title}</div></div></div>`;
         }
 
         innerHtml += '</div>';
-
-
         tooltipEl.querySelector('div').innerHTML = innerHtml;
     }
 
-    const position = context.chart.canvas.getBoundingClientRect();
-    tooltipEl.style.opacity = 1;
-    tooltipEl.style.position = 'absolute';
-
-    const tooltipWidth = tooltipEl.offsetWidth || 0;
-    let tooltipX = position.left + window.pageXOffset + tooltipModel.caretX - tooltipWidth / 2;
-
-    if (tooltipX < position.left + window.pageXOffset) {
-        tooltipX = position.left + window.pageXOffset + 10;
-    } else if (tooltipX + tooltipWidth > position.left + window.pageXOffset + position.width) {
-        tooltipX = position.left + window.pageXOffset + position.width - tooltipWidth - 10; 
-    }
-
-    tooltipEl.style.left = tooltipX + 'px';
-
-    const tooltipHeight = tooltipEl.offsetHeight || 0;
-    tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - tooltipHeight - 10 + 'px';
-
-    tooltipEl.style.padding = tooltipModel.padding + 'px ' + tooltipModel.padding + 'px';
-
+        // Set tooltip position
+        const position = context.chart.canvas.getBoundingClientRect();
+        const chartWidth = position.right - position.left;
+        const tooltipWidth = tooltipEl.offsetWidth;
+        let tooltipX = tooltipModel.caretX;
+            // Adjust tooltip position based on desired alignment 
+            if (tooltipModel.caretX + tooltipWidth > chartWidth) {
+            tooltipX = chartWidth - tooltipWidth;
+            // Align tooltip to the right of the chart
+            }
+            else if (tooltipModel.caretX < tooltipWidth / 2) {
+            tooltipX = 0;
+            // Align tooltip to the left of the chart
+            }
+            else {
+            tooltipX = tooltipModel.caretX - tooltipWidth / 2;
+            // Center tooltip
+        }
+        tooltipEl.style.opacity = 1;
+        tooltipEl.style.position = 'absolute';
+        tooltipEl.style.left = position.left + window.pageXOffset + tooltipX + 'px';
+        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
 };
 
 const customPlugin = {
@@ -278,6 +303,64 @@ const customPlugin = {
 
     chart.update();
     }
+};
+
+const drawYLabelsWithImagesPlugin = {
+    id: 'drawYLabelsWithImages',
+    afterDraw: (chart) => {
+        const ctx = chart.ctx;
+        const yAxis = chart.scales.y;
+        const xAxis = chart.scales.x;
+        const {top, bottom} = yAxis;
+
+        // Define the image size
+        const imageSize = 20;
+
+        // Get the user images from the preloaded images
+        const userImages = preloadedImages;
+
+        yAxis.ticks.forEach((tick, index) => {
+            const image = userImages[index] || new Image();
+
+            // Calculate the position for each image
+            const yPosition = yAxis.getPixelForTick(index) - imageSize / 2;
+            const xPosition = xAxis.left - imageSize - 10; // Adjust based on your layout
+
+            // Ensure image is loaded before drawing
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(xPosition + imageSize / 2, yPosition + imageSize / 2, imageSize / 2, 0, Math.PI * 2); // Create a circle
+            ctx.clip(); // Clip to the circle
+            ctx.drawImage(image, xPosition, yPosition, imageSize, imageSize); // Draw the image
+            ctx.restore(); // Restore the context to avoid affecting other drawings
+        });
+    }
+};
+
+const horizontalYAxisTitlePlugin = {
+    id: 'horizontalYAxisTitle',
+    afterDraw(chart) {
+        const ctx = chart.ctx;
+        const yScale = chart.scales.y;
+        
+        const title = 'Waiter';
+        if (!title) return;
+
+        ctx.save();
+        ctx.font = 'bold 12px Lexend';
+        ctx.fillStyle = '#48070A';
+        ctx.textAlign = 'center'; 
+        ctx.textBaseline = 'middle'; 
+
+        const x = yScale.left - 20; 
+        const y = chart.chartArea.top - 10; 
+
+        ctx.translate(x, y); 
+        ctx.rotate(-Math.PI / 2); 
+        ctx.fillText(title, 0, 0);
+        
+        ctx.restore();
+    },
 };
 
 const updateChart = () => {
@@ -355,14 +438,14 @@ onMounted(() => {
         </div>
 
         <div class="flex flex-col justify-center items-start gap-3 self-stretch min-h-[360px]">
-            <div class="w-full !h-full">
+            <div class="w-full h-full">
                 <template v-if="props.waiterCommission && props.waiterNames">
                     <Chart 
                         type="bar" 
                         :data="chartData" 
                         :options="chartOptions"
-                        :plugins="[customPlugin]"
-                        class="h-full"
+                        :plugins="[customPlugin, drawYLabelsWithImagesPlugin, horizontalYAxisTitlePlugin]"
+                        class="[&>canvas]:!w-full [&>canvas]:min-h-[360px]"
                     />
                 </template>
                 <template v-else>

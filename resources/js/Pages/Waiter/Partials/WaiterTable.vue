@@ -105,7 +105,6 @@ const handleDefaultClick = (event) => {
         :rowsPerPage="rowsPerPage"
         :searchFilter="true"
         :filters="filters"
-        minWidth="min-w-[860px]"
     >
         <template #empty>
             <EmptyWaiterIllus />

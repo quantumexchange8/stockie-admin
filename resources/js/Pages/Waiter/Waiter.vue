@@ -65,6 +65,7 @@ const waitersRowsPerPage = ref(6);
 const isModalOpen = ref(false);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
+const isLoading = ref(false);
 
 const waitersTotalPages = computed(() => {
     return Math.ceil(props.waiters.length / waitersRowsPerPage.value);
@@ -116,6 +117,7 @@ const closeModal = (status) => {
 
 
 const filterSalesPerformance = async (filters) => {
+    isLoading.value = true;
     try {
         const response = await axios.get('/waiter/filterSalesPerformance', {
             method: 'GET',
@@ -128,11 +130,12 @@ const filterSalesPerformance = async (filters) => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        isLoading.value = false;
     }
 }
 
 const filterCommEarned = async (selectedFilter) => {
+    isLoading.value = true;
     try {
         const response = await axios.get('/waiter/filterCommEarned', {
             method: 'GET',
@@ -146,7 +149,7 @@ const filterCommEarned = async (selectedFilter) => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        isLoading.value = false;
     }
 }
 
@@ -185,7 +188,7 @@ const filters = ref({
             <div class="w-full flex flex-col gap-5 justify-center items-center">
                 <div class="w-full flex gap-[21px] flex-col md:flex-row justify-center">
                     <div
-                        class="w-full p-6 bg-white sm:rounded-lg border border-solid border-primary-100 rounded-[5px] min-h-[360px]"
+                        class="w-full p-6 bg-white sm:rounded-lg border border-solid border-primary-100 rounded-[5px]"
                     >
                         <SalesPerformance 
                             :waiterName="waiterIds"
@@ -195,19 +198,18 @@ const filters = ref({
                         />
                     </div>
                     <div
-                        class="w-full p-6  bg-white sm:rounded-lg border border-solid border-primary-100 min-h-[360px]"
+                        class="w-full p-6  bg-white sm:rounded-lg border border-solid border-primary-100"
                     >
                         <CommissionEarned 
                             :waiterNames="waiterNames"
                             :waiterCommission="waiterCommission"
+                            :waiterImages="waiterImages"
                             @applyCommFilter="applyCommFilter"  
                         />
                     </div>
                 </div>
 
-                <div
-                    class="w-full flex flex-col gap-4 p-4 sm:p-6 bg-white sm:rounded-lg border-[#ffe1e2] border-solid border-[1px]"
-                >
+                <div class="w-full flex flex-col gap-4 sm:p-6 bg-white sm:rounded-lg border-[#ffe1e2] border-solid border-[1px]">
                     <div class="w-full flex items-center gap-5">
                         <SearchBar
                             placeholder="Search"
@@ -250,7 +252,7 @@ const filters = ref({
                         </Button>
                     </div>
 
-                    <div>
+                    <div class="w-full">
                         <WaiterTable 
                             :rows="waiters"
                             :columns="waiterColumns"

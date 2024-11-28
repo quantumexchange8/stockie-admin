@@ -127,6 +127,10 @@ const customTooltip = (context) => {
         return;
     }
 
+    if (!tooltipEl || !tooltipModel || !tooltipModel.dataPoints) {
+        return; // Safely exit if there's no data
+    }
+
     // Set caret Position
     tooltipEl.classList.remove('above', 'below', 'no-transform');
     if (tooltipModel.yAlign) {

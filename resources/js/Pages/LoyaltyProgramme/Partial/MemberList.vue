@@ -116,7 +116,7 @@ const csvExport = () => {
                 <span class="text-grey-900 text-sm font-semibold"> {{ row.joined_on }}</span>
             </template>
             <template #total_spend="row">
-                <span class="text-grey-900 text-sm font-semibold"> RM {{ formatAmount(row.spent) }}</span>
+                <span class="text-grey-900 text-sm font-semibold"> RM {{ row.total_spending }}</span>
             </template>
         </Table>
     </div>

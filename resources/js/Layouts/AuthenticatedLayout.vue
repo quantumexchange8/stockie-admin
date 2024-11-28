@@ -51,8 +51,8 @@ const markAllAsRead = async () => {
             ... (Array.isArray(waiter_notifications.value) ? waiter_notifications.value : [])
         ];
 
-        // Send a request to the backend to mark notifications as read
         await axios.post('/notifications/markAsRead', { notifications: notificationsToMarkAsRead });
+        getNotifications();
     } catch (error) {
         console.error(error);
     }
@@ -77,12 +77,12 @@ const isSelected = (language) => {
 
 const openOverlay = (event) => {
     op.value.show(event);
-    markAllAsRead();
 }
 
 const closeOverlay = () => {
-    op.value.hide();
     notificationLength.value = 0;
+    markAllAsRead();
+    op.value.hide();
 }
 
 const submit = () => {
@@ -301,8 +301,9 @@ onMounted(() => {
         </form>
     </Modal>
 
-    <OverlayPanel ref="op"
-        
+    <OverlayPanel 
+        ref="op"
+        @close="closeOverlay()"
     >
         <NotificationsOverlay 
             :order_notifications="order_notifications"
@@ -310,7 +311,6 @@ onMounted(() => {
             :waiter_notifications="waiter_notifications"
             :all_notifications="all_notifications"
             :notificationLength="notificationLength"
-            @close="closeOverlay"
         />
     </OverlayPanel>
     

@@ -51,6 +51,7 @@ class WaiterController extends Controller
                                             ];
                                         })
                                         ->keyBy('waiter_id');
+
         $waitersDetail = [];
         foreach ($allWaiters as $waiter) {
             $salesDetail = $waitersSalesDetail->firstWhere('waiter_id', $waiter->id);
@@ -60,6 +61,7 @@ class WaiterController extends Controller
                 'image' => $waiter->getFirstMediaUrl('user'),
             ];
         }
+
 
         // dd($allWaiters);
         $waiterIds = array_column($waitersDetail, 'waiter_name');

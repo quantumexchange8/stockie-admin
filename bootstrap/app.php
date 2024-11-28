@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('reservations:mark-no-show')->dailyAt('00:00');
         $schedule->command('configuration:update-active-promo')->dailyAt('00:00');
         $schedule->command('configuration:update-product-discount')->dailyAt('00:00');
+        $schedule->command('general:clear-notification')->dailyAt('00:00');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {

@@ -72,6 +72,7 @@ const filterMemberSpending = async (filters) => {
         const response = await axios.get('/loyalty-programme/filterMemberSpending', {
             method: 'GET',
             params: {
+                id: props.id,
                 selected: filters,
             }
         });

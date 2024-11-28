@@ -6,6 +6,7 @@ use App\Http\Requests\PointItemRequest;
 use App\Http\Requests\PointRequest;
 use App\Http\Requests\RankingRequest;
 use App\Http\Requests\RankingRewardRequest;
+use App\Models\Customer;
 use App\Models\Iventory;
 use App\Models\IventoryItem;
 use App\Models\Payment;
@@ -341,7 +342,9 @@ class LoyaltyController extends Controller
                             });
 
         $monthlySpent = Payment::with('customer')
-                                ->whereHas('customer')
+                                ->whereHas('customer', function ($query) use ($id) {
+                                    $query->where('ranking', $id);
+                                })
                                 ->where('status', 'Successful')
                                 ->whereMonth('receipt_end_date', now()->month)
                                 ->whereYear('receipt_end_date', now()->year)
@@ -356,22 +359,19 @@ class LoyaltyController extends Controller
         $names = $monthlySpent->pluck('full_name')->toArray();
         $spendings = $monthlySpent->pluck('spent')->toArray();
 
-        $customer = $tier->customers->map(function ($customer) {
-            $spent = $customer->payments->sum('grand_total');
-            $image = $customer->getFirstMediaUrl('customer');
-            return [
-                'full_name' => $customer->full_name,
-                'joined_on' => Carbon::parse($customer->created_at)->format('d/m/Y'),
-                'spent' => (int)$spent,
-                'image' => $image,
-            ];
+        $customers = Customer::where('ranking', $id)
+                            ->select('full_name', 'created_at', 'total_spending')
+                            ->get();
+        $customers->each(function($customer){
+            $customer->joined_on = Carbon::parse($customer->created_at)->format('d/m/Y');
+            $customer->image = $customer->getFirstMediaUrl('customer');
         });
 
         return Inertia::render('LoyaltyProgramme/Partial/TierDetail', [
             'id' => $id,
             'tier' => $tier,
             'reward' => $reward,
-            'customers' => $customer,
+            'customers' => $customers,
             // 'inventoryItems' => $inventoryItems,
             'logos' => $existingIcons,
             'products' => $products,
@@ -381,9 +381,13 @@ class LoyaltyController extends Controller
     }
 
     public function filterMemberSpending (Request $request)
-    {
+    {  
+        // $id = $request->input('id');
+
         $monthlySpent = Payment::with('customer')
-                                ->whereHas('customer')
+                                ->whereHas('customer', function ($query) use ($request) {
+                                    $query->where('ranking', $request->input('id'));
+                                })
                                 ->when($request->input('selected') === 'This month', function ($query) {
                                             $query->whereMonth('created_at', now()->month)
                                                 ->whereYear('created_at', now()->year);

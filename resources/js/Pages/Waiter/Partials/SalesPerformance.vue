@@ -35,6 +35,12 @@ const applyFilter = (filter) => {
     emit('applyFilter', selected.value);
 }
 
+const preloadedImages = props.waiterImages.map((src) => {
+    const img = new Image();
+    img.src = src;
+    return img;
+});
+
 const setChartData = () => {
     const backgroundColor = [];
     const sortedSales = [...props.waiterSales].sort((a, b) => b - a); 
@@ -66,7 +72,7 @@ const setChartData = () => {
                 borderColor: '#7E171B',
                 borderRadius: 5,
                 hoverRadius: 5,
-                hitRadius: 5,
+                hitRadius: 10,
             }
         ]
     };
@@ -78,7 +84,7 @@ const setChartOptions = () => {
         aspectRatio: 0.6,
         responsive: true,
         animation: {
-            duration: 200, 
+            duration: 150, 
             easing: 'linear',
         },
         plugins: {
@@ -87,11 +93,10 @@ const setChartOptions = () => {
             },
             tooltip: {
                 enabled: false,
+                position: 'nearest',
                 external: customTooltipHandler,
             },
-            drawLabelsOnBarsPlugin: {
-
-            },
+            userImages: props.waiterImages,
         },
         scales: {
             x: {
@@ -147,7 +152,7 @@ function customTooltipHandler(context) {
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
         tooltipEl.id = 'chartjs-tooltip';
-        tooltipEl.innerHTML = '<div></div>';
+        tooltipEl.innerHTML = '<div></div>'; // Ensure inner <div> is present
         document.body.appendChild(tooltipEl);
     }
 
@@ -158,8 +163,23 @@ function customTooltipHandler(context) {
         return;
     }
 
-        // Clear previous alignment classes
-        tooltipEl.classList.remove('top', 'bottom', 'center', 'no-transform');
+    if (!tooltipEl || !tooltipModel || !tooltipModel.dataPoints) {
+        return; // Safely exit if there's no data
+    }
+
+    // Ensure tooltip has inner <div>
+    let tooltipContentEl = tooltipEl.querySelector('div');
+    if (!tooltipContentEl) {
+        tooltipContentEl = document.createElement('div');
+        tooltipEl.appendChild(tooltipContentEl);
+    }
+
+    // Determine data index and fetch user image
+    const dataIndex = tooltipModel.dataPoints?.[0]?.dataIndex;
+    const userImage = props.waiterImages?.[dataIndex] || 'default-image-url.jpg';
+
+    // Clear previous alignment classes
+    tooltipEl.classList.remove('top', 'bottom', 'center', 'no-transform');
 
     if (tooltipModel.yAlign) {
         tooltipEl.classList.add(tooltipModel.yAlign);
@@ -167,6 +187,7 @@ function customTooltipHandler(context) {
         tooltipEl.classList.add('no-transform');
     }
 
+    // Construct tooltip body
     if (tooltipModel.body) {
         const body = tooltipModel.body.map(item => item.lines);
 
@@ -179,50 +200,59 @@ function customTooltipHandler(context) {
             padding: 12px 24px; 
             gap: 4px;
             align-items: center; 
+            justify-items: center;
             pointer-events: none;
-            box-shadow: 3px -10px 36.7px 0px rgba(151, 97, 99, 0.13);
+            box-shadow: 3px -10px 36.7px rgba(151, 97, 99, 0.13);
         ">`;
 
+        // Add tooltip body (e.g., sales amount)
         innerHtml += `<div style="
-            font-size: 16px; 
-            font-weight: 600; 
-            text-align: right;
+        font-size: 16px; 
+        font-weight: 600; 
+        text-align: center;
         ">RM ${body}</div>`;
 
-        if (tooltipModel.title) {
-        const title = tooltipModel.title.join('<br>');
         innerHtml += `<div style="
-            font-size: 12px; 
-            font-weight: 400; 
-            text-align: right;
-            color: #7E171B;
-            margin-bottom: 8px; 
-            display: flex;
-            gap: 4px;
-        ">
-        <div style="
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        gap: 4px;">`;
+
+        // Add user image
+        innerHtml += `<img src="${userImage}" alt="User Image" style="
             width: 20px;
             height: 20px;
-            border-radius: 20px;
-            background: #C1141B;
-            border: 1px solid var(--White-fixed, #FFF);
-        "></div>
-        ${title}</div>`;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 8px;
+        " />`;
+
+        // Add tooltip title (e.g., waiter name)
+        if (tooltipModel.title) {
+            const title = tooltipModel.title.join('<br>');
+            innerHtml += `<div style="
+                font-size: 12px; 
+                font-weight: 400; 
+                text-align: center;
+                color: #7E171B;
+                margin-bottom: 8px; 
+                display: flex;
+                gap: 4px;
+            ">
+            ${title}</div></div>`;
         }
 
         innerHtml += '</div>';
-
-
-        tooltipEl.querySelector('div').innerHTML = innerHtml;
+        tooltipContentEl.innerHTML = innerHtml;
     }
 
+    // Set tooltip position
     const position = context.chart.canvas.getBoundingClientRect();
     tooltipEl.style.opacity = 1;
     tooltipEl.style.position = 'absolute';
     tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
     tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
-    tooltipEl.style.padding = tooltipModel.padding + 'px ' + tooltipModel.padding + 'px';
-};
+}
 
 const customPlugin = {
   id: 'hoverBarColorChange',
@@ -250,23 +280,40 @@ const drawLabelsOnBarsPlugin = {
     id: 'drawLabelsOnBars',
     afterDatasetsDraw: (chart) => {
         const ctx = chart.ctx;
+
         chart.data.datasets.forEach((dataset, datasetIndex) => {
             const meta = chart.getDatasetMeta(datasetIndex);
-            meta.data.forEach((bar, index) => {
-                const value = dataset.data[index];
-                const x = bar.x;
-                const y = bar.y - 20; 
-                const radius = 8; // Radius of the circle
 
-                ctx.save();
-                ctx.fillStyle = '#C1141B'; // Fill color for the circle
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2); // Draw circle
-                ctx.fill();
-                ctx.restore();
+            meta.data.forEach((bar, index) => {
+                const image = preloadedImages[index] || new Image();
+                const x = bar.x;
+                const y = bar.y - 20;
+                const imageSize = 20;
+                const radius = imageSize / 2;
+
+                image.onload = () => {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2); // Define the circle path
+                    ctx.clip(); // Clip to the circle
+                    ctx.drawImage(image, x - radius, y - radius, imageSize, imageSize); // Draw the image
+                    ctx.restore(); // Restore the context to avoid affecting other drawings
+                };
+
+                // Ensure the image is loaded before drawing
+                if (image.complete) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(image, x - radius, y - radius, imageSize, imageSize);
+                    ctx.restore();
+                } else {
+                    image.src = preloadedImages[index].src;
+                }
             });
         });
-    }
+    },
 };
 
 const updateChart = () => {
@@ -347,7 +394,7 @@ onMounted(() => {
                 :data="chartData"
                 :options="chartOptions"
                 :plugins="[customPlugin, drawLabelsOnBarsPlugin]"
-                class="h-full"
+                class="[&>canvas]:!w-full [&>canvas]:min-h-[360px]"
             />
         </template>
         <template v-else>

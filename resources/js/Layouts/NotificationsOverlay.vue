@@ -225,7 +225,7 @@ const calcTimeDiff = (created_at) => {
                         <div class="flex flex-col items-end gap-[13px] self-stretch rounded-[5px] bg-white hover:bg-[#fff1f280] p-3" v-if="!showMoreOrder">
                             <div class="flex items-end gap-[13px] self-stretch"  v-if="firstOrder.type === 'OrderPlaced'">
                                 <div class="flex justify-start items-start gap-[13px] self-stretch size-9">
-                                    <img :src="firstOrder.data.image ? firstOrder.data.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    <img :src="firstOrder.data.waiter_image ? firstOrder.data.waiter_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
                                         alt=""
                                         class="w-full h-full rounded-full"
                                         v-if="firstOrder.type === 'OrderPlaced'"
@@ -328,7 +328,7 @@ const calcTimeDiff = (created_at) => {
                         <div class="flex flex-col items-end gap-[13px] self-stretch rounded-[5px] bg-white hover:bg-[#fff1f280] p-3" v-for="orders in props.order_notifications" v-if="showMoreOrder">
                             <div class="flex items-end gap-[13px] self-stretch"  v-if="orders.type === 'OrderPlaced'">
                                 <div class="flex justify-start items-start gap-[13px] self-stretch size-9">
-                                    <img :src="orders.data.image ? orders.data.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    <img :src="orders.data.waiter_image ? orders.data.waiter_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
                                         alt=""
                                         class="w-full h-full rounded-full"
                                         v-if="orders.type === 'OrderPlaced'"
