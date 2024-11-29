@@ -303,19 +303,6 @@ class DashboardController extends Controller
                                 ->take(6)
                                 ->get();
 
-        // $activityLogs->each(function ($activityLog){
-        //     switch($activityLog->event){
-        //         case 'check-in': 
-        //             $activityLog->image = $activityLog->getFirstMediaUrl('activity');
-                
-        //         case 'assign to serve':
-        //             $activityLog->image = $activityLog->getFirstMediaUrl('activity');
-
-        //         case 'place to order':
-        //             $activityLog->image = $activityLog->getFirstMediaUrl('activity');
-        //     }
-        // });
-
         return response()->json($activityLogs);
     }
 

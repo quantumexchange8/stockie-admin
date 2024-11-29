@@ -15,18 +15,19 @@ const props = defineProps({
     lastPeriodSales: {
         type: Array,
         required: true,
-    }
+    },
+    isLoading: Boolean,
 })
-
+const emit = defineEmits(['applySalesFilter', 'isLoading']);
 const chartData = ref();
 const chartOptions = ref();
 const categories = ['Beer', 'Wine', 'Liquor', 'Others'];
-const emit = defineEmits(['applySalesFilter']);
 const { exportToCSV } = useFileExport();
 
 const selectedCategory = ref(categories[0]);
 
 const setActive = (button, year) => {
+    emit('isLoading', true);
     selectedCategory.value = button;
     selectedYear.value = year;
     emit('applySalesFilter', selectedCategory.value, selectedYear.value);
@@ -47,6 +48,7 @@ const years = ref(getNextFiveYears());
 const selectedYear = ref(years.value[0]);
 
 const useYearFilter = (year, category) => {
+    emit('isLoading', true);
     selectedYear.value = years.value.find(y => y === year);
     selectedCategory.value = category;
     emit('applySalesFilter', selectedCategory.value, selectedYear.value);
@@ -222,11 +224,11 @@ const setChartOptions = () => {
 };
 
 function customTooltipHandler(context) {
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('sales-category-tooltip');
 
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'sales-category-tooltip';
         tooltipEl.innerHTML = '<div></div>';
         document.body.appendChild(tooltipEl);
     }
@@ -354,7 +356,10 @@ onMounted(() => {
             <div class="flex items-center gap-6">
                 <Menu as="div" class="relative inline-block text-left">
                     <div>
-                        <MenuButton class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
+                        <MenuButton 
+                            :disabled="isLoading"
+                            :class="{'border-grey-100 opacity-60 pointer-events-none cursor-default': isLoading }" 
+                            class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
                             <span class="text-primary-900 font-base text-md">{{ selectedYear }}</span>
                             <DropdownIcon class="rotate-180 text-primary-900"/>
                         </MenuButton>
@@ -456,7 +461,7 @@ onMounted(() => {
         </div>
 
         <!-- chart, category filters and label here -->
-        <template v-if="props.salesCategory.value !== 0 || props.lastPeriodSales.value !== 0">
+        <template v-if="!isLoading">
             <div class="flex flex-col items-center gap-4 self-stretch">
                 <!-- category filters + label -->
                 <div class="w-full flex px-6 justify-between items-center self-stretch">

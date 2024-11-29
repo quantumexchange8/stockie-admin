@@ -8,9 +8,11 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    isLoading: Boolean,
 })
 
 const allProducts = ref([]);
+const emit = defineEmits('isLoading');
 
 watch(
     () => props.products,
@@ -79,12 +81,12 @@ const setChartOptions = () => {
 
 const customTooltip = (context) => {
     // Tooltip Element
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('product-tooltip');
 
     // Create element on first render
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'product-tooltip';
         tooltipEl.innerHTML = '<table></table>';
         document.body.appendChild(tooltipEl);
     }
@@ -175,7 +177,7 @@ onMounted(() => {
 <template>
     <div class="flex flex-col p-6 gap-12 items-center rounded-[5px] border border-red-100 overflow-hidden">
         <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Total Product</span>
-        <div class="flex flex-col justify-content-center" v-if="allProducts.length > 0">
+        <div class="flex flex-col justify-content-center" v-if="allProducts.length > 0 && !isLoading">
             <Chart 
                 ref="totalProductChart"
                 type="doughnut" 

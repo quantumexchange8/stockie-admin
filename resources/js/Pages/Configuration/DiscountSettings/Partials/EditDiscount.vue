@@ -47,10 +47,15 @@ const calcAfterPrice = (price) => {
 
 //re-fetch the collected products due to format problem - the data structure in discount table and select product is different
 // fetch using passed-in detail id props.details.id
-const getProductDetails = async () => {
+const getProductDetails = async (filters) => {
     isLoading.value = true;
     try {
-        const response = await axios.get(`/configurations/editProductDetails/${props.details.id}`);
+        const response = await axios.get(`/configurations/editProductDetails/${props.details.id}`, {
+            method: 'GET',
+            params: {
+                filters: [parseDate(props.details.start_on), parseDate(props.details.end_on)]
+            }
+        });
         selectedProducts.value = response.data;
         copySelectedProducts.value = [...response.data];
     } catch (error) {
@@ -384,6 +389,7 @@ onMounted(() => {
             @date-filter="dateFilter"
             :action="'edit'"
             :selectedProducts="selectedProducts"
+            :discountId="props.details.id"
         />
     </Modal>
 

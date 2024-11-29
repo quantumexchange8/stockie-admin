@@ -45,6 +45,9 @@ const lastPeriodSales = ref(props.lastPeriodSales)
 const categories = ['Beer', 'Wine', 'Liquor', 'Others'];
 const selectedCategory = ref(categories[0]);
 const ordersArray = ref(props.ordersArray);
+const isOrderLoading = ref(false);
+const isSalesLoading = ref(false);
+
 const getNextFiveYears = () => {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -59,6 +62,7 @@ const getNextFiveYears = () => {
 const years = ref(getNextFiveYears());
 const selectedYear = ref(years.value[0]);
 const filterOrder = async (filters = {}) => {
+    isOrderLoading.value = true;
     try {
         const response = await axios.get('/summary-report/filterOrder', {
             method: 'GET',
@@ -70,11 +74,12 @@ const filterOrder = async (filters = {}) => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        isOrderLoading.value = false;
     }
 }
 
 const filterSales = async (category, filters) => {
+    isSalesLoading.value = true;
     try {
         const filteredSales = await axios.get('/summary-report/filterSales',{
             method:'GET',
@@ -89,7 +94,7 @@ const filterSales = async (category, filters) => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        isSalesLoading.value = false;
     }
 };
 
@@ -136,6 +141,8 @@ onMounted(async()=> {
                 <div class="flex flex-col col-span-7 justify-between">
                     <OrderSummary 
                         :ordersArray="ordersArray"
+                        :isLoading="isOrderLoading"
+                        @isLoading="isOrderLoading=$event"
                         @applyYearFilter="applyYearFilter"
                     />
                 </div>
@@ -144,6 +151,8 @@ onMounted(async()=> {
             <SalesCategory 
                 :salesCategory="salesCategory"
                 :lastPeriodSales="lastPeriodSales"
+                :isLoading="isSalesLoading"
+                @isLoading="isSalesLoading=$event"
                 @applySalesFilter="applySalesFilter"
             />
 

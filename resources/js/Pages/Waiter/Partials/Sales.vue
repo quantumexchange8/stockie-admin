@@ -34,7 +34,6 @@ const props = defineProps({
     totalPages: Number,
     rowsPerPage: Number,
 })
-
 const isDetailModalOpen = ref(false);
 const selectedOrder = ref(null);
 const order = ref(props.order);
@@ -217,7 +216,6 @@ const csvExport = () => {
         :closeable="true"
         :show="isDetailModalOpen"
         @close="closeModal"
-        v-if="isDetailModalOpen" 
      >
      <div v-if="selectedOrder">
         <Table
@@ -228,7 +226,11 @@ const csvExport = () => {
         >
             <template #product_name="selectedOrder">
                 <div class="flex gap-3 items-center">
-                    <div class="w-[40px] h-[40px] bg-primary-300"></div>
+                    <img 
+                        :src="selectedOrder.image ? selectedOrder.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="object-contain w-[40px] h-[40px]"
+                    >
                     <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ selectedOrder.product_name }}</span>
                 </div>
             </template>

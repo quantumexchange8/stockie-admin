@@ -14,9 +14,10 @@ const props = defineProps({
     spendings: {
         type: Array,
         default: () => [],
-    }
+    },
+    isLoading: Boolean,
 });
-const emit = defineEmits(['applyFilter']);
+const emit = defineEmits(['applyFilter', 'isLoading']);
 const chartData = ref();
 const chartOptions = ref();
 
@@ -27,6 +28,7 @@ const isSelected = (filter) => {
 };
 
 const applyFilter = (filter) => {
+    emit('isLoading', true);
     selected.value = graphFilter.value.find(f => f === filter);
     emit('applyFilter', selected.value);
 }
@@ -150,11 +152,11 @@ const setChartOptions = () => {
 
 function customTooltipHandler(context) {
     // Tooltip element creation or selection
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('member-spending-tooltip');
 
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'member-spending-tooltip';
         tooltipEl.innerHTML = '<div></div>';
         document.body.appendChild(tooltipEl);
     }
@@ -281,7 +283,10 @@ onMounted(() => {
             <!-- menu for year filter -->
             <Menu as="div" class="relative inline-block text-left">
                 <div>
-                    <MenuButton class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
+                    <MenuButton 
+                        :disabled="isLoading"
+                        :class="{'border-grey-100 opacity-60 pointer-events-none cursor-default': isLoading }"
+                        class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
                         <span class="text-primary-900 font-base text-md">{{ selected }}</span>
                         <DropdownIcon class="rotate-180 text-primary-900"/>
                     </MenuButton>
@@ -326,7 +331,7 @@ onMounted(() => {
                 </transition>
             </Menu>
         </div>
-        <template v-if="props.names && props.spendings">
+        <template v-if="props.names.length > 0 && props.spendings.length > 0 && !isLoading">
             <Chart
                 type="bar"
                 :data="chartData"

@@ -71,6 +71,7 @@ const removeSelectProduct = (productId) => {
 
 const unsaved = (status) => {
     emit('close', status);
+    
 }
 
 const submit = () => {
@@ -119,7 +120,6 @@ const dateFilter = async (selectedProducts = []) => {
             }
         });
         invalidDates.value = dateFilter.data.map(dateString => new Date(dateString));
-
     } catch (error) {
         console.error(error);
     } finally {
@@ -268,6 +268,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :errorMessage="form.errors?.discount_period"
                     :range="true"
                     :disabledDates="invalidDates"
+                    :disabled="isLoading"
                     :minDate="new Date()"
                     v-model="form.discount_period"
                 />

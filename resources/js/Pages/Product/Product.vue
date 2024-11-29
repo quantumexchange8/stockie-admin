@@ -46,6 +46,7 @@ const categoryArr = ref(props.categories);
 const inventoriesArr = ref(props.inventories);
 const productRowsPerPage = ref(8);
 const selectedCategory = ref(0);
+const isLoading = ref(false);
 const checkedFilters = ref({
     itemCategory: [],
     stockLevel: [],
@@ -77,6 +78,7 @@ const actions = [
 
 // Get table data
 const getProducts = async (filters = {}, selectedCategory = 0) => {
+    isLoading.value = true;
     try {
         const response = await axios.get('/menu-management/products/getProducts', {
             method: 'GET',
@@ -89,7 +91,7 @@ const getProducts = async (filters = {}, selectedCategory = 0) => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        isLoading.value = false;
     }
 }
 
@@ -146,6 +148,8 @@ onMounted(() => {
             <div class="grid grid-cols-1 md:grid-cols-12 justify-center gap-5">
                 <TotalProductChart 
                     :products="initialProducts"
+                    :isLoading="isLoading"
+                    @isLoading="isLoading=$event"
                     class="col-span-full md:col-span-4"
                 />
                 <TopSellingProductTable

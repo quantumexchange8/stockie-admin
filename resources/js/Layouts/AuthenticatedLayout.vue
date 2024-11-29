@@ -64,16 +64,19 @@ const languages = [
     { name: '中文', language: 'zh' },
 ];
 
-const selected = ref(languages[1]);
+const selected = ref(languages.find(language => language.language === localStorage.getItem('selectedLanguage')) || languages[1]);
 const op = ref(null);
 
 const changeLanguage = (lang) => {
     selected.value = languages.find(language => language.language === lang);
-    console.log(lang)
+    localStorage.setItem('selectedLanguage', lang);
+    console.log(lang);
 };
+
 const isSelected = (language) => {
     return selected.value && language.language === selected.value.language;
 };
+
 
 const openOverlay = (event) => {
     op.value.show(event);
@@ -115,6 +118,10 @@ watch(() => notificationLength.value, (newValue) => {
 onMounted(() => {
     rightSidebarState.isOpen = false;
     getNotifications();
+    const savedLanguage = localStorage.getItem('selectedLanguage');
+    if(savedLanguage){
+        selected.value = languages.find(language => language.language === savedLanguage);
+    }
 })
 </script>
 

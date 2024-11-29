@@ -18,10 +18,11 @@ const props = defineProps ({
     waiterImages: {
         type: Array,
         default: () => {},
-    }
+    },
+    isLoading: Boolean,
 })
 
-const emit = defineEmits(['applyCommFilter']);
+const emit = defineEmits(['applyCommFilter', 'isLoading']);
 const graphFilter = ref(['This month', 'This year']);
 const selectedFilter = ref(graphFilter.value[0]);
 const { formatAmount } = transactionFormat();
@@ -40,6 +41,7 @@ const isSelected = (filter) => {
 };
 
 const applyCommFilter = (filter) => {
+    emit('isLoading', true)
     selectedFilter.value = filter;
     emit('applyCommFilter', selectedFilter.value);
 }
@@ -168,11 +170,11 @@ const setChartOptions = () => {
 
 function customTooltipHandler(context) {
     // Tooltip element creation or selection
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('commission-earned-tooltip');
     
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'commission-earned-tooltip';
         tooltipEl.innerHTML = '<div></div>';
         document.body.appendChild(tooltipEl);
     }
@@ -390,7 +392,10 @@ onMounted(() => {
                 <!-- menu for year filter -->
                 <Menu as="div" class="relative inline-block text-left">
                     <div>
-                        <MenuButton class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
+                        <MenuButton 
+                            :disabled="isLoading"
+                            :class="{'border-grey-100 opacity-60 pointer-events-none cursor-default': isLoading }"
+                            class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
                             <span class="text-primary-900 font-base text-md">{{ selectedFilter }}</span>
                             <DropdownIcon class="rotate-180 text-primary-900"/>
                         </MenuButton>
@@ -439,7 +444,7 @@ onMounted(() => {
 
         <div class="flex flex-col justify-center items-start gap-3 self-stretch min-h-[360px]">
             <div class="w-full h-full">
-                <template v-if="props.waiterCommission && props.waiterNames">
+                <template v-if="props.waiterCommission && props.waiterNames && !isLoading">
                     <Chart 
                         type="bar" 
                         :data="chartData" 

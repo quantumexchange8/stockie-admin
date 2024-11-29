@@ -10,11 +10,12 @@ const props = defineProps ({
     ordersArray: {
         type: Array,
         required: true
-    }
+    },
+    isLoading: Boolean,
 })
 const chartData = ref();
 const chartOptions = ref();
-const emit = defineEmits(['applyYearFilter']);
+const emit = defineEmits(['applyYearFilter', 'isLoading']);
 const { exportToCSV } = useFileExport();
 
 const setChartData = () => {
@@ -104,11 +105,11 @@ const setChartOptions = () => {
 
 function customTooltipHandler(context) {
     // Tooltip element creation or selection
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('order-summary-tooltip');
 
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'order-summary-tooltip';
         tooltipEl.innerHTML = '<div></div>';
         document.body.appendChild(tooltipEl);
     }
@@ -209,6 +210,7 @@ const years = ref(getNextFiveYears());
 const selected = ref(years.value[0]);
 
 const useYearFilter = (year) => {
+    emit('isLoading', true);
     selected.value = years.value.find(y => y === year);
     emit('applyYearFilter', selected.value);
 };
@@ -254,7 +256,10 @@ onMounted(() => {
                 <!-- menu for year filter -->
                 <Menu as="div" class="relative inline-block text-left">
                     <div>
-                        <MenuButton class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
+                        <MenuButton 
+                            :disabled="isLoading"
+                            :class="{'border-grey-100 opacity-60 pointer-events-none cursor-default': isLoading }" 
+                            class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
                             <span class="text-primary-900 font-base text-md">{{ selected }}</span>
                             <DropdownIcon class="rotate-180 text-primary-900"/>
                         </MenuButton>
@@ -355,7 +360,7 @@ onMounted(() => {
             </div>
         </div>
 
-        <template v-if="props.ordersArray.length === 0">
+        <template v-if="props.ordersArray.length === 0 || isLoading">
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
                 <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>

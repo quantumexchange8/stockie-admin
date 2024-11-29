@@ -1,5 +1,6 @@
 <script setup>
 import Button from "@/Components/Button.vue";
+import { UndetectableIllus } from "@/Components/Icons/illus";
 import Chart from "primevue/chart";
 import { ref, onMounted, watch } from "vue";
 
@@ -11,12 +12,13 @@ const props = defineProps ({
     monthly: {
         type: Array,
         required: true,
-    }
+    },
+    isLoading: Boolean,
 })
 
 const chartData = ref();
 const chartOptions = ref();
-const emit = defineEmits(["applyTimeFilter"]);
+const emit = defineEmits(["applyTimeFilter", "isLoading"]);
         
 const setChartData = () => {
     const salesData = props.salesGraph.map(value => parseFloat(value));
@@ -133,11 +135,11 @@ const setChartOptions = () => {
 
 function customTooltipHandler(context) {
     // Tooltip element creation or selection
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('dashboard-tooltip');
 
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'dashboard-tooltip';
         tooltipEl.innerHTML = '<div></div>';
         document.body.appendChild(tooltipEl);
     }
@@ -218,6 +220,7 @@ const customPlugin = {
 const activeFilter = ref('month');
 
 const setActive = (button) => {
+    emit('isLoading', true);
     activeFilter.value = button;
     emit('applyTimeFilter', activeFilter.value);
 };
@@ -251,8 +254,10 @@ onMounted(() => {
                     :type="'button'"
                     :variant="'secondary'"
                     :size="'md'"
+                    :disabled="isLoading"
                     :class="
-                        {'bg-primary-50 hover:bg-primary-100': activeFilter === 'month', 
+                        { 'pointer-events-none cursor-not-allowed !bg-white': isLoading,
+                        'bg-primary-50 hover:bg-primary-100': activeFilter === 'month', 
                         'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'month'}
                         "
                     @click="setActive('month')"
@@ -263,8 +268,10 @@ onMounted(() => {
                     :type="'button'"
                     :variant="'secondary'"
                     :size="'md'"
+                    :disabled="isLoading"
                     :class="
-                        {'bg-primary-50 hover:bg-primary-100': activeFilter === 'year', 
+                        { 'pointer-events-none cursor-not-allowed !bg-white': isLoading,
+                        'bg-primary-50 hover:bg-primary-100': activeFilter === 'year', 
                         'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'year'}
                         "
                     @click="setActive('year')"
@@ -273,7 +280,7 @@ onMounted(() => {
                 </Button>
             </div>
         </div>
-        <div class="flex justify-content-center h-full w-full">
+        <div class="flex justify-content-center h-full w-full" v-if="props.monthly.length > 0 && props.salesGraph.length > 0 && !isLoading">
             <Chart 
                 type="line" 
                 :data="chartData" 
@@ -281,6 +288,10 @@ onMounted(() => {
                 class="h-full w-full"
                 :plugins="[customPlugin]"
             />
+        </div>
+        <div class="flex flex-col w-full h-full justify-center items-center" v-else>
+            <UndetectableIllus class="w-44 h-44"/>
+            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
         </div>
     </div>
 </template>

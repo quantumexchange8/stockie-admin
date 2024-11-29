@@ -209,12 +209,12 @@ const titleTextPlugin = {
 
 const customTooltip = (context) => {
     // Tooltip Element
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('total-stock-tooltip');
 
     // Create element on first render
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'total-stock-tooltip';
         tooltipEl.innerHTML = '<table></table>';
         document.body.appendChild(tooltipEl);
     }

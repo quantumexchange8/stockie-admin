@@ -66,6 +66,7 @@ const isModalOpen = ref(false);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isLoading = ref(false);
+const commIsLoading = ref(false);
 
 const waitersTotalPages = computed(() => {
     return Math.ceil(props.waiters.length / waitersRowsPerPage.value);
@@ -135,7 +136,7 @@ const filterSalesPerformance = async (filters) => {
 }
 
 const filterCommEarned = async (selectedFilter) => {
-    isLoading.value = true;
+    commIsLoading.value = true;
     try {
         const response = await axios.get('/waiter/filterCommEarned', {
             method: 'GET',
@@ -149,7 +150,7 @@ const filterCommEarned = async (selectedFilter) => {
     } catch (error) {
         console.error(error);
     } finally {
-        isLoading.value = false;
+        commIsLoading.value = false;
     }
 }
 
@@ -194,6 +195,8 @@ const filters = ref({
                             :waiterName="waiterIds"
                             :waiterSales="waiterSales"
                             :waiterImages="waiterImages"
+                            :isLoading="isLoading"
+                            @isLoading="isLoading=$event"
                             @applyFilter="applyFilter"
                         />
                     </div>
@@ -204,6 +207,8 @@ const filters = ref({
                             :waiterNames="waiterNames"
                             :waiterCommission="waiterCommission"
                             :waiterImages="waiterImages"
+                            :isLoading="commIsLoading"
+                            @isLoading="commIsLoading=$event"
                             @applyCommFilter="applyCommFilter"  
                         />
                     </div>

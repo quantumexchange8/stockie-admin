@@ -387,6 +387,7 @@ class WaiterController extends Controller
             $productName = $order->product->product_name;
             $productPrice = $order->product->price;
             $item_qty = $order->item_qty;
+            $image = $order->product->getFirstMediaUrl('product');
             foreach ($order->product->productItems as $productItem) {
                 foreach ($productItem->commItems as $commItem) {
                     $rate = $commItem->configComms->rate;
@@ -409,7 +410,8 @@ class WaiterController extends Controller
                 'price' => $productPrice,
                 'serve_qty' => $item_qty,
                 'total_amount' => round($totalAmount, 2), 
-                'commission' => round($commissionAmt, 2)
+                'commission' => round($commissionAmt, 2),
+                'image' => $image,
             ];
         });
 
@@ -425,7 +427,7 @@ class WaiterController extends Controller
                 'order_no' => $orderNo,
                 'total_amount' => round($totalSales, 2),
                 'commission' => round($totalCommission, 2),
-                'items' => $groupedItems->toArray()
+                'items' => $groupedItems->toArray(),
             ];
         });
         $groupedOrders = array_values($groupedOrders->toArray());

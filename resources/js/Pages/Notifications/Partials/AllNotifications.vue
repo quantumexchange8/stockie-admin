@@ -285,7 +285,7 @@ watch(
                                                     :src="notification.data.waiter_image ? notification.data.waiter_image
                                                                                             : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                     alt=""
-                                                    class="w-6 h-6 rounded-full right-0 bottom-0 absolute"
+                                                    class="w-6 h-6 rounded-full right-0 bottom-0 absolute border border-solid border-white"
                                                 >
                                             </div>
                                             <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">

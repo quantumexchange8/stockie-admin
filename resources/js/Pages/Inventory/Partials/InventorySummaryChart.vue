@@ -110,12 +110,12 @@ const percentageTextPlugin = {
 
 const customTooltip = (context) => {
     // Tooltip Element
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('inventory-summary-tooltip');
 
     // Create element on first render
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'inventory-summary-tooltip';
         tooltipEl.innerHTML = '<table></table>';
         document.body.appendChild(tooltipEl);
     }

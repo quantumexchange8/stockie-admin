@@ -185,6 +185,8 @@ const showDeleteTierForm = (event) => {
                     <MemberSpending 
                         :names="names"
                         :spendings="spendings"
+                        :isLoading="isLoading"
+                        @isLoading="isLoading=$event"
                         @applyFilter="applyFilter"
                     />
                 </div>

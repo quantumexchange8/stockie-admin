@@ -17,12 +17,12 @@ const props = defineProps ({
     waiterImages: {
         type: Array,
         default: () => {},
-    }
+    },
+    isLoading: Boolean,
 })
-const emit = defineEmits(['applyFilter']);
+const emit = defineEmits(['applyFilter', 'isLoading']);
 const graphFilter = ref(['This month', 'This year']);
 const selected = ref(graphFilter.value[0]);
-
 const chartData = ref();
 const chartOptions = ref();
 
@@ -31,6 +31,7 @@ const isSelected = (filter) => {
 };
 
 const applyFilter = (filter) => {
+    emit('isLoading', true);
     selected.value = graphFilter.value.find(f => f === filter);
     emit('applyFilter', selected.value);
 }
@@ -147,11 +148,11 @@ const setChartOptions = () => {
 
 function customTooltipHandler(context) {
     // Tooltip element creation or selection
-    let tooltipEl = document.getElementById('chartjs-tooltip');
+    let tooltipEl = document.getElementById('sales-performance-tooltip');
 
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chartjs-tooltip';
+        tooltipEl.id = 'sales-performance-tooltip';
         tooltipEl.innerHTML = '<div></div>'; // Ensure inner <div> is present
         document.body.appendChild(tooltipEl);
     }
@@ -294,10 +295,10 @@ const drawLabelsOnBarsPlugin = {
                 image.onload = () => {
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(x, y, radius, 0, Math.PI * 2); // Define the circle path
-                    ctx.clip(); // Clip to the circle
-                    ctx.drawImage(image, x - radius, y - radius, imageSize, imageSize); // Draw the image
-                    ctx.restore(); // Restore the context to avoid affecting other drawings
+                    ctx.arc(x, y, radius, 0, Math.PI * 2); 
+                    ctx.clip(); 
+                    ctx.drawImage(image, x - radius, y - radius, imageSize, imageSize); 
+                    ctx.restore(); 
                 };
 
                 // Ensure the image is loaded before drawing
@@ -329,6 +330,11 @@ watch(
     { deep: true }
 );
 
+// watch(selected, () => {
+//     emit('isLoading')
+//     console.log(isLoading.value)
+// } ,{ immediate: true });
+
 onMounted(() => {
     updateChart();
 });
@@ -343,7 +349,10 @@ onMounted(() => {
             <!-- menu for year filter -->
             <Menu as="div" class="relative inline-block text-left">
                 <div>
-                    <MenuButton class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
+                    <MenuButton 
+                        :disabled="isLoading"
+                        :class="{'border-grey-100 opacity-60 pointer-events-none cursor-default': isLoading }" 
+                        class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full">
                         <span class="text-primary-900 font-base text-md">{{ selected }}</span>
                         <DropdownIcon class="rotate-180 text-primary-900"/>
                     </MenuButton>
@@ -388,7 +397,7 @@ onMounted(() => {
                 </transition>
             </Menu>
         </div>
-        <template v-if="props.waiterName && props.waiterSales">
+        <template v-if="props.waiterName.length > 0 && props.waiterSales.length > 0 && !isLoading">
             <Chart
                 type="bar"
                 :data="chartData"

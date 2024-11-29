@@ -75,6 +75,7 @@ const salesGraph = ref(props.salesGraph);
 const monthly = ref(props.monthly);
 const reservations = ref(props.reservations);
 const reservationRowsPerPage = ref(10);
+const isLoading = ref(false);
 
 const stockColumn = ref([
     { field: 'product_name', header: 'Product Name', width: '33', sortable: false},    
@@ -108,6 +109,7 @@ const actions = {
 const reservationTotalPages = computed(() => Math.ceil(props.reservations.length / reservationRowsPerPage.value))
 
 const filterSales = async (filters = {}) => {
+    isLoading.value = true;
     try {
         const response = await axios.get('/dashboard/filterSale', {
             method: 'GET',
@@ -123,7 +125,7 @@ const filterSales = async (filters = {}) => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        isLoading.value = false;
     }
 };
 
@@ -177,6 +179,8 @@ onMounted(async()=> {
                     <SalesGraph 
                         :salesGraph="salesGraph" 
                         :monthly="monthly" 
+                        :isLoading="isLoading"
+                        @isLoading="isLoading=$event"
                         @applyTimeFilter="applyTimeFilter"
                     />
                 </div>

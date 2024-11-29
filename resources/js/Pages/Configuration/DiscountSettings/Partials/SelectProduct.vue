@@ -13,13 +13,13 @@ const props = defineProps({
         default: () => [],
     },
     action: String,
+    discountId: Number,
 })
 const categories = ref([]);
 const products = ref([]);
 const filteredProducts = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
-
 
 const selectedCategory = ref(0);
 const selectedProducts = ref(props.selectedProducts);
@@ -37,7 +37,12 @@ const cancel = () => {
 const getData = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get(`/configurations/getDiscount`);
+        const response = await axios.get(`/configurations/getDiscount`, {
+            method: 'GET',
+            params: {
+                id: props.discountId
+            }
+        });
         categories.value = response.data.categories;
         products.value = response.data.productsAvailable;
         filteredProducts.value = products.value;
@@ -209,6 +214,7 @@ onMounted(() => {
                         <span class="line-clamp-1 flex-[1_0_0] text-grey-900 text-ellipsis text-sm font-medium">{{ items.product_name }}</span>
                         <Checkbox 
                             :checked="selectedProducts.some(product => product.id === items.id)"
+                            :disabled="items.overlap && !(selectedProducts.some(product => product.id === items.id))"
                             @update:checked="selectProduct(items)"
                         />
                     </div>

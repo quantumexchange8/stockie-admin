@@ -104,7 +104,7 @@ watch(() => props.details, () => {
 </script>
 
 <template>
-    <table class="w-full border-spacing-3 border-collapse min-w-[900px]">
+    <table class="w-full border-spacing-3 border-collapse">
         <thead class="w-full bg-primary-50">
             <tr>
                 <th class="w-[31%] py-2 px-3 transition ease-in-out hover:bg-primary-200">

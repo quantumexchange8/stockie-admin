@@ -71,6 +71,11 @@ class Product extends Model implements HasMedia
         return $this->hasMany(ConfigDiscountItem::class, 'product_id');
     }
 
+    public function discount(): BelongsTo
+    {
+        return $this->belongsTo(ConfigDiscount::class, 'discount_id');
+    }
+
     /**
      * PointHistory Model
      * Get the order items of the product.

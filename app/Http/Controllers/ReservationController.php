@@ -10,11 +10,14 @@ use App\Models\OrderTable;
 use App\Models\Reservation;
 use App\Models\Table;
 use App\Models\User;
+use App\Notifications\OrderAssignedWaiter;
+use App\Notifications\OrderCheckInCustomer;
 use App\Services\RunningNumberService;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Migrations\ResetCommand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -170,6 +173,44 @@ class ReservationController extends Controller
                 'order_id' => $newOrder->id
             ]);
         }
+
+        //Check in activity log and notification
+        $waiter = User::select('full_name', 'id')->find($validatedData['assigned_waiter']);
+        $waiter->image = $waiter->getFirstMediaUrl('user');
+
+        $orderTables = implode(', ', array_map(function ($table) {
+            return Table::where('id', $table)->pluck('table_no')->first();
+        }, $validatedData['tables']));
+
+        activity()->useLog('Order')
+                ->performedOn($newOrder)
+                ->event('check in')
+                ->withProperties([
+                    'waiter_name' => $waiter->full_name,
+                    'table_name' => $orderTables, 
+                    'waiter_image' => $waiter->image
+                ])
+                ->log("New customer check-in by :properties.waiter_name.");
+        
+        Notification::send(User::all(), new OrderCheckInCustomer($orderTables, $waiter->full_name, $waiter->id));
+
+        //Assigned activity log and notification
+        activity()->useLog('Order')
+                    ->performedOn($newOrder)
+                    ->event('assign to serve')
+                    ->withProperties([
+                        'waiter_name' => $waiter->full_name,
+                        'waiter_image' => $waiter->image,
+                        'table_name' => $orderTables, 
+                        'assigned_by' => auth()->user()->full_name,
+                        'assigner_image' => auth()->user()->getFirstMediaUrl('user'),
+                    ])
+                    ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
+
+        Notification::send(User::all(), new OrderAssignedWaiter($orderTables, auth()->user()->id, $waiter->id));
+
+
+
         
         // Update reservation details
         $reservation->update([
