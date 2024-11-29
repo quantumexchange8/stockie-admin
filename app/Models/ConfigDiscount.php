@@ -33,4 +33,13 @@ class ConfigDiscount extends Model
     {
         return $this->hasMany(ConfigDiscountItem::class, 'discount_id');
     }
+
+    /**
+     * Product Model
+     * Get the products that has this discount currently.
+     */
+    public function discountedProducts(): HasMany
+    {
+        return $this->hasMany(Product::class, 'discount_id');
+    }
 }

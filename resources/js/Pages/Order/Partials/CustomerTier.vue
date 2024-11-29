@@ -1,5 +1,5 @@
 <script setup>
-import { GiftCardIllus, PointsIllust } from '@/Components/Icons/illus';
+import { GiftCardIllus, TierIllust } from '@/Components/Icons/illus';
 import { CouponIcon, HistoryIcon, PointsIcon, ProductQualityIcon, TimesIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -11,6 +11,7 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import { useCustomToast } from '@/Composables/index.js';
 import TabView from '@/Components/TabView.vue';
 import Modal from '@/Components/Modal.vue';
+import dayjs from 'dayjs';
 
 // *DNR*
 // Calculates difference in month
@@ -75,7 +76,7 @@ const submit = async () => {
         }, 200);
 
         emit('fetchZones');
-        emit('close');
+        emit('close', true);
         form.reset();
     } catch (error) {
         console.error(error);
@@ -161,32 +162,35 @@ const activeTierRewards = computed(() => rewards.value.filter((reward) => reward
 
 const redeemedTierRewards = computed(() => rewards.value.filter((reward) => reward.status === 'Redeemed'));
 
-const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) && !form.processing);
+// const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) && !form.processing);
 </script>
 
 <template>
-    <div class="flex flex-col p-6 items-center gap-y-9 shrink-0 overflow-y-auto">
+    <div class="flex flex-col max-h-[calc(100dvh-4rem)] p-6 items-center gap-y-9 shrink-0 overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
                 <span class="self-stretch text-grey-900 text-base font-medium">Current Tier</span>
                 <div class="flex flex-col justify-center items-center gap-2">
-                    <div class="flex flex-col justify-center items-center gap-[10px]">
-                        <img 
-                            :src="customer.rank.image ? customer.rank.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                            alt=""
-                            class="size-[48px]"
-                        >
-                    </div>
-                    <div class="flex flex-col justify-center items-center gap-2 !z-10">
-                        <span class="text-primary-900 text-lg font-medium">{{ customer.rank.name }}</span>
-                    </div>
+                    <template v-if="customer.rank">
+                        <div class="flex flex-col justify-center items-center gap-[10px]">
+                            <img 
+                                :src="customer.rank.image ? customer.rank.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                alt=""
+                                class="size-[48px]"
+                            >
+                        </div>
+                        <span class="text-primary-950 text-base font-medium">{{ customer.rank.name }}</span>
+                    </template>
+                    <template v-else>
+                        <span class="text-primary-900 text-lg font-medium"> - </span>
+                    </template>
                 </div>
-                <PointsIllust class="absolute flex-shrink-0"/>
+                <TierIllust class="absolute flex-shrink-0"/>
             </div>
         </div>
 
         <!-- Redeem product -->
-         <div class="flex flex-col items-start gap-y-3 self-stretch">
+        <div class="flex flex-col items-start gap-y-3 self-stretch">
             <span class="flex-[1_0_0] text-primary-900 text-md font-semibold py-3">Redeem Product</span>
 
             <TabView :tabs="tabs">
@@ -242,13 +246,9 @@ const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) &&
                                 <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
                                     <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ customer.rank.name }}</span>
                                     <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
-                                    <span class="text-grey-600 text-2xs font-normal">Redeemed on {{ reward.updated_at }}</span>
-                                    <!-- <div class="flex items-center gap-1 self-stretch">
-                                        <template v-if="reward.ranking_reward.min_purchase === 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)')">
-                                        </template>
-                                    </div> -->
-                                    <!-- *DNR* -->
-                                    <!-- <template v-if="reward.reward_type !== 'Bonus Point'">
+                                    <span class="text-grey-600 text-2xs font-normal">Redeemed on {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>
+                                    <!-- *DNR*
+                                    <template v-if="reward.reward_type !== 'Bonus Point'">
                                         <span class="self-stretch text-grey-400 text-2xs font-normal">Valid Period: {{ calculateValidPeriod(reward.valid_period_from, reward.valid_period_to) }}</span>
                                     </template> -->
                                 </div>
@@ -259,8 +259,7 @@ const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) &&
                     </div>
                 </template>
             </TabView>
-
-         </div>
+        </div>
     </div>
 
     <!-- history drawer -->
@@ -298,11 +297,14 @@ const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) &&
                             :type="'button'"
                             :variant="'tertiary'"
                             :size="'lg'"
-                            @click="console.log(selectedReward)"
+                            @click="closeModal"
                         >
                             Cancel
                         </Button>
-                        <Button :size="'lg'">
+                        <Button 
+                            :size="'lg'"
+                            :disabled="form.processing"
+                        >
                             Yes, I'm sure
                         </Button>
                     </div>

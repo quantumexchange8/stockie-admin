@@ -162,7 +162,6 @@ class LoyaltyController extends Controller
         ]);
     }
 
-
     public function storeTier(RankingRequest $request)
     {   
         // Get validated tier data

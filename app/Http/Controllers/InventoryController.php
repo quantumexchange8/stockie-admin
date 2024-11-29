@@ -203,6 +203,7 @@ class InventoryController extends Controller
         //                         ])->find(1);
                                 
         // return response()->json(['newInventory' => $newInventory], 303);
+
         return redirect()->back();
     }
 
@@ -416,10 +417,9 @@ class InventoryController extends Controller
 
             $existingGroup->update([
                 'name' => $inventoryData['name'],
-            // 'category_id' => $inventoryData['category_id'],
             ]);
 
-            if(isset($inventoryData['image']) && $inventoryData['image'] instanceof \Illuminate\Http\UploadedFile)
+            if($request->hasFile('image'))
             {
                 $existingGroup->clearMediaCollection('inventory');
                 $existingGroup->addMedia($inventoryData['image'])->toMediaCollection('inventory');
@@ -464,12 +464,12 @@ class InventoryController extends Controller
             }
         }
 
-        $message = [ 
-            'severity' => 'success', 
-            'summary' => 'Changes saved.'
-        ];
+        // $message = [ 
+        //     'severity' => 'success', 
+        //     'summary' => 'Changes saved.'
+        // ];
 
-        return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
     }
 
     /**

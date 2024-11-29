@@ -140,7 +140,8 @@ const updateProductQuantity = (productId, quantity) => {
                 price: product.price,
                 point: product.point,
                 item_qty: quantity,
-                product_items: product.product_items
+                product_items: product.product_items,
+                discount_item: product.discount_item,
             });
         }
     }
@@ -171,7 +172,7 @@ const filteredProductsByCategory = (category) => {
 const calculatedTotalAmount = computed (() => {
     return form.items.reduce((total, item) => {
         if (item.item_qty > 0) {
-            return total + (item.price * item.item_qty);
+            return total + ((item.discount_item ? item.discount_item.price_after : item.price) * item.item_qty);
         }
         return total;
     }, 0).toFixed(2);
@@ -184,9 +185,7 @@ const quantityComputed = (productId) => {
     });
 };
 
-const isFormValid = computed(() => {
-    return form.items.length > 0 && !form.processing;
-});
+const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
 
 </script>
 
@@ -218,18 +217,33 @@ const isFormValid = computed(() => {
                                 <template v-if="filteredProducts.length > 0">
                                     <div class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3" v-for="product in filteredProducts">
                                         <div class="col-span-full sm:col-span-8 flex items-center gap-3">
-                                            <!-- <div class="size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                             <img 
                                                 :src="product.image ? product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                alt=""
-                                                class="size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                                alt="ProductImage"
+                                                :class="[
+                                                    'size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100',
+                                                    { 'opacity-30': product.stock_left == 0 }
+                                                ]"
                                             >
                                             <div class="flex flex-col justify-center items-start self-stretch gap-2">
-                                                <p class="text-grey-900 text-ellipsis overflow-hidden text-base font-medium self-stretch">{{ product.product_name }}</p>
+                                                <p 
+                                                    :class="[
+                                                        'text-ellipsis overflow-hidden text-base font-medium self-stretch',
+                                                        product.stock_left > 0 ? 'text-grey-900' : 'text-grey-500'
+                                                    ]"
+                                                >
+                                                    {{ product.product_name }}
+                                                </p>
                                                 <div class="flex items-center gap-2">
-                                                    <p class="text-primary-950 text-base font-medium">RM {{ product.price }}</p>
-                                                    <span class="text-grey-200">&#x2022;</span>
-                                                    <p class="text-green-700 text-base font-normal">{{ product.stock_left > 0 ? `${product.stock_left} left` : product.status }}</p>
+                                                    <template v-if="product.stock_left > 0">
+                                                        <div v-if="product.discount_id && product.discount_item" class="flex items-center gap-x-1.5">
+                                                            <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM 2100.00</span>
+                                                            <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM2100.00</span>
+                                                        </div>
+                                                        <span class="text-primary-950 text-base font-medium" v-else>RM {{ parseFloat(product.price).toFixed(2) }}</span>
+                                                        <span class="text-grey-200">&#x2022;</span>
+                                                    </template>
+                                                    <p class="text-green-700 text-sm font-normal">{{ product.stock_left > 0 ? `${product.stock_left} left` : product.status }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -267,7 +281,6 @@ const isFormValid = computed(() => {
                                         :key="product.id" 
                                     >
                                         <div class="col-span-full sm:col-span-8 flex items-center gap-3">
-                                            <!-- <div class="size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                             <img 
                                                 :src="product.image ? product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                 alt=""

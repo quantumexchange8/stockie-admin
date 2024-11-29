@@ -9,6 +9,8 @@ use App\Models\KeepHistory;
 use App\Models\KeepItem;
 use App\Models\Order;
 use App\Models\Point;
+use App\Models\PointHistory;
+use App\Models\Product;
 use App\Models\Ranking;
 use App\Models\RankingReward;
 use Carbon\Carbon;
@@ -24,59 +26,93 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
+        // $customers = Customer::with([
+        //                             'rank:id,name',
+        //                             'keepItems' => function ($query) {
+        //                                 $query->where('status', 'Keep')
+        //                                     ->with(['orderItemSubitem.productItem.product', 'waiter']);
+        //                             }
+        //                         ])->withCount([
+        //                                     'keepItems' => function ($query) {
+        //                                         $query->where('status', 'Keep')->where('qty', '>', 0);
+        //                             }
+        //                         ])->get();
 
-        $customers = Customer::with([
+        // // dd($customers);                            
+        // $customers = $customers->map(function ($customer) {
+        //     $activeKeepItems = $customer->keepItems
+        //         ->where('qty', '>', 0)
+        //         ->sortByDesc('created_at')
+        //         ->map(function ($keepItem) {
+        //             $itemName = $keepItem->orderItemSubitem->productItem->product->product_name ?? 'N/A';
+        //                 return [
+        //                 'id' => $keepItem->id,
+        //                 'item' => $itemName,
+        //                 'qty' => $keepItem->qty,
+        //                 'created_at' => $keepItem->created_at->format('d/m/Y, h:i A'),
+        //                 'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
+        //                 'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
+        //                 'waiter_name' => $keepItem->waiter->full_name ?? 'N/A',
+        //                 'image' => $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product'),
+        //                 'waiter_pic' => $keepItem->waiter->getFirstMediaUrl('user'),
+        //             ];
+        //         })->toArray(); 
+
+        //         return [
+        //             "id" => $customer->id,
+        //             "tier" => $customer->rank->name ?? 'No Tier', 
+        //             "name" => $customer->full_name,
+        //             "email" => $customer->email,
+        //             "phone" => $customer->phone,
+        //             "points" => $customer->point,
+        //             "keep" => $customer->keep_items_count,
+        //             "keep_items" => $activeKeepItems,
+        //             "created_at" => $customer->created_at->format("d/m/Y"),
+        //             "image" => $customer->getFirstMediaUrl('user'),
+        //             "tier_image" => $customer->rank?->getFirstMediaUrl('ranking'),
+        //         ];
+        // });
+
+        $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'created_at')
+                                ->with([
                                     'rank:id,name',
                                     'keepItems' => function ($query) {
                                         $query->where('status', 'Keep')
-                                            ->with(['orderItemSubitem.productItem.product', 'waiter']);
+                                                ->with([
+                                                    'orderItemSubitem.productItem:id,inventory_item_id',
+                                                    'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                    'waiter:id,full_name'
+                                                ]);
                                     }
-                                ])->withCount([
-                                            'keepItems' => function ($query) {
-                                                $query->where('status', 'Keep')->where('qty', '>', 0);
+                                ])
+                                ->get()
+                                ->map(function ($customer) {
+                                    $customer->image = $customer->getFirstMediaUrl('customer');
+                                    $customer->keep_items_count = $customer->keepItems->count();
+
+                                    if ($customer->rank) {
+                                        $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
                                     }
-                                ])->get();
 
-        // dd($customers);                            
-        $customers = $customers->map(function ($customer) {
-            $activeKeepItems = $customer->keepItems
-                ->where('qty', '>', 0)
-                ->sortByDesc('created_at')
-                ->map(function ($keepItem) {
-                    $itemName = $keepItem->orderItemSubitem->productItem->product->product_name ?? 'N/A';
-                        return [
-                        'id' => $keepItem->id,
-                        'item' => $itemName,
-                        'qty' => $keepItem->qty,
-                        'created_at' => $keepItem->created_at->format('d/m/Y, h:i A'),
-                        'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
-                        'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
-                        'waiter_name' => $keepItem->waiter->full_name ?? 'N/A',
-                        'image' => $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product'),
-                        'waiter_pic' => $keepItem->waiter->getFirstMediaUrl('user'),
-                    ];
-                })->toArray(); 
+                                    foreach ($customer->keepItems as $key => $keepItem) {
+                                        $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                                        unset($keepItem->orderItemSubitem);
 
-                return [
-                    "id" => $customer->id,
-                    "tier" => $customer->rank->name ?? 'No Tier', 
-                    "name" => $customer->full_name,
-                    "email" => $customer->email,
-                    "phone" => $customer->phone,
-                    "points" => $customer->point,
-                    "keep" => $customer->keep_items_count,
-                    "keep_items" => $activeKeepItems,
-                    "created_at" => $customer->created_at->format("d/m/Y"),
-                    "image" => $customer->getFirstMediaUrl('user'),
-                    "tier_image" => $customer->rank?->getFirstMediaUrl('ranking'),
-                ];
-        });
+                                        $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
 
-        // dd($customers);
+                                        $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+                                    }
+
+                                    return $customer;
+                                });
+                    
         $message = $request->session()->get('message');
 
         return Inertia::render("Customer/Customer", [
             'customers' => $customers,
+            'rankingArr' => Ranking::get(['id', 'name'])->toArray(),
             'message'=> $message ?? [],
         ]);
     }
@@ -111,7 +147,7 @@ class CustomerController extends Controller
                 // Apply filter for 'tier'
                 if (isset($request['checkedFilters']['tier']) && count($request['checkedFilters']['tier']) > 0) {
                     $query->whereHas('rank', function ($rankQuery) use ($request) {
-                        $rankQuery->whereIn('name', $request['checkedFilters']['tier']);
+                        $rankQuery->whereIn('id', $request['checkedFilters']['tier']);
                     });
                 }
     
@@ -120,200 +156,252 @@ class CustomerController extends Controller
                     $query->whereBetween('point', array_map('intval', $request['checkedFilters']['points']));
                 }
             });
-    
+
             // Apply filter for 'keepItems'
-            if (isset($request['checkedFilters']['keepItems']) && count($request['checkedFilters']['keepItems']) > 0) {
-                $queries->withCount('keepItems')->having('keep_items_count', '>', 0);
+            if (!empty($request['checkedFilters']['keepItems'])) {
+                $queries->withCount(['keepItems' => fn ($query) => $query->where('status', 'Keep')])
+                        ->having('keep_items_count', '>', 6);
             }
         }
-    
-        $queries->with('rank')->withCount('keepItems');
+        // dd($queries->toSql());
+        // $results = $queries->with('rank')->withCount('keepItems')->get();
 
-        $results = $queries->get();
+        // $customers = $results->map(function ($query) {
 
-        $customers = $results->map(function ($query) {
+        //         $activeKeepItems = $query->keepItems
+        //         ->where('qty', '>', 0)
+        //         ->sortByDesc('created_at')
+        //         ->map(function ($keepItem) {
+        //             $itemName = $keepItem->orderItemSubitem->productItem->product->product_name ?? 'N/A';
+        //                 return [
+        //                 'id' => $keepItem->id,
+        //                 'item' => $itemName,
+        //                 'qty' => $keepItem->qty,
+        //                 'created_at' => Carbon::parse($keepItem->created_at)->format('d/m/Y, h:i A'),
+        //                 'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
+        //                 'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
+        //                 'waiter_name' => $keepItem->waiter->full_name ?? 'N/A',
+        //             ];
+        //         })->toArray(); 
 
-                $activeKeepItems = $query->keepItems
-                ->where('qty', '>', 0)
-                ->sortByDesc('created_at')
-                ->map(function ($keepItem) {
-                    $itemName = $keepItem->orderItemSubitem->productItem->product->product_name ?? 'N/A';
-                        return [
-                        'id' => $keepItem->id,
-                        'item' => $itemName,
-                        'qty' => $keepItem->qty,
-                        'created_at' => Carbon::parse($keepItem->created_at)->format('d/m/Y, h:i A'),
-                        'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
-                        'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
-                        'waiter_name' => $keepItem->waiter->full_name ?? 'N/A',
-                    ];
-                })->toArray(); 
+        //     return [
+        //         "id" => $query->id,
+        //         "tier" => $query->ranking->name ?? 'N/A',
+        //         "name" => $query->full_name,
+        //         "email" => $query->email,
+        //         "phone" => $query->phone,
+        //         "points" => $query->point,
+        //         "keep_items" => $activeKeepItems,
+        //         "keep" => $query->keep_items_count,
+        //         "created_at" => Carbon::parse($query->created_at)->format("d/m/Y"),
+        //     ];
+        // });
 
-            return [
-                "id" => $query->id,
-                "tier" => $query->ranking->name ?? 'N/A',
-                "name" => $query->full_name,
-                "email" => $query->email,
-                "phone" => $query->phone,
-                "points" => $query->point,
-                "keep_items" => $activeKeepItems,
-                "keep" => $query->keep_items_count,
-                "created_at" => Carbon::parse($query->created_at)->format("d/m/Y"),
-            ];
-        });
+        // dd($queries->toSql(), $queries->getBindings(), $customers);
+
+        $customers = $queries->get('id')->toArray();
+
         return response()->json($customers);
     }
 
-    public function returnItem (Request $request) {
-        $selectedItem = KeepItem::find($request->id);
-        if ($selectedItem !== null) {
+    public function returnKeepItem (Request $request, string $id) 
+    {
+        $selectedItem = KeepItem::findOrFail($id);
+
+        if ($request->type === 'qty') {
             $selectedItem->update([
-                'qty' => $selectedItem->qty - $request->qty,
+                'qty' => ($selectedItem->qty - $request->return_qty) > 0 ? $selectedItem->qty - $request->return_qty : 0.00,
+                'status' => ($selectedItem->qty - $request->return_qty) > 0 ? 'Keep' : 'Returned'
             ]);
-
-            $selectedItem = KeepHistory::create([
-                'keep_item_id' => $selectedItem->id,
-                'qty' => ($request->initial_qty - $request->qty),
-                'cm' => $selectedItem->cm,
-                'keep_date' => $selectedItem->expired_from,
-                'status' => 'returned',
+        } else {
+            $selectedItem->update([
+                'cm' => 0.00,
+                'status' => 'Returned'
             ]);
+        }
 
-            $message = [
-                'severity' => 'success',
-                'summary' => 'Item has been returned to the customer.'
-            ];
-    }else{
-        $message = [
-            'severity' => 'danger',
-            'summary' => 'Error occurred.'
-        ];
-    };
+        KeepHistory::create([
+            'keep_item_id' => $id,
+            'qty' => $request->type === 'qty' ? round($request->return_qty, 2) : 0.00,
+            'cm' => $request->type === 'cm' ? round($selectedItem->cm, 2) : 0.00,
+            'keep_date' => $selectedItem->created_at,
+            'status' => 'Returned',
+        ]);
 
-        return redirect()->back()->with(['message' => $message]);
-        
+        $customer = Customer::with([
+                                'keepItems' => function ($query) {
+                                    $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
+                                            ->where('status', 'Keep')
+                                            ->with([
+                                                'orderItemSubitem.productItem:id,inventory_item_id',
+                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                'waiter:id,full_name'
+                                            ]);
+                                }
+                            ])
+                            ->find($request->customer_id);
+
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            unset($keepItem->orderItemSubitem);
+
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+        }
+
+        return response()->json($customer->keepItems);
     }
 
-    public function keepHistory (string $id) {
+    public function getKeepHistories (string $id) 
+    {
+        $keepHistories = KeepHistory::with([
+                                        'keepItem:id,order_item_subitem_id,customer_id,qty,cm,remark,user_id,status,expired_from,expired_to',
+                                        'keepItem.orderItemSubitem:id,order_item_id,product_item_id', 
+                                        'keepItem.orderItemSubitem.productItem:id,inventory_item_id', 
+                                        'keepItem.orderItemSubitem.productItem.inventoryItem:id,item_name', 
+                                        'keepItem.waiter:id,full_name'
+                                    ])
+                                    ->whereHas('keepItem', function ($query) use ($id) {
+                                        $query->where('customer_id', $id);
+                                    })
+                                    ->orderByDesc('id')
+                                    ->get()
+                                    ->map(function ($history) {
+                                        // Assign item_name and unset unnecessary relationship data
+                                        if ($history->keepItem && $history->keepItem->orderItemSubitem) {
+                                            $history->keepItem->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+                                            unset($history->keepItem->orderItemSubitem);
 
-        $customer = Customer::find($id);
-        $allKeepHistories = [];
+                                            $history->keepItem->image = $history->keepItem->orderItemSubitem->productItem 
+                                                        ? $history->keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                                        : $history->keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+    
+                                            $history->keepItem->waiter->image = $history->keepItem->waiter->getFirstMediaUrl('user');
+                                        }
+                                        return $history;
+                                    });
 
-        foreach ($customer->keepItems as $keepItem) {
-            $keepHistories = $keepItem->keepHistories;
-
-            foreach ($keepHistories as $history) {
-                $allKeepHistories[] = [
-                    'id' => $history->id,
-                    'item_name' => $keepItem->orderItemSubitem->productItem->product->product_name,
-                    'keep_item_id' => $keepItem->id,
-                    'qty'=> $history->qty,
-                    'status' => $history->status,
-                    'created_at' => Carbon::parse($history->created_at)->format('d/m/Y, h:i A'),
-                    'expired_date' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
-                    'waiter_name' => $keepItem->waiter->full_name ?? null,
-                ];
-            }
-        };
-
-        // Log::info(array_values($allKeepHistories));
-        $sortedKeepHistories = collect($allKeepHistories)->sortByDesc('created_at')->values()->all();
-        return response()->json($sortedKeepHistories);
+        return response()->json($keepHistories);
     }
 
-    public function customerPoints () {
-        $redeemables = Point::select('id','name', 'point')->get();
+    public function getRedeemableItems () {
+        $redeemables = Product::select('id','product_name', 'point')->where('is_redeemable', true)->get();
         $redeemables->each(function($redeemable){
-            $redeemable->image = $redeemable->getFirstMediaUrl('point');
+            $redeemable->image = $redeemable->getFirstMediaUrl('product');
         });
         
         return response()->json($redeemables);
     }
 
-    public function redeemHistory(string $id)
+    public function getCustomerPointHistories(string $id)
     {
-        $orders = Order::with('pointHistories') 
-            ->where('customer_id', $id)
-            ->orderBy('created_at','desc')
-            ->get();
+        // $orders = Order::with('pointHistories') 
+        //     ->where('customer_id', $id)
+        //     ->orderBy('created_at','desc')
+        //     ->get();
 
-        $earned = $orders->map(function ($order) {
-            $positivePoints = $order->orderItems->sum('point_earned');
-            $pointNames = $order->orderItems->where('type', 'Redemption')
-                ->map(function ($item) {
-                    return [
-                        "id" => $item->point->id,
-                        "name" => $item->point->name ?? 'N/A',
-                        "image" => $item->point->getFirstMediaUrl('point'),
-                        "qty" => $item->item_qty,
-                        "redeemed" => ($item->point_redeemed * $item->item_qty),
-                    ];
-                })->unique('name'); 
+        // $earned = $orders->map(function ($order) {
+        //     $positivePoints = $order->orderItems->sum('point_earned');
+        //     $pointNames = $order->orderItems->where('type', 'Redemption')
+        //         ->map(function ($item) {
+        //             return [
+        //                 "id" => $item->point->id,
+        //                 "name" => $item->point->name ?? 'N/A',
+        //                 "image" => $item->point->getFirstMediaUrl('point'),
+        //                 "qty" => $item->item_qty,
+        //                 "redeemed" => ($item->point_redeemed * $item->item_qty),
+        //             ];
+        //         })->unique('name'); 
 
-            $subject = $positivePoints > 0 ? $order->order_no : null;
-            return [
-                'created_at' => Carbon::parse($order->created_at)->format('d/m/Y, h:i A'),
-                'subject' => $subject,
-                'earned' => $positivePoints,
-                'used' => $pointNames,
-            ];
+        //     $subject = $positivePoints > 0 ? $order->order_no : null;
+        //     return [
+        //         'created_at' => Carbon::parse($order->created_at)->format('d/m/Y, h:i A'),
+        //         'subject' => $subject,
+        //         'earned' => $positivePoints,
+        //         'used' => $pointNames,
+        //     ];
+        // });
+
+        $pointHistories = PointHistory::with([
+                                            'payment:id,order_id,point_earned',
+                                            'payment.order:id,order_no',
+                                            'redeemableItem:id,product_name'
+                                        ]) 
+                                        ->where('customer_id', $id)
+                                        ->orderBy('created_at','desc')
+                                        ->get();
+
+        $pointHistories->each(function ($record) {
+        $record->image = $record->redeemableItem?->getFirstMediaUrl('product');
         });
-        return response()->json($earned);
+
+        return response()->json($pointHistories);
     }
 
     public function tierRewards(string $id)
     {
-        $customerTier = Customer::where('id', $id)->pluck('ranking')->first();
-        $tierName = Ranking::where('id', $customerTier)->pluck('name')->first();
-        $rankingRewards = RankingReward::where('ranking_id', $customerTier)->get();
+        // $customerTier = Customer::where('id', $id)->pluck('ranking')->first();
+        // $tierName = Ranking::where('id', $customerTier)->pluck('name')->first();
+        // $rankingRewards = RankingReward::where('ranking_id', $customerTier)->get();
     
-        $response = [];
+        // $response = [];
     
-        foreach ($rankingRewards as $reward) {
-            $formattedDate = Carbon::parse($reward->valid_period_to)->format('d/m/Y');
-            if (Carbon::parse($reward->valid_period_to)->isPast()) {
-                $rewardData = [
-                    'reward_type' => $reward->reward_type,
-                    'status' => 'expired',
-                    'valid_period_to' => $formattedDate,
-                    'reward' => null,
-                ];
-            } else {
-                switch ($reward->reward_type) {
-                    case 'Discount (Amount)':
-                        $calculatedReward = $reward->discount;
-                        break;
-                    case 'Discount (Percentage)':
-                        $calculatedReward = $reward->discount * 100;
-                        break;
-                    case 'Bonus Point':
-                        $calculatedReward = $reward->bonus_point;
-                        break;
-                    case 'Free Item':
-                        $rewardNo = $reward->free_item;
-                        $calculatedReward = IventoryItem::where('id', $rewardNo)->pluck('item_name')->first();
-                        break;
-                    default:
-                        $calculatedReward = null;
-                }
-                $formattedDate = Carbon::parse($reward->valid_period_to)->format('d/m/Y');
-                $rewardData = [
-                    'reward_type' => $reward->reward_type,
-                    'status' => $reward->min_purchase,
-                    'valid_period_to' => $formattedDate,
-                    'reward' => $calculatedReward,
-                ];
-            }
+        // foreach ($rankingRewards as $reward) {
+        //     $formattedDate = Carbon::parse($reward->valid_period_to)->format('d/m/Y');
+        //     if (Carbon::parse($reward->valid_period_to)->isPast()) {
+        //         $rewardData = [
+        //             'reward_type' => $reward->reward_type,
+        //             'status' => 'expired',
+        //             'valid_period_to' => $formattedDate,
+        //             'reward' => null,
+        //         ];
+        //     } else {
+        //         switch ($reward->reward_type) {
+        //             case 'Discount (Amount)':
+        //                 $calculatedReward = $reward->discount;
+        //                 break;
+        //             case 'Discount (Percentage)':
+        //                 $calculatedReward = $reward->discount * 100;
+        //                 break;
+        //             case 'Bonus Point':
+        //                 $calculatedReward = $reward->bonus_point;
+        //                 break;
+        //             case 'Free Item':
+        //                 $rewardNo = $reward->free_item;
+        //                 $calculatedReward = IventoryItem::where('id', $rewardNo)->pluck('item_name')->first();
+        //                 break;
+        //             default:
+        //                 $calculatedReward = null;
+        //         }
+        //         $formattedDate = Carbon::parse($reward->valid_period_to)->format('d/m/Y');
+        //         $rewardData = [
+        //             'reward_type' => $reward->reward_type,
+        //             'status' => $reward->min_purchase,
+        //             'valid_period_to' => $formattedDate,
+        //             'reward' => $calculatedReward,
+        //         ];
+        //     }
     
-            $response[] = $rewardData;
-        }
+        //     $response[] = $rewardData;
+        // }
      
-        $result = [
-            'tier_name' => $tierName,
-            'rewards' => $response,
-        ];
+        // $result = [
+        //     'tier_name' => $tierName,
+        //     'rewards' => $response,
+        // ];
     
-        return response()->json($result);
+        $customer = Customer::select('id')
+                            ->with([
+                                'rewards:id,customer_id,ranking_reward_id,status,updated_at',
+                                'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
+                                'rewards.rankingReward.product:id,product_name'
+                            ])
+                            ->find($id);
+
+        return response()->json($customer->rewards);
     }
     
 }

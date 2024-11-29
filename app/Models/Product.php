@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -70,10 +71,17 @@ class Product extends Model implements HasMedia
     {
         return $this->hasMany(ConfigDiscountItem::class, 'product_id');
     }
-
-    public function discount(): BelongsTo
+    
+    /**
+     * ConfigDiscountItem Model
+     * Get a filtered discount summary of the product.
+     */
+    public function discountSummary($discount_id = null)
     {
-        return $this->belongsTo(ConfigDiscount::class, 'discount_id');
+        return $discount_id 
+            ? $this->discountItems->select('id', 'discount_id', 'product_id', 'price_before', 'price_after')
+                                    ->where('discount_id', $discount_id) 
+            : null;
     }
 
     /**
@@ -92,6 +100,15 @@ class Product extends Model implements HasMedia
     public function rankingRewards(): HasMany
     {
         return $this->hasMany(RankingReward::class, 'free_item');
+    }
+    
+    /**
+     * ConfigDiscount Model
+     * Get the current discount of the product.
+     */
+    public function discount(): BelongsTo
+    {
+        return $this->belongsTo(ConfigDiscount::class, 'discount_id');
     }
 
     // Register the model event

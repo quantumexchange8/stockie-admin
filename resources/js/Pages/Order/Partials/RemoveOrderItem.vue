@@ -118,8 +118,8 @@ const submit = () => {
 
 const filteredOrderItems = computed(() => props.orderItems.filter((item) => getLeftoverQuantity(item) !== 0 && item.type === 'Normal'));
 
-const getAdjustedAmount = (item) => {
-    return parseFloat(item.amount / item.item_qty * getLeftoverQuantity(item)).toFixed(2);
+const getAdjustedAmount = (amount, item, discount = false) => {
+    return parseFloat((discount ? amount : amount / item.item_qty) * getLeftoverQuantity(item)).toFixed(2)
 };
 
 const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0));
@@ -146,7 +146,13 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                                     <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">{{ item.product.product_name }}</p>
                                     <div class="flex flex-nowrap gap-2 items-center">
                                         <Tag value="Set" v-if="item.product.bucket === 'set'"/>
-                                        <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ getAdjustedAmount(item) }}</p>
+                                        <template v-if="item.type === 'Normal'">
+                                            <div v-if="item.product.discount_id && item.product.discount_item" class="flex items-center gap-x-1.5">
+                                                <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ getAdjustedAmount(item.product.discount_item.price_before, item, true) }}</span>
+                                                <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ getAdjustedAmount(item.amount, item) }}</span>
+                                            </div>
+                                            <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ getAdjustedAmount(item.amount, item) }}</span>
+                                        </template>
                                         <Tag :value="item.type" variant="blue" v-else/>
                                     </div>
                                 </div>

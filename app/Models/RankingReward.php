@@ -67,4 +67,13 @@ class RankingReward extends Model
     {
         return $this->hasMany(Order::class, 'voucher_id');
     }
+
+    /**
+     * Payment Model
+     * Get the payments that has this voucher(ranking reward) applied to it.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'discount_id');
+    }
 }

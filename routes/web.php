@@ -213,6 +213,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/orders/updateOrderStatus/{id}', [OrderController::class, 'updateOrderStatus'])->name('orders.complete');
         Route::put('/orders/updateOrderCustomer/{data}', [OrderController::class, 'updateOrderCustomer'])->name('orders.updateOrderCustomer');
         Route::put('/orders/updateOrderPayment/{id}', [OrderController::class, 'updateOrderPayment'])->name('orders.updateOrderPayment');
+        Route::put('/orders/removeOrderVoucher/{id}', [OrderController::class, 'removeOrderVoucher'])->name('orders.removeOrderVoucher');
 
         // Order tables
         Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');
@@ -245,13 +246,13 @@ Route::middleware('auth')->group(function () {
      /********* Customer **********/
      Route::prefix('customer')->group(function(){
         Route::get('/',[CustomerController::class,'index'])->name('customer');
-        Route::delete('/deleteCustomer/{id}', [CustomerController::class, 'deleteCustomer'])->name('customer.delete-customer');
         Route::get('/filterCustomer', [CustomerController::class,'getFilteredCustomers'])->name('customer.filter-customer');
-        Route::post('/returnItems', [CustomerController::class,'returnItem'])->name('customer.return-item');
-        Route::get('/points', [CustomerController::class,'customerPoints'])->name('customer.point');
-        Route::get('/keepHistory/{id}', [CustomerController::class,'keepHistory'])->name('customer.keep-history');
-        Route::get('/redeemHistory/{id}', [CustomerController::class,'redeemHistory'])->name('customer.redeem-history');
+        Route::get('/getRedeemableItems', [CustomerController::class,'getRedeemableItems'])->name('customer.getRedeemableItems');
+        Route::get('/getKeepHistories/{id}', [CustomerController::class,'getKeepHistories'])->name('customer.getKeepHistories');
+        Route::get('/getCustomerPointHistories/{id}', [CustomerController::class,'getCustomerPointHistories'])->name('customer.getCustomerPointHistories');
         Route::get('/tierRewards/{id}', [CustomerController::class,'tierRewards'])->name('customer.tier-rewards');
+        Route::post('/returnKeepItem/{id}', [CustomerController::class,'returnKeepItem'])->name('customer.returnKeepItem');
+        Route::delete('/deleteCustomer/{id}', [CustomerController::class, 'deleteCustomer'])->name('customer.delete-customer');
      });
 
      /********* Summary Report **********/

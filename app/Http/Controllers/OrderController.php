@@ -36,6 +36,7 @@ use Illuminate\Http\Request;
 use App\Models\Zone;
 use App\Services\RunningNumberService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 // use Notification;
@@ -65,25 +66,25 @@ class OrderController extends Controller
             $user->image = $user->getFirstMediaUrl('user');
         });
 
-        $orders = Order::with([
-                            'orderItems:id,order_id,product_id,item_qty,amount,point_earned,status', 
-                            'orderItems.product:id,product_name', 
-                            'orderTable:id,table_id,order_id', 
-                            'orderTable.table:id,table_no', 
-                            'waiter:id,full_name',
-                            'customer:id,point',
-                            'payment:id,order_id,status'
-                        ])
-                        ->orderByDesc('id')
-                        ->get()
-                        ->filter(fn ($order) => $order->status === 'Order Completed' || $order->status === 'Order Cancelled')
-                        ->values();
+        // $orders = Order::with([
+        //                     'orderItems:id,order_id,product_id,item_qty,amount,status', 
+        //                     'orderItems.product:id,product_name', 
+        //                     'orderTable:id,table_id,order_id', 
+        //                     'orderTable.table:id,table_no', 
+        //                     'waiter:id,full_name',
+        //                     'customer:id,point',
+        //                     'payment:id,order_id,status'
+        //                 ])
+        //                 ->orderByDesc('id')
+        //                 ->get()
+        //                 ->filter(fn ($order) => $order->status === 'Order Completed' || $order->status === 'Order Cancelled')
+        //                 ->values();
 
-        $orders->each(function($order){
-            if($order->waiter){
-                $order->waiter->image = $order->waiter->getFirstMediaUrl('user');
-            };
-        });
+        // $orders->each(function($order){
+        //     if($order->waiter){
+        //         $order->waiter->image = $order->waiter->getFirstMediaUrl('user');
+        //     };
+        // });
 
         $customers = Customer::orderBy('full_name')
                                 ->get()
@@ -106,7 +107,7 @@ class OrderController extends Controller
             // 'message' => $message ?? [],
             'zones' => $zones,
             'users' => $users,
-            'orders' => $orders,
+            // 'orders' => $orders,
             'occupiedTables' => Table::where('status', '!=', 'Empty Seat')->get(),
             'customers' => $customers,
             'merchant' => $merchant
@@ -338,20 +339,27 @@ class OrderController extends Controller
                 $newOrder->refresh();
             }
 
-            $temp = 0;
+            $temp = 0.00;
+            $totalDiscountedAmount = 0.00;
 
             foreach ($orderItems as $key => $item) {
                 $status = $serveNow ? 'Served' : 'Pending Serve'; 
+                $product = Product::select('id', 'discount_id')->find($item['product_id']);
+
+                $currentProductDiscount = $product->discountSummary($product->discount_id)?->first();
+                $newItemAmount = round($currentProductDiscount ? $currentProductDiscount['price_after'] * $item['item_qty'] : $item['price'] * $item['item_qty'], 2);
+
                 $new_order_item = OrderItem::create([
                     'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
                     'user_id' => $request->user_id,
                     'type' => 'Normal',
                     'product_id' => $item['product_id'],
                     'item_qty' => $item['item_qty'],
-                    'amount' => round($item['price'] * $item['item_qty'], 2),
-                    'point_earned' => $item['point'] * $item['item_qty'],
+                    'amount' => $newItemAmount,
                     'status' => $status,
                 ]);
+
+                $totalDiscountedAmount += $currentProductDiscount ? ($currentProductDiscount['price_before'] - $currentProductDiscount['price_after']) * $item['item_qty'] : 0.00;
 
                 Notification::send(User::all(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
 
@@ -367,7 +375,7 @@ class OrderController extends Controller
                             ->log("placed an order for :properties.table_name.");
 
                 if (count($item['product_items']) > 0) {
-                    $temp += round($item['price'] * $item['item_qty'], 2);
+                    $temp += $newItemAmount;
                     
                     foreach ($item['product_items'] as $key => $value) {
                         $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id')->find($value['id']);
@@ -439,6 +447,7 @@ class OrderController extends Controller
                 $order->update([
                     'amount' => $order->amount + $temp,
                     'total_amount' => $order->amount + $temp,
+                    'discount_amount' => $order->discount_amount + $totalDiscountedAmount,
                     'status' => $orderStatus
                 ]);
                 
@@ -458,7 +467,10 @@ class OrderController extends Controller
      */
     public function getAllProducts()
     {
-        $products = Product::with(['productItems', 'category:id,name'])
+        $products = Product::with([
+                                'productItems', 
+                                'category:id,name', 
+                            ])
                             ->where('availability', 'Available')
                             ->orderBy('id')
                             ->get()
@@ -466,6 +478,8 @@ class OrderController extends Controller
                                 $product_items = $product->productItems;
                                 $minStockCount = 0;
                                 $product->image = $product->getFirstMediaUrl('product');
+                                $product->discount_item = $product->discountSummary($product->discount_id)?->first(); 
+                                unset($product->discountItems);
 
                                 if (count($product_items) > 0) {
                                     $stockCountArr = [];
@@ -511,7 +525,8 @@ class OrderController extends Controller
         if (!!$currentOrderTable) {
             // Lazy load relationships only for the selected table
             $currentOrderTable->load([
-                'order.orderItems.product.productItems.inventoryItem', // load only required fields
+                'order.orderItems.product.discount:id,name',
+                'order.orderItems.product.productItems.inventoryItem',
                 'order.orderItems.handledBy:id,full_name',
                 'order.orderItems.subItems.keepItems.keepHistories' => function ($query) {
                     $query->where('status', 'Keep')->latest()->offset(1)->limit(100);
@@ -536,6 +551,8 @@ class OrderController extends Controller
                 foreach ($currentOrderTable->order->orderItems as $orderItem) {
                     $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
                     $orderItem->handledBy->image = $orderItem->handledBy->getFirstMediaUrl('user');
+                    $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+                    unset($orderItem->product->discountItems);
                 }
             }
 
@@ -773,6 +790,7 @@ class OrderController extends Controller
         $order = Order::with([
                             'orderTable.table', 
                             'payment', 
+                            'voucher:id,reward_type,discount',
                             'orderItems' => fn($query) => $query->where('status', 'Served')
                         ])->find($id);
 
@@ -791,16 +809,25 @@ class OrderController extends Controller
                 $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
                 $pointConversion = $settings->filter(fn($setting) => $setting['type'] === 'point')->first();
 
-                $sstAmount = round($order->amount * ($taxes['SST'] / 100), 2);
-                $serviceTaxAmount = round($order->amount * ($taxes['Service Tax'] / 100), 2);
+                $subTotal = $order->amount;
+                $sstAmount = round($subTotal * ($taxes['SST'] / 100), 2);
+                $serviceTaxAmount = round($subTotal * ($taxes['Service Tax'] / 100), 2);
 
-                $grandTotal = $this->priceRounding($order->amount + $sstAmount + $serviceTaxAmount);
-                $roundingDiff = $grandTotal - ($order->amount + $sstAmount + $serviceTaxAmount);
+                if ($order->voucher) {
+                    $voucherDiscountedAmount = $order->voucher->reward_type === 'Discount (Percentage)' 
+                            ? $subTotal * ($order->voucher->discount / 100)
+                            : $order->voucher->discount;
+                } else {
+                    $voucherDiscountedAmount = 0.00;
+                }
+                
+                $grandTotal = $this->priceRounding($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
+                $roundingDiff = $grandTotal - ($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
                 $totalPoints = ($grandTotal / $pointConversion['value']) * $pointConversion['point'];
                 
                 $paymentData = [
                     'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
-                    'total_amount' => $order->amount,
+                    'total_amount' => $subTotal,
                     'grand_total' => $grandTotal,
                     'rounding' => $roundingDiff,
                     'sst_amount' => $sstAmount,
@@ -808,8 +835,8 @@ class OrderController extends Controller
                     'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
                     'customer_id' => $request->customer_id,
                     'handled_by' => $request->user_id,
-                    'discount_id' => $order->orderItems->first(fn ($item) => $item->discount_id)->discount_id ?? null,
-                    'discount_amount' => 0.00
+                    'discount_id' => $order->voucher_id,
+                    'discount_amount' => $voucherDiscountedAmount
                 ];
 
                 $order->payment
@@ -825,7 +852,7 @@ class OrderController extends Controller
                     ]);
 
                 // Update the calculated total amount of the order
-                $order->update(['total_amount' => $grandTotal]);
+                // $order->update(['total_amount' => $grandTotal]);
             }
         }
         
@@ -883,21 +910,41 @@ class OrderController extends Controller
                                     });
         }
 
-        $data = $query->with([
-                            'orderItems:id,order_id,product_id,item_qty,amount,point_earned,status', 
-                            'orderItems.product:id,product_name', 
+        $orders = $query->with([
+                            'orderItems:id,order_id,type,product_id,item_qty,amount,status', 
+                            'orderItems.product:id,product_name,price,bucket,discount_id', 
+                            'orderItems.product.discount:id,name', 
                             'orderTable:id,table_id,order_id', 
                             'orderTable.table:id,table_no', 
                             'waiter:id,full_name',
-                            'customer:id,point',
-                            'payment:id,order_id,status'
+                            'customer:id,ranking,point',
+                            'customer.rank:id,name',
+                            'payment:id,order_id,receipt_no,receipt_end_date,total_amount,rounding,sst_amount,service_tax_amount,discount_id,discount_amount,grand_total,point_earned,pax,status',
+                            'payment.pointHistory:id,payment_id,amount,new_balance',
+                            'payment.voucher:id,reward_type,discount',
                         ])
                         ->orderBy('id', 'desc')
                         ->get()
-                        ->filter(function ($order) {
-                            return in_array($order->status, ['Order Completed', 'Order Cancelled']);
-                        })
+                        ->filter(fn ($order) => in_array($order->status, ['Order Completed', 'Order Cancelled']))
                         ->values();
+
+        $orders->each(function($order){
+            foreach ($order->orderItems as $orderItem) {
+                $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+                unset($orderItem->product->discountItems);
+            }
+
+            if($order->waiter){
+                $order->waiter->image = $order->waiter->getFirstMediaUrl('user');
+            };
+        });
+
+        $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('value', 'name');
+
+        $data = [
+            'orders' => $orders,
+            'taxes' => $taxes
+        ];
 
         return response()->json($data);
     }
@@ -971,7 +1018,6 @@ class OrderController extends Controller
                             }
 
                             $balanceQty = $item['item_qty'] - $updated_item['remove_qty'];
-                            $cancelledPoints = $updated_item['remove_qty'] * $item->product['point'];
                             
                             if ((int)$balanceQty > 0) {
                                 $cancelledAmount += ($item['amount'] / $item['item_qty']) * $updated_item['remove_qty'];
@@ -979,7 +1025,6 @@ class OrderController extends Controller
                                 $item->update([
                                     'item_qty' => $balanceQty,
                                     'amount' => ($item['amount'] / $item['item_qty']) * $balanceQty,
-                                    'point_earned' => $item['point_earned'] > 0 ? $item['point_earned'] - $cancelledPoints : 0,
                                     'status' => $updated_item['has_products_left'] ? 'Pending Serve' : 'Served'
                                 ]);
                             } else {
@@ -1319,7 +1364,6 @@ class OrderController extends Controller
                 'keep_item_id' => $id,
                 'item_qty' => $request->return_qty,
                 'amount' => 0,
-                'point_earned' => 0,
                 'status' => 'Pending Serve',
             ]);
             
@@ -1433,9 +1477,6 @@ class OrderController extends Controller
                             'orderItems' => fn($query) => $query->where('status', 'Served')
                         ])->findOrFail($request->order_id);
 
-        // Update payment status
-        $payment->update(['status' => 'Successful']);
-
         // Handle sale history for "Normal" order items
         $order->orderItems->where('type', 'Normal')->each(function ($item) {
             SaleHistory::create([
@@ -1504,6 +1545,12 @@ class OrderController extends Controller
             ]);
         };
 
+        // Update payment status
+        $payment->update(['status' => 'Successful']);
+
+        // Update the total amount of the order based on the payment's grandtotal
+        $order->update(['total_amount' => $payment->grand_total]);
+
         $order->orderTable->each(function ($tab) {
             $tab->table->update(['status' => 'Pending Clearance']);
             $tab->update(['status' => 'Pending Clearance']);
@@ -1519,6 +1566,7 @@ class OrderController extends Controller
     {
         $orderTables = OrderTable::with([
                                         'table', 
+                                        'order.voucher:id,reward_type,discount', 
                                         'order.payment.customer', 
                                         'order.orderItems' => fn($query) => $query->where('status', 'Served'),
                                         'order.orderItems.product',
@@ -1549,6 +1597,7 @@ class OrderController extends Controller
                 foreach ($orderTable->order->orderItems as $orderItem) {
                     if ($orderItem->product) { 
                         $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
+                        $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first(); 
                     }
                 }
             }
@@ -1556,8 +1605,7 @@ class OrderController extends Controller
 
         // Get unique orders and include each order's payment details
         $uniqueOrders = $orderTables->pluck('order')->unique('id')->map(function ($order) {
-            if($order->customer)
-            {
+            if($order->customer){
                 $order->customer->image = $order->customer->getFirstMediaUrl('customer');
             }
             return [
@@ -1565,6 +1613,7 @@ class OrderController extends Controller
                 'order_no' => $order->order_no,
                 'pax' => $order->pax,
                 'payment' => $order->payment,
+                'voucher' => $order->voucher,
                 'order_items' => $order->orderItems,
                 'customer' => $order->customer,
             ];
@@ -1682,7 +1731,6 @@ class OrderController extends Controller
                 'product_id' => $redeemableItem->id,
                 'item_qty' => $validatedData['redeem_qty'],
                 'amount' => 0,
-                'point_earned' => 0,
                 'status' => 'Pending Serve',
             ]);
 
@@ -1862,7 +1910,6 @@ class OrderController extends Controller
                     'product_id' => $freeProduct->id,
                     'item_qty' => $tierReward->item_qty,
                     'amount' => 0,
-                    'point_earned' => 0,
                     'status' => 'Pending Serve',
                 ]);
 
@@ -1930,6 +1977,8 @@ class OrderController extends Controller
                     }
 
                     $order->update(['status' => $orderStatus]);
+                    $selectedReward->update(['status' => 'Redeemed']);
+
                     
                     // Update all tables associated with this order
                     $order->orderTable->each(function ($tab) use ($orderTableStatus) {
@@ -1941,7 +1990,8 @@ class OrderController extends Controller
 
             if (in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
                 $order->update(['voucher_id' => $tierReward->id]);
-            }
+                $selectedReward->update(['status' => 'Redeemed']);
+            };
 
             $summary = match ($tierReward->reward_type) {
                 'Discount (Amount)' => "'RM $tierReward->discount Discount' has been applied to this order.",
@@ -1960,12 +2010,37 @@ class OrderController extends Controller
     {
         $customer = Customer::select('id')
                             ->with([
-                                'rewards:id,customer_id,ranking_reward_id,status',
+                                'rewards:id,customer_id,ranking_reward_id,status,updated_at',
                                 'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
                                 'rewards.rankingReward.product:id,product_name'
                             ])
                             ->find($id);
 
         return response()->json($customer->rewards);
+    }
+
+    /**
+     * Remove the voucher applied to the order and reinstate back to customer's reward list.
+     */
+    public function removeOrderVoucher(string $id)
+    {
+        $order = Order::select('id', 'customer_id', 'voucher_id')
+                            ->with([
+                                'customer:id',
+                                'customer.rewards:id,customer_id,ranking_reward_id,status',
+                            ])
+                            ->find($id);
+
+        if (!$order || !$order->customer) return response()->json(['error' => 'Order or customer not found'], 404); 
+                            
+        $customer = $order->customer;
+        $removalTarget = $customer->rewards->where('ranking_reward_id', $order->voucher_id)->first();
+        
+        if (!$removalTarget) return response()->json(['error' => 'Reward not found'], 404);
+
+        $order->update(['voucher_id' => null]);
+        $removalTarget->update(['status' => 'Active']);
+
+        return response()->json();
     }
 }

@@ -1,7 +1,7 @@
 <script setup>
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { FilterMatchMode } from 'primevue/api';
 import Tag from '@/Components/Tag.vue';
 import Table from '@/Components/Table.vue';
@@ -15,42 +15,54 @@ import OverlayPanel from '@/Components/OverlayPanel.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
-    columns: Array,
-    rows: Array,
-    rowType: Object,
-    totalPages: Number,
-    rowsPerPage: Number,
+    // columns: Array,
+    // rows: Array,
+    // rowType: Object,
+    // totalPages: Number,
+    // rowsPerPage: Number,
     merchant: Object
 });
 
-const rows = ref(props.rows);  
+const rows = ref([]);  
 const date_filter = ref('');  
 const status = ref('');
 const selectedOrder = ref(null);
 const orderInvoiceModalIsOpen = ref(false);
 const op = ref(null);
+const rowsPerPage = ref(6);
+const taxes = ref([]);
+
+const columns = ref([
+    {field: 'updated_at', header: 'Date & Time', width: '15', sortable: false},
+    {field: 'table_no', header: 'Table / Room', width: '14', sortable: false},
+    {field: 'order_no', header: 'Order No.', width: '11', sortable: false},
+    {field: 'total_amount', header: 'Total', width: '14', sortable: false},
+    {field: 'waiter', header: 'Order Completed By', width: '21', sortable: false},
+    {field: 'status', header: 'Order Status', width: '14', sortable: false},
+    {field: 'action', header: '', width: '11', sortable: false},
+]);
+
+const totalPages = computed(() => Math.ceil(rows.value.length / rowsPerPage.value));
 
 const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
 
-const orderStatuses = ref([...new Set(props.rows.map(row => row.status))].map(status => ({
+const orderStatuses = ref([...new Set(rows.value.map(row => row.status))].map(status => ({
     text: status,
     value: status
 })));
 
 const statusfilter = (statusText) => {
-    rows.value = props.rows.filter((row) => row.status === statusText);
+    rows.value = rows.value.filter((row) => row.status === statusText);
 };
 
 // Get filtered order histories
 const getOrderHistories = async (filters = {}) => {
     try {
-        const orderHistoryResponse = await axios.get('/order-management/getOrderHistories', {
-            method: 'GET',
-            params: {
-                dateFilter: filters,
-            }
+        const response = await axios.get('/order-management/getOrderHistories', {
+            params: { dateFilter: filters }
         });
-        rows.value = orderHistoryResponse.data;
+        rows.value = response.data.orders;
+        taxes.value = response.data.taxes;
     } catch (error) {
         console.error(error);
     } finally {
@@ -58,7 +70,9 @@ const getOrderHistories = async (filters = {}) => {
     }
 }
 
-watch(() => date_filter.value, () => getOrderHistories(date_filter.value));
+onMounted(() => getOrderHistories());
+
+watch(date_filter, (newValue) => getOrderHistories(newValue));
 
 const openOverlay = (event, item) => {
     selectedOrder.value = item;
@@ -66,12 +80,12 @@ const openOverlay = (event, item) => {
 };
 
 const closeOverlay = () => {
-    selectedOrder.value = null;
     if (op.value)  op.value.hide();
 };
 
 const showOrderInvoiceModal = () => {
     setTimeout(() => orderInvoiceModalIsOpen.value = true, 100);
+    closeOverlay();
 };
 
 const hideOrderInvoiceModal = () => {
@@ -205,6 +219,10 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
         :show="orderInvoiceModalIsOpen"
         @close="hideOrderInvoiceModal"
     >
-        <OrderInvoice :order="selectedOrder" :merchant="merchant" />
+        <OrderInvoice 
+            :order="selectedOrder" 
+            :merchant="merchant" 
+            :taxes="taxes" 
+        />
     </Modal>
 </template>

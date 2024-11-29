@@ -25,8 +25,8 @@ class OrderItem extends Model
         'product_id',
         'item_qty',
         'amount',
-        'point_earned',
-        'point_redeemed',
+        // 'point_earned',
+        // 'point_redeemed',
         'status',
     ];
 

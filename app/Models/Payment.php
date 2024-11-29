@@ -68,4 +68,13 @@ class Payment extends Model
     {
         return $this->hasOne(PointHistory::class, 'payment_id');
     }
+
+    /**
+     * RankingReward Model
+     * Get the associated voucher(ranking reward).
+     */
+    public function voucher(): BelongsTo
+    {
+        return $this->belongsTo(RankingReward::class,'discount_id');
+    }
 }

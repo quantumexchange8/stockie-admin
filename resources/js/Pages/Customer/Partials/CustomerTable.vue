@@ -10,23 +10,18 @@ import TextInput from "@/Components/TextInput.vue";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import { FilterMatchMode } from "primevue/api";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import Slider from "@/Components/Slider.vue";
 import RightDrawer from "@/Components/RightDrawer/RightDrawer.vue";
 import CustomerDetail from "./CustomerDetail.vue";
 import { useFileExport } from "@/Composables";
+import dayjs from "dayjs";
 
 
 const props = defineProps ({
-    columns: {
-        type: Array,
-        required: true,
-    },
-    customers: {
-        type: Array,
-        required: true,
-    },
+    columns: Array,
+    customers: Array,
     actions: {
         type: Object,
         default: () => {},
@@ -35,6 +30,7 @@ const props = defineProps ({
     totalPages: Number,
     rowsPerPage: Number,
     highestPoints: Number,
+    rankingArr: Array
 })
 
 const emit = defineEmits(["applyCheckedFilters"]);
@@ -86,7 +82,7 @@ const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
 
-const tierArr = ref(['No Tier', 'VIP', 'VVIP', 'VVVIP']);
+// const tierArr = ref(['No Tier', 'VIP', 'VVIP', 'VVVIP']);
 const checkedFilters = ref({
     tier: [],
     points: [0, props.highestPoints],
@@ -131,11 +127,11 @@ const toggleKeepStatus = (status) => {
 
 const csvExport = () => {
     const mappedCustomers = props.customers.map(customer => ({
-        'Tier': customer.tier,
-        'Customer': customer.name,
-        'Points': customer.points,
-        'Keep': customer.keep,
-        'Joined Date': customer.created_at,
+        'Tier': customer.ranking ? customer.rank.name : 'No Tier',
+        'Customer': customer.full_name,
+        'Points': customer.point,
+        'Keep': customer.keep_items_count,
+        'Joined Date': dayjs(customer.created_at).format('DD/MM/YYYY'),
     }));
     exportToCSV(mappedCustomers, 'Customer List')
 }
@@ -144,6 +140,8 @@ const formatPoints = (points) => {
   const pointsStr = points.toString();
   return pointsStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
+
+watch(() => props.customers, (newValue) => customer.value = newValue)
 
 </script>
 
@@ -207,15 +205,15 @@ const formatPoints = (points) => {
                             <span class="text-grey-900 text-base font-semibold">Tier</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div 
-                                    v-for="(tier, index) in tierArr" 
+                                    v-for="(tier, index) in rankingArr" 
                                     :key="index"
                                     class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
                                 >
                                     <Checkbox 
-                                        :checked="checkedFilters.tier.includes(tier)"
-                                        @click="toggleTier(tier)"
+                                        :checked="checkedFilters.tier.includes(tier.id)"
+                                        @click="toggleTier(tier.id)"
                                     />
-                                    <span class="text-grey-700 text-sm font-medium">{{ tier }}</span>
+                                    <span class="text-grey-700 text-sm font-medium">{{ tier.name }}</span>
                                 </div>
                             </div>
                         </div>
@@ -289,31 +287,26 @@ const formatPoints = (points) => {
                         @click="showDeleteModal(customers.id)"
                     />
                 </template>
-                <template #tier="customers">
+                <template #ranking="customers">
                     <Tag
-                        :variant="customers.tier === 'No Tier' ? 'grey' : 'default'"
-                        :value="customers.tier" 
-                    
+                        :variant="customers.ranking ? 'default' : 'grey'"
+                        :value="customers.ranking ? customers.rank.name : 'No Tier'"
                     />
                 </template>
-                <template #name="customers">
+                <template #full_name="customers">
                     <template class="flex flex-row gap-[10px] items-center">
-                        <!-- <span class="w-[32px] h-[32px] flex-shrink-0 rounded-full bg-primary-700"></span> -->
                         <img :src="customers.image ? customers.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt=""
                                 class="w-[32px] h-[32px] flex-shrink-0 rounded-full"
                         />
-                        <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ customers.name }}</span>
+                        <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ customers.full_name }}</span>
                     </template>
                 </template>
-                <template #points="customers">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ formatPoints(customers.points) }} pts</span>
-                </template>
-                <template #keep="customers">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ customers.keep }}</span>
+                <template #point="customers">
+                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ formatPoints(customers.point) }} pts</span>
                 </template>
                 <template #created_at="customers">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ customers.created_at }}</span>
+                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ dayjs(customers.created_at).format('DD/MM/YYYY') }}</span>
                 </template>
             </Table>
         </div>
@@ -375,8 +368,6 @@ const formatPoints = (points) => {
         :show="isSidebarOpen"
         @close="hideSideBar"
      >
-        <CustomerDetail 
-            :customers="selectedCustomer" 
-        />
+        <CustomerDetail :customer="selectedCustomer"/>
      </RightDrawer>
 </template>

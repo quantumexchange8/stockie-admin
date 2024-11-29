@@ -13,28 +13,27 @@ const home = ref({
 });
 
 const props = defineProps({
-    customers: {
-        type:Array,
-        required: true,
-    }
+    customers: Array,
+    rankingArr: Array
 })
 
 const { flashMessage } = useCustomToast();
 
+const initialCustomers = ref(props.customers);
 const customers = ref(props.customers);
 const customerRowsPerPage = ref(10);
 const customerTotalPages = computed(() => {
     return Math.ceil(props.customers.length / customerRowsPerPage.value);
 })
 const highestPoints = computed(() => {
-    return Math.max(...customers.value.map(customer => customer.points));
+    return Math.max(...initialCustomers.value.map(customer => customer.point));
 });
 
 const customerColumn = ref([
-    { field: 'tier', header: 'Tier', width: '13', sortable: true},
-    { field: 'name', header: 'Customer', width: '28', sortable: true},
-    { field: 'points', header: 'Points', width: '13', sortable: true},
-    { field: 'keep', header: 'Keep', width: '13', sortable: true},
+    { field: 'ranking', header: 'Tier', width: '13', sortable: true},
+    { field: 'full_name', header: 'Customer', width: '28', sortable: true},
+    { field: 'point', header: 'Points', width: '13', sortable: true},
+    { field: 'keep_items_count', header: 'Keep', width: '13', sortable: true},
     { field: 'created_at', header: 'Joined date', width: '20', sortable: true},
     { field: 'action', header: '', width: '13', sortable: false},
 ])
@@ -56,6 +55,16 @@ const checkedFilters = ref({
     keepItems: [],
 })
 
+const getFilteredCustomers = (filteredCustomers) => {
+    let filteredArr = props.customers.filter(({id}) => {
+        let filteredCustomerIds = filteredCustomers.map(({ id }) => id);
+
+        return filteredCustomerIds.includes(id);
+    });
+
+    return filteredArr;
+};
+
 const getCustomers = async (filters = {}) => {
     try {
         const response = await axios.get('/customer/filterCustomer', {
@@ -64,7 +73,7 @@ const getCustomers = async (filters = {}) => {
                 checkedFilters: filters,
             }
         });
-        customers.value = response.data;
+        customers.value = getFilteredCustomers(response.data);
     } catch (error) {
         console.error(error);
     } finally {
@@ -77,10 +86,7 @@ const applyCheckedFilters = (filters) => {
     getCustomers(filters);
 }
 
-onMounted(() => {
-    flashMessage();
-});
-
+onMounted(() => flashMessage());
 
 </script>
 
@@ -104,6 +110,7 @@ onMounted(() => {
             :totalPages="customerTotalPages" 
             :rowsPerPage="customerRowsPerPage"
             :highestPoints="highestPoints"
+            :rankingArr="rankingArr"
             @applyCheckedFilters="applyCheckedFilters"
         />
         

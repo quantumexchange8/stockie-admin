@@ -20,7 +20,7 @@ const home = ref({
 const props = defineProps({
     zones: Array,
     users: Array,
-    orders: Array,
+    // orders: Array,
     occupiedTables: Array,
     customers: Array,
     merchant: Object
@@ -29,23 +29,6 @@ const props = defineProps({
 const zones = ref(props.zones);
 const tabs = ref([]);
 const orderHistoryIsOpen = ref(false);
-const orderHistoriesRowsPerPage = ref(6);
-
-const orderHistoryColumns = ref([
-    {field: 'updated_at', header: 'Date & Time', width: '15', sortable: false},
-    {field: 'table_no', header: 'Table / Room', width: '14', sortable: false},
-    {field: 'order_no', header: 'Order No.', width: '11', sortable: false},
-    {field: 'total_amount', header: 'Total', width: '14', sortable: false},
-    {field: 'waiter', header: 'Order Completed By', width: '21', sortable: false},
-    {field: 'status', header: 'Order Status', width: '14', sortable: false},
-    {field: 'action', header: '', width: '11', sortable: false},
-]);
-
-const rowType = {
-    rowGroups: false,
-    expandable: false,
-    groupRowsBy: '',
-};
 
 const showOrderHistory = () => {
     orderHistoryIsOpen.value = true;
@@ -80,10 +63,6 @@ const populateTabs = () => {
 };
 
 watch(() => zones.value, populateTabs, { immediate: true });
-
-const orderHistoriesTotalPages = computed(() => {
-    return Math.ceil(props.orders.length / orderHistoriesRowsPerPage.value);
-});
 
 // Transform the zones instance's zone text to be lower case and separated by hyphens (-) instead
 const tranformedZones = computed(() => {
@@ -184,11 +163,6 @@ const filteredZones = computed(() => {
             @close="hideOrderHistory"
         >
             <OrderHistory
-                :columns="orderHistoryColumns"
-                :rows="orders"
-                :totalPages="orderHistoriesTotalPages"
-                :rowsPerPage="orderHistoriesRowsPerPage"
-                :rowType="rowType"
                 :merchant="merchant"
             />
         </Modal>

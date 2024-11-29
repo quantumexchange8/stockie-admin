@@ -8,7 +8,7 @@ import DragDropImage from '@/Components/DragDropImage.vue'
 import { DeleteIcon, PlusIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
-import { useInputValidator } from '@/Composables/index.js';
+import { useCustomToast, useInputValidator } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -31,9 +31,13 @@ const props = defineProps({
     },
 });
 
-const isUnsavedChangesOpen = ref(false);
-const emit = defineEmits(['close', 'isDirty'])
+const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
+
+const emit = defineEmits(['close', 'isDirty'])
+
+const isUnsavedChangesOpen = ref(false);
+
 const cancelForm = (status) => {
     emit('close', 'edit', status)
 }
@@ -46,6 +50,7 @@ const form = useForm({
     items: props.selectedGroup 
             ?   props.selectedGroup.map((item) => {
                     item.low_stock_qty = item.low_stock_qty.toString();
+                    item.stock_qty = item.stock_qty.toString();
                     return item;
                 })
             :   [],
@@ -56,6 +61,11 @@ const formSubmit = () => {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
+            showMessage({
+                severity: 'success',
+                summary: 'Changes saved.',
+            });
+
             form.reset();
             cancelForm('leave');
         },
@@ -142,6 +152,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :placeholder="'eg: H001'"
                                     :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_code']  : ''"
                                     v-model="item.item_code"
+                                />
+                                <TextInput
+                                    :inputName="'item_'+ i +'_stock_qty'"
+                                    :labelText="'Current stock'"
+                                    :placeholder="'e.g. 100'"
+                                    :errorMessage="form.errors ? form.errors['items.' + i + '.stock_qty'] : ''"
+                                    v-model="item.stock_qty"
+                                    @keypress="isValidNumberKey($event, false)"
                                 />
                                 <TextInput
                                     :inputName="'item_'+ i +'_low_stock_qty'"

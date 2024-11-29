@@ -140,7 +140,7 @@ const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) &&
 </script>
 
 <template>
-    <div class="flex flex-col p-6 items-center gap-6 shrink-0 overflow-y-auto">
+    <div class="flex flex-col p-6 items-center gap-6 shrink-0 max-h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <!-- Current points -->
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
@@ -170,7 +170,7 @@ const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) &&
                             <img 
                                 :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt=""
-                                class="w-[60px] h-[60px] bg-primary-25 rounded-[1.5px] border-[0.3px] border-solid border-grey-100"
+                                class="size-[60px] bg-primary-25 rounded-[1.5px] border-[0.3px] border-solid border-grey-100"
                             >
                             <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] self-stretch">
                                 <span class="line-clamp-1 overflow-hidden text-grey-900 ellipsis text-base font-medium">{{ item.product_name }}</span>

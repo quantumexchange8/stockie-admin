@@ -38,7 +38,7 @@ onMounted(() => getRedeemHistory())
 </script>
 
 <template>
-    <div class="!w-full flex flex-col p-6 self-stretch max-h-[800px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
+    <div class="!w-full flex flex-col p-6 self-stretch max-h-[calc(100dvh-4rem)] overflow-y-scroll scrollbar-thin scrollbar-webkit">
         <TabView :tabs="tabs">
             <template #all>
                 <template v-if="redeemHistory.length > 0">
@@ -57,7 +57,7 @@ onMounted(() => getRedeemHistory())
                                             <img
                                                 v-else
                                                 :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                alt=""
+                                                alt="RedeemedItemImage"
                                                 class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"
                                             >
                                             <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0] self-stretch">
@@ -129,10 +129,9 @@ onMounted(() => getRedeemHistory())
                                 <div class="flex justify-between items-center self-stretch gap-x-3">
                                     <div class="w-3/4 flex flex-col items-start gap-3">
                                         <div class="flex items-start gap-3 self-stretch">
-                                            <!-- <div class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"></div> -->
                                             <img 
                                                 :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                alt=""
+                                                alt="RedeemedItemImage"
                                                 class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"
                                             >
                                             <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0] self-stretch">

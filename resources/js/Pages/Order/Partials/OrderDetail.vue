@@ -311,7 +311,13 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                         </p>
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
-                                            <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ parseFloat(item.amount).toFixed(2) }}</p>
+                                            <template v-if="item.type === 'Normal'">
+                                                <div v-if="item.product.discount_id && item.product.discount_item" class="flex items-center gap-x-1.5">
+                                                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.product.discount_item.price_before * item.total_qty).toFixed(2) }}</span>
+                                                    <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                                </div>
+                                                <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                            </template>
                                             <Tag :value="getItemTypeName(item.type)" variant="blue" v-else/>
                                         </div>
                                     </div>
@@ -341,7 +347,6 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in servedItems" :key="index">
                                 <div class="col-span-1"><div class="size-[30px] flex items-center justify-center bg-primary-900 rounded-[5px] text-primary-25 text-2xs font-semibold">x{{ item.item_qty }}</div></div>
                                 <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
-                                    <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt=""
@@ -353,14 +358,19 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                         </p>
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
-                                            <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-if="item.type === 'Normal'">RM {{ parseFloat(item.amount).toFixed(2) }}</p>
+                                            <template v-if="item.type === 'Normal'">
+                                                <div v-if="item.product.discount_id && item.product.discount_item" class="flex items-center gap-x-1.5">
+                                                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.product.discount_item.price_before * item.total_qty).toFixed(2) }}</span>
+                                                    <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                                </div>
+                                                <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                            </template>
                                             <Tag :value="getItemTypeName(item.type)" variant="blue" v-else/>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-span-3 flex flex-col justify-center items-end gap-2 self-stretch">
                                     <div class="flex flex-nowrap gap-1 items-center">
-                                        <!-- <div class="p-2 size-4 bg-primary-100 rounded-full border-[0.3px] border-grey-100"></div> -->
                                         <img 
                                             :src="item.handled_by.image ? item.handled_by.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                             alt=""

@@ -16,7 +16,7 @@ const tableOrders = ref([]);
 const taxes = ref([]);
 const collapsedSections = ref({}); // Object to keep track of each section's collapsed state
 
-const fetchOrderDetails = async () => {
+const fetchPaymentHistories = async () => {
     try {
         const response = await axios.get(route('orders.getOccupiedTablePayments', props.selectedTable.id));
         tableOrders.value = response.data.table_orders;
@@ -35,7 +35,7 @@ const fetchOrderDetails = async () => {
     }
 };
 
-onMounted(() => fetchOrderDetails());
+onMounted(() => fetchPaymentHistories());
 
 const toggleCollapse = (orderNo) => collapsedSections.value[orderNo] = !collapsedSections.value[orderNo];
 
@@ -91,7 +91,7 @@ const getKeepItemName = (item) => {
                     <div class="w-full grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
                         <div class="col-span-9 grid grid-cols-12 gap-3 items-center">
                             <img 
-                                :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt=""
                                 class="col-span-3 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                             >
@@ -105,7 +105,10 @@ const getKeepItemName = (item) => {
                             </div>
                         </div>
 
-                        <p class="col-span-3 text-grey-950 text-base font-medium text-right">RM {{ parseFloat(item.amount ?? 0).toFixed(2) }}</p>
+                        <div v-if="item.product.discount_id && item.product.discount_item" class="col-span-3 flex flex-col items-center">
+                            <span class="line-clamp-1 text-ellipsis text-grey-900 text-base font-normal leading-normal text-right self-stretch">RM {{ parseFloat(item.product.discount_item.price_after).toFixed(2) }}</span>
+                            <span class="line-clamp-1 text-ellipsis text-grey-500 text-xs font-normal leading-normal text-right self-stretch line-through">RM {{ parseFloat(item.product.discount_item.price_before).toFixed(2) }}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -122,13 +125,23 @@ const getKeepItemName = (item) => {
                             <p class="text-grey-900 text-base font-normal">Sub-total</p>
                             <p class="text-grey-900 text-base font-medium">RM {{ parseFloat(order.payment.total_amount ?? 0).toFixed(2) }}</p>
                         </div>
-                        <div class="flex flex-row justify-between items-start self-stretch">
-                            <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST'] ?? 0) }}%)</p>
+                        <div class="flex flex-row justify-between items-start self-stretch" v-if="order.voucher">
+                            <p class="text-grey-900 text-base font-normal">Voucher Discount {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
+                            <p class="text-grey-900 text-base font-medium">- RM {{ parseFloat(order.payment.discount_amount ?? 0).toFixed(2) }}</p>
+                        </div>
+                        <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.sst_amount > 0">
+                            <!-- <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST'] ?? 0) }}%)</p> -->
+                            <p class="text-grey-900 text-base font-normal">SST ({{ Math.round((taxes['SST'] && taxes['SST'] > 0 ? taxes['SST'] : null) ?? (order.payment.sst_amount / order.payment.total_amount * 100)) }}%)</p>
                             <p class="text-grey-900 text-base font-medium">RM {{ parseFloat(order.payment.sst_amount ?? 0).toFixed(2) }}</p>
                         </div>
-                        <div class="flex flex-row justify-between items-start self-stretch">
-                            <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p>
+                        <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.service_tax_amount > 0">
+                            <!-- <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p> -->
+                            <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round((taxes['Service Tax'] && taxes['Service Tax'] > 0 ? taxes['Service Tax'] : null) ?? (order.payment.service_tax_amount / order.payment.total_amount * 100)) }}%)</p>
                             <p class="text-grey-900 text-base font-medium">RM {{ parseFloat(order.payment.service_tax_amount ?? 0).toFixed(2) }}</p>
+                        </div>
+                        <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.rounding != 0">
+                            <p class="text-grey-900 text-base font-normal">Rounding</p>
+                            <p class="text-grey-900 text-base font-medium">{{ Math.sign(order.payment.rounding) === -1 ? '-' : '' }} RM {{ parseFloat(Math.abs(order.payment.rounding ?? 0)).toFixed(2) }}</p>
                         </div>
                     </div>
                 </transition>
