@@ -3,7 +3,7 @@ import { ArrowDownIcon, ArrowUpIcon, OrderToday, ProductSoldToday, SalesTodayIco
 
 const props = defineProps({
     sales: {
-        type: String,
+        type: Number,
         default: 0,
     },
     productSold: {

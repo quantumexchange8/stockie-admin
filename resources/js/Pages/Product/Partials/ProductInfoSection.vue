@@ -114,7 +114,11 @@ watch( () => props.product, (newValue) => {
             </div>
         </div>
 
-        <img :src="productInfo.image ? productInfo.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
+        <img 
+            :src="productInfo.image ? productInfo.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+            alt=""
+            class="w-[274px] h-[274px] object-contain"    
+        >
 
         <div class="flex flex-col items-start self-stretch gap-4">
             <Tag

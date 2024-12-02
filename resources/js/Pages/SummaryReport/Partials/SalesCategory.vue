@@ -67,8 +67,8 @@ const csvExport = () => {
 }
 
 const setChartData = () => {
-    const salesData = props.salesCategory.map(value => parseFloat(value));
-    const lastPeriod = props.lastPeriodSales.map(value => parseFloat(value));
+    const salesData = props.salesCategory.map(value => parseFloat(value).toFixed(2));
+    const lastPeriod = props.lastPeriodSales.map(value => parseFloat(value).toFixed(2));
 
     return {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -83,7 +83,7 @@ const setChartData = () => {
                 pointStyle: 'circle',
                 pointRadius: 0,
                 pointHoverRadius: 10,
-                pointHitRadius: 10,
+                pointHitRadius: 50,
                 pointBorderWidth: 3,
                 pointHoverBackgroundColor: '#FFF9F9',
                 pointHoverBorderWidth: 5,
@@ -113,7 +113,7 @@ const setChartData = () => {
                 pointStyle: 'circle',
                 pointRadius: 0,
                 pointHoverRadius: 10,
-                pointHitRadius: 10,
+                pointHitRadius: 50,
                 pointBorderWidth: 3,
                 pointHoverBackgroundColor: '#FFF9F9',
                 pointHoverBorderWidth: 5,
@@ -143,7 +143,6 @@ const setChartOptions = () => {
             tooltip: {
                 enabled: false,
                 external: customTooltipHandler,
-                position: 'nearest'
             },
             hover: {
                 mode: 'nearest',
@@ -299,11 +298,38 @@ function customTooltipHandler(context) {
     tooltipEl.querySelector('div').innerHTML = innerHtml;
 
     const position = chart.canvas.getBoundingClientRect();
+    const chartWidth = chart.width;
+    const chartHeight = chart.height;
+    const tooltipWidth = tooltipEl.offsetWidth;
+    const tooltipHeight = tooltipEl.offsetHeight;
+
+    // Calculate the tooltip's position
+    let left = position.left + window.pageXOffset + tooltipModel.caretX;
+    let top = position.top + window.pageYOffset + tooltipModel.caretY;
+
+    // Check for horizontal overflow
+    if (left + tooltipWidth > position.left + window.pageXOffset + chartWidth) {
+        left = position.left + window.pageXOffset + chartWidth - tooltipWidth;
+    }
+    if (left < position.left + window.pageXOffset) {
+        left = position.left + window.pageXOffset;
+    }
+
+    // Check for vertical overflow
+    if (top + tooltipHeight > position.top + window.pageYOffset + chartHeight) {
+        top = position.top + window.pageYOffset + chartHeight - tooltipHeight;
+    }
+    if (top < position.top + window.pageYOffset) {
+        top = position.top + window.pageYOffset;
+    }
+
+    // Apply the adjusted position
     tooltipEl.style.opacity = 1;
     tooltipEl.style.position = 'absolute';
-    tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
-    tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
-    tooltipEl.style.padding = tooltipModel.padding + 'px ' + tooltipModel.padding + 'px';
+    tooltipEl.style.left = `${left}px`;
+    tooltipEl.style.top = `${top}px`;
+    tooltipEl.style.padding = `${tooltipModel.padding}px ${tooltipModel.padding}px`;
+
 }
 
 const customPlugin = {

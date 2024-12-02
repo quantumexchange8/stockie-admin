@@ -354,7 +354,9 @@ class LoyaltyController extends Controller
                                         'full_name' => $payments->first()->customer->full_name,
                                         'spent' => $payments->sum('grand_total'),
                                     ];
-                                })->values(); 
+                                })
+                                ->sortByDesc('full_name')
+                                ->values(); 
         $names = $monthlySpent->pluck('full_name')->toArray();
         $spendings = $monthlySpent->pluck('spent')->toArray();
 
@@ -401,7 +403,9 @@ class LoyaltyController extends Controller
                                         'full_name' => $payments->first()->customer->full_name,
                                         'spent' => $payments->sum('grand_total'),
                                     ];
-                                })->values();
+                                })
+                                ->sortByDesc('full_name')
+                                ->values();
         $names = $monthlySpent->pluck('full_name')->toArray();
         $spendings = $monthlySpent->pluck('spent')->toArray();
 

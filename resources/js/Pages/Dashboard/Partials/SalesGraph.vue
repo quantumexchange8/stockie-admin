@@ -2,7 +2,7 @@
 import Button from "@/Components/Button.vue";
 import { UndetectableIllus } from "@/Components/Icons/illus";
 import Chart from "primevue/chart";
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 
 const props = defineProps ({
     salesGraph: {
@@ -13,19 +13,26 @@ const props = defineProps ({
         type: Array,
         required: true,
     },
+    activeFilter: String,
     isLoading: Boolean,
 })
-
 const chartData = ref();
 const chartOptions = ref();
 const emit = defineEmits(["applyTimeFilter", "isLoading"]);
         
 const setChartData = () => {
-    const salesData = props.salesGraph.map(value => parseFloat(value));
-    const monthLabels = props.monthly;
+    const salesData = props.monthly.map(value => parseFloat(value));
+    const monthLabels = computed(() => {
+    if (props.activeFilter === 'month') {
+        return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    } else {
+        const currentYear = new Date().getFullYear();
+        return Array.from({ length: 5 }, (_, i) => currentYear - i).reverse();
+    }
+});
 
     return {
-        labels: monthLabels,
+        labels: monthLabels.value,
         datasets: [
             {
                 label: '',
@@ -231,7 +238,7 @@ const updateChart = () => {
 };
 
 watch(
-    [() => props.salesGraph.value, () => props.monthly.value],
+    [() => props.salesGraph.value, () => props.monthly.value, () => props.activeFilter],
     () => {
         updateChart();
     },

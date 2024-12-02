@@ -31,7 +31,6 @@ class SummaryReportController extends Controller
         //order summary
 
         $ordersByMonth = array_fill(0, 12, 0);
-
         $orderSummary = Order::selectRaw('MONTHNAME(created_at) as month, 
                                                     MONTH(created_at) as month_num, 
                                                     SUM(CASE WHEN status = "Order Completed" THEN 1 ELSE 0 END) as total_order')

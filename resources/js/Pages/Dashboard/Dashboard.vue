@@ -22,7 +22,7 @@ const props = defineProps({
         required: true,
     },
     sales: {
-        type: String,
+        type: Number,
         required: true,
     },
     productSold: {
@@ -67,7 +67,6 @@ const props = defineProps({
     occupiedTables: Array,
     waiters: Array,
 })
-
 const { flashMessage } = useCustomToast();
 
 const activeFilter = ref('month');
@@ -179,6 +178,7 @@ onMounted(async()=> {
                     <SalesGraph 
                         :salesGraph="salesGraph" 
                         :monthly="monthly" 
+                        :activeFilter="activeFilter"
                         :isLoading="isLoading"
                         @isLoading="isLoading=$event"
                         @applyTimeFilter="applyTimeFilter"
