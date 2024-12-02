@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->dateTime('check_in');
-            $table->dateTime('check_out');
+            $table->dateTime('check_out')->nullable()->default(NULL);
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

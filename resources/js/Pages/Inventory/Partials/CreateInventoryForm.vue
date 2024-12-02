@@ -57,7 +57,47 @@ const hideGroupCreatedModal = () => groupCreatedModalIsOpen.value = false;
 
 // const hideAddAsProductModal = () => addAsProductModalIsOpen.value = false;
 
+const validateItemCodes = () => {
+    // Reset item_code errors
+    form.errors = { ...form.errors }; // Ensure reactivity
+
+    const codeMap = new Map();
+
+    // Build a map of item_code occurrences with their indices
+    form.items.forEach((item, index) => {
+        const code = item.item_code?.trim();
+        if (code) {
+            if (!codeMap.has(code)) {
+                codeMap.set(code, []);
+            }
+            codeMap.get(code).push(index);
+        }
+    });
+
+    // Update errors for duplicates except the first occurrence
+    codeMap.forEach((indices) => {
+        if (indices.length > 1) {
+            indices.slice(1).forEach((index) => {
+                form.errors[`items.${index}.item_code`] = 'This field must have a unique code.';
+            });
+        }
+    });
+};
+
+const validateForm = () => {
+    // Clear all previous errors
+    form.errors = {};
+
+    // Run validations
+    validateItemCodes();
+
+    // Return whether the form is valid
+    return Object.keys(form.errors).length === 0;
+};
+
 const formSubmit = async () => { 
+    if (!validateForm()) return;
+
     form.post(route('inventory.store'), {
         preserveScroll: true,
         preserveState: true,
@@ -138,7 +178,7 @@ const close = (status) => {
 
 const requiredFields = ['name', 'image', 'items'];
 
-const isFormValid = computed(() => requiredFields.every(field => form[field]));
+const isFormValid = computed(() => requiredFields.every(field => form[field]) && Object.keys(form.errors).length === 0);
 
 const addItem = () => form.items.push({ ...defaultInventoryItem });
 
@@ -149,6 +189,12 @@ const removeItem = (index) => {
         form.items.splice(index, 1);
     }
 }
+
+watch(
+    () => form.items.map(item => item.item_code),
+    () => validateForm(), // Runs all validations, not just item codes
+    { deep: true }
+);
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
