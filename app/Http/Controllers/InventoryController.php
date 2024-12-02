@@ -384,7 +384,7 @@ class InventoryController extends Controller
                                             'required',
                                             'string',
                                             'max:255',
-                                            Rule::unique('iventory_items')->ignore($item['id'], 'id'),
+                                            Rule::unique('iventory_items')->ignore($item['id']),
                                         ]
                                     : $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
 

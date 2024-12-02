@@ -55,7 +55,7 @@ onMounted (() => {
 </script>
 
 <template>
-    <div class="w-full h-full flex flex-col py-6 item-center shrink-0 rounded-[5px] border border-solid border-primary-100">
+    <div class="w-full h-full flex flex-col py-6 item-center rounded-[5px] border border-solid border-primary-100">
         <div class="w-full flex flex-col items-start gap-[10px] self-stretch">
             <div class="w-full flex justify-between px-6 items-center self-stretch ">
                 <span class="flex flex-col justify-between flex-[1_0_0] text-md font-medium text-primary-900 w-full">Table / Room Activity</span>
@@ -92,16 +92,16 @@ onMounted (() => {
                 </div>
             </div>
 
-            <div class="w-full flex flex-col px-6 items-end gap-[10px] flex-[1_0_0] self-stretch min-h-[300px] overflow-y-auto scrollbar-webkit">
+            <div class="w-full flex flex-col px-6 items-end gap-[10px] flex-[1_0_0] self-stretch min-h-[308px] overflow-y-auto scrollbar-webkit">
                 <div class="w-full flex flex-col items-end self-stretch divide-y-[0.5px] divide-solid divide-grey-200">
                         <template v-for="activity in activities" :key="activity">
-                            <div class="w-full h- flex flex-col p-3 items-end gap-3 self-stretch rounded-[5px]">
+                            <div class="w-full h-full flex flex-col p-3 items-end gap-3 self-stretch rounded-[5px]">
                                 <div class="w-full flex items-center gap-[10px] self-stretch justify-center">
                                     <div class="h-9 w-9">
                                         <img 
                                             :src="activity.properties.waiter_image ? activity.properties.waiter_image 
                                                                                     : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                            alt=""
+                                            alt="WaiterImage"
                                             class="w-full h-full rounded-full"
                                             v-if="activity.event === 'place to order'"
                                         >
@@ -109,7 +109,7 @@ onMounted (() => {
                                             <img 
                                                 :src="activity.properties.waiter_image ? activity.properties.waiter_image
                                                                                         : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                alt=""
+                                                alt="WaiterImage"
                                                 class="w-6 h-6 rounded-full left-0 top-0 absolute"
                                             >
                                             <div class="flex justify-center items-center border border-solid border-white bg-primary-800 
@@ -124,13 +124,13 @@ onMounted (() => {
                                             <img 
                                                 :src="activity.properties.assigner_image ? activity.properties.assigner_image
                                                                                         : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                alt=""
+                                                alt="WaiterImage"
                                                 class="w-6 h-6 rounded-full left-0 top-0 absolute"
                                             >
                                             <img 
                                                 :src="activity.properties.waiter_image ? activity.properties.waiter_image
                                                                                         : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                alt=""
+                                                alt="WaiterImage"
                                                 class="w-6 h-6 rounded-full absolute bottom-0 right-0"
                                             >
                                         </div>

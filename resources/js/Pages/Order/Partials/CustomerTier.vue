@@ -1,5 +1,5 @@
 <script setup>
-import { GiftCardIllus, TierIllust } from '@/Components/Icons/illus';
+import { GiftCardIllus, TierIllust, UndetectableIllus } from '@/Components/Icons/illus';
 import { CouponIcon, HistoryIcon, PointsIcon, ProductQualityIcon, TimesIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -196,66 +196,78 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
             <TabView :tabs="tabs">
                 <template #active>
                     <div class="flex flex-col items-center self-stretch max-h-[calc(100dvh-24.7rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pr-1 gap-y-4">
-                        <div class="grid grid-cols-12 p-6 items-center justify-between self-stretch rounded-[5px] bg-white" v-for="reward in activeTierRewards">
-                            <div class="flex items-start gap-x-3 self-stretch col-span-8 border-r-[0.5px] border-grey-200">
-                                <div class="flex w-[60px] h-[60px] justify-center items-center rounded-[1.5px] border border-solid border-primary-100 bg-primary-50">
-                                    <CouponIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)'"/>
-                                    <PointsIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Bonus Point'"/>
-                                    <ProductQualityIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
-                                </div>
-                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                    <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ customer.rank.name }}</span>
-                                    <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
-                                    <div class="flex items-center gap-1 self-stretch">
-                                        <template v-if="reward.ranking_reward.min_purchase === 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)')">
-                                            <span class="text-primary-900 text-2xs font-normal">Min spend: RM {{ reward.ranking_reward.min_purchase_amount }}</span>
-                                        </template>
-                                        <template v-if="reward.ranking_reward.min_purchase !== 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)'|| reward.ranking_reward.reward_type === 'Discount (Percentage)')">
-                                            <span class="text-primary-900 text-2xs font-normal">No min. spend</span>
-                                        </template>
+                        <template  v-if="activeTierRewards.length > 0">
+                            <div class="grid grid-cols-12 p-6 items-center justify-between self-stretch rounded-[5px] bg-white" v-for="reward in activeTierRewards">
+                                <div class="flex items-start gap-x-3 self-stretch col-span-8 border-r-[0.5px] border-grey-200">
+                                    <div class="flex w-[60px] h-[60px] justify-center items-center rounded-[1.5px] border border-solid border-primary-100 bg-primary-50">
+                                        <CouponIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)'"/>
+                                        <PointsIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Bonus Point'"/>
+                                        <ProductQualityIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
                                     </div>
-                                    <!-- *DNR* -->
-                                    <!-- <template v-if="reward.reward_type !== 'Bonus Point'">
-                                        <span class="self-stretch text-grey-400 text-2xs font-normal">Valid Period: {{ calculateValidPeriod(reward.valid_period_from, reward.valid_period_to) }}</span>
-                                    </template> -->
+                                    <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ customer.rank.name }}</span>
+                                        <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
+                                        <div class="flex items-center gap-1 self-stretch">
+                                            <template v-if="reward.ranking_reward.min_purchase === 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)')">
+                                                <span class="text-primary-900 text-2xs font-normal">Min spend: RM {{ reward.ranking_reward.min_purchase_amount }}</span>
+                                            </template>
+                                            <template v-if="reward.ranking_reward.min_purchase !== 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)'|| reward.ranking_reward.reward_type === 'Discount (Percentage)')">
+                                                <span class="text-primary-900 text-2xs font-normal">No min. spend</span>
+                                            </template>
+                                        </div>
+                                        <!-- *DNR* -->
+                                        <!-- <template v-if="reward.reward_type !== 'Bonus Point'">
+                                            <span class="self-stretch text-grey-400 text-2xs font-normal">Valid Period: {{ calculateValidPeriod(reward.valid_period_from, reward.valid_period_to) }}</span>
+                                        </template> -->
+                                    </div>
                                 </div>
-                            </div>
 
-                            <p 
-                                :class="[
-                                    'text-base font-semibold col-span-4 text-center',
-                                    reward.ranking_reward.min_purchase === 'active' && reward.ranking_reward.min_purchase_amount > parseFloat(matchingOrderDetails.amount) ? 'text-grey-300 pointer-events-none' :'text-primary-900 cursor-pointer'
-                                ]" 
-                                @click="openModal(reward)"
-                            >
-                                Redeem Now
-                            </p>
-                        </div>
+                                <p 
+                                    :class="[
+                                        'text-base font-semibold col-span-4 text-center',
+                                        reward.ranking_reward.min_purchase === 'active' && reward.ranking_reward.min_purchase_amount > parseFloat(matchingOrderDetails.amount) ? 'text-grey-300 pointer-events-none' :'text-primary-900 cursor-pointer'
+                                    ]" 
+                                    @click="openModal(reward)"
+                                >
+                                    Redeem Now
+                                </p>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <UndetectableIllus class="flex-shrink-0" />
+                            <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                        </template>
                     </div>
                 </template>
 
                 <template #redeemed>
                     <div class="flex flex-col items-center self-stretch max-h-[calc(100dvh-24.7rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pr-1 gap-y-4">
-                        <div class="grid grid-cols-12 p-6 items-center justify-between self-stretch rounded-[5px] bg-white" v-for="reward in redeemedTierRewards">
-                            <div class="flex items-start gap-x-3 self-stretch col-span-8 border-r-[0.5px] border-grey-200">
-                                <div class="flex w-[60px] h-[60px] justify-center items-center rounded-[1.5px] border border-solid border-primary-100 bg-grey-100">
-                                    <CouponIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)'"/>
-                                    <PointsIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Bonus Point'"/>
-                                    <ProductQualityIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
+                        <template  v-if="redeemedTierRewards.length > 0">
+                            <div class="grid grid-cols-12 p-6 items-center justify-between self-stretch rounded-[5px] bg-white" v-for="reward in redeemedTierRewards">
+                                <div class="flex items-start gap-x-3 self-stretch col-span-8 border-r-[0.5px] border-grey-200">
+                                    <div class="flex w-[60px] h-[60px] justify-center items-center rounded-[1.5px] border border-solid border-primary-100 bg-grey-100">
+                                        <CouponIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)'"/>
+                                        <PointsIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Bonus Point'"/>
+                                        <ProductQualityIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
+                                    </div>
+                                    <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
+                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ customer.rank.name }}</span>
+                                        <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
+                                        <span class="text-grey-600 text-2xs font-normal">Redeemed on {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>
+                                        <!-- *DNR*
+                                        <template v-if="reward.reward_type !== 'Bonus Point'">
+                                            <span class="self-stretch text-grey-400 text-2xs font-normal">Valid Period: {{ calculateValidPeriod(reward.valid_period_from, reward.valid_period_to) }}</span>
+                                        </template> -->
+                                    </div>
                                 </div>
-                                <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                    <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ customer.rank.name }}</span>
-                                    <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
-                                    <span class="text-grey-600 text-2xs font-normal">Redeemed on {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>
-                                    <!-- *DNR*
-                                    <template v-if="reward.reward_type !== 'Bonus Point'">
-                                        <span class="self-stretch text-grey-400 text-2xs font-normal">Valid Period: {{ calculateValidPeriod(reward.valid_period_from, reward.valid_period_to) }}</span>
-                                    </template> -->
-                                </div>
-                            </div>
 
-                            <p class="text-grey-300 text-base font-semibold col-span-4 text-center">Redeemed</p>
-                        </div>
+                                <p class="text-grey-300 text-base font-semibold col-span-4 text-center">Redeemed</p>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <UndetectableIllus class="flex-shrink-0" />
+                            <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                        </template>
                     </div>
                 </template>
             </TabView>

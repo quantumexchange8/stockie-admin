@@ -138,12 +138,12 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
                     <p class="text-primary-950 text-md font-light">Voucher Discount {{ order.payment.voucher.reward_type === 'Discount (Percentage)' ? `(${order.payment.voucher.discount}%)` : `` }}</p>
                     <p class="text-primary-950 text-md font-normal">- {{ parseFloat(order.payment.discount_amount ?? 0).toFixed(2) }}</p>
                 </div>
-                <div class="flex items-start justify-between self-stretch">
-                    <p class="text-primary-950 text-md font-light">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p>
+                <div class="flex items-start justify-between self-stretch" v-if="order.payment.service_tax_amount > 0">
+                    <p class="text-primary-950 text-md font-light">Service Tax ({{ Math.round((order.payment.service_tax_amount / order.payment.total_amount) * 100) }}%)</p>
                     <p class="text-primary-950 text-md font-normal">{{ parseFloat(order.payment.service_tax_amount ?? 0).toFixed(2) }}</p>
                 </div>
-                <div class="flex items-start justify-between self-stretch">
-                    <p class="text-primary-950 text-md font-light">SST ({{ Math.round(taxes['SST'] ?? 0) }}%)</p>
+                <div class="flex items-start justify-between self-stretch" v-if="order.payment.sst_amount > 0">
+                    <p class="text-primary-950 text-md font-light">SST ({{ Math.round((order.payment.sst_amount / order.payment.total_amount) * 100) }}%)</p>
                     <p class="text-primary-950 text-md font-normal">{{ parseFloat(order.payment.sst_amount ?? 0).toFixed(2) }}</p>
                 </div>
                 <div class="flex items-start justify-between self-stretch">

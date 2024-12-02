@@ -131,15 +131,15 @@ const getKeepItemName = (item) => {
                         </div>
                         <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.sst_amount > 0">
                             <!-- <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST'] ?? 0) }}%)</p> -->
-                            <p class="text-grey-900 text-base font-normal">SST ({{ Math.round((taxes['SST'] && taxes['SST'] > 0 ? taxes['SST'] : null) ?? (order.payment.sst_amount / order.payment.total_amount * 100)) }}%)</p>
+                            <p class="text-grey-900 text-base font-normal">SST ({{ Math.round((order.payment.sst_amount / order.payment.total_amount) * 100) }}%)</p>
                             <p class="text-grey-900 text-base font-medium">RM {{ parseFloat(order.payment.sst_amount ?? 0).toFixed(2) }}</p>
                         </div>
                         <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.service_tax_amount > 0">
                             <!-- <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p> -->
-                            <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round((taxes['Service Tax'] && taxes['Service Tax'] > 0 ? taxes['Service Tax'] : null) ?? (order.payment.service_tax_amount / order.payment.total_amount * 100)) }}%)</p>
+                            <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round((order.payment.service_tax_amount / order.payment.total_amount) * 100) }}%)</p>
                             <p class="text-grey-900 text-base font-medium">RM {{ parseFloat(order.payment.service_tax_amount ?? 0).toFixed(2) }}</p>
                         </div>
-                        <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.rounding != 0">
+                        <div class="flex flex-row justify-between items-start self-stretch">
                             <p class="text-grey-900 text-base font-normal">Rounding</p>
                             <p class="text-grey-900 text-base font-medium">{{ Math.sign(order.payment.rounding) === -1 ? '-' : '' }} RM {{ parseFloat(Math.abs(order.payment.rounding ?? 0)).toFixed(2) }}</p>
                         </div>

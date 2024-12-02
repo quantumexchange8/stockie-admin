@@ -30,13 +30,11 @@ const props = defineProps({
 </script>
 
 <template>
-    <div class="w-full flex items-start gap-[20px]">
+    <div class="w-full flex items-start gap-5">
         <!-- Sales today -->
-         <div class="w-full h-full flex flex-col p-6 justify-center items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-gradient-to-br from-primary-900 from-[2.42%] to-[#5E0A0E] to-[102.62%]">
-            <div class="flex w-[60px] h-[60px] justify-center items-center gap-[10px]">
-                <SalesTodayIcon />
-            </div>
-            <div class="flex flex-col items-start gap-[5.333px] self-stretch">
+        <div class="w-full h-full flex flex-col p-6 items-start gap-3 rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-gradient-to-br from-primary-900 from-[2.42%] to-[#5E0A0E] to-[102.62%]">
+            <SalesTodayIcon class="flex-shrink-0 size-[60px]" />
+            <div class="flex flex-col items-start gap-1.5 self-stretch">
                 <span class="text-primary-200 text-xs font-normal">Sales Today</span>
                 <div class="flex justify-center items-center">
                     <span class="text-primary-25 text-base font-semibold whitespace-nowrap">RM {{ props.sales }}</span>
@@ -52,16 +50,13 @@ const props = defineProps({
                     </template>
                 </div>
             </div>
-         </div>
+        </div>
 
         <!-- Products Sold today -->
-        <div class="w-full h-full flex flex-col p-6 items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
-            <div class="flex w-[60px] h-[60px] justify-center items-center gap-[10px]">
-                <ProductSoldToday />
-            </div>
-
-            <div class="flex flex-col items-start gap-[5.333px] self-stretch">
-                <span class="text-grey-900 text-xs font-medium self-stretch whitespace-nowrap">Products Sold Today</span>
+        <div class="w-full h-full flex flex-col p-6 items-start gap-3 rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
+            <ProductSoldToday class="flex-shrink-0 size-[60px]" />
+            <div class="flex flex-col items-start gap-1.5 self-stretch">
+                <span class="text-grey-900 text-xs font-medium">Products Sold Today</span>
                 <div class="flex justify-center items-center gap-[13.333px]">
                     <span class="text-primary-900 text-base font-semibold">{{ props.productSold }}</span>
                 </div>
@@ -79,13 +74,10 @@ const props = defineProps({
         </div>
 
         <!-- order today -->
-        <div class="w-full h-full flex flex-col p-6 items-start gap-3 flex-[1_0_0] rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
-            <div class="flex w-[60px] h-[60px] justify-center items-center gap-[10px]">
-                <OrderToday />
-            </div>
-
-            <div class="flex flex-col items-start gap-[5.333px] self-stretch">
-                <span class="text-grey-900 text-xs font-medium self-stretch whitespace-nowrap">Order Today</span>
+        <div class="w-full h-full flex flex-col p-6 items-start gap-3 rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
+            <OrderToday class="flex-shrink-0 size-[60px]" />
+            <div class="flex flex-col items-start gap-1.5 self-stretch">
+                <span class="text-grey-900 text-xs font-medium">Order Today</span>
                 <div class="flex justify-center items-center gap-[13.333px]">
                     <span class="text-primary-900 text-base font-semibold">{{ props.order }}</span>
                 </div>

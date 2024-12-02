@@ -162,9 +162,9 @@ onMounted(async()=> {
 
         <Toast />
 
-        <div class="w-full flex flex-col gap-[20px] p-[20px]">
-            <div class="gap-[20px] grid grid-cols-12">
-                <div class="flex flex-col gap-[20px] col-span-8">
+        <div class="w-full flex flex-col gap-5 p-5">
+            <div class="gap-5 grid grid-cols-12">
+                <div class="flex flex-col gap-5 col-span-full md:col-span-8">
                     <!-- sales, product sold, order today -->
                     <SalesProductOrder 
                         :sales="sales" 
@@ -183,25 +183,19 @@ onMounted(async()=> {
                         @isLoading="isLoading=$event"
                         @applyTimeFilter="applyTimeFilter"
                     />
-                </div>
-                <div class="flex col-span-4">
-                    <!-- table / room activity -->
-                    <TableRoomActivity :activeTables="activeTables"/>
-                </div>
-            </div>
 
-            <div class="grid grid-cols-12 gap-[20px]">
-                <!-- product low at stock -->
-                 <div class="col-span-8">
+                    <!-- product low at stock -->
                     <ProductLowStock 
                         :columns="stockColumn"
                         :rows="products"
                         :rowType="rowType"
                     />
                 </div>
+                <div class="flex flex-col gap-5 col-span-full md:col-span-4">
+                    <!-- table / room activity -->
+                    <TableRoomActivity :activeTables="activeTables"/>
 
-                <!-- on duty today -->
-                 <div class="col-span-4">
+                    <!-- on duty today -->
                     <OnDutyToday :onDuty="onDuty"/>
                 </div>
             </div>

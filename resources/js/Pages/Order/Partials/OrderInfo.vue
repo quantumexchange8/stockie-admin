@@ -386,7 +386,7 @@ watch(selectedTab, (newValue) => {
                 <div class="flex justify-end px-3 gap-x-2.5 self-stretch">
                     <p class="self-stretch text-grey-900 text-md font-medium">
                         Total: RM 
-                        {{ currentOrderTable.status === 'Pending Clearance' ?  0.00 : order.amount }}
+                        {{ currentOrderTable.status === 'Pending Clearance' ?  '0.00' : order.amount }}
                         <span class="text-primary-800">{{ currentOrderTable.status !== 'Pending Clearance' && order.voucher ? ` > RM ${getVoucherDiscountedPrice(order.amount, order.voucher)}` : '' }}</span>
                     </p>
                     <div class="flex items-center gap-1.5 px-3 py-0.5 rounded-[5px] border border-dashed border-primary-300 bg-primary-50" v-if="currentOrderTable.status !== 'Pending Clearance' && order.voucher">

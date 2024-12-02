@@ -19,15 +19,9 @@ watch(
     { immediate: true }
 );
 
-const totalStock = computed(() => {
-    let totalInventories = 0;
-
-    allInventories.value.forEach(item => {
-        totalInventories += item.stock_qty;
-    });
-
-    return totalInventories;
-})
+const totalStock = ref(
+    allInventories.value.reduce((total, item) => total + item.stock_qty, 0)
+)
 
 const chartData = ref();
 const chartOptions = ref();

@@ -421,160 +421,162 @@ const totalInventoryItemStock = (items) => {
                 </div>
             </div>
 
-            <table class="w-full border-spacing-3 border-collapse min-w-[755px]">
-                <thead class="w-full bg-primary-50">
-                    <tr>
-                        <th class="w-[5%] py-2 px-3 rounded-l-[5px]"></th>
-                        <th class="w-[26%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('name')">
-                            <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                Item Name
-                                <TableSortIcon class="w-4 text-primary-800 flex-shrink-0"/>
-                            </span>
-                        </th>
-                        <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('item_code')">
-                            <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                Code
-                                <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
-                            </span>
-                        </th>
-                        <th class="w-[10%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('item_category')">
-                            <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                Unit
-                                <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
-                            </span>
-                        </th>
-                        <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('stock_qty')">
-                            <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                Stock
-                                <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
-                            </span>
-                        </th>
-                        <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('name')">
-                            <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                Keep
-                                <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
-                            </span>
-                        </th>
-                        <th class="w-[14%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('status')">
-                            <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                Status
-                                <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
-                            </span>
-                        </th>
-                        <th class="w-[12%] py-2 px-3 rounded-r-[5px]"></th>
-                    </tr>
-                </thead>
-                <tbody class="w-full before:content-['@'] before:table-row before:leading-3 before:indent[-99999px] before:invisible">
-                    <tr 
-                        v-if="rows.length > 0" 
-                        v-for="(group, groupIndex) in computedRowsPerPage" :key="groupIndex" 
-                        class="rounded-[5px]"
-                        :class="groupIndex % 2 === 0 ? 'bg-white' : 'bg-primary-25'"
-                    >
-                        <td colspan="8" class="p-0">
-                            <Disclosure 
-                                as="div" 
-                                :defaultOpen="false"
-                                v-slot="{ open }" 
-                                class="flex flex-col justify-center"
-                            >
-                                <DisclosureButton class="flex items-center justify-between gap-2.5 rounded-sm py-1 hover:bg-primary-50">
-                                    <table class="w-full border-spacing-1 border-separate">
-                                        <tbody class="w-full">
-                                            <tr>
-                                                <td class="w-[5%]">
-                                                    <svg 
-                                                        width="20" 
-                                                        height="20" 
-                                                        viewBox="0 0 20 20" 
-                                                        fill="none" 
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        class="inline-block text-grey-900 transition ease-in-out"
-                                                        :class="[open ? '' : '-rotate-90']"
-                                                    >
-                                                        <path d="M15.8337 7.08337L10.0003 12.9167L4.16699 7.08337" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                                                    </svg>
-                                                </td>
-                                                <td class="w-[79%]">
-                                                    <div class="flex items-center gap-3">
-                                                        <img :src="group.inventory_image ? group.inventory_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                            alt="" 
-                                                            class="w-[60px] h-[60px] flex-shrink-0 rounded-full" 
-                                                        />
-                                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ group.name }}</span>
-                                                    </div>
-                                                </td>
-                                                <td class="w-[8%]">
-                                                    <div class="flex justify-end items-start gap-2">
-                                                        <ReplenishIcon
-                                                            class="w-6 h-6 block transition duration-150 ease-in-out text-primary-900 hover:text-primary-800 cursor-pointer"
-                                                            @click="openForm('add', group.id, $event)"
-                                                        />
-                                                        <EditIcon
-                                                            class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                                                            @click="openForm('edit', group.id, $event)"
-                                                        />
-                                                        <DeleteIcon
-                                                            class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
-                                                            @click="openForm('delete', group.id, $event)"
-                                                        />
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <div class="flex items-center justify-between">
-                                    </div>
-                                </DisclosureButton>
-                                <transition
-                                    enter-active-class="transition duration-100 ease-out"
-                                    enter-from-class="transform scale-95 opacity-0"
-                                    enter-to-class="transform scale-100 opacity-100"
-                                    leave-active-class="transition duration-100 ease-in"
-                                    leave-from-class="transform scale-100 opacity-100"
-                                    leave-to-class="transform scale-95 opacity-0"
+            <div class="w-full overflow-auto">
+                <table class="w-full border-spacing-3 border-collapse min-w-[755px]">
+                    <thead class="w-full bg-primary-50">
+                        <tr>
+                            <th class="w-[5%] py-2 px-3 rounded-l-[5px]"></th>
+                            <th class="w-[26%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('name')">
+                                <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
+                                    Item Name
+                                    <TableSortIcon class="w-4 text-primary-800 flex-shrink-0"/>
+                                </span>
+                            </th>
+                            <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('item_code')">
+                                <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
+                                    Code
+                                    <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
+                                </span>
+                            </th>
+                            <th class="w-[10%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('item_category')">
+                                <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
+                                    Unit
+                                    <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
+                                </span>
+                            </th>
+                            <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('stock_qty')">
+                                <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
+                                    Stock
+                                    <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
+                                </span>
+                            </th>
+                            <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('name')">
+                                <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
+                                    Keep
+                                    <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
+                                </span>
+                            </th>
+                            <th class="w-[14%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('status')">
+                                <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
+                                    Status
+                                    <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
+                                </span>
+                            </th>
+                            <th class="w-[12%] py-2 px-3 rounded-r-[5px]"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="w-full before:content-['@'] before:table-row before:leading-3 before:indent[-99999px] before:invisible">
+                        <tr 
+                            v-if="rows.length > 0" 
+                            v-for="(group, groupIndex) in computedRowsPerPage" :key="groupIndex" 
+                            class="rounded-[5px]"
+                            :class="groupIndex % 2 === 0 ? 'bg-white' : 'bg-primary-25'"
+                        >
+                            <td colspan="8" class="p-0">
+                                <Disclosure 
+                                    as="div" 
+                                    :defaultOpen="false"
+                                    v-slot="{ open }" 
+                                    class="flex flex-col justify-center"
                                 >
-                                    <DisclosurePanel class="bg-white pt-2 pb-3">
-                                        <div 
-                                            class="w-full flex items-center gap-x-3 rounded-[5px] text-sm text-grey-900 font-medium odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900 hover:bg-primary-50" 
-                                            v-for="(item, index) in group.inventory_items" :key="index"
-                                        >
-                                            <div class="w-[4%] py-2 px-3"></div>
-                                            <div class="w-[27%] py-2 px-3 truncate">{{ item.item_name }}</div>
-                                            <div class="w-[11%] py-2 px-3">{{ item.item_code }}</div>
-                                            <div class="w-[10%] py-2 px-3">{{ item.item_category.name }}</div>
-                                            <div class="w-[11%] py-2 px-3">{{ item.stock_qty }}</div>
-                                            <div class="w-[11%] py-2 px-3">{{ item.total_keep_qty }}</div>
-                                            <div class="w-[14%] py-2 px-3">
-                                                <Tag
-                                                    :variant="item.status === 'In stock' 
-                                                                    ? 'green'
-                                                                    : item.status === 'Low in stock'
-                                                                        ? 'yellow'
-                                                                        : 'red'"
-                                                    :value="item.status"
-                                                />
+                                    <DisclosureButton class="flex items-center justify-between gap-2.5 rounded-sm py-1 hover:bg-primary-50">
+                                        <table class="w-full border-spacing-1 border-separate">
+                                            <tbody class="w-full">
+                                                <tr>
+                                                    <td class="w-[5%]">
+                                                        <svg 
+                                                            width="20" 
+                                                            height="20" 
+                                                            viewBox="0 0 20 20" 
+                                                            fill="none" 
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            class="inline-block text-grey-900 transition ease-in-out"
+                                                            :class="[open ? '' : '-rotate-90']"
+                                                        >
+                                                            <path d="M15.8337 7.08337L10.0003 12.9167L4.16699 7.08337" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                                                        </svg>
+                                                    </td>
+                                                    <td class="w-[79%]">
+                                                        <div class="flex items-center gap-3">
+                                                            <img :src="group.inventory_image ? group.inventory_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                                alt="" 
+                                                                class="w-[60px] h-[60px] flex-shrink-0 rounded-full" 
+                                                            />
+                                                            <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ group.name }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="w-[8%]">
+                                                        <div class="flex justify-end items-start gap-2">
+                                                            <ReplenishIcon
+                                                                class="w-6 h-6 block transition duration-150 ease-in-out text-primary-900 hover:text-primary-800 cursor-pointer"
+                                                                @click="openForm('add', group.id, $event)"
+                                                            />
+                                                            <EditIcon
+                                                                class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
+                                                                @click="openForm('edit', group.id, $event)"
+                                                            />
+                                                            <DeleteIcon
+                                                                class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
+                                                                @click="openForm('delete', group.id, $event)"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <div class="flex items-center justify-between">
+                                        </div>
+                                    </DisclosureButton>
+                                    <transition
+                                        enter-active-class="transition duration-100 ease-out"
+                                        enter-from-class="transform scale-95 opacity-0"
+                                        enter-to-class="transform scale-100 opacity-100"
+                                        leave-active-class="transition duration-100 ease-in"
+                                        leave-from-class="transform scale-100 opacity-100"
+                                        leave-to-class="transform scale-95 opacity-0"
+                                    >
+                                        <DisclosurePanel class="bg-white pt-2 pb-3">
+                                            <div 
+                                                class="w-full flex items-center gap-x-3 rounded-[5px] text-sm text-grey-900 font-medium odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900 hover:bg-primary-50" 
+                                                v-for="(item, index) in group.inventory_items" :key="index"
+                                            >
+                                                <div class="w-[4%] py-2 px-3"></div>
+                                                <div class="w-[27%] py-2 px-3 truncate">{{ item.item_name }}</div>
+                                                <div class="w-[11%] py-2 px-3">{{ item.item_code }}</div>
+                                                <div class="w-[10%] py-2 px-3">{{ item.item_category.name }}</div>
+                                                <div class="w-[11%] py-2 px-3">{{ item.stock_qty }}</div>
+                                                <div class="w-[11%] py-2 px-3">{{ item.total_keep_qty }}</div>
+                                                <div class="w-[14%] py-2 px-3">
+                                                    <Tag
+                                                        :variant="item.status === 'In stock' 
+                                                                        ? 'green'
+                                                                        : item.status === 'Low in stock'
+                                                                            ? 'yellow'
+                                                                            : 'red'"
+                                                        :value="item.status"
+                                                    />
+                                                </div>
+                                                <div class="w-[12%] py-2 px-3"></div>
                                             </div>
-                                            <div class="w-[12%] py-2 px-3"></div>
-                                        </div>
-                                        <div class="flex justify-end pr-[50px] bg-white mt-3">
-                                            <span>Total Stock: {{ totalInventoryItemStock(group.inventory_items) }}</span>
-                                        </div>
-                                    </DisclosurePanel>
-                                </transition>
-                            </Disclosure>
-                        </td>
-                    </tr>
-                    <tr v-if="rows.length === 0 && props.rows.length > 0">
-                        <td colspan="8">
-                            <div class="flex flex-col items-center justify-center gap-5">
-                                <EmptyIllus class="flex-shrink-0"/>
-                                <span class="text-primary-900 text-sm font-medium">We couldn't find any result...</span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                                            <div class="flex justify-end pr-[50px] bg-white mt-3">
+                                                <span>Total Stock: {{ totalInventoryItemStock(group.inventory_items) }}</span>
+                                            </div>
+                                        </DisclosurePanel>
+                                    </transition>
+                                </Disclosure>
+                            </td>
+                        </tr>
+                        <tr v-if="rows.length === 0 && props.rows.length > 0">
+                            <td colspan="8">
+                                <div class="flex flex-col items-center justify-center gap-5">
+                                    <EmptyIllus class="flex-shrink-0"/>
+                                    <span class="text-primary-900 text-sm font-medium">We couldn't find any result...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <div class="flex flex-col items-center justify-center gap-5" v-if="props.rows.length === 0">
                 <EmptyIllus class="flex-shrink-0"/>
@@ -909,7 +911,7 @@ const totalInventoryItemStock = (items) => {
             :deleteUrl="`/inventory/inventory/deleteInventory/${selectedGroup.id}`"
             :confirmationTitle="'Delete this group?'"
             :confirmationMessage="'All the item inside this group will be deleted altogether. Are you sure you want to delete this group?'"
-            @close="closeForm('delete')"
+            @close="closeForm('delete', 'close')"
             v-if="selectedGroup"
         />
     </div>

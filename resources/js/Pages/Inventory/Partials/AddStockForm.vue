@@ -6,6 +6,7 @@ import Button from '@/Components/Button.vue'
 import DragDropImage from '@/Components/DragDropImage.vue'
 import Label from '@/Components/Label.vue';
 import Modal from '@/Components/Modal.vue';
+import { useCustomToast } from '@/Composables/index.js';
 
 const props = defineProps({
     errors: Object,
@@ -22,12 +23,13 @@ const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
 const initialData = ref();
 
+const { showMessage } = useCustomToast();
 const emit = defineEmits(['close', 'isDirty'])
 
 const form = useForm({
     name: props.selectedGroup.name,
     // category_id: props.selectedGroup.category_id,
-    image: props.selectedGroup.image ? props.selectedGroup.image : '',
+    image: props.selectedGroup.inventory_image ? props.selectedGroup.inventory_image : '',
     items: [],
 });
 
@@ -51,11 +53,21 @@ const formSubmit = () => {
         }
     });
 
+    let replenishedItem = form.items.map(item => {
+        if (item.add_stock_qty > 0) return item.item_name;
+    }).filter(item => item != null).join(', ');
+
     if (hasAddValue === true) {
         form.post(route('inventory.updateInventoryItemStock', props.selectedGroup.id), {
             preserveScroll: true,
             preserveState: 'errors',
             onSuccess: () => {
+                showMessage({
+                    severity: 'success',
+                    summary: 'Stock replenished successfully.',
+                    detail: `You've replenished stock for ${replenishedItem}`,
+                });
+
                 form.reset();
                 unsaved('leave');
             },
@@ -101,7 +113,7 @@ watch(
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
             <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200">
-                <img :src="selectedGroup.image ? selectedGroup.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
+                <img :src="selectedGroup.inventory_image ? selectedGroup.inventory_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" alt="">
             </div>
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                 <div class="grid grid-cols-12 items-center self-stretch" v-for="(item, i) in form.items" :key="i">

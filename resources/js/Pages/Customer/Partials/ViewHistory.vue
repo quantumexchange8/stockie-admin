@@ -150,9 +150,9 @@ onMounted(() => getKeepHistory());
                                                 class="!px-1.5 !py-1 !text-[6.8px] !m-0.5 absolute"
                                             />
                                              <img 
-                                                :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                alt=""
-                                                class="h-full w-full"
+                                                :src="item.keep_item.image ? item.keep_item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                alt="KeepItemImage"
+                                                class="size-full"
                                             >
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">

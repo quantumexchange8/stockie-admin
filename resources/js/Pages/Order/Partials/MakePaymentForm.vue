@@ -91,7 +91,7 @@ const getItemTypeName = (type) => {
 <template>
     <form novalidate @submit.prevent="formSubmit">
         <div class="flex flex-col gap-6 items-start rounded-[5px]">
-            <div class="flex flex-col items-start gap-10 px-6 py-3 w-full self-stretch">
+            <div class="flex flex-col items-start gap-10 px-6 py-3 w-full self-stretch max-h-[calc(100dvh-11.5rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
                 <div class="flex flex-col gap-y-4 items-start self-stretch">
                     <div class="flex flex-col py-2 gap-y-1 items-center self-stretch">
                         <p class="text-primary-900 text-md font-normal">Total Due</p>
@@ -130,7 +130,7 @@ const getItemTypeName = (type) => {
                         </div>
 
                         <div class="flex flex-col gap-y-6 items-start self-stretch">
-                            <div class="flex flex-col gap-y-6 items-start self-stretch max-h-[calc(100dvh-43rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+                            <div class="flex flex-col gap-y-6 items-start self-stretch">
                                 <div class="flex flex-col gap-y-4 items-start self-stretch">
                                     <template v-for="row in order.order_items.filter((item) => item.status === 'Served')">
                                         <div class="flex flex-col gap-y-2 self-stretch">
@@ -165,7 +165,7 @@ const getItemTypeName = (type) => {
                                     <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax']) }}%)</p>
                                     <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.service_tax_amount).toFixed(2) }}</p>
                                 </div>
-                                <div class="flex flex-row justify-between items-start self-stretch" v-if="paymentDetails.rounding != 0">
+                                <div class="flex flex-row justify-between items-start self-stretch">
                                     <p class="text-grey-900 text-base font-normal">Rounding</p>
                                     <p class="text-grey-900 text-base font-bold">{{ Math.sign(paymentDetails.rounding) === -1 ? '-' : '' }} RM {{ parseFloat(Math.abs(paymentDetails.rounding ?? 0)).toFixed(2) }}</p>
                                 </div>

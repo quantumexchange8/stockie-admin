@@ -98,7 +98,7 @@ const applyCheckedFilters = (filters) => {
     getInventories(filters, selectedCategory.value);
 };
 
-onMounted(async () => {
+onMounted(() => {
     flashMessage();
 });
 
@@ -107,11 +107,13 @@ const allInventoryItems = computed(() => {
     // return initialInventories.value.reduce((total, group) => total + group.inventory_items.length, 0);
 })
 
-const totalStock = computed(() => {
-    return initialInventories.value.reduce((overallTotal, group) => {
-        return overallTotal + group.inventory_items.reduce((totalStock, item) => totalStock + item.stock_qty, 0);
-    }, 0);
-})
+const totalStock = ref(
+    initialInventories.value.reduce((overallTotal, group) => {
+        return overallTotal + group.inventory_items.reduce((totalStock, item) => {
+            return totalStock + item.stock_qty;
+        }, 0);
+    }, 0)
+);
 
 const totalOutofStockItems = computed(() => {
     return initialInventories.value.reduce((total, group) => {

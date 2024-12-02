@@ -46,7 +46,7 @@ const form = useForm({
     id: props.group.id,
     name: props.group.name,
     // category_id: parseInt(props.group.category_id),
-    image: props.group.image ? props.group.image : '',
+    image: props.group.inventory_image ? props.group.inventory_image : '',
     items: props.selectedGroup 
             ?   props.selectedGroup.map((item) => {
                     item.low_stock_qty = item.low_stock_qty.toString();
