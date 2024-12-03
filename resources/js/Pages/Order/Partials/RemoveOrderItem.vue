@@ -141,14 +141,18 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                         <div class="w-full flex justify-between gap-3 items-center py-3">
                             <div class="flex items-center justify-start gap-3">
                                 <div class="size-[30px] flex items-center justify-center bg-primary-900 rounded-[5px] text-primary-25 text-2xs font-semibold">x{{ getLeftoverQuantity(item) }}</div>
-                                <div class="p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div>
+                                <img 
+                                    :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt="OrderItemImage"
+                                    class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                >
                                 <div class="flex flex-col gap-2 items-start justify-center self-stretch">
                                     <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">{{ item.product.product_name }}</p>
                                     <div class="flex flex-nowrap gap-2 items-center">
                                         <Tag value="Set" v-if="item.product.bucket === 'set'"/>
                                         <template v-if="item.type === 'Normal'">
-                                            <div v-if="item.product.discount_id && item.product.discount_item" class="flex items-center gap-x-1.5">
-                                                <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ getAdjustedAmount(item.product.discount_item.price_before, item, true) }}</span>
+                                            <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
+                                                <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ getAdjustedAmount(item.amount_before_discount, item, true) }}</span>
                                                 <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ getAdjustedAmount(item.amount, item) }}</span>
                                             </div>
                                             <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ getAdjustedAmount(item.amount, item) }}</span>

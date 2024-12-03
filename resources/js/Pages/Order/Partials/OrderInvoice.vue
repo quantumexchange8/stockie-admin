@@ -117,13 +117,13 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
                         <p class="text-grey-900 text-sm font-medium">
                             {{ row.product.bucket === 'set' ? '(Set) ' : '' }}{{ row.product.product_name }}
                         </p>
-                        <p class="text-grey-900 text-sm font-medium" v-if="row.product.discount_item">{{ `${row.product.discount.name} Discount` }}</p>
+                        <p class="text-grey-900 text-sm font-medium" v-if="row.discount_id">{{ `${row.product_discount.discount.name} Discount` }}</p>
                     </div>
                 </template>
                 <template #amount="row">
-                    <div class="w-full flex flex-col items-end self-stretch gap-y-3" v-if="row.product.discount_item">
-                        <p class="text-grey-900 text-sm font-medium text-right">{{ parseFloat(row.type === 'Normal' ? row.product.price * row.item_qty : 0).toFixed(2) }}</p>
-                        <p class="text-grey-900 text-sm font-medium">- {{ parseFloat((row.product.discount_item.price_before - row.product.discount_item.price_after) * row.item_qty).toFixed(2) }}</p>
+                    <div class="w-full flex flex-col items-end self-stretch gap-y-3" v-if="row.discount_id">
+                        <p class="text-grey-900 text-sm font-medium text-right">{{ parseFloat(row.type === 'Normal' ? row.amount_before_discount : 0).toFixed(2) }}</p>
+                        <p class="text-grey-900 text-sm font-medium">- {{ parseFloat(row.discount_amount).toFixed(2) }}</p>
                     </div>
                     <p class="text-grey-900 text-sm font-medium text-right w-full" v-else>{{ parseFloat(row.amount).toFixed(2) }}</p>
                 </template>

@@ -187,6 +187,7 @@ onMounted (() => {
                 :variant="'list'"
                 :searchFilter="true"
                 :filters="filters"
+                minWidth="min-w-[963px]"
             >
                 <template #empty>
                     <div class="flex w-full flex-col items-center justify-center gap-5 h-fit">

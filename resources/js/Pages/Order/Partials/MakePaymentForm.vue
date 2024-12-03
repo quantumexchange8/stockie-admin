@@ -91,7 +91,7 @@ const getItemTypeName = (type) => {
 <template>
     <form novalidate @submit.prevent="formSubmit">
         <div class="flex flex-col gap-6 items-start rounded-[5px]">
-            <div class="flex flex-col items-start gap-10 px-6 py-3 w-full self-stretch max-h-[calc(100dvh-11.5rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+            <div class="flex flex-col items-start gap-10 px-6 py-3 w-full self-stretch max-h-[calc(100dvh-11.5rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                 <div class="flex flex-col gap-y-4 items-start self-stretch">
                     <div class="flex flex-col py-2 gap-y-1 items-center self-stretch">
                         <p class="text-primary-900 text-md font-normal">Total Due</p>
@@ -137,11 +137,11 @@ const getItemTypeName = (type) => {
                                             <div class="flex flex-row items-center self-stretch gap-x-3">
                                                 <p class="w-8/12 text-grey-950 text-base font-medium self-stretch"> {{ row.type === 'Normal' ? '' : `(${getItemTypeName(row.type)})`  }} {{ row.product.product_name }}</p>
                                                 <p class="w-1/12 text-grey-950 text-base font-medium text-center">{{ row.item_qty }}</p>
-                                                <p class="w-3/12 text-grey-950 text-base font-medium text-right">RM {{ parseFloat(row.type === 'Normal' ? row.product.price * row.item_qty : 0).toFixed(2) }}</p>
+                                                <p class="w-3/12 text-grey-950 text-base font-medium text-right">RM {{ parseFloat(row.type === 'Normal' ? row.amount_before_discount : 0).toFixed(2) }}</p>
                                             </div>
-                                            <div class="flex flex-row items-center self-stretch gap-x-3 pl-16" v-if="row.product.discount_id && row.product.discount_item">
-                                                <ul class="w-8/12 list-disc"><li class="text-grey-950 text-base font-medium self-stretch">{{ `${row.product.discount.name} Discount` }}</li></ul>
-                                                <p class="w-4/12 text-grey-950 text-base font-medium text-right">- RM {{ parseFloat((row.product.discount_item.price_before - row.product.discount_item.price_after) * row.item_qty).toFixed(2) }}</p>
+                                            <div class="flex flex-row items-center self-stretch gap-x-3 pl-16" v-if="row.discount_id">
+                                                <ul class="w-8/12 list-disc"><li class="text-grey-950 text-base font-medium self-stretch">{{ `${row.product_discount.discount.name} Discount` }}</li></ul>
+                                                <p class="w-4/12 text-grey-950 text-base font-medium text-right">- RM {{ parseFloat(row.discount_amount).toFixed(2) }}</p>
                                             </div>
                                         </div>
                                     </template>

@@ -219,7 +219,8 @@ class DashboardController extends Controller
                         ->map(function ($waiter) { 
                             return [
                                 'text' => $waiter->full_name,
-                                'value' => $waiter->id
+                                'value' => $waiter->id,
+                                'image' => $waiter->getFirstMediaUrl('user'),
                             ];
                         });
 

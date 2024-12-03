@@ -302,7 +302,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                     <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                        alt=""
+                                        alt="OrderItemImage"
                                         class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                                     >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch">
@@ -312,8 +312,8 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
                                             <template v-if="item.type === 'Normal'">
-                                                <div v-if="item.product.discount_id && item.product.discount_item" class="flex items-center gap-x-1.5">
-                                                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.product.discount_item.price_before * item.total_qty).toFixed(2) }}</span>
+                                                <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
+                                                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
                                                     <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
                                                 </div>
                                                 <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
@@ -349,7 +349,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                 <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                        alt=""
+                                        alt="OrderItemImage"
                                         class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
                                     >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
@@ -359,8 +359,8 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
                                             <template v-if="item.type === 'Normal'">
-                                                <div v-if="item.product.discount_id && item.product.discount_item" class="flex items-center gap-x-1.5">
-                                                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.product.discount_item.price_before * item.total_qty).toFixed(2) }}</span>
+                                                <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
+                                                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
                                                     <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
                                                 </div>
                                                 <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>

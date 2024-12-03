@@ -346,8 +346,9 @@ class OrderController extends Controller
                 $status = $serveNow ? 'Served' : 'Pending Serve'; 
                 $product = Product::select('id', 'discount_id')->find($item['product_id']);
 
+                $originalItemAmount = $item['price'] * $item['item_qty'];
                 $currentProductDiscount = $product->discountSummary($product->discount_id)?->first();
-                $newItemAmount = round($currentProductDiscount ? $currentProductDiscount['price_after'] * $item['item_qty'] : $item['price'] * $item['item_qty'], 2);
+                $newItemAmount = round($currentProductDiscount ? $currentProductDiscount['price_after'] * $item['item_qty'] : $originalItemAmount, 2);
 
                 $new_order_item = OrderItem::create([
                     'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
@@ -355,6 +356,9 @@ class OrderController extends Controller
                     'type' => 'Normal',
                     'product_id' => $item['product_id'],
                     'item_qty' => $item['item_qty'],
+                    'amount_before_discount' => $originalItemAmount,
+                    'discount_id' => $currentProductDiscount ? $currentProductDiscount['id'] : null,
+                    'discount_amount' => $originalItemAmount - $newItemAmount,
                     'amount' => $newItemAmount,
                     'status' => $status,
                 ]);
@@ -527,6 +531,8 @@ class OrderController extends Controller
             $currentOrderTable->load([
                 'order.orderItems.product.discount:id,name',
                 'order.orderItems.product.productItems.inventoryItem',
+                'order.orderItems.productDiscount:id,discount_id,price_before,price_after',
+                'order.orderItems.productDiscount.discount:id,name',
                 'order.orderItems.handledBy:id,full_name',
                 'order.orderItems.subItems.keepItems.keepHistories' => function ($query) {
                     $query->where('status', 'Keep')->latest()->offset(1)->limit(100);
@@ -556,7 +562,7 @@ class OrderController extends Controller
                 }
             }
 
-            if($currentOrderTable->order->customer) {
+            if ($currentOrderTable->order->customer) {
                 $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
             }
             
@@ -904,16 +910,18 @@ class OrderController extends Controller
                             }, $dateFilter);
 
             // Apply the date filter (single date or date range)
-            $query->whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
+            $query->whereDate('updated_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
                                     ->when(count($dateFilter) > 1, function ($subQuery) use ($dateFilter) {
-                                        $subQuery->whereDate('created_at', '<=', $dateFilter[1]);
+                                        $subQuery->whereDate('updated_at', '<=', $dateFilter[1]);
                                     });
         }
 
         $orders = $query->with([
-                            'orderItems:id,order_id,type,product_id,item_qty,amount,status', 
+                            'orderItems:id,order_id,type,product_id,item_qty,amount_before_discount,discount_id,discount_amount,amount,status', 
                             'orderItems.product:id,product_name,price,bucket,discount_id', 
                             'orderItems.product.discount:id,name', 
+                            'orderItems.productDiscount:id,discount_id',
+                            'orderItems.productDiscount.discount:id,name',
                             'orderTable:id,table_id,order_id', 
                             'orderTable.table:id,table_no', 
                             'waiter:id,full_name',
@@ -1323,6 +1331,12 @@ class OrderController extends Controller
                                         if ($history->keepItem && $history->keepItem->orderItemSubitem) {
                                             $history->keepItem->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
                                             unset($history->keepItem->orderItemSubitem); // Clean up the response
+
+                                            $history->keepItem->image = $history->keepItem->orderItemSubitem->productItem 
+                                                                ? $history->keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                                                : $history->keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                                
+                                            $history->keepItem->waiter->image = $history->keepItem->waiter->getFirstMediaUrl('user');
                                         }
                                         return $history;
                                     });

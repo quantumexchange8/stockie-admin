@@ -237,8 +237,8 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                                 <div class="flex items-center gap-2">
                                                     <template v-if="product.stock_left > 0">
                                                         <div v-if="product.discount_id && product.discount_item" class="flex items-center gap-x-1.5">
-                                                            <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">{{ product.discount_item.price_after }}</span>
-                                                            <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">{{ product.discount_item.price_before }}</span>
+                                                            <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ product.discount_item.price_after }}</span>
+                                                            <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ product.discount_item.price_before }}</span>
                                                         </div>
                                                         <span class="text-primary-950 text-base font-medium" v-else>RM {{ parseFloat(product.price).toFixed(2) }}</span>
                                                         <span class="text-grey-200">&#x2022;</span>

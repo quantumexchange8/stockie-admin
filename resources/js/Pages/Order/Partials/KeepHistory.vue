@@ -92,7 +92,11 @@ onMounted(() => {
                                                 <span class="text-primary-900 text-2xs font-normal">
                                                     {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
                                                 </span>
-                                                <span class="w-3 h-3 bg-primary-900 rounded-full"></span>
+                                                <img 
+                                                    :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                    alt="KeepItemImage"
+                                                    class="size-4 rounded-full"
+                                                >
                                                 <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.full_name }}</span>
                                             </div>
                                             <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
@@ -143,9 +147,9 @@ onMounted(() => {
                                                 class="!px-1.5 !py-1 !text-[6.8px] !m-0.5 absolute"
                                             />
                                             <img 
-                                                :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                :src="item.keep_item.image ? item.keep_item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                 alt=""
-                                                class="h-full w-full"
+                                                class="size-full"
                                             >
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
@@ -155,7 +159,11 @@ onMounted(() => {
                                                 <span class="text-primary-900 text-2xs font-normal">
                                                     {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
                                                 </span>
-                                                <span class="w-3 h-3 bg-primary-900 rounded-full"></span>
+                                                <img 
+                                                    :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                    alt="KeepItemImage"
+                                                    class="size-4 rounded-full"
+                                                >
                                                 <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.full_name }}</span>
                                             </div>
                                             <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>

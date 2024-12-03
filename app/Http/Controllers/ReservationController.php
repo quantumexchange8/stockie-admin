@@ -63,6 +63,7 @@ class ReservationController extends Controller
                             return [
                                 'text' => $waiter->full_name,
                                 'value' => $waiter->id,
+                                'image' => $waiter->getFirstMediaUrl('user'),
                             ];
                         });
 

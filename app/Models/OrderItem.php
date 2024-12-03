@@ -24,6 +24,9 @@ class OrderItem extends Model
         'keep_item_id',
         'product_id',
         'item_qty',
+        'amount_before_discount',
+        'discount_id',
+        'discount_amount',
         'amount',
         // 'point_earned',
         // 'point_redeemed',
@@ -92,5 +95,14 @@ class OrderItem extends Model
     public function keepItem(): BelongsTo
     {
         return $this->belongsTo(KeepItem::class, 'keep_item_id');
+    }
+    
+    /**
+     * ConfigDiscountItem Model
+     * Get the discount applied to the respective product of the order item.
+     */
+    public function productDiscount(): BelongsTo
+    {
+        return $this->belongsTo(ConfigDiscountItem::class, 'discount_id');
     }
 }

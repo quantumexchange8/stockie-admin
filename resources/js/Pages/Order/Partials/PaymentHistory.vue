@@ -57,7 +57,7 @@ const getKeepItemName = (item) => {
 </script>
 
 <template>
-    <div class="w-full max-h-[calc(100dvh-23.6rem)] pr-2 overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <div class="w-full max-h-[calc(100dvh-23.6rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col gap-y-6 pr-1 py-4 items-start rounded-[5px]">
             <div 
                 v-if="tableOrders && tableOrders.length > 0"
@@ -88,7 +88,7 @@ const getKeepItemName = (item) => {
                     </div>
                 </div>
                 <div class="w-full flex flex-col gap-y-2 items-start self-stretch">
-                    <div class="w-full grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
+                    <div class="w-full grid grid-cols-12 justify-between gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
                         <div class="col-span-9 grid grid-cols-12 gap-3 items-center">
                             <img 
                                 :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
@@ -105,10 +105,11 @@ const getKeepItemName = (item) => {
                             </div>
                         </div>
 
-                        <div v-if="item.product.discount_id && item.product.discount_item" class="col-span-3 flex flex-col items-center">
-                            <span class="line-clamp-1 text-ellipsis text-grey-900 text-base font-normal leading-normal text-right self-stretch">RM {{ parseFloat(item.product.discount_item.price_after).toFixed(2) }}</span>
-                            <span class="line-clamp-1 text-ellipsis text-grey-500 text-xs font-normal leading-normal text-right self-stretch line-through">RM {{ parseFloat(item.product.discount_item.price_before).toFixed(2) }}</span>
+                        <div v-if="item.discount_id" class="col-span-3 flex flex-col items-center">
+                            <span class="line-clamp-1 text-ellipsis text-grey-900 text-base font-normal leading-normal text-right self-stretch">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                            <span class="line-clamp-1 text-ellipsis text-grey-500 text-xs font-normal leading-normal text-right self-stretch line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
                         </div>
+                        <span class="col-span-3 text-grey-900 text-base font-normal leading-normal text-right" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
                     </div>
                 </div>
 

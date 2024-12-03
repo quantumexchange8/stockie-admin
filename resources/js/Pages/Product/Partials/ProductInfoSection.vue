@@ -129,28 +129,28 @@ watch( () => props.product, (newValue) => {
         </div>
 
         <div class="flex flex-col gap-4 items-start self-stretch">
-            <div class="flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
-                <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">
-                    <PriceTagIcon class="size-6 text-primary-900"/>
+            <div class="grid grid-cols-12 gap-4 w-full">
+                <div class="col-span-6 lg:col-span-full flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
+                    <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">
+                        <PriceTagIcon class="size-6 text-primary-900"/>
+                    </div>
+                    <span class="text-base text-grey-900 font-medium">RM {{ productInfo.price }}</span>
                 </div>
-                <span class="text-base text-grey-900 font-medium">RM {{ productInfo.price }}</span>
-            </div>
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 w-full">
-                <div class="col-span-full xl:col-span-6 flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
+                <div class="col-span-6 lg:col-span-full flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
                     <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">
                         <AppsIcon class="size-6 text-primary-900"/>
                     </div>
                     <span class="text-base text-grey-900 font-medium">{{ category.name }}</span>
                 </div>
-                <div class="col-span-full xl:col-span-6 flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
+                <!-- <div class="col-span-full xl:col-span-6 flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
                     <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">
                         <PointsIcon class="size-6 text-primary-900"/>
                     </div>
                     <span class="text-base text-grey-900 font-medium">{{ productInfo.point }} pts</span>
-                </div>
+                </div> -->
             </div>
             <!-- need to use the points from points table instead & only show when this item is redeemable -->
-            <div class="flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
+            <div class="flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]" v-if="productInfo.point > 0">
                 <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">
                     <PointsBoxIcon class="size-6 text-primary-900"/>
                 </div>
