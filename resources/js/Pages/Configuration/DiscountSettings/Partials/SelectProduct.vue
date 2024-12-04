@@ -23,9 +23,11 @@ const searchQuery = ref('');
 
 const selectedCategory = ref(0);
 const selectedProducts = ref(props.selectedProducts);
+const tempArray = ref(props.selectedProducts);
 const emit = defineEmits(['closeSelectProduct', 'cancelSelectProduct', 'dateFilter']);
 
 const close = () => {
+    selectedProducts.value = tempArray.value;
     emit('closeSelectProduct', selectedProducts.value);
     emit('dateFilter', selectedProducts.value);
 }
@@ -87,12 +89,12 @@ const handleFilterChange = (filter) => {
 }
 
 const selectProduct = (product) => {
-    const foundIndex = selectedProducts.value.findIndex(p => p.id === product.id);
+    const foundIndex = tempArray.value.findIndex(p => p.id === product.id);
     
     if (foundIndex !== -1) {
-        selectedProducts.value.splice(foundIndex, 1);
+        tempArray.value.splice(foundIndex, 1);
     } else {
-        selectedProducts.value.push(product);
+        tempArray.value.push(product);
     }
 };
 
@@ -108,48 +110,47 @@ const selectAllProduct = (category) => {
 
     // Check if all products in the category are already selected
     const allSelected = categoryProducts.every(product => 
-        selectedProducts.value.some(selected => selected.id === product.id)
+        tempArray.value.some(selected => selected.id === product.id)
     );
 
     if (allSelected) {
         // If all are selected, remove them
-        selectedProducts.value = selectedProducts.value.filter(
+        tempArray.value = tempArray.value.filter(
             selected => !categoryProducts.some(product => product.id === selected.id)
         );
     } else {
-        // Otherwise, add only those not already in selectedProducts
+        // Otherwise, add only those not already in tempArray
         const newProducts = categoryProducts.filter(product => 
-            !selectedProducts.value.some(selected => selected.id === product.id)
+            !tempArray.value.some(selected => selected.id === product.id)
         );
-        selectedProducts.value = [...selectedProducts.value, ...newProducts];
+        tempArray.value = [...tempArray.value, ...newProducts];
     }
 };
-
 
 const isAllSelected = (category) => {
     if (category === 0) {
         return filteredProducts.value.every(product => 
-            selectedProducts.value.some(selected => selected.id === product.id)
+            tempArray.value.some(selected => selected.id === product.id)
         );
     } else {
         // check if all products in the category are selected
         const categoryProducts = filteredProducts.value.filter(product => product.category_id === category);
         return categoryProducts.every(product => 
-            selectedProducts.value.some(selected => selected.id === product.id)
+            tempArray.value.some(selected => selected.id === product.id)
         );
     }
 };
 
 const isFormValid = computed(() => {
-    return selectedProducts.value.length > 0;
+    return tempArray.value.length > 0;
 });
 
 watch(() => searchQuery.value, (newValue) => {
     if (newValue === '') {
-        if(selectedCategory.value === 0){
+        if(tempArray.value === 0){
             filteredProducts.value = [...products.value];
         } else {
-            filteredProducts.value = products.value.filter(product => product.category_id === selectedCategory.value)
+            filteredProducts.value = products.value.filter(product => product.category_id === tempArray.value)
         }
         return;
     }
@@ -163,7 +164,6 @@ watch(() => searchQuery.value, (newValue) => {
         return productName.includes(query) || productPrice.includes(query);
     });
 }, { immediate: true });
-
 
 watch(() => props.selectedProducts, (newValue) => {
     selectedProducts.value = newValue;
@@ -213,8 +213,8 @@ onMounted(() => {
                         />
                         <span class="line-clamp-1 flex-[1_0_0] text-grey-900 text-ellipsis text-sm font-medium">{{ items.product_name }}</span>
                         <Checkbox 
-                            :checked="selectedProducts.some(product => product.id === items.id)"
-                            :disabled="items.overlap && !(selectedProducts.some(product => product.id === items.id))"
+                            :checked="tempArray.some(product => product.id === items.id)"
+                            :disabled="items.overlap && !(tempArray.some(product => product.id === items.id))"
                             @update:checked="selectProduct(items)"
                         />
                     </div>

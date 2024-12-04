@@ -40,19 +40,21 @@ if (Array.isArray(props.commisionDetails.product) && Array.isArray(props.commisi
 }
 
 const emit = defineEmits(['close', 'viewEmployeeComm', 'isDirty']);
-const isRate = ref(true)
+const isRate = computed(() => 
+    form.commType === 'Fixed amount per sold product' ? false : true
+);
 const isUnsavedChangesOpen = ref(false);
 const commType = [
   { text: 'Fixed amount per sold product', value: 'Fixed amount per sold product' },
   { text: 'Percentage per sold product', value: 'Percentage per sold product' }
 ];
 
-const setIsRate = (type) => {
-    if(type == 'Fixed amount per sold product'){
-        isRate.value = false;
-    }else
-        isRate.value = true;
-}
+// const setIsRate = (type) => {
+//     if(type == 'Fixed amount per sold product'){
+//         isRate.value = false;
+//     }else
+//         isRate.value = true;
+// }
 
 const form = useForm({
     id: props.commisionDetails.id,
@@ -66,13 +68,14 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            closeModal();
+            closeModal('leave');
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
                     summary: 'Commission type has been successfully updated.',
                 });
             }, 200)
+            emit('viewEmployeeComm');
         },
         onError: (errors) => {
             console.error('Form submission error: ', errors);
@@ -104,7 +107,6 @@ const isFormValid = computed(() => {
                     :errorMessage="''"
                     :dataValue="form.commType"
                     v-model="form.commType"
-                    @onChange="setIsRate(form.commType)"
                 >
                 </Dropdown>
 

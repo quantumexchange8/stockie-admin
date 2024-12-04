@@ -225,8 +225,8 @@ watch(() => searchQuery.value, (newValue) => {
 
         <Toast />
 
-        <div class="w-full flex p-5 items-start gap-5 flex-[1_0_0] self-stretch">
-            <div class="w-full h-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100">
+        <div class="w-full flex p-5 items-start gap-5 flex-[1_0_0] self-stretch flex-col md:flex-col lg:flex-row">
+            <div class="w-full h-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100 min-w-[700px] overflow-auto scrollbar-webkit">
                 <div class="w-full flex flex-col items-center gap-6 self-stretch">
                     <div class="flex justify-between items-center flex-[1_0_0] self-stretch">
                         <span class="text-primary-900 text-md font-medium">Past Achiever</span>
@@ -238,8 +238,8 @@ watch(() => searchQuery.value, (newValue) => {
                         v-model="searchQuery"
                     />
 
-                    <table class="w-full border-spacing-3 border-collapse min-w-[755px]">
-                        <thead class="w-full bg-primary-50">
+                    <table class="w-full border-spacing-3 border-collapse min-w-[600px]">
+                        <thead class="w-full bg-primary-50 overflow-hidden">
                             <tr>
                                 <th class="w-[13%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('achiever')">
                                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">

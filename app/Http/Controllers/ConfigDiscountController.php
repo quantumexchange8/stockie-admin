@@ -30,9 +30,17 @@ class ConfigDiscountController extends Controller
                                         'value' => $category->id
                                     ];
                                 });
-
-        $productsAvailable = Product::with('discountItems.discount')
-                                    ->get();
+        // $productsAvailable = Product::with('discountItems.discount')
+        $productsAvailable = Product::with([
+                                                'discountItems' => function ($query) {
+                                                    $query->select('id', 'discount_id', 'product_id', 'price_before', 'price_after');
+                                                },
+                                                'discountItems.discount' => function ($query) {
+                                                    $query->select('id', 'discount_from', 'discount_to');
+                                                }
+                                            ])
+                                        ->select('id', 'product_name', 'price', 'category_id', 'status', 'discount_id')
+                                        ->get();
 
         $productsAvailable->each(function ($productAvailable) use ($currentDiscount) {
             $productAvailable->image = $productAvailable->getFirstMediaUrl('product');
@@ -80,46 +88,6 @@ class ConfigDiscountController extends Controller
             }
         }        
     }
-
-    public function dateFilter(Request $request)
-    {
-        // dd($request->all());
-        $dateFilter = [];
-        $selectedProducts = $request->input('selectedProducts', []);
-    
-        if (!is_array($selectedProducts) || count($selectedProducts) === 0) {
-            return response()->json($dateFilter); 
-        }
-    
-        foreach ($selectedProducts as $selectedProduct) {
-            if (!isset($selectedProduct['discount_id']) || !$selectedProduct['discount_id']) {
-                continue;
-            }
-            //go through all the discounts where this product is one of the discount items
-            //collect its existing discount date to do disable
-            foreach ($selectedProduct['discount_items'] as $discountItem) {
-                if (isset($discountItem['discount']['discount_from'], $discountItem['discount']['discount_to'])) 
-                {
-                    $disabledDates = CarbonPeriod::create(
-                        Carbon::parse($discountItem['discount']['discount_from'])->timezone('Asia/Kuala_Lumpur'), 
-                        Carbon::parse($discountItem['discount']['discount_to'])->timezone('Asia/Kuala_Lumpur')
-                    );
-
-                    $dateFilter = array_merge(
-                        $dateFilter, 
-                        $disabledDates->toArray()
-                    );
-                }
-            }
-        }
-    
-        // $uniqueDates = array_unique(array_map(fn($date) => $date->format('Y-m-d'), $dateFilter));
-    
-        // dd($uniqueDates);
-        return response()->json($dateFilter);
-    }
-    
-    
 
     public function discountDetails() {
         $discount = ConfigDiscount::with('discountItems.product')

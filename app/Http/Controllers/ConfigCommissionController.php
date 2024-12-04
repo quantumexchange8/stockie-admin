@@ -69,7 +69,6 @@ class ConfigCommissionController extends Controller
         ]);
     
         $newDataId = $newData->id;
-    
         foreach ($validatedData['involvedProducts'] as $productId) {
             $productItems = Product::find($productId)?->productItems;
         
@@ -98,21 +97,9 @@ class ConfigCommissionController extends Controller
         {
             ConfigEmployeeComm::where('id', $id)->delete();
             ConfigEmployeeCommItem::where('comm_id', $id)->delete();
-            $message = [
-                'severity' => 'success',
-                'summary' => 'Commission type has been deleted.'
-            ];
-
-        }
-        else
-        {
-            $message = [
-                'severity' => 'danger',
-                'summary' => 'No commission type found. Please contact administrator.'
-            ];
         }
 
-        return redirect()->route('configurations')->with(['message' => $message]);
+        return redirect()->route('configurations', ['selectedTab' => 1]);
     }
 
     public function editCommission (Request $request)
@@ -149,7 +136,7 @@ class ConfigCommissionController extends Controller
 
         if($id)
         {
-            $comm = ConfigEmployeeComm::where('id', $id)
+            $comm = ConfigEmployeeComm::find($id)
                                         ->select('comm_type', 'rate', 'id')
                                         ->first();
 
@@ -167,27 +154,24 @@ class ConfigCommissionController extends Controller
             //products that already included under this commission
             $productDetails = [];
             foreach ($commItems as $commItem) {
-                $products = Product::where('id', $commItem->item)
-                    ->select('product_name', 'price', 'id', 'bucket')
-                    ->get(); 
-            
-                foreach ($products as $product) {
-                    if ($comm->comm_type == 'Fixed amount per sold product') {
-                        $commission = $comm->rate; 
-                    } else {
-                        $commission = $product->price * ($comm->rate / 100); 
-                    }
-            
-                    $productDetails[] = [
-                        'id' => $product->id,
-                        'product_name' => $product->product_name,
-                        'price' => $product->price,
-                        'bucket' => $product->bucket,
-                        'commission' => $commission,
-                        'rate' => $comm->rate,
-                        'image' => $product->getFirstMediaUrl('product')
-                    ];
+
+                $product = ProductItem::find($commItem->item)->product;
+
+                if($comm->comm_type === 'Fixed amount per sold product') {
+                    $commission = $comm->rate;
+                } else {
+                    $commission = $product->price * ($comm->rate/100);
                 }
+
+                $productDetails[] = [
+                    'id' => $product->id,
+                    'product_name' => $product->product_name,
+                    'price' => $product->price,
+                    'bucket' => $product->bucket,
+                    'commission' => $commission,
+                    'rate' => $comm->rate,
+                    'image' => $product->getFirstMediaUrl('product')
+                ];
             }
 
             //products that are yet to be added 

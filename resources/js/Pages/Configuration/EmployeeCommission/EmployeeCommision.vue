@@ -1,16 +1,17 @@
 <script setup>
 import Button from "@/Components/Button.vue";
-import { EmptyCommissionIllust } from "@/Components/Icons/illus";
+import { DeleteIllus, EmptyCommissionIllust } from "@/Components/Icons/illus";
 import { DeleteIcon, EditIcon, PlusIcon } from "@/Components/Icons/solid";
 import Modal from "@/Components/Modal.vue";
 import SearchBar from "@/Components/SearchBar.vue";
 import Table from "@/Components/Table.vue";
-import { Head } from "@inertiajs/vue3";
+import { Head, useForm } from "@inertiajs/vue3";
 import { FilterMatchMode } from "primevue/api";
 import { onMounted, ref } from "vue";
 import AddCommission from "./Partials/AddCommission.vue";
 import EditCommission from "./Partials/EditCommission.vue";
 import axios from "axios";
+import { useCustomToast } from "@/Composables";
 
 const isNewCommissionOpen = ref(false);
 const isEditCommOpen = ref(false);
@@ -50,6 +51,12 @@ const viewEmployeeComm = async () => {
     }
 }
 
+const { showMessage } = useCustomToast();
+
+const deleteForm = useForm({
+    id: '',
+})
+
 const openEditComm = (event, rows) => {
     handleDefaultClick(event);
     isDirty.value = false;
@@ -60,7 +67,7 @@ const openEditComm = (event, rows) => {
 const openDeleteComm = (event, id) => {
     handleDefaultClick(event);
     isDeleteCommOpen.value = true;
-    selectedProduct.value = id;
+    deleteForm.id = id;
 }
 
 const openModal = () => {
@@ -91,6 +98,31 @@ const closeModal = (status) => {
             break;
         }
 
+    }
+}
+
+const deleteComm = async () => {
+    isLoading.value = true;
+    try {
+        deleteForm.delete((`/configurations/deleteCommission/${deleteForm.id}`), {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteForm.reset();
+                closeModal('leave');
+                setTimeout(() => {
+                    showMessage({ 
+                        severity: 'success',
+                        summary: 'Commission deleted.',
+                    });
+                }, 200);
+                viewEmployeeComm();
+            },
+        });
+    } catch(error) {
+        console.error(error)
+    } finally {
+        isLoading.value = false;
     }
 }
 
@@ -216,7 +248,7 @@ onMounted (() => {
                             :src="image ? image 
                                         : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                             alt=""
-                            class="border-[0.2px] border-solid border-grey-100 rounded-[1px] size-10"
+                            class="border-[0.2px] border-solid border-grey-100 rounded-[1px] size-10 object-contain"
                         />
                     </template>
                 </div>
@@ -224,16 +256,46 @@ onMounted (() => {
         </Table>
     </div>
 
-    <Modal 
-        :show="isDeleteCommOpen" 
-        :maxWidth="'2xs'" 
-        :closeable="true" 
-        :deleteConfirmation="true"
-        :deleteUrl="`/configurations/deleteCommission/${selectedProduct}`"
-        :confirmationTitle="'Delete this commission type?'"
-        :confirmationMessage="'Are you sure you want to delete the selected commission type? This action cannot be undone.'"
+    <Modal
+        :maxWidth="'2xs'"
+        :show="isDeleteCommOpen"
+        :withHeader="false"
         @close="closeModal('leave')"
-    />
+    >
+        <form @submit.prevent="deleteComm">
+            <div class="flex flex-col items-center gap-9 rounded-[5px] border border-solid border-primary-200 bg-white m-[-24px]">
+                <div class="w-full flex flex-col items-center gap-[10px] bg-primary-50">
+                    <div class="w-full flex pt-2 justify-center items-center">
+                        <DeleteIllus />
+                    </div>
+                </div>
+                <div class="flex flex-col px-6 items-center gap-1 self-stretch">
+                    <span class="self-stretch text-primary-900 text-center text-lg font-medium ">Delete this commission type?</span>
+                    <span class="self-stretch text-grey-900 text-center text-base font-medium">Are you sure you want to delete the selected commission type? This action cannot be undone.</span>
+                </div>
+
+                <div class="flex px-6 pb-6 justify-center items-start gap-3 self-stretch">
+                    <Button
+                        variant="tertiary"
+                        size="lg"
+                        type="button"
+                        @click="closeModal('leave')"
+                    >
+                        Keep
+                    </Button>
+                    <Button
+                        variant="red"
+                        size="lg"
+                        type="submit"
+                        :disabled="isLoading"
+                        @click="deleteComm()"
+                    >
+                        Delete
+                    </Button>
+                </div>
+            </div>
+        </form>
+    </Modal>
 
     <Modal
         :show="isEditCommOpen"

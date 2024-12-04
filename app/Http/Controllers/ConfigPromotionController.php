@@ -135,9 +135,9 @@ class ConfigPromotionController extends Controller
             'status' => $status,
         ]);
 
-        if($request->hasfile('image')) {
+        if($request->hasfile('promotion_image')) {
             $editPromotion->clearMediaCollection('promotion');
-            $editPromotion->addMedia($request->image)->toMediaCollection('promotion');
+            $editPromotion->addMedia($request->promotion_image)->toMediaCollection('promotion');
         }
 
         return redirect()->back();
@@ -191,7 +191,7 @@ class ConfigPromotionController extends Controller
             'merchant_name' => ['required', 'string'],
             'merchant_contact' => ['required', 'string'],
             'merchant_address' => ['required', 'max:255'],
-            'merchant_image' => ['required', 'image'],
+            'merchant_image' => ['required'],
         ]);
 
         $config_merchant = ConfigMerchant::find($request->merchant_id);

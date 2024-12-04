@@ -171,22 +171,26 @@ const submit = () => {
     });
 }
 
-const dateFilter = async (selectedProducts = []) => {
-    isLoading.value = true;
-    try {
-        const dateFilter = await axios.get('/configurations/dateFilter', {
-            method: 'GET',
-            params: {
-                selectedProducts: selectedProducts,
-            }
-        });
-        invalidDates.value = dateFilter.data.map(dateString => new Date(dateString));
+function getAllDatesBetween(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const dates = [];
 
-    } catch (error) {
-        console.error(error);
-    } finally {
-        isLoading.value = false;
+    while (start <= end) {
+        dates.push(new Date(start)); 
+        start.setDate(start.getDate() + 1); 
     }
+
+    return dates;
+}
+
+const dateFilter = (selectedProducts) => {
+    invalidDates.value = selectedProducts.map(product => product.discount_items.map(item => 
+                                                        getAllDatesBetween(item.discount.discount_from, item.discount.discount_to)
+                                                    )
+                                            )
+                                            .flat(2);
+
 };
 
 const isFormValid = computed(() => {
@@ -230,7 +234,6 @@ onMounted(() => {
                     <Button
                         type="button"
                         size="lg"
-                        class="!w-fit"
                         @click="openSelectProduct"
                     >
                         Select Product

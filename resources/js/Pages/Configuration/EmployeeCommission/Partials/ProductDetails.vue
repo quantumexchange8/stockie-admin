@@ -193,7 +193,7 @@ const filters = ref({
                                 <img 
                                     :src="rows.image ? rows.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt=""
-                                    class="size-10 rounded-[1px] border-[0.2px] border-solid border-grey-100"
+                                    class="size-10 rounded-[1px] border-[0.2px] border-solid border-grey-100 object-contain"
                                 >
                                 <Tag
                                     :variant="'default'"

@@ -197,7 +197,7 @@ const stopEditing = () => {
         percentageColumn.width = '17';
     }
 
-    if (editTaxForm.name.trim() !== '' && editTaxForm.value.trim() !== '') {
+    if (editTaxForm.name && editTaxForm.value && editTaxForm.name.trim() !== '' && editTaxForm.value.trim() !== '') {
         taxSubmit();
     } else {
         showMessage({
@@ -206,9 +206,12 @@ const stopEditing = () => {
         });
         getResults();
         const lastTax = taxes.value[taxes.value.length - 1];
-        if (lastTax && lastTax.name.trim() === '' && lastTax.value.trim() === '') {
-            taxes.value.pop();
+        if (lastTax) {
+            if (lastTax.name.trim() === '' && lastTax.value.trim() === ''){
+                taxes.value.pop();
+            }
         }
+        editTaxForm.reset();
     }
 }
 

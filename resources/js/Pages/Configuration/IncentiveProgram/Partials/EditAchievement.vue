@@ -100,7 +100,7 @@ const submit = () => {
                     detail: `Changes will take effect from '${toastMessage}'.`,
                 });
             }, 200);
-            leaveModal();
+            unsaved('leave');
             form.reset();
             emit('getEmployeeIncent', selectedIncent.value.id);
         }

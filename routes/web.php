@@ -123,7 +123,6 @@ Route::middleware('auth')->group(function () {
         /******* Discount Settings ********/
         Route::get('/getDiscount', [ConfigDiscountController::class, 'getDiscount'])->name('configurations.getDiscount');
         Route::post('/createDiscount', [ConfigDiscountController::class, 'createDiscount'])->name('configurations.createDiscount');
-        Route::get('/dateFilter', [ConfigDiscountController::class, 'dateFilter'])->name('configurations.dateFilter');
         Route::get('/discountDetails', [ConfigDiscountController::class, 'discountDetails'])->name('configurations.discountDetails');
         Route::delete('/deleteDiscount/{id}', [ConfigDiscountController::class, 'deleteDiscount'])->name('configurations.deleteDiscount');
         Route::post('/editDiscount/{id}', [ConfigDiscountController::class, 'editDiscount'])->name('configurations.editDiscount');
