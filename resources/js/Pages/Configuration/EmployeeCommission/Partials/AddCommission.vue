@@ -32,10 +32,10 @@ const options = computed(() =>
 const emit = defineEmits(['closeModal', 'viewEmployeeComm', 'isDirty']);
 const isRate = ref(true)
 const isUnsavedChangesOpen = ref(false);
-const commType = [
-  { text: 'Fixed amount per sold product', value: 'Fixed amount per sold product' },
-  { text: 'Percentage per sold product', value: 'Percentage per sold product' }
-];
+const commType = ref([
+    { text: 'Fixed amount per sold product', value: 'Fixed amount per sold product' },
+    { text: 'Percentage per sold product', value: 'Percentage per sold product' }
+]);
 
 const setIsRate = (type) => {
     if(type == 'Fixed amount per sold product'){
@@ -45,7 +45,7 @@ const setIsRate = (type) => {
 }
 
 const form = useForm({
-    commType: '',
+    commType: commType.value[1].value,
     commRate: '',
     involvedProducts: '',
 });
@@ -92,7 +92,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :inputName="'commType'"
                     :labelText="'Commission rate based on'"
                     :inputArray="commType"
-                    :errorMessage="''"
+                    :dataValue="form.commType"
+                    :errorMessage="form.errors?.commType"
                     v-model="form.commType"
                     @onChange="setIsRate(form.commType)"
                 >
