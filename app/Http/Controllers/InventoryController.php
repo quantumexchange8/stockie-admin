@@ -100,7 +100,9 @@ class InventoryController extends Controller
                                         ];
                                     });
 
-        
+        $keepItemsQuantity = KeepItem::where('status', 'Keep')->sum('qty');
+        $keepItemsCm = KeepItem::where('status', 'Keep')->where('cm', '>', 0)->count();
+        $keepItemsCount = $keepItemsCm + $keepItemsQuantity;
 
         return Inertia::render('Inventory/Inventory', [
             'inventories' => $inventories,
@@ -108,6 +110,7 @@ class InventoryController extends Controller
             'recentKeepHistories' => $recentKeepHistories,
             'categories' => $categories,
             'itemCategories' => $itemCategories,
+            'keepItemsCount' => (int)$keepItemsCount
         ]);
     }
     

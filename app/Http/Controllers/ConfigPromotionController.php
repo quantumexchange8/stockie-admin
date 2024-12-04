@@ -16,7 +16,7 @@ class ConfigPromotionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         // $nowDate = now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
         
@@ -48,6 +48,7 @@ class ConfigPromotionController extends Controller
             'ActivePromotions' => $ActivePromotions,
             'InactivePromotions' => $InactivePromotions,
             'merchant' => $merchant,
+            'selectedTab' => (int)$request->selectedTab,
         ]);
     }
 

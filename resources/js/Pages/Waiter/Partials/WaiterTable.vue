@@ -179,8 +179,7 @@ const handleDefaultClick = (event) => {
         :deleteUrl="`/waiter/deleteWaiter/${form.id}`"
         :confirmationTitle="`Delete this waiter?`"
         :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
-        @close="closeModal"
-        v-if="isDeleteWaiterOpen"
+        @close="closeModal('leave')"
         :withHeader="false"
     >
         <form @submit.prevent="submit">
@@ -190,7 +189,7 @@ const handleDefaultClick = (event) => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeModal"
+                        @click="closeModal('leave')"
                     >
                         Keep
                     </Button>

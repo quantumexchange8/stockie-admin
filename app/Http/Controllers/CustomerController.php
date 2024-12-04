@@ -160,7 +160,7 @@ class CustomerController extends Controller
             // Apply filter for 'keepItems'
             if (!empty($request['checkedFilters']['keepItems'])) {
                 $queries->withCount(['keepItems' => fn ($query) => $query->where('status', 'Keep')])
-                        ->having('keep_items_count', '>', 6);
+                        ->having('keep_items_count', '>',0);
             }
         }
         // dd($queries->toSql());

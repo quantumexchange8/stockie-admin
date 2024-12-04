@@ -44,7 +44,7 @@ class ProfileController extends Controller
         if($user)
         {
             $user->update([
-                'name' => $request->name,
+                'full_name' => $request->name,
             ]);
         }
 

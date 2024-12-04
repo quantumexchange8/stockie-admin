@@ -20,10 +20,11 @@ const props = defineProps({
 });
 
 const totalRedemptionCount = computed(() => {
-    return props.rows.reduce((totalRedemptionCount, row) => {
-        return row.point_histories.reduce((totalRedeemedQty, record) => totalRedeemedQty + record.qty, 0);
-    }, 0);
+    return props.rows
+        .flatMap(row => row.point_histories)
+        .reduce((total, record) => total + record.qty, 0);
 });
+
 
 </script>
 
@@ -33,7 +34,7 @@ const totalRedemptionCount = computed(() => {
             <div class="col-span-full sm:col-span-4 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
                 <div class="flex flex-col gap-2 items-center md:items-start">
                     <span class="text-sm font-medium text-grey-900 whitespace-nowrap">Points Given Away</span>
-                    <span class="text-lg font-medium text-primary-900">{{ totalPointsGivenAway }}</span>
+                    <span class="text-lg font-medium text-primary-900">{{ totalPointsGivenAway }} pts</span>
                 </div>
                 <div class="hidden bg-primary-50 rounded-[5px] md:flex items-center justify-center gap-2.5 w-16 h-16">
                     <PointsIcon class="text-primary-900 size-8"/>

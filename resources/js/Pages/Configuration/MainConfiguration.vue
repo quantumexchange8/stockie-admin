@@ -23,6 +23,7 @@ const props = defineProps({
     ActivePromotions: Array,
     InactivePromotions: Array,
     merchant: Object,
+    selectedTab: Number,
 })
 const { flashMessage } = useCustomToast();
 
@@ -43,7 +44,7 @@ onMounted(() => {
 
         <Toast />
 
-        <TabView :tabs="tabs">
+        <TabView :tabs="tabs" :selectedTab="props.selectedTab ? props.selectedTab : 0">
             <template #discount-settings>
                 <DiscountSettings />
             </template>

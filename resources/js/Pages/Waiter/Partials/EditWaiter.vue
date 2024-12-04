@@ -150,10 +150,10 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="flex gap-4">
                                 <div class="w-full flex flex-col">
                                     <TextInput
-                                        label-text="Staff ID"
+                                        :label-text="'Staff ID'"
                                         :placeholder="'eg: J8192'"
-                                        inputId="role_id"
-                                        type="'text'"
+                                        :inputId="'role_id'"
+                                        disabled
                                         v-model="form.role_id"
                                     ></TextInput>
                                     <InputError

@@ -78,7 +78,6 @@ const submit = () => {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
-            form.reset();
             emit('close');
             setTimeout(() => {
                 showMessage({ 
@@ -125,8 +124,8 @@ const changeProfilePic = () => {
             <img 
                 :src="userImage ? userImage : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                 alt=""
-                class="rounded-[100px] object-fit shadow-[0px_0px_24.2px_0px_rgba(203,60,60,0.30)] 
-                        flex w-[46px] justify-center items-center"
+                class="rounded-[100px] object-contain shadow-[0px_0px_24.2px_0px_rgba(203,60,60,0.30)] 
+                        flex w-[60px] h-[60px] justify-center items-center"
             >
             <!-- </div> -->
             <div class="flex flex-col">

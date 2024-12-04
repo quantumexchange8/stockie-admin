@@ -6,7 +6,7 @@ const props = defineProps({
     redeemedProducts: Array,
 });
 
-const mostRedeemedProduct = computed(() => props.redeemedProducts.sort((a, b) => b.point_histories.qty - a.point_histories.qty).slice(0, 5));
+const mostRedeemedProduct = computed(() => props.redeemedProducts.sort((a, b) => b.point_histories.length - a.point_histories.length).slice(0, 5));
 
 const getTotalRedemption = (histories) => histories.reduce((total, record) => total + record.qty, 0);
 

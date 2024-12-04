@@ -68,6 +68,7 @@ const openForm = (action, id, event) => {
             break;
         case 'group-created': 
             inventoryToAdd.value = event;
+            createFormIsOpen.value = false;
             groupCreatedModalIsOpen.value = true;
             break;
         case 'add-as-product': 
@@ -794,7 +795,7 @@ const totalInventoryItemStock = (items) => {
             :closeable="true"
             :withHeader="false"
             :show="groupCreatedModalIsOpen"
-            @close="closeForm('group-created')"
+            @close="closeForm('group-created', 'close')"
         >
             <div class="flex flex-col gap-9 pt-36">
                 <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] fixed top-0 w-full left-0">
@@ -813,7 +814,7 @@ const totalInventoryItemStock = (items) => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeForm('group-created')"
+                        @click="groupCreatedModalIsOpen = false"
                     >
                         Maybe Later
                     </Button>

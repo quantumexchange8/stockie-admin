@@ -31,10 +31,10 @@ const csvExport = () => {
     const waiterName = props.waiter.full_name || 'Unknown Waiter';
     const dataArr = data.value.map(data => ({
         'Date': data.created_at,
-        'Total': data.monthly_sale,
+        'Monthly Sale': data.monthly_sale,
         'Commission': data.commissionAmt,        
     }));
-    exportToCSV(dataArr, `${waiterName}_Daily Sales Report`)
+    exportToCSV(dataArr, `${waiterName}_Monthly Commission Report`)
 };
 
 </script>

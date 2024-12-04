@@ -7,6 +7,7 @@ use App\Models\ConfigEmployeeCommItem;
 use App\Models\ConfigIncentiveEmployee;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\WaiterAttendance;
@@ -36,25 +37,23 @@ class WaiterController extends Controller
                             ->get()
                             ->keyBy('id');
 
-        $waitersSalesDetail = OrderItem::with('order.waiter')
-                                        ->where('status', 'Served')
-                                        ->where('type', 'Normal')
-                                        ->whereMonth('created_at', now()->month)
-                                        ->whereYear('created_at', now()->year)
-                                        ->selectRaw('user_id, SUM(amount) as total_sales')
-                                        ->groupBy('user_id')
+        $salesForWaiter = Payment::with('handledBy:id,full_name')
+                                        ->where('status', 'Successful')
+                                        ->whereMonth('receipt_end_date',now()->month)
+                                        ->selectRaw('handled_by, SUM(total_amount) as total_sales')
+                                        ->groupBy('handled_by')
                                         ->get()
-                                        ->map(function ($order) {
+                                        ->map(function($waiter){
                                             return [
-                                                'waiter_id' => $order->user_id,
-                                                'total_sales' => (int)$order->total_sales,
+                                                'waiter_id' => $waiter->handled_by,
+                                                'total_sales' => $waiter->total_sales,
                                             ];
                                         })
                                         ->keyBy('waiter_id');
 
         $waitersDetail = [];
         foreach ($allWaiters as $waiter) {
-            $salesDetail = $waitersSalesDetail->firstWhere('waiter_id', $waiter->id);
+            $salesDetail = $salesForWaiter->firstWhere('waiter_id', $waiter->id);
             $waitersDetail[] = [
                 'waiter_name' => $waiter->full_name,
                 'total_sales' => $salesDetail ? (int)$salesDetail['total_sales'] : 0,
@@ -62,8 +61,6 @@ class WaiterController extends Controller
             ];
         }
 
-
-        // dd($allWaiters);
         $waiterIds = array_column($waitersDetail, 'waiter_name');
         $waiterSales = array_column($waitersDetail, 'total_sales');
         $waiterImages = array_column($waitersDetail, 'image');
@@ -204,7 +201,7 @@ class WaiterController extends Controller
             $editWaiter->addMedia($request->image)->toMediaCollection('user');
         }
 
-        return redirect()->route('waiter');
+        return redirect()->back();
    }
 
    public function showWaiterDetails(string $id)
@@ -471,6 +468,7 @@ class WaiterController extends Controller
             $totalAmount = $order->amount;
             $productName = $order->product->product_name;
             $productPrice = $order->product->price;
+            $productImage = $order->product->getFirstMediaUrl('product');
             $item_qty = $order->item_qty;
             foreach ($order->product->productItems as $productItem) {
                 foreach ($productItem->commItems as $commItem) {
@@ -494,7 +492,8 @@ class WaiterController extends Controller
                 'price' => $productPrice,
                 'serve_qty' => $item_qty,
                 'total_amount' => round($totalAmount, 2), 
-                'commission' => round($commissionAmt, 2)
+                'commission' => round($commissionAmt, 2),
+                'image' => $productImage
             ];
         });
 
@@ -593,29 +592,29 @@ class WaiterController extends Controller
     {
         $allWaiters = User::where('role', 'waiter')->select('id', 'full_name')->get()->keyBy('id');
 
-        $waitersSalesDetail = OrderItem::with('order.waiter')
-                                        ->where('status', 'Served')
-                                        ->where('type', 'Normal')
-                                        ->when($request->input('selected') === 'This month', function ($query) {
-                                            $query->whereMonth('created_at', now()->month)
-                                                ->whereYear('created_at', now()->year);
-                                        })
-                                        ->when($request->input('selected') === 'This year', function ($query) {
-                                            $query->whereYear('created_at', now()->year);
-                                        })
-                                        ->selectRaw('user_id, SUM(amount) as total_sales')
-                                        ->groupBy('user_id')
-                                        ->get()
-                                        ->map(function ($order) {
-                                            return [
-                                                'waiter_id' => $order->user_id,
-                                                'total_sales' => (int)$order->total_sales,
-                                            ];
-                                        })
-                                        ->keyBy('waiter_id');
+        $salesForWaiter = Payment::with('handledBy:id,full_name')
+                                ->where('status', 'Successful')
+                                ->when($request->input('selected') === 'This month', function ($query) {
+                                    $query->whereMonth('created_at', now()->month)
+                                        ->whereYear('created_at', now()->year);
+                                })
+                                ->when($request->input('selected') === 'This year', function ($query) {
+                                    $query->whereYear('created_at', now()->year);
+                                })
+                                ->selectRaw('handled_by, SUM(total_amount) as total_sales')
+                                ->groupBy('handled_by')
+                                ->get()
+                                ->map(function($waiter){
+                                    return [
+                                        'waiter_id' => $waiter->handled_by,
+                                        'total_sales' => $waiter->total_sales,
+                                    ];
+                                })
+                                ->keyBy('waiter_id');
+
         $waitersDetail = [];
         foreach ($allWaiters as $waiter) {
-            $salesDetail = $waitersSalesDetail->firstWhere('waiter_id', $waiter->id);
+            $salesDetail = $salesForWaiter->firstWhere('waiter_id', $waiter->id);
             $waitersDetail[] = [
                 'waiter_name' => $waiter->full_name,
                 'total_sales' => $salesDetail ? (int)$salesDetail['total_sales'] : 0,

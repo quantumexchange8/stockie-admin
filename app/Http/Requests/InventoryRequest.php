@@ -32,7 +32,7 @@ class InventoryRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('iventories')->ignore($this->input('id')),
+                Rule::unique('iventories')->ignore($this->input('id'))->whereNull('deleted_at'),
             ];
         } else {
             $rules['name'] = 'required|string|max:255|unique:iventories';

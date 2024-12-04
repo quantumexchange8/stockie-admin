@@ -156,7 +156,7 @@ const submit = () => {
         }
     }
 
-    form.post(route('configurations.editDiscount'), {
+    form.post(route('configurations.editDiscount', form.discount_id), {
         preserveState: true,
         onSuccess: () => {
             unsaved('leave');

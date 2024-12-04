@@ -126,7 +126,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dateFilter', [ConfigDiscountController::class, 'dateFilter'])->name('configurations.dateFilter');
         Route::get('/discountDetails', [ConfigDiscountController::class, 'discountDetails'])->name('configurations.discountDetails');
         Route::delete('/deleteDiscount/{id}', [ConfigDiscountController::class, 'deleteDiscount'])->name('configurations.deleteDiscount');
-        Route::post('/editDiscount', [ConfigDiscountController::class, 'editDiscount'])->name('configurations.editDiscount');
+        Route::post('/editDiscount/{id}', [ConfigDiscountController::class, 'editDiscount'])->name('configurations.editDiscount');
         Route::get('/editProductDetails/{id}', [ConfigDiscountController::class, 'editProductDetails'])->name('configurations.editProductDetails');
 
         /******* Employee Commission ********/

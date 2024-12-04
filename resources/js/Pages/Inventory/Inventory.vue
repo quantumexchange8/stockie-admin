@@ -20,7 +20,8 @@ const props = defineProps({
     inventories: Array,
     recentKeepHistories: Array,
     categories: Array,
-    itemCategories: Array
+    itemCategories: Array,
+    keepItemsCount: Number,
 });
 
 const home = ref({
@@ -234,6 +235,7 @@ const hideAddStockForm = (status) => {
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                 <TotalStockChart
                     :inventories="allInventoryItems"
+                    :keepItemsCount="keepItemsCount"
                     class="col-span-full md:col-span-4"
                 />
                     

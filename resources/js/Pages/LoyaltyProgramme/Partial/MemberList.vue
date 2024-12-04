@@ -35,7 +35,7 @@ const csvExport = () => {
     const mappedMemberList = props.rows.map(member => ({
         'Member name': member.full_name,
         'Joined on': member.joined_on,
-        'Total spent': 'RM' + formatAmount(member.spent),
+        'Total spent': 'RM' + member.total_spending,
     }));
     exportToCSV(mappedMemberList, `${tierName}_Member List`);
 }

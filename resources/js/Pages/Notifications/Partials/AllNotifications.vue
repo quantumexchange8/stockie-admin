@@ -58,17 +58,21 @@ const applyCheckedFilters = (close) => {
 const calcTimeDiff = (created_at) => {
     const createdDate = new Date(created_at);
     const diffInMilliseconds = Date.now() - createdDate.getTime();
-    const diffMinutes = Math.floor( diffInMilliseconds / ( 1000 * 60 ));
-    const hours = Math.floor( diffMinutes / 60 );
+    const diffMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
+    const days = Math.floor(diffMinutes / (60 * 24));
+    const hours = Math.floor((diffMinutes % (60 * 24)) / 60);
     const minutes = diffMinutes % 60;
 
-    if (hours > 0) {
+    if (days > 7) {
+        return createdDate.toISOString().split('T')[0];
+    } else if (days > 0) {
+        return `${days}d ${hours}h`;
+    } else if (hours > 0) {
         return `${hours}h ${minutes}m`;
     } else {
         return `${minutes}m`;
     }
-}
-
+};
 watch(() => date_filter.value, () => toggleDateFilter(date_filter.value));
 
 watch(() => props.notifications, (newValue) => {

@@ -59,10 +59,10 @@ class ConfigCommissionController extends Controller
     {
         $validatedData = $request->validate([
             'commType' => ['required', 'string'],
-            'commRate' => ['required', 'integer', 'max:255'],
+            'commRate' => ['required', 'max:255'],
             'involvedProducts' => ['required']
         ]);
-    
+
         $newData = ConfigEmployeeComm::create([
             'comm_type' => $validatedData['commType'],
             'rate' => $validatedData['commRate'],
@@ -70,12 +70,19 @@ class ConfigCommissionController extends Controller
     
         $newDataId = $newData->id;
     
-        foreach ($validatedData['involvedProducts'] as $products) {
-            ConfigEmployeeCommItem::create([
-                'comm_id' => $newDataId,
-                'item' => $products,
-            ]);
+        foreach ($validatedData['involvedProducts'] as $productId) {
+            $productItems = Product::find($productId)?->productItems;
+        
+            if ($productItems) {
+                foreach ($productItems as $productItem) {
+                    ConfigEmployeeCommItem::create([
+                        'comm_id' => $newDataId,
+                        'item' => $productItem->id,
+                    ]);
+                }
+            }
         }
+        
 
         // $message = [
         //     'severity' => 'success',

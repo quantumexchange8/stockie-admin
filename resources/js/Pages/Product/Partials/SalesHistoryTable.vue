@@ -31,6 +31,7 @@ const props = defineProps({
         required: true,
     },
 })
+const saleHistories = ref(props.rows)
 
 const { exportToCSV } = useFileExport();
 

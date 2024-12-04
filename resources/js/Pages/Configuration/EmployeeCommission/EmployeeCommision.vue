@@ -87,6 +87,7 @@ const closeModal = (status) => {
             isUnsavedChangesOpen.value = false;
             isEditCommOpen.value = false;
             isNewCommissionOpen.value = false;
+            isDeleteCommOpen.value = false;
             break;
         }
 
@@ -231,8 +232,7 @@ onMounted (() => {
         :deleteUrl="`/configurations/deleteCommission/${selectedProduct}`"
         :confirmationTitle="'Delete this commission type?'"
         :confirmationMessage="'Are you sure you want to delete the selected commission type? This action cannot be undone.'"
-        @close="closeModal"
-        v-if="selectedProduct"
+        @close="closeModal('leave')"
     />
 
     <Modal
@@ -246,20 +246,20 @@ onMounted (() => {
             :productNames="productNames"
             :productToAdd="productToAdd"
             :commisionDetails="selectedProduct"
-            @close="closeEditModal"
+            @close="closeModal"
             @isDirty="isDirty = $event"
             @viewEmployeeComm="viewEmployeeComm"
         />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
     </Modal>
 
-    <Modal
-        :unsaved="true"
-        :maxWidth="'2xs'"
-        :withHeader="false"
-        :show="isUnsavedChangesOpen"
-        @close="closeModal('stay')"
-        @leave="closeModal('leave')"
-    >
-    </Modal>
 
 </template>

@@ -12,6 +12,7 @@ import Sales from './Sales.vue';
 import Attendance from './Attendance.vue';
 import Incentive from './Incentive.vue';
 import { transactionFormat } from '@/Composables';
+import Toast from '@/Components/Toast.vue';
 
 const props = defineProps({
     id: [Number, String],
@@ -127,6 +128,8 @@ const attendanceTotalPages = computed(() => {
             />
         </template>
 
+        <Toast />
+
         <div class="w-full">
             <div class="w-full flex flex-col gap-5 justify-center">
                 <div class="w-full flex md:flex-row gap-5 flex-col">
@@ -146,10 +149,7 @@ const attendanceTotalPages = computed(() => {
                                 <WaiterSalesIcon />
                             </div>
                         </div>
-                        <div 
-                            class="w-full flex p-5 flex-col items-start gap-2.5 
-                            grow shrink-0 basis-0 self-stretch rounded-[5px] border border-solid border-primary-100"
-                        >
+                        <div class="w-full flex p-5 flex-col items-start gap-2.5 grow shrink-0 basis-0 self-stretch rounded-[5px] border border-solid border-primary-100">
                             <div class="flex flex-col gap-1 self-stretch">
                                 <CommissionIcon />
                                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Commission in this month</span>
@@ -160,9 +160,7 @@ const attendanceTotalPages = computed(() => {
                     </div>
 
                     <!-- entitled incentive -->
-                    <div 
-                        class="w-full p-4 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 max-h-[500px] overflow-y-scroll scrollbar-webkit scrollbar-thin"
-                    >
+                    <div class="w-full p-4 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 max-h-[500px] overflow-y-scroll scrollbar-webkit scrollbar-thin">
                         <EntitledIncentive 
                             :data="incentiveData" 
                             :configIncentive="configIncentive"
@@ -170,9 +168,7 @@ const attendanceTotalPages = computed(() => {
                     </div>
 
                     <!-- waiter detail -->
-                    <div 
-                        class="w-full p-6 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 min-w-[315px]"
-                    >
+                    <div class="w-full p-6 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 min-w-[315px]">
                         <WaiterDetailCard 
                             :waiter="waiter" 
                         />

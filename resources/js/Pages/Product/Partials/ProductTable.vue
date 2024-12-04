@@ -61,6 +61,8 @@ const selectedProduct = ref(null);
 const categories = ref([]);
 const selectedCategory = ref(0);
 const selectedLayout = ref('grid');
+const searchQuery = ref('');
+const rows = ref([]);
 const forms = reactive({});
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
@@ -204,6 +206,8 @@ const resetFilters = () => {
 
 const clearFilters = (close) => {
     checkedFilters.value = resetFilters();
+    searchQuery.value = '';
+    rows.value = props.rows;
     emit('applyCategoryFilter', selectedCategory.value);
     emit('applyCheckedFilters', checkedFilters.value);
     close();
@@ -257,6 +261,28 @@ watch(
     { immediate: true }
 );
 
+watch([() => props.rows, searchQuery], ([newRows, newValue]) => {
+    if (!newValue) {
+        // If no search query, reset rows to props.rows
+        rows.value = newRows;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    rows.value = props.rows.filter(product => {
+        const productName = product.product_name.toLowerCase();
+        const categoryName = product.category.name.toLowerCase();
+        const isSingle = product.bucket.toLowerCase();
+        const productPrice = product.price.toString().toLowerCase();
+
+        return  productName.includes(query) ||
+                categoryName.includes(query) ||
+                isSingle.includes(query) ||
+                productPrice.includes(query);
+    });
+}, { immediate: true })
+
 onMounted(() => {
     categories.value = [...props.categoryArr];
     categories.value.unshift({
@@ -271,7 +297,7 @@ onMounted(() => {
             <SearchBar
                 placeholder="Search"
                 :showFilter="true"
-                v-model="filters['global'].value"
+                v-model="searchQuery"
             >
                 <template #default="{ hideOverlay }">
                     <div class="flex flex-col self-stretch gap-4 items-start">

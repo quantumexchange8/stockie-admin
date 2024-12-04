@@ -7,6 +7,7 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    keepItemsCount: Number,
 })
 
 const allInventories = ref([]);
@@ -55,7 +56,7 @@ const setChartData = () => {
         labels: ['In stock', 'Keep'],
         datasets: [
             {
-                data: [totalStock.value, 240],
+                data: [totalStock.value, props.keepItemsCount],
                 backgroundColor: (context) => {
                     let bgColor = [
                         '#7E171B',

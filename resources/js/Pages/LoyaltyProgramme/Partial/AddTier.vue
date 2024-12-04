@@ -72,7 +72,7 @@ const submit = () => {
     form.rewards = rewardList.value;
     form.rewards.forEach(item => {
         item.item_qty = item.free_item ? '1' : '';
-        item.free_item = item.free_item.toString();
+        item.free_item = item.free_item ? item.free_item.toString() : '';
     });
 
     form.post(route("loyalty-programme.tiers.store"), {

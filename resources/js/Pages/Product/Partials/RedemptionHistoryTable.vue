@@ -38,7 +38,8 @@ const { exportToCSV } = useFileExport();
 
 const emit = defineEmits(["applyDateFilter"]);
 
-const date_filter = ref(props.dateFilter); 
+const date_filter = ref(props.dateFilter);
+const redemptionHistories = ref(props.rows); 
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -55,7 +56,7 @@ const csvExport = () => {
         'Quantity': redemptionHistory.qty,
         'Redeemed_By': redemptionHistory.handled_by,
     }));
-    exportToCSV(mappedData, 'Sale History');
+    exportToCSV(mappedData, 'Redemption History');
 }
 </script>
 

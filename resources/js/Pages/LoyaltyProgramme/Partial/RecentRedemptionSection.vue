@@ -41,7 +41,7 @@ const recentRedemptions = computed(() => {
                 >
                     <span class="text-sm text-grey-900 font-medium">{{ dayjs(item.redemption_date).format('YYYY/MM/DD') }}</span>
                     <span class="text-sm text-grey-900 font-medium">{{ item.product_name }}</span>  
-                    <span class="text-sm text-grey-900 font-medium">x 1</span>
+                    <span class="text-sm text-grey-900 font-medium">x {{ item.qty }}</span>
                     <span class="text-sm text-grey-900 font-medium">{{ item.handled_by.name }}</span>
                 </div>
             </div>

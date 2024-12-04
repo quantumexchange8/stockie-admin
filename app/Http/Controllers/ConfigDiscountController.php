@@ -168,10 +168,10 @@ class ConfigDiscountController extends Controller
         ]);
     }
 
-    public function editDiscount(DiscountRequest $request) {
+    public function editDiscount(DiscountRequest $request, String $id) {
 
         // dd($request);
-        $discount = ConfigDiscount::findOrFail($request->discount_id);
+        $discount = ConfigDiscount::findOrFail($id);
         
         //update main discount details
         $discount->update([
@@ -186,14 +186,14 @@ class ConfigDiscountController extends Controller
         $newProductIds = array_column($request->discount_product, 'id');
     
         //matched discount_id but not exist in updated product list = delete
-        ConfigDiscountItem::where('discount_id', $request->discount_id)
+        ConfigDiscountItem::where('discount_id', $id)
             ->whereNotIn('product_id', $newProductIds)
             ->delete();
     
         foreach ($request->discount_product as $product) {
             if (in_array($product['id'], $existingProductIds)) {
                 //matched discount_id and matched product_id = update
-                ConfigDiscountItem::where('discount_id', $request->discount_id)
+                ConfigDiscountItem::where('discount_id', $id)
                     ->where('product_id', $product['id'])
                     ->update([
                         'price_before' => $product['price'],
@@ -204,7 +204,7 @@ class ConfigDiscountController extends Controller
             } else {
                 //not matched discount_id but exists in updated product list = create
                 ConfigDiscountItem::create([
-                    'discount_id' => $request->discount_id,
+                    'discount_id' => $id,
                     'product_id' => $product['id'],
                     'price_before' => $product['price'],
                     'price_after' => $request->discount_type === 'percentage' 

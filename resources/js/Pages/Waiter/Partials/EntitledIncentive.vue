@@ -18,7 +18,10 @@ const { formatAmount } = transactionFormat();
     <div class="flex flex-col gap-4 h-full">
         <div class="relative flex gap-5">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Entitled Incentive</span>
-            <Link :href="route('configurations')">
+            <Link 
+                :href="route('configurations')"
+                :data="{ selectedTab: 2 }"
+            >
                     <CircledArrowHeadRightIcon2  
                         class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
                     />
@@ -47,7 +50,8 @@ const { formatAmount } = transactionFormat();
                     :type="'button'"
                     :href="route('configurations')"
                     class="!w-max"
-                >Go to Add
+                >
+                    Go to Add
                 </Button>
             </div>
         </div>
