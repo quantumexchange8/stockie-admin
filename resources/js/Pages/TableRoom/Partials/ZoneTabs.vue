@@ -55,15 +55,15 @@ const form = useForm({
     errors: {}
 })
 
-const formatLabel = (type) => {
-  if (!type) return '';
-  return `${capitalize(type)} No.`;
-};
+// const formatLabel = (type) => {
+//   if (!type) return '';
+//   return `${capitalize(type)} No.`;
+// };
 
-const modalHeader = (type) => {
-    if (!type) return '';
-    return `Edit ${capitalize(type)}`;
-}
+// const modalHeader = (type) => {
+//     if (!type) return '';
+//     return `Edit ${capitalize(type)}`;
+// }
 
 const capitalize = (str) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -199,7 +199,7 @@ watch(form, () => {
     </div>
 
     <Modal
-        :title="modalHeader(form.type)"
+        :title="'Edit Table'"
         :maxWidth="'md'"
         :closeable="true"
         :show="editModal"
@@ -210,7 +210,7 @@ watch(form, () => {
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                 <TextInput
                     :inputName="'table_no'"
-                    :labelText="formatLabel(form.type)"
+                    :labelText="'Table No.'"
                     :placeholder="'eg: 1'"
                     :errorMessage="form.errors?.table_no || ''"
                     v-model="form.table_no"

@@ -58,6 +58,7 @@ const showDeleteModal = (id) => {
 
 const closeModal = () => {
     isDeleteCustomerOpen.value = false;
+    setTimeout(() => form.reset(), 300);
 }
 
 const form = useForm({
@@ -319,7 +320,6 @@ watch(() => props.customers, (newValue) => customer.value = newValue)
         :confirmationTitle="`Passcode Required`"
         :confirmationMessage="`To delete this customer, you have to enter the passcode provided from the master admin.`"
         @close="closeModal"
-        v-if="isDeleteCustomerOpen"
         :withHeader="false"
     >
         <form @submit.prevent="submit">

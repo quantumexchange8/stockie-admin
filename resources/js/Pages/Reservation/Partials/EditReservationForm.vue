@@ -184,7 +184,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     type="button"
                     variant="tertiary"
                     size="lg"
-                    @click="console.log(form.data())"
+                    @click="unsaved('close')"
                 >
                     Cancel
                 </Button>

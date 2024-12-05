@@ -9,6 +9,7 @@ import PrimeVue from "primevue/config";
 import preset from "../presets/primevue";
 import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
+import { vClickOutside } from './Composables/index.js';
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
@@ -30,6 +31,7 @@ createInertiaApp({
             })
             .use(ToastService)
             .directive('tooltip', Tooltip)
+            .directive('click-outside', vClickOutside)
             .mount(el);
     },
     progress: {

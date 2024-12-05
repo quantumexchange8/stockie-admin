@@ -183,11 +183,10 @@ const formatAmount = (num) => {
                     />
                 </template>
                 <template #icon="row">
-                    <!-- <div class="w-6 h-6 rounded-full bg-gray-500"></div> -->
                     <img 
-                        :src="row.image ? row.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                        alt=""
-                        class="w-6 h-6 rounded-full bg-gray-500"
+                        :src="row.icon ? row.icon : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt="TierIconImage"
+                        class="size-6 rounded-full"
                     />
                 </template>
                 <template #min_amount="row">

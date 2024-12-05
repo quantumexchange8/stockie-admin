@@ -70,7 +70,7 @@ const op = ref(null);
 const changeLanguage = (lang) => {
     selected.value = languages.find(language => language.language === lang);
     localStorage.setItem('selectedLanguage', lang);
-    console.log(lang);
+    // console.log(lang);
 };
 
 const isSelected = (language) => {

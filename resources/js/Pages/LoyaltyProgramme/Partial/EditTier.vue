@@ -184,7 +184,7 @@ const getObjectURL = (image) => URL.createObjectURL(image);
 const checkFileInstance = (file) => file instanceof File;
 
 const checkSelectedIcon = (logo) => {
-    if (selectedLogo.value.id != 'undefined' && selectedLogo.value.id != null) {
+    if (selectedLogo.value) {
         return selectedLogo.model_id === logo.model_id
             && selectedLogo.model_type === logo.model_type
             && selectedLogo.original_url === logo.original_url;

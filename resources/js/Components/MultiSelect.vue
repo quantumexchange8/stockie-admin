@@ -94,6 +94,23 @@ const closeOverlay = () => {
 //     },
 // };
 
+// const vClickOutside = {
+//     mounted(element, binding) {
+//         const clickEventHandler = (event) => {
+//             // Check if the clicked element is outside the directive's element
+//             if (!element.contains(event.target) && typeof binding.value === 'function') {
+//                 binding.value(event); // Execute the provided callback
+//             }
+//         };
+//         element.__clickedOutsideHandler__ = clickEventHandler;
+//         document.addEventListener("click", clickEventHandler);
+//     },
+//     unmounted(element) {
+//         document.removeEventListener("click", element.__clickedOutsideHandler__);
+//         delete element.__clickedOutsideHandler__; // Cleanup
+//     },
+// };
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
 });
