@@ -202,7 +202,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[calc(100dvh-22rem)] overflow-y-scroll scrollbar-thin scrollbar-webkit">
             <DragDropImage
                 :inputName="'image'"
                 :errorMessage="form.errors?.image || ''"

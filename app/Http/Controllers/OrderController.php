@@ -1860,7 +1860,7 @@ class OrderController extends Controller
 
             $customer->decrement('point', $pointSpent);
 
-            $order = Order::with(['orderTable.table'])->find($id);
+            $order = Order::with(['orderTable.table'])->find($addNewOrder ? $newOrder->id : $id);
             
             if ($order) {
                 $statusArr = collect($order->orderItems->pluck('status')->unique());
@@ -1920,8 +1920,6 @@ class OrderController extends Controller
         $waiter->image = $waiter->getFirstMediaUrl('user');
 
         if ($validatedData) {
-            $order = Order::with(['orderTable.table'])->find($id);
-
             $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
                                             ->with([
                                                 'rankingReward:id,reward_type,discount,free_item,item_qty',
@@ -2023,6 +2021,8 @@ class OrderController extends Controller
                         'serve_qty' => 0,
                     ]);
                 });
+
+                $order = Order::with(['orderTable.table'])->find($addNewOrder ? $newOrder->id : $id);
                 
                 if ($order) {
                     $statusArr = collect($order->orderItems->pluck('status')->unique());
