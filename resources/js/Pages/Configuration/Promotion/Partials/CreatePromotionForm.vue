@@ -66,7 +66,6 @@ const formSubmit = () => {
 
 const closeForm = () => {
     emit('close');
-    form.reset();
 }
 
 const stayModal = () => {

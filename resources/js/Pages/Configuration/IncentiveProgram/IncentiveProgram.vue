@@ -82,26 +82,11 @@ const closeDeleteAchivementModal = () => {
     isDeleteIncentOpen.value = false;
 }
 
-const closeEditAchievementModal = () => {
-    isUnsavedChangesOpen.value = isDirty.value ? true : false;
-    isEditIncentOpen.value = !isDirty.value ? false : true;
-}
-
-const stayModal = () => {
-    isUnsavedChangesOpen.value = false;
-}
-
-const leaveModal = () => {
-    isUnsavedChangesOpen.value = false;
-    isAddAchievementOpen.value = false;
-    isEditIncentOpen.value = false;
-}
-
 const getEmployeeIncent = async () => {
     isLoading.value = true;
     try {
         const response = await axios.get('/configurations/configurations/incentive');
-        waiters.value = response.data.waiters;
+        // waiters.value = response.data.waiters;
         rows.value = response.data.incentiveProg.map(incentive => {
             return {
                 ...incentive, 
@@ -258,6 +243,15 @@ onMounted (() => {
             @isDirty="isDirty = $event"
             @getEmployeeIncent="getEmployeeIncent"
         />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
     </Modal>
 
     <Modal
@@ -273,6 +267,15 @@ onMounted (() => {
             @closeModal="closeModal"
             @getEmployeeIncent="getEmployeeIncent"
         />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
 
     </Modal>
 
@@ -289,13 +292,4 @@ onMounted (() => {
         v-if="selectedIncent"
     />
 
-    <Modal
-        :unsaved="true"
-        :maxWidth="'2xs'"
-        :withHeader="false"
-        :show="isUnsavedChangesOpen"
-        @close="stayModal"
-        @leave="leaveModal"
-    >
-    </Modal>
 </template>

@@ -211,6 +211,15 @@ const formatAmount = (num) => {
                     @isDirty="isDirty=$event"
                     @close="closeModal" 
                 />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeModal('stay')"
+                    @leave="closeModal('leave')"
+                >
+                </Modal>
             </Modal>
             <Modal 
                 :title="'Edit Tier'"
@@ -227,6 +236,15 @@ const formatAmount = (num) => {
                         @isDirty="isDirty=$event"
                         @close="closeModal"
                     />
+                    <Modal
+                        :unsaved="true"
+                        :maxWidth="'2xs'"
+                        :withHeader="false"
+                        :show="isUnsavedChangesOpen"
+                        @close="closeModal('stay')"
+                        @leave="closeModal('leave')"
+                    >
+                    </Modal>
                 </template>
             </Modal>
             <Modal 
@@ -242,13 +260,5 @@ const formatAmount = (num) => {
             />
         </div>
     </div>
-    <Modal
-        :unsaved="true"
-        :maxWidth="'2xs'"
-        :withHeader="false"
-        :show="isUnsavedChangesOpen"
-        @close="closeModal('stay')"
-        @leave="closeModal('leave')"
-    >
-    </Modal>
+
 </template>

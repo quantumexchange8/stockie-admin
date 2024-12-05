@@ -60,8 +60,7 @@ const csvExport = () => {
     const salesCategory = selectedCategory.value || 'Unknown category';
     const mappedSalesCategory = props.salesCategory.map((salesCategory, index) => ({
         'Month': months[index], 
-        'Order Count': salesCategory,
-        'Last Period Order Count': props.lastPeriodSales[index]
+        'Sales': `RM ${parseFloat(salesCategory).toFixed(2)}`,
     }));
     exportToCSV(mappedSalesCategory, `${salesYear}_Sales in ${salesCategory}`);
 }
@@ -468,16 +467,6 @@ onMounted(() => {
                                     'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                 ]" :disabled="salesCategory.length === 0 && lastPeriodSales.length === 0">
                                     PDF
-                                </button>
-                            </MenuItem>
-
-                            <MenuItem v-slot="{ active }">
-                                <button type="button" :class="[
-                                    // { 'bg-primary-100': active },
-                                    { 'bg-grey-50 pointer-events-none': salesCategory.length === 0 && lastPeriodSales.length === 0 },
-                                    'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                                ]" :disabled="salesCategory.length === 0 && lastPeriodSales.length === 0">
-                                    Print
                                 </button>
                             </MenuItem>
                         </MenuItems>

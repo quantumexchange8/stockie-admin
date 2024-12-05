@@ -32,6 +32,7 @@ const InactivePromotionsCount = computed(() => {
 
 
 const showCreateForm = () => {
+    isDirty.value = false;
     createFormIsOpen.value = true;
 }
 
@@ -133,6 +134,14 @@ watch(() => props.InactivePromotions, (newValue) => {
                     @close="hideCreateForm($event)"
                     @isDirty="isDirty = $event"
                 />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="stayModal"
+                    @leave="leaveModal"
+                />
             </Modal>
         </div>
 
@@ -191,12 +200,4 @@ watch(() => props.InactivePromotions, (newValue) => {
         <div></div>
     </div>
 
-    <Modal
-        :unsaved="true"
-        :maxWidth="'2xs'"
-        :withHeader="false"
-        :show="isUnsavedChangesOpen"
-        @close="stayModal"
-        @leave="leaveModal"
-    />
 </template>

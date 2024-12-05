@@ -114,36 +114,6 @@ const openForm = (action, reservation) => {
     }
 }
 
-// const closeForm = (type) => {
-//     closeType.value = type;
-
-//     if (actionType.value === 'create') {
-//         if(closeType === 'close') {
-//             if(isDirty.value){
-//                 isUnsavedChangesOpen.value = true;
-//             } else {
-//                 makeReservationFormIsOpen.value = false;
-//             }
-//         };
-//         if(closeType === 'stay') {
-//             isUnsavedChangesOpen.value = false;
-//         };
-//         if(closeType === 'leave') {
-//             isUnsavedChangesOpen.value = false;
-//             makeReservationFormIsOpen.value = false;
-//         }
-//     }
-//     if (actionType.value === 'show') reservationDetailIsOpen.value = false;
-//     if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
-//     if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
-//     if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
-    
-//     // Reset value of selected reservation on close
-//     if (actionType.value !== 'create') setTimeout(() => selectedReservation.value = null, 300);
-
-//     actionType.value = '';
-// }
-
 const closeForm = (type) => {
     closeType.value = type;
 
@@ -374,7 +344,14 @@ const getStatusVariant = (status) => {
                     @isDirty="isDirty = $event" 
                     @fetchReservations="$emit('fetchReservations')"
                 />
-
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeForm('stay')"
+                    @leave="closeForm('leave')"
+                />
             </Modal>
             
             <!-- View reservation detail -->
@@ -390,6 +367,14 @@ const getStatusVariant = (status) => {
                     :tables="tables" 
                     @close="closeForm" 
                     @fetchReservations="$emit('fetchReservations')"
+                />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeForm('stay')"
+                    @leave="closeForm('leave')"
                 />
             </Modal>
 
@@ -408,6 +393,14 @@ const getStatusVariant = (status) => {
                     @isDirty="isDirty=$event"
                     @close="closeForm" 
                 />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeForm('stay')"
+                    @leave="closeForm('leave')"
+                />
             </Modal>
 
             <Modal 
@@ -421,6 +414,14 @@ const getStatusVariant = (status) => {
                     @close="closeForm" 
                     @isDirty="isDirty=$event"
                     @fetchReservations="$emit('fetchReservations')"
+                />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeForm('stay')"
+                    @leave="closeForm('leave')"
                 />
             </Modal>
 
@@ -436,15 +437,15 @@ const getStatusVariant = (status) => {
                     @isDirty="isDirty=$event"
                     @fetchReservations="$emit('fetchReservations')"
                 />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeForm('stay')"
+                    @leave="closeForm('leave')"
+                />
             </Modal>
         </div>
-        <Modal
-            :unsaved="true"
-            :maxWidth="'2xs'"
-            :withHeader="false"
-            :show="isUnsavedChangesOpen"
-            @close="closeForm('stay')"
-            @leave="closeForm('leave')"
-        />
     </div>
 </template>

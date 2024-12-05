@@ -344,16 +344,6 @@ onMounted(() => {
                                     PDF
                                 </button>
                             </MenuItem>
-
-                            <MenuItem v-slot="{ active }">
-                                <button type="button" :class="[
-                                    // { 'bg-primary-100': active },
-                                    { 'bg-grey-50 pointer-events-none': ordersArray.length === 0 },
-                                    'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                                ]" :disabled="ordersArray.length === 0">
-                                    Print
-                                </button>
-                            </MenuItem>
                         </MenuItems>
                     </transition>
                 </Menu>

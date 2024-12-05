@@ -52,7 +52,7 @@ const props = defineProps({
                 </template>
                 <template #product="row">
                     <div class="flex flex-nowrap items-start gap-4">
-                        <img class="bg-grey-50 border border-grey-200 h-10 w-10" 
+                        <img class="bg-grey-50 border border-grey-200 h-10 w-10 object-contain" 
                             :src="row.image ? row.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
                             alt=""
                         />

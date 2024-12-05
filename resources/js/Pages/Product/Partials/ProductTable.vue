@@ -512,6 +512,15 @@ onMounted(() => {
                 @close="closeModal"
                 @isDirty="isDirty = $event"
             />
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeModal('stay')"
+                @leave="closeModal('leave')"
+            >
+            </Modal>
         </Modal>
         <Modal 
             :title="'Edit Product'"
@@ -528,6 +537,15 @@ onMounted(() => {
                     @close="closeModal"
                     @isDirty="isDirty = $event"
                 />
+                <Modal
+                    :unsaved="true"
+                    :maxWidth="'2xs'"
+                    :withHeader="false"
+                    :show="isUnsavedChangesOpen"
+                    @close="closeModal('stay')"
+                    @leave="closeModal('leave')"
+                >
+                </Modal>
             </template>
         </Modal>
         <Modal 
@@ -541,14 +559,5 @@ onMounted(() => {
             @close="closeModal('leave')"
             v-if="selectedProduct"
         />
-        <Modal
-            :unsaved="true"
-            :maxWidth="'2xs'"
-            :withHeader="false"
-            :show="isUnsavedChangesOpen"
-            @close="closeModal('stay')"
-            @leave="closeModal('leave')"
-        >
-        </Modal>
     </div>
 </template>

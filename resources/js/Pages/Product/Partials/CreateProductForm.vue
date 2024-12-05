@@ -51,8 +51,7 @@ const formSubmit = () => {
         preserveState: 'errors',
         onSuccess: () => {
             form.reset();
-            emit('close');
-            
+            unsaved('leave');
         },
     })
 };

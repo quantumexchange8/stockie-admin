@@ -222,6 +222,16 @@ const leaveModal = () => {
             @closeModal="closeModal"
             @getEmployeeIncent="getEmployeeIncent"
         />
+        
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
     </Modal>
 
     <Modal 
@@ -249,14 +259,5 @@ const leaveModal = () => {
         v-if="selectedWaiter"
     />
 
-    <Modal
-        :unsaved="true"
-        :maxWidth="'2xs'"
-        :withHeader="false"
-        :show="isUnsavedChangesOpen"
-        @close="stayModal"
-        @leave="leaveModal"
-    >
-    </Modal>
 </template>
 

@@ -58,7 +58,14 @@ const form = useForm({
 
 initialData.value = ({
     bucket: form.bucket,
-    items: form.items,
+    items: props.product.product_items 
+            ?   props.product.product_items.map((item) => {
+                    item.formatted_item_name = `${item.inventory_item.inventory.name} - ${item.inventory_item.item_name}`;
+                    item.inventory_stock_qty = item.inventory_item.stock_qty;
+                    item.qty = parseInt(item.qty);
+                    return item;
+                }) 
+            :   [],
     product_name: form.product_name,
     price: form.price,
     category_id: form.category_id,
