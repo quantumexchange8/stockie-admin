@@ -51,8 +51,7 @@ class ReservationController extends Controller
                                             ->get();
 
         $upcomingReservations->each(function ($upcomingReservation){
-            if($upcomingReservation->reservedFor)
-            {
+            if($upcomingReservation->reservedFor){
                 $upcomingReservation->reservedFor->image = $upcomingReservation->reservedFor->getFirstMediaUrl('customer');
             }
         });
@@ -106,7 +105,17 @@ class ReservationController extends Controller
      */
     public function update(ReservationRequest $request, string $id)
     {   
-        $reservation = Reservation::find($id);
+        $reservation = Reservation::with([
+                                        'reservedFor:id,customer_id,handled_by,reserved_by', 
+                                        'reservedFor.reservationCancelled', 
+                                        'reservedFor.reservationAbandoned', 
+                                        'reservedBy:id,full_name', 
+                                        'handledBy:id,full_name'
+                                    ])->find($id);
+
+        if($reservation->reservedFor){
+            $reservation->reservedFor->image = $reservation->reservedFor->getFirstMediaUrl('customer');
+        }
 
         $customer = is_int($request->name) ? Customer::find($request->name) : null;
 
@@ -124,7 +133,8 @@ class ReservationController extends Controller
             'reserved_by' => $request->reserved_by,
         ]);
 
-        return redirect()->back();
+        return response()->json($reservation);
+        // return redirect()->back();
     }
     
     /**

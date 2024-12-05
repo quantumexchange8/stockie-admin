@@ -284,6 +284,7 @@ onMounted (() => {
         :deleteUrl="`/configurations/configurations/deleteAchievement/${selectedIncent}`"
         :confirmationTitle="'Delete achievement?'"
         :confirmationMessage="'Are you sure you want to delete this achievement? All the data in this achievement will be lost.'"
+        :toastMessage="'Achievement has been deleted.'"
         @close="closeDeleteAchivementModal"
         v-if="selectedIncent"
     />

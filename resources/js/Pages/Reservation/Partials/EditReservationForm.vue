@@ -23,7 +23,7 @@ const { showMessage } = useCustomToast();
 const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();
 
-const emit = defineEmits(['close', 'fetchReservations', 'isDirty']);
+const emit = defineEmits(['close', 'fetchReservations', 'isDirty', 'update:reservation']);
 
 const form = useForm({
     reserved_by: userId.value,
@@ -40,28 +40,57 @@ const unsaved = (status) => {
     emit('close', status);
 }
 
-const submit = () => { 
+const submit = async () => { 
     form.reservation_date = form.reservation_date ? dayjs(form.reservation_date).format('YYYY-MM-DD HH:mm:ss') : '';
     form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
     form.table_no = props.tables
         .filter(table => form.tables.includes(table.id))  // Filter to only selected tables
         .map(table => ({ id: table.id, name: table.table_no }));  // Map to required format
 
-    form.put(route('reservations.update', props.reservation.id), {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            setTimeout(() => {
-                showMessage({ 
-                    severity: 'success',
-                    summary: 'Changes saved',
-                });
-                form.reset();
-            }, 200);
-            unsaved('leave');
-            emit('fetchReservations');
-        },
-    })
+    // form.put(route('reservations.update', props.reservation.id), {
+    //     preserveScroll: true,
+    //     preserveState: true,
+    //     onSuccess: () => {
+    //         setTimeout(() => {
+    //             showMessage({ 
+    //                 severity: 'success',
+    //                 summary: 'Changes saved',
+    //             });
+    //             form.reset();
+    //         }, 200);
+    //         unsaved('leave');
+    //         emit('fetchReservations');
+    //     },
+    // })
+
+    try {
+        const response = await axios.put(`/reservation/${props.reservation.id}`, form);
+        let updatedReservation = response.data;
+
+        form.reserved_by = userId.value,
+        form.reservation_date = dayjs(updatedReservation.reservation_date).toDate(),
+        form.pax = updatedReservation.pax,
+        form.name = updatedReservation.name,
+        form.phone = updatedReservation.phone,
+        form.phone_temp = formatPhone(updatedReservation.phone, true, true),
+        form.table_no = updatedReservation.table_no,
+        form.tables = updatedReservation.table_no.map((table) => table.id),
+
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: 'Changes saved',
+            });
+            form.reset();
+        }, 200);
+        unsaved('leave');
+        emit('update:reservation', response.data);
+        emit('fetchReservations');
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
 };
 
 const customersArr = computed(() => {
@@ -155,7 +184,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     type="button"
                     variant="tertiary"
                     size="lg"
-                    @click="unsaved('close')"
+                    @click="console.log(form.data())"
                 >
                     Cancel
                 </Button>

@@ -126,7 +126,7 @@ const deleteRecord = () => {
 
 <template>
     <TransitionRoot appear :show="show" as="template">
-        <Dialog as="div" @close="close" class="relative z-[1109]">
+        <Dialog as="div" @close="close" class="relative" :class="props.unsaved ? 'z-[1111]' : 'z-[1109]'">
             <TransitionChild
                 as="template"
                 enter="duration-300 ease-out"

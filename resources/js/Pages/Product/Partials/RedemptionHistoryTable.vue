@@ -117,7 +117,7 @@ const csvExport = () => {
             </Menu>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+        <div class="flex items-start gap-5">
             <SearchBar
                 placeholder="Search"
                 :showFilter="false"

@@ -101,7 +101,7 @@ watch( () => props.product, (newValue) => {
 <template>
     <div class="col-span-full lg:col-span-4 flex flex-col p-6 gap-6 items-start rounded-[5px] border border-red-100">
         <div class="flex items-center justify-between w-full">
-            <span class="w-full text-start text-md font-medium text-primary-900 whitespace-nowrap">Product Detail</span>
+            <span class="w-full text-start text-md font-medium text-primary-900">Product Detail</span>
             <div class="flex flex-nowrap gap-2">
                 <EditIcon 
                     class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer"

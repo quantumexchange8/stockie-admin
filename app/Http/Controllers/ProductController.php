@@ -377,6 +377,10 @@ class ProductController extends Controller
                 if (isset($request['checkedFilters']['priceRange']) && count($request['checkedFilters']['priceRange']) > 0) {
                     $query->whereBetween('price', array_map(fn($value) => (int)$value, $request['checkedFilters']['priceRange']));
                 }
+
+                if (isset($request['checkedFilters']['isRedeemable']) && count($request['checkedFilters']['isRedeemable']) > 0) {
+                    $query->where('is_redeemable', 1);
+                }
             });
         }
 

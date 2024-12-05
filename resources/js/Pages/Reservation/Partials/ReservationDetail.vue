@@ -25,6 +25,7 @@ const emit = defineEmits(['close', 'fetchReservations']);
 
 const { formatPhone } = usePhoneUtils();
 
+const reservation = ref(props.reservation);
 const editReservationIsOpen = ref(false);
 const customers = computed(() => props.customers ?? []);
 const tables = computed(() => props.tables);
@@ -158,7 +159,7 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                     
                     <div class="w-1/2 flex flex-col gap-y-1 items-start">
                         <p class="text-grey-900 text-base font-normal self-stretch">Reserved by</p>
-                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.reserved_by.name }}</p>
+                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.reserved_by.full_name }}</p>
                     </div>
                 </div>
 
@@ -173,7 +174,7 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                         
                         <div class="w-1/2 flex flex-col gap-y-1 items-start">
                             <p class="text-grey-900 text-base font-normal self-stretch">{{ getHandledByLabel(reservation.status) }}</p>
-                            <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.handled_by.name }}</p>
+                            <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.handled_by.full_name }}</p>
                         </div>
                     </div>
 
@@ -239,6 +240,7 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                 @isDirty="isDirty=$event"
                 @close="hideEditReservationForm" 
                 @fetchReservations="fetchReservations"
+                @update:reservation="reservation = $event"
             />
         </template>
         <Modal

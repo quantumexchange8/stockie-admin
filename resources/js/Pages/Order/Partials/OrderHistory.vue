@@ -24,6 +24,7 @@ const props = defineProps({
 });
 
 const rows = ref([]);  
+const initialRows = ref([]);  
 const date_filter = ref('');  
 const status = ref('');
 const selectedOrder = ref(null);
@@ -42,17 +43,18 @@ const columns = ref([
     {field: 'action', header: '', width: '11', sortable: false},
 ]);
 
-const totalPages = computed(() => Math.ceil(rows.value.length / rowsPerPage.value));
-
 const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
 
-const orderStatuses = ref([...new Set(rows.value.map(row => row.status))].map(status => ({
-    text: status,
-    value: status
-})));
+const orderStatuses = ref([
+    { text: 'All Orders', value: 'All Orders' },
+    { text: 'Order Completed', value: 'Order Completed' },
+    { text: 'Order Cancelled', value: 'Order Cancelled' }
+]);
 
 const statusfilter = (statusText) => {
-    rows.value = rows.value.filter((row) => row.status === statusText);
+    rows.value = statusText === 'All Orders'
+            ? initialRows.value
+            : initialRows.value.filter((row) => row.status === statusText);
 };
 
 // Get filtered order histories
@@ -61,6 +63,7 @@ const getOrderHistories = async (filters = {}) => {
         const response = await axios.get('/order-management/getOrderHistories', {
             params: { dateFilter: filters }
         });
+        initialRows.value = response.data.orders;
         rows.value = response.data.orders;
         taxes.value = response.data.taxes;
     } catch (error) {
@@ -93,36 +96,39 @@ const hideOrderInvoiceModal = () => {
     orderInvoiceModalIsOpen.value = false;
 };
 
-const sortedRows = computed(() => {
-    return rows.value
-            .filter((row) => row.payment && row.payment.status === 'Successful') 
-            .sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
-});
+// const sortedRows = computed(() => {
+//     return rows.value
+//             .filter((row) => row.payment && row.payment.status === 'Successful') 
+//             .sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
+// });
+
+const totalPages = computed(() => Math.ceil(rows.value.length / rowsPerPage.value));
 
 const getOrderTableNames = (order_table) => order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '';
 </script>
 
 <template>
     <div class="flex flex-col items-centers gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit h-full !max-h-[calc(100dvh-17rem)]">
-        <div class="flex justify-between items-start">
+        <div class="flex flex-wrap sm:flex-nowrap justify-between items-start gap-x-7 gap-y-6">
             <SearchBar
                 placeholder="Search"
                 :showFilter="false"
                 v-model="filters['global'].value"
-                class="max-w-[309px]"
+                class="sm:max-w-[309px]"
             />
-            <div class="flex items-start gap-x-7">
+            <div class="flex w-full items-start justify-end gap-x-7">
                 <DateInput
                     :inputName="'date_filter'"
                     :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                     :range="true"
-                    class="max-w-[309px]"
+                    class="w-2/3 sm:w-auto sm:!max-w-[309px]"
                     v-model="date_filter"
                 />
                 <Dropdown
                     :inputName="'order_status'"
                     :inputArray="orderStatuses"
                     v-model="status"
+                    class="w-1/3 sm:w-auto"
                     @onChange="statusfilter"
                 />
             </div>
@@ -131,7 +137,7 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
             <Table 
                 ref="orderHistoryTable"
                 :variant="'list'"
-                :rows="sortedRows"
+                :rows="rows"
                 :columns="columns"
                 :rowsPerPage="rowsPerPage"
                 :totalPages="totalPages"

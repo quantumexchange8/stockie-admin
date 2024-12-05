@@ -36,7 +36,7 @@ const tiersColumns = ref([
 ]);
 
 const redeemableItemsColumns = ref([
-    { field: "name", header: "Product Name", width: "58", sortable: true },
+    { field: "product_name", header: "Product Name", width: "58", sortable: true },
     { field: "point", header: "Redeemed with", width: "25", sortable: true },
     { field: "stock_left", header: "Left", width: "17", sortable: true },
 ]);

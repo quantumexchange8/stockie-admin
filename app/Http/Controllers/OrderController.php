@@ -916,6 +916,17 @@ class OrderController extends Controller
                                     });
         }
 
+        // Ensure `date` condition applies to all `status` filters
+        $query->where(function ($query) {
+            $query->where('status', 'Order Cancelled')
+                ->orWhere(function ($subQuery) {
+                    $subQuery->where('status', 'Order Completed')
+                        ->whereHas('payment', function ($paymentQuery) {
+                            $paymentQuery->where('status', 'Successful');
+                        });
+                });
+        });
+
         $orders = $query->with([
                             'orderItems:id,order_id,type,product_id,item_qty,amount_before_discount,discount_id,discount_amount,amount,status', 
                             'orderItems.product:id,product_name,price,bucket,discount_id', 
@@ -931,10 +942,10 @@ class OrderController extends Controller
                             'payment.pointHistory:id,payment_id,amount,new_balance',
                             'payment.voucher:id,reward_type,discount',
                         ])
-                        ->orderBy('id', 'desc')
+                        ->orderBy('updated_at', 'desc')
                         ->get()
-                        ->filter(fn ($order) => in_array($order->status, ['Order Completed', 'Order Cancelled']))
                         ->values();
+        // dd($query->toSql(), $query->getBindings());
 
         $orders->each(function($order){
             foreach ($order->orderItems as $orderItem) {
@@ -1377,7 +1388,10 @@ class OrderController extends Controller
                 'product_id' => $keepItem->orderItemSubitem->productItem->product_id,
                 'keep_item_id' => $id,
                 'item_qty' => $request->return_qty,
-                'amount' => 0,
+                'amount_before_discount' => 0.00,
+                'discount_id' => null,
+                'discount_amount' => 0.00,
+                'amount' => 0.00,
                 'status' => 'Pending Serve',
             ]);
             
@@ -1647,10 +1661,40 @@ class OrderController extends Controller
      * Get all redeemable items.
      */
     public function getRedeemableItems() {
-        $redeemables = Product::select('id','product_name', 'point')->where('is_redeemable', true)->get();
-        $redeemables->each(function($redeemable){
-            $redeemable->image = $redeemable->getFirstMediaUrl('product');
-        });
+        $redeemables = Product::select('id','product_name', 'point')
+                                ->with([
+                                    'productItems:id,product_id,inventory_item_id,qty', 
+                                    'productItems.inventoryItem:id,inventory_id,item_name,stock_qty,status',
+                                    'productItems.inventoryItem.inventory:id,name',
+                                ])
+                                ->where('is_redeemable', true)
+                                ->get()
+                                ->map(function ($product) {
+                                    $product->image = $product->getFirstMediaUrl('product');
+                                    $product_items = $product->productItems;
+                                    $minStockCount = 0;
+    
+                                    if (count($product_items) > 0) {
+                                        $stockCountArr = [];
+    
+                                        foreach ($product_items as $key => $value) {
+                                            $inventory_item = IventoryItem::select('stock_qty')->find($value['inventory_item_id']);
+                                            $stockQty = $inventory_item->stock_qty;
+                                            $stockCount = (int)round($stockQty / (int)$value['qty']);
+    
+                                            array_push($stockCountArr, $stockCount);
+                                        }
+                                        $minStockCount = min($stockCountArr);
+                                    }
+                                    $product['stock_left'] = $minStockCount;
+                                    unset($product->productItems);
+    
+                                    return $product;
+                                });
+
+        // $redeemables->each(function($redeemable){
+        //     $redeemable->image = $redeemable->getFirstMediaUrl('product');
+        // });
         
         return response()->json($redeemables);
     }
@@ -1744,6 +1788,9 @@ class OrderController extends Controller
                 'type' => 'Redemption',
                 'product_id' => $redeemableItem->id,
                 'item_qty' => $validatedData['redeem_qty'],
+                'amount_before_discount' => 0.00,
+                'discount_id' => null,
+                'discount_amount' => 0.00,
                 'amount' => 0,
                 'status' => 'Pending Serve',
             ]);
@@ -1923,6 +1970,9 @@ class OrderController extends Controller
                     'type' => 'Redemption',
                     'product_id' => $freeProduct->id,
                     'item_qty' => $tierReward->item_qty,
+                    'amount_before_discount' => 0.00,
+                    'discount_id' => null,
+                    'discount_amount' => 0.00,
                     'amount' => 0,
                     'status' => 'Pending Serve',
                 ]);

@@ -145,7 +145,7 @@ const hideDeletePointForm = () => {
                             @click="showDeletePointForm($event, row.id)"
                     />
                 </template> -->
-                <template #name="row">
+                <template #product_name="row">
                     <div class="flex flex-nowrap items-center gap-3">
                         <!-- <div class="bg-grey-50 border border-grey-200 h-14 w-14"></div> -->
                         <img 

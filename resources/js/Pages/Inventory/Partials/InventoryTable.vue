@@ -51,9 +51,11 @@ const selectedCategory = ref(0);
 const checkedFilters = ref({
     itemCategory: [],
     stockLevel: [],
+    keepStatus: [],
 });
 
 const stockLevels = ref(['In Stock', 'Low Stock', 'Out of Stock']);
+const keepStatusArr = ref(['Active', 'Inactive']);
 
 const openForm = (action, id, event) => {
     isDirty.value = false;
@@ -140,6 +142,7 @@ const resetFilters = () => {
     return {
         itemCategory: [],
         stockLevel: [],
+        keepStatus: [],
     };
 };
 
@@ -170,6 +173,15 @@ const toggleStockLevel = (value) => {
         checkedFilters.value.stockLevel.splice(index, 1);
     } else {
         checkedFilters.value.stockLevel.push(value);
+    }
+};
+
+const toggleKeepStatus = (value) => {
+    const index = checkedFilters.value.keepStatus.indexOf(value);
+    if (index > -1) {
+        checkedFilters.value.keepStatus.splice(index, 1);
+    } else {
+        checkedFilters.value.keepStatus.push(value);
     }
 };
 
@@ -373,6 +385,22 @@ const totalInventoryItemStock = (items) => {
                                 </div>
                             </div>
                         </div>
+                        <div class="flex flex-col self-stretch gap-4 items-start">
+                            <span class="text-grey-900 text-base font-semibold">Keep</span>
+                            <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
+                                <div 
+                                    v-for="(status, index) in keepStatusArr" 
+                                    :key="index"
+                                    class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
+                                >
+                                    <Checkbox 
+                                        :checked="checkedFilters.keepStatus.includes(status)"
+                                        @click="toggleKeepStatus(status)"
+                                    />
+                                    <span class="text-grey-700 text-sm font-medium">{{ status }}</span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
                             <Button
                                 :type="'button'"
@@ -546,7 +574,7 @@ const totalInventoryItemStock = (items) => {
                                                 <div class="w-[11%] py-2 px-3">{{ item.item_code }}</div>
                                                 <div class="w-[10%] py-2 px-3">{{ item.item_category.name }}</div>
                                                 <div class="w-[11%] py-2 px-3">{{ item.stock_qty }}</div>
-                                                <div class="w-[11%] py-2 px-3">{{ item.total_keep_qty }}</div>
+                                                <div class="w-[11%] py-2 px-3">{{ item.keep === 'Active' ? item.total_keep_qty : 'Not Allowed' }}</div>
                                                 <div class="w-[14%] py-2 px-3">
                                                     <Tag
                                                         :variant="item.status === 'In stock' 
@@ -912,6 +940,7 @@ const totalInventoryItemStock = (items) => {
             :deleteUrl="`/inventory/inventory/deleteInventory/${selectedGroup.id}`"
             :confirmationTitle="'Delete this group?'"
             :confirmationMessage="'All the item inside this group will be deleted altogether. Are you sure you want to delete this group?'"
+            :toastMessage="'Selected group has been deleted successfully.'"
             @close="closeForm('delete', 'close')"
             v-if="selectedGroup"
         />

@@ -34,11 +34,15 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
         $request->session()->regenerate();
-        $message = $request->session()->get('message');
+        
+        $message = [ 
+            'severity' => 'success', 
+            'summary' => "You've logged in to Stockie."
+        ];
 
         return redirect()->intended('dashboard')->with([
             'user' => auth()->user(),
-            'message' => $message ?? [],
+            'message' => $message,
         ]);
     }
 
@@ -56,7 +60,7 @@ class AuthenticatedSessionController extends Controller
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => 'You’ve logged out your Stockie account.'
+            'summary' => "You've logged out your Stockie account."
         ];
 
         return redirect('login')->with(['message' => $message]);

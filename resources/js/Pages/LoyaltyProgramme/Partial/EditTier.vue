@@ -135,7 +135,7 @@ const submit = () => {
         item.item_qty = item.item_qty ? item.item_qty.toString() : '';
     });
     
-    form.put(`/loyalty-programme/tiers/update/${props.tier.id}`, {
+    form.post(`/loyalty-programme/tiers/update/${props.tier.id}`, {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
@@ -205,7 +205,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form @submit.prevent="submit">
-        <div class="max-h-[773px] overflow-y-scroll scrollbar-webkit scrollbar-thin p-2">
+        <div class="max-h-[calc(100dvh-8.5rem)] overflow-y-scroll scrollbar-webkit scrollbar-thin p-2">
             <div class="w-full flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <TextInput

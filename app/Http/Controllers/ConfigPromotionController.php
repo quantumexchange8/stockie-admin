@@ -44,11 +44,13 @@ class ConfigPromotionController extends Controller
         $merchant = ConfigMerchant::first();
         $merchant->merchant_image = $merchant->getFirstMediaUrl('merchant_settings');
 
+        $selectedTab = $request->session()->get('selectedTab');
+
         return Inertia::render('Configuration/MainConfiguration', [
             'ActivePromotions' => $ActivePromotions,
             'InactivePromotions' => $InactivePromotions,
             'merchant' => $merchant,
-            'selectedTab' => (int)$request->selectedTab,
+            'selectedTab' => $selectedTab ?? 0,
         ]);
     }
 

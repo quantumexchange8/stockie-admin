@@ -70,13 +70,12 @@ const { showMessage } = useCustomToast();
 const { formatAmount } = transactionFormat();
 
 const checkedFilters = ref({
-    keepStatus: [],
+    isRedeemable: [],
     stockLevel: [],
     priceRange: [0, 5000],
 });
 
 const stockLevels = ref(['In stock', 'Low in stock', 'Out of stock']);
-const keepStatusArr = ref(['Active', 'Inactive']);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -198,7 +197,7 @@ const handleDefaultClick = (event) => {
 
 const resetFilters = () => {
     return {
-        keepStatus: [],
+        isRedeemable: [],
         stockLevel: [],
         priceRange: [0, 5000],
     };
@@ -218,14 +217,10 @@ const applyCheckedFilters = (close) => {
     close();
 };
 
-const toggleKeepStatus = (value) => {
-    const index = checkedFilters.value.keepStatus.indexOf(value);
-    if (index > -1) {
-        checkedFilters.value.keepStatus.splice(index, 1);
-    } else {
-        checkedFilters.value.keepStatus.push(value);
-    }
-};
+const toggleRedeemableStatus = () => {
+    checkedFilters.value.isRedeemable = 
+        checkedFilters.value.isRedeemable.includes(true) ? [] : [true];
+}
 
 const toggleStockLevel = (value) => {
     const index = checkedFilters.value.stockLevel.indexOf(value);
@@ -301,22 +296,6 @@ onMounted(() => {
             >
                 <template #default="{ hideOverlay }">
                     <div class="flex flex-col self-stretch gap-4 items-start">
-                        <span class="text-grey-900 text-base font-semibold">Keep</span>
-                        <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
-                            <div 
-                                v-for="(status, index) in keepStatusArr" 
-                                :key="index"
-                                class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
-                            >
-                                <Checkbox 
-                                    :checked="checkedFilters.keepStatus.includes(status)"
-                                    @click="toggleKeepStatus(status)"
-                                />
-                                <span class="text-grey-700 text-sm font-medium">{{ status }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col self-stretch gap-4 items-start">
                         <span class="text-grey-900 text-base font-semibold">Stock Level</span>
                         <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                             <div 
@@ -340,6 +319,17 @@ onMounted(() => {
                                     :minValue="0"
                                     :maxValue="5000"
                                     v-model="checkedFilters.priceRange"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col self-stretch gap-4 items-start">
+                        <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
+                            <div class="inline-flex w-full gap-2 justify-between border border-grey-100 rounded-[5px]">
+                                <span>Show redeemable products only</span>
+                                <Checkbox 
+                                    :checked="checkedFilters.isRedeemable.includes(true)"
+                                    @click="toggleRedeemableStatus()"
                                 />
                             </div>
                         </div>

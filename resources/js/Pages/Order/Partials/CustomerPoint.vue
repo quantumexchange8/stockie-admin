@@ -136,6 +136,13 @@ const getRedeemables = async () => {
 
 onMounted(() => getRedeemables())
 
+const getRedeemableMaxQuantity = () => {
+    let stockLeft = selectedItem.value.stock_left;
+    let maxCustomerRedeemCount = Math.floor(customer.value.point / selectedItem.value.point);
+
+    return maxCustomerRedeemCount >= stockLeft ? stockLeft : maxCustomerRedeemCount;
+};
+
 const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) && !form.processing);
 </script>
 
@@ -169,19 +176,20 @@ const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) &&
                         <div class="flex items-center gap-3">
                             <img 
                                 :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                alt=""
+                                alt="RedeemableItemImage"
                                 class="size-[60px] bg-primary-25 rounded-[1.5px] border-[0.3px] border-solid border-grey-100"
+                                :class="{ 'opacity-30': item.stock_left == 0 }"
                             >
                             <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] self-stretch">
-                                <span class="line-clamp-1 overflow-hidden text-grey-900 ellipsis text-base font-medium">{{ item.product_name }}</span>
-                                <span class="overflow-hidden text-red-950 text-base font-medium">{{ formatPoints(item.point) }} pts</span>
+                                <span class="line-clamp-1 overflow-hidden ellipsis text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-grey-900'">{{ item.product_name }}</span>
+                                <span class="overflow-hidden text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-primary-950'">{{ formatPoints(item.point) }} pts</span>
                             </div>
                         </div>
                         <!-- tableStatus === 'Pending Clearance' -->
                         <Button 
                             :type="'button'" 
                             :size="'md'" 
-                            :disabled="customer.point < item.point"
+                            :disabled="customer.point < item.point || item.stock_left == 0"
                             class="!w-fit"
                             @click="openOverlay($event, item)"
                         >
@@ -234,7 +242,7 @@ const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) &&
 
                         <NumberCounter
                             :inputName="`redeem_qty`"
-                            :maxValue="Math.floor(customer.point / selectedItem.point)"
+                            :maxValue="getRedeemableMaxQuantity()"
                             v-model="form.redeem_qty"
                         />
                     </div>

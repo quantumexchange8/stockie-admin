@@ -197,7 +197,7 @@ onMounted(() => {
                             },
                             // Colors
                             'text-primary-900',
-                            'placeholder:text-grey-200',
+                            'placeholder:text-grey-200 placeholder:text-[13px]',
                             'bg-white',
                             'border',
                             {

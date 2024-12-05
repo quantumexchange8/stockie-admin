@@ -84,12 +84,12 @@ class ConfigEmployeeIncProgController extends Controller
         ConfigIncentiveEmployee::where('incentive_id', $id)->delete();
         ConfigIncentive::find($id)->delete();
 
-        $message = [
-            'severity' => 'success',
-            'summary' => 'Achievement has been deleted.'
-        ];
+        // $message = [
+        //     'severity' => 'success',
+        //     'summary' => 'Achievement has been deleted.'
+        // ];
 
-        return redirect()->route('configurations')->with(['message' => $message]);
+        return redirect()->route('configurations');
     }
 
     public function editAchievement(Request $request)
@@ -118,7 +118,7 @@ class ConfigEmployeeIncProgController extends Controller
         // get related waiters
         $entitled = ConfigIncentiveEmployee::where('incentive_id', $id)
                                             ->orderBy('created_at')
-                                            ->where('created_at', '>=', $incentive->effective_date)
+                                            // ->where('created_at', '>=', $incentive->effective_date)
                                             ->with([
                                                 'configIncentive',
                                                 'waiters:id,full_name',
@@ -126,11 +126,12 @@ class ConfigEmployeeIncProgController extends Controller
                                                     $query->where([
                                                         ['status', 'Served'],
                                                         ['type', 'Normal'],
-                                                        ['created_at', '>=', $incentive->effective_date],
+                                                        // ['created_at', '>=', $incentive->effective_date],
                                                     ]);
                                                 }
                                             ])
                                             ->get();
+        // dd($entitled);
 
         //group orders according to recurring date
         // $entitled->map(function($entitleds){

@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/viewAttendance/{id}', [WaiterController::class,'viewAttendance'])->name('waiter.view-attendance');
         Route::get('/filterSalesPerformance', [WaiterController::class, 'filterSalesPerformance'])->name('waiter.filter-salesperformance');
         Route::get('/filterCommEarned', [WaiterController::class, 'filterCommEarned'])->name('waiter.filter-commEarned');
+        Route::get('/viewEmployeeIncentive', [WaiterController::class, 'viewEmployeeIncentive'])->name('waiter.viewEmployeeIncentive');
     });
  
     /********* Menu Management **********/
@@ -173,7 +174,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/tiers', [LoyaltyController::class, 'index'])->name('loyalty-programme.tiers');
         Route::get('/tier_details/{id}', [LoyaltyController::class, 'showTierDetails'])->name('loyalty-programme.tiers.show');
         Route::post('/tiers/store', [LoyaltyController::class, 'storeTier'])->name('loyalty-programme.tiers.store');
-        Route::put('/tiers/update/{id}', [LoyaltyController::class, 'updateTier'])->name('loyalty-programme.tiers.update');
+        Route::post('/tiers/update/{id}', [LoyaltyController::class, 'updateTier'])->name('loyalty-programme.tiers.update');
         Route::delete('/tiers/destroy/{id}', [LoyaltyController::class, 'deleteTier'])->name('loyalty-programme.tiers.destroy');
         Route::get('/filterMemberSpending', [LoyaltyController::class, 'filterMemberSpending'])->name('loyalty-programme.tiers.filter');
 

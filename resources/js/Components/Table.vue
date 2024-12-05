@@ -689,6 +689,7 @@ onMounted(() => {
         </form>
         <Paginator 
             :rows="props.rowsPerPage" 
+            :first="(currentPage - 1) * props.rowsPerPage"
             :totalRecords="props.rows.length"
             template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
             @page="onPageChange"

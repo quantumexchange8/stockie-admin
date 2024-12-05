@@ -66,10 +66,13 @@ const markReservationAsNoShow = (id) => {
                     summary: "Reservation has been marked as 'No show'.",
                 });
             }, 200);
+            
+            closeOverlay();
             emit('fetchReservations')
         },
     })
 };
+
 const showReservationDetailForm = (reservation) => {
     selectedReservation.value = reservation;
     reservationDetailIsOpen.value = true;
@@ -77,9 +80,7 @@ const showReservationDetailForm = (reservation) => {
 
 const hideReservationDetailForm = () => {
     reservationDetailIsOpen.value = false;
-    setTimeout(() => {
-        selectedReservation.value = null;
-    }, 300);
+    setTimeout(() => selectedReservation.value = null, 300);
 }
 
 const showCheckInForm = (reservation) => {
@@ -133,7 +134,9 @@ const openActionMenu = (event, reservation) => {
 
 const openOverlay = (event) =>  op.value.show(event);
 
-const closeOverlay = () => op.value.hide();
+const closeOverlay = () => {
+    if (op.value) op.value.hide();
+};
 </script>
 
 <template>

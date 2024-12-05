@@ -267,6 +267,14 @@ class InventoryController extends Controller
                 }
             });
         }
+        
+        // Apply item category filters if present
+        if (!empty($filters['keepStatus'])) {
+            foreach ($filters['keepStatus'] as $status) {
+                $itemQuery->orWhere('keep', $status);
+            };
+        }
+
 
         // Get filtered inventory items with their item category
         $filteredItems = $itemQuery->with('itemCategory:id,name')->get();
@@ -289,9 +297,37 @@ class InventoryController extends Controller
         $data = $inventoryQuery->whereIn('id', $inventoryIds)
                                 ->with([
                                     'inventoryItems' => fn ($query) => $query->whereIn('id', $filteredItems->pluck('id')), 
-                                    'inventoryItems.itemCategory:id,name'])
+                                    'inventoryItems.itemCategory:id,name',
+                                    'inventoryItems.productItems:id,inventory_item_id,product_id',
+                                    'inventoryItems.productItems.product:id',
+                                    'inventoryItems.productItems.orderSubitems:id,product_item_id',
+                                ])
                                 ->orderBy('id')
-                                ->get();
+                                ->get()
+                                ->map(function ($group) {
+                                    $group->inventoryItems->each(function ($item) {
+                                        // Collect unique product and assign to $item->products
+                                        $item->products = $item->productItems
+                                                ->pluck('product')
+                                                ->unique('id')
+                                                ->map(fn($product) => [
+                                                    'id' => $product->id,
+                                                    'image' => $product->getFirstMediaUrl('product'),
+                                                ])
+                                                ->values();
+
+                                        $item->total_keep_qty = $item->total_keep_qty ?? 0;
+                            
+                                        unset($item->productItems);
+                                        
+                                    });
+
+                                    return $group;
+                                });
+
+        $data->each(function($inventory){
+            $inventory->inventory_image = $inventory->getFirstMediaUrl('inventory');
+        });
 
         return response()->json($data);
     }
@@ -483,23 +519,23 @@ class InventoryController extends Controller
         $existingGroup = Iventory::with('inventoryItems')->find($id);
         $existingGroupItems = $existingGroup->inventoryItems;
         
-        if (count($existingGroupItems) > 0) {
-            foreach ($existingGroupItems as $key => $value) {
-                if (isset($value['id'])) {
-                    $existingItem = IventoryItem::find($value['id']);
-                    $existingItem->delete();
-                }
-            }
-        }
+        // if (count($existingGroupItems) > 0) {
+        //     foreach ($existingGroupItems as $key => $value) {
+        //         if (isset($value['id'])) {
+        //             $existingItem = IventoryItem::find($value['id']);
+        //             $existingItem->delete();
+        //         }
+        //     }
+        // }
 
-        $existingGroup->delete();
+        // $existingGroup->delete();
 
-        $message = [ 
-            'severity' => 'success', 
-            'summary' => 'Selected group has been deleted successfully.',
-        ];
+        // $message = [ 
+        //     'severity' => 'success', 
+        //     'summary' => 'Selected group has been deleted successfully.',
+        // ];
 
-        return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
     }
     
     /**

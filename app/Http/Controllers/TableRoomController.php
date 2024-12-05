@@ -90,7 +90,7 @@ class TableRoomController extends Controller
     public function addTable(Request $request)
     {
         $validatedData = $request->validate([
-            'type'=>'required',
+            // 'type'=>'required',
             'table_no'=>['required','string','max:255',
             Rule::unique('tables')->whereNull('deleted_at')],
             'seat'=> 'required|integer',
@@ -98,7 +98,7 @@ class TableRoomController extends Controller
         ]);
 
         Table::create([
-            'type'=> $validatedData['type'],
+            'type'=> 'table',
             'table_no' => $validatedData['table_no'],
             'seat' => $validatedData['seat'],
             'zone_id' => $validatedData['zone_id'],

@@ -99,7 +99,7 @@ class ConfigCommissionController extends Controller
             ConfigEmployeeCommItem::where('comm_id', $id)->delete();
         }
 
-        return redirect()->route('configurations', ['selectedTab' => 1]);
+        return redirect()->route('configurations')->with(['selectedTab' => 1]);
     }
 
     public function editCommission (Request $request)

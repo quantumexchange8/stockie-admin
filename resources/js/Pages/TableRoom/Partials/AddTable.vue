@@ -28,7 +28,7 @@ watch(() => props.zonesArr, (newValue) => {
 }, { immediate: true });
 
 const form = useForm({
-    type: '',
+    // type: '',
     table_no: '',
     seat: '',
     zone_id: '',
@@ -63,7 +63,7 @@ const unsaved = (status) => {
     emit('close', status)
 }
 
-const requiredFields = ['type', 'table_no', 'seat', 'zone_id'];
+const requiredFields = ['table_no', 'seat', 'zone_id'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
@@ -77,21 +77,21 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
         <div class="gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
-                <div class="flex items-start gap-10">
+                <!-- <div class="flex items-start gap-10">
                     <RadioButton
                         :optionArr="tableType"
                         :checked="form.type"
                         v-model:checked="form.type"
-                        />
-                    </div>
-                    <TextInput
-                        :inputName="'table_no'"
-                        :labelText="'Table / Room No.'"
-                        :placeholder="'eg: 1'"
-                        :errorMessage="form.errors?.table_no || ''"
-                        v-model="form.table_no"
-                        class="col-span-full md:col-span-8"
                     />
+                </div> -->
+                <TextInput
+                    :inputName="'table_no'"
+                    :labelText="'Table / Room No.'"
+                    :placeholder="'eg: 1'"
+                    :errorMessage="form.errors?.table_no || ''"
+                    v-model="form.table_no"
+                    class="col-span-full md:col-span-8"
+                />
                 <div class="grid grid-cols-2 md:grid-cols-12 gap-3 self-stretch">
                     <TextInput
                         :inputName="'seat'"

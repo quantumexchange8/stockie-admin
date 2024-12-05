@@ -446,6 +446,11 @@ class WaiterController extends Controller
         ]);
    }
 
+   public function viewEmployeeIncentive()
+   {
+        return redirect()->route('configurations')->with(['selectedTab' => 2]);
+   }
+
    public function salesReport(Request $request, string $id)
    {
         $dateFilter = $request->input('dateFilter');

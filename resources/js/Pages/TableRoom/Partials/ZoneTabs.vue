@@ -48,7 +48,7 @@ watch(() => props.zones, populateTabs, {immediate: true});
 
 const form = useForm({
     id: '',
-    type: '',
+    // type: '',
     table_no: '',
     seat: '',
     zone_id: '',
@@ -71,7 +71,7 @@ const capitalize = (str) => {
 
 const openEditModal = (table) => {
     form.id = table.id,
-    form.type = table.type,
+    // form.type = table.type,
     form.table_no = table.table_no,
     form.seat = table.seat.toString(),
     form.zone_id = table.zone_id,
@@ -85,8 +85,8 @@ const openEditModal = (table) => {
 };
 
 
-const openDeleteModal = (type, id) => {
-    form.type = type;
+const openDeleteModal = (id) => {
+    // form.type = type;
     form.id = id;
     deleteModal.value = true;
 }
@@ -184,7 +184,7 @@ watch(form, () => {
                                     <Button 
                                         :type="'button'" 
                                         :size="'md'"
-                                        @click="openDeleteModal(table.type, table.id)"
+                                        @click="openDeleteModal(table.id)"
                                         class="!bg-primary-600 hover:!bg-primary-700 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[5px]">
                                         <DeleteIcon
                                             class="w-5 h-5 text-primary-100 hover:text-primary-50 cursor-pointer pointer-events-none" />
