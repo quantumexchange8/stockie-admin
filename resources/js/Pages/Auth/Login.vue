@@ -7,7 +7,7 @@ import InputError from "@/Components/InputError.vue";
 import TextInput from "@/Components/TextInput.vue";
 import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables";
-import { useForm } from "@inertiajs/vue3";
+import { Head, useForm } from "@inertiajs/vue3";
 import { onMounted } from "vue";
 
 defineProps({
@@ -39,6 +39,8 @@ onMounted(() => {
 </script>
 
 <template>
+    <Head title="Login"></Head>
+
     <div class="flex w-full min-h-screen max-h-screen overflow-hidden">
         <div class="w-1/2 md:bg-primary-900 flex flex-col justify-between pt-[99px] pr-12 xl:pr-12 gap-20">
             <div class="flex flex-col pl-11">

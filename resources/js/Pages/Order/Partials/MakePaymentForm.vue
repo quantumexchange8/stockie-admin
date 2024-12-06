@@ -16,7 +16,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones']);
+const emit = defineEmits(['close', 'fetchZones', 'update:customer-point']);
 
 const order = ref(props.order);
 const paymentDetails = ref({});
@@ -41,30 +41,56 @@ const fetchOrderDetails = async () => {
 
 onMounted(() => fetchOrderDetails());
 
-const formSubmit = () => { 
-    form.put(route('orders.updateOrderPayment', paymentDetails.value.id), {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            setTimeout(() => {
-                showMessage({ 
-                    severity: 'success',
-                    summary: 'Payment Completed.',
-                });
-            }, 200);
-            form.reset();
-            emit('close', true);
-            emit('fetchZones');
-        },
-        onError: () => {
-            setTimeout(() => {
+const formSubmit = async () => { 
+    // form.put(route('orders.updateOrderPayment', paymentDetails.value.id), {
+    //     preserveScroll: true,
+    //     preserveState: true,
+    //     onSuccess: () => {
+    //         setTimeout(() => {
+    //             showMessage({ 
+    //                 severity: 'success',
+    //                 summary: 'Payment Completed.',
+    //             });
+    //         }, 200);
+    //         form.reset();
+    //         emit('close', true);
+    //         emit('fetchZones');
+    //     },
+    //     onError: () => {
+    //         setTimeout(() => {
+    //             showMessage({ 
+    //                 severity: 'error',
+    //                 summary: 'Payment Unsuccessful.',
+    //             });
+    //         }, 200);
+    //     }
+    // })
+
+    try {
+        const response = await axios.put(`/order-management/orders/updateOrderPayment/${paymentDetails.value.id}`, form);
+        let customerPointBalance = response.data;
+        
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: 'Payment Completed.',
+            });
+        }, 200);
+        form.reset();
+        emit('close', true);
+        emit('fetchZones');
+        if (customerPointBalance !== 'guest') emit('update:customer-point', customerPointBalance);
+    } catch (error) {
+        console.error(error);
+        setTimeout(() => {
                 showMessage({ 
                     severity: 'error',
                     summary: 'Payment Unsuccessful.',
                 });
             }, 200);
-        }
-    })
+    } finally {
+
+    }
 };
 
 // const sstAmount = computed(() => {

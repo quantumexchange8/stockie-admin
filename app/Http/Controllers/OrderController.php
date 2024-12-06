@@ -1521,6 +1521,7 @@ class OrderController extends Controller
 
         // Add the accumulated points earned from the order to the customer
         if ($customer) {
+            $newPointBalance = $customer->point + $totalPoints;
             $oldTotalSpending = $customer->total_spending;
             $newTotalSpending = $oldTotalSpending + $payment->grand_total;
             $oldRanking = $customer->ranking;
@@ -1532,7 +1533,7 @@ class OrderController extends Controller
 
             // Update customer points and total spending
             $customer->update([
-                'point' => $customer->point + $totalPoints,
+                'point' => $newPointBalance,
                 'total_spending' => $newTotalSpending,
                 'ranking' => $newRanking
             ]);
@@ -1584,7 +1585,7 @@ class OrderController extends Controller
             $tab->update(['status' => 'Pending Clearance']);
         });
 
-        return redirect()->back();
+        return response()->json($customer ? $newPointBalance : 'guest');
     }
 
     /**

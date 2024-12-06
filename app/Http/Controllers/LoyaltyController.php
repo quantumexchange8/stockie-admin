@@ -433,7 +433,7 @@ class LoyaltyController extends Controller
         $validatedData = $request->validated();
 
         // Get tier items
-        $rewardsData = $request->input('rewards');
+        $rewardsData = $request->input('rewards') ?? [];
         
         $rankingRewardRequest = new RankingRewardRequest();
         $validatedRankingRewards = [];

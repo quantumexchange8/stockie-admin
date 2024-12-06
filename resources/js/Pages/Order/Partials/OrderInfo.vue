@@ -326,6 +326,7 @@ watch(selectedTab, (newValue) => {
             :order="order" 
             :selectedTable="selectedTable"
             @fetchZones="$emit('fetchZones')"
+            @update:customer-point="customer.point = $event"
             @close="closePaymentDrawer"
         />
     </RightDrawer>

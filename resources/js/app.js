@@ -15,7 +15,7 @@ const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
 createInertiaApp({
     // title: (title) => `${title} - ${appName}`,
-    title: (title) => `${title} - Stockie`,
+    title: (title) => `${title} - Stockie Admin`,
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.vue`,
