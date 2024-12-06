@@ -609,11 +609,11 @@ onMounted(() => {
         <form @submit.prevent="updateAvailability">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4" v-if="props.variant === 'grid'">
                 <div v-for="(item, index) in paginatedRows" :key="index" class="col-span-full md:col-span-3">
-                    <div class="flex flex-col items-start gap-1 w-full">
+                    <div class="flex flex-col items-start gap-1 size-full">
                         <slot name="item-body">
                             <div 
                                 :class="[
-                                    'relative self-stretch w-full h-52 rounded-[5px] border border-grey-100',
+                                    'relative self-stretch w-full min-h-52 rounded-[5px] border border-grey-100',
                                     {
                                         'bg-primary-25': index % 2 === 0 && item.stock_left > 0,
                                         'bg-white': index % 2 !== 0 && item.stock_left > 0,
@@ -622,7 +622,7 @@ onMounted(() => {
                                 ]"
                             >
                                 <div 
-                                    class="w-full cursor-pointer"
+                                    class="size-full cursor-pointer"
                                     :class="{'hover:bg-primary-50 h-[168px] ': item.stock_left !== 0 }"
                                     @click="redirectAction(mergedActions.view(item.id))"
                                 >
@@ -648,33 +648,37 @@ onMounted(() => {
                                     </slot>
                                 </div>
                             </div>
-                            <div class="w-full flex gap-2 items-center">
-                                <Tag value="Set" v-if="item.bucket === 'set'"/>
-                                <span class="w-full self-stretch text-primary-950 text-md font-semibold overflow-hidden text-ellipsis whitespace-nowrap">{{ item.product_name }}</span>
-                            </div>
-                            <div v-for="items in item.discountItems" v-if="item.discount_id !== null" class="flex items-start gap-2">
-                                <span class="line-clamp-1 text-grey-900 text-ellipsis font-normal text-md line-through">RM {{ formatAmount(items.price_before) }}</span>
-                                <span class="line-clamp-1 text-grey-900 text-ellipsis font-bold text-md ">RM {{ formatAmount(items.price_after) }}</span>
-                            </div>
-                            <div v-else>
-                                <span class="line-clamp-1 text-grey-900 text-ellipsis font-bold text-md">
-                                    RM {{ formatAmount(item.price) }}
-                                </span>
-                            </div>
-                            <div class="flex items-center self-stretch gap-2">
-                                <Toggle 
-                                    :checked="item.availability === 'Available'" 
-                                    :inputName="'availability'"
-                                    :inputId="'availability'"
-                                    @change="toggleAvailability(item)"
-                                />
-                                <span class="text-base font-medium" 
-                                :class="item.status === 'In stock' ? 'text-green-700' 
-                                        : item.status === 'Low in stock' ? 'text-yellow-700' 
-                                        : 'text-primary-600'">
-                                        <p v-if="item.status === 'Out of stock'">{{ item.status }}</p>
-                                        <p v-else>{{ item.bucket === 'set' ? `${item.stock_left} set left` : `${item.stock_left} left` }}</p>
-                                </span>
+                            <div class="flex flex-col items-start gap-y-2 justify-between size-full">
+                                <div class="flex flex-col items-start gap-y-1 size-full">
+                                    <div class="w-full flex gap-2 items-center">
+                                        <Tag value="Set" v-if="item.bucket === 'set'"/>
+                                        <span class="w-full self-stretch text-primary-950 text-md font-semibold overflow-hidden text-ellipsis whitespace-nowrap">{{ item.product_name }}</span>
+                                    </div>
+                                    <div v-for="items in item.discountItems" v-if="item.discount_id !== null" class="flex flex-col items-start">
+                                        <span class="text-grey-900 font-bold text-md ">RM {{ formatAmount(items.price_after) }}</span>
+                                        <span class="text-grey-900 font-normal text-sm line-through">RM {{ formatAmount(items.price_before) }}</span>
+                                    </div>
+                                    <div v-else>
+                                        <span class="line-clamp-1 text-grey-900 text-ellipsis font-bold text-md">
+                                            RM {{ formatAmount(item.price) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center self-stretch gap-2">
+                                    <Toggle 
+                                        :checked="item.availability === 'Available'" 
+                                        :inputName="'availability'"
+                                        :inputId="'availability'"
+                                        @change="toggleAvailability(item)"
+                                    />
+                                    <span class="text-base font-medium" 
+                                    :class="item.status === 'In stock' ? 'text-green-700' 
+                                            : item.status === 'Low in stock' ? 'text-yellow-700' 
+                                            : 'text-primary-600'">
+                                            <p v-if="item.status === 'Out of stock'">{{ item.status }}</p>
+                                            <p v-else>{{ item.bucket === 'set' ? `${item.stock_left} set left` : `${item.stock_left} left` }}</p>
+                                    </span>
+                                </div>
                             </div>
                         </slot>
                     </div>
