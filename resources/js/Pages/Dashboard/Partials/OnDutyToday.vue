@@ -23,12 +23,11 @@ const props = defineProps ({
                 <div class="flex flex-col items-start self-stretch rounded-[5px]">
                     <template v-if="props.onDuty.length > 0">
                         <template v-for="waiter in props.onDuty.slice(0,5)" :key="waiter.id">
-                            <div class="flex py-2 justify-between items-center self-stretch">
+                            <div class="flex py-2 justify-between items-center self-stretch gap-2">
                                 <div class="flex items-center gap-[10px]">
-                                    <!-- <div class="w-10 h-10 shrink-0 rounded-full bg-primary-900"></div> -->
                                     <img 
                                         :src="waiter.image ? waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                        alt=""
+                                        alt="WaiterImage"
                                         class="w-10 h-10 shrink-0 rounded-full"
                                     >
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">

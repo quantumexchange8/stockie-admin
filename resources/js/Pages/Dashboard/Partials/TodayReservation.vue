@@ -175,7 +175,7 @@ const closeOverlay = () => {
                         <!-- <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div> -->
                         <img 
                             :src="row.reserved_for.image ? row.reserved_for.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                            alt=""
+                            alt="CustomerImage"
                             class="size-4 rounded-full"
                             v-if="row.customer_id"
                         >
