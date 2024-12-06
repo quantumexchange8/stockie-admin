@@ -162,7 +162,7 @@ onMounted(async()=> {
         <Toast />
 
         <div class="w-full flex flex-col gap-5 p-5">
-            <div class="gap-5 grid grid-cols-12">
+            <div class="gap-5 md:grid grid-cols-12">
                 <div class="flex flex-col gap-5 col-span-full md:col-span-8">
                     <!-- sales, product sold, order today -->
                     <SalesProductOrder 

@@ -15,7 +15,7 @@ const { formatAmount } = transactionFormat();
 </script>
 
 <template>
-    <div class="flex flex-col gap-4 h-full min-w-[280px]">
+    <div class="flex flex-col gap-4 h-full">
         <div class="relative flex gap-5">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Entitled Incentive</span>
             <Link :href="route('waiter.viewEmployeeIncentive')">
