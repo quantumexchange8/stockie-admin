@@ -3,13 +3,14 @@ import { DeleteIcon, EditIcon, PercentageIcon, PlusIcon } from "@/Components/Ico
 import Modal from "@/Components/Modal.vue";
 import TextInput from "@/Components/TextInput.vue";
 import { Head, useForm } from "@inertiajs/vue3";
-import { nextTick, reactive, ref, watch } from "vue";
+import { computed, nextTick, reactive, ref, watch } from "vue";
 import Button from '@/Components/Button.vue';
 import Toast from "@/Components/Toast.vue";
 import Table from "@/Components/Table.vue";
 import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
 import { DeleteIllus } from "@/Components/Icons/illus";
 import DragDropImage from "@/Components/DragDropImage.vue";
+import InputError from "@/Components/InputError.vue";
 
 const props = defineProps({
     merchant: Object,
@@ -39,6 +40,8 @@ const getResults = async () => {
 
         const response = await axios.get(url);
         taxes.value = response.data;
+        editTaxForm.items = taxes.value;
+        initialTaxForm.value = JSON.parse(JSON.stringify(taxes.value));
     } catch (error) {
         console.error(error);
     } finally {
@@ -58,9 +61,7 @@ const form = useForm({
 });
 
 const editTaxForm = useForm({
-    id: taxes.id,
-    name: taxes.name,
-    value: parseInt(taxes.value),
+    items: [],
 })
 
 const deleteForm = useForm({
@@ -80,7 +81,6 @@ const actions = {
     edit: () => ``,
     delete: () => ``,
 };
-
 
 const editDetails = () => {
     merchantDetailsModal.value = true;
@@ -107,9 +107,17 @@ const closeModal = (status) => {
             isDeleteTaxOpen.value = false;
             break;
         }
-
     }
 }
+
+const isEdited = computed(() => (id) => {
+    const targetTax = taxes.value.find((item) => item.id === id); 
+    return targetTax?.remarks === 'edited' || targetTax?.remarks === 'added'; 
+});
+
+const isNoneEdited = computed(() => {
+    return editTaxForm.items.every(item => !item.hasOwnProperty('remarks') || item.remarks === null);
+})
 
 const openDeleteTax = (tax) => {
     isDeleteTaxOpen.value = true;
@@ -119,51 +127,42 @@ const openDeleteTax = (tax) => {
 const startEditing = (event, tax, type) => {
     event.stopPropagation();
     actionVal.value = 'edit';
-    // Adjust column widths for styling
+    
     const actionCol = merchantColumn.value.find(col => col.field === 'action');
     const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
     if (actionCol && percentageColumn) {
-        actionCol.width = '0';
-        percentageColumn.width = '30';
+        actionCol.width = '5';
+        percentageColumn.width = '25';
     }
 
-    // Set editing flags
     isEditingName.value = true;
     isEditingPercentage.value = true;
+    isAddTaxClicked.value = false;
 
-    // Handle input focus dynamically
+    const taxToEdit = editTaxForm.items.find(item => item.id === tax.id);
+    if (taxToEdit && !taxToEdit.remarks) {
+        taxToEdit.remarks = 'edited'; 
+    }
+
     const inputRefName = type === 'name' 
         ? `nameInput${tax.id}` 
         : `taxInput${tax.id}`;
     nextTick(() => {
         if (inputRefs[inputRefName]) {
-            inputRefs[inputRefName].focus(); // Access the dynamically assigned ref
+            inputRefs[inputRefName].focus(); 
         }
     });
 
-    // Update `editTaxForm` only if a new tax item is being edited
     if (editTaxForm.id !== tax.id) {
         editTaxForm.id = tax.id;
-        editTaxForm.name = tax.name || ''; // Fallback to an empty string
-        editTaxForm.value = tax.value || 0; // Fallback to 0 for numerical values
-
-        // Update initial form values for dirty checking
-        initialTaxForm.value = {
-            name: tax.name,
-            tax: tax.value,
-        };
+        editTaxForm.name = tax.name || ''; 
+        editTaxForm.value = tax.value || 0; 
     }
 };
 
-
-watch(editTaxForm, (newValue) => {
-    editTaxForm.name = newValue.name;
-    editTaxForm.value = newValue.value;
-    console.log(newValue.name);
-}, { immediate: true });
-
 const addTax = (event) => {
-    // event.preventDefault();
+
+    // column behaviours
     event.stopPropagation();
     const actionCol = merchantColumn.value.find(col => col.field === 'action');
     const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
@@ -175,15 +174,21 @@ const addTax = (event) => {
     isAddTaxClicked.value = true;
     actionVal.value = 'add';
     const tempId = Date.now();
-    taxes.value.push({ id: tempId, name: '', value: '' });
+    taxes.value.push({ id: tempId, name: '', value: '', remarks: 'added' });
 
+    //newly added tax    
     const newTax = taxes.value[taxes.value.length - 1];
     isEditingPercentage.value = true;
     isEditingName.value = true;
+    nextTick(() => {
+        const inputRefName = `nameInput${newTax.id}`;
+        if (inputRefs[inputRefName]) {
+            inputRefs[inputRefName].focus();
+        }
+    });
     editTaxForm.id = newTax.id;
     editTaxForm.name = newTax.name;
     editTaxForm.value = newTax.value;
-
 }
 
 const quitAddingTax = (event) => {
@@ -197,36 +202,47 @@ const quitAddingTax = (event) => {
 
     isAddTaxClicked.value = false;
     actionVal.value = null;
-    const lastTax = taxes.value[taxes.value.length - 1];
+    const lastTax = editTaxForm.items[editTaxForm.items.length - 1];
     if (lastTax) {
-        if (lastTax.name.trim() === '' && lastTax.value.trim() === ''){
-            taxes.value.pop();
-        }
+        taxes.value.pop();
     }
     isEditingName.value = false;
     isEditingPercentage.value = false;
 }
 
-const stopEditing = () => {
-    
+const stopEditing = (event, id) => {
+    event.stopPropagation();
     isAddTaxClicked.value = false;
     isEditingName.value = false;
     isEditingPercentage.value = false;
-    
-    const actionCol = merchantColumn.value.find(col => col.field === 'action');
-    if (actionCol && defaultActionWidth) {
-        actionCol.width = '13'; 
+
+    //clear only this row's error message
+    if (editTaxForm.errors) {
+        const errors = { ...editTaxForm.errors }; 
+        Object.keys(errors).forEach((key) => {
+            if (key.startsWith(`taxes.${id}.`)) {
+                delete errors[key]; 
+            }
+        });
+        editTaxForm.errors = errors; 
     }
 
-    const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
-    if (percentageColumn) {
-        percentageColumn.width = '17';
+    //restore the value for this row to default value 
+    const index = editTaxForm.items.findIndex((item) => item.id === id);
+    if (index !== -1 && initialTaxForm.value.find((item) => item.id === id)) {
+        editTaxForm.items[index] = JSON.parse(JSON.stringify(initialTaxForm.value.find((item) => item.id === id)));
+        if(editTaxForm.items[index].remarks === 'edited') {
+            delete editTaxForm.items[index].remarks;
+        }
     }
 
-    if (editTaxForm.name && editTaxForm.value && editTaxForm.name.trim() !== '' && editTaxForm.value.trim() !== '' && isDirty) {
-        taxSubmit();
-    } else {
-            
+    if(isNoneEdited.value){
+        const actionCol = merchantColumn.value.find(col => col.field === 'action');
+        const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
+        if (actionCol && defaultActionWidth && percentageColumn) {
+            actionCol.width = '13'; 
+            percentageColumn.width = '17';
+        }
     }
 }
 
@@ -250,18 +266,20 @@ const formSubmit = () => {
 const taxSubmit = () => {
     isEditingName.value = false;
     isEditingPercentage.value = false;
-    const actionCol = merchantColumn.value.find(col => col.field === 'action');
-    const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
-    if (actionCol && percentageColumn) {
-        percentageColumn.width = '17';
-        actionCol.width = '13'; 
-    }
     if(isDirty.value){
         const currentAction = actionVal.value;
+        // const submitItems = editTaxForm.items.filter(tax => tax.remarks === (currentAction === 'add' ? 'added' : 'edited'));
+        // editTaxForm.items = submitItems;
         editTaxForm.post(route('configurations.addTax'), {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
+                const actionCol = merchantColumn.value.find(col => col.field === 'action');
+                const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
+                if (actionCol && percentageColumn) {
+                    percentageColumn.width = '17';
+                    actionCol.width = '13'; 
+                }
                 editTaxForm.reset();
                 setTimeout(() => {
                     showMessage({ 
@@ -271,25 +289,23 @@ const taxSubmit = () => {
                     });
                 }, 200);
                 actionVal.value = null;
+                isAddTaxClicked.value = false;
                 getResults();
             },
             onError: () => {
-                // const lastTax = taxes.value[taxes.value.length - 1];
-                // if (lastTax && lastTax.name.trim() === '' && lastTax.value.trim() === '') {
-                //     taxes.value.pop();
-                // }
                 isEditingName.value = true;
                 isEditingPercentage.value = true;
-                isAddTaxClicked.value = true;
+                // isAddTaxClicked.value = true; 
                 const actionCol = merchantColumn.value.find(col => col.field === 'action');
                 const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
                 if (actionCol && percentageColumn) {
                     percentageColumn.width = '25';
                     actionCol.width = '5'; 
                 }
-            }
+            },
         })
     } else {
+        // if isDirty is false (no changes), then simply make everything into default 
         isAddTaxClicked.value = false;
         actionVal.value = null;
         const lastTax = taxes.value[taxes.value.length - 1];
@@ -298,6 +314,13 @@ const taxSubmit = () => {
                 taxes.value.pop();
             }
         }
+
+        //remove remarks if no changes
+        taxes.value.forEach(item => {
+            if(item.remarks === 'edited'){
+                delete item.remarks;
+            }
+        })
         isEditingName.value = false;
         isEditingPercentage.value = false;
     }
@@ -336,23 +359,18 @@ const deleteSubmit = () => {
 
 getResults()
 
+const isFormValid = computed(() => {
+    return editTaxForm.items.every(item => item.name && item.value);
+});
+
 watch(() => taxes.value, (newValue) => {
     taxes.value = newValue ? newValue : {};
 }, { immediate: true });
 
-
-watch(editTaxForm, ()=> {
-    const currentData = ({
-        name: editTaxForm.name,
-        tax: editTaxForm.value,
-    })
-    isDirty.value = JSON.stringify(currentData) !== JSON.stringify(initialTaxForm.value);
-}, { immediate: true })
-
-// watch(() => form, (newValue) => {
-//     console.log(form.isDirty);
-// }, { immediate: true, deep: true });
-
+watch(editTaxForm, () => {
+    const restArray = editTaxForm.items.map(({ remarks, ...rest }) => rest);
+    isDirty.value = JSON.stringify(restArray) !== JSON.stringify(initialTaxForm.value);
+}, { immediate: true });
 
 </script>
 
@@ -403,7 +421,7 @@ watch(editTaxForm, ()=> {
         </div>
 
         <!-- tax setting -->
-        <!-- <form @submit.prevent="taxSubmit"> -->
+        <form @submit.prevent="taxSubmit">
             <div class="w-full flex flex-col p-6 items-start gap-6 rounded-[5px] border border-solid border-primary-100">
                 <div class="text-primary-900 text-md font-medium">
                     Tax Setting
@@ -417,44 +435,55 @@ watch(editTaxForm, ()=> {
                         :paginator="false"
                     >
                         <template #editAction="taxes">
-                            <EditIcon
-                                class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                                v-show="!isEditingName || !isEditingPercentage"
-                                @click="startEditing($event, taxes, 'name')"
-                            />
+                            <div class="flex size-full !items-center justify-end">
+                                <EditIcon
+                                    class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
+                                    v-show="!isEditingName && !isEditingPercentage && !isAddTaxClicked && isNoneEdited"
+                                    @click="startEditing($event, taxes, 'name')"
+                                />
+                            </div>
                         </template>
                         <template #deleteAction="taxes">
-                            <DeleteIcon
-                                class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
-                                v-show="!isEditingName || !isEditingPercentage"
-                                @click="openDeleteTax(taxes.id)"
-                            />
-                            <DeleteIcon
-                                class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
-                                v-show="isAddTaxClicked && editTaxForm.id == taxes.id"
-                                @click="quitAddingTax($event)"
-                            />
+                            <div class="flex size-full"
+                                :class="isNoneEdited ? '!items-center' : '!items-start'"
+                            >
+                                <DeleteIcon
+                                    class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
+                                    v-show="!isEditingName && !isEditingPercentage && !isAddTaxClicked && isNoneEdited"
+                                    @click="openDeleteTax(taxes.id)"
+                                />
+                                <DeleteIcon
+                                    class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
+                                    v-show="editTaxForm.items.length && isEdited(taxes.id)"
+                                    @click="isAddTaxClicked ? quitAddingTax($event) : stopEditing($event, taxes.id)"
+                                />
+                            </div>
                         </template>
                         <template #name="taxes">
-                            <!-- blur = check is addtax clicked? if yes, then check if both input field is not empty? -->
-                             <!-- if both not empty then return true -->
-                            <span 
-                                class="flex-[1_0_0] text-grey-900 text-sm font-medium"
-                                :class="editTaxForm.processing ? 'cursor-not-allowed pointer-events-none' : null"
-                                @keydown.enter.prevent="taxSubmit()"
+                            <div class="flex !items-start size-full" v-if="editTaxForm.items.length && isEdited(taxes.id)" >
+                                <TextInput
+                                    v-model="editTaxForm.items.find(item => item.id === taxes.id).name"
+                                    :inputName="'taxes.'+taxes.id+'.name'"
+                                    :ref="el => (inputRefs[`nameInput${taxes.id}`] = el)"
+                                    :errorMessage="editTaxForm.errors ? editTaxForm.errors['taxes.' + taxes.id + '.name'] : null"
+                                    :disabled="editTaxForm.processing"
+                                    @click="isAddTaxClicked ? null : startEditing($event, taxes, 'name')"
+                                />
+                            </div>
+                            <div class="w-full" 
+                                v-else
                                 @click="isAddTaxClicked ? null : startEditing($event, taxes, 'name')" 
-                                v-show="!isEditingName || editTaxForm.id !== taxes.id"
                             >
-                                {{ taxes.name }}
-                            </span>
-                            <TextInput
-                                :ref="el => (inputRefs[`nameInput${taxes.id}`] = el)"
-                                v-model="editTaxForm.name"
-                                v-show="isEditingName && editTaxForm.id == taxes.id" 
-                                :errorMessage="taxes.id === editTaxForm.id ? editTaxForm.errors?.name : null"
-                                :disabled="editTaxForm.processing"
-                                @click="isAddTaxClicked ? null : startEditing($event, taxes, 'name')" 
-                            />
+                                <span 
+                                    class="flex-[1_0_0] text-grey-900 text-sm font-medium !w-full"
+                                    :class="editTaxForm.processing ? 'cursor-not-allowed pointer-events-none' : null"
+                                    @keydown.enter.prevent="taxSubmit()"
+                                >
+                                    {{ taxes.name }}
+                                </span>
+                                <InputError :message="editTaxForm.errors ? editTaxForm.errors['taxes.' + taxes.id + '.name'] : null"></InputError>
+                            </div>
+
                             <!-- keep commented in case click outside behaviour is requested -->
                             <!-- <TextInput
                                 :ref="el => (inputRefs[`nameInput${taxes.id}`] = el)"
@@ -468,21 +497,21 @@ watch(editTaxForm, ()=> {
                             /> -->
                         </template>
                         <template #value="taxes">
-                            <TextInput
-                                :ref="el => (inputRefs[`taxInput${taxes.id}`] = el)"
-                                v-model="editTaxForm.value"
-                                v-if="isEditingPercentage && editTaxForm.id == taxes.id"
-                                :errorMessage="taxes.id === editTaxForm.id ? editTaxForm.errors?.value : null"
-                                :disabled="editTaxForm.processing"
-                                iconPosition="'right'"
-                                @click="isAddTaxClicked ? null : startEditing($event, taxes, 'percentage')"
-                                @keypress="isValidNumberKey($event, false)"
-                            >
-                                <template #prefix>
-                                    <PercentageIcon />
-                                </template>
-                            </TextInput>
-
+                            <div class="flex !items-start size-full" v-if="editTaxForm.items.length && isEdited(taxes.id)">
+                                <TextInput
+                                    v-model="editTaxForm.items.find(item => item.id === taxes.id).value"
+                                    iconPosition="'right'"
+                                    :inputName="'taxes.' + taxes.id + '.value'"
+                                    :ref="el => (inputRefs[`taxInput${taxes.id}`] = el)"
+                                    :errorMessage="editTaxForm.errors ? editTaxForm.errors['taxes.' + taxes.id + '.value'] : null"
+                                    :disabled="editTaxForm.processing"
+                                    @click="isAddTaxClicked ? null : startEditing($event, taxes, 'percentage')"
+                                    @keypress="isValidNumberKey($event, true)"
+                                >
+                                    <template #prefix>
+                                        <PercentageIcon />
+                                    </template>
+                                </TextInput>
                             <!-- keep commented in case click outside behaviour is requested -->
                             <!-- <TextInput
                                 :ref="el => (inputRefs[`taxInput${taxes.id}`] = el)"
@@ -500,19 +529,24 @@ watch(editTaxForm, ()=> {
                                     <PercentageIcon />
                                 </template>
                             </TextInput> -->
-                            <template v-else>
+                        </div>
+                        <template v-else>
+                            <div class="flex flex-col w-full"
+                                @click="isAddTaxClicked ? null : startEditing($event, taxes, 'percentage')"
+                                @blur="isAddTaxClicked && (!editTaxForm.name || !editTaxForm.value) ? null : stopEditing($event, taxes.id)"
+                            >
                                 <div class="!p-3 !items-center !text-center content-center !border !rounded-[5px] !border-solid !border-primary-100 !w-full !flex">
                                     <div 
                                         class="flex-[1_0_0] text-grey-900 text-sm font-medium"
                                         :class="editTaxForm.processing ? 'cursor-not-allowed pointer-events-none' : null"
-                                        @click="isAddTaxClicked ? null : startEditing($event, taxes, 'percentage')"
-                                        @blur="isAddTaxClicked && (!editTaxForm.name || !editTaxForm.value) ? null : stopEditing()"
                                     >
-                                        {{ parseInt(taxes.value) }}
+                                        {{ taxes.value ? parseInt(taxes.value) : '' }}
                                     </div>
                                     <PercentageIcon />
                                 </div>
-                            </template>
+                                <InputError :message="editTaxForm.errors ? editTaxForm.errors['taxes.' + taxes.id + '.value'] : null"/>
+                            </div>
+                        </template>
                         </template>
 
                     </Table>
@@ -523,7 +557,7 @@ watch(editTaxForm, ()=> {
                             :size="'lg'" 
                             @click="addTax($event)" 
                             :disabled="editTaxForm.processing"
-                            v-if="!isEditingName && !isEditingPercentage"
+                            v-if="!isEditingName && !isEditingPercentage && isNoneEdited"
                         >
                             <PlusIcon />
                             Tax Type
@@ -532,16 +566,24 @@ watch(editTaxForm, ()=> {
                             :variant="'primary'" 
                             :size="'lg'" 
                             @click="taxSubmit()"
-                            :disabled="editTaxForm.processing"
+                            :disabled="editTaxForm.processing || !isFormValid"
                             v-else
                         >
                             <!-- Save Changes -->
                             {{ isDirty ? 'Save Changes' : 'Discard' }}
                         </Button>
+                        <!-- <Button 
+                            :variant="'primary'" 
+                            :size="'lg'" 
+                            @click="console.log(editTaxForm.items.every(item => !item.hasOwnProperty('remarks') || item.remarks === null))"
+                            :type="'button'"
+                        >
+                            {{ taxes }}
+                        </Button> -->
                     </div>
                 </div>
             </div>
-        <!-- </form> -->
+        </form>
     </div>
 
     <Modal

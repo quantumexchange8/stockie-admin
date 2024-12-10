@@ -397,7 +397,7 @@ onMounted(() => {
                         <p class="text-sm font-medium text-grey-900">{{ slotProps.data[col.field] }}</p>
                     </slot>
                     
-                    <div class="flex justify-end items-start gap-2" v-if="col.field === 'action' && !mergedRowType.rowGroups">
+                    <div class="flex justify-end items-center gap-2 size-full" v-if="col.field === 'action' && !mergedRowType.rowGroups">
                         <slot name="viewAction" :="slotProps.data">
                             <Link
                                 :as="'button'"

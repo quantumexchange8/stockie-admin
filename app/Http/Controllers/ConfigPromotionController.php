@@ -8,6 +8,7 @@ use App\Models\ItemCategory;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -213,50 +214,97 @@ class ConfigPromotionController extends Controller
     }
 
     public function addTax(Request $request)
-    {   
-        $newTax = Setting::find($request->id);
+    {  
+        $taxesErrors = [];
+        $validatedTaxes = [];
+        foreach ($request->input('items') as $taxes) { 
+            if (!isset($taxes['id'])) {
+                continue; 
+            }
 
-        $request->validate([
-            'name' => [
-                'required',
-                'max:255',
-                Rule::unique('settings', 'id')
-                    ->whereNull('deleted_at')
-                    ->ignore($newTax ? $newTax->id : null),
-            ],
-            'value' => ['required'],
-        ], [
-            'name.required' => 'The name field is required.',
-            'name.max' => 'The name field must not exceed 255 characters.',
-            'name.unique' => 'The name already exists in the tax settings.',
-            'value.required' => 'This field is required.',
-        ]);
-
-
-        if ($newTax) {
-            // Update the existing tax
-            $newTax->update([
-                'name' => $request->name,
-                'value' => round($request->value, 2),
-                'type' => 'tax',
-                'value_type' => 'percentage',
+            $validator = Validator::make($taxes, [
+                'id' => 'required|integer', 
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    function ($attribute, $value, $fail) use ($taxes) {
+                        {
+                            if(isset($taxes['remarks'])){
+                                if($taxes['remarks'] === 'added'){
+                                    $exists = Setting::where('name', $value)->exists();
+                                    if ($exists) {
+                                        $fail("Tax name has already been taken.");
+                                    }
+    
+                                } elseif ($taxes['remarks'] === 'edited') {
+                                    $exists = Setting::where('name', $value)
+                                        ->where('id', '!=', $taxes['id'])
+                                        ->exists();
+                                    if ($exists) {
+                                        $fail("Tax name has already been taken by another record.");
+                                    }
+                                }
+                            }
+                        }
+                    },
+                ],
+                'value' => 'required|numeric|min:0',
+                'remarks' => 'string',
+            ], [
+                'name.required' => 'Tax name is required.',
+                'value.required' => 'Tax value is required.',
             ]);
-        } else {
-            // Create a new tax
-            Setting::create([
-                'name' => $request->name,
-                'value' => $request->value,
-                'type' => 'tax',
-                'value_type' => 'percentage',
-            ]);
+
+            if ($validator->fails()) {
+                foreach ($validator->errors()->messages() as $field => $messages) {
+                    $taxesErrors["taxes.{$taxes['id']}.$field"] = $messages;
+                }
+            } else {
+                $validated = $validator->validated();
+                if (isset($validated['id'])) {
+                    $validated['id'] = $taxes['id'];
+                }
+                $validatedTaxes[] = $validated;
+                
+            }
+            
         }
+        
+        if (!empty($taxesErrors)) {
+            return redirect()->back()->withErrors($taxesErrors);
+        }
+
+        foreach($validatedTaxes as $items){
+
+            if(isset($items['remarks'])){
+                if ($items['remarks'] === 'added') {
+                    Setting::create([
+                        'name' => $items['name'],
+                        'value' => $items['value'],
+                        'type' => 'tax',
+                        'value_type' => 'percentage',
+                    ]);
+    
+                } else {
+                    Setting::find($items['id'])
+                        ->update([
+                        'name' => $items['name'],
+                        'value' => round($items['value'], 2),
+                        'type' => 'tax',
+                        'value_type' => 'percentage',
+                    ]);
+                }
+            }
+        }
+        return redirect()->back();
     }
 
     public function getTax()
     {
         $stock = Setting::query();
 
-        $results = $stock->where('type', 'tax')->get();
+        $results = $stock->where('type', 'tax')->select('id', 'name', 'value')->get();
 
         return response()->json($results);
     }
