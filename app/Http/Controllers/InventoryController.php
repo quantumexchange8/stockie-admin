@@ -126,9 +126,21 @@ class InventoryController extends Controller
         $validatedInventoryItems = [];
         $allItemErrors = [];
 
+        // Track unique codes and their first occurrence index
+        $uniqueCodeTracker = [];
+
         foreach ($inventoryItemData as $index => $item) {
             $rules = $inventoryItemRequest->rules();
             $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
+
+            // Check for item code uniqueness
+            if (isset($uniqueCodeTracker[$item['item_code']])) {
+                // If this code has been seen before, add error only to the current (subsequent) item
+                $allItemErrors["items.$index.item_code"] = ['This unique code has been taken'];
+            } else {
+                // First occurrence of this code
+                $uniqueCodeTracker[$item['item_code']] = $index;
+            }
 
             // Validate inventory items data
             $inventoryItemValidator = Validator::make($item, $rules, $inventoryItemRequest->messages(), $inventoryItemRequest->attributes());
@@ -153,45 +165,45 @@ class InventoryController extends Controller
             return redirect()->back()->withErrors($allItemErrors);
         }
 
-        // $newGroup = Iventory::create(['name' => $validatedData['name']]);
+        $newGroup = Iventory::create(['name' => $validatedData['name']]);
 
-        // if ($request->hasFile('image')) {
-        //     $newGroup->addMedia($validatedData['image'])->toMediaCollection('inventory');
-        // };
+        if ($request->hasFile('image')) {
+            $newGroup->addMedia($validatedData['image'])->toMediaCollection('inventory');
+        };
         
-        // if (count($validatedInventoryItems) > 0) {
-        //     foreach ($validatedInventoryItems as $key => $value) {
-        //         if ($value['stock_qty'] === 0) {
-        //             $newStatus = 'Out of stock';
-        //         } elseif ($value['stock_qty'] <= $value['low_stock_qty']) {
-        //             $newStatus = 'Low in stock';
-        //         } else {
-        //             $newStatus = 'In stock';
-        //         }
+        if (count($validatedInventoryItems) > 0) {
+            foreach ($validatedInventoryItems as $key => $value) {
+                if ($value['stock_qty'] === 0) {
+                    $newStatus = 'Out of stock';
+                } elseif ($value['stock_qty'] <= $value['low_stock_qty']) {
+                    $newStatus = 'Low in stock';
+                } else {
+                    $newStatus = 'In stock';
+                }
 
-        //         IventoryItem::create([
-        //             'inventory_id' => $newGroup->id,
-        //             'item_name' => $value['item_name'],
-        //             'item_code' => $value['item_code'],
-        //             'item_cat_id' => $value['item_cat_id'],
-        //             'stock_qty' => $value['stock_qty'],
-        //             'low_stock_qty' => $value['low_stock_qty'],
-        //             'keep' => $value['keep'],
-        //             'status' => $newStatus,
-        //         ]);    
+                IventoryItem::create([
+                    'inventory_id' => $newGroup->id,
+                    'item_name' => $value['item_name'],
+                    'item_code' => $value['item_code'],
+                    'item_cat_id' => $value['item_cat_id'],
+                    'stock_qty' => $value['stock_qty'],
+                    'low_stock_qty' => $value['low_stock_qty'],
+                    'keep' => $value['keep'],
+                    'status' => $newStatus,
+                ]);    
 
-        //         if ($value['stock_qty'] > 0) {
-        //             StockHistory::create([
-        //                 'inventory_id' => $newGroup->id,
-        //                 'inventory_item' => $value['item_name'],
-        //                 'old_stock' => 0,
-        //                 'in' => $value['stock_qty'],
-        //                 'out' => 0,
-        //                 'current_stock' => $value['stock_qty'],
-        //             ]);
-        //         }
-        //     }
-        // }
+                if ($value['stock_qty'] > 0) {
+                    StockHistory::create([
+                        'inventory_id' => $newGroup->id,
+                        'inventory_item' => $value['item_name'],
+                        'old_stock' => 0,
+                        'in' => $value['stock_qty'],
+                        'out' => 0,
+                        'current_stock' => $value['stock_qty'],
+                    ]);
+                }
+            }
+        }
 
         // $message = [ 
         //     'severity' => 'success', 
@@ -458,6 +470,9 @@ class InventoryController extends Controller
         $validatedInventoryItems = [];
         $allItemErrors = [];
 
+        // Track unique codes and their first occurrence index
+        $uniqueCodeTracker = [];
+
         foreach ($inventoryItemData as $index => $item) {
             $rules = $inventoryItemRequest->rules();
             
@@ -471,6 +486,15 @@ class InventoryController extends Controller
                                             Rule::unique('iventory_items')->ignore($item['id']),
                                         ]
                                     : $rules['item_code'] = 'required|string|max:255|unique:iventory_items,item_code';
+
+            // Check for item code uniqueness
+            if (isset($uniqueCodeTracker[$item['item_code']])) {
+                // If this code has been seen before, add error only to the current (subsequent) item
+                $allItemErrors["items.$index.item_code"] = ['This unique code has been taken'];
+            } else {
+                // First occurrence of this code
+                $uniqueCodeTracker[$item['item_code']] = $index;
+            }
 
             // Validate inventory items data
             $inventoryItemValidator = Validator::make($item, $rules, $inventoryItemRequest->messages(), $inventoryItemRequest->attributes());
@@ -714,6 +738,12 @@ class InventoryController extends Controller
         $data = $query->with('inventory:id,name')
                         ->orderBy('created_at', 'desc')
                         ->get();
+
+        $data->each(function ($stockHistory) {
+            if ($stockHistory->inventory) {
+                $stockHistory->inventory->image = $stockHistory->inventory->getFirstMediaUrl('inventory');
+            }
+        });
                         
         return response()->json($data);
     }

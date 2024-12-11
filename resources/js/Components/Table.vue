@@ -615,25 +615,26 @@ onMounted(() => {
                                 :class="[
                                     'relative self-stretch w-full min-h-52 rounded-[5px] border border-grey-100',
                                     {
-                                        'bg-primary-25': index % 2 === 0 && item.stock_left > 0,
-                                        'bg-white': index % 2 !== 0 && item.stock_left > 0,
+                                        'bg-primary-25': index % 2 === 0 && item.status !== 'Out of stock',
+                                        'bg-white': index % 2 !== 0 && item.status !== 'Out of stock',
                                     }
                                 ]"
                             >
                                 <div 
                                     class="size-full cursor-pointer"
-                                    :class="{'hover:bg-primary-50 h-[168px] ': item.stock_left !== 0 }"
+                                    :class="{'hover:bg-primary-50 h-[168px] ': item.status !== 'Out of stock' }"
                                     @click="redirectAction(mergedActions.view(item.id))"
                                 >
-                                    <div :class="['absolute w-full z-10 bg-black ', item.stock_left == 0 ? 'opacity-50' : 'opacity-0']"></div>
-                                    <span class="absolute z-20 top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.stock_left === 0">Out of Stock</span>
+                                    <div :class="['absolute size-full !z-10 bg-black', item.status === 'Out of stock' ? 'opacity-50' : 'opacity-0 hidden']"></div>
+                                    <span class="absolute !z-20 top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.status === 'Out of stock'">Out of Stock</span>
                                     <img 
                                         :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt="ProductImage" 
-                                        class="size-full object-contain relative z-0"
+                                        class="min-h-[168px] w-full object-contain relative !z-0"
+                                        :class="item.stock_left == 0 ? 'max-h-[200px]' : 'max-h-[168px]'"
                                     />
                                 </div>
-                                <div class="flex p-[2px] items-start flex-shrink-0 gap-0.5" v-if="item.stock_left > 0">
+                                <div class="flex p-[2px] items-start flex-shrink-0 gap-0.5" v-if="item.status !== 'Out of stock'">
                                     <slot name="editAction" :="item">
                                         <Button
                                             :type="'button'"
@@ -646,7 +647,7 @@ onMounted(() => {
                                     </slot>
                                 </div>
                             </div>
-                            <div class="flex flex-col items-start gap-y-2 justify-between size-full">
+                            <div class="flex flex-col items-start gap-y-2 justify-between size-full min-h-[117px]">
                                 <div class="flex flex-col items-start gap-y-1 size-full">
                                     <div class="w-full flex gap-2 items-center">
                                         <Tag value="Set" v-if="item.bucket === 'set'"/>
@@ -660,7 +661,7 @@ onMounted(() => {
                                         <span class="line-clamp-1 text-grey-900 text-ellipsis font-bold text-md">
                                             RM {{ formatAmount(item.price) }}
                                         </span>
-                                    </div>
+                                    </div>{{ item.stock_left }}
                                 </div>
                                 <div class="flex items-center self-stretch gap-2">
                                     <Toggle 

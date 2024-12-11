@@ -74,7 +74,7 @@ const formSubmit = () => {
 
 const requiredFields = ['name', 'image', 'items'];
 
-const isFormValid = computed(() => requiredFields.every(field => form[field]));
+const isFormValid = computed(() => requiredFields.every(field => form[field]) && !form.processing);
 
 const addItem = () => form.items.push({ ...defaultInventoryItem, inventory_id: props.group.id });
 

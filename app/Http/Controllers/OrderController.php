@@ -382,7 +382,7 @@ class OrderController extends Controller
                     $temp += $newItemAmount;
                     
                     foreach ($item['product_items'] as $key => $value) {
-                        $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id')->find($value['id']);
+                        $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty')->find($value['id']);
                         $inventoryItem = $productItem->inventoryItem;
     
                         // Deduct stock
@@ -476,7 +476,7 @@ class OrderController extends Controller
                                 'category:id,name', 
                             ])
                             ->where('availability', 'Available')
-                            ->orderBy('id')
+                            ->orderBy('product_name')
                             ->get()
                             ->map(function ($product) {
                                 $product_items = $product->productItems;
@@ -493,7 +493,7 @@ class OrderController extends Controller
 
                                         $stockQty = $inventory_item->stock_qty;
                                         
-                                        $stockCount = (int)round($stockQty / (int)$value['qty']);
+                                        $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
                                         array_push($stockCountArr, $stockCount);
                                     }
                                     $minStockCount = min($stockCountArr);
@@ -1681,7 +1681,7 @@ class OrderController extends Controller
                                         foreach ($product_items as $key => $value) {
                                             $inventory_item = IventoryItem::select('stock_qty')->find($value['inventory_item_id']);
                                             $stockQty = $inventory_item->stock_qty;
-                                            $stockCount = (int)round($stockQty / (int)$value['qty']);
+                                            $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
     
                                             array_push($stockCountArr, $stockCount);
                                         }
@@ -1779,7 +1779,7 @@ class OrderController extends Controller
 
             $redeemableItem = Product::with([
                                             'productItems:id,product_id,inventory_item_id,qty',
-                                            'productItems.inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id'
+                                            'productItems.inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty'
                                         ])
                                         ->find($validatedData['selected_item']['id']);
 
@@ -1926,7 +1926,7 @@ class OrderController extends Controller
                                                 'rankingReward:id,reward_type,discount,free_item,item_qty',
                                                 'rankingReward.product:id,product_name',
                                                 'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
-                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id'
+                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty'
                                             ])
                                             ->findOrFail($validatedData['customer_reward_id']);
 

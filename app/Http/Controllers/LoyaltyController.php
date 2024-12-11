@@ -70,7 +70,7 @@ class LoyaltyController extends Controller
         
                                             foreach ($product_items as $key => $value) {
                                                 $stockQty = $value->inventoryItem->stock_qty;
-                                                $stockCount = (int)round($stockQty / (int)$value['qty']);
+                                                $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
         
                                                 array_push($stockCountArr, $stockCount);
                                             }
@@ -98,7 +98,7 @@ class LoyaltyController extends Controller
 
                                     foreach ($product_items as $key => $value) {
                                         $stockQty = $value->inventoryItem->stock_qty;
-                                        $stockCount = (int)round($stockQty / (int)$value['qty']);
+                                        $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
 
                                         array_push($stockCountArr, $stockCount);
                                     }

@@ -10,7 +10,7 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultProductItem } from '@/Composables/constants';
-import { useInputValidator } from '@/Composables';
+import { useInputValidator, useCustomToast } from '@/Composables';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -19,6 +19,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close', 'isDirty']);
+const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
 const categoryArr = ref(props.categoryArr);
@@ -40,6 +41,8 @@ const form = useForm({
             product_name: `${item.item_name} (${item.item_category.name})`,
             image: inventoryToAdd.value.image,
             price: '',
+            is_redeemable: false,
+            point: '0',
             category_id: '',
             qty: 1,
             inventory_item_id: item.id
@@ -52,6 +55,10 @@ const formSubmit = () => {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
+            showMessage({
+                severity: 'success',
+                summary: 'Products has been successfully added to your menu.',
+            });
             form.reset();
             emit('close');
         },

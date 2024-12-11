@@ -47,8 +47,7 @@ class ProductController extends Controller
 
                                     foreach ($product_items as $key => $value) {
                                         $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])->find($value['inventory_item_id']);
-                                        $stockQty = $inventory_item->stock_qty;
-                                        $stockCount = (int)round($stockQty / (int)$value['qty']);
+                                        $stockCount = (int)bcdiv($inventory_item->stock_qty, (int)$value['qty']);
 
                                         array_push($stockCountArr, $stockCount);
                                     }
@@ -120,27 +119,27 @@ class ProductController extends Controller
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) return redirect()->back()->withErrors($allItemErrors)->withInput();
         
-        // $newProduct = Product::create([
-        //     'product_name' => $validatedData['product_name'],
-        //     'bucket' => $validatedData['bucket'] ? 'set' : 'single',
-        //     'price' => $validatedData['price'],
-        //     'point' => 0,
-        //     // 'point' => $validatedData['point'],
-        //     'category_id' => $validatedData['category_id'],
-        //     // 'keep' => $validatedData['keep'],
-        //     'status' => $this->getProductStatus($validatedProductItems),
-        //     'availability' => 'Available',
-        // ]);
+        $newProduct = Product::create([
+            'product_name' => $validatedData['product_name'],
+            'bucket' => $validatedData['bucket'] ? 'set' : 'single',
+            'price' => $validatedData['price'],
+            'point' => 0,
+            // 'point' => $validatedData['point'],
+            'category_id' => $validatedData['category_id'],
+            // 'keep' => $validatedData['keep'],
+            'status' => $this->getProductStatus($validatedProductItems),
+            'availability' => 'Available',
+        ]);
 
-        // if (count($validatedProductItems) > 0) {
-        //     foreach ($validatedProductItems as $key => $value) {
-        //         ProductItem::create(attributes: [
-        //             'product_id' => $newProduct->id,
-        //             'inventory_item_id' => $value['inventory_item_id'],
-        //             'qty' => (string) $value['qty'],
-        //         ]);
-        //     }
-        // }
+        if (count($validatedProductItems) > 0) {
+            foreach ($validatedProductItems as $key => $value) {
+                ProductItem::create(attributes: [
+                    'product_id' => $newProduct->id,
+                    'inventory_item_id' => $value['inventory_item_id'],
+                    'qty' => (string) $value['qty'],
+                ]);
+            }
+        }
 
         $this->createProductAndItems($validatedData, $validatedProductItems);
 
@@ -414,7 +413,7 @@ class ProductController extends Controller
                                 foreach ($product_items as $key => $value) {
                                     $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])->find($value['inventory_item_id']);
                                     $stockQty = $inventory_item->stock_qty;
-                                    $stockCount = (int)round($stockQty / (int)$value['qty']);
+                                    $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
 
                                     array_push($stockCountArr, $stockCount);
                                 }

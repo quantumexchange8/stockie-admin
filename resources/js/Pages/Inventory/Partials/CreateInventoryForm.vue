@@ -57,46 +57,50 @@ const hideGroupCreatedModal = () => groupCreatedModalIsOpen.value = false;
 
 // const hideAddAsProductModal = () => addAsProductModalIsOpen.value = false;
 
-const validateItemCodes = () => {
-    // Reset item_code errors
-    form.errors = { ...form.errors }; // Ensure reactivity
+// const validateItemCodes = () => {
+//     // Reset item_code errors
+//     form.errors = { ...form.errors }; // Ensure reactivity
 
-    const codeMap = new Map();
+//     const codeMap = new Map();
 
-    // Build a map of item_code occurrences with their indices
-    form.items.forEach((item, index) => {
-        const code = item.item_code?.trim();
-        if (code) {
-            if (!codeMap.has(code)) {
-                codeMap.set(code, []);
-            }
-            codeMap.get(code).push(index);
-        }
-    });
+//     // Build a map of item_code occurrences with their indices
+//     form.items.forEach((item, index) => {
+//         const code = item.item_code?.trim();
+//         if (code) {
+//             if (!codeMap.has(code)) {
+//                 codeMap.set(code, []);
+//             }
+//             codeMap.get(code).push(index);
+//         }
+//     });
 
-    // Update errors for duplicates except the first occurrence
-    codeMap.forEach((indices) => {
-        if (indices.length > 1) {
-            indices.slice(1).forEach((index) => {
-                form.errors[`items.${index}.item_code`] = 'This field must have a unique code.';
-            });
-        }
-    });
-};
+//     // Update errors for duplicates except the first occurrence
+//     codeMap.forEach((indices) => {
+//         if (indices.length > 1) {
+//             indices.slice(1).forEach((index) => {
+//                 form.errors[`items.${index}.item_code`] = 'This field must have a unique code.';
+//             });
+//         }
+//     });
+// };
 
-const validateForm = () => {
-    // Clear all previous errors
-    form.errors = {};
+// const validateForm = () => {
+//     // Clear all previous errors
+//     form.errors = {};
 
-    // Run validations
-    validateItemCodes();
+//     // Run validations
+//     validateItemCodes();
 
-    // Return whether the form is valid
-    return Object.keys(form.errors).length === 0;
-};
+//     // Return whether the form is valid
+//     return Object.keys(form.errors).length === 0;
+// };
+
+const close = (status) => {
+    emit('close', 'create', status);
+}
 
 const formSubmit = async () => { 
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     form.post(route('inventory.store'), {
         preserveScroll: true,
@@ -105,7 +109,6 @@ const formSubmit = async () => {
             try {
                 // Fetch the latest inventory
                 const response = await axios.get('/inventory/inventory/getLatestInventory');
-                newInventoryData.value = response.data.latestInventory;
 
                 // Display success message
                 showMessage({
@@ -116,9 +119,14 @@ const formSubmit = async () => {
 
                 // Reset the form and emit necessary events
                 form.reset();
-                emit('close');
+                form.value = {
+                    name: '',
+                    image: '',
+                    items: [],
+                };
+                close('leave');
                 emit('update:rows', response.data.inventories);
-                emit('addAsProducts', newInventoryData.value);
+                emit('addAsProducts', response.data.latestInventory);
             } catch (error) {
                 if (error.response) {
                     console.error('An unexpected error occurred:', error.response.data.errors);
@@ -173,13 +181,10 @@ const formSubmit = async () => {
 //     setTimeout(() => form.reset(), 200);
 // }
 
-const close = (status) => {
-    emit('close', 'create', status)
-}
 
 const requiredFields = ['name', 'image', 'items'];
 
-const isFormValid = computed(() => requiredFields.every(field => form[field]) && Object.keys(form.errors).length === 0);
+const isFormValid = computed(() => requiredFields.every(field => form[field]) && !form.processing);
 
 const addItem = () => form.items.push({ ...defaultInventoryItem });
 
@@ -191,11 +196,11 @@ const removeItem = (index) => {
     }
 }
 
-watch(
-    () => form.items.map(item => item.item_code),
-    () => validateForm(), // Runs all validations, not just item codes
-    { deep: true }
-);
+// watch(
+//     () => form.items.map(item => item.item_code),
+//     () => validateForm(), // Runs all validations, not just item codes
+//     { deep: true }
+// );
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 

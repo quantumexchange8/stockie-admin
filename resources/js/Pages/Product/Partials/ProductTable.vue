@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, reactive } from 'vue';
+import { ref, onMounted, watch, reactive, computed } from 'vue';
 import { FilterMatchMode } from 'primevue/api';
 import Tag from '@/Components/Tag.vue';
 import Table from '@/Components/Table.vue';
@@ -66,13 +66,15 @@ const rows = ref([]);
 const forms = reactive({});
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
+const maxProductPrice = ref(Math.max(...props.rows.map((row) => row.price)));
+
 const { showMessage } = useCustomToast();
 const { formatAmount } = transactionFormat();
 
 const checkedFilters = ref({
     isRedeemable: [],
     stockLevel: [],
-    priceRange: [0, 5000],
+    priceRange: [0, maxProductPrice.value],
 });
 
 const stockLevels = ref(['In stock', 'Low in stock', 'Out of stock']);
@@ -244,6 +246,8 @@ const baselayoutIconClasses = [
     'size-auto flex-shrink-0 active:text-primary-100 active:fill-primary-900 [&>rect]:active:stroke-primary-900 focus:text-primary-100 focus:fill-primary-900 [&>rect]:focus:stroke-primary-900',
 ]
 
+// const maxProductPrice = computed(() => Math.max(...rows.value.map((row) => row.price)));
+
 watch(
     () => props.categoryArr,
     (newValue) => {
@@ -311,13 +315,13 @@ onMounted(() => {
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-col self-stretch gap-4 items-start">
+                    <div class="flex flex-col self-stretch gap-y-14 items-start">
                         <span class="text-grey-900 text-base font-semibold">Price Range</span>
                         <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                             <div class="flex items-center w-full">
                                 <Slider 
                                     :minValue="0"
-                                    :maxValue="5000"
+                                    :maxValue="maxProductPrice"
                                     v-model="checkedFilters.priceRange"
                                 />
                             </div>

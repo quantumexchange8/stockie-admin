@@ -45,7 +45,7 @@ const isUnsavedChangesOpen = ref(false);
 
 const selectedGroup = ref(null);
 const selectedGroupItems = ref(null);
-const d = ref({});
+const inventoryToAdd = ref({});
 const selectedCategory = ref(0);
 
 const checkedFilters = ref({
@@ -69,7 +69,7 @@ const openForm = (action, id, event) => {
             createFormIsOpen.value = true;
             break;
         case 'group-created': 
-            d.value = event;
+            inventoryToAdd.value = event;
             createFormIsOpen.value = false;
             groupCreatedModalIsOpen.value = true;
             break;
@@ -866,7 +866,7 @@ const totalInventoryItemStock = (items) => {
         >
             <template v-if="inventoryToAdd">
                 <AddItemToMenuForm 
-                    :inventoryToAdd="d" 
+                    :inventoryToAdd="inventoryToAdd" 
                     :categoryArr="categoryArr" 
                     @close="closeForm" 
                     @isDirty="isDirty=$event"

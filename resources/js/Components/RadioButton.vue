@@ -57,7 +57,6 @@ const proxyChecked = computed({
             >
                 <RadioButton 
                     v-model="proxyChecked" 
-                    :inputId="option.text" 
                     name="dynamic" 
                     :value="option.value" 
                     :disabled="disabled"

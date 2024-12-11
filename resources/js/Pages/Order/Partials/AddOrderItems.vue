@@ -9,6 +9,7 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { useCustomToast } from '@/Composables/index.js';
 import { ArrowLeftIcon } from '@/Components/Icons/solid';
+import Tag from '@/Components/Tag.vue';
 
 const props = defineProps({
     errors: Object,
@@ -226,14 +227,17 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                                 ]"
                                             >
                                             <div class="flex flex-col justify-center items-start self-stretch gap-2">
-                                                <p 
-                                                    :class="[
-                                                        'text-ellipsis overflow-hidden text-base font-medium self-stretch',
-                                                        product.stock_left > 0 ? 'text-grey-900' : 'text-grey-500'
-                                                    ]"
-                                                >
-                                                    {{ product.product_name }}
-                                                </p>
+                                                <div class="flex flex-nowrap gap-2 items-center">
+                                                    <Tag value="Set" v-if="product.bucket === 'set'"/>
+                                                    <p 
+                                                        :class="[
+                                                            'text-ellipsis overflow-hidden text-base font-medium',
+                                                            product.stock_left > 0 ? 'text-grey-900' : 'text-grey-500'
+                                                        ]"
+                                                    >
+                                                        {{ product.product_name }}
+                                                    </p>
+                                                </div>
                                                 <div class="flex items-center gap-2">
                                                     <template v-if="product.stock_left > 0">
                                                         <div v-if="product.discount_id && product.discount_item" class="flex items-center gap-x-1.5">
