@@ -14,7 +14,7 @@ defineProps({
     errors:Object
 })
 
-const emit = defineEmits(['stay', 'leave', 'isDirty', 'close'])
+const emit = defineEmits(['isDirty', 'closeModal', 'update:promotions'])
 const { showMessage } = useCustomToast();
 const isUnsavedChangesOpen = ref(false);
 
@@ -24,10 +24,10 @@ const form = useForm({
     promotionPeriod: '',
     promotion_from: '',
     promotion_to: '',
-    image: '',
+    promotion_image: '',
 });
 
-const formSubmit = () => { 
+const formSubmit = async () => { 
     if (form.promotionPeriod !== '') {
         let startDate, endDate;
         
@@ -48,36 +48,46 @@ const formSubmit = () => {
         }
     }
 
-    form.post(route('configurations.promotions.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            closeForm(),
-            setTimeout(() => {
-                showMessage({ 
-                    severity: 'success',
-                    summary: 'Promotion has been added.',
-                    detail: 'Promotion will be visible to waiter and customer during the active period.',
-                });
-            }, 200)
+    try {
+        const { data } = await axios.post('/configurations/promotions/store', form, { headers: { 'Content-Type': 'multipart/form-data' } });
 
-        }
-    })
+        emit('update:promotions', data);
+        unsaved('leave');
+        setTimeout(() => {
+            form.reset();
+            showMessage({ 
+                severity: 'success',
+                summary: 'Promotion has been added.',
+                detail: 'Promotion will be visible to waiter and customer during the active period.',
+            });
+        }, 200);
+    } catch (error) {
+        form.errors = error.response.data.errors;
+        console.error(error);
+    }
+
+    // form.post(route('configurations.promotions.store'), {
+    //     preserveScroll: true,
+    //     preserveState: 'errors',
+    //     onSuccess: () => {
+    //         unsaved('close');
+    //         setTimeout(() => {
+    //             showMessage({ 
+    //                 severity: 'success',
+    //                 summary: 'Promotion has been added.',
+    //                 detail: 'Promotion will be visible to waiter and customer during the active period.',
+    //             });
+    //         }, 200);
+    //     }
+    // })
 };
 
-const closeForm = () => {
-    emit('close');
-}
-
-const stayModal = () => {
-    emit('stay');
-}
-
-const leaveModal = () => {
-    emit('leave');
+const unsaved = (status) => {
+    emit('closeModal', status);
 }
 
 const isFormValid = computed(() => {
-    return ['title', 'description', 'promotionPeriod'].every(field => form[field]);
+    return ['title', 'description', 'promotionPeriod'].every(field => form[field]) && !form.processing;
 })
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
@@ -86,12 +96,12 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[450px] pl-1 pr-2 py-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[calc(100dvh-18rem)] pl-1 pr-2 py-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
             <DragDropImage
                 inputName="image"
                 remarks="Suggested image size: 1920 x 1080 pixel"
-                :errorMessage="form.errors.image"
-                v-model="form.image"
+                :errorMessage="form.errors.promotion_image ? form.errors.promotion_image[0] : ''"
+                v-model="form.promotion_image"
                 class="col-span-full h-[244px]"
             />
             <div class="col-span-full flex flex-col items-start gap-4 flex-[1_0_0] self-stretch">
@@ -100,7 +110,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         :inputName="'title'"
                         :labelText="'Title'"
                         :placeholder="'eg: Heineken B1F1 Promotion'"
-                        :errorMessage="form.errors.title"
+                        :errorMessage="form.errors.title ? form.errors.title[0] : ''"
                         v-model="form.title"
                     />
                     <DateInput
@@ -110,7 +120,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         :range="true"
                         :minDate="new Date()"
                         class="col-span-full xl:col-span-4"
-                        :errorMessage="form.errors.promotionPeriod"
+                        :errorMessage="form.errors.promotionPeriod ? form.errors.promotionPeriod[0] : ''"
                         v-model="form.promotionPeriod"
                     />
                     <Textarea
@@ -119,7 +129,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         :placeholder="'eg: promotion date and time, detail of the promotion and etc'"
                         :rows="5"
                         class="col-span-full xl:col-span-4"
-                        :errorMessage="form.errors.description" 
+                        :errorMessage="form.errors.description ? form.errors.description[0] : ''" 
                         v-model="form.description"
                     />
                 </div>
@@ -130,13 +140,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
-                @click="closeForm"
+                @click="unsaved('close')"
             >
                 Cancel
             </Button>
             <Button
                 :size="'lg'"
-                :disabled="form.processing || !isFormValid"
+                :disabled="!isFormValid"
             >
                 Add
             </Button>
@@ -148,7 +158,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
         :maxWidth="'2xs'"
         :withHeader="false"
         :show="isUnsavedChangesOpen"
-        @close="stayModal"
-        @leave="leaveModal"
+        @close="unsaved('stay')"
+        @leave="unsaved('leave')"
     />
 </template>

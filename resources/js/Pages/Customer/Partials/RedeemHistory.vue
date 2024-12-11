@@ -38,7 +38,7 @@ onMounted(() => getRedeemHistory());
 </script>
 
 <template>
-    <div class="!w-full flex flex-col p-6 self-stretch max-h-[calc(100dvh-4rem)] overflow-y-scroll scrollbar-thin scrollbar-webkit">
+    <div class="!w-full flex flex-col p-6 self-stretch max-h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <TabView :tabs="tabs">
             <template #all>
                 <template v-if="redeemHistory.length > 0">

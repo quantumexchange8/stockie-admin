@@ -106,7 +106,8 @@ class ReservationController extends Controller
     public function update(ReservationRequest $request, string $id)
     {   
         $reservation = Reservation::with([
-                                        'reservedFor:id,customer_id,handled_by,reserved_by', 
+                                        'reservedFor:id', 
+                                        'reservedFor.reservations:id', 
                                         'reservedFor.reservationCancelled', 
                                         'reservedFor.reservationAbandoned', 
                                         'reservedBy:id,full_name', 
@@ -116,6 +117,7 @@ class ReservationController extends Controller
         if($reservation->reservedFor){
             $reservation->reservedFor->image = $reservation->reservedFor->getFirstMediaUrl('customer');
         }
+
 
         $customer = is_int($request->name) ? Customer::find($request->name) : null;
 
@@ -160,6 +162,7 @@ class ReservationController extends Controller
             'order_no' => RunningNumberService::getID('order'),
             'pax' => $validatedData['pax'],
             'user_id' => $validatedData['assigned_waiter'],
+            'customer_id' => $reservation->customer_id ?? null,
             'amount' => 0.00,
             'total_amount' => 0.00,
             'status' => 'Pending Serve',

@@ -476,10 +476,21 @@ onMounted(() => {
                 </template>
                 <template #product_name="row">
                     <div class="flex flex-nowrap items-center gap-3">
-                        <img class="bg-grey-50 border border-grey-200 h-14 w-14 object-contain" 
+                        <!-- <div class="bg-black/50"></div> -->
+                        <!-- <img class="border border-grey-200 h-14 w-14 object-contain" 
                             :src="row.image ? row.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                            alt=""
-                        />
+                            alt="ProductImage"
+                            :class="{ 'opacity-50': row.stock_left == 0 }"
+                        /> -->
+                        <div class="relative rounded-[5px] border border-grey-100]">
+                            <div :class="['absolute size-14 bg-black', row.stock_left == 0 ? 'opacity-50' : 'opacity-0']"></div>
+                            <span class="absolute top-[calc(50%-0.5rem)] left-[calc(50%-1.45rem)] bottom-0 text-white text-[8px] font-medium" v-if="row.stock_left === 0">Out of Stock</span>
+                            <img 
+                                :src="row.image ? row.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                alt="ProductImage" 
+                                class="size-14 object-contain"
+                            />
+                        </div>
                         <span class="text-grey-900 text-sm font-medium">{{ row.product_name }}</span>
                     </div>
                 </template>

@@ -68,9 +68,9 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 <template>
-    <div class="w-full flex flex-col overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
+    <div class="w-full flex flex-col overflow-y-auto scrollbar-thin scrollbar-webkit pl-1 pt-1">
         <form @submit.prevent="submit" autocomplete="off">
-            <div class="w-full flex flex-col max-h-[500px] md:gap-9">
+            <div class="w-full flex flex-col max-h-[calc(100dvh-18rem)] md:gap-9">
                 <div class="w-full flex md:gap-6">
                     <DragDropImage
                         :inputName="'image'"
@@ -111,20 +111,17 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 <div class="flex md:gap-4">
                                     <div class="w-full flex flex-col">
                                         <TextInput
-                                            label-text="Phone number"
-                                            inputId="phone"
-                                            type="'tel'"
-                                            v-model="form.phone_temp"
-                                            :errorMessage="form.errors?.phone || ''"
+                                            inputName="phone"
+                                            labelText="Phone number"
+                                            placeholder="11 1234 5678"
                                             :iconPosition="'left'"
+                                            :errorMessage="form.errors?.phone || ''"
+                                            class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
+                                            v-model="form.phone_temp"
                                             @keypress="isValidNumberKey($event, false)"
                                             @input="formatPhoneInput"
                                         >
-                                            <template #prefix>
-                                                <span class="text-grey-900"
-                                                    >+60</span
-                                                >
-                                            </template>
+                                            <template #prefix> +60 </template>
                                         </TextInput>
                                     </div>
 

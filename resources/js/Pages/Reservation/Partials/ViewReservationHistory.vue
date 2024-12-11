@@ -5,6 +5,7 @@ import Toast from "@/Components/Toast.vue";
 import Breadcrumb from "@/Components/Breadcrumb.vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import ReservationHistoryTable from "./ReservationHistoryTable.vue";
+import { Head } from "@inertiajs/vue3";
 
 const home = ref({
     label: 'Reservation',
@@ -53,6 +54,8 @@ const rowType = {
 </script>
 
 <template>
+    <Head title="Reservation History" />
+    
     <AuthenticatedLayout>
         <template #header>
             <Breadcrumb 

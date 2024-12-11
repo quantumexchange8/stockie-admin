@@ -153,45 +153,45 @@ class InventoryController extends Controller
             return redirect()->back()->withErrors($allItemErrors);
         }
 
-        $newGroup = Iventory::create(['name' => $validatedData['name']]);
+        // $newGroup = Iventory::create(['name' => $validatedData['name']]);
 
-        if ($request->hasFile('image')) {
-            $newGroup->addMedia($validatedData['image'])->toMediaCollection('inventory');
-        };
+        // if ($request->hasFile('image')) {
+        //     $newGroup->addMedia($validatedData['image'])->toMediaCollection('inventory');
+        // };
         
-        if (count($validatedInventoryItems) > 0) {
-            foreach ($validatedInventoryItems as $key => $value) {
-                if ($value['stock_qty'] === 0) {
-                    $newStatus = 'Out of stock';
-                } elseif ($value['stock_qty'] <= $value['low_stock_qty']) {
-                    $newStatus = 'Low in stock';
-                } else {
-                    $newStatus = 'In stock';
-                }
+        // if (count($validatedInventoryItems) > 0) {
+        //     foreach ($validatedInventoryItems as $key => $value) {
+        //         if ($value['stock_qty'] === 0) {
+        //             $newStatus = 'Out of stock';
+        //         } elseif ($value['stock_qty'] <= $value['low_stock_qty']) {
+        //             $newStatus = 'Low in stock';
+        //         } else {
+        //             $newStatus = 'In stock';
+        //         }
 
-                IventoryItem::create([
-                    'inventory_id' => $newGroup->id,
-                    'item_name' => $value['item_name'],
-                    'item_code' => $value['item_code'],
-                    'item_cat_id' => $value['item_cat_id'],
-                    'stock_qty' => $value['stock_qty'],
-                    'low_stock_qty' => $value['low_stock_qty'],
-                    'keep' => $value['keep'],
-                    'status' => $newStatus,
-                ]);    
+        //         IventoryItem::create([
+        //             'inventory_id' => $newGroup->id,
+        //             'item_name' => $value['item_name'],
+        //             'item_code' => $value['item_code'],
+        //             'item_cat_id' => $value['item_cat_id'],
+        //             'stock_qty' => $value['stock_qty'],
+        //             'low_stock_qty' => $value['low_stock_qty'],
+        //             'keep' => $value['keep'],
+        //             'status' => $newStatus,
+        //         ]);    
 
-                if ($value['stock_qty'] > 0) {
-                    StockHistory::create([
-                        'inventory_id' => $newGroup->id,
-                        'inventory_item' => $value['item_name'],
-                        'old_stock' => 0,
-                        'in' => $value['stock_qty'],
-                        'out' => 0,
-                        'current_stock' => $value['stock_qty'],
-                    ]);
-                }
-            }
-        }
+        //         if ($value['stock_qty'] > 0) {
+        //             StockHistory::create([
+        //                 'inventory_id' => $newGroup->id,
+        //                 'inventory_item' => $value['item_name'],
+        //                 'old_stock' => 0,
+        //                 'in' => $value['stock_qty'],
+        //                 'out' => 0,
+        //                 'current_stock' => $value['stock_qty'],
+        //             ]);
+        //         }
+        //     }
+        // }
 
         // $message = [ 
         //     'severity' => 'success', 
@@ -215,7 +215,7 @@ class InventoryController extends Controller
      */
     public function getLatestInventory()
     {
-        $data = Iventory::select(['id', 'name', 'image'])
+        $latestInventory = Iventory::select(['id', 'name', 'image'])
                         ->with([
                             'inventoryItems:id,inventory_id,item_name,item_cat_id', 
                             'inventoryItems.itemCategory:id,name'
@@ -224,7 +224,52 @@ class InventoryController extends Controller
                         ->latest()
                         ->get();
 
-        return response()->json($data[0]);
+        $latestInventory[0]->inventory_image = $latestInventory[0]->getFirstMediaUrl('inventory');
+
+        $inventories = Iventory::with([
+                                    'inventoryItems' => function ($query) {
+                                        $query->selectRaw('iventory_items.*, SUM(keep_items.qty) as total_keep_qty')
+                                                ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
+                                                ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
+                                                ->leftJoin('keep_items', 'order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                                ->groupBy('iventory_items.id');
+                                    },
+                                    'inventoryItems.itemCategory:id,name',
+                                    'inventoryItems.productItems:id,inventory_item_id,product_id',
+                                    'inventoryItems.productItems.product:id',
+                                    'inventoryItems.productItems.orderSubitems:id,product_item_id',
+                                ])
+                                ->orderBy('id')
+                                ->get()
+                                ->map(function ($group) {
+                                    $group->inventory_image = $group->getFirstMediaUrl('inventory');
+
+                                    $group->inventoryItems->each(function ($item) {
+                                        // Collect unique product and assign to $item->products
+                                        $item->products = $item->productItems
+                                                ->pluck('product')
+                                                ->unique('id')
+                                                ->map(fn($product) => [
+                                                    'id' => $product->id,
+                                                    'image' => $product->getFirstMediaUrl('product'),
+                                                ])
+                                                ->values();
+
+                                        $item->total_keep_qty = $item->total_keep_qty ?? 0;
+                            
+                                        unset($item->productItems);
+                                        
+                                    });
+
+                                    return $group;
+                                });
+
+        $data = [
+            'latestInventory' => $latestInventory[0],
+            'inventories' => $inventories
+        ];
+
+        return response()->json($data);
     }
     
     /**
@@ -519,16 +564,16 @@ class InventoryController extends Controller
         $existingGroup = Iventory::with('inventoryItems')->find($id);
         $existingGroupItems = $existingGroup->inventoryItems;
         
-        // if (count($existingGroupItems) > 0) {
-        //     foreach ($existingGroupItems as $key => $value) {
-        //         if (isset($value['id'])) {
-        //             $existingItem = IventoryItem::find($value['id']);
-        //             $existingItem->delete();
-        //         }
-        //     }
-        // }
+        if (count($existingGroupItems) > 0) {
+            foreach ($existingGroupItems as $key => $value) {
+                if (isset($value['id'])) {
+                    $existingItem = IventoryItem::find($value['id']);
+                    $existingItem->delete();
+                }
+            }
+        }
 
-        // $existingGroup->delete();
+        $existingGroup->delete();
 
         // $message = [ 
         //     'severity' => 'success', 

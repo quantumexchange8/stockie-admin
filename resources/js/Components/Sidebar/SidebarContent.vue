@@ -55,8 +55,8 @@ import {
                 </SidebarLink>
                 <SidebarLink 
                     title="Menu Management" 
-                    :href="route('products.index')"
-                    :active="route().current('products.index') || route().current('products.showProductDetails')"
+                    :href="route('products')"
+                    :active="route().current('products') || route().current('products.showProductDetails')"
                 >
                     <template #icon>
                         <MenuIcon aria-hidden="true" />

@@ -91,7 +91,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form class="flex flex-col gap-6 min-h-full max-h-screen" novalidate @submit.prevent="formSubmit">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[60vh] overflow-y-scroll scrollbar-thin scrollbar-webkit">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[calc(100dvh-18rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <!-- <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div> -->
              <DragDropImage
                 :inputName="'image'"

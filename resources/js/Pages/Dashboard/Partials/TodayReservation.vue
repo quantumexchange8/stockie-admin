@@ -43,10 +43,14 @@ const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id);
 
 const selectedReservation = ref(null);
+const actionType = ref('');
 const reservationDetailIsOpen = ref(false);
 const checkInFormIsOpen = ref(false);
 const delayReservationFormIsOpen = ref(false);
 const cancelReservationFormIsOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
+const closeType = ref(null);
 const op = ref(null);
 
 const form = useForm({ handled_by: userId.value });
@@ -55,6 +59,7 @@ const handleDefaultClick = (event) => {
     event.stopPropagation();
     event.preventDefault();
 };
+
 const markReservationAsNoShow = (id) => { 
     form.put(route('reservations.markAsNoShow', id), {
         preserveScroll: true,
@@ -73,45 +78,92 @@ const markReservationAsNoShow = (id) => {
     })
 };
 
-const showReservationDetailForm = (reservation) => {
-    selectedReservation.value = reservation;
-    reservationDetailIsOpen.value = true;
+const openForm = (action, reservation) => {
+    actionType.value = action;
+    isDirty.value = false;
+
+    if (actionType.value === 'create') makeReservationFormIsOpen.value = true;
+    if (reservation) {
+        // Set value of selected reservation on open
+        if (actionType.value !== 'create') selectedReservation.value = reservation;
+
+        if (actionType.value === 'show') reservationDetailIsOpen.value = true;
+        if (actionType.value === 'check-in') checkInFormIsOpen.value = true;
+        if (actionType.value === 'delay') delayReservationFormIsOpen.value = true;
+        if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = true;
+
+        setTimeout(() => closeOverlay(), 100);
+    }
 }
 
-const hideReservationDetailForm = () => {
-    reservationDetailIsOpen.value = false;
-    setTimeout(() => selectedReservation.value = null, 300);
+const closeForm = (type) => {
+    closeType.value = type;
+
+    switch(type){
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
+                if (actionType.value === 'show') reservationDetailIsOpen.value = false;
+                if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
+                if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
+                if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': isUnsavedChangesOpen.value = false; break;
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
+            if (actionType.value === 'show') reservationDetailIsOpen.value = false;
+            if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
+            if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
+            if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+            break;
+        }
+    }
 }
 
-const showCheckInForm = (reservation) => {
-    selectedReservation.value = reservation;
-    checkInFormIsOpen.value = true;
-}
+// const showReservationDetailForm = (reservation) => {
+//     selectedReservation.value = reservation;
+//     reservationDetailIsOpen.value = true;
+// }
 
-const hideCheckInForm = () => {
-    checkInFormIsOpen.value = false;
-    setTimeout(() =>selectedReservation.value = null, 300);
-}
+// const hideReservationDetailForm = () => {
+//     reservationDetailIsOpen.value = false;
+//     setTimeout(() => selectedReservation.value = null, 300);
+// }
 
-const showDelayReservationForm = (reservation) => {
-    selectedReservation.value = reservation;
-    delayReservationFormIsOpen.value = true;
-}
+// const showCheckInForm = (reservation) => {
+//     selectedReservation.value = reservation;
+//     checkInFormIsOpen.value = true;
+// }
 
-const hideDelayReservationForm = () => {
-    delayReservationFormIsOpen.value = false;
-    setTimeout(() =>selectedReservation.value = null, 300);
-}
+// const hideCheckInForm = () => {
+//     checkInFormIsOpen.value = false;
+//     setTimeout(() =>selectedReservation.value = null, 300);
+// }
 
-const showCancelReservationForm = (reservation) => {
-    selectedReservation.value = reservation;
-    cancelReservationFormIsOpen.value = true;
-}
+// const showDelayReservationForm = (reservation) => {
+//     selectedReservation.value = reservation;
+//     delayReservationFormIsOpen.value = true;
+// }
 
-const hideCancelReservationForm = () => {
-    cancelReservationFormIsOpen.value = false;
-    setTimeout(() =>selectedReservation.value = null, 300);
-}
+// const hideDelayReservationForm = () => {
+//     delayReservationFormIsOpen.value = false;
+//     setTimeout(() =>selectedReservation.value = null, 300);
+// }
+
+// const showCancelReservationForm = (reservation) => {
+//     selectedReservation.value = reservation;
+//     cancelReservationFormIsOpen.value = true;
+// }
+
+// const hideCancelReservationForm = () => {
+//     cancelReservationFormIsOpen.value = false;
+//     setTimeout(() =>selectedReservation.value = null, 300);
+// }
 
 const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
 
@@ -160,7 +212,7 @@ const closeOverlay = () => {
                 :actions="actions"
                 :rowType="rowType"
                 minWidth="min-w-[950px]"
-                @onRowClick="showReservationDetailForm($event.data)"
+                @onRowClick="openForm('show', $event.data)"
             >
                 <template #empty>
                     <div class="flex flex-col gap-5 items-center">
@@ -203,7 +255,7 @@ const closeOverlay = () => {
     <!-- Open reservation action menu -->
     <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-1">
         <div class="flex flex-col gap-y-0.5 bg-white min-w-[247px]">
-            <div class="p-3 flex items-center justify-between" @click="showCheckInForm(selectedReservation)">
+            <div class="p-3 flex items-center justify-between" @click="openForm('check-in', selectedReservation)">
                 <p class="text-grey-900 text-base font-medium ">Check in customer </p>
                 <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
             </div>
@@ -213,12 +265,12 @@ const closeOverlay = () => {
                 <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
             </div>
 
-            <div class="p-3 flex items-center justify-between" @click="showDelayReservationForm(selectedReservation)">
+            <div class="p-3 flex items-center justify-between" @click="openForm('delay', selectedReservation)">
                 <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
                 <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
             </div>
 
-            <div class="p-3 flex items-center justify-between" @click="showCancelReservationForm(selectedReservation)">
+            <div class="p-3 flex items-center justify-between" @click="openForm('cancel', selectedReservation)">
                 <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
                 <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
             </div>
@@ -230,14 +282,22 @@ const closeOverlay = () => {
         :title="'Reservation Detail'"
         :show="reservationDetailIsOpen" 
         :maxWidth="'sm'" 
-        @close="hideReservationDetailForm"
+        @close="closeForm('close')"
     >
         <ReservationDetail
             :reservation="selectedReservation" 
             :customers="customers" 
             :tables="tables" 
-            @close="hideReservationDetailForm" 
+            @close="closeForm" 
             @fetchReservations="$emit('fetchReservations')"
+        />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeForm('stay')"
+            @leave="closeForm('leave')"
         />
     </Modal>
 
@@ -246,14 +306,23 @@ const closeOverlay = () => {
         :title="'Assign Seat'"
         :show="checkInFormIsOpen" 
         :maxWidth="'xs'" 
-        @close="hideCheckInForm"
+        @close="closeForm('close')"
     >
         <CheckInGuestForm 
             :reservation="selectedReservation" 
             :waiters="waiters" 
             :tables="tables" 
             :occupiedTables="occupiedTables" 
-            @close="hideCheckInForm" 
+            @isDirty="isDirty=$event"
+            @close="closeForm" 
+        />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeForm('stay')"
+            @leave="closeForm('leave')"
         />
     </Modal>
 
@@ -261,12 +330,21 @@ const closeOverlay = () => {
         :title="'Delay Reservation'"
         :show="delayReservationFormIsOpen" 
         :maxWidth="'2xs'" 
-        @close="hideDelayReservationForm"
+        @close="closeForm('close')"
     >
         <DelayReservationForm 
             :reservation="selectedReservation" 
-            @close="hideDelayReservationForm" 
+            @close="closeForm" 
+            @isDirty="isDirty=$event"
             @fetchReservations="$emit('fetchReservations')"
+        />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeForm('stay')"
+            @leave="closeForm('leave')"
         />
     </Modal>
 
@@ -274,12 +352,21 @@ const closeOverlay = () => {
         :title="'Cancel Reservation'"
         :show="cancelReservationFormIsOpen" 
         :maxWidth="'sm'" 
-        @close="hideCancelReservationForm"
+        @close="closeForm('close')"
     >
         <CancelReservationForm 
             :reservation="selectedReservation" 
-            @close="hideCancelReservationForm" 
+            @close="closeForm" 
+            @isDirty="isDirty=$event"
             @fetchReservations="$emit('fetchReservations')"
+        />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeForm('stay')"
+            @leave="closeForm('leave')"
         />
     </Modal>
 </template>

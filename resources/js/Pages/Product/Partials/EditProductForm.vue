@@ -136,7 +136,7 @@ watch(
 
 <template>
     <form class="flex flex-col gap-6" @submit.prevent="formSubmit">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[650px] pl-1 pr-2 py-1 overflow-y-scroll scrollbar-thin scrollbar-webkit">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[calc(100dvh-18rem)] pl-1 pr-2 py-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
             <DragDropImage 
                 :inputName="'image'"
                 :remarks="'Suggested image size: 1200 x 1200 pixel'"

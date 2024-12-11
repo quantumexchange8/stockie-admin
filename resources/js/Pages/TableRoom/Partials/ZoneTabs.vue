@@ -206,7 +206,7 @@ watch(form, () => {
         @close="closeModal('close')"
     >
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
-        <div class="gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
+        <div class="gap-6 pl-1 pr-2 py-1 max-h-[700px] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                 <TextInput
                     :inputName="'table_no'"

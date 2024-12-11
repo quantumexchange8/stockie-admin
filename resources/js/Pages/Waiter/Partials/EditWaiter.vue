@@ -68,7 +68,7 @@ const isFormValid = computed(() => {
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 </script>
 <template>
-    <div class="w-full flex flex-col max-h-[650px] overflow-y-scroll scrollbar-thin scrollbar-webkit pl-1 pt-1">
+    <div class="w-full flex flex-col max-h-[calc(100dvh-18rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pl-1 pt-1">
         <form @submit.prevent="submit">
             <div class="w-full flex flex-col md:gap-9">
                 <div class="w-full flex flex-col gap-6 md:flex-row justify-center">

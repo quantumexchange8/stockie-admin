@@ -37,9 +37,7 @@ onMounted(() => {
 
     <AuthenticatedLayout>
         <template #header>
-            <Breadcrumb 
-                :home="home" 
-            />
+            <Breadcrumb :home="home" />
         </template>
 
         <Toast />
@@ -49,8 +47,7 @@ onMounted(() => {
                 <DiscountSettings />
             </template>
             <template #employee-commission>
-                <Commision   
-                />
+                <Commision />
             </template>
             <template #employee-incentive-programme>
                 <IncentiveProg />
@@ -62,9 +59,7 @@ onMounted(() => {
                 />
             </template>
             <template #invoice-setting>
-                <MerchantDetail 
-                    :merchant="merchant"
-                />
+                <MerchantDetail :merchant="merchant" />
             </template>
             <template #points-settings>
                 <PointsSettings />

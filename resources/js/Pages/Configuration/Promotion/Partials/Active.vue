@@ -30,11 +30,12 @@ const openEditModal = (promotion, actionType) => {
     editModal.value = true;
     actionVal.value = actionType;
     modalDetails.value = promotion;
+    form.id = modalDetails.value.id;
     form.title = modalDetails.value.title;
     form.description = modalDetails.value.description;
-    form.id = modalDetails.value.id;
     form.promotion_from = modalDetails.value.promotion_from;
     form.promotion_to = modalDetails.value.promotion_to;
+    form.promotion_image = modalDetails.value.promotion_image;
     
     form.promotionPeriod = [
         new Date(modalDetails.value.promotion_from),
@@ -62,6 +63,7 @@ const closeModal = (status) => {
         case 'leave': {
             isUnsavedChangesOpen.value = false;
             editModal.value = false;
+            form.errors = {};
             break;
         }
     }
@@ -80,7 +82,6 @@ const form = useForm({
 
 
 const submit = () => {
-
     const startDate = new Date(form.promotionPeriod[0]);
     const endDate = new Date(form.promotionPeriod[1]);
 
@@ -90,36 +91,54 @@ const submit = () => {
     form.promotion_from = (startDate.getFullYear() < 10 ? '0' + startDate.getFullYear() : startDate.getFullYear()) + '/' + ((startDate.getMonth() + 1) < 10 ? '0' + (startDate.getMonth() + 1) : (startDate.getMonth() + 1)) + '/' + (startDate.getDate()  < 10 ? '0' + startDate.getDate() : startDate.getDate());
     form.promotion_to = (endDate.getFullYear() < 10 ? '0' + endDate.getFullYear() : endDate.getFullYear()) + '/' + ((endDate.getMonth() + 1) < 10 ? '0' + (endDate.getMonth() + 1) : (endDate.getMonth() + 1)) + '/' + (endDate.getDate()  < 10 ? '0' + endDate.getDate() : endDate.getDate());
 
-    if (actionVal.value === 'edit') {
-        form.post(route('configurations.promotion.edit'), {
-            preserveScroll: true,
-            onSuccess: () => {
-                closeModal('leave');
-                form.reset();
-                setTimeout(() => {
-                    showMessage({ 
-                        severity: 'success',
-                        summary: 'Selected promotion has been edited successfully.',
-                    });
-                }, 200)
-            },
-        })
-    } else {
-        form.post(route('configurations.promotion.delete'), {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                closeModal('leave');
-                form.reset();
-                setTimeout(() => {
-                    showMessage({ 
-                        severity: 'success',
-                        summary: 'Selected promotion has been deleted successfully.',
-                    });
-                }, 200)
-            },
-        })
-    }
+    const routeURL = actionVal.value === 'edit' ? 'configurations.promotion.edit' : 'configurations.promotion.delete';
+    const toastSummary = actionVal.value === 'edit' ? 'Selected promotion has been edited successfully.' : 'Selected promotion has been deleted successfully.';
+
+    form.post(route(routeURL), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            closeModal('leave');
+            form.reset();
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: toastSummary,
+                });
+            }, 200)
+        },
+    })
+
+    // if (actionVal.value === 'edit') {
+    //     form.post(route('configurations.promotion.edit'), {
+    //         preserveScroll: true,
+    //         onSuccess: () => {
+    //             closeModal('leave');
+    //             form.reset();
+    //             setTimeout(() => {
+    //                 showMessage({ 
+    //                     severity: 'success',
+    //                     summary: 'Selected promotion has been edited successfully.',
+    //                 });
+    //             }, 200)
+    //         },
+    //     })
+    // } else {
+    //     form.post(route('configurations.promotion.delete'), {
+    //         preserveScroll: true,
+    //         preserveState: true,
+    //         onSuccess: () => {
+    //             closeModal('leave');
+    //             form.reset();
+    //             setTimeout(() => {
+    //                 showMessage({ 
+    //                     severity: 'success',
+    //                     summary: 'Selected promotion has been deleted successfully.',
+    //                 });
+    //             }, 200)
+    //         },
+    //     })
+    // }
 }
 
 const isFormValid = computed(() => {
@@ -147,11 +166,11 @@ watch(form, () => {
     </div>
     <div v-else class="grid grid-cols-3 gap-5 select-none h-full">
         <div v-for="promotion in ActivePromotions" >
-            <div class="flex flex-col" >
+            <div class="flex flex-col border border-grey-100 rounded-[5px]">
                 <div class="p-3 flex justify-center items-center">
                     <img 
                         :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                        alt=""
+                        alt="PromotionImage"
                         class="object-contain h-[296px]"
                     >
                 </div>
@@ -167,7 +186,7 @@ watch(form, () => {
                             {{ promotion.description }}
                         </div>
                     </div>
-                    <div class="flex items-center">
+                    <div class="flex items-center p-0.5 gap-x-0.5 bg-primary-25">
                         <Button
                             class="bg-primary-100 hover:bg-primary-50"
                             variant="secondary"
@@ -197,8 +216,8 @@ watch(form, () => {
         v-if="actionVal === 'edit'"
     >
         <form @submit.prevent="submit">
-            <div class="flex flex-col gap-6">
-                <div class=" w-full h-56">
+            <div class="flex flex-col gap-6 max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <div class="w-full h-56">
                     <DragDropImage
                         inputName="image"
                         remarks="Suggested image size: 1920 x 1080 pixel"

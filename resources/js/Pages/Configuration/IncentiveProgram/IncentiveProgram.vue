@@ -86,7 +86,7 @@ const getEmployeeIncent = async () => {
     isLoading.value = true;
     try {
         const response = await axios.get('/configurations/configurations/incentive');
-        // waiters.value = response.data.waiters;
+        waiters.value = response.data.waiters;
         rows.value = response.data.incentiveProg.map(incentive => {
             return {
                 ...incentive, 

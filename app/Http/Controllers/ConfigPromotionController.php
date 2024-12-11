@@ -31,16 +31,17 @@ class ConfigPromotionController extends Controller
         //     })
         //     ->update(['status' => 'Inactive']);
 
-        $ActivePromotions = ConfigPromotion::where('status', 'Active')->get();
-        $InactivePromotions = ConfigPromotion::where('status', 'Inactive')->get();
+        $promotions = $this->getPromotions();
+        // $ActivePromotions = ConfigPromotion::where('status', 'Active')->get();
+        // $InactivePromotions = ConfigPromotion::where('status', 'Inactive')->get();
 
-        $ActivePromotions->each(function ($active) {
-            $active->promotion_image = $active->getFirstMediaUrl('promotion');
-        });
+        // $ActivePromotions->each(function ($active) {
+        //     $active->promotion_image = $active->getFirstMediaUrl('promotion');
+        // });
 
-        $InactivePromotions->each(function ($inactive) {
-            $inactive->promotion_image = $inactive->getFirstMediaUrl('promotion');
-        });
+        // $InactivePromotions->each(function ($inactive) {
+        //     $inactive->promotion_image = $inactive->getFirstMediaUrl('promotion');
+        // });
 
         $merchant = ConfigMerchant::first();
         $merchant->merchant_image = $merchant->getFirstMediaUrl('merchant_settings');
@@ -48,24 +49,21 @@ class ConfigPromotionController extends Controller
         $selectedTab = $request->session()->get('selectedTab');
 
         return Inertia::render('Configuration/MainConfiguration', [
-            'ActivePromotions' => $ActivePromotions,
-            'InactivePromotions' => $InactivePromotions,
+            'ActivePromotions' => $promotions['Active'],
+            'InactivePromotions' => $promotions['Inactive'],
             'merchant' => $merchant,
             'selectedTab' => $selectedTab ?? 0,
         ]);
     }
 
-    public function getPromotions(){
-        $ActivePromotions = ConfigPromotion::where('status', 'Active')->get();
-        $InactivePromotions = ConfigPromotion::where('status', 'Inactive')->get();
-
-        $ActivePromotions->each(function ($active) {
-            $active->promotion_image = $active->getFirstMediaUrl('promotion');
-        });
-
-        $InactivePromotions->each(function ($inactive) {
-            $inactive->promotion_image = $inactive->getFirstMediaUrl('promotion');
-        });
+    private function getPromotions(){
+        return ConfigPromotion::whereIn('status', ['Active', 'Inactive'])
+            ->get()
+            ->map(function ($promotion) {
+                $promotion->promotion_image = $promotion->getFirstMediaUrl('promotion');
+                return $promotion;
+            })
+            ->groupBy('status');
     }
 
     /**
@@ -81,31 +79,43 @@ class ConfigPromotionController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->all();
+        // Validate form request
+        $validatedData = $request->validate(
+            [
+                'title' => 'required|string',
+                'description' => 'required|string',
+                'promotionPeriod' => 'required',
+                'promotion_image' => 'required|image',
+            ], 
+            ['required' => 'This field is required.']
+        );
+
+        // $data = $request->all();
         $todayDate = now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
-        // dd($todayDate);
-        if ($todayDate >= $request->promotion_from && $todayDate < $request->promotion_to) {
+
+        if ($todayDate >= $request->promotion_from && $todayDate <= $request->promotion_to) {
             $status = 'Active';
         } else {
             $status = 'Inactive';
         }
 
         $promotion = ConfigPromotion::create([
-            'title' => $data['title'],
-            'description' => $data['description'],
-            'promotion_from' => $data['promotion_from'],
-            'promotion_to' => $data['promotion_to'],
-            'image' => $data['image'],
+            'title' => $validatedData['title'],
+            'description' => $validatedData['description'],
+            'promotion_from' => $request->promotion_from,
+            'promotion_to' => $request->promotion_to,
             'status' => $status,
         ]);
+        $promotions = $this->getPromotions();
 
-        if ($request->hasfile('image'))
+
+        if ($request->hasfile('promotion_image'))
         {
-            $promotion->addMedia($request->image)->toMediaCollection('promotion');
+            $promotion->addMedia($request->promotion_image)->toMediaCollection('promotion');
         }
         
         // return Redirect::route('configurations.promotions.index');
-        return redirect()->back();
+        return response()->json($promotions);
 
     }
 
@@ -122,17 +132,30 @@ class ConfigPromotionController extends Controller
      */
     public function edit(Request $request)
     {
+        // Validate form request
+        $validatedData = $request->validate(
+            [
+                'title' => 'required|string',
+                'description' => 'required|string',
+                'promotionPeriod' => 'required',
+                'promotion_image' => 'required|image',
+            ], 
+            ['required' => 'This field is required.']
+        );
+
         $todayDate = date('Y/m/d');
-        if (($todayDate >= $request->promotion_from) && ($todayDate <= $request->todayDate)) {
+
+        if (($todayDate >= $request->promotion_from) && ($todayDate <= $request->promotion_to)) {
             $status = 'Active';
         } else {
             $status = 'Inactive';
         }
+
         $editPromotion = ConfigPromotion::find($request->id);
 
         $editPromotion->update([
-            'title' => $request->title,
-            'description' => $request->description,
+            'title' => $validatedData['title'],
+            'description' => $validatedData['description'],
             'promotion_from' => $request->promotion_from,
             'promotion_to' => $request->promotion_to,
             'status' => $status,

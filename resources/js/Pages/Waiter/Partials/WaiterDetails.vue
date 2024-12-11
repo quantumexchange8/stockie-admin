@@ -160,7 +160,7 @@ const attendanceTotalPages = computed(() => {
                     </div>
 
                     <!-- entitled incentive -->
-                    <div class="w-full p-4 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 max-h-[500px] overflow-y-scroll scrollbar-webkit scrollbar-thin">
+                    <div class="w-full p-4 bg-white rounded-[5px] col-span-4 border border-solid border-primary-100 max-h-[500px] overflow-y-auto scrollbar-webkit scrollbar-thin">
                         <EntitledIncentive 
                             :data="incentiveData" 
                             :configIncentive="configIncentive"

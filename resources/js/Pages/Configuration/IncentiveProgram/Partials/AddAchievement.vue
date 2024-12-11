@@ -18,7 +18,7 @@ const props = defineProps({
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 const isUnsavedChangesOpen = ref(false);
-const waiters = computed(() =>
+const formattedWaiters = computed(() =>
     props.waiters.map(item => ({
         text: item.full_name,
         value: item.id,
@@ -164,11 +164,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             </TextInput>
 
             <MultiSelect
-                :inputArray="waiters"
+                :inputArray="formattedWaiters"
                 :inputName="'entitled'"
                 :labelText="'Employee entitled to achieve this commission'"
                 :withImages="true"
-                :disabled="!waiters.length"
+                :disabled="!formattedWaiters.length"
                 v-model="form.entitled"
             >   
             </MultiSelect>

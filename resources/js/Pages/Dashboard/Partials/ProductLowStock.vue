@@ -23,7 +23,7 @@ const props = defineProps({
         <div class="flex flex-col pl-3 items-start gap-[10px] self-stretch">
             <div class="flex pl-3 pr-6 justify-between items-center self-stretch">
                 <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Product Low at Stock</span>
-                <Link :href="route('inventory')">
+                <Link :href="route('products')">
                     <CircledArrowHeadRightIcon2  
                         class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
                     />
@@ -46,10 +46,9 @@ const props = defineProps({
                 </template>
                 <template #product_name="rows">
                     <div class="flex items-start gap-4 overflow-hidden">
-                        <!-- <div class="w-10 h-10 bg-primary-900 shrink-0"></div> -->
                         <img 
                             :src="rows.image ? rows.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                            alt=""
+                            alt="ProductImage"
                             class="w-10 h-10 shrink-0"
                         />
                         <span class="self-center text-grey-900 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium">{{ rows.product_name }}</span>                    

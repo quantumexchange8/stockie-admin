@@ -156,7 +156,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form @submit.prevent="submit">
-        <div class="max-h-[773px] overflow-y-scroll scrollbar-webkit scrollbar-thin p-2">
+        <div class="max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-webkit scrollbar-thin p-2">
             <div class="w-full flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <TextInput

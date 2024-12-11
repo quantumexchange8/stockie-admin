@@ -617,7 +617,6 @@ onMounted(() => {
                                     {
                                         'bg-primary-25': index % 2 === 0 && item.stock_left > 0,
                                         'bg-white': index % 2 !== 0 && item.stock_left > 0,
-                                        'bg-black opacity-50': item.stock_left === 0
                                     }
                                 ]"
                             >
@@ -626,15 +625,14 @@ onMounted(() => {
                                     :class="{'hover:bg-primary-50 h-[168px] ': item.stock_left !== 0 }"
                                     @click="redirectAction(mergedActions.view(item.id))"
                                 >
-                                <img 
-                                    :src="item.stock_left > 0 
-                                            ? ( item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png') 
-                                            : ''" 
-                                    alt="" 
-                                    :class="item.stock_left > 0 ? 'h-full w-full object-contain' : ''"
+                                    <div :class="['absolute w-full z-10 bg-black ', item.stock_left == 0 ? 'opacity-50' : 'opacity-0']"></div>
+                                    <span class="absolute z-20 top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.stock_left === 0">Out of Stock</span>
+                                    <img 
+                                        :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        alt="ProductImage" 
+                                        class="size-full object-contain relative z-0"
                                     />
                                 </div>
-                                <span class="absolute top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.stock_left === 0">Out of Stock</span>
                                 <div class="flex p-[2px] items-start flex-shrink-0 gap-0.5" v-if="item.stock_left > 0">
                                     <slot name="editAction" :="item">
                                         <Button

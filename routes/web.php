@@ -71,7 +71,7 @@ Route::middleware('auth')->group(function () {
  
     /********* Menu Management **********/
     Route::prefix('menu-management')->group(function () {
-        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products', [ProductController::class, 'index'])->name('products');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
         Route::post('/products/storeFromInventoryItems', [ProductController::class, 'storeFromInventoryItems'])->name('products.storeFromInventoryItems');
         Route::post('/products/updateAvailability', [ProductController::class, 'updateAvailability'])->name('products.updateAvailability');

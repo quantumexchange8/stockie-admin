@@ -114,7 +114,7 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
 </script>
 
 <template>
-    <div class="flex flex-col gap-y-6 items-start">
+    <div class="flex flex-col gap-y-6 items-start max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col items-start gap-y-4 self-stretch">
             <Tag :value="reservation.status" :variant="getStatusVariant(reservation.status)" />
             <div class="flex flex-col gap-y-5 items-start self-stretch">

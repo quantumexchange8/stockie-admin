@@ -281,7 +281,17 @@ export function useInputValidator() {
         const { key, target: { value } } = e;
 
         // Allow digits
-        if (/^\d$/.test(key)) return;
+        if (/^\d$/.test(key)) {
+            //Check decimal places if option is allowed
+            if (allowDecimal && value.includes('.')) {
+                const [,decimalPart] = value.split('.');
+
+                if (decimalPart.length >= 2) {
+                    e.preventDefault();
+                }
+            }
+            return;
+        };
 
         // Allow decimal point if not already in the value
         if (allowDecimal && key === '.' && /\d/.test(value) && !value.includes('.')) return;

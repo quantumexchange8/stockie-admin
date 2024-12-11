@@ -24,7 +24,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['addAsProducts', 'close', 'isDirty']);
+const emit = defineEmits(['addAsProducts', 'close', 'isDirty', 'update:rows']);
 
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
@@ -105,7 +105,7 @@ const formSubmit = async () => {
             try {
                 // Fetch the latest inventory
                 const response = await axios.get('/inventory/inventory/getLatestInventory');
-                newInventoryData.value = response.data;
+                newInventoryData.value = response.data.latestInventory;
 
                 // Display success message
                 showMessage({
@@ -117,6 +117,7 @@ const formSubmit = async () => {
                 // Reset the form and emit necessary events
                 form.reset();
                 emit('close');
+                emit('update:rows', response.data.inventories);
                 emit('addAsProducts', newInventoryData.value);
             } catch (error) {
                 if (error.response) {
@@ -202,7 +203,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[calc(100dvh-22rem)] overflow-y-scroll scrollbar-thin scrollbar-webkit">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pl-1 pr-2 py-1 max-h-[calc(100dvh-18rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <DragDropImage
                 :inputName="'image'"
                 :errorMessage="form.errors?.image || ''"

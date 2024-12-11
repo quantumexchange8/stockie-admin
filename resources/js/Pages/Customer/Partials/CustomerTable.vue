@@ -118,12 +118,9 @@ const toggleTier = (value) => {
     }
 };
 
-const toggleKeepStatus = (status) => {
-    if (status) {
-        checkedFilters.value.keepItems = [true];
-    } else {
-        checkedFilters.value.keepItems = [];
-    }
+const toggleKeepStatus = () => {
+    checkedFilters.value.keepItems = 
+        checkedFilters.value.keepItems.includes(true) ? [] : [true];
 }
 
 const csvExport = () => {
@@ -236,7 +233,7 @@ watch(() => props.customers, (newValue) => customer.value = newValue)
                                     <span>With keep item only</span>
                                     <Checkbox 
                                         :checked="checkedFilters.keepItems.includes(true)"
-                                        @click="toggleKeepStatus(true)"
+                                        @click="toggleKeepStatus()"
                                     />
                                 </div>
                             </div>

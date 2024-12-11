@@ -23,31 +23,45 @@ const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
 const createFormIsOpen = ref(false);
 
-const activePromotionsCount = computed(() => {
-    return props.ActivePromotions.filter(promotion => promotion.status === 'Active').length
-})
-const InactivePromotionsCount = computed(() => {
-    return props.InactivePromotions.filter(promotion => promotion.status === 'Inactive').length
-})
+// const activePromotionsCount = computed(() => {
+//     return props.ActivePromotions.filter(promotion => promotion.status === 'Active').length
+// })
+// const InactivePromotionsCount = computed(() => {
+//     return props.InactivePromotions.filter(promotion => promotion.status === 'Inactive').length
+// })
 
 
-const showCreateForm = () => {
-    isDirty.value = false;
+const openModal = () => {
     createFormIsOpen.value = true;
+    isDirty.value = false;
 }
 
-const hideCreateForm = () => {
-    isUnsavedChangesOpen.value = isDirty.value ? true : false;
-    createFormIsOpen.value = !isDirty.value ? false : true;
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                createFormIsOpen.value = false;
+            }
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            createFormIsOpen.value = false;
+            break;
+        }
+
+    }
 }
 
-const stayModal = () => {
-    isUnsavedChangesOpen.value = false;
-}
-
-const leaveModal = () => {
-    isUnsavedChangesOpen.value = false;
-    createFormIsOpen.value = false;
+const updatePromotions = (newPromotions) => {
+    filteredActivePromotions.value = newPromotions.Active;
+    filteredInactivePromotions.value = newPromotions.Inactive;
 }
 
 watch(() => searchQuery.value, (newValue) => {
@@ -112,7 +126,7 @@ watch(() => props.InactivePromotions, (newValue) => {
                 :size="'lg'"
                 :iconPosition="'left'"
                 class="md:!w-fit"
-                @click="showCreateForm"
+                @click="openModal"
             >
                 <template #icon>
                     <PlusIcon
@@ -126,21 +140,20 @@ watch(() => props.InactivePromotions, (newValue) => {
                 :show="createFormIsOpen" 
                 :maxWidth="'md'" 
                 :closeable="true" 
-                @close="hideCreateForm($event)"
+                @close="closeModal('close')"
             >
                 <CreatePromotionForm
-                    @stay="stayModal"
-                    @leave="leaveModal"
-                    @close="hideCreateForm($event)"
+                    @closeModal="closeModal"
                     @isDirty="isDirty = $event"
+                    @update:promotions="updatePromotions($event)"
                 />
                 <Modal
                     :unsaved="true"
                     :maxWidth="'2xs'"
                     :withHeader="false"
                     :show="isUnsavedChangesOpen"
-                    @close="stayModal"
-                    @leave="leaveModal"
+                    @close="closeModal('stay')"
+                    @leave="closeModal('leave')"
                 />
             </Modal>
         </div>
@@ -161,7 +174,7 @@ watch(() => props.InactivePromotions, (newValue) => {
                                 : 'text-blue-100 hover:text-primary-500',
                             ]"
                         >
-                            Active ({{ activePromotionsCount }})
+                            Active ({{ filteredActivePromotions?.length }})
                         </button>
                     </Tab>
                     <Tab
@@ -170,14 +183,14 @@ watch(() => props.InactivePromotions, (newValue) => {
                     >
                         <button
                             :class="[
-                            'w-[90px] py-2.5 text-sm font-medium leading-5',
+                            'w-[90px] py-3 text-sm font-medium leading-5',
                             'focus:outline-none focus:ring-0',
                             selected
                                 ? 'bg-white text-primary-900 border-b-2 border-primary-900'
                                 : 'text-blue-100 hover:text-primary-800',
                             ]"
                         >
-                            Inactive ({{ InactivePromotionsCount }})
+                            Inactive ({{ filteredInactivePromotions?.length }})
                         </button>
                     </Tab>
                 </TabList>

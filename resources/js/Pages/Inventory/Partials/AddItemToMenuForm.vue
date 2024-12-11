@@ -29,7 +29,7 @@ const isUnsavedChangesOpen = ref(false);
 // const inventoriesArr = ref([{ text: , value: }]);
 
 const getInventoryItemArr = (item) => {
-    return [{text: 'hi', value: item.inventory_item_id}];
+    return [{text: '', value: item.inventory_item_id}];
 };
 
 const form = useForm({
@@ -109,7 +109,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="formSubmit">
-        <div class="flex flex-col items-start gap-6 self-stretch max-h-[650px] pl-1 pr-2 py-1 overflow-y-scroll scrollbar-thin scrollbar-webkit">
+        <div class="flex flex-col items-start gap-6 self-stretch max-h-[650px] pl-1 pr-2 py-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
             <!-- <DragDropImage
                 :inputName="'image'"
                 :errorMessage="form.errors.image"
@@ -129,7 +129,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
                     <div class="flex flex-row gap-x-6 self-stretch">
                         <img 
-                            :src="item.inventory_image ?? 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            :src="inventoryToAdd.inventory_image ? inventoryToAdd.inventory_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                             alt="Inventory Image"
                             width="142"
                             height="142"

@@ -105,7 +105,7 @@ watch(() => props.zonesArr, (newValue) => {
 
 <template>
     <form novalidate spellcheck="false" @submit.prevent="submit">
-        <div class="h-[454px] overflow-y-scroll scrollbar-thin scrollbar-webkit">
+        <div class="max-h-[calc(100dvh-18rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <div class="w-full flex flex-col ">
                 <div class="flex flex-col gap-[16px]">
                     <div v-for="zonesArr in zones" :key="zonesArr.id" class="w-full flex flex-row text-grey-600 h-auto p-3 gap-4">
