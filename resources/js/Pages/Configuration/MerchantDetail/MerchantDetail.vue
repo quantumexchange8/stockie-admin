@@ -103,7 +103,6 @@ const closeModal = (status) => {
         case 'leave': {
             isUnsavedChangesOpen.value = false;
             merchantDetailsModal.value = false;
-            form.reset();
             isDeleteTaxOpen.value = false;
             break;
         }

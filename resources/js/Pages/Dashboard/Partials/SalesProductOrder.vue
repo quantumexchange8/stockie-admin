@@ -37,7 +37,7 @@ const props = defineProps({
             <div class="flex flex-col items-start gap-1.5 self-stretch">
                 <span class="text-primary-200 text-xs font-normal">Sales Today</span>
                 <div class="flex justify-center items-center">
-                    <span class="text-primary-25 text-base font-semibold whitespace-nowrap">RM {{ props.sales }}</span>
+                    <span class="text-primary-25 text-base font-semibold whitespace-nowrap">RM {{ parseFloat(props.sales).toFixed(2) }}</span>
                 </div>
                 <div class="flex items-center gap-0.5">
                     <template v-if="props.compareSale < 0 ">

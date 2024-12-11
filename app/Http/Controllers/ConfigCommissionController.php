@@ -127,7 +127,7 @@ class ConfigCommissionController extends Controller
         //     ];
         // }
 
-        // return redirect()->back()->with(['message' => $message]);
+        return redirect()->back();
     }
 
     public function productDetails(Request $request, String $id)

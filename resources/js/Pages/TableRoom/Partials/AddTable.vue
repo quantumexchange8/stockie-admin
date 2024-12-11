@@ -54,11 +54,6 @@ const formSubmit = () => {
     })
 };
 
-const cancelForm = () => {
-    form.reset();
-    emit('close');
-}
-
 const unsaved = (status) => {
     emit('close', status)
 }
@@ -89,6 +84,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :labelText="'Table / Room No.'"
                     :placeholder="'eg: 1'"
                     :errorMessage="form.errors?.table_no || ''"
+                    :maxlength="4"
                     v-model="form.table_no"
                     class="col-span-full md:col-span-8"
                 />

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TableRoomRequest;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\Zone;
@@ -70,21 +71,51 @@ class TableRoomController extends Controller
     public function addZone(Request $request)
     {
         // dd($request->all());
-        $validatedData = $request->validate([
-            'name' => ['required','string','max:255',
-            Rule::unique('zones', 'name')->whereNull('deleted_at'),]
-        ]);
-        
-        Zone::create([
-            'name' => $validatedData['name'],
-        ]);
+        $zonesError = [];
+        $validatedZones = [];
+        foreach ($request->input('zones') as $zones) {
+            if(!isset($zones['index'])) {
+                continue;
+            }
 
-        $message = [
-            'severity' => 'success',
-            'summary' => 'New Zone has been added successfully.'
-        ];
+            $zonesValidator = Validator::make($zones, [
+                'index' => 'required|integer',
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('zones')->whereNull('deleted_at'),
+                ]
+            ], [
+                'name.required' => 'Zone name is required.',
+                'name.string' => 'Invalid input.',
+                'name.unique' => 'Zone name already exists. Try another one.'
+            ]);
 
-        return redirect()->route('table-room')->with(['message' => $message]);
+            if ($zonesValidator->fails()) {
+                foreach ($zonesValidator->errors()->messages() as $field => $messages) {
+                    $zonesError["zones.{$zones['index']}.$field"] = $messages;
+                }
+            } else {
+                $validated = $zonesValidator->validated();
+                if(isset($validated['index'])){
+                    $validated['index'] = $zones['index'];
+                }
+                $validatedZones[] = $validated;
+            }
+        }
+
+        if(!empty($zonesError)){
+            return redirect()->back()->withErrors($zonesError);
+        }
+
+        foreach($validatedZones as $newZones) {
+            Zone::create([
+                'name' => $newZones['name']
+            ]);
+        }
+
+        return redirect()->route('table-room');
     }
 
     public function addTable(Request $request)

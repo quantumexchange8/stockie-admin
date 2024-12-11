@@ -15,7 +15,7 @@ const allInventories = ref([]);
 watch(props.inventories, (newValue) => allInventories.value = newValue, { immediate: true });
 
 const inStockInventories = computed(() => {
-    return allInventories.value.filter(item => item.stock_qty > 1).length;
+    return allInventories.value.filter(item => item.stock_qty > 1 && item.stock_qty > item.low_stock_qty).length;
 });
 
 const lowInStockInventories = computed(() => {

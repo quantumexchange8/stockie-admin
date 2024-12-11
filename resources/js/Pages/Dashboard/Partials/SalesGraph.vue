@@ -21,7 +21,7 @@ const chartOptions = ref();
 const emit = defineEmits(["applyTimeFilter", "isLoading"]);
         
 const setChartData = () => {
-    const salesData = props.monthly.map(value => parseFloat(value));
+    const salesData = props.monthly;
     const monthLabels = computed(() => {
     if (props.activeFilter === 'month') {
         return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -178,16 +178,21 @@ function customTooltipHandler(context) {
             font-size: 14px; 
             font-weight: bold; 
             margin-top: 5px;
-        ">RM ${body}</div>`;
-        innerHtml += `<div style="
-            margin-bottom: 5px;
-            color: #FFC7C9;
-            text-align:right;
-            font-size: 12px;
-            font-weight: 400;
-            line-height: normal;
-        ">Lowest sales in Nov</div>`;
-        innerHtml += '</div>';
+        ">RM ${parseFloat(body).toFixed(2)}</div>`;
+
+        // Add tooltip title (e.g., waiter name)
+        if (tooltipModel.title) {
+            const title = tooltipModel.title.join('<br>');
+            innerHtml += `<div style="
+                margin-bottom: 5px;
+                color: #FFC7C9;
+                text-align:right;
+                font-size: 12px;
+                font-weight: 400;
+                line-height: normal;
+            ">
+            ${title}</div></div>`;
+        }
 
         tooltipEl.querySelector('div').innerHTML = innerHtml;
     }

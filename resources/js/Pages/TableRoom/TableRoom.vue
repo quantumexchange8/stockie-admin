@@ -39,6 +39,7 @@ const isModalOpen = ref(false);
 const createFormIsOpen = ref(false);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
+const isLoading = ref(false);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -222,14 +223,23 @@ const filteredZones = computed(() => {
                 </Button>
                 <Modal
                     :show="isModalOpen"
-                    @close="closeModal('leave')"
+                    @close="closeModal('close')"
                     :title="'Manage Zone'"
                     :maxWidth="'md'"
                 >
                     <ManageZone 
                         @getZoneDetails="getZoneDetails"
-                        @close="closeModal('leave')" 
+                        @close="closeModal('close')" 
+                        @isDirty="isDirty=$event"
                         :zonesArr="zones"
+                    />
+                    <Modal
+                        :unsaved="true"
+                        :maxWidth="'2xs'"
+                        :withHeader="false"
+                        :show="isUnsavedChangesOpen"
+                        @close="closeModal('stay')"
+                        @leave="closeModal('leave')"
                     />
                 </Modal>
             </template>

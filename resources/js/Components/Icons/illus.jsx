@@ -1269,7 +1269,7 @@ export const RemoveProductIllust = defineComponent({
 export const EmployeeIncentProgIllust = defineComponent({
     setup() {
         return () => (
-            <svg width="395" height="394" viewBox="0 0 395 394" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="302" height="202" viewBox="50 100 302 182" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M189 253.634C231.802 253.634 266.5 219.16 266.5 176.634C266.5 134.108 231.802 99.6338 189 99.6338C146.198 99.6338 111.5 134.108 111.5 176.634C111.5 219.16 146.198 253.634 189 253.634Z" fill="url(#paint0_linear_756_34625)"/>
                 <g filter="url(#filter0_f_756_34625)">
                 <ellipse cx="197.5" cy="196.719" rx="86" ry="85" fill="#FFF1F2"/>

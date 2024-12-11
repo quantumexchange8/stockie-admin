@@ -32,6 +32,7 @@ const props = defineProps({
         type: String,
         default: "",
     },
+    maxlength: Number,
 });
 
 const {
@@ -153,6 +154,7 @@ onMounted(() => {
                 ref="input"
                 :autocomplete="inputType === 'password' ? 'current-password' : ''"
                 :disabled="disabled"
+                :maxlength="maxlength"
                 :placeholder="placeholder"
             />
             <span

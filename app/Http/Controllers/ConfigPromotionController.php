@@ -106,13 +106,13 @@ class ConfigPromotionController extends Controller
             'promotion_to' => $request->promotion_to,
             'status' => $status,
         ]);
-        $promotions = $this->getPromotions();
-
 
         if ($request->hasfile('promotion_image'))
         {
             $promotion->addMedia($request->promotion_image)->toMediaCollection('promotion');
         }
+        
+        $promotions = $this->getPromotions();
         
         // return Redirect::route('configurations.promotions.index');
         return response()->json($promotions);
@@ -246,29 +246,23 @@ class ConfigPromotionController extends Controller
             }
 
             $validator = Validator::make($taxes, [
-                'id' => 'required|integer', 
+                'id' => 'required|integer',
                 'name' => [
                     'required',
                     'string',
                     'max:255',
                     function ($attribute, $value, $fail) use ($taxes) {
-                        {
-                            if(isset($taxes['remarks'])){
-                                if($taxes['remarks'] === 'added'){
-                                    $exists = Setting::where('name', $value)->exists();
-                                    if ($exists) {
-                                        $fail("Tax name has already been taken.");
-                                    }
-    
-                                } elseif ($taxes['remarks'] === 'edited') {
-                                    $exists = Setting::where('name', $value)
-                                        ->where('id', '!=', $taxes['id'])
-                                        ->exists();
-                                    if ($exists) {
-                                        $fail("Tax name has already been taken by another record.");
-                                    }
-                                }
-                            }
+                        if (isset($taxes['remarks'])) {
+                            Setting::query()
+                                ->when($taxes['remarks'] === 'added', function ($query) use ($value) {
+                                    $query->where('name', $value)->whereNull('deleted_at');
+                                })
+                                ->when($taxes['remarks'] === 'edited', function ($query) use ($value, $taxes) {
+                                    $query->where('name', $value)
+                                          ->where('id', '!=', $taxes['id'])
+                                          ->whereNull('deleted_at');
+                                })
+                                ->exists() && $fail("Tax name has already been taken.");
                         }
                     },
                 ],
@@ -278,6 +272,7 @@ class ConfigPromotionController extends Controller
                 'name.required' => 'Tax name is required.',
                 'value.required' => 'Tax value is required.',
             ]);
+            
 
             if ($validator->fails()) {
                 foreach ($validator->errors()->messages() as $field => $messages) {
@@ -289,9 +284,7 @@ class ConfigPromotionController extends Controller
                     $validated['id'] = $taxes['id'];
                 }
                 $validatedTaxes[] = $validated;
-                
             }
-            
         }
         
         if (!empty($taxesErrors)) {
@@ -299,7 +292,6 @@ class ConfigPromotionController extends Controller
         }
 
         foreach($validatedTaxes as $items){
-
             if(isset($items['remarks'])){
                 if ($items['remarks'] === 'added') {
                     Setting::create([

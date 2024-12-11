@@ -2,7 +2,7 @@
 import TextInput from "@/Components/TextInput.vue";
 import Button from "@/Components/Button.vue";
 import { useForm } from "@inertiajs/vue3";
-import { nextTick, ref, watch } from "vue";
+import { nextTick, reactive, ref, watch } from "vue";
 import { DeleteIcon, Menu2Icon, PlusIcon } from '@/Components/Icons/solid.jsx';
 import Modal from '@/Components/Modal.vue';
 import { useCustomToast } from "@/Composables";
@@ -14,15 +14,18 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(["close", 'getZoneDetails']);
+const emit = defineEmits(["close", 'getZoneDetails', 'isDirty']);
 const { showMessage } = useCustomToast();
 
 const deleteProductFormIsOpen = ref(false);
 const selectedZone = ref(null);
-const isTextInputVisible = ref(false);
 const isEditing = ref(false);
 const currentZoneId = ref(null);
+const initialZoneName = ref(null);
+const inputRefs = reactive({});
+const isEdited = ref(false);
 const zones = ref();
+const newZoneCounter = ref(0);
 
 const form = useForm({
     name: "",
@@ -30,45 +33,65 @@ const form = useForm({
     id: "",
 });
 
+const newZones = useForm({
+    zones: [],
+})
+
 const addZone = () => {
     isEditing.value = false;
-    if(isTextInputVisible.value){
-        submit();
-    }else{
-        isTextInputVisible.value = true;
-    }
+    newZoneCounter.value++;
+    newZones.zones.push({name: '', index: newZoneCounter.value})
+    
+    //when clicked, auto focus the latest added input
+    nextTick(() => {
+        const inputRefName = `zones${newZoneCounter.value}`;
+        if (inputRefs[inputRefName]) {
+            inputRefs[inputRefName].focus();
+        }
+    });
 }
 
-const submit = (id) => {
-    if(isEditing.value){
-        form.id = id,
-        form.post(route('tableroom.edit-zone'), {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                isEditing.value = false;
-                isTextInputVisible.value = false;
-                form.reset();
-                setTimeout(() => {
-                showMessage({
-                    severity: 'success',
-                    summary: 'Zone name has been edited successfully.'
-                });
-            }, 200);
-                emit('getZoneDetails');
-            }
-        })
-    }
-    else{
-        form.post(route("tableroom.add-zone"), {
-            preserveScroll: true,
-            preserveState: 'errors',
-            onSuccess: () => {
-                isTextInputVisible.value = false;
-                form.reset();
-                emit('close');
-            }
-        });
+const removeAddZone = (id) => { 
+    newZones.zones = newZones.zones.filter(zone => zone.index !== id); 
+}
+
+const submit = () => {
+    //only submit if its edited, else just return default state
+    if(isEdited.value){
+        if(isEditing.value){
+            form.post(route('tableroom.edit-zone'), {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    isEditing.value = false;
+                    form.reset();
+                    setTimeout(() => {
+                    showMessage({
+                        severity: 'success',
+                        summary: 'Zone name has been edited successfully.'
+                    });
+                }, 200);
+                    emit('getZoneDetails');
+                }
+            })
+        }
+        else{
+            newZones.post(route("tableroom.add-zone"), {
+                preserveScroll: true,
+                preserveState: 'errors',
+                onSuccess: () => {
+                    form.reset();
+                    emit('close', 'leave');
+                    showMessage({
+                        severity: 'success',
+                        summary: 'Zone has been added successfully.'
+                    });
+                }
+            });
+        }
+    } else {
+        isEditing.value = false;
+        form.reset();
     }
 };
 
@@ -89,25 +112,46 @@ const hideDeleteProductForm = () => {
 
 
 const startEditing = (zonesArr) => {
-    // document.getElementById('zone').focus();
-    isTextInputVisible.value = false;
     isEditing.value = true;
-    currentZoneId.value = zonesArr.value;
     form.edit_name = zonesArr.text;
+    form.id = zonesArr.value;
+    currentZoneId.value = zonesArr.value;
+
+    nextTick(() => {
+        const inputRefName = `zones${zonesArr.value}`;
+        if (inputRefs[inputRefName]) {
+            inputRefs[inputRefName].focus();
+        }
+    });
+
+    initialZoneName.value = zonesArr.text;
 }
 
 watch(() => props.zonesArr, (newValue) => {
     zones.value = newValue ? newValue : {};
 }, { immediate: true });
 
+watch(
+    () => form.edit_name, 
+    (newVal) => {
+        isEdited.value = newVal !== initialZoneName.value; 
+    },
+    { immediate: true } 
+);
+
+watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
+    emit('isDirty', newFormValue.isDirty || newIsEdited);
+});
+
 
 </script>
 
 <template>
-    <form novalidate spellcheck="false" @submit.prevent="submit">
+    <!-- <form novalidate spellcheck="false" @submit.prevent="submit"> -->
         <div class="max-h-[calc(100dvh-18rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <div class="w-full flex flex-col ">
                 <div class="flex flex-col gap-[16px]">
+                    <!-- existing zones -->
                     <div v-for="zonesArr in zones" :key="zonesArr.id" class="w-full flex flex-row text-grey-600 h-auto p-3 gap-4">
                         <div v-if="!isEditing || currentZoneId !== zonesArr.value" class="w-full flex flex-row justify-between">
                             <div class="flex flex-row gap-[12px]">
@@ -132,7 +176,7 @@ watch(() => props.zonesArr, (newValue) => {
                                 </span>
                             </div>
                             <div>
-                            <DeleteIcon class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
+                            <DeleteIcon class="w-6 h-6 text-primary-600 hover:text-primary-700 cursor-pointer"
                                 @click="showDeleteGroupForm($event, zonesArr.value)" /></div>
                         </div>
                         <template v-if="isEditing && currentZoneId === zonesArr.value">
@@ -143,28 +187,40 @@ watch(() => props.zonesArr, (newValue) => {
                                 input-name="edit_zone_name"
                                 inputId="edit_name"
                                 v-model="form.edit_name"
-                                ref="editZoneNameInput"
-                                @blur="submit(zonesArr.value)"
-                                @keydown.enter.prevent.stop="submit(zonesArr.value)"
+                                :ref="el => (inputRefs[`zones${zonesArr.value}`] = el)"
+                                @keydown.enter.prevent.stop="submit()"
                             />
                         </template>
                     </div>
-                    <div v-if="isTextInputVisible" class="flex flex-col px-[12px]" >
+
+                    <!-- new zones -->
+                    <div v-if="newZones.zones.length" v-for="zones in newZones.zones" class="flex w-full px-3 gap-3 justify-center items-center">
                         <TextInput 
                             :placeholder="'eg: Main Area'" 
                             inputId="name" 
                             type="'text'" 
-                            v-model="form.name"
-                            :errorMessage="form.errors.name" />
+                            v-model="zones.name"
+                            :ref="el => (inputRefs[`zones${zones.index}`] = el)" 
+                            :errorMessage="newZones.errors ? newZones.errors['zones.' + zones.index + '.name'] : null"
+                        />
+                        <div class="size-6">
+                            <DeleteIcon 
+                                class="w-6 h-6 text-primary-600 hover:text-primary-700 cursor-pointer" 
+                                @click="removeAddZone(zones.index)" 
+                            />
+                        </div>
                     </div>
-                    <div class="flex gap-4 p-2">
+
+                    <!-- buttons -->
+                    <div class="flex flex-col gap-4 p-2">
                         <Button
-                            :type="isTextInputVisible ? 'submit' : 'button'"
+                            :type="'button'"
                             :variant="'secondary'" 
                             :size="'lg'" 
                             :iconPosition="'left'"
-                            :class="{ 'opacity-25': form.processing }"
-                            :disabled="form.processing"
+                            :class="{ 'opacity-25': newZones.processing }"
+                            :disabled="newZones.processing"
+                            v-if="!isEditing"
                             @click="addZone"
                         >
                             <template #icon>
@@ -174,11 +230,35 @@ watch(() => props.zonesArr, (newValue) => {
                             </template>
                             New Zone
                         </Button>
+
+                        <Button
+                            :type="'submit'"
+                            :variant="'primary'" 
+                            :size="'lg'" 
+                            :class="{ 'opacity-25': form.processing }"
+                            :disabled="form.processing"
+                            v-if="isEditing"
+                            @click="submit()"
+                        >
+                            {{ isEdited ? 'Save changes' : 'Discard' }}
+                        </Button>
+
+                        <Button
+                            :type="'button'"
+                            :variant="'primary'" 
+                            :size="'lg'" 
+                            :class="{ 'opacity-25': newZones.processing }"
+                            :disabled="newZones.processing"
+                            v-if="newZones.zones.length"
+                            @click="submit()"
+                        >
+                            Add Zone
+                        </Button>
                     </div>
                 </div>
             </div>
         </div>
-    </form>
+    <!-- </form> -->
     
     <Modal 
         :show="deleteProductFormIsOpen" 

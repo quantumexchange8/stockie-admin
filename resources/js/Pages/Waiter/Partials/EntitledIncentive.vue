@@ -45,7 +45,7 @@ const { formatAmount } = transactionFormat();
                 <span class="text-sm font-medium text-primary-900 text-balance">This employee does not entitled to any incentive commission yet.</span>
                 <Button
                     :type="'button'"
-                    :href="route('configurations')"
+                    :href="route('waiter.viewEmployeeIncentive')"
                     class="!w-max"
                 >
                     Go to Add
