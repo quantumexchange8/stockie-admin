@@ -221,7 +221,7 @@ const showDeleteTierForm = (event) => {
                 <div class="flex gap-4 items-center self-stretch">
                     <!-- <div class="w-6 h-6 rounded-full bg-[#FFE279]"></div> -->
                     <img 
-                        :src="props.tier.image ? props.tier.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                        :src="props.tier.icon ? props.tier.icon : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
                         alt="" 
                         class="w-6 h-6 rounded-full"
                     />

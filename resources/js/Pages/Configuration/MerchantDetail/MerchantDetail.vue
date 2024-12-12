@@ -322,6 +322,13 @@ const taxSubmit = () => {
         })
         isEditingName.value = false;
         isEditingPercentage.value = false;
+
+        const actionCol = merchantColumn.value.find(col => col.field === 'action');
+        const percentageColumn = merchantColumn.value.find(col => col.field === 'value');
+        if (actionCol && percentageColumn) {
+            percentageColumn.width = '17';
+            actionCol.width = '13'; 
+        }
     }
 }
 

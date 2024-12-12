@@ -222,7 +222,7 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                                 :src="product.image ? product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                 alt="ProductImage"
                                                 :class="[
-                                                    'size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100',
+                                                    'size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain',
                                                     { 'opacity-30': product.stock_left == 0 }
                                                 ]"
                                             >

@@ -61,13 +61,14 @@ class DashboardController extends Controller
 
 
         //order today
-        $order = Order::whereDate('updated_at', Carbon::today())
+        $order = Order::whereDate('created_at', Carbon::today())
                         ->whereHas('payment')
                         ->with(['payment' => fn($query) => $query->where('status', 'Successful')])
                         ->count();
         
         $orderYesterday = Order::whereDate('created_at', Carbon::yesterday())
                                 ->where('status','Order Completed')
+                                ->with(['payment' => fn($query) => $query->where('status', 'Successful')])
                                 ->count();
         $comparedOrder = 0;
         if($orderYesterday !== 0){

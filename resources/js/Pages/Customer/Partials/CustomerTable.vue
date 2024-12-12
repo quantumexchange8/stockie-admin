@@ -125,7 +125,7 @@ const toggleKeepStatus = () => {
 
 const csvExport = () => {
     const mappedCustomers = props.customers.map(customer => ({
-        'Tier': customer.ranking ? customer.rank.name : 'No Tier',
+        'Tier': parseInt(customer.ranking) !== 0 ? customer.rank.name : 'No Tier',
         'Customer': customer.full_name,
         'Points': customer.point,
         'Keep': customer.keep_items_count,
@@ -287,15 +287,15 @@ watch(() => props.customers, (newValue) => customer.value = newValue)
                 </template>
                 <template #ranking="customers">
                     <Tag
-                        :variant="customers.ranking ? 'default' : 'grey'"
-                        :value="customers.ranking ? customers.rank.name : 'No Tier'"
+                        :variant="parseInt(customers.ranking) !== 0 ? 'default' : 'grey'"
+                        :value="parseInt(customers.ranking) !== 0 ? customers.rank.name : 'No Tier'"
                     />
                 </template>
                 <template #full_name="customers">
                     <template class="flex flex-row gap-[10px] items-center">
                         <img :src="customers.image ? customers.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt=""
-                                class="w-[32px] h-[32px] flex-shrink-0 rounded-full"
+                                class="w-[32px] h-[32px] flex-shrink-0 rounded-full object-contain"
                         />
                         <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ customers.full_name }}</span>
                     </template>

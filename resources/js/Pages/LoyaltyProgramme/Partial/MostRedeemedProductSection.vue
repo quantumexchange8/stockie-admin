@@ -9,7 +9,11 @@ const props = defineProps({
 const mostRedeemedProduct = computed(() => {
     return props.redeemedProducts
         .filter((product) => product.point_histories.length > 0)
-        .sort((a, b) => b.point_histories.length - a.point_histories.length)
+        .sort((a, b) => {
+            const totalQtyA = a.point_histories.reduce((total, record) => total + record.qty, 0);
+            const totalQtyB = b.point_histories.reduce((total, record) => total + record.qty, 0);
+            return totalQtyB - totalQtyA;
+        })
         .slice(0, 5);
 });
 

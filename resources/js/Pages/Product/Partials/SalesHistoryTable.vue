@@ -134,7 +134,7 @@ const csvExport = () => {
                 <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.created_at).format('hh:mm A') }}</span>
             </template>
             <template #total_price="row">
-                <span class="text-grey-900 text-sm font-medium">RM {{ row.total_price }}</span>
+                <span class="text-grey-900 text-sm font-medium">RM {{ parseFloat(row.total_price).toFixed(2) }}</span>
             </template>
         </Table>
     </div>

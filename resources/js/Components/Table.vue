@@ -661,7 +661,7 @@ onMounted(() => {
                                         <span class="line-clamp-1 text-grey-900 text-ellipsis font-bold text-md">
                                             RM {{ formatAmount(item.price) }}
                                         </span>
-                                    </div>{{ item.stock_left }}
+                                    </div>
                                 </div>
                                 <div class="flex items-center self-stretch gap-2">
                                     <Toggle 

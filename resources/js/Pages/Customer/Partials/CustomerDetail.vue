@@ -157,7 +157,7 @@ const formatPoints = (points) => {
                                         <img 
                                             :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                             alt="CustomerKeepItem"
-                                            class="flex rounded-[1.5px] overflow-x-hidden size-[60px] object-cover"
+                                            class="flex rounded-[1.5px] overflow-x-hidden size-[60px] object-contain"
                                         />
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">

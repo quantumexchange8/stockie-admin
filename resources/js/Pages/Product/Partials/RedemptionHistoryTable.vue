@@ -52,9 +52,9 @@ watch(() => date_filter.value, (newValue) => {
 const csvExport = () => {
     const mappedData =  props.rows.map(redemptionHistory => ({
         'Date': dayjs(redemptionHistory.redemption_date).format('DD/MM/YYYY'),
-        'Redeemable_Item': redemptionHistory.Redeemable_Item.product_name,
+        'Redeemable_Item': redemptionHistory.redeemable_item.product_name,
         'Quantity': redemptionHistory.qty,
-        'Redeemed_By': redemptionHistory.handled_by,
+        'Redeemed_By': redemptionHistory.handled_by.name,
     }));
     exportToCSV(mappedData, 'Redemption History');
 }

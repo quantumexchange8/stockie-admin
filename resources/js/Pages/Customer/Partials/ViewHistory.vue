@@ -85,7 +85,7 @@ onMounted(() => getKeepHistory());
                                             <img 
                                                 :src="item.keep_item.image ? item.keep_item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                 alt="KeepItemImage"
-                                                class="size-full"
+                                                class="size-full object-contain"
                                             >
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
@@ -98,7 +98,7 @@ onMounted(() => getKeepHistory());
                                                 <img 
                                                     :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                     alt="WaiterProfileImage"
-                                                    class="size-4 rounded-full"
+                                                    class="size-4 rounded-full object-contain"
                                                 >
                                                 <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.full_name }}</span>
                                             </div>
@@ -152,7 +152,7 @@ onMounted(() => getKeepHistory());
                                              <img 
                                                 :src="item.keep_item.image ? item.keep_item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                 alt="KeepItemImage"
-                                                class="size-full"
+                                                class="size-full object-contain"
                                             >
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
@@ -165,7 +165,7 @@ onMounted(() => getKeepHistory());
                                                 <img 
                                                     :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                     alt="WaiterProfileImage"
-                                                    class="size-4 rounded-full"
+                                                    class="size-4 rounded-full object-contain"
                                                 >
                                                 <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.full_name }}</span>
                                             </div>
