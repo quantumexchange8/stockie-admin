@@ -174,6 +174,7 @@ const submit = (action) => {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
+                    emit('fetchZones');
                     if (form.action_type === 'complete') {
                         openPaymentDrawer(); 
                     } else {
@@ -202,11 +203,11 @@ const submit = (action) => {
                         });
                     }, 200);
                     form.reset();
+                    emit('fetchZones');
                     closeDrawer();
                 },
             })
         }
-        emit('fetchZones');
     }
 };
 

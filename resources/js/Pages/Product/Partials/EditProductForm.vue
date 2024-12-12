@@ -99,7 +99,7 @@ const updateInventoryStockCount = async (index, id) => {
             const { data } = await axios.get(`/menu-management/products/getInventoryItemStock/${id}`);
             const item = form.items[index];
             item.inventory_stock_qty = data.stock_qty;
-            item.qty = data.stock_qty >= 2 ? 2 : 0;
+            item.qty = data.stock_qty >= 1 ? 1 : 0;
             item.formatted_item_name = data.formattedName;
         } catch (error) {
             console.error(error);
@@ -197,7 +197,7 @@ watch(
                                 v-if="form.bucket"
                                 :labelText="'Quantity of item in this set'"
                                 :inputName="'qty_' + i"
-                                :minValue="form.bucket ? 2 : 1"
+                                :minValue="1"
                                 :maxValue="item.inventory_stock_qty"
                                 v-model="item.qty"
                                 class="!w-fit whitespace-nowrap"

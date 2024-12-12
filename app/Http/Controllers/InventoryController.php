@@ -63,7 +63,7 @@ class InventoryController extends Controller
             $inventory->inventory_image = $inventory->getFirstMediaUrl('inventory');
         });
 
-        $endDate = Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
+        $endDate = Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->addDay()->format('Y-m-d');
         $startDate = Carbon::now()->subDays(30)->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
 
         $recentKeepHistories = KeepHistory::with([
@@ -71,6 +71,8 @@ class InventoryController extends Controller
                                                 'keepItem.customer:id,full_name', 
                                             ])
                                             ->whereBetween('created_at', [$startDate, $endDate])
+                                            ->where('status', 'Keep')
+                                            ->orderBy('created_at', 'desc')
                                             ->limit(5)
                                             ->get()
                                             ->transform(function ($history) {
@@ -614,14 +616,14 @@ class InventoryController extends Controller
     {
         $dateFilter = [
             now()->subDays(7)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
-            now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d')
+            now()->timezone('Asia/Kuala_Lumpur')->addDay()->format('Y-m-d')
         ];
 
         $keepHistories = KeepHistory::with([
                                             'keepItem.orderItemSubitem.productItem.inventoryItem',
                                             'keepItem.customer:id,full_name', 
                                         ])
-                                        ->whereBetween('created_at', [$dateFilter[0], $dateFilter[1]])
+                                        ->whereBetween('created_at', $dateFilter)
                                         ->where('status', 'Keep')
                                         ->orderBy('created_at', 'desc')
                                         ->get()

@@ -61,11 +61,11 @@ const unsaved = (status) => {
     emit('close', status);
 }
 
-const addItem = () => form.items.push({ ...defaultProductItem, qty: 2 });
+const addItem = () => form.items.push({ ...defaultProductItem });
 
 const removeItem = (index) => {
     if (form.items.length === 1) {
-        Object.assign(form.items[0], { ...defaultProductItem, qty: 2 });
+        Object.assign(form.items[0], { ...defaultProductItem });
     } else {
         form.items.splice(index, 1);
     }
@@ -86,7 +86,7 @@ const updateInventoryStockCount = async (index, id) => {
             }
             
             if (item.bucket) {
-                item.qty = data.stock_qty >= 2 ? 2 : 0;
+                item.qty = data.stock_qty >= 1 ? 1 : 0;
             }
         } catch (error) {
             console.error(error);
@@ -103,7 +103,7 @@ watch(() => form.bucket, (newValue) => {
         }
         form.items[0].qty = 1;
     } else {
-        form.items[0].qty = 2;
+        form.items[0].qty = 1;
     }
 }, { immediate: true });
 
@@ -169,7 +169,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 v-if="form.bucket"
                                 :labelText="'Quantity of item in this set'"
                                 :inputName="'qty_' + i"
-                                :minValue="form.bucket === true ? 2 : 1"
+                                :minValue="1"
                                 :maxValue="item.inventory_stock_qty"
                                 v-model="item.qty"
                                 class="!w-fit whitespace-nowrap"

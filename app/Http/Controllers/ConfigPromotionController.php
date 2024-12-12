@@ -49,8 +49,8 @@ class ConfigPromotionController extends Controller
         $selectedTab = $request->session()->get('selectedTab');
 
         return Inertia::render('Configuration/MainConfiguration', [
-            'ActivePromotions' => $promotions['Active'],
-            'InactivePromotions' => $promotions['Inactive'],
+            'ActivePromotions' => $promotions['Active'] ?? [],
+            'InactivePromotions' => $promotions['Inactive'] ?? [],
             'merchant' => $merchant,
             'selectedTab' => $selectedTab ?? 0,
         ]);
@@ -138,18 +138,10 @@ class ConfigPromotionController extends Controller
                 'title' => 'required|string',
                 'description' => 'required|string',
                 'promotionPeriod' => 'required',
-                'promotion_image' => 'required|image',
+                'promotion_image' => 'required',
             ], 
             ['required' => 'This field is required.']
         );
-
-        $todayDate = date('Y/m/d');
-
-        if (($todayDate >= $request->promotion_from) && ($todayDate <= $request->promotion_to)) {
-            $status = 'Active';
-        } else {
-            $status = 'Inactive';
-        }
 
         $editPromotion = ConfigPromotion::find($request->id);
 
@@ -158,7 +150,7 @@ class ConfigPromotionController extends Controller
             'description' => $validatedData['description'],
             'promotion_from' => $request->promotion_from,
             'promotion_to' => $request->promotion_to,
-            'status' => $status,
+            'status' => $editPromotion->status,
         ]);
 
         if($request->hasfile('promotion_image')) {

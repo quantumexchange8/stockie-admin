@@ -99,7 +99,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :model="form.image"
                 :errorMessage="form.errors.image"
                 v-model="form.image"
-                class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"
+                class="col-span-full md:col-span-4 h-[372px] py-1"
              />
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 self-stretch">
                 <TextInput

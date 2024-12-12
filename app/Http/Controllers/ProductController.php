@@ -90,13 +90,13 @@ class ProductController extends Controller
             $rules = $productItemRequest->rules();
             $requestMessages = $productItemRequest->messages();
 
-            $rules['qty'] = $validatedData['bucket']
-                                    ? 'required|integer|min:2'
-                                    : 'required|integer|min:1';
+            // $rules['qty'] = $validatedData['bucket']
+            //                         ? 'required|integer|min:2'
+            //                         : 'required|integer|min:1';
 
-            $requestMessages['qty.min'] = $validatedData['bucket']
-                                    ? 'A minimum of 2 stocks available are required.'
-                                    : 'A minimum of 1 stock available is required.';
+            // $requestMessages['qty.min'] = $validatedData['bucket']
+            //                         ? 'A minimum of 2 stocks available are required.'
+            //                         : 'A minimum of 1 stock available is required.';
 
             // Validate product items data
             $productItemValidator = Validator::make($item, $rules, $requestMessages, $productItemRequest->attributes());
@@ -118,28 +118,6 @@ class ProductController extends Controller
 
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) return redirect()->back()->withErrors($allItemErrors)->withInput();
-        
-        $newProduct = Product::create([
-            'product_name' => $validatedData['product_name'],
-            'bucket' => $validatedData['bucket'] ? 'set' : 'single',
-            'price' => $validatedData['price'],
-            'point' => 0,
-            // 'point' => $validatedData['point'],
-            'category_id' => $validatedData['category_id'],
-            // 'keep' => $validatedData['keep'],
-            'status' => $this->getProductStatus($validatedProductItems),
-            'availability' => 'Available',
-        ]);
-
-        if (count($validatedProductItems) > 0) {
-            foreach ($validatedProductItems as $key => $value) {
-                ProductItem::create(attributes: [
-                    'product_id' => $newProduct->id,
-                    'inventory_item_id' => $value['inventory_item_id'],
-                    'qty' => (string) $value['qty'],
-                ]);
-            }
-        }
 
         $this->createProductAndItems($validatedData, $validatedProductItems);
 
@@ -259,11 +237,11 @@ class ProductController extends Controller
             if ($inventoryItem) {
                 // Determine stock status
                 if ($inventoryItem->stock_qty == 0) {
-                    return 'Out of Stock';
+                    return 'Out of stock';
                 } elseif ($inventoryItem->stock_qty < $item['qty']) {
-                    return 'Low Stock';
+                    return 'Low in stock';
                 } else {
-                    return 'In Stock';
+                    return 'In stock';
                 }
             }
     
@@ -271,13 +249,13 @@ class ProductController extends Controller
         });
     
         // Determine overall product status
-        if ($stockStatuses->contains('Out of Stock')) {
-            return 'Out of Stock';
-        } elseif ($stockStatuses->contains('Low Stock')) {
-            return 'Low Stock';
+        if ($stockStatuses->contains('Out of stock')) {
+            return 'Out of stock';
+        } elseif ($stockStatuses->contains('Low in stock')) {
+            return 'Low in stock';
         }
     
-        return 'In Stock';
+        return 'In stock';
     }
 
     /**
@@ -495,13 +473,13 @@ class ProductController extends Controller
             $inventoryItemStock = IventoryItem::select('stock_qty')
                                                 ->find($item['inventory_item_id']);
 
-            $rules['qty'] = $validatedData['bucket']
-                                    ? 'required|integer|min:2'
-                                    : 'required|integer|min:1';
+            // $rules['qty'] = $validatedData['bucket']
+            //                         ? 'required|integer|min:2'
+            //                         : 'required|integer|min:1';
 
-            $requestMessages['qty.min'] = $validatedData['bucket']
-                                    ? 'A minimum of 2 stocks available are required.'
-                                    : 'A minimum of 1 stock available is required.';
+            // $requestMessages['qty.min'] = $validatedData['bucket']
+            //                         ? 'A minimum of 2 stocks available are required.'
+            //                         : 'A minimum of 1 stock available is required.';
 
             // Validate product items data
             $productItemValidator = Validator::make(
@@ -512,9 +490,7 @@ class ProductController extends Controller
             );
 
             if (($inventoryItemStock->stock_qty - $item['qty']) < 0) {
-                $allItemErrors["items.$index.qty"] = $validatedData['bucket']
-                                    ? 'A minimum of 2 stocks available are required.'
-                                    : 'A minimum of 1 stock available is required.';
+                $allItemErrors["items.$index.qty"] = 'A minimum of 1 stock available is required.';
             }
             
             if ($productItemValidator->fails()) {

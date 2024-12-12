@@ -160,13 +160,14 @@ watch(form, () => {
             You haven’t added any promotion yet...
         </div>
     </div>
-    <div v-else class="grid grid-cols-3 gap-5 select-none h-full">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 min-[840px]:grid-cols-3 gap-5 select-none h-full">
         <div v-for="promotion in InactivePromotions" >
             <div class="flex flex-col border border-grey-100 rounded-[5px]">
-                <div class="p-3 flex items-center justify-center">
-                    <img :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                <div class="p-3 flex items-center justify-center min-h-[296px]">
+                    <img 
+                        :src="promotion.promotion_image ? promotion.promotion_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                         alt="PromotionImage"
-                        class="object-contain min-h-[296px]"
+                        class="object-contain h-[296px] w-full"
                     >
                 </div>
                 <div class="">
@@ -174,10 +175,10 @@ watch(form, () => {
                         <div class="text-gray-500 text-2xs font-medium leading-tight" >
                             Active Period: {{ formatDate(promotion.promotion_from) }} - {{ formatDate(promotion.promotion_to) }}
                         </div>
-                        <div class="text-base text-gray-900 font-semibold leading-tight">
+                        <div class="text-base text-gray-900 font-semibold leading-tight truncate">
                             {{ promotion.title }}
                         </div>
-                        <div class="h-9 text-gray-700 text-xs font-medium overflow-hidden" >
+                        <div class="h-9 text-gray-700 text-xs font-medium line-clamp-2" >
                             {{ promotion.description }}
                         </div>
                     </div>
@@ -211,15 +212,15 @@ watch(form, () => {
         v-if="actionVal === 'edit'"
     >
         <form @submit.prevent="submit">
-            <div class="flex flex-col gap-6 max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
-                <div class=" w-full h-56">
+            <div class="flex flex-col gap-6 max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pl-1 pr-2 py-1">
+                <div class="w-full h-56">
                     <DragDropImage
                         inputName="image"
                         remarks="Suggested image size: 1920 x 1080 pixel"
                         :modelValue="form.promotion_image"
                         :errorMessage="form.errors.promotion_image"
                         v-model="form.promotion_image"
-                        class="w-full h-full object-contain rounded-[5px]"
+                        class="size-full object-contain rounded-[5px]"
                     />
                 </div>
                 <div class="flex flex-col gap-4">

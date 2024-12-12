@@ -24,7 +24,7 @@ class ProductItemRequest extends FormRequest
         return [
             // 'product_id' => 'required|integer',
             'inventory_item_id' => 'required|integer',
-            'qty' => 'required|integer',
+            'qty' => 'required|integer|min:1',
         ];
     }
 
@@ -43,6 +43,7 @@ class ProductItemRequest extends FormRequest
             'string' => 'This field must be a string.',
             'max' => 'This field must not exceed 255 characters.',
             'integer' => 'This field must be an integer.',
+            'min' => 'A minimum of 1 stock available is required.',
         ];
     }
 }

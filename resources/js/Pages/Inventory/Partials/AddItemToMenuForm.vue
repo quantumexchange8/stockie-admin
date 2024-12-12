@@ -39,7 +39,7 @@ const form = useForm({
             bucket: false,
             formattedItemName: `${inventoryToAdd.value.name} - ${item.item_name}`,
             product_name: `${item.item_name} (${item.item_category.name})`,
-            image: inventoryToAdd.value.image,
+            image: inventoryToAdd.value.inventory_image,
             price: '',
             is_redeemable: false,
             point: '0',
