@@ -121,10 +121,10 @@ watch( () => props.product, (newValue) => {
         >
 
         <div class="flex flex-col items-start self-stretch gap-4">
-            <Tag
+            <!-- <Tag
                 :variant="productInfo.keep ? 'green' : 'yellow'"
                 :value="productInfo.keep === 'Active' ? 'Keep is allowed' : 'Keep is not allowed'"
-            />
+            /> -->
             <span class="text-md text-grey-900 font-medium">{{ productInfo.product_name }}</span>
         </div>
 
