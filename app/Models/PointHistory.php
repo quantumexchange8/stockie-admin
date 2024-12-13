@@ -19,6 +19,7 @@ class PointHistory extends Model implements HasMedia
         'product_id',
         'payment_id',
         'type',
+        'point_type',
         'qty',
         'amount',
         'old_balance',

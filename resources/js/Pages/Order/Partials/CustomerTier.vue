@@ -117,11 +117,24 @@ const getRewardTitle = (reward) => {
 };
 
 const openModal = (reward) => {
-    if (reward.ranking_reward.min_purchase === 'inactive' 
-        || (reward.ranking_reward.min_purchase === 'active' 
-        && reward.ranking_reward.min_purchase_amount <= parseFloat(props.matchingOrderDetails.amount))) {
-        selectedReward.value = reward;
-        isRedeemRewardOpen.value = true;
+    // if (reward.ranking_reward.min_purchase === 'inactive' 
+    //     || (reward.ranking_reward.min_purchase === 'active' 
+    //     && reward.ranking_reward.min_purchase_amount <= parseFloat(props.matchingOrderDetails.amount))
+    //     && !(tableStatus === 'Pending Clearance' && reward.ranking_reward.reward_type !== 'Free Item')) {
+    //     selectedReward.value = reward;
+    //     isRedeemRewardOpen.value = true;
+    // }
+    
+    if (props.tableStatus === 'Pending Clearance') {
+        if (reward.ranking_reward.reward_type === 'Free Item') {
+            selectedReward.value = reward;
+            isRedeemRewardOpen.value = true;
+        } 
+    } else {
+        if (reward.ranking_reward.min_purchase === 'inactive' || reward.ranking_reward.min_purchase_amount <= parseFloat(props.matchingOrderDetails.amount)) {
+            selectedReward.value = reward;
+            isRedeemRewardOpen.value = true;
+        }
     }
 };
 
@@ -225,7 +238,7 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
                                 <p 
                                     :class="[
                                         'text-base font-semibold col-span-4 text-center',
-                                        reward.ranking_reward.min_purchase === 'active' && reward.ranking_reward.min_purchase_amount > parseFloat(matchingOrderDetails.amount) ? 'text-grey-300 pointer-events-none' :'text-primary-900 cursor-pointer'
+                                        (reward.ranking_reward.min_purchase === 'active' && reward.ranking_reward.min_purchase_amount > parseFloat(matchingOrderDetails.amount)) || (tableStatus === 'Pending Clearance' && reward.ranking_reward.reward_type !== 'Free Item') ? 'text-grey-300 pointer-events-none' :'text-primary-900 cursor-pointer'
                                     ]" 
                                     @click="openModal(reward)"
                                 >

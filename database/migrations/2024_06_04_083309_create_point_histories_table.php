@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('payment_id');
             $table->string('type');
+            $table->string('point_type');
             $table->integer('qty');
             $table->integer('amount');
             $table->integer('old_balance');

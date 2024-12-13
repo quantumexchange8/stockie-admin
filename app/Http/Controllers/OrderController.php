@@ -1521,7 +1521,8 @@ class OrderController extends Controller
 
         // Add the accumulated points earned from the order to the customer
         if ($customer) {
-            $newPointBalance = $customer->point + $totalPoints;
+            $oldPointBalance = $customer->point;
+            $newPointBalance = $oldPointBalance + $totalPoints;
             $oldTotalSpending = $customer->total_spending;
             $newTotalSpending = $oldTotalSpending + $payment->grand_total;
             $oldRanking = $customer->ranking;
@@ -1542,11 +1543,13 @@ class OrderController extends Controller
                 'total_spending' => $newTotalSpending,
                 'ranking' => $newRanking
             ]);
+            $customer->refresh();
 
+            $bonusPointRewards = [];
             // Grant rewards for rank up 
             if ($newRanking && $newRanking != $oldRanking) { 
                 $ranks = Ranking::select('id')
-                                ->with('rankingRewards:id,ranking_id')
+                                ->with('rankingRewards:id,ranking_id,reward_type,bonus_point')
                                 ->where([
                                     ['reward', 'active'],
                                     ['min_amount', '<=', $newTotalSpending],
@@ -1556,27 +1559,61 @@ class OrderController extends Controller
                                 ->get(); 
 
                 foreach ($ranks as $rank) { 
-                    $rank->rankingRewards->each(fn ($reward) => CustomerReward::create([ 
-                        'customer_id' => $customer->id, 
-                        'ranking_reward_id' => $reward->id, 
-                        'status' => 'Active' 
-                    ])); 
+                    $rank->rankingRewards->each(function ($reward) use ($customer, $bonusPointRewards) {
+                        CustomerReward::create([ 
+                            'customer_id' => $customer->id, 
+                            'ranking_reward_id' => $reward->id, 
+                            'status' => 'Active' 
+                        ]);
+
+                        if ($reward->reward_type === 'Bonus Point') {
+                            array_push($bonusPointRewards, $reward);
+                        }
+                    }); 
                 };
             };
 
-            // Log point history 
+            // Log point history for earned points from completed order
             PointHistory::create([ 
                 'product_id' => null, 
                 'payment_id' => $id, 
                 'type' => 'Earned', 
+                'point_type' => 'Order', 
                 'qty' => 0, 
                 'amount' => $totalPoints, 
-                'old_balance' => $customer->point - $totalPoints, 
-                'new_balance' => $customer->point, 
+                'old_balance' => $oldPointBalance, 
+                'new_balance' => $newPointBalance, 
                 'customer_id' => $customer->id, 
                 'handled_by' => $request->user_id, 
                 'redemption_date' => now() 
             ]);
+
+            // Log point history for earned bonus point entry reward
+            foreach ($bonusPointRewards as $key => $reward) {
+                $currentPoint = $customer->point;
+                $pointAfterBonus = $currentPoint + $reward['bonus_point'];
+                
+                PointHistory::create([ 
+                    'product_id' => null, 
+                    'payment_id' => null, 
+                    'type' => 'Earned', 
+                    'point_type' => 'Entry Reward', 
+                    'qty' => 0, 
+                    'amount' => $reward['bonus_point'], 
+                    'old_balance' => $currentPoint, 
+                    'new_balance' => $pointAfterBonus, 
+                    'customer_id' => $customer->id, 
+                    'handled_by' => $request->user_id, 
+                    'redemption_date' => now() 
+                ]);
+                
+                // Update customer points and total spending
+                $customer->update(['point' => $pointAfterBonus]);
+                $customer->refresh();
+
+                $customerReward = CustomerReward::find($reward['id']);
+                $customerReward->update(['status' => 'Redeemed']);
+            }
         };
 
         // Update payment status
@@ -1717,7 +1754,9 @@ class OrderController extends Controller
         $pointHistories = PointHistory::with([
                                             'payment:id,order_id,point_earned',
                                             'payment.order:id,order_no',
-                                            'redeemableItem:id,product_name'
+                                            'redeemableItem:id,product_name',
+                                            'customer:id,ranking',
+                                            'customer.rank:id,name'
                                         ]) 
                                         ->where('customer_id', $id)
                                         ->orderBy('created_at','desc')
@@ -1859,6 +1898,7 @@ class OrderController extends Controller
                 'product_id' => $redeemableItem->id,
                 'payment_id' => null,
                 'type' => 'Used',
+                'point_type' => 'Redeem', 
                 'qty' => $validatedData['redeem_qty'],
                 'amount' => $pointSpent,
                 'old_balance' => $customer->point,
@@ -2063,6 +2103,7 @@ class OrderController extends Controller
             };
 
             if (in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
+                $order = Order::find($id);
                 $order->update(['voucher_id' => $tierReward->id]);
                 $selectedReward->update(['status' => 'Redeemed']);
             };

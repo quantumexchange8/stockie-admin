@@ -1,6 +1,6 @@
 <script setup>
 import { UndetectableIllus } from '@/Components/Icons/illus';
-import { ReceiptIcon } from '@/Components/Icons/solid';
+import { PointsIcon, ReceiptIcon } from '@/Components/Icons/solid';
 import TabView from '@/Components/TabView.vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -34,6 +34,13 @@ const formatPoints = (points) => {
 const earnedHistories = computed(() => redeemHistory.value.filter(item => item.type === 'Earned'));
 const usedHistories = computed(() => redeemHistory.value.filter(item => item.type === 'Used'));
 
+const getRecordTitle = (item) => {
+    switch (item.type) {
+        case 'Earned': return item.point_type === 'Order' ? item.payment.order.order_no : `${item.customer.rank.name} Entry Reward`;
+        case 'Used': return item.point_type === 'Redeem' ? item.redeemable_item.product_name : '';
+    }
+}
+
 onMounted(() => getRedeemHistory())
 </script>
 
@@ -52,7 +59,8 @@ onMounted(() => getRedeemHistory())
                                     <div class="w-3/4 flex flex-col items-start gap-3">
                                         <div class="flex items-start gap-3 self-stretch">
                                             <div class="flex w-[60px] h-[60px] justify-center items-center gap-[15px] rounded-[4.5px] border-[1.5px] border-solid border-primary-200 bg-primary-50" v-if="item.type === 'Earned'">
-                                                <ReceiptIcon />
+                                                <ReceiptIcon class="text-primary-900" v-if="item.point_type === 'Order'" />
+                                                <PointsIcon class="text-primary-900" v-else/>
                                             </div>
                                             <img
                                                 v-else
@@ -61,8 +69,8 @@ onMounted(() => getRedeemHistory())
                                                 class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"
                                             >
                                             <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0] self-stretch">
-                                                <span class="overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ item.type === 'Earned' ? item.payment.order.order_no : item.redeemable_item.product_name }}</span>
-                                                <span class="text-primary-950 text-base font-medium" v-if="item.type === 'Used'">x{{ item.qty }}</span>
+                                                <span class="overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ getRecordTitle(item) }}</span>
+                                                <span class="text-primary-950 text-base font-medium" v-if="item.type === 'Used' && item.point_type === 'Redeem'">x{{ item.qty }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -98,7 +106,7 @@ onMounted(() => getRedeemHistory())
                                                 <ReceiptIcon />
                                             </div>
                                             <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0] self-stretch">
-                                                <span class="overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ item.type === 'Earned' ? item.payment.order.order_no : item.redeemable_item.product_name }}</span>
+                                                <span class="overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ getRecordTitle(item) }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -135,8 +143,8 @@ onMounted(() => getRedeemHistory())
                                                 class="w-[60px] h-[60px] rounded-[4.5px] border-[0.3px] border-solid border-grey-100 bg-primary-25"
                                             >
                                             <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0] self-stretch">
-                                                <span class="overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ item.redeemable_item.product_name }}</span>
-                                                <span class="text-primary-950 text-base font-medium">x{{ item.qty }}</span>
+                                                <span class="overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ getRecordTitle(item) }}</span>
+                                                <span class="text-primary-950 text-base font-medium" v-if="item.point_type === 'Redeem'">x{{ item.qty }}</span>
                                             </div>
                                         </div>
                                     </div>

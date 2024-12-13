@@ -119,7 +119,7 @@ class ProductController extends Controller
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) return redirect()->back()->withErrors($allItemErrors)->withInput();
 
-        $this->createProductAndItems($validatedData, $validatedProductItems);
+        $this->createProductAndItems($request, $validatedData, $validatedProductItems);
 
         $message = [ 
             'severity' => 'success', 
@@ -180,9 +180,9 @@ class ProductController extends Controller
                 'qty' => $item['qty'],
             ];
         }
-
+        // dd($validatedData, $validatedProductItems);
         foreach ($validatedData as $key => $value) {
-            $this->createProductAndItems($validatedData[$key], [$validatedProductItems[$key]]);
+            $this->createProductAndItems($request, $validatedData[$key], [$validatedProductItems[$key]]);
         }
 
         $message = [ 
@@ -193,8 +193,9 @@ class ProductController extends Controller
         return redirect()->back()->with(['message' => $message]);
     }
 
-    private function createProductAndItems($validatedData, $validatedProductItems)
+    private function createProductAndItems($request, $validatedData, $validatedProductItems)
     {
+        // dd($request->hasFile('image'));
         $newProduct = Product::create([
             'product_name' => $validatedData['product_name'],
             'bucket' => $validatedData['bucket'] ? 'set' : 'single',
@@ -206,8 +207,12 @@ class ProductController extends Controller
             'availability' => 'Available',
         ]);
 
-        if (isset($validatedData['image'])) {
+        if ($request->hasFile('image')) {
             $newProduct->addMedia($validatedData['image'])->toMediaCollection('product');
+        }
+
+        if (isset($validatedData['image']) && gettype($validatedData['image']) === 'string') {
+            $newProduct->addMediaFromUrl($validatedData['image'])->toMediaCollection('product');
         }
 
         if (count($validatedProductItems) > 0) {

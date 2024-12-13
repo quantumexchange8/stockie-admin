@@ -119,11 +119,11 @@ const formSubmit = async () => {
 
                 // Reset the form and emit necessary events
                 form.reset();
-                form.value = {
-                    name: '',
-                    image: '',
-                    items: [],
-                };
+                // form.value = {
+                //     name: '',
+                //     image: '',
+                //     items: [],
+                // };
                 close('leave');
                 emit('update:rows', response.data.inventories);
                 emit('addAsProducts', response.data.latestInventory);
@@ -265,13 +265,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.item_code'] : ''"
                                     v-model="item.item_code"
                                 />
-                                <!-- <NumberCounter
-                                    :inputName="'item_'+ i +'_stock_qty'"
-                                    :labelText="'Stock (per unit)'"
-                                    :errorMessage="Object.keys(form.errors).length > 0 ? form.errors['items.' + i + '.stock_qty']  : ''"
-                                    v-model="item.stock_qty"
-                                    class="col-span-full md:col-span-3"
-                                /> -->
                                 <TextInput
                                     :inputName="'item_'+ i +'_stock_qty'"
                                     :labelText="'Current stock'"

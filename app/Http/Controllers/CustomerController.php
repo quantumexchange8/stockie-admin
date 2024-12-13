@@ -328,14 +328,16 @@ class CustomerController extends Controller
         $pointHistories = PointHistory::with([
                                             'payment:id,order_id,point_earned',
                                             'payment.order:id,order_no',
-                                            'redeemableItem:id,product_name'
+                                            'redeemableItem:id,product_name',
+                                            'customer:id,ranking',
+                                            'customer.rank:id,name'
                                         ]) 
                                         ->where('customer_id', $id)
                                         ->orderBy('created_at','desc')
                                         ->get();
 
         $pointHistories->each(function ($record) {
-        $record->image = $record->redeemableItem?->getFirstMediaUrl('product');
+            $record->image = $record->redeemableItem?->getFirstMediaUrl('product');
         });
 
         return response()->json($pointHistories);
