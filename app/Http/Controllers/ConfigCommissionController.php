@@ -132,13 +132,12 @@ class ConfigCommissionController extends Controller
 
     public function productDetails(Request $request, String $id)
     {
+        // dd($id);
         $message = $request->session()->get('message');
 
         if($id)
         {
-            $comm = ConfigEmployeeComm::find($id)
-                                        ->select('comm_type', 'rate', 'id')
-                                        ->first();
+            $comm = ConfigEmployeeComm::find($id);
 
             $commItems = ConfigEmployeeCommItem::where('comm_id', $id)
                                                 ->select('comm_id', 'item')

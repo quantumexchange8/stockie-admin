@@ -63,7 +63,7 @@ class ConfigEmployeeIncProgController extends Controller
         $incentive = ConfigIncentive::create([
             'type' => $request->comm_type['value'],
             'rate' => $rate,
-            'effective_date' => Carbon::parse($request->effective_date)->startOfDay()->format('Y-m-d H:i:s'),
+            'effective_date' => Carbon::parse($request->effective_date)->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
             'recrurring_on' => $request->recurring_on['value'],
             'monthly_sale' => round($request->monthly_sale, 2),
         ]);

@@ -36,13 +36,13 @@ const recentRedemptions = computed(() => {
         <div class="flex flex-col gap-3 self-stretch" v-if="recentRedemptions.length > 0">
             <div class="flex flex-col justify-between items-start self-stretch gap-1 overflow-x-auto">
                 <div 
-                    class="w-full flex flex-nowrap items-center justify-between p-2 min-w-[440px] odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900"
+                    class="w-full grid grid-cols-4 whitespace-nowrap items-center justify-between p-2 min-w-[440px] odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900"
                     v-for="(item, index) in recentRedemptions" :key="index"
                 >
-                    <span class="text-sm text-grey-900 font-medium">{{ dayjs(item.redemption_date).format('YYYY/MM/DD') }}</span>
-                    <span class="text-sm text-grey-900 font-medium">{{ item.product_name }}</span>  
-                    <span class="text-sm text-grey-900 font-medium">x {{ item.qty }}</span>
-                    <span class="text-sm text-grey-900 font-medium">{{ item.handled_by.name }}</span>
+                    <span class="text-sm text-grey-900 font-medium col-span-1">{{ dayjs(item.redemption_date).format('YYYY/MM/DD') }}</span>
+                    <span class="text-sm text-grey-900 font-medium col-span-1 text-center">{{ item.product_name }}</span>  
+                    <span class="text-sm text-grey-900 font-medium col-span-1 text-center">x {{ item.qty }}</span>
+                    <span class="text-sm text-grey-900 font-medium col-span-1 text-center">{{ item.handled_by.name }}</span>
                 </div>
             </div>
 

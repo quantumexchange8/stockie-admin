@@ -7,7 +7,7 @@ import Button from "@/Components/Button.vue";
 import DateInput from "@/Components/Date.vue";
 import Dropdown from "@/Components/Dropdown.vue";
 import TextInput from "@/Components/TextInput.vue";
-import { Calendar, UploadLogoIcon } from "@/Components/Icons/solid";
+import { Calendar, DeleteIcon, UploadLogoIcon } from "@/Components/Icons/solid";
 import Accordion from "@/Components/Accordion.vue";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
 import { useCustomToast, useInputValidator } from "@/Composables";
@@ -47,6 +47,10 @@ const toggleMinPurchase = (index) => {
 };
 
 const addReward = () => rewardList.value.push(emptyReward());
+
+const removeReward = (id) => {
+    rewardList.value.splice(id, 1);
+}
 
 const toggleReward = () => {
     const isActive = form.reward === "active";
@@ -236,7 +240,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
                 <!-- Rewards section -->
                 <div class="flex flex-col gap-6" v-if="form.reward === 'active'">
-                    <Accordion
+                    <!-- <Accordion
                         v-for="(reward, index) in rewardList"
                         :key="index"
                         accordionClasses="gap-4"
@@ -248,130 +252,139 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         </template>
 
                         <template #body>
-                            <div class="flex flex-col gap-4">
-                                <!-- Reward type selection -->
-                                <Dropdown
-                                    :labelText="rewardList[index].reward_type !== '' ? `Reward Type ${index + 1}` : 'Select Reward Type'"
-                                    :placeholder="'Select'"
-                                    :inputArray="rewardOption"
-                                    :inputName="'reward_type_' + index"
-                                    :hint-text="'The reward can only be redeemed once.'"
-                                    :dataValue="reward.reward_type"
-                                    v-model="reward.reward_type"
-                                    :errorMessage="form.errors ? form.errors['items.' + index + '.reward_type']  : ''"
-                                    @onChange="resetReward($event, index)"
+                        </template>
+                    </Accordion> -->
+                    <div class="" v-for="(reward, index) in rewardList" :key="index">
+                        <div class="flex flex-col gap-4 self-stretch">
+                            <div class="flex justify-between items-center self-stretch">
+                                <span class="text-md font-bold text-grey-900">Reward {{ index + 1 }}</span>
+                                <DeleteIcon 
+                                    class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
+                                    @click="removeReward(index)"
                                 />
+                            </div>
+                            <!-- Reward type selection -->
+                            <Dropdown
+                                :labelText="rewardList[index].reward_type !== '' ? `Reward Type ${index + 1}` : 'Select Reward Type'"
+                                :placeholder="'Select'"
+                                :inputArray="rewardOption"
+                                :inputName="'reward_type_' + index"
+                                :hint-text="'The reward can only be redeemed once.'"
+                                :dataValue="reward.reward_type"
+                                v-model="reward.reward_type"
+                                :errorMessage="form.errors ? form.errors['items.' + index + '.reward_type']  : ''"
+                                @onChange="resetReward($event, index)"
+                            />
 
-                                <div v-if="reward.reward_type !== null && reward.reward_type !== undefined">
-                                    <div class="flex flex-col gap-3">
-                                        <!--Discount Amount & Discount Percent -->
-                                        <template v-if="reward.reward_type === 'Discount (Amount)' || reward.reward_type === 'Discount (Percentage)'">
-                                            <div class="flex gap-3">
-                                                <TextInput
-                                                    :iconPosition="reward.reward_type === 'Discount (Amount)' ? 'left' : 'right'"
-                                                    :inputName="'discount_' + index"
-                                                    :errorMessage="form.errors ? form.errors['items.' + index + '.discount']  : ''"
-                                                    :labelText="reward.reward_type === 'Discount (Amount)' ? 'Discount Amount' : 'Discount Percentage'"
-                                                    inputId="discount"
-                                                    v-model="reward.discount"
-                                                    @keypress="isValidNumberKey($event, true)"
-                                                >
-                                                    <template #prefix>{{ reward.reward_type === 'Discount (Amount)' ? 'RM' : '%' }}</template>
-                                                </TextInput>
-                                                <TextInput
-                                                    v-if="reward.min_purchase === 'active'"
-                                                    :inputName="'min_purchase_amount_' + index"
-                                                    :iconPosition="'left'"
-                                                    :errorMessage="form.errors ? form.errors['items.' + index + '.min_purchase_amount']  : ''"
-                                                    labelText="Minimum purchase amount"
-                                                    inputId="min_purchase_amount"
-                                                    v-model="reward.min_purchase_amount"
-                                                    @keypress="isValidNumberKey($event, true)"
-                                                >
-                                                    <template #prefix>RM</template>
-                                                </TextInput>
-                                            </div>
-                                            <div class="justify-end flex gap-3">
-                                                <p class="font-normal">With minimum purchase</p>
-                                                <Toggle
-                                                    class="xl:col-span-2"
-                                                    :checked="reward.min_purchase === 'active'"
-                                                    :inputName="'min_purchase'"
-                                                    :errorsMessage="form.errors ? form.errors['items.' + index + '.min_purchase']  : ''"
-                                                    inputId="min_purchase"
-                                                    v-model="reward.min_purchase"
-                                                    @change="() => toggleMinPurchase(index)"
-                                                />
-                                            </div>
-                                        </template>
-                                        
-                                        <!--Bonus Point -->
-                                        <template v-if="reward.reward_type === 'Bonus Point'">
+                            <div v-if="reward.reward_type !== null && reward.reward_type !== undefined">
+                                <div class="flex flex-col gap-3">
+                                    <!--Discount Amount & Discount Percent -->
+                                    <template v-if="reward.reward_type === 'Discount (Amount)' || reward.reward_type === 'Discount (Percentage)'">
+                                        <div class="flex gap-3">
                                             <TextInput
-                                                :labelText="'Bonus point get'"
-                                                :placeholder="'10'"
-                                                :iconPosition="'right'"
-                                                v-model="reward.bonus_point"
-                                                :inputName="'bonus_point_' + index"
-                                                :errorMessage="form.errors ? form.errors['items.' + index + '.bonus_point']  : ''"
-                                                @keypress="isValidNumberKey($event, false)"
+                                                :iconPosition="reward.reward_type === 'Discount (Amount)' ? 'left' : 'right'"
+                                                :inputName="'discount_' + index"
+                                                :errorMessage="form.errors ? form.errors['items.' + index + '.discount']  : ''"
+                                                :labelText="reward.reward_type === 'Discount (Amount)' ? 'Discount Amount' : 'Discount Percentage'"
+                                                inputId="discount"
+                                                v-model="reward.discount"
+                                                @keypress="isValidNumberKey($event, true)"
                                             >
-                                                <template #prefix>pts</template>
+                                                <template #prefix>{{ reward.reward_type === 'Discount (Amount)' ? 'RM' : '%' }}</template>
                                             </TextInput>
-                                        </template>
+                                            <TextInput
+                                                v-if="reward.min_purchase === 'active'"
+                                                :inputName="'min_purchase_amount_' + index"
+                                                :iconPosition="'left'"
+                                                :errorMessage="form.errors ? form.errors['items.' + index + '.min_purchase_amount']  : ''"
+                                                labelText="Minimum purchase amount"
+                                                inputId="min_purchase_amount"
+                                                v-model="reward.min_purchase_amount"
+                                                @keypress="isValidNumberKey($event, true)"
+                                            >
+                                                <template #prefix>RM</template>
+                                            </TextInput>
+                                        </div>
+                                        <div class="justify-end flex gap-3">
+                                            <p class="font-normal">With minimum purchase</p>
+                                            <Toggle
+                                                class="xl:col-span-2"
+                                                :checked="reward.min_purchase === 'active'"
+                                                :inputName="'min_purchase'"
+                                                :errorsMessage="form.errors ? form.errors['items.' + index + '.min_purchase']  : ''"
+                                                inputId="min_purchase"
+                                                v-model="reward.min_purchase"
+                                                @change="() => toggleMinPurchase(index)"
+                                            />
+                                        </div>
+                                    </template>
+                                    
+                                    <!--Bonus Point -->
+                                    <template v-if="reward.reward_type === 'Bonus Point'">
+                                        <TextInput
+                                            :labelText="'Bonus point get'"
+                                            :placeholder="'10'"
+                                            :iconPosition="'right'"
+                                            v-model="reward.bonus_point"
+                                            :inputName="'bonus_point_' + index"
+                                            :errorMessage="form.errors ? form.errors['items.' + index + '.bonus_point']  : ''"
+                                            @keypress="isValidNumberKey($event, false)"
+                                        >
+                                            <template #prefix>pts</template>
+                                        </TextInput>
+                                    </template>
 
-                                        <!--Free Item-->
-                                        <template v-if="reward.reward_type === 'Free Item'">
-                                            <div class="flex gap-4 items-center">
-                                                <Dropdown
-                                                    :labelText="'Select a product'"
-                                                    imageOption
-                                                    :inputArray="products"
-                                                    :inputName="'free_item_' + index"
-                                                    :errorMessage="form.errors ? form.errors['items.' + index + '.free_item']  : ''"
-                                                    v-model="reward.free_item"
-                                                    placeholder="Select"
-                                                    class="w-full"
-                                                />
-                                            </div>
-                                        </template>
+                                    <!--Free Item-->
+                                    <template v-if="reward.reward_type === 'Free Item'">
+                                        <div class="flex gap-4 items-center">
+                                            <Dropdown
+                                                :labelText="'Select a product'"
+                                                imageOption
+                                                :inputArray="products"
+                                                :inputName="'free_item_' + index"
+                                                :errorMessage="form.errors ? form.errors['items.' + index + '.free_item']  : ''"
+                                                v-model="reward.free_item"
+                                                placeholder="Select"
+                                                class="w-full"
+                                            />
+                                        </div>
+                                    </template>
 
-                                        <!-- All except Bonus Point -->
-                                        <!-- *DNR*                                          
-                                        <template v-if="reward.reward_type !== 'Bonus Point'">
-                                            <div class="flex flex-wrap sm:flex-nowrap gap-3 items-start">
-                                                <Dropdown
-                                                    labelText="Valid Period"
-                                                    :placeholder="'Select'"
-                                                    :inputArray="periodOption"
-                                                    :dataValue="reward.valid_period"
-                                                    inputId="valid_period"
-                                                    :inputName="'valid_period_' + index"
-                                                    :errorMessage="form.errors ? form.errors['items.' + index + '.valid_period_from']  : ''"
-                                                    v-model="reward.valid_period"
-                                                    @onChange="updateValidPeriod(reward, $event)"
-                                                    :iconOptions="{
-                                                        'Customise range...': Calendar,
-                                                    }"
-                                                />
+                                    <!-- All except Bonus Point -->
+                                    <!-- *DNR*                                          
+                                    <template v-if="reward.reward_type !== 'Bonus Point'">
+                                        <div class="flex flex-wrap sm:flex-nowrap gap-3 items-start">
+                                            <Dropdown
+                                                labelText="Valid Period"
+                                                :placeholder="'Select'"
+                                                :inputArray="periodOption"
+                                                :dataValue="reward.valid_period"
+                                                inputId="valid_period"
+                                                :inputName="'valid_period_' + index"
+                                                :errorMessage="form.errors ? form.errors['items.' + index + '.valid_period_from']  : ''"
+                                                v-model="reward.valid_period"
+                                                @onChange="updateValidPeriod(reward, $event)"
+                                                :iconOptions="{
+                                                    'Customise range...': Calendar,
+                                                }"
+                                            />
 
-                                                <DateInput
-                                                    v-if="reward.valid_period === 0"
-                                                    :labelText="''"
-                                                    :inputName="'date_range_' + index"
-                                                    :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
-                                                    :range="true"
-                                                    class="sm:pt-[22px]"
-                                                    @onChange="updateValidPeriod(reward, $event)"
-                                                    v-model="reward.date_range"
-                                                />
-                                            </div>
-                                        </template> -->
-                                    </div>
+                                            <DateInput
+                                                v-if="reward.valid_period === 0"
+                                                :labelText="''"
+                                                :inputName="'date_range_' + index"
+                                                :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                                                :range="true"
+                                                class="sm:pt-[22px]"
+                                                @onChange="updateValidPeriod(reward, $event)"
+                                                v-model="reward.date_range"
+                                            />
+                                        </div>
+                                    </template> -->
                                 </div>
                             </div>
-                        </template>
-                    </Accordion>
+                        </div>
+                    </div>
 
                     <!-- Button to add more rewards -->
                     <Button

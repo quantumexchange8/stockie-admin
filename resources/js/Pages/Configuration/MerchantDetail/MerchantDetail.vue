@@ -453,16 +453,21 @@ watch(editTaxForm, () => {
                             <div class="flex size-full"
                                 :class="isNoneEdited ? '!items-center' : '!items-start'"
                             >
-                                <DeleteIcon
+                                <!-- <DeleteIcon
                                     class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
                                     v-show="!isEditingName && !isEditingPercentage && !isAddTaxClicked && isNoneEdited"
                                     @click="openDeleteTax(taxes.id)"
-                                />
+                                /> -->
                                 <DeleteIcon
                                     class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
                                     v-show="editTaxForm.items.length && isEdited(taxes.id)"
-                                    @click="isAddTaxClicked ? quitAddingTax($event) : stopEditing($event, taxes.id)"
+                                    @click="stopEditing($event, taxes.id)"
                                 />
+                                <!-- <DeleteIcon
+                                    class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
+                                    v-show="editTaxForm.items.length && isEdited(taxes.id)"
+                                    @click="isAddTaxClicked ? quitAddingTax($event) : stopEditing($event, taxes.id)"
+                                /> -->
                             </div>
                         </template>
                         <template #name="taxes">
@@ -558,7 +563,7 @@ watch(editTaxForm, () => {
                     </Table>
 
                     <div>
-                        <Button 
+                        <!-- <Button 
                             :variant="'tertiary'" 
                             :size="'lg'" 
                             @click="addTax($event)" 
@@ -567,13 +572,13 @@ watch(editTaxForm, () => {
                         >
                             <PlusIcon />
                             Tax Type
-                        </Button>
+                        </Button> -->
                         <Button 
                             :variant="'primary'" 
                             :size="'lg'" 
                             @click="taxSubmit()"
                             :disabled="editTaxForm.processing || !isFormValid"
-                            v-else
+                            v-if="isEditingName || isEditingPercentage || !isNoneEdited"
                         >
                             <!-- Save Changes -->
                             {{ isDirty ? 'Save Changes' : 'Discard' }}

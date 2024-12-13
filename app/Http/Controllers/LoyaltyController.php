@@ -355,8 +355,8 @@ class LoyaltyController extends Controller
                                         'spent' => $payments->sum('grand_total'),
                                     ];
                                 })
-                                ->sortByDesc('full_name')
-                                ->values(); 
+                                ->sortBy('full_name')
+                                ->values();
         $names = $monthlySpent->pluck('full_name')->toArray();
         $spendings = $monthlySpent->pluck('spent')->toArray();
 

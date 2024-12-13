@@ -36,16 +36,34 @@ const props = defineProps({
 });
 
 const date_filter = ref(props.dateFilter); 
-
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
+const searchQuery = ref('');    
+const rows = ref(props.rows);
 
 const emit = defineEmits(["applyDateFilter"]);
 
 watch(() => date_filter.value, (newValue) => {
     emit('applyDateFilter', newValue);
 })
+
+watch(() => props.rows, (newValue) => {
+    rows.value = newValue;
+}, { immediate: true })
+
+watch(() => searchQuery.value, (newValue) => {
+    if(newValue === '') {
+        rows.value = props.rows;
+        return;
+    }
+    const query = newValue.toLowerCase();
+
+    rows.value = props.rows.filter(row => {
+        const redeemedItem = row.redeemable_item.product_name.toLowerCase();
+        const redeemedBy = row.handled_by.name.toLowerCase();
+
+        return  redeemedItem.includes(query) ||
+                redeemedBy.includes(query);
+    });
+}, { immediate: true });
 </script>
 
 <template>
@@ -54,7 +72,7 @@ watch(() => date_filter.value, (newValue) => {
             <SearchBar
                 placeholder="Search"
                 :showFilter="false"
-                v-model="filters['global'].value"
+                v-model="searchQuery"
                 class="col-span-full md:col-span-7"
             />
             <DateInput
@@ -75,7 +93,6 @@ watch(() => date_filter.value, (newValue) => {
             :rowType="rowType"
             :actions="actions"
             :searchFilter="true"
-            :filters="filters"
             minWidth="min-w-[810px]"
         >
             <template #empty>

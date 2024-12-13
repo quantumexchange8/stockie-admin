@@ -167,7 +167,6 @@ function customTooltipHandler(context) {
         tooltipEl.style.opacity = 0;
         return;
     }
-
         // Clear previous alignment classes
         tooltipEl.classList.remove('top', 'bottom', 'center', 'no-transform');
 
@@ -179,6 +178,7 @@ function customTooltipHandler(context) {
 
     if (tooltipModel.body) {
         const body = tooltipModel.body.map(item => item.lines);
+        const flatBody = body.flat().map(line => Number(line.replace(/,/g, '')));
 
         let innerHtml = `<div style="
             display: flex; 
@@ -197,27 +197,27 @@ function customTooltipHandler(context) {
             font-size: 16px; 
             font-weight: 600; 
             text-align: right;
-        ">RM ${body}</div>`;
+        ">RM ${parseFloat(flatBody).toFixed(2)}</div>`;
 
         if (tooltipModel.title) {
-        const title = tooltipModel.title.join('<br>');
-        innerHtml += `<div style="
-            font-size: 12px; 
-            font-weight: 400; 
-            text-align: right;
-            color: #7E171B;
-            margin-bottom: 8px; 
-            display: flex;
-            gap: 4px;
-        ">
-        <div style="
-            width: 20px;
-            height: 20px;
-            border-radius: 20px;
-            background: #C1141B;
-            border: 1px solid var(--White-fixed, #FFF);
-        "></div>
-        ${title}</div>`;
+            const title = tooltipModel.title.join('<br>');
+            innerHtml += `<div style="
+                font-size: 12px; 
+                font-weight: 400; 
+                text-align: right;
+                color: #7E171B;
+                margin-bottom: 8px; 
+                display: flex;
+                gap: 4px;
+            ">
+            <div style="
+                width: 20px;
+                height: 20px;
+                border-radius: 20px;
+                background: #C1141B;
+                border: 1px solid var(--White-fixed, #FFF);
+            "></div>
+            ${title}</div>`;
         }
 
         innerHtml += '</div>';
@@ -251,7 +251,6 @@ const customPlugin = {
         if (chart.hoveredIndex === undefined) {
             chart.hoveredIndex = null;
         }
-
         chart.update();
     }
 };
