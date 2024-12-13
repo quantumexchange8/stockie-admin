@@ -114,8 +114,9 @@ const pendingServeItems = computed(() => {
             total_qty,
             total_served_qty
         };
-    });
+    }).filter((undeleted) => undeleted.status !== 'Cancelled');
 });
+
 
 const getKeptQuantity = (subItem) => {
     return subItem.keep_items?.reduce((totalKeeps, keepItem) => totalKeeps + parseInt(keepItem.oldest_keep_history.qty) + (parseFloat(keepItem.oldest_keep_history.cm) > 0 ? 1 : 0), 0) ?? 0;
@@ -285,7 +286,7 @@ const getKeepItemName = (item) => {
                     <img 
                         :src="order.customer.image ? order.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                         alt=""
-                        class="rounded-full size-20"
+                        class="rounded-full size-20 object-contain"
                     >
                     <div class="flex flex-col gap-y-2 items-center">
                         <p class="text-primary-900 text-base font-semibold">{{ order.customer.full_name }}</p>
@@ -303,11 +304,10 @@ const getKeepItemName = (item) => {
                             <div class="flex flex-col gap-y-2 py-3" v-for="(item, index) in pendingServeItems" :key="index">
                                 <div class="flex justify-between items-center gap-x-3">
                                     <div class="flex flex-nowrap gap-x-3 items-center">
-                                        <!-- <div class="p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                         <img 
                                             :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                             alt=""
-                                            class="size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                            class="size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
                                         >
                                         <div class="flex flex-col gap-y-2 items-start justify-center self-stretch">
                                             <div class="flex flex-nowrap gap-x-2 items-center">

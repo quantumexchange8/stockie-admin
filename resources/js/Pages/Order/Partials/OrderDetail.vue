@@ -67,7 +67,7 @@ const closeDrawer = () => {
 
 const openOverlay = (event, item) => {
     selectedItem.value = item;
-    
+
     if (selectedItem.value) {
         form.order_item_id = selectedItem.value.id;
         form.point = selectedItem.value.product.point * selectedItem.value.item_qty;
@@ -75,7 +75,7 @@ const openOverlay = (event, item) => {
         selectedItem.value.sub_items.forEach(sub_item => {
             form.items.push({ 
                 sub_item_id: sub_item.id,
-                serving_qty: 0,
+                serving_qty: selectedItem.value.total_qty - selectedItem.value.total_served_qty,
             })
         });
         op.value.show(event);
@@ -262,7 +262,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                 <img 
                                     :src="user.image ? user.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt=""
-                                    class="size-6 rounded-full"
+                                    class="size-6 rounded-full object-contain"
                                 >
                              </template>
                             <p class="text-grey-900 text-base font-medium" :class="{'!text-grey-300': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0].full_name : 'No order yet' }}</p>
@@ -303,7 +303,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt="OrderItemImage"
-                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
                                     >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
@@ -350,7 +350,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt="OrderItemImage"
-                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
                                     >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
@@ -374,7 +374,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                         <img 
                                             :src="item.handled_by.image ? item.handled_by.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                             alt=""
-                                            class="p-2 size-4 rounded-full border-[0.3px] border-grey-100"
+                                            class="p-2 size-4 rounded-full border-[0.3px] border-grey-100 object-contain"
                                         >
                                         <p class="text-xs text-grey-900 font-medium">{{ item.handled_by.full_name }}</p>
                                     </div>

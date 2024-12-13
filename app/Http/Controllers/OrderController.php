@@ -1527,9 +1527,14 @@ class OrderController extends Controller
             $oldRanking = $customer->ranking;
 
             // Determine the new rank based on the new total spending 
-            $newRanking = Ranking::where('min_amount', '<=', $newTotalSpending) 
-                                    ->orderBy('min_amount', 'desc') 
-                                    ->value('id');
+            $newRankingDetails = Ranking::where('min_amount', '<=', $newTotalSpending)
+                                ->select('id', 'name')
+                                ->orderBy('min_amount', 'desc')
+                                ->first();
+            
+            $newRankingDetails->image = $newRankingDetails->getFirstMediaUrl('ranking');
+
+            $newRanking = $newRankingDetails->value('id');
 
             // Update customer points and total spending
             $customer->update([
@@ -1585,7 +1590,11 @@ class OrderController extends Controller
             $tab->update(['status' => 'Pending Clearance']);
         });
 
-        return response()->json($customer ? $newPointBalance : 'guest');
+        // return response()->json($customer ? $newPointBalance : 'guest');
+        return response()->json($customer ? ([
+            'newPointBalance' => $newPointBalance,
+            'newRanking' => $newRankingDetails,
+        ]) : []);
     }
 
     /**

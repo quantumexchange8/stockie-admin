@@ -16,7 +16,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones', 'update:customer-point']);
+const emit = defineEmits(['close', 'fetchZones', 'update:customer-point', 'update:customer-rank']);
 
 const order = ref(props.order);
 const paymentDetails = ref({});
@@ -68,7 +68,8 @@ const formSubmit = async () => {
 
     try {
         const response = await axios.put(`/order-management/orders/updateOrderPayment/${paymentDetails.value.id}`, form);
-        let customerPointBalance = response.data;
+        let customerPointBalance = response.data.newPointBalance;
+        let customerRanking = response.data.newRanking;
         
         setTimeout(() => {
             showMessage({ 
@@ -79,7 +80,8 @@ const formSubmit = async () => {
         form.reset();
         emit('close', true);
         emit('fetchZones');
-        if (customerPointBalance !== 'guest') emit('update:customer-point', customerPointBalance);
+        if (customerPointBalance !== undefined) emit('update:customer-point', customerPointBalance);
+        if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
     } catch (error) {
         console.error(error);
         setTimeout(() => {
