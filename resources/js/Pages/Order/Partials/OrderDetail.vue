@@ -75,10 +75,8 @@ const openOverlay = (event, item) => {
         selectedItem.value.sub_items.forEach(sub_item => {
             form.items.push({ 
                 sub_item_id: sub_item.id,
-                serving_qty: selectedItem.value.product.bucket === 'set' ? sub_item.item_qty - sub_item.serve_qty : (sub_item.item_qty * selectedItem.value.total_qty) - sub_item.serve_qty,
+                serving_qty: (sub_item.item_qty * selectedItem.value.item_qty) - sub_item.serve_qty,
             })
-            console.log(selectedItem.value);
-            console.log(sub_item);
         });
         op.value.show(event);
     }
