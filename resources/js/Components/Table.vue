@@ -387,6 +387,7 @@ onMounted(() => {
 
             <Column 
                 :field="col.field"
+                :filterField="col.field"
                 :header="col.header"
                 :sortable="col.sortable"
                 v-for="col of columns" :key="col.field"
