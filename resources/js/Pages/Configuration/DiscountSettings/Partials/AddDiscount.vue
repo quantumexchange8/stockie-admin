@@ -169,7 +169,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <img 
                                 :src="products.image ? products.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt=""
-                                class="size-11"
+                                class="size-11 object-contain"
                             >
                             <div class="flex flex-col justify-center items-start flex-[1_0_0]">
                                 <span class="self-stretch overflow-hidden text-grey-900 text-ellipsis whitespace-nowrap text-sm font-medium">{{ products.product_name }}</span>
@@ -312,6 +312,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             @date-filter="dateFilter"
             :action="'add'"
             :selectedProducts="selectedProducts"
+            :dateFilter="form.discount_period ? form.discount_period : []"
         />
     </Modal>
 

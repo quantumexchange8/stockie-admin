@@ -113,53 +113,56 @@ const login = () => {
                 <span v-html="description" class="text-grey-900 text-base font-normal max-w-[440px]"></span>
             </div>
 
-            <Button
-                :type="'button'"
-                :size="'lg'"
-                @click="previousPage"
-                v-if="props.status === 404"
-                class="!w-fit"
-            >
-                Take me back
-            </Button>
+            <div class="flex items-start gap-4">
+                <Button
+                    :type="'button'"
+                    :size="'lg'"
+                    @click="previousPage"
+                    v-if="props.status === 404"
+                    class="!w-fit"
+                >
+                    Take me back
+                </Button>
 
-            <Button
-                :type="'button'"
-                :size="'lg'"
-                @click="refresh"
-                v-if="  props.status === 408 || 
-                        props.status === 400 || 
-                        props.status === 429 || 
-                        props.status === 500 || 
-                        props.status === 502"
-                class="!w-fit"
-            >
-                Refresh
-            </Button>
+                <Button
+                    :type="'button'"
+                    :size="'lg'"
+                    @click="refresh"
+                    v-if="  props.status === 408 || 
+                            props.status === 400 || 
+                            props.status === 429 || 
+                            props.status === 500 || 
+                            props.status === 502"
+                    class="!w-fit"
+                >
+                    Refresh
+                </Button>
 
-            <Button
-                :type="'button'"
-                :size="'lg'"
-                :variant="props.status === 403 ? 'primary' : 'secondary'"
-                @click="homepage"
-                v-if="  props.status === 400 ||
-                        props.status === 403 ||
-                        props.status === 429 ||
-                        props.status === 500 || 
-                        props.status === 502"
-            >
-                Go to home page
-            </Button>
+                <Button
+                    :type="'button'"
+                    :size="'lg'"
+                    :variant="props.status === 403 ? 'primary' : 'secondary'"
+                    @click="homepage"
+                    v-if="  props.status === 400 ||
+                            props.status === 403 ||
+                            props.status === 429 ||
+                            props.status === 500 || 
+                            props.status === 502"
+                    class="!w-fit"
+                >
+                    Go to home page
+                </Button>
 
-            <Button
-                :type="'button'"
-                :size="'lg'"
-                @click="login"
-                v-if="props.status === 401"
-                class="!w-fit"
-            >
-                Log in now
-            </Button>
+                <Button
+                    :type="'button'"
+                    :size="'lg'"
+                    @click="login"
+                    v-if="props.status === 401"
+                    class="!w-fit"
+                >
+                    Log in now
+                </Button>
+            </div>
         </div>
     </div>
 </template>

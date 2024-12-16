@@ -15,7 +15,8 @@ use Log;
 class ConfigDiscountController extends Controller
 {
     public function getDiscount(Request $request) {
-        // dd($request->all());
+        // dd($request->input('date'));
+        $dateFilter = $request->input('date');
 
         if($request->input('id') !== []){
             $currentDiscount = ConfigDiscount::select('id', 'discount_from', 'discount_to')
@@ -31,16 +32,31 @@ class ConfigDiscountController extends Controller
                                     ];
                                 });
         // $productsAvailable = Product::with('discountItems.discount')
-        $productsAvailable = Product::with([
-                                                'discountItems' => function ($query) {
-                                                    $query->select('id', 'discount_id', 'product_id', 'price_before', 'price_after');
-                                                },
-                                                'discountItems.discount' => function ($query) {
-                                                    $query->select('id', 'discount_from', 'discount_to');
-                                                }
-                                            ])
+        $productsAvailable = Product::when(!empty($dateFilter), function ($query) use ($dateFilter) {
+                                            $query->whereDoesntHave('discountItems.discount', function ($query) use ($dateFilter) {
+                                                $query->where(function ($q) use ($dateFilter) {
+                                                    if (count($dateFilter) === 1) {
+                                                        $q->whereBetween($dateFilter[0], ['discount_from', 'discount_to']);
+                                                    } else {
+                                                        $q->where(function ($subQuery) use ($dateFilter) {
+                                                            $subQuery->where('discount_from', '<=', $dateFilter[1])
+                                                                    ->where('discount_to', '>=', $dateFilter[0]);
+                                                        });
+                                                    }
+                                                });
+                                            });
+                                        })
+                                        ->with([
+                                            'discountItems' => function ($query) {
+                                                $query->select('id', 'discount_id', 'product_id', 'price_before', 'price_after');
+                                            },
+                                            'discountItems.discount' => function ($query) {
+                                                $query->select('id', 'discount_from', 'discount_to');
+                                            }
+                                        ])
                                         ->select('id', 'product_name', 'price', 'category_id', 'status', 'discount_id')
                                         ->get();
+        
 
         $productsAvailable->each(function ($productAvailable) use ($currentDiscount) {
             $productAvailable->image = $productAvailable->getFirstMediaUrl('product');

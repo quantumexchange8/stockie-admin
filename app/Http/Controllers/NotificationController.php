@@ -285,7 +285,7 @@ class NotificationController extends Controller
 
             if (isset($inventoryData['inventory_id'])) {
                 // Find the inventory items by inventory_id
-                $inventoryItems = IventoryItem::where('inventory_id', $inventoryData['inventory_id'])->get();
+                $inventoryItems = IventoryItem::where('id', $inventoryData['inventory_id'])->get();
         
                 $inventoryItems->each(function ($inventoryItem) use (&$inventoryData) {
                     // Loop through productItems for each inventoryItem

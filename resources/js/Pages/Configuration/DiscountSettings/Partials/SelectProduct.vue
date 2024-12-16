@@ -14,7 +14,9 @@ const props = defineProps({
     },
     action: String,
     discountId: Number,
+    dateFilter: [Date, Array],
 })
+
 const categories = ref([]);
 const products = ref([]);
 const filteredProducts = ref([]);
@@ -42,7 +44,8 @@ const getData = async () => {
         const response = await axios.get(`/configurations/getDiscount`, {
             method: 'GET',
             params: {
-                id: props.discountId
+                id: props.discountId,
+                date: props.dateFilter,
             }
         });
         categories.value = response.data.categories;

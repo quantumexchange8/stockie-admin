@@ -178,7 +178,7 @@ function customTooltipHandler(context) {
             font-size: 14px; 
             font-weight: bold; 
             margin-top: 5px;
-        ">RM ${parseFloat(body).toFixed(2)}</div>`;
+        ">RM ${body}</div>`;
 
         // Add tooltip title (e.g., waiter name)
         if (tooltipModel.title) {
