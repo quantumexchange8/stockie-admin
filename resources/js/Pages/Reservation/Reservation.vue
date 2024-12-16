@@ -26,7 +26,7 @@ const columns = ref([
     { field: 'res_time', header: 'Time', width: '7', sortable: false},
     { field: 'name', header: 'Name', width: '20', sortable: false},
     { field: 'pax', header: 'Pax', width: '6', sortable: false},
-    { field: 'table_no', header: 'Table / Room', width: '15', sortable: false},
+    { field: 'merged_table_no', header: 'Table / Room', width: '15', sortable: false},
     { field: 'phone', header: 'Contact No.', width: '15', sortable: false},
     { field: 'status', header: 'Status', width: '10', sortable: false},
     { field: 'action', header: 'Action', width: '8', edit: false, delete: false, sortable: false},

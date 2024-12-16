@@ -48,7 +48,20 @@ class ReservationController extends Controller
                                                 });
                                             })
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
-                                            ->get();
+                                            ->get()
+                                            ->map(function ($res) {
+                                                $tableData = $res->table_no; 
+                                                
+                                                if (is_array($tableData)) {
+                                                    $res['merged_table_no'] = collect($tableData)
+                                                        ->pluck('name') 
+                                                        ->implode(', '); 
+                                                } else {
+                                                    $res['merged_table_no'] = $tableData; 
+                                                }
+
+                                                return $res;
+                                            });            
 
         $upcomingReservations->each(function ($upcomingReservation){
             if($upcomingReservation->reservedFor){

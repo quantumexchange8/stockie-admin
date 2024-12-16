@@ -1,23 +1,19 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { usePage, useForm } from '@inertiajs/vue3';
 import { FilterMatchMode } from 'primevue/api';
 import Tag from '@/Components/Tag.vue';
 import Table from '@/Components/Table.vue';
 import Modal from '@/Components/Modal.vue';
-import Slider from "@/Components/Slider.vue";
 import Button from '@/Components/Button.vue';
-import Tapbar from '@/Components/Tapbar.vue';
-import Checkbox from '@/Components/Checkbox.vue';
 import SearchBar from "@/Components/SearchBar.vue";
 import { EmptyIllus } from '@/Components/Icons/illus.jsx';
-import { PlusIcon, EditIcon, DeleteIcon, ListViewIcon, GridViewIcon, UploadIcon, SquareStickerIcon, HorizontalDotsIcon, CheckIcon, CheckCircleIcon, NoShowIcon, HourGlassIcon, CircledTimesIcon, TimesIcon } from '@/Components/Icons/solid';
+import { PlusIcon, UploadIcon, SquareStickerIcon, HorizontalDotsIcon, CheckIcon, CheckCircleIcon, NoShowIcon, HourGlassIcon, CircledTimesIcon, TimesIcon } from '@/Components/Icons/solid';
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
 import dayjs from 'dayjs';
 import MakeReservationForm from './MakeReservationForm.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import ReservationDetail from './ReservationDetail.vue';
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import CheckInGuestForm from './CheckInGuestForm.vue';
 import { usePhoneUtils, useCustomToast, useFileExport } from '@/Composables/index.js';
 import CancelReservationForm from './CancelReservationForm.vue';
@@ -48,11 +44,11 @@ const { exportToCSV } = useFileExport();
 
 const emit = defineEmits(['fetchReservations']);
 
+const filters = ref({'global': {value: null, matchMode: FilterMatchMode.CONTAINS}});
 const op = ref(null);
 const checkInOverlay = ref(null);
-const filters = ref({'global': {value: null, matchMode: FilterMatchMode.CONTAINS}});
 const selectedReservation = ref(null);
-const actionType = ref('');
+const closeType = ref(null);
 const makeReservationFormIsOpen = ref(false);
 const reservationDetailIsOpen = ref(false);
 const checkInFormIsOpen = ref(false);
@@ -60,7 +56,7 @@ const delayReservationFormIsOpen = ref(false);
 const cancelReservationFormIsOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
-const closeType = ref(null);
+const actionType = ref('');
 
 const form = useForm({ handled_by: userId.value });
 
@@ -280,26 +276,26 @@ const getStatusVariant = (status) => {
                         <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
                     </div>
                 </template>
-                <template #reservation_no="row">{{ row.reservation_no }}</template>
-                <template #res_date="row">{{ dayjs(row.status === 'Delayed' && row.action_date ? row.action_date : row.reservation_date).format('DD/MM/YYYY') }}</template>
-                <template #res_time="row">{{ dayjs(row.status === 'Delayed' && row.action_date ? row.action_date : row.reservation_date).format('HH:mm') }}</template>
-                <template #name="row">
+                <template #reservation_no="rows">{{ rows.reservation_no }}</template>
+                <template #res_date="rows">{{ dayjs(rows.status === 'Delayed' && rows.action_date ? rows.action_date : rows.reservation_date).format('DD/MM/YYYY') }}</template>
+                <template #res_time="rows">{{ dayjs(rows.status === 'Delayed' && rows.action_date ? rows.action_date : rows.reservation_date).format('HH:mm') }}</template>
+                <template #name="rows">
                     <div class="flex items-center gap-x-2">
-                        <!-- <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div> -->
+                        <!-- <div class="size-4 bg-primary-100 rounded-full" v-if="rows.customer_id"></div> -->
                         <img 
-                            :src="row.reserved_for?.image ? row.reserved_for.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                            :src="rows.reserved_for?.image ? rows.reserved_for.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
                             alt="" 
                             class="w-3 h-3 bg-red-900 rounded-full"
-                            v-if="row.customer_id"
+                            v-if="rows.customer_id"
                         />
-                        {{ row.name }}
+                        {{ rows.name }}
                     </div>
                 </template>
-                <template #table_no="row">{{ getTableNames(row.table_no) }}</template>
-                <template #phone="row">{{ formatPhone(row.phone) }}</template>
-                <template #status="row"><Tag :value="row.status" :variant="getStatusVariant(row.status)" /></template>
-                <template #action="row">
-                    <div class="w-full flex items-center justify-center" v-if="['Pending', 'Delayed', 'Checked in'].includes(row.status)" @click="openActionMenu($event, row)">
+                <template #merged_table_no="rows">{{ rows.merged_table_no }}</template>
+                <template #phone="rows">{{ formatPhone(rows.phone) }}</template>
+                <template #status="rows"><Tag :value="rows.status" :variant="getStatusVariant(rows.status)" /></template>
+                <template #action="rows">
+                    <div class="w-full flex items-center justify-center" v-if="['Pending', 'Delayed', 'Checked in'].includes(rows.status)" @click="openActionMenu($event, rows)">
                         <HorizontalDotsIcon class="flex-shrink-0 cursor-pointer" />
                     </div>
                 </template>

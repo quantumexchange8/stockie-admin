@@ -41,6 +41,7 @@ const isSidebarOpen = ref(false);
 const isDeleteCustomerOpen = ref(false);
 const selectedCustomer = ref(null);
 const highestPoints = ref(props.highestPoints);
+const searchQuery = ref('');
 
 const showSideBar = (customer) => {
     isSidebarOpen.value = true;
@@ -141,6 +142,33 @@ const formatPoints = (points) => {
 
 watch(() => props.customers, (newValue) => customer.value = newValue)
 
+watch (() => searchQuery.value, (newValue) => {
+    if(newValue === '') {
+        customer.value = props.customers;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    customer.value = props.customers.filter(customer => {
+        const tier = customer.rank.name.toLowerCase();
+        const name = customer.full_name.toLowerCase();
+        const email = customer.email.toLowerCase();
+        const phoneNumber = customer.phone.toString().toLowerCase();
+        // const keptItem = customer.keep_items ? customer.keep_items.item_name.toLowerCase() : '';
+        const keptItems = Array.isArray(customer.keep_items)
+            ? customer.keep_items.some(item => item.item_name.toLowerCase().includes(query))
+            : false;
+
+        return  tier.includes(query) ||
+                name.includes(query) ||
+                email.includes(query) ||
+                phoneNumber.includes(query) ||
+                keptItems;
+                // phoneNumber.includes(query);
+    })
+}, { immediate: true })
+
 </script>
 
 <template>
@@ -196,7 +224,7 @@ watch(() => props.customers, (newValue) => customer.value = newValue)
                 <SearchBar 
                     placeholder="Search"
                     :showFilter="true"
-                    v-model="filters['global'].value"
+                    v-model="searchQuery"
                 >
                     <template #default="{ hideOverlay }">
                         <div class="flex flex-col self-stretch gap-4 items-start">
@@ -260,7 +288,7 @@ watch(() => props.customers, (newValue) => customer.value = newValue)
 
             <Table
                 :columns="columns"
-                :rows="customers"
+                :rows="customer"
                 :variant="'list'"
                 :actions="actions"
                 :rowType="rowType"
@@ -273,38 +301,38 @@ watch(() => props.customers, (newValue) => customer.value = newValue)
                     <UndetectableIllus class="w-44 h-44"/>
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
-                <template #editAction="customers">
+                <template #editAction="customer">
                     <EditIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="showSideBar(customers)"
+                        @click="showSideBar(customer)"
                     />
                 </template>
-                <template #deleteAction="customers">
+                <template #deleteAction="customer">
                     <DeleteIcon
                         class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
-                        @click="showDeleteModal(customers.id)"
+                        @click="showDeleteModal(customer.id)"
                     />
                 </template>
-                <template #ranking="customers">
+                <template #ranking="customer">
                     <Tag
-                        :variant="parseInt(customers.ranking) !== 0 ? 'default' : 'grey'"
-                        :value="parseInt(customers.ranking) !== 0 ? customers.rank.name : 'No Tier'"
+                        :variant="parseInt(customer.ranking) !== 0 ? 'default' : 'grey'"
+                        :value="parseInt(customer.ranking) !== 0 ? customer.rank.name : 'No Tier'"
                     />
                 </template>
-                <template #full_name="customers">
+                <template #full_name="customer">
                     <template class="flex flex-row gap-[10px] items-center">
-                        <img :src="customers.image ? customers.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        <img :src="customer.image ? customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt=""
                                 class="w-[32px] h-[32px] flex-shrink-0 rounded-full object-contain"
                         />
-                        <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ customers.full_name }}</span>
+                        <span class="text-grey-900 text-sm font-medium line-clamp-1">{{ customer.full_name }}</span>
                     </template>
                 </template>
-                <template #point="customers">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ formatPoints(customers.point) }} pts</span>
+                <template #point="customer">
+                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ formatPoints(customer.point) }} pts</span>
                 </template>
-                <template #created_at="customers">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ dayjs(customers.created_at).format('DD/MM/YYYY') }}</span>
+                <template #created_at="customer">
+                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ dayjs(customer.created_at).format('DD/MM/YYYY') }}</span>
                 </template>
             </Table>
         </div>

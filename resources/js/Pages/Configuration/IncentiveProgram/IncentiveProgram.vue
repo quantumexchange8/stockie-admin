@@ -7,20 +7,22 @@ import SearchBar from "@/Components/SearchBar.vue";
 import Table from "@/Components/Table.vue";
 import Toast from "@/Components/Toast.vue";
 import { FilterMatchMode } from "primevue/api";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import AddAchievement from "./Partials/AddAchievement.vue";
 import EditAchievement from "./Partials/EditAchievement.vue";
 import { transactionFormat } from "@/Composables";
 
 const isLoading = ref(false);
-const rows = ref([]);
 const isEditIncentOpen = ref(false);
 const isDeleteIncentOpen = ref(false);
 const isAddAchievementOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
 const selectedIncent = ref(null);
+const rows = ref([]);
 const waiters = ref([]);
+const filteredRows = ref([]);
+const searchQuery = ref('');
 const { formatDate, formatAmount } = transactionFormat();
 
 const actions = {
@@ -95,6 +97,7 @@ const getEmployeeIncent = async () => {
                 entitled: incentive.entitled.slice(0, 4),
             };
         });
+        filteredRows.value = rows.value;
     } catch (error) {
         console.error(error);
     } finally {
@@ -107,11 +110,9 @@ const incentProgColumn = ref([
     {field: 'type', header: 'Commission Type', width: '20', sortable: true},
     {field: 'rate', header: 'Rate', width: '10', sortable: true},
     {field: 'effective_date', header: 'Effective Date', width: '20', sortable: true},
-    {field: 'name', header: 'Entitled Employee', width: '20', sortable: true},
+    {field: 'entitled', header: 'Entitled Employee', width: '20', sortable: true},
     {field: 'action', header: '', width: '10', sortable: false},
 ])
-
-
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -125,6 +126,31 @@ const handleDefaultClick = (event) => {
 onMounted (() => {
     getEmployeeIncent();
 })
+
+watch(() => searchQuery.value, (newValue) => {
+    if(newValue === '') {
+        filteredRows.value = rows.value;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    filteredRows.value = rows.value.filter(row => {
+        const monthlySale = row.monthly_sale.toString().toLowerCase();
+        const rowType = row.type === 'fixed' ? 'fixed amount'.toLowerCase() : 'percentage of monthly sales'.toLowerCase();
+        const incentiveRate = row.rate.toString().toLowerCase();
+        const effectiveDate = row.effective_date.toString().toLowerCase();
+        const entitled = Array.isArray(row.entitled) ? row.entitled.some(entitled => entitled.name.toLowerCase().includes(query)) : false;
+        const hidden = Array.isArray(row.hiddenEntitled) ? row.hiddenEntitled.some(entitled => entitled.name.toLowerCase().includes(query)) : false;
+
+        return  monthlySale.includes(query) ||
+                rowType.includes(query) ||
+                incentiveRate.includes(query) ||
+                effectiveDate.includes(query) ||
+                entitled ||
+                hidden;
+    })
+}, { immediate: true })
 </script>
 
 <template>
@@ -139,7 +165,7 @@ onMounted (() => {
                 <SearchBar 
                     placeholder="Search"
                     :showFilter="false"
-                    v-model="filters['global'].value"
+                    v-model="searchQuery"
                 />
 
                 <Button
@@ -167,7 +193,7 @@ onMounted (() => {
 
             <Table
                 :columns="incentProgColumn"
-                :rows="rows"
+                :rows="filteredRows"
                 :actions="actions"
                 :variant="'list'"
                 :searchFilter="true"
@@ -180,29 +206,29 @@ onMounted (() => {
                         <span class="text-primary-900 text-sm font-medium">You haven’t added any incentive commission yet...</span>
                     </div>
                 </template>
-                <template #monthly_sale="rows">
-                    <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">RM {{ formatAmount(rows.monthly_sale) }}</span>
+                <template #monthly_sale="filteredRows">
+                    <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">RM {{ formatAmount(filteredRows.monthly_sale) }}</span>
                 </template>
-                <template #type="rows">
-                    <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ formatType(rows.type) }}</span>
+                <template #type="filteredRows">
+                    <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ formatType(filteredRows.type) }}</span>
                 </template>
-                <template #rate="rows">
+                <template #rate="filteredRows">
                     <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">
-                        <template v-if="rows.type == 'fixed'">
-                            RM {{ rows.rate }}
+                        <template v-if="filteredRows.type == 'fixed'">
+                            RM {{ filteredRows.rate }}
                         </template>
                         <template v-else>
-                            {{ rows.rate * 100 }} %
+                            {{ filteredRows.rate * 100 }} %
                         </template>
                     </span>
                 </template>
-                <template #effective_date="rows">
-                    <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ formatDate(rows.effective_date) }}</span>
+                <template #effective_date="filteredRows">
+                    <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ formatDate(filteredRows.effective_date) }}</span>
                 </template>
-                <template #name="rows">
+                <template #entitled="filteredRows">
                     <div class="flex items-center gap-[13px] overflow-hidden">
                         <div class="flex items-start gap-1">
-                            <template v-for="image in rows.entitled">
+                            <template v-for="image in filteredRows.entitled">
                                 <img 
                                     :src="image.image ? image.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt=""
@@ -210,21 +236,21 @@ onMounted (() => {
                                 />
                             </template>
                         </div>
-                        <div v-if="rows.hiddenEntitled !== null" class="flex items-start pr-1">
-                            <span class="text-grey-900 text-sm font-medium">+{{ rows.hiddenEntitled }}</span>
+                        <div v-if="filteredRows.hiddenEntitled !== null" class="flex items-start pr-1">
+                            <span class="text-grey-900 text-sm font-medium">+{{ filteredRows.hiddenEntitled }}</span>
                         </div>
                     </div>
                 </template>
-                <template #editAction="rows">
+                <template #editAction="filteredRows">
                     <EditIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="openEditIncent($event, rows)"
+                        @click="openEditIncent($event, filteredRows)"
                     />
                 </template>
-                <template #deleteAction="rows">
+                <template #deleteAction="filteredRows">
                     <DeleteIcon
                         class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
-                        @click="openDeleteIncent($event, rows.id)"
+                        @click="openDeleteIncent($event, filteredRows.id)"
                     />
                 </template>
             </Table>

@@ -154,7 +154,7 @@ const csvExport = () => {
             <template #amount="row">
                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.amount }} pts</span>
             </template>
-            <template #handled_by="row">
+            <template #handled_by.name="row">
                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.handled_by.name }}</span>
             </template>
         </Table>

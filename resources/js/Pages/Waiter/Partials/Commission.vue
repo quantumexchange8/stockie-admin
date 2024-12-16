@@ -7,7 +7,7 @@ import { transactionFormat, useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import dayjs from 'dayjs';
 import { FilterMatchMode } from 'primevue/api';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
     data: Object,
@@ -23,6 +23,8 @@ const { exportToCSV } = useFileExport();
 
 
 const data = ref(props.data)
+const searchQuery = ref('');
+
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
@@ -36,6 +38,25 @@ const csvExport = () => {
     }));
     exportToCSV(dataArr, `${waiterName}_Monthly Commission Report`)
 };
+
+watch(() => searchQuery.value, (newValue) => {
+    if(newValue === '') {
+        data.value = props.data;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    data.value = props.data.filter(filteredData => {
+        const dataMonth = filteredData.created_at.toLowerCase();
+        const dataSale = filteredData.monthly_sale.toString().toLowerCase();
+        const dataCommission = filteredData.commissionAmt.toString().toLowerCase();
+
+        return  dataMonth.includes(query) ||
+                dataSale.includes(query) ||
+                dataCommission.includes(query);
+    });
+})
 
 </script>
 
@@ -91,7 +112,7 @@ const csvExport = () => {
             <SearchBar 
                 placeholder="Search"
                 :showFilter="false"
-                v-model="filters['global'].value"
+                v-model="searchQuery"
             />
         </div>
 
