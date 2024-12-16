@@ -16,6 +16,7 @@ import Toast from '@/Components/Toast.vue'
 import { useCustomToast, useInputValidator } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
 import Modal from "@/Components/Modal.vue";
+import { DeleteIllus } from "@/Components/Icons/illus";
 
 //------------------------
 // DNR = DO NOT REMOVE code that has until confirmed is not needed by requirements
@@ -45,6 +46,8 @@ const initialLogos = ref([...props.logos]);
 const fileInput = ref(null);
 const selectedLogo = ref(props.tier.icon);
 const isUnsavedChangesOpen = ref(false);
+const selectedReward = ref(null);
+const isDeleteRewardModalOpen = ref(false);
 
 const emit = defineEmits(["close", "isDirty"]);
 const { isValidNumberKey } = useInputValidator();
@@ -79,7 +82,19 @@ const form = useForm({
 const addReward = () => form.rewards.push(emptyReward());
 
 const removeReward = (id) => {
-    form.rewards.splice(id, 1);
+    let reward = form.rewards.find((item) => item.id === id);
+    reward.status = 'Inactive';
+    closeDeleteRewardModal();
+}
+
+const openDeleteRewardModal = (rewardId) => {
+    selectedReward.value = rewardId;
+    isDeleteRewardModalOpen.value = true;
+}
+
+const closeDeleteRewardModal = () => {
+    isDeleteRewardModalOpen.value = false;
+    setTimeout(() => selectedReward.value = null, 200);
 }
 
 const closeModal = (status) => {
@@ -311,14 +326,15 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         <template #body>
                         </template>
                     </Accordion> -->
-                    <div class="flex flex-col gap-4" v-for="(reward, index) in form.rewards">
+                    <div class="flex flex-col gap-4" v-for="(reward, index) in form.rewards.filter((item) => item.status === 'Active')">
                         <div class="flex justify-between items-center self-stretch">
                             <span class="text-md font-bold text-grey-900">Reward {{ index + 1 }}</span>
                             <!-- *DNR* -->
-                            <!-- <DeleteIcon
+                            <DeleteIcon
+                                v-if="reward.isFullyRedeemed"
                                 class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
-                                @click="removeReward(index)"
-                            /> -->
+                                @click="openDeleteRewardModal(reward.id)"
+                            />
                         </div>
                         <!-- Reward type selection -->
                         <Dropdown
@@ -476,7 +492,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         variant="tertiary"
                         :type="'button'"
                         :size="'lg'"
-                        @click="closeModal('close')"
+                        @click="console.log(form.rewards)"
                     >
                         Cancel
                     </Button>
@@ -502,4 +518,43 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
         >
         </Modal>
     </form>
+
+    <Modal
+        :maxWidth="'2xs'"
+        :closeable="true"
+        :withHeader="false"
+        :show="isDeleteRewardModalOpen"
+        class="[&>div>div>div]:!p-0"
+        @close="closeDeleteRewardModal"
+    >
+        <template v-if="selectedReward">
+            <div class="flex flex-col gap-9">
+                <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                    <DeleteIllus/>
+                </div>
+                <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6">
+                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">Remove this reward?</p>
+                    <p class="text-center text-grey-900 text-base font-medium self-stretch">By removing this reward, new members entering this tier will no longer benefit from it. Are you sure you want to remove?</p>
+                </div>
+                <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                    <Button
+                        :type="'button'"
+                        :variant="'tertiary'"
+                        :size="'lg'"
+                        @click="closeDeleteRewardModal"
+                    >
+                        Keep
+                    </Button>
+                    <Button 
+                        :size="'lg'"
+                        :variant="'red'"
+                        :disabled="form.processing"
+                        @click="removeReward(selectedReward)"
+                    >
+                        Remove
+                    </Button>
+                </div>
+            </div>
+        </template>
+    </Modal>
 </template>

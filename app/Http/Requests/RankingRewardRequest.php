@@ -32,6 +32,7 @@ class RankingRewardRequest extends FormRequest
             'item_qty' => 'nullable|string|max:255',
             // 'valid_period_from' => 'nullable|date_format:Y-m-d H:i:s',
             // 'valid_period_to' => 'nullable|date_format:Y-m-d H:i:s',
+            'status' => 'required|string|max:255',
         ];
     }
 
@@ -48,6 +49,7 @@ class RankingRewardRequest extends FormRequest
             'item_qty' => 'Item Quantity',
             // 'valid_period_from' => 'Valid Period Start',
             // 'valid_period_to' => 'Valid Period End',
+            'status' => 'Status',
         ];
     }
 

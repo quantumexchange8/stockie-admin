@@ -219,10 +219,9 @@ const showDeleteTierForm = (event) => {
                     </div>
                 </div>
                 <div class="flex gap-4 items-center self-stretch">
-                    <!-- <div class="w-6 h-6 rounded-full bg-[#FFE279]"></div> -->
                     <img 
                         :src="props.tier.icon ? props.tier.icon : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
-                        alt="" 
+                        alt="TierIconImage" 
                         class="w-6 h-6 rounded-full"
                     />
                     <span class="flex-[1_0_0] text-grey-900 text-md font-medium">{{ props.tier.name }}</span>
@@ -283,9 +282,9 @@ const showDeleteTierForm = (event) => {
                                     <span class="text-primary-900 text-2xs font-normal">No min. spend</span>
                                 </template>
                             </div>
-                            <template v-if="reward.reward_type !== 'Bonus Point'">
+                            <!-- <template v-if="reward.reward_type !== 'Bonus Point'">
                                 <span class="self-stretch text-grey-400 text-2xs font-normal">Valid Period: {{ calculateValidPeriod(reward.valid_period_from, reward.valid_period_to) }}</span>
-                            </template>
+                            </template> -->
                         </div>
                     </div>
                 </div>

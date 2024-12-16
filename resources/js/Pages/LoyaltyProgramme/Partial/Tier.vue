@@ -176,12 +176,12 @@ const formatAmount = (num) => {
                         @click.stop.prevent="showEditTierForm(row)"
                     />
                 </template>
-                <template #deleteAction="row">
+                <!-- <template #deleteAction="row">
                     <DeleteIcon
                         class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
                             @click.stop.prevent="showDeleteTierForm(row.id)"
                     />
-                </template>
+                </template> -->
                 <template #icon="row">
                     <img 
                         :src="row.icon ? row.icon : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 

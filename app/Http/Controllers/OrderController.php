@@ -1549,7 +1549,10 @@ class OrderController extends Controller
             // Grant rewards for rank up 
             if ($newRanking && $newRanking != $oldRanking) { 
                 $ranks = Ranking::select('id')
-                                ->with('rankingRewards:id,ranking_id,reward_type,bonus_point')
+                                ->with(['rankingRewards' => function ($query) {
+                                    $query->where('status', 'Active')
+                                            ->select('id', 'ranking_id', 'reward_type', 'bonus_point');
+                                }])
                                 ->where([
                                     ['reward', 'active'],
                                     ['min_amount', '<=', $newTotalSpending],

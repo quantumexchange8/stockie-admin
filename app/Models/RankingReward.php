@@ -20,11 +20,12 @@ class RankingReward extends Model
         'min_purchase',
         'discount',
         'min_purchase_amount',
-        'valid_period_from',
-        'valid_period_to',
+        'bonus_point',
         'free_item',
         'item_qty',
-        'bonus_point'
+        'valid_period_from',
+        'valid_period_to',
+        'status'
     ];
 
     public function ranking(): BelongsTo

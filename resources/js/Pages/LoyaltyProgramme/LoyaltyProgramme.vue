@@ -32,7 +32,7 @@ const tiersColumns = ref([
     { field: "min_amount", header: "Amount spend to achive", width: "24", sortable: true },
     { field: "merged_reward_type", header: "Entry Rewards", width: "29", sortable: true },
     { field: "member", header: "Member", width: "13", sortable: true },
-    { field: "action", header: "", width: "10", sortable: false, edit: true, delete: true },
+    { field: "action", header: "", width: "10", sortable: false, edit: true },
 ]);
 
 const redeemableItemsColumns = ref([

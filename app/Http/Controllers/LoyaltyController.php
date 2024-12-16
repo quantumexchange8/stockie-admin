@@ -27,7 +27,7 @@ class LoyaltyController extends Controller
 {
     public function index(Request $request){
         $tiers = Ranking::with([
-                                'rankingRewards', 
+                                'rankingRewards' => fn ($query) => $query->where('status', 'Active'), 
                                 'rankingRewards.product',
                                 'customers'
                             ])
@@ -42,6 +42,10 @@ class LoyaltyController extends Controller
                                 $rank['member'] = $rank->customers->count();
                                 
                                 $rank->icon = $rank->getFirstMediaUrl('ranking');
+
+                                $rank->rankingRewards->each(function ($reward) {
+                                    $reward->isFullyRedeemed = $reward->customerReward->contains('status', 'Active');
+                                });
 
                                 return $rank;
                             }); 
@@ -253,12 +257,13 @@ class LoyaltyController extends Controller
                     'reward_type' => $value['reward_type'],
                     'discount' => $value['discount'],
                     'min_purchase_amount' => $value['min_purchase_amount'],
-                    // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
-                    // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
-                    'bonus_point' => $value['bonus_point'],
                     'min_purchase' => $value['min_purchase'],
+                    'bonus_point' => $value['bonus_point'],
                     'free_item' => $value['free_item'],
                     'item_qty' => $value['item_qty'],
+                    // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                    // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                    'status' => 'Active',
                 ]);
             }
         }
@@ -271,32 +276,36 @@ class LoyaltyController extends Controller
         return redirect()->back()->with(['message' => $message]);
     }
 
-    public function showRecord()
-    {
-        $data = Ranking::with([
-                                'rankingRewards', 
-                                'rankingRewards.inventoryItem',
-                                'customers'
-                            ])
-                            ->orderBy('id')
-                            ->get()
-                            ->map(function ($rank) {
-                                $rank['merged_reward_type'] = $rank->rankingRewards
-                                                                    ->pluck('reward_type')
-                                                                    ->unique()
-                                                                    ->implode(', ');
+    // public function showRecord()
+    // {
+    //     $data = Ranking::with([
+    //                             'rankingRewards', 
+    //                             'rankingRewards.inventoryItem',
+    //                             'customers'
+    //                         ])
+    //                         ->orderBy('id')
+    //                         ->get()
+    //                         ->map(function ($rank) {
+    //                             $rank['merged_reward_type'] = $rank->rankingRewards
+    //                                                                 ->pluck('reward_type')
+    //                                                                 ->unique()
+    //                                                                 ->implode(', ');
 
-                                $rank['member'] = $rank->customers->count();
+    //                             $rank['member'] = $rank->customers->count();
                                 
-                                return $rank;
-                            }); 
+    //                             return $rank;
+    //                         }); 
 
-        return response()->json($data);
-    }
+    //     return response()->json($data);
+    // }
 
     public function showTierDetails(string $id)
     {
-        $tier = Ranking::with(['rankingRewards', 'customers'])->find($id); 
+        $tier = Ranking::with([
+                            'rankingRewards' => fn ($query) => $query->where('status', 'Active'), 
+                            'customers'
+                        ])->find($id); 
+
         $tier->icon = $tier->getFirstMediaUrl('ranking');
 
         $reward = $tier->rankingRewards->map(function($reward) {
@@ -363,6 +372,7 @@ class LoyaltyController extends Controller
         $customers = Customer::where('ranking', $id)
                             ->select('full_name', 'created_at', 'total_spending')
                             ->get();
+
         $customers->each(function($customer){
             $customer->joined_on = Carbon::parse($customer->created_at)->format('d/m/Y');
             $customer->image = $customer->getFirstMediaUrl('customer');
@@ -415,17 +425,17 @@ class LoyaltyController extends Controller
         ]);
     }
 
-    public function showTierData(Request $request)
-    {   
-        $id = $request->query('id');
-        $ranking = Ranking::with('rankingRewards')
-                            ->find($id); 
-        // $rankingRewards = RankingReward::where('ranking_id', $id)->get();
-        return response()->json([
-            'ranking' => $ranking,
-            'rankingRewards' => $ranking->rankingRewards,
-        ]);
-    }
+    // public function showTierData(Request $request)
+    // {   
+    //     $id = $request->query('id');
+    //     $ranking = Ranking::with('rankingRewards')
+    //                         ->find($id); 
+    //     // $rankingRewards = RankingReward::where('ranking_id', $id)->get();
+    //     return response()->json([
+    //         'ranking' => $ranking,
+    //         'rankingRewards' => $ranking->rankingRewards,
+    //     ]);
+    // }
 
     public function updateTier(RankingRequest $request, string $id)
     {        
@@ -522,12 +532,13 @@ class LoyaltyController extends Controller
                         'reward_type' => $value['reward_type'],
                         'discount' => $value['discount'],
                         'min_purchase_amount' => $value['min_purchase_amount'],
-                        // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
-                        // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
-                        'bonus_point' => $value['bonus_point'],
                         'min_purchase' => $value['min_purchase'],
+                        'bonus_point' => $value['bonus_point'],
                         'free_item' => $value['free_item'],
                         'item_qty' => $value['item_qty'],
+                        // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                        // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                        'status' => $value['status'],
                     ]);
                 } else {
                     RankingReward::create([
@@ -535,12 +546,13 @@ class LoyaltyController extends Controller
                         'reward_type' => $value['reward_type'],
                         'discount' => $value['discount'],
                         'min_purchase_amount' => $value['min_purchase_amount'],
-                        // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
-                        // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
-                        'bonus_point' => $value['bonus_point'],
                         'min_purchase' => $value['min_purchase'],
+                        'bonus_point' => $value['bonus_point'],
                         'free_item' => $value['free_item'],
                         'item_qty' => $value['item_qty'],
+                        // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                        // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
+                        'status' => 'Active',
                     ]);
                 }
             }

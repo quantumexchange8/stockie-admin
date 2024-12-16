@@ -15,11 +15,6 @@ import OverlayPanel from '@/Components/OverlayPanel.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
-    // columns: Array,
-    // rows: Array,
-    // rowType: Object,
-    // totalPages: Number,
-    // rowsPerPage: Number,
     merchant: Object
 });
 
@@ -38,7 +33,7 @@ const columns = ref([
     {field: 'table_no', header: 'Table / Room', width: '14', sortable: false},
     {field: 'order_no', header: 'Order No.', width: '11', sortable: false},
     {field: 'total_amount', header: 'Total', width: '14', sortable: false},
-    {field: 'waiter', header: 'Order Completed By', width: '21', sortable: false},
+    {field: 'waiter.full_name', header: 'Order Completed By', width: '21', sortable: false},
     {field: 'status', header: 'Order Status', width: '14', sortable: false},
     {field: 'action', header: '', width: '11', sortable: false},
 ]);
@@ -105,6 +100,22 @@ const hideOrderInvoiceModal = () => {
 const totalPages = computed(() => Math.ceil(rows.value.length / rowsPerPage.value));
 
 const getOrderTableNames = (order_table) => order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '';
+
+// watch(() => filters.value.global.value, (newValue) => {
+    // if (!newValue) {
+    //     // If no search query, reset rows to props.rows
+    //     rows.value = newRows;
+    //     return;
+    // }
+
+    //  const query = newValue.toLowerCase();
+
+    // console.log(rows.value);
+    // rows.value = initialRows.value.filter(order => {
+    //     console.log(getOrderTableNames(order.order_table));
+    //     return  getOrderTableNames(order.order_table).includes(query);
+    // });
+// }, { immediate: false })
 </script>
 
 <template>
@@ -162,9 +173,8 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
                 <template #total_amount="row">
                     <span class="text-grey-900 text-sm font-medium">RM {{ row.total_amount }}</span>
                 </template>
-                <template #waiter="row">
+                <template #waiter.full_name="row">
                     <div class="flex whitespace-nowrap gap-1 items-center">
-                        <!-- <div class="size-4 bg-primary-200 rounded-full"></div> -->
                         <img 
                             :src="row.waiter.image ? row.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                             alt=""

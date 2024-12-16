@@ -77,7 +77,7 @@ const addItemToList = (item) => {
         form.items.push({
             order_item_id: item.id,
             has_products_left: false,
-            remove_qty: 0,
+            remove_qty: getLeftoverQuantity(item),
         });
     }
 }
@@ -144,7 +144,7 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                                 <img 
                                     :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt="OrderItemImage"
-                                    class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100"
+                                    class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
                                 >
                                 <div class="flex flex-col gap-2 items-start justify-center self-stretch">
                                     <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">{{ item.product.product_name }}</p>
