@@ -17,7 +17,7 @@ const props = defineProps({
 const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired']);
 
 const formatHistoryStatus = (status) => {
-    return status.toLowerCase().replace(/[/_]+/g, "-").replace(/^-+|-+$/g, " "); // Replace spaces, '/', and '_' with '-' | Remove leading or trailing '-'
+    return status.toLowerCase().replace(/[/_]+/g, "-").replace(/^-+|-+$/g, " "); 
 };
 
 const tabsSlug = ref(
@@ -73,15 +73,6 @@ onMounted(() => getKeepHistory());
                                 <div class="w-full flex justify-between items-center self-stretch">
                                     <div class="flex w-full self-stretch items-start gap-3">
                                         <div class="size-[60px] relative bg-primary-25">
-                                            <Tag 
-                                                :variant="item.status === 'Keep' 
-                                                                ? 'default' 
-                                                                : item.status === 'Returned' || item.status === 'Served'
-                                                                        ? 'green' 
-                                                                        : 'grey'"
-                                                :value="item.status"
-                                                class="!px-1.5 !py-1 !text-[6.8px] !m-0.5 absolute"
-                                            />
                                             <img 
                                                 :src="item.keep_item.image ? item.keep_item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                 alt="KeepItemImage"
@@ -102,7 +93,18 @@ onMounted(() => getKeepHistory());
                                                 >
                                                 <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.full_name }}</span>
                                             </div>
-                                            <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
+                                            <div class="flex items-center gap-2 self-stretch">
+                                                <Tag 
+                                                    :variant="item.status === 'Keep' 
+                                                                    ? 'default' 
+                                                                    : item.status === 'Returned' || item.status === 'Served'
+                                                                            ? 'green' 
+                                                                            : 'grey'"
+                                                    :value="item.status"
+                                                    class="flex px-2.5 py-1.5 justify-center items-center gap-2.5"
+                                                />
+                                                <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
+                                            </div>
                                             <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark">
                                                 <CommentIcon class="flex-shrink-0 mt-1" />
                                                 <span class="text-grey-900 text-sm font-normal">{{ item.keep_item.remark }}</span>
@@ -138,17 +140,7 @@ onMounted(() => getKeepHistory());
                                 </div>
                                 <div class="w-full flex justify-between items-center self-stretch">
                                     <div class="flex w-full self-stretch items-start gap-3">
-                                        <div class="size-[60px] relative bg-primary-25">
-                                            <Tag 
-                                                v-if="item.status === 'Returned' || item.status === 'Served'"
-                                                :variant="item.status === 'Keep' 
-                                                                ? 'default' 
-                                                                : item.status === 'Returned' || item.status === 'Served'
-                                                                        ? 'green' 
-                                                                        : 'grey'"
-                                                :value="item.status"
-                                                class="!px-1.5 !py-1 !text-[6.8px] !m-0.5 absolute"
-                                            />
+                                        <div class="size-[60px] bg-primary-25">
                                              <img 
                                                 :src="item.keep_item.image ? item.keep_item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                 alt="KeepItemImage"
@@ -160,7 +152,7 @@ onMounted(() => getKeepHistory());
                                                 <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                                 <span class="text-primary-900 text-2xs font-normal">
-                                                    {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
+                                                    {{ item.status === 'Returned' ? 'Returned by' : 'Kept by' }}
                                                 </span>
                                                 <img 
                                                     :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
@@ -169,7 +161,18 @@ onMounted(() => getKeepHistory());
                                                 >
                                                 <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.full_name }}</span>
                                             </div>
-                                            <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
+                                            <div class="flex items-center gap-2 self-stretch">
+                                                <Tag 
+                                                    :variant="item.status === 'Keep' 
+                                                                    ? 'default' 
+                                                                    : item.status === 'Returned' || item.status === 'Served'
+                                                                            ? 'green' 
+                                                                            : 'grey'"
+                                                    :value="item.status"
+                                                    class="flex px-2.5 py-1.5 justify-center items-center gap-2.5"
+                                                />
+                                                <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
+                                            </div>
                                             <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark">
                                                 <CommentIcon class="flex-shrink-0 mt-1" />
                                                 <span class="text-grey-900 text-sm font-normal">{{ item.keep_item.remark }}</span>

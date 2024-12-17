@@ -200,6 +200,7 @@ watch(form, () => {
                         :labelText="'Table No.'"
                         :placeholder="'eg: 1'"
                         :errorMessage="form.errors?.table_no || ''"
+                        :maxlength="4"
                         v-model="form.table_no"
                         class="col-span-full md:col-span-8"
                     />
