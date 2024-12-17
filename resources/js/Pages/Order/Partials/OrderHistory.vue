@@ -177,7 +177,7 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
                     <div class="flex whitespace-nowrap gap-1 items-center">
                         <img 
                             :src="row.waiter.image ? row.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                            alt=""
+                            alt="WaiterImage"
                             class="size-4 rounded-full"
                         >
                         <span class="text-grey-900 text-sm font-medium">{{ row.waiter.full_name }}</span>
@@ -191,6 +191,7 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
                 </template>
                 <template #action="row">
                     <Button
+                        v-if="row.status === 'Order Completed'"
                         type="button"
                         variant="tertiary"
                         class="!w-fit col-span-3 hover:bg-primary-50"

@@ -117,7 +117,9 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
                     <template #product_name="row">
                         <div class="w-full flex flex-col items-start self-stretch gap-y-3">
                             <p class="text-grey-900 text-sm font-medium">
-                                {{ row.product.bucket === 'set' ? '(Set) ' : '' }}{{ row.product.product_name }}
+                                {{ row.type !== 'Normal' ? `(${row.type})` : '' }}
+                                {{ row.product.bucket === 'set' ? '(Set) ' : '' }}
+                                {{ row.product.product_name }}
                             </p>
                             <p class="text-grey-900 text-sm font-medium" v-if="row.discount_id">{{ `${row.product_discount.discount.name} Discount` }}</p>
                         </div>

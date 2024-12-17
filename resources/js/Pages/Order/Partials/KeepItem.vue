@@ -114,7 +114,9 @@ const pendingServeItems = computed(() => {
             total_qty,
             total_served_qty
         };
-    }).filter((undeleted) => undeleted.status !== 'Cancelled');
+    })
+    .filter((item) => item.sub_items.length > 0)
+    .filter((undeleted) => undeleted.status !== 'Cancelled');
 });
 
 
@@ -306,7 +308,7 @@ const getKeepItemName = (item) => {
                                     <div class="flex flex-nowrap gap-x-3 items-center">
                                         <img 
                                             :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                            alt=""
+                                            alt="OrderItemImage"
                                             class="size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
                                         >
                                         <div class="flex flex-col gap-y-2 items-start justify-center self-stretch">
@@ -329,6 +331,7 @@ const getKeepItemName = (item) => {
                                     />
                                 </div>
                                 
+                                {{ console.log(item.sub_items.length) }}
                                 <template v-if="form.items.find(i => i.order_item_id === item.id)">
                                     <template v-for="(subItem, index) in item.sub_items" :key="index">
                                         <div class="flex flex-col self-stretch gap-y-2 py-3">
