@@ -529,8 +529,7 @@ class InventoryController extends Controller
                 'name' => $inventoryData['name'],
             ]);
 
-            if($request->hasFile('image'))
-            {
+            if($request->hasFile('image')){
                 $existingGroup->clearMediaCollection('inventory');
                 $existingGroup->addMedia($inventoryData['image'])->toMediaCollection('inventory');
             }

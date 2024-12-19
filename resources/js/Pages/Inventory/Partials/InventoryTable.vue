@@ -89,8 +89,9 @@ const openForm = (action, id, event) => {
     }
 
     if (id && action !== 'create' && action !== 'add-as-product' && action !== 'group-created') {
-        selectedGroup.value = props.rows.find((group) => group.id === id);
+        selectedGroup.value = rows.value.find((group) => group.id === id);
         selectedGroupItems.value = action === 'add' || action === 'edit' ? selectedGroup.value.inventory_items : null;
+        console.log(selectedGroup.value);
     } 
 }
 

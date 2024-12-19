@@ -331,7 +331,6 @@ const getKeepItemName = (item) => {
                                     />
                                 </div>
                                 
-                                {{ console.log(item.sub_items.length) }}
                                 <template v-if="form.items.find(i => i.order_item_id === item.id)">
                                     <template v-for="(subItem, index) in item.sub_items" :key="index">
                                         <div class="flex flex-col self-stretch gap-y-2 py-3">
