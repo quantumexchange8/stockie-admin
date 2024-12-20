@@ -26,8 +26,7 @@ const unsaved = (status) => {
 };
 
 const form = useForm({
-    username: "",
-    name: "",
+    full_name: "",
     phone: "",
     phone_temp: "",
     email: "",
@@ -35,6 +34,7 @@ const form = useForm({
     salary: "",
     stockie_email: "",
     password: "",
+    passcode: "",
     image: "",
 });
 
@@ -58,7 +58,7 @@ const submit = () => {
     });
 };
 
-const requiredFields = ['username', 'name', 'phone_temp', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
+const requiredFields = ['full_name', 'phone_temp', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
@@ -75,8 +75,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <DragDropImage
                         :inputName="'image'"
                         :errorMessage="form.errors.image"
-                        v-model="form.image"
                         class="!h-[373px] !w-[373px] "
+                        v-model="form.image"
                     />
                     <div class="flex flex-grow flex-col md:gap-[48px]">
                         <div class="flex flex-col md:gap-6">
@@ -85,57 +85,49 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             </div>
 
                             <div class="flex flex-col md:gap-4">
-                                <div class="flex md:gap-4">
+                                <!-- <div class="flex md:gap-4">
                                     <TextInput
                                         :labelText="'User name'"
                                         :placeholder="'eg: johndoe'"
-                                        inputId="username"
-                                        v-model="form.username"
-                                        :errorMessage="form.errors.username"
+                                        inputId="full_name"
+                                        v-model="form.full_name"
+                                        :errorMessage="form.errors.full_name"
                                     >
                                     </TextInput>
-                                </div>
+                                </div> -->
+
+                                <TextInput
+                                    label-text="Full name"
+                                    :placeholder="'eg: John Doe'"
+                                    inputId="full_name"
+                                    type="'text'"
+                                    :errorMessage="form.errors.full_name"
+                                    v-model="form.full_name"
+                                />
 
                                 <div class="flex md:gap-4">
                                     <TextInput
-                                        label-text="Full name"
-                                        :placeholder="'eg: John Doe'"
-                                        inputId="name"
-                                        type="'text'"
-                                        v-model="form.name"
-                                        :errorMessage="form.errors.name"
+                                        inputName="phone"
+                                        labelText="Phone number"
+                                        placeholder="11 1234 5678"
+                                        :iconPosition="'left'"
+                                        :errorMessage="form.errors?.phone || ''"
+                                        class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
+                                        v-model="form.phone_temp"
+                                        @keypress="isValidNumberKey($event, false)"
+                                        @input="formatPhoneInput"
                                     >
+                                        <template #prefix> +60 </template>
                                     </TextInput>
-                                </div>
 
-                                <div class="flex md:gap-4">
-                                    <div class="w-full flex flex-col">
-                                        <TextInput
-                                            inputName="phone"
-                                            labelText="Phone number"
-                                            placeholder="11 1234 5678"
-                                            :iconPosition="'left'"
-                                            :errorMessage="form.errors?.phone || ''"
-                                            class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
-                                            v-model="form.phone_temp"
-                                            @keypress="isValidNumberKey($event, false)"
-                                            @input="formatPhoneInput"
-                                        >
-                                            <template #prefix> +60 </template>
-                                        </TextInput>
-                                    </div>
-
-                                    <div class="w-full flex flex-col">
-                                        <TextInput
-                                            label-text="Email address"
-                                            :placeholder="'eg: johndoe@gmail.com'"
-                                            inputId="email"
-                                            type="'email'"
-                                            v-model="form.email"
-                                            :errorMessage="form.errors?.email || ''"
-                                        >
-                                        </TextInput>
-                                    </div>
+                                    <TextInput
+                                        label-text="Email address"
+                                        :placeholder="'eg: johndoe@gmail.com'"
+                                        inputId="email"
+                                        type="'email'"
+                                        :errorMessage="form.errors?.email || ''"
+                                        v-model="form.email"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -144,67 +136,64 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 Work Detail
                             </div>
                             <div class="flex md:gap-4">
-                                <div class="w-full flex flex-col">
-                                    <TextInput
-                                        label-text="Staff ID"
-                                        :placeholder="'eg: J8192'"
-                                        inputId="role_id"
-                                        type="'text'"
-                                        v-model="form.role_id"
-                                    ></TextInput>
-                                    <InputError
-                                        :message="form.errors.role_id"
-                                    />
-                                </div>
-                                <div class="w-full flex flex-col">
-                                    <TextInput
-                                        label-text="Basic salary (per month)"
-                                        inputId="salary"
-                                        type="'text'"
-                                        v-model="form.salary"
-                                        :iconPosition="'left'"
-                                        @keypress="isValidNumberKey($event, true)"
-                                    >
-                                        <template #prefix>
-                                            <span class="text-grey-900"
-                                                >RM</span
-                                            >
-                                        </template>
-                                    </TextInput>
-                                    <InputError :message="form.errors.salary" />
-                                </div>
+                                <TextInput
+                                    label-text="Staff ID"
+                                    :placeholder="'eg: J8192'"
+                                    inputId="role_id"
+                                    type="'text'"
+                                    :errorMessage="form.errors?.role_id || ''"
+                                    v-model="form.role_id"
+                                />
+                                <TextInput
+                                    label-text="Basic salary (per month)"
+                                    inputId="salary"
+                                    type="'text'"
+                                    :errorMessage="form.errors?.salary || ''"
+                                    v-model="form.salary"
+                                    :iconPosition="'left'"
+                                    @keypress="isValidNumberKey($event, true)"
+                                >
+                                    <template #prefix>
+                                        <span class="text-grey-900"
+                                            >RM</span
+                                        >
+                                    </template>
+                                </TextInput>
                             </div>
                         </div>
-                        <div class="flex flex-col md:gap-6">
+                        <div class="flex flex-col md:gap-6 w-full">
                             <div class="md:text-[20px] text-[#48070A]">
                                 Account Detail
                             </div>
                             <div class="flex md:gap-4">
-                                <div class="w-full flex flex-col">
-                                    <TextInput
-                                        labelText="Email address"
-                                        :placeholder="'for Stockie account log-in'"
-                                        inputId="stockie_email"
-                                        type="'email'"
-                                        v-model="form.stockie_email"
-                                    ></TextInput>
-                                    <InputError
-                                        :message="form.errors.stockie_email"
-                                    />
-                                </div>
-                                <div class="w-full flex flex-col">
-                                    <TextInput
-                                        labelText="Password"
-                                        :placeholder="'for Stockie account log-in'"
-                                        inputId="password"
-                                        :inputType="'password'"
-                                        v-model="form.password"
-                                    ></TextInput>
-                                    <InputError
-                                        :message="form.errors.password"
-                                    />
-                                </div>
+                                <TextInput
+                                    labelText="Email address"
+                                    :placeholder="'for Stockie account log-in'"
+                                    inputId="stockie_email"
+                                    type="'email'"
+                                    :errorMessage="form.errors?.stockie_email || ''"
+                                    v-model="form.stockie_email"
+                                />
+                                <TextInput
+                                    labelText="Password"
+                                    :placeholder="'for Stockie account log-in'"
+                                    inputId="password"
+                                    :inputType="'password'"
+                                    :errorMessage="form.errors?.password || ''"
+                                    v-model="form.password"
+                                />
                             </div>
+                            
+                            <TextInput
+                                inputId="passcode"
+                                labelText="Passcode"
+                                placeholder="eg: 123456"
+                                class="!w-1/2"
+                                :maxlength="6"
+                                :errorMessage="form.errors?.passcode || ''"
+                                v-model="form.passcode"
+                                @keypress="isValidNumberKey($event, false)"
+                            />
                         </div>
                     </div>
                 </div>

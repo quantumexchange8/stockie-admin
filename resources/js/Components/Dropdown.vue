@@ -48,7 +48,7 @@ const props = defineProps({
     plainStyle: {
         type: Boolean,
         default: false,
-    },
+    }
 });
 
 const emits = defineEmits(["update:modelValue", "onChange"]);
@@ -86,6 +86,11 @@ const handleClickOutside = (event) => {
     open.value = false;
   }
 };
+
+// Only if the option array thats been passed has image provided
+const getOptionData = (value) => {
+    return props.inputArray.find((item) => item.value === value);
+}
 
 onMounted(() => {
     // localValue.value = props.modelValue;
@@ -212,7 +217,17 @@ onUnmounted(() => {
             }"
         >
             <template #value="slotProps">
-                <slot name="value" />
+                <slot name="value" :="slotProps">
+                    <!-- If imageOption is true then it will display the option's image when selected an option -->
+                    <div class="flex items-center gap-x-2" v-if="slotProps.value && imageOption">
+                        <img 
+                            :src="getOptionData(slotProps.value).image ? getOptionData(slotProps.value).image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                            alt="WaiterProfileImage"
+                            class="size-5 rounded-full"
+                        >
+                        <p class="text-grey-700 text-base font-normal">{{ getOptionData(slotProps.value).text }}</p>
+                    </div>
+                </slot>
             </template>
             <template #dropdownicon>
                 <svg

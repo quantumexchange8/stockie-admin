@@ -138,26 +138,27 @@ class WaiterController extends Controller
 
    public function store(WaiterRequest $request)
    {    
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+        // $request->validate([
+        //     'name' => 'required|string|max:255',
+        //     'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+        // ]);
+        $validatedData = $request->validated();
+
+        $newWaiter = User::create([
+            'name' => $validatedData['full_name'],
+            'full_name' => $validatedData['full_name'],
+            'phone' => $validatedData['phone'],
+            'email'=>$validatedData['email'],
+            'role_id' => $validatedData['role_id'],
+            'role' => 'waiter',
+            'salary'=> $validatedData['salary'],
+            'worker_email' => $validatedData['stockie_email'],
+            'password' => Hash::make($validatedData['password']),
+            'profile_photo' => $validatedData['image'],
+            'passcode' => $validatedData['passcode'],
         ]);
 
-       $newWaiter = User::create([
-                'name' => $request->username,
-                'full_name' => $request->name,
-                'phone' => $request->phone,
-                'email'=>$request->email,
-                'role_id' => $request->role_id,
-                'role' => 'waiter',
-                'salary'=> $request->salary,
-                'worker_email' => $request->stockie_email,
-                'password' => Hash::make($request->stockie_password),
-                'profile_photo' => $request->image,
-        ]);
-
-       if($request->hasFile('image'))
-       {
+       if($request->hasFile('image')){
             $newWaiter->addMedia($request->image)->toMediaCollection('user');
        }
 
@@ -166,18 +167,25 @@ class WaiterController extends Controller
 
    public function deleteWaiter (String $id)
    {
-       $deleteWaiter = User::find($id);
+        $severity = 'error';  
+        $summary = 'Error deleting selected waiter.';
 
+        if ($id) {
+            $deleteWaiter = User::find($id);
+            $deleteWaiter->delete();
+
+            $severity = 'success';
+            $summary = 'Selected waiter has been successfully deleted.';
+        }
+        
     //    activity()->useLog('fire')
     //             ->performedOn($deleteWaiter)
     //             ->event('fired')
     //             ->log("$deleteWaiter->full_name is leaving us and we now have $deleteWaiter->salary more to spend, oh yeah");
 
-        $deleteWaiter->delete();
-
         $message = [ 
-            'severity' => 'success', 
-            'summary' => 'Selected waiter has been successfully deleted.'
+            'severity' => $severity, 
+            'summary' => $summary
         ];
 
 
@@ -186,21 +194,31 @@ class WaiterController extends Controller
 
    public function editWaiter (WaiterRequest $request)
    {
-        $editWaiter = User::find($request->id);
-        $editWaiter->update([
-            'name' => $request->input('username'),
-            'full_name' => $request->input('name'),
-            'phone' => $request->input('phone'),
-            'email' => $request->input('email'),
-            'staffid' => $request->input('staffid'),
-            'salary' => $request->input('salary'),
-            'worker_email' => $request->input('stockie_email'),
-            'password' => $request->input('password'),
+        $validatedData = $request->validated();
+        
+        $waiter = User::find($request->id);
+
+        $waiter->update([
+            'name' => $validatedData['full_name'],
+            'full_name' => $validatedData['full_name'],
+            'phone' => $validatedData['phone'],
+            'email'=>$validatedData['email'],
+            'role_id' => $validatedData['role_id'],
+            'salary'=> $validatedData['salary'],
+            'worker_email' => $validatedData['stockie_email'],
+            'profile_photo' => $validatedData['image'],
+            'passcode' => $validatedData['passcode'],
         ]);
 
+        if ($validatedData['password'] != '') {
+            $waiter->update([
+                'password' => Hash::make($validatedData['password']),
+            ]);
+        }
+
         if($request->hasFile('image')){
-            $editWaiter->clearMediaCollection('user');
-            $editWaiter->addMedia($request->image)->toMediaCollection('user');
+            $waiter->clearMediaCollection('user');
+            $waiter->addMedia($request->image)->toMediaCollection('user');
         }
 
         return redirect()->back();

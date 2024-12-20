@@ -7,16 +7,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-
+/**
+ * @method HasMany attendances()
+ */
 
 class User extends Authenticatable implements HasMedia
 {
-    use HasFactory, Notifiable, SoftDeletes, InteractsWithMedia, LogsActivity;
+    use HasFactory, Notifiable, SoftDeletes, InteractsWithMedia, LogsActivity, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -25,16 +29,16 @@ class User extends Authenticatable implements HasMedia
      */
     protected $fillable = [
         'name',
-        'email',
-        'password',  
-        'phone', 
-        'role_id', 
-        'salary', 
-        'worker_email', 
         'full_name',
+        'email',
+        'worker_email', 
+        'phone', 
+        'password',  
         'role',
-        'profile_photo'
-        
+        'role_id', 
+        'passcode', 
+        'profile_photo',
+        'salary', 
     ];
 
     /**
@@ -86,7 +90,7 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(OrderItem::class, 'user_id');
     }
 
-    public function keepItems () : HasMany
+    public function keepItems(): HasMany
     {
         return $this->hasMany(KeepItem::class);
     }
@@ -99,12 +103,17 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(Order::class, 'user_id');
     }
 
-    public function attendances () : HasMany
+    public function currentAttendance(): HasOne
+    {
+        return $this->hasOne(WaiterAttendance::class, 'user_id')->where('status', 'Checked in')->latest('check_in')->first();
+    }
+
+    public function attendances(): HasMany
     {
         return $this->hasMany(WaiterAttendance::class, 'user_id');
     }
 
-    public function configIncentEmployee () : HasMany
+    public function configIncentEmployee(): HasMany
     {
         return $this->hasMany(ConfigIncentiveEmployee::class, 'user_id');
     }
