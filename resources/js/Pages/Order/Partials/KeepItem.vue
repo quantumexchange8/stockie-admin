@@ -2,7 +2,7 @@
 import { useForm, usePage } from '@inertiajs/vue3';
 import { onMounted, ref, computed, watch } from 'vue';
 import Button from '@/Components/Button.vue';
-import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
+import { useCustomToast, useInputValidator, usePhoneUtils } from '@/Composables/index.js';
 import Tag from '@/Components/Tag.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
@@ -12,8 +12,11 @@ import RadioButton from '@/Components/RadioButton.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DateInput from "@/Components/Date.vue";
 import Toggle from '@/Components/Toggle.vue';
-import { Calendar } from "@/Components/Icons/solid";
+import { Calendar, TimesIcon, WarningIcon } from "@/Components/Icons/solid";
 import dayjs from 'dayjs';
+import { UndetectableIllus } from '@/Components/Icons/illus';
+import OverlayPanel from '@/Components/OverlayPanel.vue';
+import NotAllowedToKeep from './NotAllowedToKeep.vue';
 
 const props = defineProps({
     errors: Object,
@@ -29,6 +32,58 @@ const props = defineProps({
 
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
+const items = ref([]);
+const notAllowToKeep = ref([]);
+const isLoading = ref(false);
+const isMessageShown = ref(true);
+const allCustomers = ref([]);
+const notAllowedOverlay = ref(null);
+const { isValidNumberKey } = useInputValidator();
+
+const fetchProducts = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get(route('orders.getTableKeepItem', props.selectedTable.id));
+        items.value = response.data.uniqueOrders;
+        allCustomers.value = response.data.allCustomers.map(customer => ({
+            text: customer.full_name,
+            value: customer.id,
+            image: customer.image,
+            details: [
+                { key: 'email', value: customer.email },
+                { key: 'phone', value: formatPhone(customer.phone) }
+            ]
+        }));
+
+        notAllowToKeep.value = items.value
+            .flatMap(item => {
+                // Map through all order items
+                return item.order_items.map(orderItem => {
+                    // Filter sub-items that are not 'Active'
+                    const inactiveSubItems = orderItem.sub_items.filter(
+                        subItem => subItem.product_item.inventory_item.keep !== 'Active'
+                    );
+
+                    // If there are any inactive sub-items, return a new order item with those sub-items
+                    if (inactiveSubItems.length > 0) {
+                        return {
+                            ...orderItem,
+                            sub_items: inactiveSubItems,
+                        };
+                    }
+
+                    return null; // Return null if no inactive sub-items
+                }).filter(orderItem => orderItem !== null); // Remove null entries
+            });
+
+    } catch (error) {
+        console.error(error);
+        items.value = [];
+        notAllowToKeep.value = [];
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
@@ -50,7 +105,9 @@ const expiryPeriodOptions = [
 
 const form = useForm({
     user_id: userId.value,
+    current_customer_id: props.order.customer_id,
     customer_id: props.order.customer_id,
+    current_order_id: props.order.id,
     order_id: props.order.id,
     items: [],
 });
@@ -59,7 +116,6 @@ const submit = async () => {
     form.processing = true;
     try {
         const response = await axios.post(`/order-management/orders/addItemToKeep`, form);
-
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
@@ -76,21 +132,6 @@ const submit = async () => {
     } finally {
         form.processing = false;
     }
-    // form.post(route('orders.items.keep'), {
-    //     preserveScroll: true,
-    //     preserveState: true,
-    //     onSuccess: () => {
-    //         setTimeout(() => {
-    //             showMessage({ 
-    //                 severity: 'success',
-    //                 summary: 'Item kept successfully.',
-    //                 detail: "You can always refer back the keep item in 'Customer detail'.",
-    //             });
-    //         }, 200);
-    //         form.reset();
-    //         emit('close');
-    //     },
-    // })
 };
 
 const pendingServeItems = computed(() => {
@@ -132,16 +173,12 @@ const getTotalKeptQuantity = (item) => {
 
 const getTotalServedQty = (item) => {
     let count = 0;
-    const totalServedQty = [];
-
     item.sub_items.forEach((subItem) => {
-        const servedQty = Math.ceil(subItem.serve_qty / subItem.item_qty);
-        count++;
-
-        return servedQty > 0 || count > 1 ? totalServedQty.push(servedQty) : totalServedQty.push(0);
+        if(subItem.product_item.inventory_item.keep === 'Active') {
+            count+= subItem.item_qty * item.item_qty;
+        }
     });
-
-    return totalServedQty.length > 0 ? Math.max(...totalServedQty) : 0;
+    return count;
 };
 
 const getLeftoverQuantity = (item) => {
@@ -152,13 +189,24 @@ const getLeftoverQuantity = (item) => {
     return untouchedQty > 0 ? untouchedQty : 0;
 };
 
+const openNotAllowOverlay = (event) => {
+    notAllowedOverlay.value.show(event);
+} 
+
+const closeNotAllowOverlay = () => {
+    notAllowedOverlay.value.hide();
+}
+
 const addItemToList = (item) => {
     const index = form.items.findIndex(i => i.order_item_id === item.id);
 
     if (index !== -1) {
         // Remove all subitems if order item is unchecked
-        form.items = form.items.filter(i => i.order_item_id !== item.id);
+        // form.items = form.items.filter(i => i.order_item_id !== item.id);
+        form.items = [];
     } else {
+        form.items = [];
+        form.order_id = item.order_id;
         item.sub_items.forEach((subItem) => {
             form.items.push({
                 order_item_id: item.id,
@@ -168,11 +216,17 @@ const addItemToList = (item) => {
                         : parseFloat(item.keep_item.oldest_keep_history.qty) > parseFloat(item.keep_item.oldest_keep_history.cm) 
                             ? 'qty'
                             : 'cm',
-                amount: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
+                // amount: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
+                //         ? (subItem.item_qty * item.item_qty) - getKeptQuantity(subItem) 
+                //         : parseFloat(item.keep_item.oldest_keep_history.qty) > parseFloat(item.keep_item.oldest_keep_history.cm) 
+                //             ? (subItem.item_qty * item.item_qty) - getTotalKeptQuantity(item)
+                //             : item.keep_item.oldest_keep_history.cm,
+                amount: subItem.product_item.inventory_item.keep === 'Active' ?
+                        item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
                         ? (subItem.item_qty * item.item_qty) - getKeptQuantity(subItem) 
                         : parseFloat(item.keep_item.oldest_keep_history.qty) > parseFloat(item.keep_item.oldest_keep_history.cm) 
                             ? (subItem.item_qty * item.item_qty) - getTotalKeptQuantity(item)
-                            : item.keep_item.oldest_keep_history.cm,
+                            : item.keep_item.oldest_keep_history.cm : 0,
                 remark: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.remark ? item.keep_item.remark : '',
                 expiration: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? false : item.keep_item.expired_from ? true : false,
                 expired_period: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? 0 : '',
@@ -278,11 +332,16 @@ const getKeepItemName = (item) => {
     });
     if (itemName) return itemName;
 };
+
+onMounted(() => {
+    fetchProducts();
+});
+
 </script>
 
 <template>
     <form novalidate @submit.prevent="submit">
-        <div class="flex flex-col gap-y-6 items-start rounded-[5px]">
+        <!-- <div class="flex flex-col gap-y-6 items-start rounded-[5px]">
             <div class="flex flex-col justify-center items-start gap-y-3 px-6 py-3 w-full">
                 <div class="flex flex-col gap-y-3 py-6 justify-center items-center w-full bg-[rgba(255,_249,_249,_0.90)] rounded-[5px]">
                     <img 
@@ -456,7 +515,242 @@ const getKeepItemName = (item) => {
                     Done
                 </Button>
             </div>
+        </div> -->
+
+        <div class="flex flex-col p-5 items-start gap-5 flex-[1_0_0] self-stretch max-h-[calc(100dvh-5rem)] overflow-y-auto scrollbar-thin scrollbar-webkit" v-if="items.length">
+            <!-- message container -->
+            <div class="flex flex-col p-3 justify-center items-start gap-3 self-stretch rounded-[5px] bg-[#FDFBED]"
+                v-if="notAllowToKeep.length > 0 && isMessageShown"
+                @click.prevent.stop="openNotAllowOverlay($event)"
+            >
+                <!-- message header -->
+                <div class="flex items-start gap-3 self-stretch">
+                    <div class="flex items-start gap-3 flex-[1_0_0]">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2.00098C6.49094 2.00098 2 6.49052 2 12C2 17.5094 6.49094 21.9986 12 21.9986C17.5091 21.9986 22 17.5094 22 12C22 6.49052 17.5091 2.00098 12 2.00098ZM12 16.9992C11.4481 16.9992 10.999 16.5512 10.999 15.9992C10.999 15.4473 11.4481 14.9996 12 14.9996C12.5519 14.9996 13.001 15.4473 13.001 15.9992C13.001 16.5512 12.5519 16.9992 12 16.9992ZM13.001 12.9996C13.001 13.5515 12.5519 13.9996 12 13.9996C11.4481 13.9996 10.999 13.5515 10.999 12.9996V8.00028C10.999 7.44835 11.4481 7.00029 12 7.00029C12.5519 7.00029 13.001 7.44835 13.001 8.00028V12.9996Z" fill="#DEA622"/>
+                        </svg>
+                        <div class="flex flex-col justify-between items-start flex-[1_0_0]">
+                            <span class="self-stretch text-[#A35F1A] text-base font-bold">Item(s) not allowed to keep.</span>
+                            <span class="self-stretch text-[#3E200A] text-sm font-normal"><span class="!font-bold">{{ notAllowToKeep.length }} items</span> will be removed from keep item listing.</span>
+                        </div>
+                    </div>
+                    <TimesIcon class="!text-[#6E3E19] cursor-pointer" @click.prevent.stop="isMessageShown = false"/>
+                </div>
+
+                <!-- image container -->
+                <div class="flex mx-9 items-start gap-3 self-stretch overflow-x-auto">
+                    <img 
+                        :src="item.product?.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                        alt=""
+                        class="size-[60px] object-contain bg-white"
+                        v-for="item in notAllowToKeep" :key="item.id"
+                    >
+                </div>
+            </div>
+
+            <!-- item container -->
+            <div class="flex flex-col pt-4 pb-2 items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)] "
+                v-for="item in items" :key="item.id"
+            >
+                <!-- item header -->
+                <div class="flex px-4 justify-center items-center gap-2.5 self-stretch">
+                    <div class="w-1.5 h-[53px] bg-red-800"></div>
+                    <!-- item details -->
+                    <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
+                        <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-lg font-bold">{{ item.order_no }}</span>
+                        <!-- item info -->
+                        <div class="flex items-center gap-3 self-stretch">
+                            <div class="flex items-center gap-2">
+                                <img
+                                    :src="item.customer.image ? item.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    alt="CustomerIcon"
+                                    class="size-5 rounded-[20px]"
+                                >
+                                <span class="text-grey-900 text-base font-normal">{{ item.customer.full_name }}</span>
+                                <span class="text-grey-200">&#x2022;</span>
+                                <span class="text-grey-900 text-base font-normal">{{ item.order_time }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- item list -->
+                <div class="flex flex-col w-full px-4 items-start self-stretch divide-y-[0.5px] divide-grey-200">
+                    <div class="flex flex-col items-start gap-2 self-stretch" v-for="(order_item, index) in item.order_items">
+                        <div class="flex py-3 items-center gap-8 self-stretch">
+                            <div class="flex items-center gap-3 !justify-between flex-[1_0_0] ">
+                                <img
+                                    :src="order_item.product?.image ? order_item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    alt="ItemImage"
+                                    class="size-[60px] object-contain"
+                                >
+                                <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
+                                    <div class="flex items-center gap-2 self-stretch">
+                                        <Tag 
+                                            :variant="'default'"
+                                            :value="'Set'"
+                                            v-if="order_item.product.bucket === 'set'"
+                                        />
+                                        <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium gap-2">
+                                            {{ order_item.product.product_name }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2 self-stretch">
+                                        <span class=" text-base font-semibold"
+                                            :class="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ? '  text-green-500' : 'text-primary-900'"
+                                        >
+                                            {{ getTotalKeptQuantity(order_item) }}/{{ getTotalServedQty(order_item) }} item kept
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- <RadioButton 
+                                :name="'item'"
+                                :dynamic="false"
+                                :value="order_item"
+                                class="!w-fit"
+                                :errorMessage="''"
+                                v-model:checked="form.item"
+                            /> -->
+                            <Checkbox 
+                                :checked="form.items.find(i => i.order_item_id === order_item.id) !== undefined"
+                                v-tooltip.left="{ value: getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ?  'You’ve reached the max keep quantity.' : '' }"
+                                :disabled="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item)"
+                                @change="addItemToList(order_item)"
+                            />
+                        </div>
+                        <div class="flex flex-col px-3 pb-5 items-start gap-3 self-stretch" v-if="form.items.find(i => i.order_item_id === order_item.id)">
+                            <div class="flex flex-col py-2 justify-end items-start gap-3 self-stretch" v-for="sub_item in order_item.sub_items">
+                                <template v-if="sub_item.product_item.inventory_item.keep === 'Active'">
+                                    <span class="self-stretch text-grey-900 text-base font-medium" v-if="order_item.product.bucket === 'set'">{{ sub_item.product_item.inventory_item.item_name }}</span>
+                                    <div class="flex flex-col mx-[-12px] items-start gap-2.5 self-stretch">
+                                        <div class="flex justify-between items-center self-stretch">
+                                            <RadioButton
+                                                :optionArr="keepTypes"
+                                                :checked="form.items.find(i => i.order_item_subitem_id === sub_item.id).type"
+                                                :disabled="totalSubItemQty(order_item, sub_item) === getKeptQuantity(sub_item) || order_item.type === 'Keep'"
+                                                v-model:checked="form.items.find(i => i.order_item_subitem_id === sub_item.id).type"
+                                                @onChange="updateKeepAmount(form.items.find(i => i.order_item_subitem_id === sub_item.id), $event)"
+                                            />
+
+                                            <NumberCounter 
+                                                :minValue="0"
+                                                :maxValue="totalSubItemQty(order_item, sub_item) - (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
+                                                v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
+                                                v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'qty'"
+                                                class="!w-36"
+                                            />
+
+                                            <TextInput
+                                                :iconPosition="'right'"
+                                                v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
+                                                v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'cm'"
+                                                :disabled="totalSubItemQty(order_item, sub_item) === (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
+                                                @keypress="isValidNumberKey($event, false)"
+                                                @update:modelValue="checkMaxValue($event, order_item, sub_item.id)"
+                                                class="!w-36"
+                                            />
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <Dropdown 
+                                :inputArray="allCustomers"
+                                :labelText="'Keep for'"
+                                :dataValue="props.order.customer_id"
+                                v-model="form.customer_id"
+                                imageOption
+                                withDescription
+                            >
+                                <template #description="slotProps">
+                                    <div class="flex items-center gap-2 self-stretch">
+                                        <span class="text-grey-500 text-sm font-normal ">{{ allCustomers[slotProps.index].details[0].value }}</span>
+                                        <span class="text-grey-300 ">&#x2022;</span>
+                                        <span class="text-grey-500 text-sm font-normal ">{{ allCustomers[slotProps.index].details[1].value }}</span>
+                                    </div>
+                                </template>
+                            </Dropdown>
+
+                            <Textarea
+                                inputName="remark"
+                                labelText="Remark"
+                                v-model="form.items.find(i => i.order_item_id === order_item.id).remark"
+                                :rows="5"
+                                :maxCharacters="60" 
+                                :disabled="order_item.type === 'Keep'"
+                                class="col-span-full xl:col-span-4 [&>div>label:first-child]:text-xs [&>div>label:first-child]:font-medium [&>div>label:first-child]:text-grey-900"
+                                @input="updateRemarkForSubitems(order_item.id, $event.target.value)"
+                            />
+
+                            <div class="flex justify-end items-center gap-3 self-stretch">
+                                <p class="text-base text-grey-900 font-normal">
+                                    With Keep Expiration Date
+                                </p>
+                                <Toggle
+                                    :checked="form.items.find(i => i.order_item_id === order_item.id).expiration"
+                                    :inputName="'expiration'"
+                                    inputId="expiration"
+                                    :disabled="order_item.type === 'Keep'"
+                                    v-model="form.items.find(i => i.order_item_id === order_item.id).expiration"
+                                    @change="toggleExpiration(order_item.id, $event.target.checked)"
+                                />
+                            </div>
+
+                            <template v-if="form.items.find(i => i.order_item_id === order_item.id).expiration">
+                                <div class="flex flex-col gap-3 w-full">
+                                    <Dropdown
+                                        :placeholder="'Select'"
+                                        :inputArray="expiryPeriodOptions"
+                                        :dataValue="form.items.find(i => i.order_item_id === order_item.id).expired_period"
+                                        :inputName="'expired_period_' + index"
+                                        :disabled="order_item.type === 'Keep'"
+                                        labelText="Expire Date Range"
+                                        inputId="expired_period"
+                                        v-model="form.items.find(i => i.order_item_id === order_item.id).expired_period"
+                                        @onChange="updateValidPeriod(order_item.id, $event)"
+                                        :iconOptions="{
+                                            'Customise range...': Calendar,
+                                        }"
+                                    />
+
+                                    <DateInput
+                                        v-if="form.items.find(i => i.order_item_id === order_item.id).expired_period === 0"
+                                        :labelText="''"
+                                        :inputName="'date_range_' + index"
+                                        :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                                        :range="true"
+                                        :errorMessage="form.errors ? form.errors['items.' + index + '.expired_to']  : ''"
+                                        :disabled="order_item.type === 'Keep'"
+                                        @onChange="updateValidPeriod(order_item.id, $event)"
+                                        v-model="form.items.find(i => i.order_item_id === order_item.id).date_range"
+                                    />
+                                </div>
+                            </template>
+                        </div>
+                        <Button
+                            :variant="'primary'"
+                            :size="'lg'"
+                            :disabled="form.processing"
+                            v-if="form.items.find(i => i.order_item_id === order_item.id)"
+                        >
+                            Keep
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
+            <UndetectableIllus />
+            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
         </div>
     </form>
+
+    <OverlayPanel ref="notAllowedOverlay" class="!max-h-[calc(100dvh-18rem)] !overflow-y-auto !scrollbar-thin !scrollbar-webkit">
+        <NotAllowedToKeep 
+            :item="notAllowToKeep"
+            @close="closeNotAllowOverlay()"
+        />
+    </OverlayPanel>
 </template>
     

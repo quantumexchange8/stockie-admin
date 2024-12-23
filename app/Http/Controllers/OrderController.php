@@ -1159,8 +1159,9 @@ class OrderController extends Controller
 
         if (count($validatedItems) > 0) {
             $order = Order::with(['orderTable.table', 'orderItems.subItems', 'orderItems.product'])->find($request->order_id);
+            $currentOrder = Order::with(['orderTable.table', 'orderItems.subItems', 'orderItems.product'])->find($request->current_order_id);
+
             $orderItems = $order->orderItems;
-                        
             foreach ($orderItems as $orderItemKey => $orderItem) {
                 $totalItemQty = 0;
                 $totalServedQty = 0;
@@ -1220,7 +1221,7 @@ class OrderController extends Controller
                                 }
         
                                 $totalItemQty += $subItem['item_qty'] * $orderItem->item_qty;
-                                $totalServedQty += $subItem['serve_qty'];
+                                $totalServedQty += $subItem['serve_qty'];  
                                 $hasServeQty = $item['amount'] > 0 || $hasServeQty ? true : false;
                             }
                         }
@@ -1231,10 +1232,10 @@ class OrderController extends Controller
                     $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
                 }
             }
-            $order->refresh();
+            $currentOrder->refresh();
 
-            if ($order) {
-                $statusArr = collect($order->orderItems->pluck('status')->unique());
+            if ($currentOrder) {
+                $statusArr = collect($currentOrder->orderItems->pluck('status')->unique());
             
                 $orderStatus = 'Pending Serve';
                 $orderTableStatus = 'Pending Order';
@@ -1250,10 +1251,10 @@ class OrderController extends Controller
                     $orderTableStatus = 'All Order Served';
                 }
                 
-                $order->update(['status' => $orderStatus]);
+                $currentOrder->update(['status' => $orderStatus]);
                 
                 // Update all tables associated with this order
-                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
+                $currentOrder->orderTable->each(function ($tab) use ($orderTableStatus) {
                     $tab->table->update(['status' => $orderTableStatus]);
                     $tab->update(['status' => $orderTableStatus]);
                 });
@@ -1271,7 +1272,7 @@ class OrderController extends Controller
                                             ]);
                                 }
                             ])
-                            ->find($request->customer_id);
+                            ->find($request->current_customer_id);
         
         foreach ($customer->keepItems as $key => $keepItem) {
             $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
@@ -1285,6 +1286,166 @@ class OrderController extends Controller
         }
 
         return response()->json($customer->keepItems);
+        
+        // $validated = $request->validate([
+        //     'customer_id' => 'required|integer',
+        //     'user_id' => 'required|integer',
+        //     'order_id' => 'required|integer',
+        //     'remark' => 'nullable|string',
+        //     'expired_from' => 'nullable|date_format:Y-m-d H:i:s',
+        //     'expired_to' => 'nullable|date_format:Y-m-d H:i:s',
+        // ], [
+        //     'required' => 'This field is required.'
+        // ]);
+
+        // $order_item = $request->input('item');
+        // $sub_items = collect($order_item['sub_items'])->map(function ($query) use ($validated) {
+        //     return [
+        //         'customer_id' => $validated['customer_id'],
+        //         'id' => $query['id'], 
+        //         'qty' => $query['type'] === 'qty' ? (int)$query['amount'] : 0,
+        //         'cm' => $query['type'] === 'cm' ? round($query['amount'], 2) : 0.00,
+        //         'type' => $query['type'], 
+        //         'remark' => $validated['remark'],
+        //         'user_id' => $validated['user_id'],
+        //         'status' => 'Keep',
+        //         'expired_from' => $validated['expired_from'],
+        //         'expired_to' => $validated['expired_to'],
+        //         'order_id' => $validated['order_id']
+        //     ];
+        // });
+        // dd($sub_items);
+        
+        // if (count($sub_items) > 0) {
+        //     $order = Order::with(['orderTable.table', 'orderItems.subItems', 'orderItems.product'])->find($request->order_id);
+        //     $orderItems = $order->orderItems;
+                        
+        //     foreach ($orderItems as $orderItemKey => $orderItem) {
+        //         $totalItemQty = 0;
+        //         $totalServedQty = 0;
+        //         $hasServeQty = false;
+
+        //         foreach ($orderItem->subItems as $subItemKey => $subItem) {
+        //             foreach ($sub_items as $key => $item) {
+        //                 foreach ($request->items as $reqItemKey => $reqItem) {
+        //                     if ($item['id'] === $reqItem['order_item_subitem_id'] && $subItem['id'] === $item['order_item_subitem_id']) {
+        //                         if ($item['amount'] > 0) {
+        //                             if ($reqItem['keep_id']) {
+        //                                 $keepItem = KeepItem::find($reqItem['keep_id']);
+        //                                 $keepItem->update([
+        //                                     'qty' => $reqItem['type'] === 'qty' ? $keepItem->qty + $item['amount'] : $keepItem->qty,
+        //                                     'cm' => $reqItem['type'] === 'cm' ? $keepItem->cm + $item['amount'] : $keepItem->cm,
+        //                                     'status' => 'Keep',
+        //                                 ]);
+
+        //                                 $keepItem->save();
+        //                                 $keepItem->refresh();
+            
+        //                                 KeepHistory::create([
+        //                                     'keep_item_id' => $reqItem['keep_id'],
+        //                                     'order_item_id' => $reqItem['order_item_id'],
+        //                                     'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
+        //                                     'cm' => $reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
+        //                                     'keep_date' => $keepItem->updated_at,
+        //                                     'status' => 'Keep',
+        //                                 ]);
+        //                             } else {
+        //                                 $newKeep = KeepItem::create([
+        //                                     'customer_id' => $request->customer_id,
+        //                                     'order_item_subitem_id' => $item['order_item_subitem_id'],
+        //                                     'qty' => $reqItem['type'] === 'qty' ? $item['amount'] : 0,
+        //                                     'cm' => $reqItem['type'] === 'cm' ? $item['amount'] : 0,
+        //                                     'remark' => $item['remark'] ?: '',
+        //                                     'user_id' => $request->user_id,
+        //                                     'status' => 'Keep',
+        //                                     'expired_from' => $item['expired_from'],
+        //                                     'expired_to' => $item['expired_to'],
+        //                                 ]);
+            
+        //                                 KeepHistory::create([
+        //                                     'keep_item_id' => $newKeep->id,
+        //                                     'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
+        //                                     'cm' => $reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
+        //                                     'keep_date' => $newKeep->created_at,
+        //                                     'status' => 'Keep',
+        //                                 ]);
+        //                             }
+
+        //                             if ($orderItem->status === 'Pending Serve') {
+        //                                 $subItem->increment('serve_qty', $reqItem['type'] === 'cm' ? 1 : $item['amount']);
+        //                             }
+        //                             $subItem->save();
+        //                             $subItem->refresh();
+        //                         }
+        
+        //                         $totalItemQty += $subItem['item_qty'] * $orderItem->item_qty;
+        //                         $totalServedQty += $subItem['serve_qty'];
+        //                         $hasServeQty = $item['amount'] > 0 || $hasServeQty ? true : false;
+        //                     }
+        //                 }
+        //             }
+        //         }
+
+        //         if ($hasServeQty) {
+        //             $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
+        //         }
+        //     }
+        //     $order->refresh();
+
+        //     if ($order) {
+        //         $statusArr = collect($order->orderItems->pluck('status')->unique());
+            
+        //         $orderStatus = 'Pending Serve';
+        //         $orderTableStatus = 'Pending Order';
+            
+        //         if ($statusArr->contains('Pending Serve')) {
+        //             $orderStatus = 'Pending Serve';
+        //             $orderTableStatus = 'Order Placed';
+        //         } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+        //             $orderStatus = 'Order Served';
+        //             $orderTableStatus = 'All Order Served';
+        //         } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+        //             $orderStatus = 'Order Served';
+        //             $orderTableStatus = 'All Order Served';
+        //         }
+                
+        //         $order->update(['status' => $orderStatus]);
+                
+        //         // Update all tables associated with this order
+        //         $order->orderTable->each(function ($tab) use ($orderTableStatus) {
+        //             $tab->table->update(['status' => $orderTableStatus]);
+        //             $tab->update(['status' => $orderTableStatus]);
+        //         });
+        //     }
+        // }
+        
+        // $customer = Customer::with([
+        //                         'keepItems' => function ($query) {
+        //                             $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
+        //                                     ->where('status', 'Keep')
+        //                                     ->with([
+        //                                         'orderItemSubitem.productItem:id,inventory_item_id',
+        //                                         'orderItemSubitem.productItem.inventoryItem:id,item_name',
+        //                                         'waiter:id,full_name'
+        //                                     ]);
+        //                         }
+        //                     ])
+        //                     ->find($request->customer_id);
+        
+        // foreach ($customer->keepItems as $key => $keepItem) {
+        //     $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+        //     unset($keepItem->orderItemSubitem);
+            
+        //     $keepItem->image = $keepItem->orderItemSubitem->productItem 
+        //             ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+        //             : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+            
+        //     $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+        // }
+
+        // return response()->json($customer->keepItems);
+
+
     }
 
     /**
@@ -2179,5 +2340,72 @@ class OrderController extends Controller
         $removalTarget->update(['status' => 'Active']);
 
         return response()->json();
+    }
+
+    public function getTableKeepItem(string $id)
+    {
+        $orderTables = OrderTable::with([
+                                        'table',
+                                        'order.payment.customer',
+                                        'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
+                                        'order.orderItems.product',
+                                        'order.orderItems.subItems.productItem.inventoryItem',
+                                        'order.orderItems.subItems.keepItems.keepHistories',
+                                        'order.orderItems.subItems.keepItems.oldestKeepHistory'
+                                    ])
+                                    ->where('table_id', $id)
+                                    ->where(function ($query){
+                                        $query->where('status', 'Pending Clearance')
+                                            ->orWhere('status', 'All Order Served')
+                                            ->orWhere('status', 'Order Placed');
+                                    })
+                                    ->orderByDesc('updated_at')
+                                    ->get()
+                                    ->map(function ($orderTable) {
+                                        $orderTable->order->orderItems->each(function ($item) {
+                                            if ($item['keep_item_id']) {
+                                                $item['item_name'] = $item->subItems[0]->productItem->inventoryItem['item_name'];
+                                            }
+
+                                            // unset($item->subItems[0]->productItem);
+
+                                            return $item;
+                                        });
+
+                                        return $orderTable;
+                                    });
+
+        //get images
+        foreach ($orderTables as $orderTable) {
+            if ($orderTable->order) {
+                foreach ($orderTable->order->orderItems as $orderItem) {
+                    if ($orderItem->product) {
+                        $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
+                    }
+                }
+            }
+        }
+
+        $allCustomers = Customer::select('id', 'full_name', 'email', 'phone')->get();
+        $allCustomers->each(function($customer){
+            $customer->image = $customer->getFirstMediaUrl('customer');
+        });
+
+        $uniqueOrders = $orderTables->pluck('order')->unique('id')->map(function ($order) {
+            if ($order->customer) {
+                $order->customer->image = $order->customer->getFirstMediaUrl('customer');
+            }
+            return [
+                'order_time' => Carbon::parse($order->created_at)->format('d/m/Y, H:i'),
+                'order_no' => $order->order_no,
+                'order_items' => $order->orderItems,
+                'customer' => $order->customer,
+            ];
+        })->values();
+        
+        return response()->json([
+            'uniqueOrders' => $uniqueOrders,
+            'allCustomers' => $allCustomers,
+        ]);
     }
 }

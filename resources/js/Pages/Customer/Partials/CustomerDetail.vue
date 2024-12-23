@@ -148,7 +148,7 @@ const formatPoints = (points) => {
                 <div class="flex flex-col justify-end items-start gap-2 self-stretch">
                     <div class="flex py-3 items-center gap-3 self-stretch" v-for="item in formatKeepItems(customer.keep_items)" :key="item.id">
                         <div class="flex flex-col justify-center items-start gap-3 flex-[1_0_0]">
-                            <div class="flex px-[10px] py-1 items-center gap-[10px] self-stretch rounded-sm">
+                            <div class="flex px-[10px] py-1 items-center gap-[10px] self-stretch rounded-sm bg-primary-25">
                                 <span class="text-primary-900 text-sm font-medium">{{ dayjs(item.created_at).format('DD/MM/YYYY, hh:mm A') }}</span>
                             </div>
                             <div class="flex items-center gap-3 self-stretch">

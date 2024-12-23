@@ -48,6 +48,10 @@ const props = defineProps({
     plainStyle: {
         type: Boolean,
         default: false,
+    },
+    withDescription: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -193,7 +197,7 @@ onUnmounted(() => {
                                 'text-grey-700': !context.focused && !context.selected,
                                 'bg-grey-50': context.focused && !context.selected,
                                 'text-grey-800': context.focused && !context.selected,
-                                'text-primary-900': context.selected,
+                                'text-primary-900 [&>div>div>div>span]:text-primary-900': context.selected,
                                 'bg-primary-50': context.selected ,
                                 'hover:bg-grey-100': !context.focused && !context.selected,
                                 'hover:bg-primary-highlight-hover': context.selected,
@@ -274,7 +278,12 @@ onUnmounted(() => {
                         class="size-5 rounded-full"
                         v-if="imageOption"
                     />
-                    <span>{{ slotProps.option.text }}</span>
+                    <span v-if="!withDescription">{{ slotProps.option.text }}</span>
+
+                    <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]" v-if="withDescription">
+                        <span>{{ slotProps.option.text }}</span>
+                        <slot name="description" :="slotProps"></slot>
+                    </div>
                     <span
                         class="absolute right-0 pr-4"
                         v-if="props.iconOptions"
