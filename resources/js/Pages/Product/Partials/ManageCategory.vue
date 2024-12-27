@@ -6,6 +6,8 @@ import { nextTick, reactive, ref, watch } from "vue";
 import { DeleteIcon, Menu2Icon, PlusIcon } from '@/Components/Icons/solid.jsx';
 import Modal from '@/Components/Modal.vue';
 import { useCustomToast } from "@/Composables";
+import OverlayPanel from "@/Components/OverlayPanel.vue";
+import ReassignedProductCategory from "./ReassignedProductCategory.vue";
 
 const props = defineProps({
     categoryArr: {
@@ -14,10 +16,9 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(["close", 'getZoneDetails', 'isDirty']);
+const emit = defineEmits(["close", 'isDirty', 'update:categories']);
 const { showMessage } = useCustomToast();
 
-const deleteCategoryFormIsOpen = ref(false);
 const selectedCategory = ref(null);
 const isEditing = ref(false);
 const currentCategoryId = ref(null);
@@ -26,6 +27,11 @@ const inputRefs = reactive({});
 const isEdited = ref(false);
 const categories = ref();
 const newCategoriesCounter = ref(0);
+const op = ref(null);
+const reassignCategoryFormIsOpen = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const isAfterAction = ref(false);
 
 const form = useForm({
     name: "",
@@ -52,46 +58,88 @@ const addCategory = () => {
 }
 
 const removeAddCategory = (id) => { 
-    newCategories.categories = newCategories.categories.filter(category => category.index !== id); 
+    newCategories.categories = id !== 'clear' ? newCategories.categories.filter(category => category.index !== id) : []; 
+    newCategoriesCounter.value = id !== 'clear' ? newCategoriesCounter.value - 1 : 0;
 }
 
-const submit = () => {
+const submit = async () => {
     //only submit if its edited, else just return default state
     if(isEdited.value){
         if(isEditing.value){
-            form.post(route('tableroom.edit-zone'), {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    isEditing.value = false;
-                    form.reset();
-                    setTimeout(() => {
+            form.processing = true;
+
+            try {
+                const { data } = await axios.put(`/menu-management/products/category/updateCategory/${form.id}`, form);
+                isEditing.value = false;
+                form.reset();
+
+                setTimeout(() => {
                     showMessage({
                         severity: 'success',
-                        summary: 'Zone name has been edited successfully.'
+                        summary: 'Category name has been edited successfully.'
                     });
                 }, 200);
-                    emit('getZoneDetails');
-                }
-            })
-        }
-        else{
-            newCategories.post(route("tableroom.add-zone"), {
-                preserveScroll: true,
-                preserveState: 'errors',
-                onSuccess: () => {
-                    form.reset();
-                    emit('close', 'leave');
+
+                emit('update:categories', data);
+                emit('isDirty', false);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                form.processing = false;
+            }
+
+            // form.post(route('products.category.update', form.id), {
+            //     preserveScroll: true,
+            //     preserveState: true,
+            //     onSuccess: () => {
+            //         isEditing.value = false;
+            //         form.reset();
+            //         setTimeout(() => {
+            //             showMessage({
+            //                 severity: 'success',
+            //                 summary: 'Category name has been edited successfully.'
+            //             });
+            //         }, 200);
+            //         emit('update:categories', );
+            //     }
+            // })
+        } else {
+            newCategories.processing = true;
+
+            try {
+                const { data } = await axios.post('/menu-management/products/category/storeCategory', newCategories);
+                newCategories.reset();
+
+                setTimeout(() => {
                     showMessage({
                         severity: 'success',
-                        summary: 'Zone has been added successfully.'
+                        summary: 'Category has been added successfully.'
                     });
-                }
-            });
+                }, 200);
+
+                emit('update:categories', data);
+                emit('isDirty', false);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                newCategories.processing = false;
+            }
+
+            // newCategories.post(route("products.category.store"), {
+            //     preserveScroll: true,
+            //     preserveState: 'errors',
+            //     onSuccess: () => {
+            //         form.reset();
+            //         emit('close', 'leave');
+            //         showMessage({
+            //             severity: 'success',
+            //             summary: 'Category has been added successfully.'
+            //         });
+            //     }
+            // });
         }
     } else {
         isEditing.value = false;
-        form.reset();
     }
 };
 
@@ -100,49 +148,72 @@ const handleDefaultClick = (event) => {
     event.preventDefault();   
 };
 
-const showDeleteGroupForm = (event, id) => {
-    handleDefaultClick(event);
-    selectedCategory.value = id;
-    deleteCategoryFormIsOpen.value = true;
-}
-
-const hideDeleteCategoryForm = () => {
-    deleteCategoryFormIsOpen.value = false;
-}
-
-
 const startEditing = (categoryArr) => {
-    isEditing.value = true;
-    form.edit_name = categoryArr.text;
-    form.id = categoryArr.value;
-    currentCategoryId.value = categoryArr.value;
-
-    nextTick(() => {
-        const inputRefName = `categories${categoryArr.value}`;
-        if (inputRefs[inputRefName]) {
-            inputRefs[inputRefName].focus();
-        }
-    });
-
-    initialCategoryName.value = categoryArr.text;
+    if (newCategoriesCounter.value == 0) {
+        isEditing.value = true;
+        form.edit_name = categoryArr.text;
+        form.id = categoryArr.value;
+        currentCategoryId.value = categoryArr.value;
+    
+        nextTick(() => {
+            const inputRefName = `categories${categoryArr.value}`;
+            if (inputRefs[inputRefName]) {
+                inputRefs[inputRefName].focus();
+            }
+        });
+    
+        initialCategoryName.value = categoryArr.text;
+    }
 }
+
+const openModal = (category) => {
+    isEditing.value = false;
+    isDirty.value = false;
+    selectedCategory.value = category;
+    reassignCategoryFormIsOpen.value = true;
+    removeAddCategory('clear');
+};
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                selectedCategory.value = null;  
+                reassignCategoryFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            selectedCategory.value = null;  
+            isUnsavedChangesOpen.value = false;
+            reassignCategoryFormIsOpen.value = false;
+            isDirty.value = false;
+        }
+    }
+}
+
+const updateCategories = (event) => {
+    categories.value = event;
+    emit('update:categories', event);
+};
 
 watch(() => props.categoryArr, (newValue) => {
     categories.value = newValue ? newValue : {};
 }, { immediate: true });
 
-watch(
-    () => form.edit_name, 
-    (newVal) => {
-        isEdited.value = newVal !== initialCategoryName.value; 
-    },
-    { immediate: true } 
-);
+watch(() => form.edit_name, (newVal) => {
+    isEdited.value = newVal !== initialCategoryName.value; 
+}, { immediate: true });
 
 watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
-    emit('isDirty', newFormValue.isDirty || newIsEdited);
+    emit('isDirty', newFormValue.isDirty ?? newIsEdited);
 });
-
 
 </script>
 
@@ -154,14 +225,14 @@ watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
                     <!-- existing categories -->
                     <div v-for="categoryArr in categories" :key="categoryArr.id" class="w-full flex flex-row text-grey-600 h-auto p-3 gap-4">
                         <div v-if="!isEditing || currentCategoryId !== categoryArr.value" class="w-full flex flex-row justify-between">
-                            <div class="flex flex-row gap-[12px]">
+                            <div class="flex flex-row gap-[12px] w-full">
                                 <svg 
                                     width="25" 
                                     height="25" 
                                     viewBox="0 0 25 25" 
                                     fill="none"
                                     xmlns="http://www.w3.org/2000/svg"
-                                    >
+                                >
                                     <path 
                                         d="M3.0918 12.5H21.0918M3.0918 6.5H21.0918M3.0918 18.5H21.0918"
                                         stroke="currentColor" 
@@ -169,15 +240,14 @@ watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
                                         stroke-linecap="round"
                                         stroke-linejoin="round" />
                                 </svg>
-                                <span
-                                    @click="startEditing(categoryArr)"
-                                    >
-                                    {{ categoryArr.text }}
-                                </span>
+                                <span class="w-full" @click="startEditing(categoryArr)">{{ categoryArr.text }}</span>
                             </div>
                             <div>
-                            <DeleteIcon class="w-6 h-6 text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click="showDeleteGroupForm($event, categoryArr.value)" /></div>
+                                <DeleteIcon 
+                                    class="w-6 h-6 text-primary-600 hover:text-primary-700 cursor-pointer" 
+                                    @click="openModal(categoryArr)" 
+                                />
+                            </div>
                         </div>
                         <template v-if="isEditing && currentCategoryId === categoryArr.value">
                             <TextInput
@@ -256,16 +326,28 @@ watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
             </div>
         </div>
     <!-- </form> -->
-    
+
     <Modal 
-        :show="deleteCategoryFormIsOpen" 
-        :maxWidth="'2xs'" 
+        :title="'Reassign Category'"
+        :show="reassignCategoryFormIsOpen" 
+        :maxWidth="'sm'" 
         :closeable="true" 
-        :deleteConfirmation="true"
-        :deleteUrl="`/table-room/table-room/deleteZone/${selectedCategory}`"
-        :confirmationTitle="'Delete this category?'"
-        :confirmationMessage="'Are you sure you want to delete this category? This action cannot be undone.'"
-        @close="hideDeleteCategoryForm" 
-        v-if="selectedCategory" 
-    />
+        @close="closeModal('close')"
+    >
+        <ReassignedProductCategory 
+            :selectedCategory="selectedCategory" 
+            :categoryArr="categories" 
+            @close="closeModal"
+            @isDirty="isDirty = $event"
+            @update:categories="updateCategories($event)"
+        />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal>
 </template>

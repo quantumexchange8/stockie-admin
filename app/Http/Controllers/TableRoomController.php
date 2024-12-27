@@ -141,8 +141,8 @@ class TableRoomController extends Controller
 
     public function deleteZone($id)
     {
-        $deleteZone = Zone::where('id', $id)->delete();
-        $deleteTable = Table::where('zone_id', $id)->delete();
+        Zone::where('id', $id)->delete();
+        Table::where('zone_id', $id)->delete();
 
         $message = [
             'severity' => 'success',

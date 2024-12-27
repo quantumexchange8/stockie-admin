@@ -148,6 +148,7 @@ onMounted(() => {
             <div class="grid grid-cols-1 md:grid-cols-12 justify-center gap-5">
                 <TotalProductChart 
                     :products="initialProducts"
+                    :categoryArr="categoryArr"
                     :isLoading="isLoading"
                     @isLoading="isLoading=$event"
                     class="col-span-full md:col-span-4"
@@ -171,6 +172,7 @@ onMounted(() => {
                 :rowsPerPage="productRowsPerPage"
                 @applyCategoryFilter="applyCategoryFilter"
                 @applyCheckedFilters="applyCheckedFilters"
+                @update:categories="categoryArr = $event"
             />
         </div>
     </AuthenticatedLayout>

@@ -1,7 +1,7 @@
 <script setup>
 import Toast from 'primevue/toast';
 import Button from './Button.vue';
-import { TimesIcon } from './Icons/solid';
+import { TimesIcon, ToastSuccessIcon, ToastInfoIcon, ToastWarnIcon, ToastErrorIcon } from './Icons/solid';
 import { ref } from 'vue';
 import { TransitionRoot } from '@headlessui/vue'
 
@@ -63,7 +63,12 @@ const inlineMessageIsOpen = ref(true);
             <div class="flex items-center justify-between p-4 gap-4 lg:gap-8 mt-4">
                 <div class="flex gap-10 xl:gap-20 items-center justify-between w-full ">
                     <div class="flex items-center gap-3">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" v-if="message.severity == 'success'" class="flex-shrink-0">
+                        <ToastSuccessIcon class="flex-shrink-0 size-8" v-if="message.severity == 'success'" />
+                        <ToastInfoIcon class="flex-shrink-0 size-8" v-if="message.severity == 'info'" />
+                        <ToastWarnIcon class="flex-shrink-0 size-8" v-if="message.severity == 'warn'" />
+                        <ToastErrorIcon class="flex-shrink-0 size-8" v-if="message.severity == 'error'" />
+
+                        <!-- <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" v-if="message.severity == 'success'" class="flex-shrink-0">
                             <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2289)" fill-opacity="0.6"/>
                             <g filter="url(#filter0_i_29_2289)">
                                 <rect x="5" y="5" width="22" height="22" rx="11" fill="#388E22"/>
@@ -157,7 +162,7 @@ const inlineMessageIsOpen = ref(true);
                                     <stop offset="1" stop-color="#7CBEFD"/>
                                 </linearGradient>
                             </defs>
-                        </svg>
+                        </svg> -->
 
                         <div class="flex flex-col items-start justify-center gap-1">
                             <p 
@@ -220,101 +225,10 @@ const inlineMessageIsOpen = ref(true);
             <div class="flex items-center justify-between p-4 gap-4 lg:gap-8 w-full rounded-[5px]">
                 <div class="flex gap-10 xl:gap-20 items-center justify-between w-full">
                     <div class="flex items-center gap-3">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" v-if="severity == 'success'" class="flex-shrink-0">
-                            <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2289)" fill-opacity="0.6"/>
-                            <g filter="url(#filter0_i_29_2289)">
-                                <rect x="5" y="5" width="22" height="22" rx="11" fill="#388E22"/>
-                                <path d="M20.7273 13L14.7273 19L12 16.2727" stroke="#F0FBEA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </g>
-                            <defs>
-                                <filter id="filter0_i_29_2289" x="5" y="5" width="22" height="26" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                                    <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-                                    <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                                    <feOffset dy="4"/>
-                                    <feGaussianBlur stdDeviation="2"/>
-                                    <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-                                    <feColorMatrix type="matrix" values="0 0 0 0 0.358572 0 0 0 0 0.735824 0 0 0 0 0.24664 0 0 0 1 0"/>
-                                    <feBlend mode="normal" in2="shape" result="effect1_innerShadow_29_2289"/>
-                                </filter>
-                                <linearGradient id="paint0_linear_29_2289" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#DDF5D2"/>
-                                    <stop offset="1" stop-color="#BCECAA"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" v-if="severity == 'warn'" class="flex-shrink-0">
-                            <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2312)" fill-opacity="0.6"/>
-                            <g filter="url(#filter0_i_29_2312)">
-                                <rect x="5" y="5" width="22" height="22" rx="11" fill="#D55121"/>
-                                <path d="M16 12V16M16 20H16.01" stroke="#FDF6EF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </g>
-                            <defs>
-                                <filter id="filter0_i_29_2312" x="5" y="5" width="22" height="26" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                                    <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-                                    <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                                    <feOffset dy="4"/>
-                                    <feGaussianBlur stdDeviation="2"/>
-                                    <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-                                    <feColorMatrix type="matrix" values="0 0 0 0 0.894118 0 0 0 0 0.415686 0 0 0 0 0.168627 0 0 0 1 0"/>
-                                    <feBlend mode="normal" in2="shape" result="effect1_innerShadow_29_2312"/>
-                                </filter>
-                                <linearGradient id="paint0_linear_29_2312" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#FBEAD9"/>
-                                    <stop offset="1" stop-color="#F0B281"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" v-if="severity == 'error'" class="flex-shrink-0">
-                            <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2336)" fill-opacity="0.6"/>
-                            <g filter="url(#filter0_i_29_2336)">
-                                <rect x="5" y="5" width="22" height="22" rx="11" fill="#E51D25"/>
-                                <path d="M19 13L13 19M13 13L19 19" stroke="#FFF1F2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </g>
-                            <defs>
-                                <filter id="filter0_i_29_2336" x="5" y="5" width="22" height="26" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                                    <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-                                    <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                                    <feOffset dy="4"/>
-                                    <feGaussianBlur stdDeviation="2"/>
-                                    <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-                                    <feColorMatrix type="matrix" values="0 0 0 0 0.992627 0 0 0 0 0.273182 0 0 0 0 0.299829 0 0 0 1 0"/>
-                                    <feBlend mode="normal" in2="shape" result="effect1_innerShadow_29_2336"/>
-                                </filter>
-                                <linearGradient id="paint0_linear_29_2336" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#FFE1E2"/>
-                                    <stop offset="1" stop-color="#FFA1A5"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" v-if="severity == 'info'" class="flex-shrink-0">
-                            <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2353)" fill-opacity="0.6"/>
-                            <g filter="url(#filter0_i_29_2353)">
-                                <rect x="5" y="5" width="22" height="22" rx="11" fill="#0C82EB"/>
-                                <path d="M16.0098 20V16M16.0098 12H15.9998" stroke="#F0F7FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </g>
-                            <defs>
-                                <filter id="filter0_i_29_2353" x="5" y="5" width="22" height="26" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                                    <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-                                    <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                                    <feOffset dy="4"/>
-                                    <feGaussianBlur stdDeviation="2"/>
-                                    <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-                                    <feColorMatrix type="matrix" values="0 0 0 0 0.253935 0 0 0 0 0.655371 0 0 0 0 0.990902 0 0 0 1 0"/>
-                                    <feBlend mode="normal" in2="shape" result="effect1_innerShadow_29_2353"/>
-                                </filter>
-                                <linearGradient id="paint0_linear_29_2353" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#E0EDFE"/>
-                                    <stop offset="1" stop-color="#7CBEFD"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
+                        <ToastSuccessIcon class="flex-shrink-0 size-6" v-if="severity == 'success'" />
+                        <ToastInfoIcon class="flex-shrink-0 size-6" v-if="severity == 'info'" />
+                        <ToastWarnIcon class="flex-shrink-0 size-6" v-if="severity == 'warn'" />
+                        <ToastErrorIcon class="flex-shrink-0 size-6" v-if="severity == 'error'" />
 
                         <div class="flex flex-col items-start justify-center gap-1">
                             <p 

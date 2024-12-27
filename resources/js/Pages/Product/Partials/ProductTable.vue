@@ -54,7 +54,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(["applyCategoryFilter", "applyCheckedFilters"]);
+const emit = defineEmits(["applyCategoryFilter", "applyCheckedFilters", "update:categories"]);
 
 const createFormIsOpen = ref(false);
 const editProductFormIsOpen = ref(false);
@@ -304,11 +304,16 @@ onMounted(() => {
 });
 
 const getCategoryFilteredRows = (category) => {
-    return category === 'all' ? rows.value : rows.value.filter((row) => row.category.name.toLowerCase() === category);
+    return category === 'all' ? rows.value : rows.value.filter((row) => row.category.name.toLowerCase().replace(/[/\s_]+/g, "-") === category);
 };
 
 const getCategoryFilteredRowsLength = (category) => {
     return Math.ceil(getCategoryFilteredRows(category).length / props.rowsPerPage);
+};
+
+const updateCategories = (event) => {
+    categories.value = event;
+    emit('update:categories', event);
 };
 
 </script>
@@ -438,7 +443,7 @@ const getCategoryFilteredRowsLength = (category) => {
                                 class="w-[20px] h-[20px]"
                             />
                         </template>
-                        <span class="hidden sm:flex">Manage Zone</span>
+                        <span class="hidden sm:flex whitespace-nowrap">Manage Category</span>
                     </Button>
                     <Modal
                         :show="manageCategoryFormIsOpen"
@@ -447,9 +452,10 @@ const getCategoryFilteredRowsLength = (category) => {
                         :maxWidth="'md'"
                     >
                         <ManageCategory
-                            :categoryArr="categoryArr"
+                            :categoryArr="categories"
                             @close="closeModal" 
-                            @isDirty="isDirty=$event"
+                            @isDirty="isDirty = $event"
+                            @update:categories="updateCategories($event)"
                         />
                         <Modal
                             :unsaved="true"
@@ -462,7 +468,7 @@ const getCategoryFilteredRowsLength = (category) => {
                     </Modal>
                 </template>
                 <template
-                    v-for="tab in tabCategories.map((item) => item.toLowerCase())"
+                    v-for="tab in tabCategories.map((item) => item.toLowerCase().replace(/[/\s_]+/g, '-'))"
                     :key="tab"
                     v-slot:[tab]
                 >

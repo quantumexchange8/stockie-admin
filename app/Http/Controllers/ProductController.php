@@ -672,4 +672,147 @@ class ProductController extends Controller
         return redirect()->back();
     }
 
+    /**
+     * Get all the products with the specified category id.
+     */
+    public function getCategoryProducts(string $id)
+    {
+        $category = Category::with('products:id,product_name,bucket,category_id')->find($id);
+        $products = $category->products;
+
+        foreach ($products as $key => $product) {
+            $product->image = $product->getFirstMediaUrl('product');
+        };
+        
+        return response()->json($products);
+    }
+
+    /**
+     * Store new product category.
+     */
+    public function storeCategory(Request $request)
+    {
+        $categoriesError = [];
+        $validatedZones = [];
+
+        foreach ($request->input('categories') as $categories) {
+            if(!isset($categories['index'])) {
+                continue;
+            }
+
+            $categoriesValidator = Validator::make($categories, [
+                'index' => 'required|integer',
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('categories')->whereNull('deleted_at'),
+                ]
+            ], [
+                'required' => 'This field is required.',
+                'name.string' => 'Invalid input.',
+                'name.unique' => 'Category name already exists. Try another one.'
+            ]);
+
+            if ($categoriesValidator->fails()) {
+                foreach ($categoriesValidator->errors()->messages() as $field => $messages) {
+                    $categoriesError["categories.{$categories['index']}.$field"] = $messages;
+                }
+            } else {
+                $validated = $categoriesValidator->validated();
+                if(isset($validated['index'])){
+                    $validated['index'] = $categories['index'];
+                }
+                $validatedZones[] = $validated;
+            }
+        }
+
+        if(!empty($categoriesError)){
+            return redirect()->back()->withErrors($categoriesError);
+        }
+
+        foreach($validatedZones as $newCategories) {
+            Category::create(['name' => $newCategories['name']]);
+        }
+
+        return response()->json($this->getAllCategories());
+    }
+
+    /**
+     * Update the details of the product category.
+     */
+    public function updateCategory(Request $request, string $id)
+    {
+        $validatedData = $request->validate([
+            'edit_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('categories','name')->ignore($id)->whereNull('deleted_at')],
+            ]
+        );
+
+        $editZone = Category::find($id);
+        $editZone->update(['name' => $validatedData['edit_name']]);
+
+        return response()->json($this->getAllCategories());
+    }
+
+    /**
+     * Reassign all the category's products' category and then deleting the category.
+     */
+    public function reassignProductsCategory(Request $request, string $id)
+    {
+        $products = $request->input('items');
+        
+        $validatedProducts = [];
+        $allItemErrors = [];
+
+        foreach ($products as $index => $item) {
+            // Validate product data
+            $productValidator = Validator::make(
+                $item, 
+                [
+                    'product_id' => 'required|integer',
+                    'new_category_id' => 'required|integer',
+                ], 
+                [
+                    'required' => 'This field is required.',
+                    'integer' => 'This field must be an integer.',
+                ]
+            );
+            
+            if ($productValidator->fails()) {
+                // Collect the errors for each item and add to the array with item index
+                foreach ($productValidator->errors()->messages() as $field => $messages) {
+                    $allItemErrors["items.$index.$field"] = $messages;
+                }
+            } else {
+                // Collect the validated item and manually add the 'id' field back
+                $validatedItem = $productValidator->validated();
+                if (isset($item['id'])) {
+                    $validatedItem['id'] = $item['id'];
+                }
+                $validatedProducts[] = $validatedItem;
+            }
+        }
+
+        // If there are any item validation errors, return them
+        if (!empty($allItemErrors)) {
+            return redirect()->back()->withErrors($allItemErrors);
+        }
+
+        foreach ($validatedProducts as $key => $product) {
+            $existingProduct = Product::find($product['product_id']);
+            $existingProduct->update(['category_id' => $product['new_category_id']]);
+        }
+
+        $category = Category::find($id);                                         
+
+        if ($category) {
+            $category->delete();
+        }
+
+        return response()->json($this->getAllCategories());
+    }
 }

@@ -78,6 +78,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/products/updateProduct/{id}', [ProductController::class, 'updateProduct'])->name('products.updateProduct');
         Route::delete('/products/deleteProduct/{id}', [ProductController::class, 'deleteProduct'])->name('products.deleteProduct');
         Route::delete('/products/deleteProductItem/{id}', [ProductController::class, 'deleteProductItem'])->name('products.deleteProductItem');
+
+        // Product Category
+        Route::get('/products/category/getCategoryProducts/{id}', [ProductController::class, 'getCategoryProducts'])->name('products.category.getCategoryProducts');
+        Route::post('/products/category/storeCategory', [ProductController::class, 'storeCategory'])->name('products.category.store');
+        Route::post('/products/category/reassignProductsCategory/{id}', [ProductController::class, 'reassignProductsCategory'])->name('products.category.reassignProductsCategory');
+        Route::put('/products/category/updateCategory/{id}', [ProductController::class, 'updateCategory'])->name('products.category.update');
         
         Route::get('/products_details/{id}', [ProductController::class, 'showProductDetails'])->name('products.showProductDetails');
         Route::get('/products/getProducts', [ProductController::class, 'getProducts'])->name('products.getProducts');

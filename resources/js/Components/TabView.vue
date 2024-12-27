@@ -51,7 +51,7 @@ const tranformedTabs = computed(() => {
 
 <template>
     <TabGroup :selectedIndex="selectedTab" @change="changeTab">
-        <TabList class="flex">
+        <TabList class="flex overflow-x-auto">
             <slot name="startheader"></slot> 
             <template v-for="(tab, index) in tabs" :key="index">
                 <Tab 
@@ -62,8 +62,7 @@ const tranformedTabs = computed(() => {
                 >
                     <button
                         :class="[
-                            'p-3 text-sm font-medium leading-none',
-                            'focus:outline-none',
+                            'p-3 text-sm font-medium leading-none focus:outline-none whitespace-nowrap',
                             { 'text-grey-200': !selected },
                             { 'text-primary-900 border-b-2 border-primary-900': selected },
                             { 'hover:bg-white/[0.12] hover:text-primary-800': withDisabled ? !tab.disabled : true }

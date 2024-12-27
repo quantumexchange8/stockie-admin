@@ -8,48 +8,102 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    categoryArr: Array,
     isLoading: Boolean,
 })
 
 const allProducts = ref([]);
 const emit = defineEmits('isLoading');
 
-watch(
-    () => props.products,
-    (newValue) => {
-        allProducts.value = newValue;
-    },
-    { immediate: true }
-);
+watch(() => props.products, (newValue) => {
+    allProducts.value = newValue;
+}, { immediate: true });
 
-const beerProducts = computed(() => {
-    return allProducts.value.filter(item => item.category.name === 'Beer').length;
+// const beerProducts = computed(() => {
+//     return allProducts.value.filter(item => item.category.name === 'Beer').length;
+// });
+
+// const wineProducts = computed(() => {
+//     return allProducts.value.filter(item => item.category.name === 'Wine').length;
+// });
+
+// const liquorProducts = computed(() => {
+//     return allProducts.value.filter(item => item.category.name === 'Liquor').length;
+// });
+
+// const otherProducts = computed(() => {
+//     return allProducts.value.filter(item => item.category.name === 'Others').length;
+// });
+
+// Dynamic computation of products per category
+const productsByCategory = computed(() => {
+    const categoryCounts = props.categoryArr.reduce((acc, category, index) => {
+        acc[index] = {
+            'name': category.text,
+            'count': allProducts.value.filter(
+                        item => item.category.name === category.text
+                    ).length
+        };
+        return acc;
+    }, []);
+
+    const sortedCategories = categoryCounts.sort((a, b) => {
+        if (b.count === a.count) {
+            // If counts are equal, sort alphabetically by category name
+            return a.name.localeCompare(b.name);
+        }
+        return b.count - a.count;
+    });
+
+    return sortedCategories;
 });
 
-const wineProducts = computed(() => {
-    return allProducts.value.filter(item => item.category.name === 'Wine').length;
-});
+// Color mapping for categories
+const categoryColors = {
+    'Beer': '#9F151A',
+    'Wine': '#0C82EB',
+    'Liquor': '#388E22',
+    'Others': '#E46A2B'
+};
 
-const liquorProducts = computed(() => {
-    return allProducts.value.filter(item => item.category.name === 'Liquor').length;
-});
+const getColorForCategory = (categoryName) => {
+    if (categoryColors[categoryName]) {
+        return categoryColors[categoryName];
+    }
 
-const otherProducts = computed(() => {
-    return allProducts.value.filter(item => item.category.name === 'Others').length;
-});
+    // Function to generate a random RGB color with controlled brightness
+    const randomColor = () => {
+        const min = 0; // Minimum brightness for each color channel
+        const max = 230; // Maximum brightness to avoid colors too close to white
+        const r = Math.floor(Math.random() * (max - min + 1)) + min;
+        const g = Math.floor(Math.random() * (max - min + 1)) + min;
+        const b = Math.floor(Math.random() * (max - min + 1)) + min;
 
-const totalProductChart = ref();
+        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    };
+
+    const color = randomColor();
+    categoryColors[categoryName] = color;
+    
+    return color;
+};
+
+const totalProductChart = ref(null);
 const chartLegendData = ref();
 const chartData = ref();
 const chartOptions = ref();
 
 const setChartData = () => {
+    const categories = productsByCategory.value.map(cat => cat.name);
+    const data = categories.map(category => productsByCategory.value.find(cat => cat.name === category).count || 0);
+    const backgroundColor = categories.map(category => getColorForCategory(category));
+
     return {
-        labels: ['Beer', 'Wine', 'Liquor', 'Others'],
+        labels: categories,
         datasets: [
             {
-                data: [beerProducts.value, wineProducts.value, liquorProducts.value, otherProducts.value],
-                backgroundColor: ['#9F151A', '#0C82EB', '#388E22', '#E46A2B'],
+                data: data,
+                backgroundColor: backgroundColor,
                 hoverBorderWidth: 0,
                 hoverBorderRadius: 0,
             }
@@ -61,12 +115,14 @@ const setChartOptions = () => {
     return {
         plugins: {
             legend: {
+                display: false,
                 position: 'bottom',  // Position the legend at the bottom
                 labels: {
                     color: '#45535F',
                     usePointStyle: true,
                     padding: 25,
                 },
+                maxWidth: 5
             },
             tooltip: {
                 enabled: false,
@@ -75,7 +131,7 @@ const setChartOptions = () => {
         },
         layout: {
             autoPadding: true
-        }
+        },
     };
 };
 
@@ -150,15 +206,38 @@ const customTooltip = (context) => {
     tooltipEl.style.pointerEvents = 'none';
 };
 
+// Custom legend generation
+const generateCustomLegend = () => {
+    if (!chartData.value) return [];
+    return chartData.value.labels.map((label, index) => ({
+        label,
+        color: chartData.value.datasets[0].backgroundColor[index],
+        value: chartData.value.datasets[0].data[index]
+    }));
+};
+
 const updateChart = () => {
     chartData.value = setChartData();
     chartOptions.value = setChartOptions();
     
 };
 
+// watch(
+//     [beerProducts, wineProducts, liquorProducts, otherProducts],
+//     updateChart
+// );
+
+// Watch for changes in products by category
 watch(
-    [beerProducts, wineProducts, liquorProducts, otherProducts],
-    updateChart
+    () => productsByCategory.value,
+    updateChart,
+    { deep: true }
+);
+
+watch(
+    () => props.categoryArr,
+    updateChart,
+    { deep: true }
 );
 
 // watch(
@@ -175,24 +254,37 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col p-6 gap-12 items-center rounded-[5px] border border-red-100 overflow-hidden">
+    <div class="flex flex-col p-6 items-center rounded-[5px] gap-y-6 border border-red-100 overflow-hidden md:max-w-[463px]">
         <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Total Product</span>
-        <div class="flex flex-col justify-content-center" v-if="allProducts.length > 0 && !isLoading">
+
+        <div class="flex flex-col justify-content-center items-center justify-center size-full" v-if="allProducts.length > 0 && !isLoading">
             <Chart 
                 ref="totalProductChart"
                 type="doughnut" 
                 :data="chartData" 
                 :options="chartOptions" 
-                class="w-64 xl:w-72" 
+                class="max-w-full xl:max-w-64" 
             />
-            <!-- <ul>
-                <li v-for="(item, index) in chartLegendData." :key="index"></li>
-            </ul>-->
+            
         </div>
-        
         <div v-else>
             <UndetectableIllus class="w-44 h-44" />
             <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
         </div>
+
+        <!-- Scrollable legend container -->
+        <div class="overflow-y-auto min-h-11 max-w-full" v-if="allProducts.length > 0 && !isLoading">
+            <div class="flex gap-4 justify-start">
+                <div 
+                    v-for="(item, index) in generateCustomLegend()" 
+                    :key="index"
+                    class="flex items-center gap-2 min-w-fit"
+                >
+                    <div class="size-3 rounded-full" :style="{ backgroundColor: item.color }"></div>
+                    <span class="text-sm text-primary-900">{{ item.label }}</span>
+                </div>
+            </div>
+        </div>
+        
     </div>
 </template>
