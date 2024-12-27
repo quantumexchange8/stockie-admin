@@ -12,6 +12,7 @@ const props = defineProps({
         type: Object,
         default: () => {}
     },
+    selectedTab: Number,
 })
 
 const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired']);
@@ -43,7 +44,6 @@ const getKeepHistory = async () => {
     }
 };
 
-
 const filteredHistoryByStatus = (status) => {
     if(!keepHistory.value) return [];
     const filteredArr = keepHistory.value.filter(history => {
@@ -61,7 +61,7 @@ onMounted(() => getKeepHistory());
 
 <template>
     <div class="w-full p-6 max-h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
-        <TabView :tabs="tabs">
+        <TabView :tabs="tabs" :selectedTab="props.selectedTab ? props.selectedTab : 0">
             <template #all>         
                 <div class="w-full flex flex-col items-start py-6 self-stretch rounded-[5px]">
                     <template v-if="keepHistory.length > 0">

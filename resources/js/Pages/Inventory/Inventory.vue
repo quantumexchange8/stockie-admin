@@ -30,10 +30,11 @@ const home = ref({
 
 const keepHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'item_name', header: 'Item Name', width: '40', sortable: false},
-    {field: 'quantity', header: 'Quantity', width: '18', sortable: false},
-    {field: 'keep_date', header: 'Date', width: '20', sortable: false},
-    {field: 'keep_for', header: 'Keep For', width: '22', sortable: false},
+    {field: 'keep_date', header: 'Date', width: '14.2', sortable: false},
+    {field: 'item_name', header: 'Item Name', width: '39.3', sortable: false},
+    {field: 'qty', header: 'Qty', width: '11.9', sortable: false},
+    {field: 'keep_item.expired_to', header: 'Expire On', width: '16.1', sortable: false},
+    {field: 'keep_item.customer.full_name', header: 'Customer', width: '18.5', sortable: false},
 ]);
 
 const { flashMessage } = useCustomToast();
@@ -178,8 +179,55 @@ const hideAddStockForm = (status) => {
         <Toast />
 
         <div class="flex flex-col justify-center gap-5">
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-5">
-                <div class="col-span-full sm:col-span-3 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
+            <div class="grid grid-cols-12 sm:grid-cols-12 gap-5">
+                <div class="col-span-6 flex flex-col gap-5">
+                    <div class="col-span-full flex gap-5">
+                        <div class="col-span-3 flex flex-col p-5 justify-center items-start gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 h-full">
+                            <div class="bg-primary-50 rounded-[5px] flex items-center justify-center gap-2.5 w-16 h-16">
+                                <TotalGroupsIcon class="text-primary-900"/>
+                            </div>
+                            <div class="flex flex-col items-start gap-2 self-stretch">
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Group</span>
+                                <span class="text-lg font-medium text-primary-900">{{ initialInventories.length }}</span>
+                            </div>
+                        </div>
+                        <div class="col-span-3 flex flex-col p-5 justify-center items-start gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 h-full">
+                            <div class="bg-primary-50 rounded-[5px] flex items-center justify-center gap-2.5 w-16 h-16">
+                                <TotalItemsIcon class="text-primary-900"/>
+                            </div>
+                            <div class="flex flex-col items-start gap-2 self-stretch">
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Item</span>
+                                <span class="text-lg font-medium text-primary-900">{{ allInventoryItems.length }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-span-full flex gap-5">
+                        <div class="col-span-3 flex flex-col p-5 justify-center items-start gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 h-full">
+                            <div class="bg-primary-50 rounded-[5px] flex items-center justify-center gap-2.5 w-16 h-16">
+                                <TotalStockIcon class="text-primary-900"/>
+                            </div>
+                            <div class="flex flex-col items-start gap-2 self-stretch">
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Stock</span>
+                                <span class="text-lg font-medium text-primary-900">{{ totalStock }}</span>
+                            </div>
+                        </div>
+                        <div class="col-span-3 flex flex-col p-5 justify-center items-start gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 h-full">
+                            <div class="bg-primary-50 rounded-[5px] flex items-center justify-center gap-2.5 w-16 h-16">
+                                <EmptyStockIcon class="text-primary-900"/>
+                            </div>
+                            <div class="flex flex-col items-start gap-2 self-stretch">
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Out of Stock</span>
+                                <span class="text-lg font-medium text-primary-600">{{ totalOutofStockItems }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-6">
+                    <InventorySummaryChart
+                        :inventories="allInventoryItems"
+                />
+                </div>
+                <!-- <div class="col-span-full sm:col-span-3 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
                     <div class="flex flex-col gap-2 items-center md:items-start">
                         <span class="text-sm font-medium text-grey-900 whitespace-nowrap">Total Group</span>
                         <span class="text-lg font-medium text-primary-900">{{ initialInventories.length }}</span>
@@ -214,23 +262,15 @@ const hideAddStockForm = (status) => {
                     <div class="hidden bg-primary-50 rounded-[5px] md:flex items-center justify-center gap-2.5 w-16 h-16">
                         <EmptyStockIcon class="text-primary-900"/>
                     </div>
-                </div>
+                </div> -->
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
-                <RecentKeepHistoryTable
-                    :columns="keepHistoryColumns"
-                    :rows="recentKeepHistories"
-                    :rowType="rowType"
-                    :actions="actions"
-                    class="col-span-full md:col-span-8"
-                />
-    
-                <InventorySummaryChart
-                    :inventories="allInventoryItems"
-                    class="col-span-full md:col-span-4"
-                />
-            </div>
+            <RecentKeepHistoryTable
+                :columns="keepHistoryColumns"
+                :rows="recentKeepHistories"
+                :rowType="rowType"
+                :actions="actions"
+            />
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                 <TotalStockChart

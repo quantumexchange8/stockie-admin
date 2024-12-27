@@ -103,7 +103,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/inventory/getInventories', [InventoryController::class, 'getInventories']);
         Route::get('/inventory/getInventoryItems/{id}', [InventoryController::class, 'getInventoryItems']);
         Route::get('/inventory/getAllStockHistory', [InventoryController::class, 'getAllStockHistory']);
-        Route::get('/inventory/getAllKeepHistory', [InventoryController::class, 'getAllKeepHistory']);
+        Route::post('/inventory/getAllKeepHistory', [InventoryController::class, 'getAllKeepHistory']);
         Route::get('/inventory/getLatestInventory', [InventoryController::class, 'getLatestInventory']);
     });
 
@@ -279,6 +279,7 @@ Route::middleware('auth')->group(function () {
 
         // View reservation history
         Route::get('/reservation-history', [ReservationController::class, 'viewReservationHistory'])->name('reservations.viewReservationHistory');
+        Route::get('/filter-reservation-history', [ReservationController::class, 'filterReservationHistory'])->name('reservations.filterReservationHistory');
     });
 });
 

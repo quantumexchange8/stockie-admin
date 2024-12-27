@@ -314,12 +314,12 @@ onMounted(() => {
 <template>
     <div class="flex flex-col p-6 items-center rounded-[5px] border border-red-100 overflow-hidden">
         <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Total Stock</span>
-        <div class="flex justify-content-center">
+        <div class="flex justify-center items-center">
             <Chart 
                 type="doughnut" 
                 :data="chartData" 
                 :options="chartOptions" 
-                class="w-full md:w-48 xl:w-60 2xl:w-full " 
+                class="w-full md:w-48 xl:w-60 2xl:w-full [&>canvas]:flex" 
                 :plugins="[totalStockPlugin, titleTextPlugin, hoverEffectPlugin]"
             />
         </div>

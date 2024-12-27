@@ -28,6 +28,7 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
+    isFullScreen: Boolean,
 });
 
 const emit = defineEmits(['fetchZones']);
@@ -87,25 +88,40 @@ const getTableClasses = (table) => ({
         }
     ]),
     state: computed(() => [
-        'w-full flex justify-center py-1.5 px-6',
+        // 'w-full flex justify-center py-1.5 px-6',
         {
             'bg-grey-50': table.status === 'Empty Seat',
             'bg-primary-900': table.status === 'Pending Order',
-            'bg-yellow-500': table.status === 'Order Placed',
-            'bg-green-600': table.status === 'All Order Served',
-            'bg-yellow-700': table.status === 'Pending Clearance',
+            'bg-green-600': table.status === 'All Order Served' || table.status === 'Order Placed',
+            'bg-orange-500': table.status === 'Pending Clearance',
         }
     ]),
     text: computed(() => [
-        'text-sm font-medium',
+        'text-xl font-bold self-stretch text-center',
         {
-            'text-grey-200': table.status === 'Empty Seat',
+            'text-primary-900': table.status === 'Empty Seat',
             'text-primary-25': table.status === 'Pending Order',
-            'text-yellow-25': table.status === 'Order Placed',
-            'text-green-50': table.status === 'All Order Served',
-            'text-white': table.status === 'Pending Clearance',
+            'text-green-50': table.status === 'Order Placed' || table.status === 'All Order Served',
+            'text-orange-25': table.status === 'Pending Clearance',
         }
-    ])
+    ]),
+    duration: computed(() => [
+        'text-base font-normal self-stretch text-center',
+        {
+            'text-primary-100': table.status === 'Pending Order',
+            'text-green-100': table.status === 'Order Placed' || table.status === 'All Order Served',
+            'text-orange-100': table.status === 'Pending Clearance',
+        }
+    ]),
+    count: computed(() => [
+        'text-xs font-medium self-stretch text-center',
+        {
+            'text-primary-900': table.status === 'Empty Seat',
+            'text-white': table.status === 'Pending Order',
+            'text-green-100': table.status === 'Order Placed' || table.status === 'All Order Served',
+            'text-orange-100': table.status === 'Pending Clearance',
+        }
+    ]),
 });
 
 const waitersArr = computed(() => {
@@ -192,6 +208,20 @@ const getCurrentOrderTableDuration = (table) => {
     return setupDuration(currentOrderTable);
 };
 
+const getStatusCount = (status) => {
+    let count = 0;
+
+    if(props.isMainTab) {
+        props.zones.forEach((zone) => {
+            count += zone.tables.filter((table) => table.status === status).length;
+        });
+    } else {
+        count += filteredZones.value.tables.filter((table) => table.status === status).length;
+    }
+
+    return count;
+}
+
 // const showReservationList = (event, table) => {
 //     event.preventDefault();
 //     event.stopPropagation();
@@ -228,17 +258,74 @@ const getCurrentOrderTableDuration = (table) => {
         </RightDrawer>
     </template>
     
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6" :class="props.isFullScreen === true ? 'bg-primary-25' : 'bg-white'">
+        <!-- Count table status tab -->
+        <div class="flex items-center gap-5 self-stretch">
+            <!-- Empty Seat -->
+            <div class="flex items-center gap-3">
+                <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-grey-100 bg-white">
+                    <span class="text-xs font-medium text-center text-primary-900">{{ getStatusCount('Empty Seat') }}</span>
+                </div>
+                <span class="text-grey-700 text-center text-sm font-normal">Empty</span>
+            </div>
+
+            <!-- Pending Order -->
+            <div class="flex items-center gap-3">
+                <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-primary-700 bg-primary-800">
+                    <span class="text-xs font-medium text-center text-white">{{ getStatusCount('Pending Order') }}</span>
+                </div>
+                <span class="text-grey-700 text-center text-sm font-normal">Pending Order</span>
+            </div>
+
+            <!-- Order Placed / All Order Served -->
+            <div class="flex items-center gap-3">
+                <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-green-400 bg-green-500">
+                    <span class="text-xs font-medium text-center text-white">{{ (getStatusCount('Order Placed')) + (getStatusCount('All Order Served')) }}</span>
+                </div>
+                <span class="text-grey-700 text-center text-sm font-normal">Order Placed</span>
+            </div>
+
+            <!-- Pending Clearance -->
+            <div class="flex items-center gap-3">
+                <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-orange-400 bg-orange-500">
+                    <span class="text-xs font-medium text-center text-white">{{ getStatusCount('Pending Clearance') }}</span>
+                </div>
+                <span class="text-grey-700 text-center text-sm font-normal">Pending Clearance</span>
+            </div>
+        </div>
+        
         <!-- Display all zones along with their table(s) -->
         <template v-if="isMainTab"> 
-            <Accordion v-for="zone in filteredZones" :key="zone.value" accordionClasses="gap-[24px]">
+            <div class="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-3 items-start gap-6 self-stretch" v-if="props.isFullScreen === true" >
+                <template v-for="zone in filteredZones" class="flex">
+                    <div class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap" v-for="table in zone.tables">
+                        <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] cursor-pointer w-full relative"
+                            :class="getTableClasses(table).state.value"
+                            @click="openOverlay($event, table)"
+                        >
+                            <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                            <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
+                                {{ getCurrentOrderTableDuration(table) }}
+                            </div>
+                            <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                            <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
+                                v-if="table.pending_count > 0"
+                            >
+                                <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <Accordion v-for="zone in filteredZones" :key="zone.value" accordionClasses="gap-[24px]" v-else>
                 <template #head>
                     <span class="text-sm text-grey-900 font-medium">{{ zone.text }}</span>
                 </template>
                 <template #body>
-                    <div class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-x-6">
+                    <div class="grid xl:grid-cols-6 lg:grid-cols-4 md:grid-cols-3 gap-6">
                         <div class="relative" v-for="table in zone.tables" :key="table.id">
-                            <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
+                            <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
                                 <template #title>
                                     <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
                                         <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
@@ -253,7 +340,7 @@ const getCurrentOrderTableDuration = (table) => {
                                         <p :class="getTableClasses(table).text.value">{{ table.status }}</p>
                                     </div>
                                 </template>
-                            </Card>
+                            </Card> -->
                             <!-- <div 
                                 v-if="table.reservations && table.reservations.length > 0"
                                 v-tooltip.top="{ value: getTooltipMessage(table) }"
@@ -262,6 +349,21 @@ const getCurrentOrderTableDuration = (table) => {
                             >
                                 <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                             </div> -->
+                            <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] cursor-pointer"
+                                :class="getTableClasses(table).state.value"
+                                @click="openOverlay($event, table)"
+                            >
+                                <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
+                                    {{ getCurrentOrderTableDuration(table) }}
+                                </div>
+                                <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                                <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
+                                    v-if="table.pending_count > 0"
+                                >
+                                    <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </template>
@@ -270,9 +372,9 @@ const getCurrentOrderTableDuration = (table) => {
         
         <!-- Display specified zone along with its table(s) -->
         <template v-else>
-            <div v-if="filteredZones.tables.length > 0" class="grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-x-6">
+            <div v-if="filteredZones.tables.length > 0" class="gap-6" :class="props.isFullScreen === true ? 'grid xl:grid-cols-6 lg:grid-cols-4 md:grid-cols-3 ' : 'grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2'">
                 <div class="relative" v-for="table in filteredZones.tables" :key="table.id">
-                    <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
+                    <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
                         <template #title>
                             <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
                                 <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
@@ -287,7 +389,7 @@ const getCurrentOrderTableDuration = (table) => {
                                 <p :class="getTableClasses(table).text.value">{{ table.status }}</p>
                             </div>
                         </template>
-                    </Card>
+                    </Card> -->
                     <!-- <div 
                         v-if="table.reservations && table.reservations.length > 0"
                         v-tooltip.top="{ value: getTooltipMessage(table) }"
@@ -296,6 +398,21 @@ const getCurrentOrderTableDuration = (table) => {
                     >
                         <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                     </div> -->
+                    <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] cursor-pointer"
+                        :class="getTableClasses(table).state.value"
+                        @click="openOverlay($event, table)"
+                    >
+                        <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                        <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
+                            {{ getCurrentOrderTableDuration(table) }}
+                        </div>
+                        <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                        <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
+                            v-if="table.pending_count > 0"
+                        >
+                            <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="flex flex-col items-center text-center gap-5" v-else>

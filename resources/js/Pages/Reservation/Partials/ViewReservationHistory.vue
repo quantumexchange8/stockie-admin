@@ -6,6 +6,7 @@ import Breadcrumb from "@/Components/Breadcrumb.vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import ReservationHistoryTable from "./ReservationHistoryTable.vue";
 import { Head } from "@inertiajs/vue3";
+import axios from "axios";
 
 const home = ref({
     label: 'Reservation',
@@ -27,6 +28,7 @@ onMounted(() => flashMessage());
 
 const reservations = ref(props.reservations);
 const rowsPerPage = ref(10);
+
 const columns = ref([
     { field: 'reservation_no', header: 'No.', width: '9', sortable: false},
     { field: 'res_date', header: 'Date', width: '10', sortable: false},

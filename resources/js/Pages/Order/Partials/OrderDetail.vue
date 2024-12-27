@@ -400,16 +400,15 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                     </Button>
                     <Button
                         type="button"
-                        variant="secondary"
                         iconPosition="left"
                         size="lg"
                         :disabled="!order.id || !matchingOrderDetails.tables"
                         @click="openDrawer('add')"
                     >
                         <template #icon>
-                            <PlusIcon class="w-6 h-6 text-primary-900 hover:text-primary-800" />
+                            <PlusIcon class="w-6 h-6 text-white" />
                         </template>
-                        More Order
+                        Place Order
                     </Button>
                 </div>
             </div>

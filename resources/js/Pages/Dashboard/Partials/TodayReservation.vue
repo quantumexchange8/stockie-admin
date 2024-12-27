@@ -11,9 +11,10 @@ import CheckInGuestForm from '@/Pages/Reservation/Partials/CheckInGuestForm.vue'
 import ReservationDetail from '@/Pages/Reservation/Partials/ReservationDetail.vue';
 import DelayReservationForm from '@/Pages/Reservation/Partials/DelayReservationForm.vue';
 import CancelReservationForm from '@/Pages/Reservation/Partials/CancelReservationForm.vue';
-import { CheckCircleIcon, CircledArrowHeadRightIcon2, CircledTimesIcon, HorizontalDotsIcon, HourGlassIcon, NoShowIcon } from '@/Components/Icons/solid';
+import { CheckCircleIcon, CircledArrowHeadRightIcon2, CircledTimesIcon, DefaultIcon, DelayedIcon, DinnerTableIcon, HorizontalDotsIcon, HourGlassIcon, NoShowIcon, UserIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
+import Button from '@/Components/Button.vue';
 
 const props = defineProps({
     customers: Array,
@@ -202,7 +203,7 @@ const closeOverlay = () => {
             </Link>
         </div>
         
-        <template v-if="rows.length > 0">
+        <!-- <template v-if="rows.length > 0">
             <Table
                 :variant="'list'"
                 :rows="rows"
@@ -224,7 +225,6 @@ const closeOverlay = () => {
                 <template #res_time="row">{{ dayjs(row.reservation_date).format('HH:mm') }}</template>
                 <template #name="row">
                     <div class="flex items-center gap-x-2">
-                        <!-- <div class="size-4 bg-primary-100 rounded-full" v-if="row.customer_id"></div> -->
                         <img 
                             :src="row.reserved_for.image ? row.reserved_for.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                             alt="CustomerImage"
@@ -249,16 +249,73 @@ const closeOverlay = () => {
                 <UndetectableIllus />
                 <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
             </div>
-        </template>
+        </template> -->
+        <div class="grid xl:grid-cols-3 grid-cols-3 items-start gap-2.5 self-stretch" v-if="rows.length > 0">
+                <div class="items-start content-start gap-5 self-stretch flex-wrap" v-for="reservation in rows" @click="openForm('show', reservation)">
+                    <div class="flex flex-col p-4 items-start gap-4 flex-[1_0_0] rounded-[5px] border border-solid border-grey-100 bg-white shadow-sm">
+                        <div class="flex items-start gap-2 self-stretch">
+                            <div class="flex items-center gap-2 flex-[1_0_0]">
+                                <span class="text-grey-950 text-base font-bold line-clamp-1">{{ dayjs(reservation.reservation_date).format('YYYY-MM-DD') }}</span>
+                                <span class="text-grey-950 text-base font-bold">{{ dayjs(reservation.reservation_date).format('HH:mm') }}</span>
+                                <DelayedIcon class="size-5" v-if="reservation.status === 'Delayed'"/>
+                            </div>
+                            <div class="flex-shrink-0 cursor-pointer size-5" v-if="['Pending', 'Delayed', 'Checked in'].includes(reservation.status)" @click="openActionMenu($event, reservation)">
+                                <HorizontalDotsIcon />
+                            </div>
+                        </div>
+                        <div class="w-full h-[1px] bg-[#eceff2]"></div>
+                        <div class="flex items-start gap-2 self-stretch">
+                            <div class="flex items-center gap-2 flex-[1_0_0] self-stretch">
+                                <div class="flex flex-col justify-between items-start flex-[1_0_0] self-stretch">
+                                    <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-sm font-bold">{{ reservation.name }}</span>
+                                    <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-sm font-normal">{{ formatPhone(reservation.phone) }}</span>
+                                </div>
+                                <img
+                                    :src="reservation.reserved_for.image"
+                                    alt="CustomerIcon"
+                                    class="rounded-full size-[38px]"
+                                    v-if="reservation.reserved_for && reservation.reserved_for.image"
+                                >
+                                <DefaultIcon v-else />
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-start gap-3 self-stretch">
+                            <div class="flex items-start gap-4 self-stretch">
+                                <div class="flex items-start gap-2">
+                                    <DinnerTableIcon class="size-[18px]"/>
+                                    <span class="text-grey-950 text-sm font-semibold">{{ getTableNames(reservation.table_no) }}</span>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    <UserIcon class="size-[18px]"/>
+                                    <span class="text-grey-950 text-sm font-semibold">{{ reservation.pax }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <Button
+                            :variant="'primary'"
+                            :type="'submit'"
+                            :disabled="reservation.status === 'Checked in'"
+                            @click="openForm('check-in', selectedReservation)"
+                        >
+                            {{ reservation.status === 'Checked in' ?  'Customer checked-in' : 'Check-in customer' }}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-5 items-center"  v-else>
+                <EmptyIllus />
+                <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
+            </div>
     </div>
     
     <!-- Open reservation action menu -->
     <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-1">
         <div class="flex flex-col gap-y-0.5 bg-white min-w-[247px]">
-            <div class="p-3 flex items-center justify-between" @click="openForm('check-in', selectedReservation)">
+            <!-- <div class="p-3 flex items-center justify-between" @click="openForm('check-in', selectedReservation)">
                 <p class="text-grey-900 text-base font-medium ">Check in customer </p>
                 <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
-            </div>
+            </div> -->
 
             <div class="p-3 flex items-center justify-between" @click="markReservationAsNoShow(selectedReservation.id)">
                 <p class="text-grey-900 text-base font-medium ">Mark as no show </p>

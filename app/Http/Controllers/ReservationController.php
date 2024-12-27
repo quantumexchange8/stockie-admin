@@ -46,6 +46,12 @@ class ReservationController extends Controller
                                                     $subQuery->where('status', 'Delayed')
                                                         ->where('action_date', '>=', $cutoffTime);
                                                 });
+
+                                                // Or check for 'Checked in' status
+                                                $query->orWhere(function($subQuery) use ($cutoffTime){
+                                                    $subQuery->where('status', 'Checked in')
+                                                            ->where('action_date', '>=', $cutoffTime);
+                                                });
                                             })
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
                                             ->get()
@@ -337,6 +343,12 @@ class ReservationController extends Controller
                                                     $subQuery->where('status', 'Delayed')
                                                         ->where('action_date', '>=', $cutoffTime);
                                                 });
+
+                                                // Or check for 'Checked in' status
+                                                $query->orWhere(function($subQuery) use ($cutoffTime){
+                                                    $subQuery->where('status', 'Checked in')
+                                                            ->where('action_date', '>=', $cutoffTime);
+                                                });
                                             })
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
                                             ->get();
@@ -358,7 +370,7 @@ class ReservationController extends Controller
                                                 'handledBy'
                                             ])
                                             // ->whereDate('reservation_date', '<', $yesterday)
-                                            ->whereIn('status', ['Checked in', 'Completed', 'No show', 'Cancelled'])
+                                            ->whereIn('status', ['Completed', 'No show', 'Cancelled'])
                                             ->orderBy('id')
                                             ->get();
 
@@ -373,6 +385,84 @@ class ReservationController extends Controller
             'reservations' => $pastReservations,
             'tables' => Table::all()
         ]);
+    }
+
+    /**
+     * Filter reservation history with date filter.
+     */
+    public function filterReservationHistory(Request $request) 
+    {
+        $dateFilter = $request->input('date_filter');
+        $dateFilter = array_map(function ($date){
+            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d H:i:s');
+        }, $dateFilter);
+
+        $data = Reservation::whereDate('reservation_date', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
+                            ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
+                                $subQuery->whereDate('reservation_date', '<=', $dateFilter[1]);
+                            })
+                            ->with([
+                                'reservedFor.reservations', 
+                                'reservedFor.reservationCancelled', 
+                                'reservedFor.reservationAbandoned', 
+                                'reservedBy', 
+                                'handledBy'
+                            ])
+                            // ->whereDate('reservation_date', '<', $yesterday)
+                            ->whereIn('status', ['Completed', 'No show', 'Cancelled'])
+                            ->orderBy('id')
+                            ->get();
+
+        $data->each(function ($pastReservation){
+            if($pastReservation->reservedFor)
+            {
+                $pastReservation->reservedFor->image = $pastReservation->reservedFor->getFirstMediaUrl('customer');
+            }
+        });
+
+        return response()->json($data);
+
+        // $dateFilter = $request->input('date_filter');
+        // $query = Reservation::query();
+
+        // if ($dateFilter && is_array($dateFilter)) {
+        //     //Single date filter
+        //     if (count($dateFilter) === 1) {
+        //         $date = Carbon::parse($dateFilter[0])->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
+        //         $query->whereDate('reservation_date', $date);
+        //     }
+
+        //     //Range date filter
+        //     if (count($dateFilter) > 1) {
+        //         $startDate = Carbon::parse($dateFilter[0])->timezone('Asia/Kuala_Kumpur')->format('Y-m-d H:i:s');
+        //         $endDate = Carbon::parse($dateFilter[1])->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s');
+        //         $query->whereDate('reservation_date', '>=', $startDate)
+        //                 ->whereDate('reservation_date', '<=', $endDate);
+        //     }
+        // }
+
+
+        // $data = $query->with([
+        //                     'reservedFor.reservations', 
+        //                     'reservedFor.reservationCancelled', 
+        //                     'reservedFor.reservationAbandoned', 
+        //                     'reservedBy', 
+        //                     'handledBy'
+        //                 ])
+        //                 // ->whereDate('reservation_date', '<', $yesterday)
+        //                 ->whereIn('status', ['Completed', 'No show', 'Cancelled'])
+        //                 ->orderBy('id')
+        //                 ->get();
+
+        // $data->each(function ($pastReservation){
+        //     if($pastReservation->reservedFor)
+        //     {
+        //         $pastReservation->reservedFor->image = $pastReservation->reservedFor->getFirstMediaUrl('customer');
+        //     }
+        // });
+
+
+        // return response()->json($data);
     }
     
     /**

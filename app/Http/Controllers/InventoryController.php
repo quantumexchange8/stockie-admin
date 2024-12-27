@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 
 class InventoryController extends Controller
 {
@@ -77,6 +76,7 @@ class InventoryController extends Controller
                                             ->get()
                                             ->transform(function ($history) {
                                                 $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+                                                $history->customer_image = $history->keepItem->customer->getFirstMediaUrl('customer');
                                                 unset($history->keepItem->orderItemSubitem);
 
                                                 return $history;
@@ -614,20 +614,22 @@ class InventoryController extends Controller
     public function viewKeepHistories(Request $request)
     {
         $dateFilter = [
-            now()->subDays(7)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
+            now()->subMonths(3)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
             now()->timezone('Asia/Kuala_Lumpur')->addDay()->format('Y-m-d')
         ];
 
         $keepHistories = KeepHistory::with([
                                             'keepItem.orderItemSubitem.productItem.inventoryItem',
-                                            'keepItem.customer:id,full_name', 
+                                            'keepItem.customer:id,full_name',
+                                            'keepItem.waiter:id,full_name'
                                         ])
                                         ->whereBetween('created_at', $dateFilter)
-                                        ->where('status', 'Keep')
                                         ->orderBy('created_at', 'desc')
                                         ->get()
                                         ->transform(function ($history) {
                                             $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+                                            $history->customer_image = $history->keepItem->customer->getFirstMediaUrl('customer');
+                                            $history->waiter_image = $history->keepItem->waiter->getFirstMediaUrl('user');
                                             unset($history->keepItem->orderItemSubitem);
 
                                             return $history;
@@ -648,6 +650,7 @@ class InventoryController extends Controller
     public function getAllKeepHistory(Request $request)
     {
         $dateFilter = $request->input('dateFilter');
+        $checkedFilters = $request->input('checkedFilters');
         $query = KeepHistory::query();
 
         if ($dateFilter && gettype($dateFilter) === 'array') {
@@ -665,15 +668,36 @@ class InventoryController extends Controller
             }
         }
 
+        if ($checkedFilters && is_array($checkedFilters)) {
+            $query->whereHas('keepItem', function ($query) use ($checkedFilters) {
+                
+                // filtering with expire in by getting the largest value of all selection
+                if (!empty($checkedFilters['expiresIn'])) {
+                    $query->whereDate('expired_to', '<=', Carbon::now()->startOfDay()->addDays(max($checkedFilters['expiresIn'])));
+                }
+
+            });
+            // // filtering with selection in kept in
+            if (!empty($checkedFilters['keptIn']) && count($checkedFilters['keptIn']) === 1) {
+                if($checkedFilters['keptIn'][0] === 'cm') {
+                    $query->where('qty', '=', '0');
+                } elseif ($checkedFilters['keptIn'][0] === 'qty') {
+                    $query->where('cm', '=', '0');
+                }
+            }
+        }
+
         $data = $query->with([
                             'keepItem.orderItemSubitem.productItem.inventoryItem',
                             'keepItem.customer:id,full_name', 
+                            'keepItem.waiter:id,full_name'
                         ])
-                        ->where('status', 'Keep')
                         ->orderBy('created_at', 'desc')
                         ->get()
                         ->transform(function ($history) {
                             $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+                            $history->customer_image = $history->keepItem->customer->getFirstMediaUrl('customer');
+                            $history->waiter_image = $history->keepItem->waiter->getFirstMediaUrl('user');
                             unset($history->keepItem->orderItemSubitem);
 
                             return $history;

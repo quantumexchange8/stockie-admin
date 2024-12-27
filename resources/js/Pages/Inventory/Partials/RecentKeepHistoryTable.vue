@@ -61,16 +61,29 @@ const props = defineProps({
                     <UndetectableIllus class="w-44 h-44"/>
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
-                <template #quantity="row">
-                    {{ parseFloat(row.qty) > parseFloat(row.cm) ? `x ${row.qty}` : `${row.cm} cm` }}
-                </template>
                 <template #keep_date="row">
-                    {{ dayjs(row.keep_date).format('DD/MM/YYYY') }}
+                    <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.keep_date).format('DD/MM/YYYY') }}</span>
                 </template>
-                <template #keep_for="row">
-                    <Link :href="route('customer')" class="line-clamp-1 underline text-ellipsis text-sm font-semibold text-primary-900 hover:text-primary-700">
-                        {{ row.keep_item?.customer?.full_name ?? 0 }}
-                    </Link>
+                <template #item_name="row">
+                    <span class="line-clamp-1 flex-[1_0_0] text-grey-900 text-sm font-semibold text-ellipsis">{{ row.item_name }}</span>
+                </template>
+                <template #qty="row">
+                    <span class="text-grey-900 text-sm font-medium">{{ parseFloat(row.qty) > parseFloat(row.cm) ? `x ${row.qty}` : `${row.cm} cm` }}</span>
+                </template>
+                <template #keep_item.expired_to="row">
+                    <span class="text-grey-900 text-sm font-medium">{{ row.keep_item.expired_to ? dayjs(row.keep_item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
+                </template>
+                <template #keep_item.customer.full_name="row">
+                    <div class="flex items-center gap-2">
+                        <img 
+                            :src="rows.customer_image ? rows.customer_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt="CustomerImage"
+                            class="size-4 object-contain rounded-full"
+                        >
+                        <span class="line-clamp-1 flex-[1_0_0] text-primary-900 text-ellipsis text-sm font-semibold underline underline-offset-auto decoration-solid decoration-auto">
+                            {{ row.keep_item.customer.full_name }}
+                        </span>
+                    </div>
                 </template>
             </Table>
             

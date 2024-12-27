@@ -67,7 +67,7 @@ const submit = () => {
                 form.reset();
             }, 200);
             unsaved('leave');
-            window.location.href = 'order-management/orders';
+            // window.location.href = 'order-management/orders';
         },
     })
 };

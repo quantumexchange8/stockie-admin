@@ -59,7 +59,15 @@ class OrderController extends Controller
                             return [
                                 'text' => $zone->name,
                                 'value' => $zone->id,
-                                'tables' => $zone->tables
+                                'tables' => $zone->tables->map(function ($table) {
+                                    $pendingCount = $table->orderTables->reduce(function ($orderTotal, $orderTable) {
+                                        $pendingItems = $orderTable->order->orderItems->where('status', 'Pending Serve')->count();
+                                        return $orderTotal + $pendingItems;
+                                    }, 0);
+                    
+                                    $table->pending_count = $pendingCount;
+                                    return $table;
+                                }),
                             ];
                         });
 
@@ -757,7 +765,15 @@ class OrderController extends Controller
                             return [
                                 'text' => $zone->name,
                                 'value' => $zone->id,
-                                'tables' => $zone->tables
+                                'tables' => $zone->tables->map(function ($table) {
+                                    $pendingCount = $table->orderTables->reduce(function ($orderTotal, $orderTable) {
+                                        $pendingItems = $orderTable->order->orderItems->where('status', 'Pending Serve')->count();
+                                        return $orderTotal + $pendingItems;
+                                    }, 0);
+                    
+                                    $table->pending_count = $pendingCount;
+                                    return $table;
+                                }),
                             ];
                         });
                             

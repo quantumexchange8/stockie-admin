@@ -98,11 +98,10 @@ const openForm = (action, id, event) => {
 const closeForm = (action, status) => {
     switch(status) {
         case 'close':{
-            if(isDirty.value){
+            if(isDirty.value || action === 'add-as-product'){
                 isUnsavedChangesOpen.value = true;
             } else {
                 if(action === 'create') createFormIsOpen.value = false;
-                if(action === 'group-created') groupCreatedModalIsOpen.value = false;
                 if(action === 'add-as-product') addAsProductModalIsOpen.value = false;
                 if(action === 'add') addStockFormIsOpen.value = false;
                 if(action === 'edit') editGroupFormIsOpen.value = false;
