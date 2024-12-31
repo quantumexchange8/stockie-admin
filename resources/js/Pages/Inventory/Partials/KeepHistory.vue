@@ -23,7 +23,8 @@ const home = ref({
     route: '/inventory/inventory'
 });
 const items = ref([
-    { label: 'Keep History' },
+    { label: 'Active Kept Item', route: '/inventory/inventory/activeKeptItem' },
+    { label: 'Keep History' }
 ]);
 
 // refs
@@ -89,7 +90,7 @@ const getKeepHistories = async (filters = {}, checkedFilters = {}) => {
 
 const getFilteredRows = (tab) => {
     switch(tab) {
-        case 'served-returned': return keepHistories.value.filter((history) => history.status !== 'Expired' && history.status !== 'Keep');
+        case 'served-returned': return keepHistories.value.filter((history) => history.status == 'Returned' || history.status == 'Served');
         case 'active': return keepHistories.value.filter((history) => history.status == 'Keep');
         case 'expired': return keepHistories.value.filter((history) => history.status == 'Expired');
     }

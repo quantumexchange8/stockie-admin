@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('order_item_subitem_id');
             $table->double('qty')->nullable();
             $table->decimal('cm', 13, 2)->nullable();
-            $table->string('remark');
+            $table->string('remark')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('status');
             $table->dateTime('expired_from')->nullable();

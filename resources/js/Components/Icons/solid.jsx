@@ -2733,7 +2733,7 @@ export const MenuItemIcon = defineComponent({
 
 export const ToastSuccessIcon = defineComponent({
     setup() {
-        return () => {
+        return () => (
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
                 <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2289)" fill-opacity="0.6"/>
                 <g filter="url(#filter0_i_29_2289)">
@@ -2757,13 +2757,13 @@ export const ToastSuccessIcon = defineComponent({
                     </linearGradient>
                 </defs>
             </svg>
-        }
+        )
     },
 });
 
 export const ToastInfoIcon = defineComponent({
     setup() {
-        return () => {
+        return () => (
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
                 <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2353)" fill-opacity="0.6"/>
                 <g filter="url(#filter0_i_29_2353)">
@@ -2787,13 +2787,13 @@ export const ToastInfoIcon = defineComponent({
                     </linearGradient>
                 </defs>
             </svg>
-        }
+        )
     },
 });
 
 export const ToastWarnIcon = defineComponent({
     setup() {
-        return () => {
+        return () => (
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
                 <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2312)" fill-opacity="0.6"/>
                 <g filter="url(#filter0_i_29_2312)">
@@ -2817,13 +2817,13 @@ export const ToastWarnIcon = defineComponent({
                     </linearGradient>
                 </defs>
             </svg>
-        }
+        )
     },
 });
 
 export const ToastErrorIcon = defineComponent({
     setup() {
-        return () => {
+        return () => (
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
                 <rect width="32" height="32" rx="16" fill="url(#paint0_linear_29_2336)" fill-opacity="0.6"/>
                 <g filter="url(#filter0_i_29_2336)">
@@ -2847,7 +2847,9 @@ export const ToastErrorIcon = defineComponent({
                     </linearGradient>
                 </defs>
             </svg>
-        }
+        
+        
+        )
     },
 });
 

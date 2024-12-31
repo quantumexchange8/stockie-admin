@@ -107,3 +107,23 @@ export const cancelTypes = [
     { text: 'Forgotten reservation', value: 'Forgotten reservation' },
     { text: 'Others (specify under Remarks)', value: 'Others (specify under Remarks)' },
 ];
+
+// ----------------------------------------------------------------------------------
+//                                  Order Keep Items
+// ----------------------------------------------------------------------------------
+
+export const expiryDates = [
+    { text: "1 month", value: 1 },
+    { text: "2 months", value: 2 },
+    { text: "3 months", value: 3 },
+    { text: "4 months", value: 4 },
+    { text: "5 months", value: 5 },
+    { text: "6 months", value: 6 },
+]
+
+export const deleteReason = [
+    { text: "Incorrect information", value: 'Incorrect information'},
+    { text: "Duplicate entry", value: 'Duplicate entry'},
+    { text: "Customer asked to delete", value: 'Customer asked to delete'},
+    { text: "Others (specify under Remarks)", value: 'Others'},
+]

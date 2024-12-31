@@ -15,7 +15,7 @@ const props = defineProps({
     selectedTab: Number,
 })
 
-const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired']);
+const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired', 'Extended', 'Deleted']);
 
 const formatHistoryStatus = (status) => {
     return status.toLowerCase().replace(/[/_]+/g, "-").replace(/^-+|-+$/g, " "); 
@@ -28,10 +28,6 @@ const tabsSlug = ref(
 );
 
 const keepHistory = ref([]);
-const formatStatus = (status) => {
-    return capitalize(status);
-}
-
 const getKeepHistory = async () => {
     try {
         const response = await axios.get(`/customer/getKeepHistories/${props.customer.id}`);
@@ -81,7 +77,7 @@ onMounted(() => getKeepHistory());
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">
-                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
+                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_date ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}` : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                                 <span class="text-primary-900 text-2xs font-normal">
                                                     {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
@@ -99,7 +95,11 @@ onMounted(() => getKeepHistory());
                                                                     ? 'default' 
                                                                     : item.status === 'Returned' || item.status === 'Served'
                                                                             ? 'green' 
-                                                                            : 'grey'"
+                                                                            : item.status === 'Extended'
+                                                                                ? 'blue'
+                                                                                : item.status === 'Deleted' 
+                                                                                    ? 'red' 
+                                                                                    : 'grey'"
                                                     :value="item.status"
                                                     class="flex px-2.5 py-1.5 justify-center items-center gap-2.5"
                                                 />
@@ -107,7 +107,11 @@ onMounted(() => getKeepHistory());
                                             </div>
                                             <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark">
                                                 <CommentIcon class="flex-shrink-0 mt-1" />
-                                                <span class="text-grey-900 text-sm font-normal">{{ item.keep_item.remark }}</span>
+                                                <span class="text-grey-900 text-xs font-normal">{{ item.keep_item.remark }}</span>
+                                            </div>
+                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.status === 'Deleted'">
+                                                <CommentIcon class="flex-shrink-0 mt-1" />
+                                                <span class="text-grey-900 text-xs font-normal">{{ item.remark }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -149,7 +153,7 @@ onMounted(() => getKeepHistory());
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">
-                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
+                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_date ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}` : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                                 <span class="text-primary-900 text-2xs font-normal">
                                                     {{ item.status === 'Returned' ? 'Returned by' : 'Kept by' }}
@@ -166,8 +170,12 @@ onMounted(() => getKeepHistory());
                                                     :variant="item.status === 'Keep' 
                                                                     ? 'default' 
                                                                     : item.status === 'Returned' || item.status === 'Served'
-                                                                            ? 'green' 
-                                                                            : 'grey'"
+                                                                            ? 'green'
+                                                                            : item.status === 'Extended'
+                                                                                ? 'blue' 
+                                                                                : item.status === 'Deleted' 
+                                                                                    ? 'red' 
+                                                                                    : 'grey'"
                                                     :value="item.status"
                                                     class="flex px-2.5 py-1.5 justify-center items-center gap-2.5"
                                                 />
@@ -175,7 +183,11 @@ onMounted(() => getKeepHistory());
                                             </div>
                                             <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark">
                                                 <CommentIcon class="flex-shrink-0 mt-1" />
-                                                <span class="text-grey-900 text-sm font-normal">{{ item.keep_item.remark }}</span>
+                                                <span class="text-grey-900 text-xs font-normal">{{ item.keep_item.remark }}</span>
+                                            </div>
+                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.status === 'Deleted'">
+                                                <CommentIcon class="flex-shrink-0 mt-1" />
+                                                <span class="text-grey-900 text-xs font-normal">{{ item.remark }}</span>
                                             </div>
                                         </div>
                                     </div>

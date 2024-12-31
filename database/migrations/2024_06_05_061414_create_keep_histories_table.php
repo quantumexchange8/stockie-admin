@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('qty');
             $table->string('cm');
             $table->dateTime('keep_date');
+            $table->string('remark')->nullable();
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

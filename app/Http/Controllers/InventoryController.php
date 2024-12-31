@@ -67,7 +67,7 @@ class InventoryController extends Controller
 
         $recentKeepHistories = KeepHistory::with([
                                                 'keepItem.orderItemSubitem.productItem.inventoryItem',
-                                                'keepItem.customer:id,full_name', 
+                                                'keepItem.customer:id,full_name,phone', 
                                             ])
                                             ->whereBetween('created_at', [$startDate, $endDate])
                                             ->where('status', 'Keep')
@@ -677,7 +677,7 @@ class InventoryController extends Controller
                 }
 
             });
-            // // filtering with selection in kept in
+            // filtering with selection in kept in
             if (!empty($checkedFilters['keptIn']) && count($checkedFilters['keptIn']) === 1) {
                 if($checkedFilters['keptIn'][0] === 'cm') {
                     $query->where('qty', '=', '0');
@@ -772,6 +772,92 @@ class InventoryController extends Controller
                         
         return response()->json($data);
     }
+
+    public function activeKeptItem()
+    {
+        $activeKeptItem = $this->getKeptItem();
+
+        return Inertia::render('Inventory/Partials/ActiveKeptItem', [
+            'activeKeptItem' => $activeKeptItem,
+        ]);
+    }
+
+    private function getKeptItem($dateFilter = null, $checkedFilters = null)
+    {
+        $query = KeepItem::with([
+                                'customer:email,full_name,id,phone,point,ranking',
+                                'customer.keepItems.waiter:id,full_name',
+                                'customer.rank:id,name',
+                                'customer.keepItems.orderItemSubitem.productItem.inventoryItem',
+                                'orderItemSubitem.productItem.inventoryItem'
+                            ])
+                            ->where('status', 'Keep')
+                            ->whereDate('created_at', '>=', now()->subMonths(6)->timezone('Asia/Kuala_Lumpur'));
+    
+        if ($dateFilter) {
+            $dateFilter = array_map(function ($date) {
+                return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+            }, $dateFilter);
+    
+            if (count($dateFilter) === 1) {
+                $query->whereDate('created_at', '=', $dateFilter[0]);
+            } else {
+                $query->whereDate('created_at', '>=', $dateFilter[0])
+                      ->whereDate('created_at', '<=', $dateFilter[1]);
+            }
+        }
+
+        if ($checkedFilters) {
+            if (!empty($checkedFilters['expiresIn']) && is_array($checkedFilters['expiresIn'])) {
+                $query->whereNotNull('expired_to')
+                    ->whereDate('expired_to', '<=', Carbon::now()->startOfDay()->addDays((int)(max($checkedFilters['expiresIn']))));
+            }
+
+            if(!empty($checkedFilters['keptIn']) && count($checkedFilters['keptIn']) === 1) {
+                if($checkedFilters['keptIn'][0] === 'cm') {
+                    $query->where('qty', '=', '0');
+                } elseif ($checkedFilters['keptIn'][0] === 'qty') {
+                    $query->where('cm', '=', '0');
+                }
+            }
+        }
+    
+        $activeKeptItem = $query->get();
+    
+        $activeKeptItem->each(function ($keepItem) {
+            if ($keepItem->customer) {
+                $keepItem->customer->image = $keepItem->customer->getFirstMediaUrl('customer');
+            }
+
+            if ($keepItem->customer->rank) {
+                $keepItem->customer->rank->image = $keepItem->customer->rank->getFirstMediaUrl('ranking');
+            }
+
+            foreach ($keepItem->customer->keepItems as $keepItem) {
+                $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                            ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                            : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                unset($keepItem->orderItemSubitem);
+                
+                $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+            }
+        });
+    
+        return $activeKeptItem;
+    }
+    
+
+    public function filterKeptItem(Request $request)
+    {
+        $dateFilter = $request->input('date_filter');
+        $checkedFilter = $request->input('checkedFilters');
+    
+        $currentKeptItem = $this->getKeptItem($dateFilter, $checkedFilter);
+    
+        return response()->json($currentKeptItem);
+    }
+    
 
     /**
      * Testing get data for dropdown grouped option.

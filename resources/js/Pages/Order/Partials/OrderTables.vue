@@ -323,7 +323,7 @@ const getStatusCount = (status) => {
                     <span class="text-sm text-grey-900 font-medium">{{ zone.text }}</span>
                 </template>
                 <template #body>
-                    <div class="grid xl:grid-cols-6 lg:grid-cols-4 md:grid-cols-3 gap-6">
+                    <div class="grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 gap-6">
                         <div class="relative" v-for="table in zone.tables" :key="table.id">
                             <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
                                 <template #title>

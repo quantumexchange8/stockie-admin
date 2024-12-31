@@ -296,16 +296,11 @@ watch (() => searchQuery.value, (newValue) => {
                 :rowsPerPage="rowsPerPage"
                 :searchFilter="true"
                 :filters="filters"
+                @onRowClick="showSideBar($event.data)"
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
-                </template>
-                <template #editAction="customer">
-                    <EditIcon
-                        class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="showSideBar(customer)"
-                    />
                 </template>
                 <template #deleteAction="customer">
                     <DeleteIcon
@@ -393,6 +388,9 @@ watch (() => searchQuery.value, (newValue) => {
         :show="isSidebarOpen"
         @close="hideSideBar"
      >
-        <CustomerDetail :customer="selectedCustomer"/>
+        <CustomerDetail 
+            :customer="selectedCustomer"
+            @update:customerKeepItems="selectedCustomer.keep_items = $event"
+        />
      </RightDrawer>
 </template>

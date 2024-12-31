@@ -8,6 +8,7 @@ import Modal from '@/Components/Modal.vue'
 import Table from '@/Components/Table.vue'
 import Button from '@/Components/Button.vue'
 import dayjs from 'dayjs';
+import { usePhoneUtils } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -33,13 +34,39 @@ const props = defineProps({
     },
 })
 
+const { formatPhone } = usePhoneUtils();
+
+const getTimeDifference = (date) => {
+    const createdDate = new Date(date);
+    const now = new Date();
+    
+    let months = now.getMonth() - createdDate.getMonth() + (12 * (now.getFullYear() - createdDate.getFullYear()));
+    let days = now.getDate() - createdDate.getDate();
+    let hours = now.getHours() - createdDate.getHours();
+
+    // Adjust for negative days
+    if (days < 0) {
+        months -= 1;
+        const previousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += previousMonth.getDate();
+    }
+
+    if (months > 0) {
+        return `${months} m`;
+    } else if (days > 0) {
+        return `${days} d`;
+    } else if (hours > 0) {
+        return `${hours} h`;
+    }
+};
+
 </script>
 
 <template>
     <div class="flex flex-col w-full p-6 gap-6 items-center rounded-[5px] border border-primary-100">
         <div class="flex items-center justify-between w-full">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap">Recent Keep History</span>
-            <Link :href="route('inventory.viewKeepHistories')">
+            <Link :href="route('activeKeptItem')">
                 <CircledArrowHeadRightIcon2  
                     class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
                 />
@@ -55,6 +82,7 @@ const props = defineProps({
                 :actions="actions"
                 :paginator="false"
                 minWidth="min-w-[544px]"
+                class="[&>div>div>table>tbody>tr>td]:px-3 [&>div>div>table>tbody>tr>td]:py-2"
             >
                 <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                 <template #empty>
@@ -64,6 +92,19 @@ const props = defineProps({
                 <template #keep_date="row">
                     <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.keep_date).format('DD/MM/YYYY') }}</span>
                 </template>
+                <template #keep_item.customer.full_name="row">
+                    <div class="flex items-center gap-2">
+                        <img 
+                            :src="row.customer_image ? row.customer_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt="CustomerImage"
+                            class="size-9 object-contain rounded-full"
+                        >
+                        <div class="flex flex-col justify-center items-start flex-[1_0_0]">
+                            <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-sm font-semibold">{{ row.keep_item.customer.full_name }}</span>
+                            <span class="self-stretch text-grey-900 text-sm font-normal line-clamp-1">{{ formatPhone(row.keep_item.customer.phone) }}</span>
+                        </div>
+                    </div>
+                </template>
                 <template #item_name="row">
                     <span class="line-clamp-1 flex-[1_0_0] text-grey-900 text-sm font-semibold text-ellipsis">{{ row.item_name }}</span>
                 </template>
@@ -71,19 +112,7 @@ const props = defineProps({
                     <span class="text-grey-900 text-sm font-medium">{{ parseFloat(row.qty) > parseFloat(row.cm) ? `x ${row.qty}` : `${row.cm} cm` }}</span>
                 </template>
                 <template #keep_item.expired_to="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.keep_item.expired_to ? dayjs(row.keep_item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
-                </template>
-                <template #keep_item.customer.full_name="row">
-                    <div class="flex items-center gap-2">
-                        <img 
-                            :src="rows.customer_image ? rows.customer_image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                            alt="CustomerImage"
-                            class="size-4 object-contain rounded-full"
-                        >
-                        <span class="line-clamp-1 flex-[1_0_0] text-primary-900 text-ellipsis text-sm font-semibold underline underline-offset-auto decoration-solid decoration-auto">
-                            {{ row.keep_item.customer.full_name }}
-                        </span>
-                    </div>
+                    <span class="text-grey-900 text-sm font-medium">{{ row.keep_item.expired_to ? getTimeDifference(row.keep_item.expired_to) : '-' }}</span>
                 </template>
             </Table>
             

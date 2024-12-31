@@ -1489,6 +1489,7 @@ class OrderController extends Controller
         
         foreach ($customer->keepItems as $key => $keepItem) {
             $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
             unset($keepItem->orderItemSubitem);
 
             $keepItem->image = $keepItem->orderItemSubitem->productItem 
@@ -2423,5 +2424,103 @@ class OrderController extends Controller
             'uniqueOrders' => $uniqueOrders,
             'allCustomers' => $allCustomers,
         ]);
+    }
+
+    public function extendDuration(Request $request)
+    {
+        $targetItem = KeepItem::findOrFail($request->id);
+        // dd($targetItem->id, (string)$targetItem->qty, (string)$targetItem->cm, $targetItem->created_at, $targetItem->remark);
+
+        $targetItem->update([
+            'expired_to' => Carbon::parse($targetItem['expired_to'])->addMonthsWithoutOverflow($request->expired_to)->format('Y-m-d H:i:s')
+        ]);
+
+        KeepHistory::create([
+            'keep_item_id' => $targetItem->id,
+            'qty' => $targetItem->qty,
+            'cm' => $targetItem->cm,
+            'keep_date' => $targetItem->expired_to,
+            'remark' => $targetItem->remark,
+            'status' => 'Extended',
+        ]);
+
+        $customer = Customer::with([
+            'keepItems' => function ($query) {
+                $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
+                        ->where('status', 'Keep')
+                        ->with([
+                            'orderItemSubitem.productItem:id,inventory_item_id',
+                            'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                            'waiter:id,full_name'
+                        ]);
+            }
+        ])
+        ->find($request->customer_id);
+
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            unset($keepItem->orderItemSubitem);
+
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+            ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+            : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+        }
+
+        return response()->json($customer->keepItems);
+    }
+
+    public function deleteKeptItem(Request $request)
+    {
+        $validatedData = $request->validate([
+            'id' => ['required'],
+            'customer_id' => ['required'],
+            'remark' => ['required', 'string'],
+            'remark_description' => ['max:255'],
+        ], [
+            'remark.required' => 'The remark field is required.',
+            'remark.string' => 'The remark must be a valid string.',
+            'remark_description.max' => 'The remark description may not be greater than 255 characters.',
+        ]);
+
+        $remarkDesc = $validatedData['remark_description'] ? ': ' . $validatedData['remark_description'] : '';
+
+        $targetItem = KeepItem::find($validatedData['id']);
+        $targetItem->update(['status' => 'Deleted']);
+        KeepHistory::create([
+            'keep_item_id' => $targetItem->id,
+            'qty' => $targetItem->qty,
+            'cm' => $targetItem->cm,
+            'keep_date' => $targetItem->created_at,
+            'remark' => $validatedData['remark'] . $remarkDesc,
+            'status' => 'Deleted',
+        ]);
+
+        $customer = Customer::with([
+            'keepItems' => function ($query) {
+                $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
+                        ->where('status', 'Keep')
+                        ->with([
+                            'orderItemSubitem.productItem:id,inventory_item_id',
+                            'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                            'waiter:id,full_name'
+                        ]);
+            }
+        ])
+        ->find($request->customer_id);
+
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            unset($keepItem->orderItemSubitem);
+
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+            ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+            : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+        }
+
+        return response()->json($customer->keepItems);
     }
 }

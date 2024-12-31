@@ -26,53 +26,6 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        // $customers = Customer::with([
-        //                             'rank:id,name',
-        //                             'keepItems' => function ($query) {
-        //                                 $query->where('status', 'Keep')
-        //                                     ->with(['orderItemSubitem.productItem.product', 'waiter']);
-        //                             }
-        //                         ])->withCount([
-        //                                     'keepItems' => function ($query) {
-        //                                         $query->where('status', 'Keep')->where('qty', '>', 0);
-        //                             }
-        //                         ])->get();
-
-        // // dd($customers);                            
-        // $customers = $customers->map(function ($customer) {
-        //     $activeKeepItems = $customer->keepItems
-        //         ->where('qty', '>', 0)
-        //         ->sortByDesc('created_at')
-        //         ->map(function ($keepItem) {
-        //             $itemName = $keepItem->orderItemSubitem->productItem->product->product_name ?? 'N/A';
-        //                 return [
-        //                 'id' => $keepItem->id,
-        //                 'item' => $itemName,
-        //                 'qty' => $keepItem->qty,
-        //                 'created_at' => $keepItem->created_at->format('d/m/Y, h:i A'),
-        //                 'expired_from' => Carbon::parse($keepItem->expired_from)->format('d/m/Y'),
-        //                 'expired_to' => Carbon::parse($keepItem->expired_to)->format('d/m/Y'),
-        //                 'waiter_name' => $keepItem->waiter->full_name ?? 'N/A',
-        //                 'image' => $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product'),
-        //                 'waiter_pic' => $keepItem->waiter->getFirstMediaUrl('user'),
-        //             ];
-        //         })->toArray(); 
-
-        //         return [
-        //             "id" => $customer->id,
-        //             "tier" => $customer->rank->name ?? 'No Tier', 
-        //             "name" => $customer->full_name,
-        //             "email" => $customer->email,
-        //             "phone" => $customer->phone,
-        //             "points" => $customer->point,
-        //             "keep" => $customer->keep_items_count,
-        //             "keep_items" => $activeKeepItems,
-        //             "created_at" => $customer->created_at->format("d/m/Y"),
-        //             "image" => $customer->getFirstMediaUrl('user'),
-        //             "tier_image" => $customer->rank?->getFirstMediaUrl('ranking'),
-        //         ];
-        // });
-
         $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'created_at')
                                 ->with([
                                     'rank:id,name',

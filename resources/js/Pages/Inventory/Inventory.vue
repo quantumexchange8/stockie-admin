@@ -30,11 +30,11 @@ const home = ref({
 
 const keepHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'keep_date', header: 'Date', width: '14.2', sortable: false},
-    {field: 'item_name', header: 'Item Name', width: '39.3', sortable: false},
-    {field: 'qty', header: 'Qty', width: '11.9', sortable: false},
-    {field: 'keep_item.expired_to', header: 'Expire On', width: '16.1', sortable: false},
-    {field: 'keep_item.customer.full_name', header: 'Customer', width: '18.5', sortable: false},
+    {field: 'keep_date', header: 'Date', width: '13.3', sortable: false},
+    {field: 'keep_item.customer.full_name', header: 'Customer', width: '25', sortable: false},
+    {field: 'item_name', header: 'Item Name', width: '38', sortable: false},
+    {field: 'qty', header: 'Qty', width: '11.2', sortable: false},
+    {field: 'keep_item.expired_to', header: 'Expire On', width: '12.5', sortable: false},
 ]);
 
 const { flashMessage } = useCustomToast();

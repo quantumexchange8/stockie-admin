@@ -73,7 +73,8 @@ import {
                 <SidebarLink 
                     title="Inventory" 
                     :href="route('inventory')"
-                    :active="route().current('inventory') || route().current('inventory.viewStockHistories') || route().current('inventory.viewKeepHistories')"
+                    :active="route().current('inventory') || route().current('inventory.viewStockHistories') || 
+                    route().current('inventory.viewKeepHistories') || route().current('activeKeptItem')"
                 >
                     <template #icon>
                         <InventoryIcon aria-hidden="true" />

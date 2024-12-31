@@ -19,6 +19,7 @@ class KeepHistory extends Model
         'qty',
         'cm',
         'keep_date',
+        'remark',
         'status',
     ];
 

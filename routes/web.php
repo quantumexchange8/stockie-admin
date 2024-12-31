@@ -111,6 +111,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/inventory/getAllStockHistory', [InventoryController::class, 'getAllStockHistory']);
         Route::post('/inventory/getAllKeepHistory', [InventoryController::class, 'getAllKeepHistory']);
         Route::get('/inventory/getLatestInventory', [InventoryController::class, 'getLatestInventory']);
+        Route::get('/inventory/activeKeptItem', [InventoryController::class, 'activeKeptItem'])->name('activeKeptItem');
+        Route::get('/inventory/filterKeptItem', [InventoryController::class, 'filterKeptItem'])->name('filterKeptItem');
     });
 
     /******* Profile ********/
@@ -248,6 +250,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/getCurrentTableOrder/{id}', [OrderController::class, 'getCurrentTableOrder'])->name('orders.getCurrentTableOrder');
         Route::get('/getOrderHistories', [OrderController::class, 'getOrderHistories'])->name('orders.getOrderHistories');
         Route::get('/getAllCategories', [OrderController::class, 'getAllCategories'])->name('orders.getAllCategories');
+
+        //Order's keep item
+        Route::post('/extendDuration', [OrderController::class, 'extendDuration'])->name('extendDuration');
+        Route::post('/deleteKeptItem', [OrderController::class, 'deleteKeptItem'])->name('deleteKeptItem');
     });
 
      /********* Customer **********/
