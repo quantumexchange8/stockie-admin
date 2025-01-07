@@ -16,7 +16,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones', 'update:customer-point', 'update:customer-rank']);
+const emit = defineEmits(['close', 'fetchZones', 'update:customer-point', 'update:customer-rank', 'fetchPendingServe']);
 
 const order = ref(props.order);
 const paymentDetails = ref({});
@@ -80,6 +80,7 @@ const formSubmit = async () => {
         form.reset();
         emit('close', true);
         emit('fetchZones');
+        emit('fetchPendingServe');
         if (customerPointBalance !== undefined) emit('update:customer-point', customerPointBalance);
         if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
     } catch (error) {
@@ -160,7 +161,7 @@ const getItemTypeName = (type) => {
                         <div class="flex flex-col gap-y-6 items-start self-stretch">
                             <div class="flex flex-col gap-y-6 items-start self-stretch">
                                 <div class="flex flex-col gap-y-4 items-start self-stretch">
-                                    <template v-for="row in order.order_items.filter((item) => item.status === 'Served')">
+                                    <template v-for="row in order.order_items.filter((item) => item.status !== 'Cancelled')">
                                         <div class="flex flex-col gap-y-2 self-stretch">
                                             <div class="flex flex-row items-center self-stretch gap-x-3">
                                                 <p class="w-8/12 text-grey-950 text-base font-medium self-stretch"> {{ row.type === 'Normal' ? '' : `(${getItemTypeName(row.type)})`  }} {{ row.product.product_name }}</p>

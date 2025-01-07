@@ -193,7 +193,7 @@ const closeOverlay = () => {
 </script>
 
 <template>
-    <div class="flex flex-col p-6 gap-y-6 items-end shrink-0 rounded-[5px] border border-solid border-primary-100">
+    <div class="flex flex-col p-6 gap-y-6 items-center shrink-0 rounded-[5px] border border-solid border-primary-100">
         <div class="flex justify-between items-center self-stretch">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Today's Reservation</span>
             <Link :href="route('reservations')">
@@ -307,7 +307,7 @@ const closeOverlay = () => {
                 <EmptyIllus />
                 <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
             </div>
-    </div>
+        </div>
     
     <!-- Open reservation action menu -->
     <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-1">

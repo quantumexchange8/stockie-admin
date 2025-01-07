@@ -234,6 +234,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/addItemToKeep', [OrderController::class, 'addItemToKeep'])->name('orders.items.keep');
         Route::put('/orders/updateOrderItem/{id}', [OrderController::class, 'updateOrderItem'])->name('orders.items.update');
         Route::put('/orders/removeOrderItem/{id}', [OrderController::class, 'removeOrderItem'])->name('orders.removeOrderItem');
+        Route::get('/orders/getPendingServe/{id}', [OrderController::class, 'pendingServeItems'])->name('orders.pendingServe');
 
         // Order's customer
         Route::get('/orders/customer/{id}', [OrderController::class, 'getCustomerDetails'])->name('orders.customer');

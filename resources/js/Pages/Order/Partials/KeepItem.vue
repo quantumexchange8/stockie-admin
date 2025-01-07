@@ -549,196 +549,200 @@ onMounted(() => {
             </div>
 
             <!-- item container -->
-            <div class="flex flex-col pt-4 pb-2 items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)] "
-                v-for="item in items" :key="item.id"
-            >
-                <!-- item header -->
-                <div class="flex px-4 justify-center items-center gap-2.5 self-stretch">
-                    <div class="w-1.5 h-[53px] bg-red-800"></div>
-                    <!-- item details -->
-                    <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
-                        <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-lg font-bold">{{ item.order_no }}</span>
-                        <!-- item info -->
-                        <div class="flex items-center gap-3 self-stretch">
-                            <div class="flex items-center gap-2">
-                                <img
-                                    :src="item.customer.image ? item.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                                    alt="CustomerIcon"
-                                    class="size-5 rounded-[20px]"
-                                >
-                                <span class="text-grey-900 text-base font-normal">{{ item.customer.full_name }}</span>
-                                <span class="text-grey-200">&#x2022;</span>
-                                <span class="text-grey-900 text-base font-normal">{{ item.order_time }}</span>
+             <template v-for="item in items" :key="item.id">
+                <div class="flex flex-col pt-4 pb-2 items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)] "
+                v-if="item.order_items.some(orderItem =>
+                        orderItem.sub_items.some(subItem => subItem.product_item.inventory_item.keep !== 'Inactive')
+                    )"
+                >
+                    <!-- item header -->
+                    <div class="flex px-4 justify-center items-center gap-2.5 self-stretch">
+                        <div class="w-1.5 h-[53px] bg-red-800"></div>
+                        <!-- item details -->
+                        <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
+                            <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-lg font-bold">{{ item.order_no }}</span>
+                            <!-- item info -->
+                            <div class="flex items-center gap-3 self-stretch">
+                                <div class="flex items-center gap-2">
+                                    <img
+                                        :src="item.customer.image ? item.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                        alt="CustomerIcon"
+                                        class="size-5 rounded-[20px]"
+                                    >
+                                    <span class="text-grey-900 text-base font-normal">{{ item.customer.full_name }}</span>
+                                    <span class="text-grey-200">&#x2022;</span>
+                                    <span class="text-grey-900 text-base font-normal">{{ item.order_time }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- item list -->
-                <div class="flex flex-col w-full px-4 items-start self-stretch divide-y-[0.5px] divide-grey-200">
-                    <div class="flex flex-col items-start gap-2 self-stretch" v-for="(order_item, index) in item.order_items">
-                        <div class="flex py-3 items-center gap-8 self-stretch">
-                            <div class="flex items-center gap-3 !justify-between flex-[1_0_0] ">
-                                <img
-                                    :src="order_item.product?.image ? order_item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                                    alt="ItemImage"
-                                    class="size-[60px] object-contain"
-                                >
-                                <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
-                                    <div class="flex items-center gap-2 self-stretch">
-                                        <Tag 
-                                            :variant="'default'"
-                                            :value="'Set'"
-                                            v-if="order_item.product.bucket === 'set'"
-                                        />
-                                        <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium gap-2">
-                                            {{ order_item.product.product_name }}
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center gap-2 self-stretch">
-                                        <span class=" text-base font-semibold"
-                                            :class="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ? '  text-green-500' : 'text-primary-900'"
-                                        >
-                                            {{ getTotalKeptQuantity(order_item) }}/{{ getTotalServedQty(order_item) }} item kept
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- <RadioButton 
-                                :name="'item'"
-                                :dynamic="false"
-                                :value="order_item"
-                                class="!w-fit"
-                                :errorMessage="''"
-                                v-model:checked="form.item"
-                            /> -->
-                            <Checkbox 
-                                :checked="form.items.find(i => i.order_item_id === order_item.id) !== undefined"
-                                v-tooltip.left="{ value: getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ?  'You’ve reached the max keep quantity.' : '' }"
-                                :disabled="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item)"
-                                @change="addItemToList(order_item)"
-                            />
-                        </div>
-                        <div class="flex flex-col px-3 pb-5 items-start gap-3 self-stretch" v-if="form.items.find(i => i.order_item_id === order_item.id)">
-                            <div class="flex flex-col py-2 justify-end items-start gap-3 self-stretch" v-for="sub_item in order_item.sub_items">
-                                <template v-if="sub_item.product_item.inventory_item.keep === 'Active'">
-                                    <span class="self-stretch text-grey-900 text-base font-medium" v-if="order_item.product.bucket === 'set'">{{ sub_item.product_item.inventory_item.item_name }}</span>
-                                    <div class="flex flex-col mx-[-12px] items-start gap-2.5 self-stretch">
-                                        <div class="flex justify-between items-center self-stretch">
-                                            <RadioButton
-                                                :optionArr="keepTypes"
-                                                :checked="form.items.find(i => i.order_item_subitem_id === sub_item.id).type"
-                                                :disabled="totalSubItemQty(order_item, sub_item) === getKeptQuantity(sub_item) || order_item.type === 'Keep'"
-                                                v-model:checked="form.items.find(i => i.order_item_subitem_id === sub_item.id).type"
-                                                @onChange="updateKeepAmount(form.items.find(i => i.order_item_subitem_id === sub_item.id), $event)"
+                    <!-- item list -->
+                    <div class="flex flex-col w-full px-4 items-start self-stretch divide-y-[0.5px] divide-grey-200">
+                        <div class="flex flex-col items-start gap-2 self-stretch" v-for="(order_item, index) in item.order_items">
+                            <div class="flex py-3 items-center gap-8 self-stretch">
+                                <div class="flex items-center gap-3 !justify-between flex-[1_0_0] ">
+                                    <img
+                                        :src="order_item.product?.image ? order_item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                        alt="ItemImage"
+                                        class="size-[60px] object-contain"
+                                    >
+                                    <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
+                                        <div class="flex items-center gap-2 self-stretch">
+                                            <Tag 
+                                                :variant="'default'"
+                                                :value="'Set'"
+                                                v-if="order_item.product.bucket === 'set'"
                                             />
-
-                                            <NumberCounter 
-                                                :minValue="0"
-                                                :maxValue="totalSubItemQty(order_item, sub_item) - (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
-                                                v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
-                                                v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'qty'"
-                                                class="!w-36"
-                                            />
-
-                                            <TextInput
-                                                :iconPosition="'right'"
-                                                v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
-                                                v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'cm'"
-                                                :disabled="totalSubItemQty(order_item, sub_item) === (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
-                                                @keypress="isValidNumberKey($event, false)"
-                                                @update:modelValue="checkMaxValue($event, order_item, sub_item.id)"
-                                                class="!w-36"
-                                            />
+                                            <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium gap-2">
+                                                {{ order_item.product.product_name }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center gap-2 self-stretch">
+                                            <span class=" text-base font-semibold"
+                                                :class="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ? '  text-green-500' : 'text-primary-900'"
+                                            >
+                                                {{ getTotalKeptQuantity(order_item) }}/{{ getTotalServedQty(order_item) }} item kept
+                                            </span>
                                         </div>
                                     </div>
-                                </template>
-                            </div>
-                            
-                            <Dropdown 
-                                :inputArray="allCustomers"
-                                :labelText="'Keep for'"
-                                :dataValue="props.order.customer_id"
-                                v-model="form.customer_id"
-                                imageOption
-                                withDescription
-                            >
-                                <template #description="slotProps">
-                                    <div class="flex items-center gap-2 self-stretch">
-                                        <span class="text-grey-500 text-sm font-normal ">{{ allCustomers[slotProps.index].details[0].value }}</span>
-                                        <span class="text-grey-300 ">&#x2022;</span>
-                                        <span class="text-grey-500 text-sm font-normal ">{{ allCustomers[slotProps.index].details[1].value }}</span>
-                                    </div>
-                                </template>
-                            </Dropdown>
-
-                            <Textarea
-                                inputName="remark"
-                                labelText="Remark"
-                                v-model="form.items.find(i => i.order_item_id === order_item.id).remark"
-                                :rows="5"
-                                :maxCharacters="60" 
-                                :disabled="order_item.type === 'Keep'"
-                                class="col-span-full xl:col-span-4 [&>div>label:first-child]:text-xs [&>div>label:first-child]:font-medium [&>div>label:first-child]:text-grey-900"
-                                @input="updateRemarkForSubitems(order_item.id, $event.target.value)"
-                            />
-
-                            <div class="flex justify-end items-center gap-3 self-stretch">
-                                <p class="text-base text-grey-900 font-normal">
-                                    With Keep Expiration Date
-                                </p>
-                                <Toggle
-                                    :checked="form.items.find(i => i.order_item_id === order_item.id).expiration"
-                                    :inputName="'expiration'"
-                                    inputId="expiration"
-                                    :disabled="order_item.type === 'Keep'"
-                                    v-model="form.items.find(i => i.order_item_id === order_item.id).expiration"
-                                    @change="toggleExpiration(order_item.id, $event.target.checked)"
+                                </div>
+                                <!-- <RadioButton 
+                                    :name="'item'"
+                                    :dynamic="false"
+                                    :value="order_item"
+                                    class="!w-fit"
+                                    :errorMessage="''"
+                                    v-model:checked="form.item"
+                                /> -->
+                                <Checkbox 
+                                    :checked="form.items.find(i => i.order_item_id === order_item.id) !== undefined"
+                                    v-tooltip.left="{ value: getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ?  'You’ve reached the max keep quantity.' : '' }"
+                                    :disabled="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item)"
+                                    @change="addItemToList(order_item)"
                                 />
                             </div>
+                            <div class="flex flex-col px-3 pb-5 items-start gap-3 self-stretch" v-if="form.items.find(i => i.order_item_id === order_item.id)">
+                                <div class="flex flex-col py-2 justify-end items-start gap-3 self-stretch" v-for="sub_item in order_item.sub_items">
+                                    <template v-if="sub_item.product_item.inventory_item.keep === 'Active'">
+                                        <span class="self-stretch text-grey-900 text-base font-medium" v-if="order_item.product.bucket === 'set'">{{ sub_item.product_item.inventory_item.item_name }}</span>
+                                        <div class="flex flex-col mx-[-12px] items-start gap-2.5 self-stretch">
+                                            <div class="flex justify-between items-center self-stretch">
+                                                <RadioButton
+                                                    :optionArr="keepTypes"
+                                                    :checked="form.items.find(i => i.order_item_subitem_id === sub_item.id).type"
+                                                    :disabled="totalSubItemQty(order_item, sub_item) === getKeptQuantity(sub_item) || order_item.type === 'Keep'"
+                                                    v-model:checked="form.items.find(i => i.order_item_subitem_id === sub_item.id).type"
+                                                    @onChange="updateKeepAmount(form.items.find(i => i.order_item_subitem_id === sub_item.id), $event)"
+                                                />
 
-                            <template v-if="form.items.find(i => i.order_item_id === order_item.id).expiration">
-                                <div class="flex flex-col gap-3 w-full">
-                                    <Dropdown
-                                        :placeholder="'Select'"
-                                        :inputArray="expiryPeriodOptions"
-                                        :dataValue="form.items.find(i => i.order_item_id === order_item.id).expired_period"
-                                        :inputName="'expired_period_' + index"
-                                        :disabled="order_item.type === 'Keep'"
-                                        labelText="Expire Date Range"
-                                        inputId="expired_period"
-                                        v-model="form.items.find(i => i.order_item_id === order_item.id).expired_period"
-                                        @onChange="updateValidPeriod(order_item.id, $event)"
-                                        :iconOptions="{
-                                            'Customise range...': Calendar,
-                                        }"
-                                    />
+                                                <NumberCounter 
+                                                    :minValue="0"
+                                                    :maxValue="totalSubItemQty(order_item, sub_item) - (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
+                                                    v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
+                                                    v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'qty'"
+                                                    class="!w-36"
+                                                />
 
-                                    <DateInput
-                                        v-if="form.items.find(i => i.order_item_id === order_item.id).expired_period === 0"
-                                        :labelText="''"
-                                        :inputName="'date_range_' + index"
-                                        :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
-                                        :range="true"
-                                        :errorMessage="form.errors ? form.errors['items.' + index + '.expired_to']  : ''"
+                                                <TextInput
+                                                    :iconPosition="'right'"
+                                                    v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
+                                                    v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'cm'"
+                                                    :disabled="totalSubItemQty(order_item, sub_item) === (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
+                                                    @keypress="isValidNumberKey($event, false)"
+                                                    @update:modelValue="checkMaxValue($event, order_item, sub_item.id)"
+                                                    class="!w-36"
+                                                />
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <Dropdown 
+                                    :inputArray="allCustomers"
+                                    :labelText="'Keep for'"
+                                    :dataValue="props.order.customer_id"
+                                    v-model="form.customer_id"
+                                    imageOption
+                                    withDescription
+                                >
+                                    <template #description="slotProps">
+                                        <div class="flex items-center gap-2 self-stretch">
+                                            <span class="text-grey-500 text-sm font-normal ">{{ allCustomers[slotProps.index].details[0].value }}</span>
+                                            <span class="text-grey-300 ">&#x2022;</span>
+                                            <span class="text-grey-500 text-sm font-normal ">{{ allCustomers[slotProps.index].details[1].value }}</span>
+                                        </div>
+                                    </template>
+                                </Dropdown>
+
+                                <Textarea
+                                    inputName="remark"
+                                    labelText="Remark"
+                                    v-model="form.items.find(i => i.order_item_id === order_item.id).remark"
+                                    :rows="5"
+                                    :maxCharacters="60" 
+                                    :disabled="order_item.type === 'Keep'"
+                                    class="col-span-full xl:col-span-4 [&>div>label:first-child]:text-xs [&>div>label:first-child]:font-medium [&>div>label:first-child]:text-grey-900"
+                                    @input="updateRemarkForSubitems(order_item.id, $event.target.value)"
+                                />
+
+                                <div class="flex justify-end items-center gap-3 self-stretch">
+                                    <p class="text-base text-grey-900 font-normal">
+                                        With Keep Expiration Date
+                                    </p>
+                                    <Toggle
+                                        :checked="form.items.find(i => i.order_item_id === order_item.id).expiration"
+                                        :inputName="'expiration'"
+                                        inputId="expiration"
                                         :disabled="order_item.type === 'Keep'"
-                                        @onChange="updateValidPeriod(order_item.id, $event)"
-                                        v-model="form.items.find(i => i.order_item_id === order_item.id).date_range"
+                                        v-model="form.items.find(i => i.order_item_id === order_item.id).expiration"
+                                        @change="toggleExpiration(order_item.id, $event.target.checked)"
                                     />
                                 </div>
-                            </template>
+
+                                <template v-if="form.items.find(i => i.order_item_id === order_item.id).expiration">
+                                    <div class="flex flex-col gap-3 w-full">
+                                        <Dropdown
+                                            :placeholder="'Select'"
+                                            :inputArray="expiryPeriodOptions"
+                                            :dataValue="form.items.find(i => i.order_item_id === order_item.id).expired_period"
+                                            :inputName="'expired_period_' + index"
+                                            :disabled="order_item.type === 'Keep'"
+                                            labelText="Expire Date Range"
+                                            inputId="expired_period"
+                                            v-model="form.items.find(i => i.order_item_id === order_item.id).expired_period"
+                                            @onChange="updateValidPeriod(order_item.id, $event)"
+                                            :iconOptions="{
+                                                'Customise range...': Calendar,
+                                            }"
+                                        />
+
+                                        <DateInput
+                                            v-if="form.items.find(i => i.order_item_id === order_item.id).expired_period === 0"
+                                            :labelText="''"
+                                            :inputName="'date_range_' + index"
+                                            :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                                            :range="true"
+                                            :errorMessage="form.errors ? form.errors['items.' + index + '.expired_to']  : ''"
+                                            :disabled="order_item.type === 'Keep'"
+                                            @onChange="updateValidPeriod(order_item.id, $event)"
+                                            v-model="form.items.find(i => i.order_item_id === order_item.id).date_range"
+                                        />
+                                    </div>
+                                </template>
+                            </div>
+                            <Button
+                                :variant="'primary'"
+                                :size="'lg'"
+                                :disabled="form.processing"
+                                v-if="form.items.find(i => i.order_item_id === order_item.id)"
+                            >
+                                Keep
+                            </Button>
                         </div>
-                        <Button
-                            :variant="'primary'"
-                            :size="'lg'"
-                            :disabled="form.processing"
-                            v-if="form.items.find(i => i.order_item_id === order_item.id)"
-                        >
-                            Keep
-                        </Button>
                     </div>
                 </div>
-            </div>
+            </template>
         </div>
         <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
             <UndetectableIllus />

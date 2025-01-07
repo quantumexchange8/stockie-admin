@@ -33,7 +33,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails']);
+const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails','fetchPendingServe']);
 
 const query = ref('');
 const tabs = ref(['All']);
@@ -74,6 +74,7 @@ const submit = async () => {
 
         emit('fetchZones');
         emit('fetchOrderDetails');
+        emit('fetchPendingServe');
         emit('close');
         form.reset();
     } catch (error) {

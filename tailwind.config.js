@@ -172,6 +172,7 @@ export default {
                 ".scrollbar-webkit": {
                     "&::-webkit-scrollbar": {
                         width: "2px",
+                        height: "2px",
                     },
                     "&::-webkit-scrollbar-track": {
                         background: "#d6dce1",

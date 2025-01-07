@@ -7,7 +7,7 @@ const props = defineProps({
         type: String,
         default: 'primary',
         validator(value) {
-            return ['primary', 'secondary', 'tertiary', 'red'].includes(value)
+            return ['primary', 'secondary', 'tertiary', 'red', 'red-tertiary', 'green', 'green-tertiary'].includes(value)
         },
     },
     type: {
@@ -69,6 +69,9 @@ const variantClasses = computed(() => ({
     'secondary': 'bg-primary-50 text-primary-900 hover:bg-primary-25 hover:text-primary-700',
     'tertiary': 'bg-transparent text-primary-900 hover:text-primary-800 border border-primary-800',
     'red': 'bg-primary-600 text-white hover:bg-primary-500',
+    'red-tertiary': 'bg-transparent text-primary-500 border border-primary-600 hover:text-primary-600',
+    'green': 'bg-green-500 text-white hover:bg-green-600',
+    'green-tertiary': 'bg-transparent text-green-600 border border-green-500 hover:text-green-500',
 }[variant]));
 
 const sizeClasses = computed(() => ({
@@ -87,6 +90,9 @@ const disabledClasses = computed(() => ({
     '!bg-primary-100': disabled.value === true && variant === 'secondary',
     '!bg-primary-200': disabled.value === true && variant === 'tertiary',
     '!bg-primary-300': disabled.value === true && variant === 'red',
+    '!border-primary-300 !text-primary-300': disabled.value === true && variant === 'red-tertiary',
+    '!bg-green-200': disabled.value === true && variant === 'green',
+    '!border-green-200 !text-green-200': disabled.value === true && variant === 'green-tertiary',
 }));
 
 const classes = computed(() => [

@@ -1,39 +1,26 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import Tag from '@/Components/Tag.vue';
 import Button from '@/Components/Button.vue';
-import AddOrderItems from './AddOrderItems.vue';
-import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
-import { DeleteIcon, PlusIcon, TimesIcon } from '@/Components/Icons/solid.jsx';
-import axios from 'axios';
+import { DefaultIcon, DeleteIcon, PlusIcon, TimesIcon } from '@/Components/Icons/solid.jsx';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
-import { router, useForm } from '@inertiajs/vue3';
-import Modal from '@/Components/Modal.vue';
+import { useForm } from '@inertiajs/vue3';
 import RemoveOrderItem from './RemoveOrderItem.vue';
-import KeepItem from './KeepItem.vue';
-import Dropdown from '@/Components/Dropdown.vue';
+import dayjs from 'dayjs';
+import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
-    errors: Object,
-    customers: Array,
-    users: Array,
-    tableStatus: String,
-    selectedTable: {
-        type: Object,
-        default: () => {}
-    },
     order: {
         type: Object,
         default: () => {}
     },
-    matchingOrderDetails: {
-        type: Object,
-        default: () => {}
-    }
+    pendingServeItems: {
+        type: Array,
+        default: () => []
+    },
 })
-const emit = defineEmits(['fetchOrderDetails', 'fetchZones', 'update:customerKeepItems', 'fetchPendingServe']);
-
+const emit = defineEmits(['fetchOrderDetails', 'fetchZones', 'fetchPendingServe']);
 const order = computed(() => props.order);
 const drawerIsVisible = ref(false);
 const actionType = ref(null);
@@ -46,7 +33,7 @@ const selectedItem = ref();
 
 const form = useForm({
     current_order_id: order.value.id,
-    order_id: order.value.id,
+    order_id: '',
     order_item_id: '',
     point: 0,
     items: [],
@@ -69,8 +56,9 @@ const openOverlay = (event, item) => {
     selectedItem.value = item;
 
     if (selectedItem.value) {
+        form.order_id = selectedItem.value.order_id;
         form.order_item_id = selectedItem.value.id;
-        form.point = selectedItem.value.product.point * selectedItem.value.item_qty;
+        form.point = parseInt(selectedItem.value.product.point) * selectedItem.value.item_qty;
 
         selectedItem.value.sub_items.forEach(sub_item => {
             form.items.push({ 
@@ -91,6 +79,7 @@ const closeOverlay = () => {
     if (op.value) {
         op.value.hide();  // Ensure op.value is not null before calling hide
     }
+
 };
 
 const closeOrderDetails = () => {
@@ -113,8 +102,8 @@ const formSubmit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            form.reset();
             closeOrderDetails();
+            form.reset();
         },
     })
 };
@@ -209,85 +198,21 @@ const getItemTypeName = (type) => {
     }
 }
 
+const getServedQty = (item) => {
+    return item.sub_items.reduce((sum, qty) => sum + qty.serve_qty, 0);
+}
+
+const getTotalQty = (item) => {
+    return item.item_qty * item.sub_items.reduce((sum, subItem) => sum + subItem.item_qty, 0);
+}
+
 const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0) && !form.processing);
 
 </script>
 
 <template>
-    <RightDrawer 
-        :header="actionType === 'keep' ? 'Keep Item' : ''" 
-        :withHeader="actionType === 'keep'"
-        previousTab
-        v-model:show="drawerIsVisible"
-        @close="closeDrawer"
-    >
-        <template v-if="actionType === 'keep'">
-            <KeepItem 
-                :order="order" 
-                :selectedTable="selectedTable"
-                @update:customerKeepItems="$emit('update:customerKeepItems', $event)"
-                @close="closeDrawer();closeOrderDetails()"
-            />
-        </template>
-        <template v-if="actionType === 'add'">
-            <AddOrderItems 
-                :order="computedOrder" 
-                :selectedTable="selectedTable"
-                :matchingOrderDetails="matchingOrderDetails"
-                @fetchZones="$emit('fetchZones')"
-                @fetchOrderDetails="$emit('fetchOrderDetails')"
-                @fetchPendingServe="$emit('fetchPendingServe')"
-                @close="closeDrawer();closeOverlay()"
-            />
-        </template>
-    </RightDrawer>
-    <div class="w-full flex flex-col gap-6 items-start rounded-[5px] pr-1 max-h-[calc(100dvh-23.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <!-- <div class="w-full flex flex-col gap-6 items-start rounded-[5px] pr-1 max-h-[calc(100dvh-23.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col items-start gap-4 self-stretch">
-            <div class="flex flex-col items-start gap-y-4 py-4 self-stretch">
-                <div class="w-full flex flex-row gap-x-3 items-start">
-                    <div class="basis-1/2 flex flex-col gap-2 items-start">
-                        <p class="text-grey-900 text-sm font-medium">Order No.</p>
-                        <p class="text-grey-800 text-md font-semibold" v-if="tableStatus !== 'Pending Clearance'">#{{ order.order_no }}</p>
-                        <p class="text-grey-800 text-md font-semibold" v-else>--</p>
-                    </div>
-                    <div class="basis-1/2 flex flex-col gap-2 items-start">
-                        <p class="text-grey-900 text-sm font-medium">No. of pax</p>
-                        <p class="text-grey-800 text-md font-semibold">{{ order.pax }}</p>
-                    </div>
-                </div>
-                <div class="w-full flex flex-row gap-x-3 items-start">
-                    <div class="basis-1/2 flex flex-col gap-2 items-start">
-                        <p class="text-grey-900 text-sm font-medium">Ordered by</p>
-                        <div class="flex whitespace-nowrap items-center gap-2">
-                            <!-- <div class="size-6 bg-primary-100 rounded-full" v-for="user in orderedBy"></div> -->
-                             <template v-for="user in orderedBy" >
-                                <img 
-                                    :src="user.image ? user.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                    alt=""
-                                    class="size-6 rounded-full object-contain"
-                                >
-                             </template>
-                            <p class="text-grey-900 text-base font-medium" :class="{'!text-grey-300': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0].full_name : 'No order yet' }}</p>
-                            <!-- <p class="text-grey-800 text-sm font-semibold">{{ order.waiter?.full_name ?? '' }}</p> -->
-                        </div>
-                    </div>
-                    <div class="basis-1/2 flex flex-col gap-2 items-start">
-                        <p class="text-grey-900 text-sm font-medium">Customer</p>
-                        <Dropdown
-                            inputName="customer_id"
-                            imageOption
-                            plainStyle
-                            :inputArray="customers"
-                            :dataValue="order.customer_id"
-                            :errorMessage="updateOrderCustomerForm.errors?.customer_id || ''"
-                            :disabled="tableStatus === 'Pending Clearance'"
-                            v-model="updateOrderCustomerForm.customer_id"
-                            @onChange="updateOrderCustomer"
-                        />
-                    </div>
-                </div>
-            </div>
-
             <div class="flex flex-col gap-3 items-center self-stretch">
                 <div class="flex flex-col gap-2 justify-start self-stretch">
                     <div class="flex items-center justify-between">
@@ -301,7 +226,6 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in pendingServeItems" :key="index">
                                 <div class="col-span-1"><div class="size-[30px] flex items-center justify-center bg-primary-900 rounded-[5px] text-primary-25 text-2xs font-semibold">x{{ item.item_qty }}</div></div>
                                 <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
-                                    <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt="OrderItemImage"
@@ -339,86 +263,79 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">No pending item to be served.</p>
                     </template>
                 </div>
+            </div>
+        </div>
+    </div> -->
 
-                <div class="flex flex-col gap-2 justify-start self-stretch">
-                    <div class="flex items-center justify-between">
-                        <p class="text-primary-950 text-md font-medium">Served</p>
+    <div class="flex flex-col py-3 items-end gap-3 flex-[1_0_0] self-stretch overflow-auto scrollbar-webkit scrollbar-thin max-h-[calc(100dvh-25rem)]" v-if="props.pendingServeItems.length > 0">
+        <div class="flex flex-col pt-4 pb-2 items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)]" v-for="table in props.pendingServeItems">
+            <!-- item header -->
+            <div class="flex px-4 justify-center items-center gap-2.5 self-stretch">
+                <!-- <div class="w-1.5 h-[53px] bg-primary-800"></div> -->
+                <div class="flex flex-col items-start gap-1 flex-[1_0_0] border-l-[6px] border-l-primary-800">
+                    <span class="line-clamp-1 self-stretch text-ellipsis text-lg font-bold pl-2.5">{{ table.order.order_no }}</span>
+                    <!-- item info -->
+                    <div class="flex items-center gap-3 self-stretch pl-2.5">
+                        <div class="flex items-center gap-2">
+                            <img
+                                :src="table.customer.image"
+                                alt="CustomerIcon"
+                                class="size-5 rounded-full"
+                                v-if="table.customer && table.customer.image"
+                            >
+                            <DefaultIcon class="size-5" v-else />
+                            <span class="text-grey-900 text-base font-normal">{{ table.customer ? table.customer.full_name : 'Guest' }}</span>
+                        </div>
+                        <p class="text-grey-200">&#x2022;</p>
+                        <span class="text-grey-900 text-base font-normal">{{ dayjs(table.order.created_at).format('DD/MM/YYYY, HH:mm') }}</span>
                     </div>
-                    <template v-if="servedItems.length > 0">
-                        <div class="flex flex-col divide-y-[0.5px] divide-grey-200">
-                            <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in servedItems" :key="index">
-                                <div class="col-span-1"><div class="size-[30px] flex items-center justify-center bg-primary-900 rounded-[5px] text-primary-25 text-2xs font-semibold">x{{ item.item_qty }}</div></div>
-                                <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
-                                    <img 
-                                        :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                        alt="OrderItemImage"
-                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
-                                    >
-                                    <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
-                                        <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
-                                            <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Normal' ? item.product.product_name : getKeepItemName(item) }}
-                                        </p>
-                                        <div class="flex flex-nowrap gap-2 items-center">
-                                            <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
-                                            <template v-if="item.type === 'Normal'">
-                                                <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
-                                                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
-                                                    <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
-                                                </div>
-                                                <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
-                                            </template>
-                                            <Tag :value="getItemTypeName(item.type)" variant="blue" v-else/>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-span-3 flex flex-col justify-center items-end gap-2 self-stretch">
-                                    <div class="flex flex-nowrap gap-1 items-center">
-                                        <img 
-                                            :src="item.handled_by.image ? item.handled_by.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                            alt=""
-                                            class="p-2 size-4 rounded-full border-[0.3px] border-grey-100 object-contain"
-                                        >
-                                        <p class="text-xs text-grey-900 font-medium">{{ item.handled_by.full_name }}</p>
-                                    </div>
-                                </div>
+                </div>
+            </div>
+
+            <!-- item list -->
+            <div class="flex flex-col px-4 items-start self-stretch" v-for="item in table.order.order_items">
+                <div class="flex py-3 items-center gap-5 self-stretch">
+                    <div class="flex items-center gap-3 flex-[1_0_0]">
+                        <img
+                            :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                            alt="ProductIcon"
+                            class="size-[60px] object-contain"
+                        >
+                        <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] self-stretch">
+                            <span class="text-primary-800 line-clamp-1 self-stretch text-ellipsis text-base font-medium flex gap-1">
+                                ({{ getServedQty(item) }}/{{ getTotalQty(item) }}) 
+                                <span class="line-clamp-1 text-grey-900 text-ellipsis text-base font-medium">{{ item.product.product_name }}</span>
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <Tag 
+                                    :value="'Set'"
+                                    :variant="'default'"
+                                    v-if="item.product.bucket === 'set'"
+                                />
+                                <span class="line-clamp-1 text-ellipsis text-xs font-medium text-grey-900 line-through" v-if="item.amount_before_discount !== item.amount">RM {{ item.amount_before_discount }}</span>
+                                <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium text-primary-950">RM {{ item.amount }}</span>
                             </div>
                         </div>
-                    </template>
-                    <template v-else>
-                        <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">No item served.</p>
-                    </template>
-                </div>
-
-                <div class="flex gap-2.5 pb-6 items-center self-stretch">
-                    <Button
-                        v-if="order.customer_id"
-                        type="button"
-                        variant="tertiary"
-                        size="lg"
-                        :disabled="!order.id || tableStatus === 'Pending Clearance' || !matchingOrderDetails.tables"
-                        @click="openDrawer('keep')"
-                    >
-                        Keep Item
-                    </Button>
+                    </div>
                     <Button
                         type="button"
-                        iconPosition="left"
-                        size="lg"
-                        :disabled="!order.id || !matchingOrderDetails.tables"
-                        @click="openDrawer('add')"
+                        class="!w-fit col-span-3"
+                        :disabled="form.processing"
+                        @click="openOverlay($event, item)"
                     >
-                        <template #icon>
-                            <PlusIcon class="w-6 h-6 text-white" />
-                        </template>
-                        Place Order
+                        Serve Now
                     </Button>
                 </div>
             </div>
         </div>
     </div>
+    <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
+        <UndetectableIllus />
+        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+    </div>
 
     <!-- Remove order item -->
-    <OverlayPanel ref="op2" @close="hideDeleteOrderItemOverlay">
+    <!-- <OverlayPanel ref="op2" @close="hideDeleteOrderItemOverlay">
         <template v-if="pendingServeItems">
             <RemoveOrderItem 
                 :order="order" 
@@ -427,7 +344,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                 @closeDrawer="closeOrderDetails"
             />
         </template>
-    </OverlayPanel>
+    </OverlayPanel> -->
     
     <!-- Serve order item -->
     <OverlayPanel ref="op" @close="closeOverlay">
@@ -443,10 +360,10 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                     </div>
 
                     <!-- Iterate through sub_items of the selected order item -->
-                    <template v-if="selectedItem.sub_items.length > 0">
-                        <template v-for="(subItem, index) in selectedItem.sub_items" :key="index">
+                    <!-- <template v-if="selectedItem.sub_items.length > 0">
+                        <template v-for="(subItem, index) in selectedItem.sub_items" :key="index"> -->
                             <!-- Find the related product_item from product.product_items -->
-                            <template v-for="productItem in selectedItem.product.product_items" :key="productItem.id">
+                            <!-- <template v-for="productItem in selectedItem.product.product_items" :key="productItem.id">
                                 <template v-if="subItem.product_item_id === productItem.id">
                                     <div class="flex flex-col gap-3">
                                         <div class="flex justify-between items-center self-stretch">
@@ -474,7 +391,24 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                 </template>
                             </template>
                         </template>
-                    </template>
+                    </template> -->
+                    <div class="flex flex-col items-start gap-3 self-stretch" v-for="(item, index) in selectedItem.sub_items" :key="index">
+                        <div class="flex justify-between items-center self-stretch">
+                            <span class="text-grey-900 text-base font-medium">{{ item.product_item.inventory_item.item_name }}</span>
+                            <div class="flex items-start gap-2">
+                                <span class="text-primary-900 text-xs font-medium">Served:</span>
+                                <span class="text-primary-900 text-xs font-medium">({{ item.serve_qty }}/{{ item.item_qty * selectedItem.item_qty }})</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 justify-between items-center self-stretch ">
+                            <span class="text-grey-900 text-xs font-medium">Serve Now Quantity</span>
+                            <NumberCounter
+                                :inputName="`subItem_${item.id}.serving_qty`"
+                                :maxValue="item.item_qty - item.serve_qty"
+                                v-model="form.items[index].serving_qty"
+                            />
+                        </div>
+                    </div>
 
                     <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
                         <Button

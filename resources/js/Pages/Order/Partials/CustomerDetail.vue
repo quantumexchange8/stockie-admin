@@ -145,10 +145,10 @@ const closeModal = (status) => {
     switch(status) {
         case 'close': {
             if(extendForm.expired_to !== 2) isUnsavedChangesOpen.value = true;
-            else isExtendExpirationOpen.value = false;
+            else isExtendExpirationOpen.value = false; extendForm.clearErrors();
 
             if(deleteForm.remark !== '' || deleteForm.remark_description !== '') isUnsavedChangesOpen.value = true;
-            else isDeleteKeptItemOpen.value = false;
+            else isDeleteKeptItemOpen.value = false; deleteForm.clearErrors();
             break;
         };
         case 'stay': {

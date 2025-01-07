@@ -14,7 +14,11 @@ const props = defineProps({
     withDisabled: {
         type: Boolean,
         default: false
-    }
+    },
+    tabFooter: {
+        type: Object,
+        default: () => {}
+    },
 });
 
 const emit = defineEmits(['onChange']);
@@ -51,7 +55,7 @@ const tranformedTabs = computed(() => {
 
 <template>
     <TabGroup :selectedIndex="selectedTab" @change="changeTab">
-        <TabList class="flex overflow-x-auto">
+        <TabList class="flex overflow-auto min-h-max scrollbar-webkit scrollbar-thin">
             <slot name="startheader"></slot> 
             <template v-for="(tab, index) in tabs" :key="index">
                 <Tab 
@@ -65,10 +69,12 @@ const tranformedTabs = computed(() => {
                             'p-3 text-sm font-medium leading-none focus:outline-none whitespace-nowrap',
                             { 'text-grey-200': !selected },
                             { 'text-primary-900 border-b-2 border-primary-900': selected },
-                            { 'hover:bg-white/[0.12] hover:text-primary-800': withDisabled ? !tab.disabled : true }
+                            { 'hover:bg-white/[0.12] hover:text-primary-800': withDisabled ? !tab.disabled : true },
+                            { 'flex gap-2.5 justify-center items-center': props.tabFooter }
                         ]"
                     >
                         {{ withDisabled ? tab.title : tab }}
+                        <slot name="endtab" v-if="props.tabFooter === tab"></slot>
                     </button>
                 </Tab>
             </template>

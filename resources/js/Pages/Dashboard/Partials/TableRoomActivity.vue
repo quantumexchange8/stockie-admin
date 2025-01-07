@@ -68,7 +68,7 @@ onMounted (() => {
         </div>
 
         <template v-if="activities.length > 0 && props.activeTables.length > 0 && !isLoading">
-            <div class="flex pl-6 items-end gap-[10px] self-stretch overflow-x-scroll relative">
+            <div class="flex pl-6 items-end gap-[10px] self-stretch overflow-x-auto scrollbar-webkit scrollbar-thin relative">
                 <div 
                     class="flex p-3 pt-0 items-end gap-1 flex-[1_0_0] h-[102.231px] w-[270px] absolute
                             rounded-tl-[45px] rounded-tr-[5px] rounded-bl-[5px] rounded-br-[5px] 

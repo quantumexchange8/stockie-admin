@@ -52,6 +52,7 @@ class OrderController extends Controller
         $zones = Zone::with([
                             'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled']),
                             'tables.orderTables.order',
+                            'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty'
                         ])
                         ->select('id', 'name')
                         ->get()
@@ -60,9 +61,14 @@ class OrderController extends Controller
                                 'text' => $zone->name,
                                 'value' => $zone->id,
                                 'tables' => $zone->tables->map(function ($table) {
-                                    $pendingCount = $table->orderTables->reduce(function ($orderTotal, $orderTable) {
-                                        $pendingItems = $orderTable->order->orderItems->where('status', 'Pending Serve')->count();
-                                        return $orderTotal + $pendingItems;
+                                    $pendingCount = $table->orderTables->reduce(function ($pendingCount, $orderTable) {
+                                        $orderPendingCount = $orderTable->order->orderItems->where('status', 'Pending Serve')->reduce(function ($itemCount, $orderItem) {
+                                            $itemTotalQty = collect($orderItem->subItems)->reduce(function ($subTotal, $subItem) use ($orderItem) {
+                                                return $subTotal + ($subItem['item_qty'] * $orderItem['item_qty'] - $subItem['serve_qty']);
+                                            }, 0);
+                                            return $itemCount + $itemTotalQty;
+                                        }, 0);
+                                        return $pendingCount + $orderPendingCount;
                                     }, 0);
                     
                                     $table->pending_count = $pendingCount;
@@ -70,6 +76,9 @@ class OrderController extends Controller
                                 }),
                             ];
                         });
+    
+        
+        // dd($zones);
 
         // $waiters = Waiter::orderBy('id')->get();
         $users = User::select(['id', 'full_name', 'role'])->orderBy('id')->get();
@@ -527,7 +536,7 @@ class OrderController extends Controller
     {
         // Fetch only the main order tables first, selecting only necessary columns
         $orderTables = OrderTable::select('id', 'table_id', 'status', 'updated_at', 'order_id')
-                                    ->with('table:id,table_no,status') // only fetch necessary fields
+                                    ->with('table:id,table_no,status')
                                     ->where('table_id', $id)
                                     ->orderByDesc('updated_at')
                                     ->get();
@@ -576,7 +585,14 @@ class OrderController extends Controller
             if ($currentOrderTable->order->customer) {
                 $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
             }
-            
+
+            // $currentOrderTable->order->map(function ($order) {
+            //     $pendingItemsCount = $order->orderItems->where('status', 'Pending Serve')->count();
+            //     $order->pending_count = $pendingItemsCount;
+            //     return $order;
+            // });
+
+            // dd($currentOrderTable->order->orderItems->where('status', 'Pending Serve')->count());
             $data = [
                 'currentOrderTable' => $currentOrderTable->table,
                 'order' => $currentOrderTable->order
@@ -735,15 +751,21 @@ class OrderController extends Controller
                         $orderTableStatus = 'All Order Served';
                     }
                 }
-                
-                // Update all tables associated with this order
-                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
-                    $table = Table::find($tab['table_id']);
-                    $table->update(['status' => $orderTableStatus]);
-                    $tab->update(['status' => $orderTableStatus]);
+
+                $allClearance = $order->orderTable->every(function($table){
+                    return $table->status === 'Pending Clearance';
                 });
 
-                $order->update(['status' => $orderStatus]);
+                if(($request->input('current_order_id') === $request->input('order_id')) && !$allClearance){
+                    // Update all tables associated with this order
+                    $order->orderTable->each(function ($tab) use ($orderTableStatus) {
+                        $table = Table::find($tab['table_id']);
+                        $table->update(['status' => $orderTableStatus]);
+                        $tab->update(['status' => $orderTableStatus]);
+                    });
+    
+                    $order->update(['status' => $orderStatus]);
+                }
             }
         }
 
@@ -766,9 +788,14 @@ class OrderController extends Controller
                                 'text' => $zone->name,
                                 'value' => $zone->id,
                                 'tables' => $zone->tables->map(function ($table) {
-                                    $pendingCount = $table->orderTables->reduce(function ($orderTotal, $orderTable) {
-                                        $pendingItems = $orderTable->order->orderItems->where('status', 'Pending Serve')->count();
-                                        return $orderTotal + $pendingItems;
+                                    $pendingCount = $table->orderTables->reduce(function ($pendingCount, $orderTable) {
+                                        $orderPendingCount = $orderTable->order->orderItems->where('status', 'Pending Serve')->reduce(function ($itemCount, $orderItem) {
+                                            $itemTotalQty = collect($orderItem->subItems)->reduce(function ($subTotal, $subItem) use ($orderItem) {
+                                                return $subTotal + ($subItem['item_qty'] * $orderItem['item_qty'] - $subItem['serve_qty']);
+                                            }, 0);
+                                            return $itemCount + $itemTotalQty;
+                                        }, 0);
+                                        return $pendingCount + $orderPendingCount;
                                     }, 0);
                     
                                     $table->pending_count = $pendingCount;
@@ -816,20 +843,19 @@ class OrderController extends Controller
                             'orderTable.table', 
                             'payment', 
                             'voucher:id,reward_type,discount',
-                            'orderItems' => fn($query) => $query->where('status', 'Served')
+                            'orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve')
                         ])->find($id);
 
         if (!$order) return redirect()->back();
 
         if ($request->action_type === 'complete') {
-            if ($order->status === 'Order Served') {
+            // if ($order->status === 'Order Served' || $order->status === 'Pending Serve') {
                 $order->update(['status' => 'Order Completed']);
-                $order->refresh();
-            }
+                // $order->refresh();
+            // }
 
             $statusArr = collect($order->orderTable->pluck('status')->unique());
-
-            if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && $statusArr->first() === 'All Order Served')) {
+            if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && ($statusArr->first() === 'All Order Served' || $statusArr->first() === 'Order Placed' || $statusArr->first() === 'Pending Order'))) {
                 $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
                 $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
                 $pointConversion = $settings->filter(fn($setting) => $setting['type'] === 'point')->first();
@@ -1843,7 +1869,7 @@ class OrderController extends Controller
                                         'table', 
                                         'order.voucher:id,reward_type,discount', 
                                         'order.payment.customer', 
-                                        'order.orderItems' => fn($query) => $query->where('status', 'Served'),
+                                        'order.orderItems' => fn($query) => $query->whereNotIn('status', ['Cancelled']),
                                         'order.orderItems.product',
                                         'order.orderItems.subItems.productItem.inventoryItem',
                                     ])
@@ -2522,5 +2548,44 @@ class OrderController extends Controller
         }
 
         return response()->json($customer->keepItems);
+    }
+
+    public function pendingServeItems(String $id)
+    {
+        $currentTable = OrderTable::where('table_id', $id)
+                                    ->whereNotIn('status', ['Order Completed', 'Order Cancelled'])
+                                    ->whereHas('order.orderItems', function ($query) {
+                                        $query->where('status', 'Pending Serve');
+                                    })
+                                    ->with([
+                                        'order:id,order_no,created_at,customer_id',
+                                        'order.orderItems' => function ($query) {
+                                            $query->where('status', 'Pending Serve')
+                                                ->select('id', 'amount_before_discount', 'amount', 'product_id', 'item_qty', 'order_id', 'status');
+                                        },
+                                        'order.orderItems.product:bucket,id,price,product_name,point',
+                                        'order.orderItems.subItems:id,item_qty,product_item_id,serve_qty,order_item_id',
+                                        'order.orderItems.subItems.productItem:id,product_id,inventory_item_id',
+                                        'order.orderItems.subItems.productItem.inventoryItem:id,item_name',
+                                        'order.customer:id,full_name'
+                                    ])
+                                    ->select('table_id', 'order_id', 'id')
+                                    ->get();
+
+        // if($currentTable->order->customer) {
+        //     $currentTable->order->customer->image = $currentTable->order->customer_id ? $currentTable->order->customer->getFirstMediaUrl('customer') : null;
+        // }
+
+        $currentTable->each(function ($table) {
+            if ($table->order && $table->order->customer_id) {
+                $table->order->customer->image = $table->order->customer->getFirstMediaUrl('customer');
+            }
+
+            foreach ($table->order->orderItems as $orderItem) {
+                $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+            }
+        });
+    
+        return response()->json($currentTable);
     }
 }

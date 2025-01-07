@@ -13,6 +13,7 @@ import { TimesIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import MakePaymentForm from './MakePaymentForm.vue';
 import PaymentHistory from './PaymentHistory.vue';
+import PendingServe from './PendingServe.vue';
 
 const props = defineProps({
     errors: Object,
@@ -23,7 +24,6 @@ const props = defineProps({
         default: () => {},
     },
 })
-
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
 
@@ -32,11 +32,13 @@ const { showMessage } = useCustomToast();
 const emit = defineEmits(['close', 'fetchZones']);
 
 const tabs = ref([
-    { title: 'Order Detail', disabled: false }, 
+    { title: 'Order Detail', disabled: false },
+    { title: 'Pending Serve', disabled: false },
     { title: 'Customer Detail', disabled: true }, 
     { title: 'Payment History', disabled: false }
 ]);
 const order = ref({});
+const pending = ref(0);
 const customer = ref({});
 const cancelOrderFormIsOpen = ref(false);
 const removeRewardFormIsOpen = ref(false);
@@ -45,6 +47,7 @@ const orderInvoiceModalIsOpen = ref(false);
 const drawerIsVisible = ref(false);
 const selectedTab = ref(0);
 const currentOrderTable = ref({});
+const pendingServeItems = ref([]);
 
 const fetchOrderDetails = async () => {
     try {
@@ -83,7 +86,30 @@ const fetchCustomerDetails = async () => {
     }
 };
 
-onMounted(async () => await fetchOrderDetails());
+const fetchPendingServe = async () => {
+    try {
+        const pendingServeResponse = await axios.get(route('orders.pendingServe', currentOrderTable.value.id));
+        pendingServeItems.value = pendingServeResponse.data;
+        // pending.value = pendingServeItems.value.reduce((sum, item) => sum + item.order.order_items.reduce((total_qty, items) => items.item_qty + total_qty , 0), 0);
+        pending.value = pendingServeItems.value.reduce((sum, pending) => {
+            return sum + pending.order.order_items.reduce((orderSum, items) => {
+                return orderSum + items.sub_items.reduce((subItemSum, sub_item) => {
+                    return subItemSum + items.item_qty * sub_item.item_qty - sub_item.serve_qty;
+                }, 0);
+            }, 0);
+        }, 0);
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+}
+
+onMounted(async () => {
+    await fetchOrderDetails();
+    await fetchPendingServe();
+});
+
 
 const matchingOrderDetails = ref({
     tables: '',
@@ -110,7 +136,7 @@ const closePaymentDrawer = (redirect = false) => {
     drawerIsVisible.value = false;
     if (redirect) {
         fetchOrderDetails();
-        selectedTab.value = order.value.customer_id ? 2 : 1;
+        selectedTab.value = order.value.customer_id ? 3 : 2;
     }
 };
 
@@ -258,7 +284,7 @@ const isOrderCompleted = computed(() => {
                                     })
                             : [];
 
-    return mappedOrder.every((item) => item.status === 'Served' || item.status === 'Cancelled') && !form.processing && currentOrderTable.value.status !== 'Pending Clearance';
+    return !form.processing && currentOrderTable.value.status !== 'Pending Clearance';
 });
 
 // const formattedOrder = computed(() => {
@@ -279,6 +305,10 @@ const hasServedItem = computed(() => {
     return !order.value.id 
         || order.value?.order_items?.some(item => item.sub_items.some((subItem) => subItem.serve_qty > 0))
         || order.value?.order_items?.some(item => item.type === 'Keep' || item.type === 'Expired');
+});
+
+const hasPreviousPending = computed(() => {
+    return pendingServeItems.value.some((item) => item.order.id === props.selectedTable.order_id)
 });
 
 const orderTableNames = computed(() => {
@@ -303,7 +333,7 @@ watch(
     async (newCustomerId) => {
         if (newCustomerId) {
             await fetchCustomerDetails();
-            tabs.value[1].disabled = !newCustomerId;
+            tabs.value[2].disabled = !newCustomerId;
         }
     },
     { immediate: true } // Run the watcher immediately on mount
@@ -313,6 +343,10 @@ watch(
 
 watch(selectedTab, (newValue) => {
     if (tabs.value[newValue].title === 'Order Detail') fetchOrderDetails();
+});
+
+watch(order.value, () => {
+    fetchPendingServe();
 });
 </script>
 
@@ -327,6 +361,7 @@ watch(selectedTab, (newValue) => {
             :order="order" 
             :selectedTable="selectedTable"
             @fetchZones="$emit('fetchZones')"
+            @fetchPendingServe="fetchPendingServe"
             @update:customer-point="customer.point = $event"
             @update:customer-rank="customer.rank = $event"
             @close="closePaymentDrawer"
@@ -350,8 +385,14 @@ watch(selectedTab, (newValue) => {
                 :withDisabled="true"
                 :tabs="tabs" 
                 :selectedTab="selectedTab" 
+                :tabFooter="tabs[1]"
                 @onChange="selectedTab = $event"
             >
+                <template #endtab>
+                    <div class="flex flex-col size-4 items-center justify-center rounded-full bg-primary-600" v-if="tabs[1] && pending > 0">
+                        <span class="text-white text-center text-[8px] font-bold">{{ pending }}</span>
+                    </div>
+                </template>
                 <template #order-detail>
                     <OrderDetail 
                         :selectedTable="selectedTable" 
@@ -362,7 +403,17 @@ watch(selectedTab, (newValue) => {
                         :matchingOrderDetails="matchingOrderDetails"
                         @fetchZones="$emit('fetchZones')" 
                         @fetchOrderDetails="fetchOrderDetails" 
+                        @fetchPendingServe="fetchPendingServe"
                         @update:customerKeepItems="customer.keep_items = $event"
+                    />
+                </template>
+                <template #pending-serve>
+                    <PendingServe 
+                        :order="order"
+                        :pendingServeItems="pendingServeItems"
+                        @fetchZones="$emit('fetchZones')" 
+                        @fetchOrderDetails="fetchOrderDetails" 
+                        @fetchPendingServe="fetchPendingServe"
                     />
                 </template>
                 <template #customer-detail v-if="order.customer_id">
@@ -406,7 +457,7 @@ watch(selectedTab, (newValue) => {
                             type="button"
                             variant="tertiary"
                             size="lg"
-                            :disabled="hasServedItem"
+                            :disabled="hasServedItem || hasPreviousPending"
                             @click="showCancelOrderForm"
                         >
                             Cancel Order
@@ -414,7 +465,7 @@ watch(selectedTab, (newValue) => {
                         <Button
                             size="lg"
                             variant="tertiary"
-                            :disabled="currentOrderTable.status !== 'Pending Clearance'"
+                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0"
                             @click="form.action_type = 'clear'"
                         >
                             Free Up Table
@@ -430,10 +481,10 @@ watch(selectedTab, (newValue) => {
                     <!-- <Button
                         type="button"
                         size="lg"
-                        :disabled="!isOrderCompleted"
-                        @click="openPaymentDrawer"
+                        :disabled="!(order.order_items && order.order_items.length)"
+                        @click="console.log(props)"
                     >
-                        Make Payment
+                        {{ props.selectedTable.status }}
                     </Button> -->
                 </div>
             </div>
