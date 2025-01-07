@@ -1606,7 +1606,7 @@ class OrderController extends Controller
                 'order_item_id' => $newOrderItem->id,
                 'product_item_id' => $keepItem->orderItemSubitem->productItem->id,
                 'item_qty' => 1,
-                'serve_qty' => 0,
+                'serve_qty' => $request->return_qty,
             ]);
 
             KeepHistory::create([
@@ -2393,8 +2393,7 @@ class OrderController extends Controller
                                         'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
                                         'order.orderItems.product',
                                         'order.orderItems.subItems.productItem.inventoryItem',
-                                        'order.orderItems.subItems.keepItems.keepHistories',
-                                        'order.orderItems.subItems.keepItems.oldestKeepHistory'
+                                        'order.orderItems.keepItems.oldestKeepHistory'
                                     ])
                                     ->where('table_id', $id)
                                     ->where(function ($query){
@@ -2416,7 +2415,7 @@ class OrderController extends Controller
                                         });
 
                                         return $orderTable;
-                                    });
+                                    }); 
 
         //get images
         foreach ($orderTables as $orderTable) {
@@ -2588,4 +2587,20 @@ class OrderController extends Controller
     
         return response()->json($currentTable);
     }
+
+    // public function editKeptItemDetail(Request $request)
+    // {
+    //     $validatedData = $request->validate([
+    //         'id' => ['required'],
+    //         'kept_amount' => ['required', 'numeric'],
+    //         'remark' => ['nullable', 'max:60'],
+    //         'expired_to' => ['required', 'datetime']
+    //     ], [
+    //         'kept_amount.required' => 'The amount is required.',
+    //         'kept_amount.numeric' => 'The amount must be an integer.',
+    //         'remark.max' => 'The remark may not be longer than 60 characters.',
+    //         'expired_to.required' => 'Expiry date is required.',
+    //         'expired_to.datetime' => 'Invalid input.',
+    //     ]);
+    // }
 }

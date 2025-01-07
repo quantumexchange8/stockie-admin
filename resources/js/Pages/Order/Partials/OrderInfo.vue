@@ -388,7 +388,7 @@ watch(order.value, () => {
                 :tabFooter="tabs[1]"
                 @onChange="selectedTab = $event"
             >
-                <template #endtab>
+                <template #tabFooter>
                     <div class="flex flex-col size-4 items-center justify-center rounded-full bg-primary-600" v-if="tabs[1] && pending > 0">
                         <span class="text-white text-center text-[8px] font-bold">{{ pending }}</span>
                     </div>

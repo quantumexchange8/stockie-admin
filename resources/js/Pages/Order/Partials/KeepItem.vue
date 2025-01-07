@@ -12,7 +12,7 @@ import RadioButton from '@/Components/RadioButton.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DateInput from "@/Components/Date.vue";
 import Toggle from '@/Components/Toggle.vue';
-import { Calendar, TimesIcon, WarningIcon } from "@/Components/Icons/solid";
+import { Calendar, DefaultIcon, TimesIcon, WarningIcon } from "@/Components/Icons/solid";
 import dayjs from 'dayjs';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
@@ -54,6 +54,8 @@ const fetchProducts = async () => {
                 { key: 'phone', value: formatPhone(customer.phone) }
             ]
         }));
+
+        console.log(items.value)
 
         notAllowToKeep.value = items.value
             .flatMap(item => {
@@ -168,7 +170,8 @@ const getKeptQuantity = (subItem) => {
 const getTotalKeptQuantity = (item) => {
     return item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
             ? item.sub_items?.reduce((total, subItem) => total + getKeptQuantity(subItem), 0 ) ?? 0
-            : item.keep_item.keep_histories?.reduce((total, history) => total + parseInt(history.qty) + (parseFloat(history.cm) > 0 ? 1 : 0), 0) ?? 0;
+            : item.keep_item.oldest_keep_history?.reduce((total, history) => total + parseInt(history.qty) + (parseFloat(history.cm) > 0 ? 1 : 0), 0) ?? 0;
+            // : item.keep_item.oldest_keep_history ? parseInt(item.keep_item.oldest_keep_history.qty) + (parseFloat(item.keep_item.oldest_keep_history.cm) > 0 ? 1 : 0) : 0;
 };
 
 const getTotalServedQty = (item) => {
@@ -323,6 +326,10 @@ const updateValidPeriod = (orderItemId, option) => {
                                 : dayjs().add(option, 'month').format('YYYY-MM-DD');
         }
     });
+}
+
+const isAllNotKept = (item) => {
+    return item.sub_items.every((sub_item) => sub_item.product_item.inventory_item.keep === 'Inactive');
 }
 
 const getKeepItemName = (item) => {
@@ -568,8 +575,10 @@ onMounted(() => {
                                         :src="item.customer.image ? item.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
                                         alt="CustomerIcon"
                                         class="size-5 rounded-[20px]"
+                                        v-if="item.customer"
                                     >
-                                    <span class="text-grey-900 text-base font-normal">{{ item.customer.full_name }}</span>
+                                    <DefaultIcon class="size-5" v-else />
+                                    <span class="text-grey-900 text-base font-normal">{{ item.customer ? item.customer.full_name : 'Guest' }}</span>
                                     <span class="text-grey-200">&#x2022;</span>
                                     <span class="text-grey-900 text-base font-normal">{{ item.order_time }}</span>
                                 </div>
@@ -580,48 +589,50 @@ onMounted(() => {
                     <!-- item list -->
                     <div class="flex flex-col w-full px-4 items-start self-stretch divide-y-[0.5px] divide-grey-200">
                         <div class="flex flex-col items-start gap-2 self-stretch" v-for="(order_item, index) in item.order_items">
-                            <div class="flex py-3 items-center gap-8 self-stretch">
-                                <div class="flex items-center gap-3 !justify-between flex-[1_0_0] ">
-                                    <img
-                                        :src="order_item.product?.image ? order_item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                                        alt="ItemImage"
-                                        class="size-[60px] object-contain"
-                                    >
-                                    <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
-                                        <div class="flex items-center gap-2 self-stretch">
-                                            <Tag 
-                                                :variant="'default'"
-                                                :value="'Set'"
-                                                v-if="order_item.product.bucket === 'set'"
-                                            />
-                                            <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium gap-2">
-                                                {{ order_item.product.product_name }}
-                                            </span>
-                                        </div>
-                                        <div class="flex items-center gap-2 self-stretch">
-                                            <span class=" text-base font-semibold"
-                                                :class="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ? '  text-green-500' : 'text-primary-900'"
-                                            >
-                                                {{ getTotalKeptQuantity(order_item) }}/{{ getTotalServedQty(order_item) }} item kept
-                                            </span>
+                            <template v-if="!isAllNotKept(order_item)">
+                                <div class="flex py-3 items-center gap-8 self-stretch">
+                                    <div class="flex items-center gap-3 !justify-between flex-[1_0_0]">
+                                        <img
+                                            :src="order_item.product?.image ? order_item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                            alt="ItemImage"
+                                            class="size-[60px] object-contain"
+                                        >
+                                        <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
+                                            <div class="flex items-center gap-2 self-stretch">
+                                                <Tag 
+                                                    :variant="'default'"
+                                                    :value="'Set'"
+                                                    v-if="order_item.product.bucket === 'set'"
+                                                />
+                                                <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium gap-2">
+                                                    {{ order_item.product.product_name }}
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center gap-2 self-stretch">
+                                                <span class="text-base font-semibold"
+                                                    :class="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ? '  text-green-500' : 'text-primary-900'"
+                                                >
+                                                    {{ getTotalKeptQuantity(order_item) }}/{{ getTotalServedQty(order_item) }} item kept
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
+                                    <!-- <RadioButton 
+                                        :name="'item'"
+                                        :dynamic="false"
+                                        :value="order_item"
+                                        class="!w-fit"
+                                        :errorMessage="''"
+                                        v-model:checked="form.item"
+                                    /> -->
+                                    <Checkbox 
+                                        :checked="form.items.find(i => i.order_item_id === order_item.id) !== undefined"
+                                        v-tooltip.left="{ value: getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ?  'You’ve reached the max keep quantity.' : '' }"
+                                        :disabled="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item)"
+                                        @change="addItemToList(order_item)"
+                                    />
                                 </div>
-                                <!-- <RadioButton 
-                                    :name="'item'"
-                                    :dynamic="false"
-                                    :value="order_item"
-                                    class="!w-fit"
-                                    :errorMessage="''"
-                                    v-model:checked="form.item"
-                                /> -->
-                                <Checkbox 
-                                    :checked="form.items.find(i => i.order_item_id === order_item.id) !== undefined"
-                                    v-tooltip.left="{ value: getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ?  'You’ve reached the max keep quantity.' : '' }"
-                                    :disabled="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item)"
-                                    @change="addItemToList(order_item)"
-                                />
-                            </div>
+                            </template>
                             <div class="flex flex-col px-3 pb-5 items-start gap-3 self-stretch" v-if="form.items.find(i => i.order_item_id === order_item.id)">
                                 <div class="flex flex-col py-2 justify-end items-start gap-3 self-stretch" v-for="sub_item in order_item.sub_items">
                                     <template v-if="sub_item.product_item.inventory_item.keep === 'Active'">
@@ -686,7 +697,7 @@ onMounted(() => {
                                     @input="updateRemarkForSubitems(order_item.id, $event.target.value)"
                                 />
 
-                                <div class="flex justify-end items-center gap-3 self-stretch">
+                                <!-- <div class="flex justify-end items-center gap-3 self-stretch">
                                     <p class="text-base text-grey-900 font-normal">
                                         With Keep Expiration Date
                                     </p>
@@ -698,9 +709,9 @@ onMounted(() => {
                                         v-model="form.items.find(i => i.order_item_id === order_item.id).expiration"
                                         @change="toggleExpiration(order_item.id, $event.target.checked)"
                                     />
-                                </div>
+                                </div> -->
 
-                                <template v-if="form.items.find(i => i.order_item_id === order_item.id).expiration">
+                                <!-- <template v-if="form.items.find(i => i.order_item_id === order_item.id).expiration"> -->
                                     <div class="flex flex-col gap-3 w-full">
                                         <Dropdown
                                             :placeholder="'Select'"
@@ -729,7 +740,7 @@ onMounted(() => {
                                             v-model="form.items.find(i => i.order_item_id === order_item.id).date_range"
                                         />
                                     </div>
-                                </template>
+                                <!-- </template> -->
                             </div>
                             <Button
                                 :variant="'primary'"

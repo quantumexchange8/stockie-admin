@@ -51,6 +51,7 @@ const isExtendExpirationOpen = ref(false);
 const isDeleteKeptItemOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const selectedItem = ref();
+const initialEditForm = ref();
 
 const form = useForm({
     order_id: props.orderId,
@@ -120,6 +121,7 @@ const openActionsOverlay = (event, item) => {
     editForm.expired_to = selectedItem.value.expired_to ? dayjs(selectedItem.value.expired_to).format('DD/MM/YYYY') : '';
     editForm.kept_amount = parseFloat(selectedItem.value.cm) > parseFloat(selectedItem.value.qty) ? (selectedItem.value.cm).toString() : selectedItem.value.qty;
     editForm.remark = selectedItem.value.remark ? selectedItem.value.remark : '';
+    initialEditForm.value = {...editForm};
 
     extendForm.id = selectedItem.value.id;
 
@@ -144,6 +146,9 @@ const openModal = (action) => {
 const closeModal = (status) => {
     switch(status) {
         case 'close': {
+            if(initialEditForm.isDirty) isUnsavedChangesOpen.value = true;
+            else isEditKeptItemOpen.value = false; editForm.clearErrors();
+
             if(extendForm.expired_to !== 2) isUnsavedChangesOpen.value = true;
             else isExtendExpirationOpen.value = false; extendForm.clearErrors();
 
@@ -156,14 +161,19 @@ const closeModal = (status) => {
             break;
         };
         case 'leave': {
+
             isUnsavedChangesOpen.value = false;
-            // isEditKeptItemOpen.value = false;
+            isEditKeptItemOpen.value = false;
             isExtendExpirationOpen.value = false;
             isDeleteKeptItemOpen.value = false;
 
+            selectedItem.value = '';
+
+            editForm.reset();
             extendForm.reset();
             deleteForm.reset();
-            // editForm.isDirty = false;
+
+            editForm.isDirty = false;
             extendForm.isDirty = false;
             deleteForm.isDirty = false;
             break;
@@ -208,7 +218,12 @@ const submit = async () => {
 };
 
 const editKeptItem = async () => {
-    console.log(editForm.data());
+    try {
+        const response = await axios.put('/order-management/editKeptItemDetail', editForm.data());
+        console.log(response.data());
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 const extendKeptItem = async () => {
@@ -263,6 +278,13 @@ const formatPoints = (points) => {
   
   return pointsStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
+
+watch((editForm), (newValue) => {
+    initialEditForm.isDirty = newValue.id !== initialEditForm.value.id ||
+                            newValue.kept_amount !== initialEditForm.value.kept_amount ||
+                            newValue.remark !== initialEditForm.value.remark ||
+                            newValue.expired_to !== initialEditForm.value.expired_to;
+})
 
 const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[field]) && !form.processing);
 
@@ -540,15 +562,15 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
 
     <!-- More Actions -->
     <OverlayPanel ref="isMoreActionOpen" @close="closeActionsOverlay" class="[&>div]:!p-1 [&>div]:!gap-0.5">
-        <!-- <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('edit')">
+        <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('edit')">
             <span class="text-grey-900 text-base font-medium">Edit kept detail</span>
-        </div> -->
-        <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('extend')" v-if="selectedItem.expired_to">
+        </div>
+        <!-- <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('extend')" v-if="selectedItem.expired_to">
             <span class="text-grey-900 text-base font-medium">Extend expiration date</span>
         </div>
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-not-allowed pointer-events-none bg-grey-50" @click="openModal('extend')" v-else>
             <span class="text-grey-300 text-base font-medium">Extend expiration date</span>
-        </div>
+        </div> -->
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('delete')">
             <span class="text-primary-800 text-base font-medium">Delete kept item</span>
         </div>
@@ -559,7 +581,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
         :show="isEditKeptItemOpen"
         :title="'Edit Kept Item Detail'"
         :maxWidth="'sm'"
-        @close="closeModal"
+        @close="closeModal('close')"
     >  
         <form novalidate @submit.prevent="editKeptItem">
             <div class="flex flex-col items-start gap-8 self-stretch">
@@ -632,6 +654,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :variant="'tertiary'"
                         :type="'button'"
                         :size="'lg'"
+                        @click="closeModal('close')"
                     >
                         Cancel
                     </Button>
@@ -645,6 +668,14 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                 </div>
             </div>
         </form>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
     </Modal>
 
      <!-- Extend expiration date -->

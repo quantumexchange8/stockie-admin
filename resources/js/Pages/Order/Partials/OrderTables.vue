@@ -13,6 +13,7 @@ import Modal from "@/Components/Modal.vue";
 import ReservationListTable from './ReservationListTable.vue';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import OrderInfo from './OrderInfo.vue';
+import { MergedIcon } from '@/Components/Icons/solid';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -91,8 +92,7 @@ const getTableClasses = (table) => ({
         // 'w-full flex justify-center py-1.5 px-6',
         {
             'bg-grey-50': table.status === 'Empty Seat',
-            'bg-primary-900': table.status === 'Pending Order',
-            'bg-green-600': table.status === 'All Order Served' || table.status === 'Order Placed',
+            'bg-green-600': table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order',
             'bg-orange-500': table.status === 'Pending Clearance',
         }
     ]),
@@ -100,16 +100,16 @@ const getTableClasses = (table) => ({
         'text-xl font-bold self-stretch text-center',
         {
             'text-primary-900': table.status === 'Empty Seat',
-            'text-primary-25': table.status === 'Pending Order',
-            'text-green-50': table.status === 'Order Placed' || table.status === 'All Order Served',
+            // 'text-primary-25': table.status === 'Pending Order',
+            'text-green-50': table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order',
             'text-orange-25': table.status === 'Pending Clearance',
         }
     ]),
     duration: computed(() => [
         'text-base font-normal self-stretch text-center',
         {
-            'text-primary-100': table.status === 'Pending Order',
-            'text-green-100': table.status === 'Order Placed' || table.status === 'All Order Served',
+            // 'text-primary-100': table.status === 'Pending Order',
+            'text-green-100': table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order',
             'text-orange-100': table.status === 'Pending Clearance',
         }
     ]),
@@ -117,8 +117,8 @@ const getTableClasses = (table) => ({
         'text-xs font-medium self-stretch text-center',
         {
             'text-primary-900': table.status === 'Empty Seat',
-            'text-white': table.status === 'Pending Order',
-            'text-green-100': table.status === 'Order Placed' || table.status === 'All Order Served',
+            // 'text-white': table.status === 'Pending Order',
+            'text-green-100': table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order',
             'text-orange-100': table.status === 'Pending Clearance',
         }
     ]),
@@ -222,6 +222,14 @@ const getStatusCount = (status) => {
     return count;
 }
 
+const isMerged = (targetTable) => {
+    return props.zones.some(zone =>
+        zone.tables.some(table =>
+            table.id !== targetTable.id && table.order_id === targetTable.order_id && table.status !== 'Empty Seat'
+        )
+    );
+};
+
 // const showReservationList = (event, table) => {
 //     event.preventDefault();
 //     event.stopPropagation();
@@ -270,19 +278,19 @@ const getStatusCount = (status) => {
             </div>
 
             <!-- Pending Order -->
-            <div class="flex items-center gap-3">
+            <!-- <div class="flex items-center gap-3">
                 <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-primary-700 bg-primary-800">
                     <span class="text-xs font-medium text-center text-white">{{ getStatusCount('Pending Order') }}</span>
                 </div>
                 <span class="text-grey-700 text-center text-sm font-normal">Pending Order</span>
-            </div>
+            </div> -->
 
-            <!-- Order Placed / All Order Served -->
+            <!-- Pending Order / Order Placed / All Order Served -->
             <div class="flex items-center gap-3">
                 <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-green-400 bg-green-500">
-                    <span class="text-xs font-medium text-center text-white">{{ (getStatusCount('Order Placed')) + (getStatusCount('All Order Served')) }}</span>
+                    <span class="text-xs font-medium text-center text-white">{{ getStatusCount('Pending Order') + (getStatusCount('Order Placed')) + (getStatusCount('All Order Served')) }}</span>
                 </div>
-                <span class="text-grey-700 text-center text-sm font-normal">Order Placed</span>
+                <span class="text-grey-700 text-center text-sm font-normal">In use</span>
             </div>
 
             <!-- Pending Clearance -->
@@ -298,11 +306,12 @@ const getStatusCount = (status) => {
         <template v-if="isMainTab"> 
             <div class="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-3 items-start gap-6 self-stretch" v-if="props.isFullScreen === true" >
                 <template v-for="zone in filteredZones" class="flex">
-                    <div class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap" v-for="table in zone.tables">
+                    <div class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap relative" v-for="table in zone.tables">
                         <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] cursor-pointer w-full relative"
                             :class="getTableClasses(table).state.value"
                             @click="openOverlay($event, table)"
                         >
+                            <MergedIcon class="absolute left-[8.375px] top-[8px] size-5" v-if="isMerged(table)"/>
                             <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                 {{ getCurrentOrderTableDuration(table) }}
@@ -353,6 +362,7 @@ const getStatusCount = (status) => {
                                 :class="getTableClasses(table).state.value"
                                 @click="openOverlay($event, table)"
                             >
+                                 <MergedIcon class="absolute left-[8.375px] top-[8px] size-5" v-if="isMerged(table)"/>
                                 <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                 <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                     {{ getCurrentOrderTableDuration(table) }}

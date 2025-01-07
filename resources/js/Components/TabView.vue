@@ -74,7 +74,7 @@ const tranformedTabs = computed(() => {
                         ]"
                     >
                         {{ withDisabled ? tab.title : tab }}
-                        <slot name="endtab" v-if="props.tabFooter === tab"></slot>
+                        <slot name="tabFooter" v-if="props.tabFooter === tab"></slot>
                     </button>
                 </Tab>
             </template>

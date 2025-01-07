@@ -253,6 +253,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/getAllCategories', [OrderController::class, 'getAllCategories'])->name('orders.getAllCategories');
 
         //Order's keep item
+        Route::put('/editKeptItemDetail', [OrderController:: class, 'editKeptItemDetail'])->name('editKeptItemDetail');
         Route::post('/extendDuration', [OrderController::class, 'extendDuration'])->name('extendDuration');
         Route::post('/deleteKeptItem', [OrderController::class, 'deleteKeptItem'])->name('deleteKeptItem');
     });
