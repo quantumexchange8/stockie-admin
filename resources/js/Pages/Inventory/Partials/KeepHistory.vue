@@ -14,6 +14,7 @@ import { UploadIcon } from '@/Components/Icons/solid';
 import { useFileExport } from '@/Composables';
 import Button from '@/Components/Button.vue';
 import Checkbox from '@/Components/Checkbox.vue';
+import Toast from '@/Components/Toast.vue';
 
 const props = defineProps({
     keepHistories: Array
@@ -189,6 +190,9 @@ watch(() => searchQuery.value, (newValue) => {
                 :items="items"
             />
         </template>
+
+        <Toast />
+
         <div class="flex flex-col p-6 items-start gap-6 rounded-[5px] border-solid border border-primary-100">
             <div class="flex items-start gap-2.5 self-stretch">
                 <div class="flex justify-between items-center flex-[1_0_0] self-stretch">
@@ -316,7 +320,8 @@ watch(() => searchQuery.value, (newValue) => {
                                 :rows="getFilteredRows(tab)"
                                 :rowType="rowType"
                                 :tab="tab"
-                                :selectedTab="tranformedTabs.indexOf(tab)+1" 
+                                :selectedTab="tranformedTabs.indexOf(tab)+1"
+                                @getKeepHistories="getKeepHistories"
                             />
                         </div>
                     </template>

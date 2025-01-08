@@ -1,11 +1,16 @@
 <script setup>
+import Button from '@/Components/Button.vue';
+import DateInput from '@/Components/Date.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { CommentIcon } from '@/Components/Icons/solid';
+import Modal from '@/Components/Modal.vue';
 import TabView from '@/Components/TabView.vue';
 import Tag from '@/Components/Tag.vue';
+import { useCustomToast } from '@/Composables';
+import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
     customer: {
@@ -14,12 +19,71 @@ const props = defineProps({
     },
 });
 
-const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired', 'Extended', 'Deleted']);
+const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired', 'Edited', 'Extended', 'Deleted']);
 const keepHistory = ref([]);
+const isReactivateOpen = ref(false);
+const selectedItem = ref('');
+const isUnsavedChangesOpen = ref(false);
+const initialExpiry = ref('');
+const form = useForm({
+    id: '',
+    expiry_date: '',
+})
+const { showMessage } = useCustomToast();
 
 const formatHistoryStatus = (status) => {
     return status.toLowerCase().replace(/[/_]+/g, "-").replace(/^-+|-+$/g, " "); // Replace spaces, '/', and '_' with '-' | Remove leading or trailing '-'
 };
+
+const openReactivateModal = (item) => {
+    selectedItem.value = item;
+    form.expiry_date = selectedItem.value.keep_item.expired_to ? dayjs(selectedItem.value.keep_item.expired_to).format('DD/MM/YYYY') : '';
+    initialExpiry.value = form.expiry_date;
+    isReactivateOpen.value = true;
+}
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(form.expiry_date !== initialExpiry.value) isUnsavedChangesOpen.value = true;
+            else isReactivateOpen.value = false; selectedItem.value = '';
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        };
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isReactivateOpen.value = false;
+            form.reset();
+            selectedItem.value = '';
+            break;
+        }
+    }
+}
+
+const reactivateExpiredItems = () => {
+    form.id = selectedItem.value.id;
+    try {
+        form.post(route('reactivateExpiredItems'), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                closeModal('leave');
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Kept item has been reactivated successfully',
+                    detail: "You’ve extended the expiration date for selected kept item.",
+                });
+                form.reset();
+                getKeepHistory();
+            },
+        })
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 const tabsSlug = ref(
   tabs.value
@@ -81,7 +145,7 @@ onMounted(() => {
                                                 <span class="text-grey-400 text-2xs font-normal">{{ item.keep_date ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}` : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                                 <span class="text-primary-900 text-2xs font-normal">
-                                                    {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
+                                                    {{ item.status === 'Returned' ? 'Returned by' : 'Kept by' }}
                                                 </span>
                                                 <img 
                                                     :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
@@ -106,11 +170,11 @@ onMounted(() => {
                                                 />
                                                 <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
                                             </div>
-                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark">
+                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark && item.status !== 'Deleted' && item.status !== 'Edited'">
                                                 <CommentIcon class="flex-shrink-0 mt-1" />
                                                 <span class="text-grey-900 text-xs font-normal">{{ item.keep_item.remark }}</span>
                                             </div>
-                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.status === 'Deleted'">
+                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.status === 'Deleted' || item.status === 'Edited'">
                                                 <CommentIcon class="flex-shrink-0 mt-1" />
                                                 <span class="text-grey-900 text-xs font-normal">{{ item.remark }}</span>
                                             </div>
@@ -154,10 +218,14 @@ onMounted(() => {
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">
-                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_date ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}` : '' }}</span>
+                                                <!-- <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span> -->
+                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? item.status === 'Extended' || item.status === 'Expired' 
+                                                                                                                                    ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}`
+                                                                                                                                    : `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` 
+                                                                                                                                : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                                 <span class="text-primary-900 text-2xs font-normal">
-                                                    {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
+                                                    {{ item.status === 'Returned' ? 'Returned by' : 'Kept by' }}
                                                 </span>
                                                 <img 
                                                     :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
@@ -182,11 +250,11 @@ onMounted(() => {
                                                 />
                                                 <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
                                             </div>
-                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark">
+                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.keep_item.remark && item.status !== 'Deleted' && item.status !== 'Edited'">
                                                 <CommentIcon class="flex-shrink-0 mt-1" />
                                                 <span class="text-grey-900 text-xs font-normal">{{ item.keep_item.remark }}</span>
                                             </div>
-                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.status === 'Deleted'">
+                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.status === 'Deleted' || item.status === 'Edited' && item.remark">
                                                 <CommentIcon class="flex-shrink-0 mt-1" />
                                                 <span class="text-grey-900 text-xs font-normal">{{ item.remark }}</span>
                                             </div>
@@ -196,6 +264,16 @@ onMounted(() => {
                                         <span class="text-primary-900 text-base font-medium whitespace-nowrap">{{ item.qty > item.cm ? `x ${item.qty}` : `${item.cm} cm`  }}</span>
                                     </div>
                                 </div>
+                                <Button
+                                    :variant="'tertiary'"
+                                    :type="'button'"
+                                    :size="'md'"
+                                    :disabled="item.keep_date < item.keep_item.expired_to"
+                                    @click="openReactivateModal(item)"
+                                    v-if="item.status === 'Expired'"
+                                    >
+                                    Reactivate
+                                </Button>
                             </div>
                         </div>
                     </template>
@@ -209,4 +287,49 @@ onMounted(() => {
             </template>
         </TabView>
     </div>
+
+    <!-- Extend expiration date -->
+    <Modal
+        :title="'Extend to'"
+        :maxWidth="'xs'"
+        :show="isReactivateOpen"
+        @close="closeModal('close')"
+    >
+        <form @submit.prevent="reactivateExpiredItems">
+            <div class="flex flex-col items-start gap-6">
+                <DateInput 
+                    :placeholder="'DD/MM/YYYY'"
+                    :minDate="new Date(form.expiry_date)"
+                    v-model="form.expiry_date"
+                />
+                <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
+                    <Button
+                        :variant="'tertiary'"
+                        :type="'button'"
+                        :size="'lg'"
+                        @click="closeModal('close')"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        :variant="'primary'"
+                        :type="'submit'"
+                        :size="'lg'"
+                        :disabled="form.expiry_date === ''"
+                    >
+                        Confirm
+                    </Button>
+                </div>
+            </div>
+        </form>
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal>
 </template>

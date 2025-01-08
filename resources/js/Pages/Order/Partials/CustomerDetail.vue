@@ -66,6 +66,8 @@ const editForm = useForm({
     kept_amount: '',
     remark: '',
     expired_to: '',
+    keptIn: '',
+    customer_id: props.customer.id,
 })
 
 const extendForm = useForm({
@@ -121,6 +123,9 @@ const openActionsOverlay = (event, item) => {
     editForm.expired_to = selectedItem.value.expired_to ? dayjs(selectedItem.value.expired_to).format('DD/MM/YYYY') : '';
     editForm.kept_amount = parseFloat(selectedItem.value.cm) > parseFloat(selectedItem.value.qty) ? (selectedItem.value.cm).toString() : selectedItem.value.qty;
     editForm.remark = selectedItem.value.remark ? selectedItem.value.remark : '';
+    editForm.keptIn = parseFloat(selectedItem.value.cm) > parseFloat(selectedItem.value.qty) ? 'cm' : 'qty';
+    editForm.customer_id = props.customer.id;
+
     initialEditForm.value = {...editForm};
 
     extendForm.id = selectedItem.value.id;
@@ -219,8 +224,16 @@ const submit = async () => {
 
 const editKeptItem = async () => {
     try {
-        const response = await axios.put('/order-management/editKeptItemDetail', editForm.data());
-        console.log(response.data());
+        const response = await axios.put(`/order-management/editKeptItemDetail`, editForm);
+        emit('update:customerKeepItems', response.data);
+        closeModal('leave');
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: 'Successfully edited.',
+            });
+        }, 200)
+        editForm.reset();
     } catch (error) {
         console.error(error);
     }
@@ -641,11 +654,9 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :errorMessage="editForm.errors?.expired_to"
                         :range="false"
                         :inputName="'expiration_date'"
-                        :minDate="new Date()"
-                        :disabled="selectedItem.expired_to !== null"
+                        :minDate="editForm.expired_to ? new Date(dayjs(editForm.expired_to).format('DD/MM/YYYY')) : new Date()"
                         v-model="editForm.expired_to"
                         class="col-span-2"
-                        :class="selectedItem.expired_to !== null ? '[&>span>input]:!text-grey-200 [&>span>input]:!bg-grey-50 [&>span>input]:!border-grey-100 [&>span>div>svg]:!hidden pr-5' : ''"
                     />
                 </div>
 

@@ -2393,7 +2393,9 @@ class OrderController extends Controller
                                         'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
                                         'order.orderItems.product',
                                         'order.orderItems.subItems.productItem.inventoryItem',
-                                        'order.orderItems.keepItems.oldestKeepHistory'
+                                        'order.orderItems.keepItem.oldestKeepHistory'  => function ($query) {
+                                            $query->where('status', 'Keep');
+                                        }
                                     ])
                                     ->where('table_id', $id)
                                     ->where(function ($query){
@@ -2451,49 +2453,24 @@ class OrderController extends Controller
         ]);
     }
 
-    public function extendDuration(Request $request)
+    public function reactivateExpiredItems(Request $request)
     {
-        $targetItem = KeepItem::findOrFail($request->id);
-        // dd($targetItem->id, (string)$targetItem->qty, (string)$targetItem->cm, $targetItem->created_at, $targetItem->remark);
-
-        $targetItem->update([
-            'expired_to' => Carbon::parse($targetItem['expired_to'])->addMonthsWithoutOverflow($request->expired_to)->format('Y-m-d H:i:s')
-        ]);
+        $targetItem = KeepHistory::with('keepItem')->find($request->input('id'));
 
         KeepHistory::create([
-            'keep_item_id' => $targetItem->id,
-            'qty' => $targetItem->qty,
-            'cm' => $targetItem->cm,
-            'keep_date' => $targetItem->expired_to,
-            'remark' => $targetItem->remark,
-            'status' => 'Extended',
+            'keep_item_id' => $targetItem->keepItem->id,
+            'qty' => $targetItem->keepItem->qty,
+            'cm' => $targetItem->keepItem->cm,
+            'keep_date' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
+            'status' => 'Extended'
+        ]);
+        
+        KeepItem::find($targetItem->keepItem->id)->update([
+            'expired_to' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
+            'status' => 'Keep',
         ]);
 
-        $customer = Customer::with([
-            'keepItems' => function ($query) {
-                $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
-                        ->where('status', 'Keep')
-                        ->with([
-                            'orderItemSubitem.productItem:id,inventory_item_id',
-                            'orderItemSubitem.productItem.inventoryItem:id,item_name',
-                            'waiter:id,full_name'
-                        ]);
-            }
-        ])
-        ->find($request->customer_id);
-
-        foreach ($customer->keepItems as $key => $keepItem) {
-            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-            unset($keepItem->orderItemSubitem);
-
-            $keepItem->image = $keepItem->orderItemSubitem->productItem 
-            ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-            : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
-
-            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
-        }
-
-        return response()->json($customer->keepItems);
+        return redirect()->back();
     }
 
     public function deleteKeptItem(Request $request)
@@ -2588,19 +2565,62 @@ class OrderController extends Controller
         return response()->json($currentTable);
     }
 
-    // public function editKeptItemDetail(Request $request)
-    // {
-    //     $validatedData = $request->validate([
-    //         'id' => ['required'],
-    //         'kept_amount' => ['required', 'numeric'],
-    //         'remark' => ['nullable', 'max:60'],
-    //         'expired_to' => ['required', 'datetime']
-    //     ], [
-    //         'kept_amount.required' => 'The amount is required.',
-    //         'kept_amount.numeric' => 'The amount must be an integer.',
-    //         'remark.max' => 'The remark may not be longer than 60 characters.',
-    //         'expired_to.required' => 'Expiry date is required.',
-    //         'expired_to.datetime' => 'Invalid input.',
-    //     ]);
-    // }
+    public function editKeptItemDetail(Request $request)
+    {
+        $validatedData = $request->validate([
+            'id' => ['required'],
+            'kept_amount' => ['required', 'numeric'],
+            'remark' => ['nullable', 'max:60'],
+            'expired_to' => ['required']
+        ], [
+            'kept_amount.required' => 'The amount is required.',
+            'kept_amount.numeric' => 'The amount must be an integer.',
+            'remark.max' => 'The remark may not be longer than 60 characters.',
+            'expired_to.required' => 'Expiry date is required.',
+            // 'expired_to.datetime' => 'Invalid input.',
+        ]);
+        
+        $targetItem = KeepItem::find($validatedData['id']);
+        $targetItem->update([
+            'qty' => $request->input('keptIn') === 'qty' ? round($validatedData['kept_amount'], 2) : 0.00,
+            'cm' => $request->input('keptIn') === 'cm' ? round($validatedData['kept_amount'], 2) : 0.00,
+            'remark' => $validatedData['remark'] ?? $validatedData['remark'],
+            'expired_to' => Carbon::parse($validatedData['expired_to'])->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
+        ]);
+
+        KeepHistory::create([
+            'keep_item_id' => $validatedData['id'],
+            'qty' => $request->input('keptIn') === 'qty' ? round($validatedData['kept_amount'], 2) : 0.00,
+            'cm' => $request->input('keptIn') === 'cm' ? round($validatedData['kept_amount'], 2) : 0.00,
+            'keep_date' => $targetItem->expired_to,
+            'remark' => $targetItem->remark,
+            'status' => 'Edited',
+        ]);
+
+        $customer = Customer::with([
+            'keepItems' => function ($query) {
+                $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
+                        ->where('status', 'Keep')
+                        ->with([
+                            'orderItemSubitem.productItem:id,inventory_item_id',
+                            'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                            'waiter:id,full_name'
+                        ]);
+            }
+        ])
+        ->find($request->customer_id);
+
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            unset($keepItem->orderItemSubitem);
+
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+            ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+            : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+        }
+
+        return response()->json($customer->keepItems);
+    }
 }

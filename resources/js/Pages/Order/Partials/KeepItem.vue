@@ -54,9 +54,6 @@ const fetchProducts = async () => {
                 { key: 'phone', value: formatPhone(customer.phone) }
             ]
         }));
-
-        console.log(items.value)
-
         notAllowToKeep.value = items.value
             .flatMap(item => {
                 // Map through all order items
@@ -99,9 +96,11 @@ const keepTypes = [
 
 const expiryPeriodOptions = [
     { text: "1 month starting from today", value: 1 },
+    { text: "2 months starting from today", value: 2 },
     { text: "3 months starting from today", value: 3 },
+    { text: "4 months starting from today", value: 4 },
+    { text: "5 months starting from today", value: 5 },
     { text: "6 months starting from today", value: 6 },
-    { text: "12 months starting from today", value: 12 },
     { text: "Customise range...", value: 0 },
 ];
 
@@ -170,8 +169,7 @@ const getKeptQuantity = (subItem) => {
 const getTotalKeptQuantity = (item) => {
     return item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
             ? item.sub_items?.reduce((total, subItem) => total + getKeptQuantity(subItem), 0 ) ?? 0
-            : item.keep_item.oldest_keep_history?.reduce((total, history) => total + parseInt(history.qty) + (parseFloat(history.cm) > 0 ? 1 : 0), 0) ?? 0;
-            // : item.keep_item.oldest_keep_history ? parseInt(item.keep_item.oldest_keep_history.qty) + (parseFloat(item.keep_item.oldest_keep_history.cm) > 0 ? 1 : 0) : 0;
+            : item.keep_item.keep_histories?.reduce((total, history) => total + parseInt(history.qty) + (parseFloat(history.cm) > 0 ? 1 : 0), 0) ?? 0;
 };
 
 const getTotalServedQty = (item) => {

@@ -4,6 +4,11 @@ import { computed, ref, watch } from 'vue'
 import Table from '@/Components/Table.vue'
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import ViewHistory from '@/Pages/Customer/Partials/ViewHistory.vue';
+import { useForm } from '@inertiajs/vue3';
+import Modal from '@/Components/Modal.vue';
+import DateInput from '@/Components/Date.vue';
+import Button from '@/Components/Button.vue';
+import { useCustomToast } from '@/Composables';
 
 const props = defineProps({
     rows: Array,
@@ -11,6 +16,8 @@ const props = defineProps({
     tab: String,
     selectedTab: Number,
 })
+
+const emit = defineEmits(['getKeepHistories']);
 
 // // Group the rows by the unique created date
 // const rowGroupedByDates = computed(() => {
@@ -62,15 +69,77 @@ const servedColumns = ref([
 ])
 
 const expiredColumns = ref([
-    { field: 'keep_item.expired_to', header: 'Expired Date', width: '16.2', sortable: true},
-    { field: 'item_name', header: 'Item', width: '39.2', sortable: true},
-    { field: 'qty', header: 'Qty', width: '8.2', sortable: true},
-    { field: 'keep_item.customer.full_name', header: 'Customer', width: '39.4', sortable: true},
+    { field: 'keep_item.expired_to', header: 'Expired Date', width: '24', sortable: true},
+    { field: 'item_name', header: 'Item', width: '23', sortable: true},
+    { field: 'qty', header: 'Qty', width: '10', sortable: true},
+    { field: 'keep_item.customer.full_name', header: 'Customer', width: '23', sortable: true},
+    { field: 'action', header: 'Action', width: '20', sortable: true},
 ])
 
 const rowsPerPage = ref(12);
 const isDrawerOpen = ref(false);
 const selectedCustomer = ref(null);
+const isReactivateOpen = ref(false);
+const initialExpiry = ref('');
+const isUnsavedChangesOpen = ref(false);
+
+const form = useForm({
+    id: '',
+    expiry_date: '',
+    expiry_date_object: '',
+})
+
+const { showMessage } = useCustomToast();
+
+const reactivateExpiredItems = () => {
+    try {
+        form.post(route('reactivateExpiredItems'), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                closeModal('leave');
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Kept item has been reactivated successfully',
+                    detail: "You’ve extended the expiration date for selected kept item.",
+                });
+                form.reset();
+                emit('getKeepHistories');
+            },
+        })
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+const openModal = (row) => {
+    form.id = row.id;
+    form.expiry_date = row.keep_item.expired_to ? dayjs(row.keep_item.expired_to).format('DD/MM/YYYY') : '';
+    form.expiry_date_object = row.keep_item.expired_to ? dayjs(row.keep_item.expired_to).format('MM/DD/YYYY') : '';
+    initialExpiry.value = form.expiry_date;
+
+    isReactivateOpen.value = true;
+}
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(form.expiry_date !== initialExpiry.value) isUnsavedChangesOpen.value = true;
+            else isReactivateOpen.value = false; 
+            break;
+        };
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        };
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isReactivateOpen.value = false;
+            form.reset();
+            break;
+        }
+    }
+}
 
 const openDrawer = (row) => {
     isDrawerOpen.value = true;
@@ -87,6 +156,10 @@ const totalPages = computed(() => {
 
 const qtyColumn = (row) => {
     return parseInt(row.qty) === 0 ? `${row.cm} cm` : `x ${row.qty}`;
+}
+
+const isLatestRecord = (keep_item_id, id) => {
+    return id === (props.rows.filter((row) => row.keep_item_id === keep_item_id))[0].id;
 }
 
 </script>
@@ -227,7 +300,7 @@ const qtyColumn = (row) => {
             v-else-if="props.tab === 'expired'"
         >
             <template #keep_item.expired_to="rows">
-                <span class="text-grey-900 text-sm font-medium">{{ rows.keep_item.expired_to ? dayjs(rows.keep_item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
+                <span class="text-grey-900 text-sm font-medium">{{ rows.keep_date ? dayjs(rows.keep_date).format('DD/MM/YYYY') : '-' }}</span>
             </template>
             <template #item_name="rows">
                 <span class="line-clamp-1 text-ellipsis text-grey-900 text-sm font-semibold">{{ rows.item_name }}</span>
@@ -238,6 +311,14 @@ const qtyColumn = (row) => {
             <template #keep_item.customer.full_name="rows">
                 <span class="line-clamp-1 flex-[1_0_0] text-primary-900 text-ellipsis text-sm font-semibold underline underline-offset-auto decoration-solid decoration-auto">
                     {{ rows.keep_item.customer.full_name }}
+                </span>
+            </template>
+            <template #action="rows">
+                <span class="line-clamp-1 overflow-visible flex-[1_0_0] text-ellipsis text-sm font-semibold decoration-solid decoration-auto"
+                    :class="isLatestRecord(rows.keep_item.id, rows.id) ? 'text-primary-900 cursor-pointer underline underline-offset-auto' : 'text-grey-200 cursor-not-allowed'"
+                    @click.stop="openModal(rows)"
+                >
+                    Reactivate
                 </span>
             </template>
         </Table>
@@ -255,5 +336,51 @@ const qtyColumn = (row) => {
             :selectedTab="props.selectedTab"
         />
      </RightDrawer>
+
+     <!-- Extend expiration date -->
+    <Modal
+        :title="'Extend to'"
+        :maxWidth="'xs'"
+        :show="isReactivateOpen"
+        @close="closeModal('close')"
+    >
+        <form @submit.prevent="reactivateExpiredItems">
+            <div class="flex flex-col items-start gap-6">
+                <DateInput
+                    :placeholder="'DD/MM/YYYY'"
+                    :minDate="new Date(form.expiry_date_object)"
+                    v-model="form.expiry_date"
+                />
+
+                <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
+                    <Button
+                        :variant="'tertiary'"
+                        :type="'button'"
+                        :size="'lg'"
+                        @click="closeModal('close')"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        :variant="'primary'"
+                        :type="'submit'"
+                        :size="'lg'"
+                        :disabled="form.expiry_date === ''"
+                    >
+                        Confirm
+                    </Button>
+                </div>
+            </div>
+        </form>
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal>
 
 </template>

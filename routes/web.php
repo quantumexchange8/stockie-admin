@@ -254,7 +254,7 @@ Route::middleware('auth')->group(function () {
 
         //Order's keep item
         Route::put('/editKeptItemDetail', [OrderController:: class, 'editKeptItemDetail'])->name('editKeptItemDetail');
-        Route::post('/extendDuration', [OrderController::class, 'extendDuration'])->name('extendDuration');
+        Route::post('/reactivateExpiredItems', [OrderController::class, 'reactivateExpiredItems'])->name('reactivateExpiredItems');
         Route::post('/deleteKeptItem', [OrderController::class, 'deleteKeptItem'])->name('deleteKeptItem');
     });
 
