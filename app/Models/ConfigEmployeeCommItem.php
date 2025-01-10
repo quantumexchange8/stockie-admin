@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ConfigEmployeeCommItem extends Model
@@ -22,8 +23,8 @@ class ConfigEmployeeCommItem extends Model
         return $this->belongsTo(ConfigEmployeeComm::class, 'comm_id');
     }
 
-    public function productItems() : HasMany
+    public function product() : HasOne
     {
-        return $this->hasMany(ProductItem::class, 'id', 'item');
+        return $this->hasOne(Product::class, 'id', 'item');
     }
 }

@@ -12,6 +12,7 @@ use App\Models\ConfigIncentiveEmployee;
 use App\Models\ConfigMerchant;
 use App\Models\Customer;
 use App\Models\CustomerReward;
+use App\Models\EmployeeCommission;
 use App\Models\IventoryItem;
 use App\Models\KeepHistory;
 use App\Models\KeepItem;
@@ -1709,11 +1710,30 @@ class OrderController extends Controller
         $order = Order::with([
                             'orderTable.table', 
                             'customer:id,point,total_spending,ranking', 
-                            'orderItems' => fn($query) => $query->where('status', 'Served')
+                            'orderItems' => fn($query) => $query->with('product.commItem.configComms')->where('status', 'Served')
                         ])->findOrFail($request->order_id);
 
         // Handle sale history for "Normal" order items
         $order->orderItems->where('type', 'Normal')->each(function ($item) {
+            $configCommItem = $item->product->commItem;
+
+            if ($configCommItem) {
+                $commissionType = $configCommItem->configComms->comm_type;
+                $commissionRate = $configCommItem->configComms->rate;
+                $commissionAmount = $commissionType === 'Fixed amount per sold product' 
+                        ? $commissionRate * $item->item_qty
+                        : $item->product->price * $item->item_qty * ($commissionRate / 100);
+
+                EmployeeCommission::create([
+                    'user_id' => $item->user_id,
+                    'type' => $commissionType,
+                    'rate' => $commissionRate,
+                    'order_item_id' => $item->id,
+                    'comm_item_id' => $configCommItem->id,
+                    'amount' => $commissionAmount,
+                ]);
+            }
+
             SaleHistory::create([
                 'product_id' => $item->product_id,
                 'total_price' => $item->amount,
@@ -1841,6 +1861,9 @@ class OrderController extends Controller
         //     }
         };
         /* END GIVE BONUS POINT JOB */
+
+        // Record waiter earned commissions
+        
 
         // Update payment status
         $payment->update(['status' => 'Successful']);

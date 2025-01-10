@@ -154,7 +154,7 @@ const attendanceTotalPages = computed(() => {
                                 <CommissionIcon />
                                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Commission in this month</span>
                                 <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ formatAmount(props.incentiveThisMonth + props.commissionThisMonth) }}</span>
-                                <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ formatAmount(props.incentiveThisMonth) }} + RM {{ formatAmount(props.commissionThisMonth) }})</span>
+                                <!-- <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ formatAmount(props.commissionThisMonth) }} + RM {{ formatAmount(props.incentiveThisMonth) }})</span> -->
                             </div>
                         </div>
                     </div>

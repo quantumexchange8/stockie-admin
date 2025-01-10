@@ -15,7 +15,7 @@ class ConfigIncentive extends Model
         'type',
         'rate',
         'effective_date',
-        'recrurring_on',
+        'recurring_on',
         'monthly_sale',
     ];
 

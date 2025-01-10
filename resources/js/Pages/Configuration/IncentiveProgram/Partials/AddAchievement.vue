@@ -13,7 +13,7 @@ const props = defineProps({
     waiters: {
         type: Array,
         required: true,
-    }
+    },
 })
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
@@ -47,11 +47,7 @@ const recurringDates = ref([...Array(31)].map((_, i) => {
 
 
 const setIsRate = (type) => {
-    if(type == 'fixed'){
-        isRate.value = false;
-    } else {
-        isRate.value = true;
-    }
+    isRate.value = type == 'fixed' ? false : true;
 }
 
 const unsaved = (status) => {
@@ -59,34 +55,38 @@ const unsaved = (status) => {
 }
 
 const isFormValid = computed(() => {
-    return ['comm_type', 'rate', 'effective_date', 'recurring_on', 'monthly_sale', 'entitled'].every(field => form[field]);
+    return ['comm_type', 'rate', 'effective_date', 'monthly_sale', 'entitled'].every(field => form[field]);
 })
 
 const form = useForm({
     comm_type: comm_type.value[0],
     rate: '',
     effective_date: '',
-    recurring_on: recurringDates.value[0],
+    // recurring_on: recurringDates.value[0],
     monthly_sale: '',
     entitled: '',
 })
 
 const submit = () => {
-    form.post(route('configurations.addAchievement'), {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            form.reset();
-            unsaved('leave');
-            emit('getEmployeeIncent');
-            setTimeout(() => {
-                showMessage({ 
-                    severity: 'success',
-                    summary: 'New achievement has been successfully added.',
-                });
-            }, 200);
-        }
-    })
+    form.transform((data) => ({
+            ...data,
+            rate: parseFloat(data.rate),
+        }))
+        .post(route('configurations.addAchievement'), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                form.reset();
+                unsaved('leave');
+                emit('getEmployeeIncent');
+                setTimeout(() => {
+                    showMessage({ 
+                        severity: 'success',
+                        summary: 'New achievement has been successfully added.',
+                    });
+                }, 200);
+            }
+        });
 }
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
@@ -96,7 +96,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 <template>
     <form @submit.prevent="submit">
         <div class="flex flex-col items-start gap-4 self-stretch">
-            <div class="grid items-start gap-4 self-stretch grid-cols-12">
+            <div class="flex items-start content-start gap-4 self-stretch">
                 <Dropdown
                     :inputName="'comm_type'"
                     :labelText="'Commission type'"
@@ -104,32 +104,16 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :dataValue="form.comm_type.value"
                     v-model="form.comm_type.value"
                     @onChange="setIsRate(form.comm_type.value)"
-                    class="col-span-8"
-                >
-                </Dropdown>
+                />
 
                 <TextInput
                     labelText="Rate"
                     :inputName="'comm_rate'"
-                    iconPosition='right'
+                    :iconPosition="isRate ? 'right' : 'left'"
                     v-model="form.rate"
-                    v-show="isRate"
                     @keypress="isValidNumberKey($event, true)"
-                    class="col-span-4"
                 >
-                    <template #prefix>%</template>
-                </TextInput>
-
-                <TextInput
-                    labelText="Amount"
-                    :inputName="'comm_rate'"
-                    iconPosition="left"
-                    v-model="form.rate"
-                    v-show="!isRate"
-                    @keypress="isValidNumberKey($event, true)"
-                    class="col-span-4"
-                >
-                    <template #prefix>RM</template>
+                    <template #prefix>{{ isRate ? '%' : 'RM' }}</template>
                 </TextInput>
             </div>
 
@@ -140,28 +124,26 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :placeholder="'DD/MM/YYYY'"
                     :range="false"
                     v-model="form.effective_date"
-                    
                 />
 
-                <Dropdown
+                <TextInput 
+                    :labelText="'Monthly sales hits above'"
+                    :inputName="'monthly_sale'"
+                    :iconPosition="'left'"
+                    v-model="form.monthly_sale"
+                    @keypress="isValidNumberKey($event, true)"
+                >
+                    <template #prefix>RM</template>
+                </TextInput>
+                <!-- <Dropdown
                     :inputName="'recurring_on'"
                     :labelText="'Recurring on'"
                     :inputArray="recurringDates"
                     :dataValue="form.recurring_on.value"
                     v-model="form.recurring_on.value"
-                >
-                </Dropdown>
+                /> -->
             </div>
 
-            <TextInput 
-                :labelText="'Monthly sales hits above'"
-                :inputName="'monthly_sale'"
-                :iconPosition="'left'"
-                v-model="form.monthly_sale"
-                @keypress="isValidNumberKey($event, true)"
-            >
-                <template #prefix>RM</template>
-            </TextInput>
 
             <MultiSelect
                 :inputArray="formattedWaiters"
@@ -170,9 +152,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :withImages="true"
                 :disabled="!formattedWaiters.length"
                 v-model="form.entitled"
-            >   
-            </MultiSelect>
-
+            />
         </div>
 
         <div class="pt-6 flex justify-center items-end gap-4 self-stretch">

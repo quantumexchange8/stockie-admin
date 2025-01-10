@@ -156,7 +156,7 @@ const csvExport = () => {
                     <span class="text-grey-900 text-sm font-medium">{{ attendance.check_in }}</span>
                 </template>
                 <template #check_out="attendance">
-                    <span class="text-grey-900 text-sm font-medium">{{ attendance.check_out }}</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ attendance.check_out ?? '-' }}</span>
                 </template>
                 <template #duration="attendance">
                     <span class="text-grey-900 text-sm font-medium">{{ attendance.duration }}</span>

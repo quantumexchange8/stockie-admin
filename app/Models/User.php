@@ -38,6 +38,7 @@ class User extends Authenticatable implements HasMedia
         'position',
         'role_id', 
         'passcode', 
+        'passcode_status', 
         'profile_photo',
         'salary', 
     ];
@@ -135,6 +136,15 @@ class User extends Authenticatable implements HasMedia
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'handled_by', 'id');
+    }
+
+    /**
+     * EmployeeCommission Model
+     * Get the commissions earned by the employee.
+     */
+    public function commissions(): HasMany
+    {
+        return $this->hasMany(EmployeeCommission::class, 'user_id');
     }
 
     // /**

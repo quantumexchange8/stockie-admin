@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ConfigIncentive;
 use App\Models\ConfigIncentiveEmployee;
 use App\Models\OrderItem;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\TotalSalesService;
 use Carbon\Carbon;
@@ -14,6 +15,17 @@ use Log;
 
 class ConfigEmployeeIncProgController extends Controller
 {
+    protected $incentiveRecurringDay;
+    
+    public function __construct()
+    {
+        $this->incentiveRecurringDay = Setting::where('name', 'Recurring Day')
+                                                ->get(['id', 'value'])
+                                                ->first();
+
+        $this->incentiveRecurringDay['value'] = (int) $this->incentiveRecurringDay['value'];
+    }
+
     public function index()
     {
         $allWaiters = User::select('id', 'full_name')->where('position', 'waiter')->orderBy('full_name')->get();
@@ -29,7 +41,7 @@ class ConfigEmployeeIncProgController extends Controller
                                                 'type' => $incentive->type,
                                                 'rate' => $incentive->rate,
                                                 'effective_date' => $incentive->effective_date,
-                                                'recrurring_on' => $incentive->recrurring_on,
+                                                'recurring_on' => $incentive->recurring_on,
                                                 'monthly_sale' => $incentive->monthly_sale,
                                                 'entitled' => $incentive->incentiveEmployees->flatMap(function ($employee) {
                                                     return $employee->waiters->map(function ($waiter) {
@@ -46,30 +58,37 @@ class ConfigEmployeeIncProgController extends Controller
         return response()->json([
             'incentiveProg' => $incentiveProg,
             'waiters' => $allWaiters,
+            'incentiveRecurringDay' => $this->incentiveRecurringDay['value']
         ]);
-
-
     }
 
     public function addAchievement(Request $request)
     {
-        if($request->comm_type['value'] == 'fixed')
-        {
-            $rate = $request->rate;
-        } else {
-            $rate = $request->rate / 100;
-        }
+        // $validatedData = $request->validate([
+        //     'comm_type' => 'required|string',
+        //     'rate' => 'required|string',
+        //     'effective_date' => 'required|date',
+        //     'recurring_on' => 'required',
+        //     'monthly_sale' => 'required',
+        //     'entitled' => 'required',
+        // ], [
+        //     'remark.required' => 'The remark field is required.',
+        //     'remark.string' => 'The remark must be a valid string.',
+        //     'remark_description.max' => 'The remark description may not be greater than 255 characters.',
+        // ]);
+
+        $rate = $request->comm_type['value'] == 'fixed' ? $request->rate : $request->rate / 100;
 
         $incentive = ConfigIncentive::create([
             'type' => $request->comm_type['value'],
             'rate' => $rate,
             'effective_date' => Carbon::parse($request->effective_date)->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
-            'recrurring_on' => $request->recurring_on['value'],
+            'recurring_on' => $this->incentiveRecurringDay['value'],
+            // 'recurring_on' => $request->recurring_on['value'],
             'monthly_sale' => round($request->monthly_sale, 2),
         ]);
 
-        foreach ($request->entitled as $entitledWaiters)
-        {
+        foreach ($request->entitled as $entitledWaiters) {
             ConfigIncentiveEmployee::create([
                 'incentive_id' => $incentive->id,
                 'user_id' => $entitledWaiters,
@@ -105,7 +124,8 @@ class ConfigEmployeeIncProgController extends Controller
             'type' => $request->comm_type['value'],
             'rate' => $request->comm_type['value'] === 'fixed' ? $request->rate : round($request->rate / 100, 2),
             'effective_date' => $request->effective_date,
-            'recrurring_on' => $request->recurring_on['value'],
+            'recurring_on' => $this->incentiveRecurringDay['value'],
+            // 'recurring_on' => $request->recurring_on['value'],
             'monthly_sale' => (float)$request->monthly_sale,
         ]);
 
@@ -164,7 +184,7 @@ class ConfigEmployeeIncProgController extends Controller
                             // group item according to reccuring date
                             ->groupBy(function ($order) use ($incentive) {
                                 $orderDate = Carbon::parse($order->created_at);
-                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recrurring_on);
+                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recurring_on);
                                 $endOfMonth = $startOfMonth->copy()->addMonth()->subDay();
                         
                                 if ($orderDate->between($startOfMonth, $endOfMonth)) {
@@ -289,7 +309,7 @@ class ConfigEmployeeIncProgController extends Controller
                             // group item according to reccuring date
                             ->groupBy(function ($order) use ($incentive) {
                                 $orderDate = Carbon::parse($order->created_at);
-                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recrurring_on);
+                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recurring_on);
                                 $endOfMonth = $startOfMonth->copy()->addMonth()->subDay();
                         
                                 if ($orderDate->between($startOfMonth, $endOfMonth)) {
@@ -408,7 +428,7 @@ class ConfigEmployeeIncProgController extends Controller
                             // group item according to reccuring date
                             ->groupBy(function ($order) use ($incentive) {
                                 $orderDate = Carbon::parse($order->created_at);
-                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recrurring_on);
+                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recurring_on);
                                 $endOfMonth = $startOfMonth->copy()->addMonth()->subDay();
                         
                                 if ($orderDate->between($startOfMonth, $endOfMonth)) {
@@ -479,5 +499,14 @@ class ConfigEmployeeIncProgController extends Controller
                             ->toArray();
     
         return response()->json($sales);
+    }
+
+    public function updateIncentiveRecurringDay(Request $request)
+    {
+        $newRecurringDay = $request->recurring_on;
+        // dd($this->incentiveRecurringDay);
+        $this->incentiveRecurringDay->update(['value' => $newRecurringDay]);
+
+        return response()->json($newRecurringDay);
     }
 }

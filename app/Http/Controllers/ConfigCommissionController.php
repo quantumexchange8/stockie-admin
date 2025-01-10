@@ -16,19 +16,19 @@ class ConfigCommissionController extends Controller
     {
         $message = $request->session()->get('message');
 
-        $commission = ConfigEmployeeComm::with('configCommItems.productItems.product')->get();        
+        $commission = ConfigEmployeeComm::with('configCommItems.product')->get();        
    
         $commission = $commission->map(function($involved) {
             $products = [];
             $productIds = [];
             $productImage = [];
+
             foreach ($involved->configCommItems as $configItem) {
-                foreach ($configItem->productItems as $productItem) {
-                    $products[] = $productItem->product->product_name;
-                    $productIds[] = $productItem->product->id;
-                    $productImage[] = $productItem->product->getFirstMediaUrl('product');
-                }
+                $products[] = $configItem->product->product_name;
+                $productIds[] = $configItem->Product->id;
+                $productImage[] = $configItem->product->getFirstMediaUrl('product');
             }
+
             return [
                 'id' => $involved->id,
                 'comm_type' => $involved->comm_type,
@@ -41,8 +41,8 @@ class ConfigCommissionController extends Controller
 
         $productNames = Product::select('id', 'product_name')->get();
 
-        $items = ProductItem::whereDoesntHave('commItems')->pluck('product_id');
-        $productsToAdd = Product::whereIn('id', $items)->get(['id', 'product_name']);
+        $products = Product::whereDoesntHave('commItem')->pluck('id');
+        $productsToAdd = Product::whereIn('id', $products)->get(['id', 'product_name']);
         $productsToAdd->each(function ($product){
             $product->image = $product->getFirstMediaUrl('product');
         });
@@ -70,15 +70,24 @@ class ConfigCommissionController extends Controller
     
         $newDataId = $newData->id;
         foreach ($validatedData['involvedProducts'] as $productId) {
-            $productItems = Product::find($productId)?->productItems;
+            // $productItems = Product::find($productId)?->productItems;
         
-            if ($productItems) {
-                foreach ($productItems as $productItem) {
-                    ConfigEmployeeCommItem::create([
-                        'comm_id' => $newDataId,
-                        'item' => $productItem->id,
-                    ]);
-                }
+            // if ($productItems) {
+            //     foreach ($productItems as $productItem) {
+            //         ConfigEmployeeCommItem::create([
+            //             'comm_id' => $newDataId,
+            //             'item' => $productItem->id,
+            //         ]);
+            //     }
+            // }
+
+            $product = Product::find($productId);
+        
+            if ($product) {
+                ConfigEmployeeCommItem::create([
+                    'comm_id' => $newDataId,
+                    'item' => $product->id,
+                ]);
             }
         }
         
@@ -104,9 +113,7 @@ class ConfigCommissionController extends Controller
 
     public function editCommission (Request $request)
     {
-        // dd($request->all());
-        if($request->id)
-        {
+        if ($request->id) {
             //delete first, then re-create
             ConfigEmployeeCommItem::where('comm_id', $request->id)->delete();
             ConfigEmployeeComm::where('id', $request->id)->update([
@@ -132,11 +139,9 @@ class ConfigCommissionController extends Controller
 
     public function productDetails(Request $request, String $id)
     {
-        // dd($id);
         $message = $request->session()->get('message');
 
-        if($id)
-        {
+        if ($id) {
             $comm = ConfigEmployeeComm::find($id);
 
             $commItems = ConfigEmployeeCommItem::where('comm_id', $id)
@@ -153,14 +158,11 @@ class ConfigCommissionController extends Controller
             //products that already included under this commission
             $productDetails = [];
             foreach ($commItems as $commItem) {
+                $product = Product::find($commItem->item);
 
-                $product = ProductItem::find($commItem->item)->product;
-
-                if($comm->comm_type === 'Fixed amount per sold product') {
-                    $commission = $comm->rate;
-                } else {
-                    $commission = $product->price * ($comm->rate/100);
-                }
+                $commission = $comm->comm_type === 'Fixed amount per sold product'
+                        ? $comm->rate
+                        : $product->price * ($comm->rate/100);
 
                 $productDetails[] = [
                     'id' => $product->id,
@@ -176,22 +178,19 @@ class ConfigCommissionController extends Controller
             //products that are yet to be added 
             $otherProductDetails = [];
             foreach ($filteredOtherCommItems as $commItem) {
-                $products = Product::where('id', $commItem)
-                    ->select('product_name', 'price', 'id', 'bucket')
-                    ->get(); 
-                foreach ($products as $product) {
-                    $commission = ($comm->comm_type == 'Fixed amount per sold product') 
-                        ? $comm->rate 
-                        : floor($product->price * ($comm->rate / 100));
-            
-                    $otherProductDetails[] = [
-                        'id' => $product->id,
-                        'product_name' => $product->product_name,
-                        'price' => $product->price,
-                        'bucket' => $product->bucket,
-                        'commission' => $commission,
-                    ];
-                }
+                $product = Product::find($commItem, ['product_name', 'price', 'id', 'bucket']); 
+
+                $commission = ($comm->comm_type == 'Fixed amount per sold product') 
+                    ? $comm->rate 
+                    : floor($product->price * ($comm->rate / 100));
+        
+                $otherProductDetails[] = [
+                    'id' => $product->id,
+                    'product_name' => $product->product_name,
+                    'price' => $product->price,
+                    'bucket' => $product->bucket,
+                    'commission' => $commission,
+                ];
             }
 
             $commDetails = [
@@ -201,16 +200,15 @@ class ConfigCommissionController extends Controller
                 'productDetails' => $productDetails,
                 'otherProductDetails' => $otherProductDetails,
             ];
-        }
-        else{
+        } else {
             $message = [
                 'severity' => 'danger',
                 'summary' => 'Error occurred. Please contact administrator.'
             ];
         }
 
-        $productItems = ProductItem::whereDoesntHave('commItems')->pluck('product_id');
-        $productsToAdd = Product::whereIn('id', $productItems)->get(['id', 'product_name']);
+        $products = Product::whereDoesntHave('commItem')->pluck('id');
+        $productsToAdd = Product::whereIn('id', $products)->get(['id', 'product_name']);
         $productsToAdd->each(function($productToAdd){
             $productToAdd->image = $productToAdd->getFirstMediaUrl('product');
         });
@@ -228,17 +226,14 @@ class ConfigCommissionController extends Controller
         $deletingProduct = ConfigEmployeeCommItem::where('comm_id', $request->commissionId)
                                                     ->where('item', $request->id)
                                                     ->first();
-        if($deletingProduct)
-        {
+        if ($deletingProduct) {
             $deletingProduct->delete();
 
             $message = [
                 'severity' => 'success',
                 'summary' => 'Product has been removed successfully.'
             ];
-        }
-        else
-        {
+        } else {
             $message = [
                 'severity' => 'error',
                 'summary' => 'Error occurred. Please contact administrator.'
@@ -280,6 +275,4 @@ class ConfigCommissionController extends Controller
 
         // return redirect()->back()->with(['message' => $message]);
     }
-
-    
 }

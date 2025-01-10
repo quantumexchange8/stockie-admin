@@ -71,7 +71,7 @@ const setIsRate = (type) => {
 }
 
 const isFormValid = computed(() => {
-    return ['comm_type', 'rate', 'effective_date', 'recurring_on', 'monthly_sale'].every(field => form[field]);
+    return ['comm_type', 'rate', 'effective_date', 'monthly_sale'].every(field => form[field]);
 })
 
 const form = useForm({
@@ -81,7 +81,7 @@ const form = useForm({
         ? selectedIncent.value.rate.toString()
         : parseFloat((selectedIncent.value.rate * 100).toFixed(2)).toString(),
     effective_date: dayjs(selectedIncent.value.effective_date).add(1, 'month').toDate(),
-    recurring_on: recurringDates.value.find(item => item.value === selectedIncent.value.recrurring_on) || recurringDates.value[0],
+    // recurring_on: recurringDates.value.find(item => item.value === selectedIncent.value.recurring_on) || recurringDates.value[0],
     monthly_sale: parseFloat(selectedIncent.value.monthly_sale).toFixed(2),
 });
 
@@ -118,7 +118,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 <template>
     <form @submit.prevent="submit">
         <div class="flex flex-col items-start gap-4 self-stretch">
-            <div class="grid items-start gap-4 self-stretch grid-cols-12">
+            <div class="flex items-start content-start gap-4 self-stretch">
                 <Dropdown
                     :inputName="'comm_type'"
                     :labelText="'Commission type'"
@@ -126,32 +126,17 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :dataValue="form.comm_type.value"
                     v-model="form.comm_type.value"
                     @onChange="setIsRate(form.comm_type.value)"
-                    class="col-span-8"
                 >
                 </Dropdown>
 
                 <TextInput
                     labelText="Rate"
                     :inputName="'comm_rate'"
-                    iconPosition='right'
+                    :iconPosition="isRate ? 'right' : 'left'"
                     v-model="form.rate"
-                    v-show="isRate"
                     @keypress="isValidNumberKey($event, true)"
-                    class="col-span-4"
                 >
-                    <template #prefix>%</template>
-                </TextInput>
-
-                <TextInput
-                    labelText="Amount"
-                    :inputName="'comm_rate'"
-                    iconPosition="left"
-                    v-model="form.rate"
-                    v-show="!isRate"
-                    @keypress="isValidNumberKey($event, true)"
-                    class="col-span-4"
-                >
-                    <template #prefix>RM</template>
+                    <template #prefix>{{ isRate ? '%' : 'RM' }}</template>
                 </TextInput>
             </div>
 
@@ -163,29 +148,25 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :range="false"
                     :hintText="'Changes will take effect only starting from next month.'"
                     v-model="form.effective_date"
-                    
                 />
 
-                <Dropdown
+                <TextInput 
+                    :labelText="'Monthly sales hits above'"
+                    :inputName="'monthly_sale'"
+                    :iconPosition="'left'"
+                    v-model="form.monthly_sale"
+                    @keypress="isValidNumberKey($event, true)"
+                >
+                    <template #prefix>RM</template>
+                </TextInput>
+                <!-- <Dropdown
                     :inputName="'recurring_on'"
                     :labelText="'Recurring on'"
                     :inputArray="recurringDates"
                     :dataValue="form.recurring_on.value"
                     v-model="form.recurring_on.value"
-                >
-                </Dropdown>
+                /> -->
             </div>
-
-            <TextInput 
-                :labelText="'Monthly sales hits above'"
-                :inputName="'monthly_sale'"
-                :iconPosition="'left'"
-                v-model="form.monthly_sale"
-                @keypress="isValidNumberKey($event, true)"
-            >
-                <template #prefix>RM</template>
-            </TextInput>
-
         </div>
 
         <div class="pt-6 flex justify-center items-end gap-4 self-stretch">

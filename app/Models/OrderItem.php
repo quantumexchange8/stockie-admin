@@ -105,4 +105,13 @@ class OrderItem extends Model
     {
         return $this->belongsTo(ConfigDiscountItem::class, 'discount_id');
     }
+    
+    /**
+     * EmployeeCommission Model
+     * Get the commission of the order item.
+     */
+    public function commission(): HasOne
+    {
+        return $this->hasOne(EmployeeCommission::class, 'order_item_id');
+    }
 }

@@ -110,6 +110,15 @@ class Product extends Model implements HasMedia
     {
         return $this->belongsTo(ConfigDiscount::class, 'discount_id');
     }
+    
+    /**
+     * ConfigEmployeeCommItem Model
+     * Get the associated employee commission type's item.
+     */
+    public function commItem(): HasOne
+    {
+        return $this->hasOne(ConfigEmployeeCommItem::class, 'item');
+    }
 
     // Register the model event
     protected static function booted()

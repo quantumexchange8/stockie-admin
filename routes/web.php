@@ -158,6 +158,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/configurations/deleteEntitled/{achievement}/{id}', [ConfigEmployeeIncProgController::class, 'deleteEntitled'])->name('configuration.deleteEntitled');
         Route::get('/configurations/updateStatus', [ConfigEmployeeIncProgController::class, 'updateStatus'])->name('configurations.updateStatus');
         Route::get('/configurations/getIncentDetail', [ConfigEmployeeIncProgController::class, 'getIncentDetail'])->name('configurations.getIncentDetail');
+        Route::post('/configurations/updateIncentiveRecurringDay', [ConfigEmployeeIncProgController::class, 'updateIncentiveRecurringDay'])->name('configurations.updateIncentiveRecurringDay');
 
         /******* Promotion ********/
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');

@@ -46,9 +46,4 @@ class ProductItem extends Model
     {
         return $this->hasMany(OrderItemSubitem::class, 'product_item_id');
     }
-
-    public function commItems(): HasMany
-    {
-        return $this->hasMany(ConfigEmployeeCommItem::class, 'item');
-    }
 }

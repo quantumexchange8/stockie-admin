@@ -11,13 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('config_incentives', function (Blueprint $table) {
+        Schema::create('employee_incentives', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id');
             $table->string('type');
             $table->string('rate');
-            $table->dateTime('effective_date');
+            $table->unsignedBigInteger('product_id');
+            $table->decimal('amount', 13, 2);
+            $table->decimal('sales_target', 13, 2);
             $table->string('recurring_on');
-            $table->decimal('monthly_sale', 13, 2)->default(0.00);
+            $table->dateTime('effective_date');
+            $table->string('status');
             $table->softDeletes();
             $table->timestamps();
         });
@@ -28,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('config_incentives');
+        Schema::dropIfExists('employee_incentives');
     }
 };

@@ -52,6 +52,10 @@ const props = defineProps({
     withDescription: {
         type: Boolean,
         default: false
+    },
+    loading: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -130,6 +134,7 @@ onUnmounted(() => {
             :optionGroupLabel="grouped ? 'group_name' : null"
             :optionGroupChildren="grouped ? 'items' : null"
             :editable="editable"
+            :loading="loading"
             optionLabel="text"
             optionValue='value'
             @change="updateSelectedOption"

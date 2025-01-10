@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('role')->nullable()->default(NULL);
             $table->string('role_id')->nullable()->default(NULL);
             $table->integer('passcode')->nullable()->default(NULL);
+            $table->string('passcode_status')->nullable()->default(NULL);
             $table->string('profile_photo')->nullable()->default(NULL);
             $table->string('salary')->nullable()->default(NULL);
             $table->rememberToken();

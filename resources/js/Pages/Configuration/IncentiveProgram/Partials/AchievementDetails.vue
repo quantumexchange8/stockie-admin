@@ -167,7 +167,7 @@ const leaveModal = () => {
                         <RecurringIcon />
                     </div>
                     <span class="flex-[1_0_0] text-grey-900 text-base font-medium">Recurring on
-                        <span class="text-primary-900 text-base font-medium">{{ getSuffix(props.achievementDetails.recrurring_on) }} of every month</span>
+                        <span class="text-primary-900 text-base font-medium">{{ getSuffix(props.achievementDetails.recurring_on) }} of every month</span>
                     </span>
                 </div>
 

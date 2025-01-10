@@ -11,6 +11,9 @@ import { computed, onMounted, ref, watch } from "vue";
 import AddAchievement from "./Partials/AddAchievement.vue";
 import EditAchievement from "./Partials/EditAchievement.vue";
 import { transactionFormat } from "@/Composables";
+import { useForm } from "@inertiajs/vue3";
+import Dropdown from "@/Components/Dropdown.vue";
+import { useCustomToast } from '@/Composables/index.js';
 
 const isLoading = ref(false);
 const isEditIncentOpen = ref(false);
@@ -23,13 +26,61 @@ const rows = ref([]);
 const waiters = ref([]);
 const filteredRows = ref([]);
 const searchQuery = ref('');
+const incentiveRecurringDay = ref(0);
 const { formatDate, formatAmount } = transactionFormat();
+const { showMessage } = useCustomToast();
+
+const form = useForm({
+    recurring_on: incentiveRecurringDay.value,
+    // recurring_on: recurringDates.value.find(item => item.value === selectedIncent.value.recurring_on) || recurringDates.value[0],
+});
 
 const actions = {
     view: (incentive) => `/configurations/configurations/incentCommDetail/${incentive}`,
     edit: () => ``,
     delete: () => ``,
 };
+
+const recurringDates = ref([...Array(7)].map((_, i) => {
+    const day = i + 1;
+    let suffix;
+
+    if (day % 10 === 1 && day % 100 !== 11) {
+        suffix = 'st';
+    } else if (day % 10 === 2 && day % 100 !== 12) {
+        suffix = 'nd';
+    } else if (day % 10 === 3 && day % 100 !== 13) {
+        suffix = 'rd';
+    } else {
+        suffix = 'th';
+    }
+
+    return {
+        text: `${day}${suffix}`,
+        value: day
+    };
+}));
+
+const submit = async () => {
+    form.processing = true;
+    try {
+        const response = await axios.post('/configurations/configurations/updateIncentiveRecurringDay', form);
+
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: 'Changes saved.',
+            });
+        }, 200);
+
+        incentiveRecurringDay.value = response.data;
+        form.reset();
+    } catch (error) {
+        console.error(error);
+    } finally {
+        form.processing = false;
+    }
+}
 
 const formatType = (type) => {
     if (type == 'fixed'){
@@ -89,6 +140,7 @@ const getEmployeeIncent = async () => {
     try {
         const response = await axios.get('/configurations/configurations/incentive');
         waiters.value = response.data.waiters;
+        incentiveRecurringDay.value = response.data.incentiveRecurringDay;
         rows.value = response.data.incentiveProg.map(incentive => {
             return {
                 ...incentive, 
@@ -127,6 +179,8 @@ onMounted (() => {
     getEmployeeIncent();
 })
 
+watch(incentiveRecurringDay, (newValue) => (form.recurring_on = newValue));
+
 watch(() => searchQuery.value, (newValue) => {
     if(newValue === '') {
         filteredRows.value = rows.value;
@@ -154,6 +208,34 @@ watch(() => searchQuery.value, (newValue) => {
 </script>
 
 <template>
+    <div class="w-full flex flex-col gap-y-5">
+        <form class="w-full flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]" @submit.prevent="submit">
+            <div class="w-full flex items-center justify-between gap-[10px]">
+                <span class="text-md font-medium text-primary-900">
+                    Recurring Settings
+                </span>
+                <Button
+                    :size="'lg'"
+                    class="!w-fit flex items-center gap-2"
+                    :disabled="form.recurring_on === incentiveRecurringDay"
+                >
+                    Save Changes
+                </Button>
+            </div>
+            
+            <div class="flex items-center gap-x-4">
+                <p class="text-base text-grey-950 font-medium whitespace-nowrap">Incentive will recur on</p>
+                <Dropdown
+                    :inputName="'recurring_on'"
+                    :inputArray="recurringDates"
+                    :dataValue="form.recurring_on"
+                    :loading="!form.recurring_on"
+                    v-model="form.recurring_on"
+                />
+                <p class="text-base text-grey-950 font-medium whitespace-nowrap">of every month</p>
+            </div>
+        </form>
+
         <div class="w-full flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]">
             <div class="flex flex-col justify-center gap-[10px]">
                 <span class="text-md font-medium text-primary-900">
@@ -255,7 +337,7 @@ watch(() => searchQuery.value, (newValue) => {
                 </template>
             </Table>
         </div>
-    
+    </div>
     <Modal
         :show="isAddAchievementOpen"
         :maxWidth="'md'"
@@ -317,5 +399,4 @@ watch(() => searchQuery.value, (newValue) => {
         @close="closeDeleteAchivementModal"
         v-if="selectedIncent"
     />
-
 </template>
