@@ -21,8 +21,15 @@ import {
     TableRoomIcon,
     LoyaltyIcon,
     ReservationIcon,
+    UsersIcon,
 } from "@/Components/Icons/solid";
+import { usePage } from "@inertiajs/vue3";
+
+const page = usePage();
+const existingPermissions = page.props.auth.user.data.permission;
+
 </script>
+
 
 <template>
     <div
@@ -33,6 +40,8 @@ import {
             title="Dashboard"
             :href="route('dashboard')"
             :active="route().current('dashboard')"
+            v-if="existingPermissions?.includes('dashboard')" 
+
         >
             <template #icon>
                 <HomeIcon aria-hidden="true" />
@@ -40,7 +49,10 @@ import {
         </SidebarLink>
 
         <div class="flex flex-col gap-[24px]">
-            <p class="text-grey-300 text-xs tracking-[4.32px] uppercase">
+            <p class="text-grey-300 text-xs tracking-[4.32px] uppercase"
+                v-if="existingPermissions?.includes('order-management') || 
+                        existingPermissions?.includes('menu-management')"
+            >
                 General
             </p>
             <div class="flex flex-col">
@@ -48,6 +60,7 @@ import {
                     title="Order Management"
                     :href="route('orders')"
                     :active="route().current('orders')"
+                    v-if="existingPermissions?.includes('order-management')" 
                 >
                     <template #icon>
                         <OrderIcon aria-hidden="true" />
@@ -57,6 +70,7 @@ import {
                     title="Menu Management" 
                     :href="route('products')"
                     :active="route().current('products') || route().current('products.showProductDetails')"
+                    v-if="existingPermissions?.includes('menu-management')" 
                 >
                     <template #icon>
                         <MenuIcon aria-hidden="true" />
@@ -66,7 +80,13 @@ import {
         </div>
 
         <div class="flex flex-col gap-[24px]">
-            <p class="text-grey-300 text-xs tracking-[4.32px] uppercase">
+            <p class="text-grey-300 text-xs tracking-[4.32px] uppercase"
+                v-if="existingPermissions?.includes('inventory') || 
+                    existingPermissions?.includes('waiter') ||
+                    existingPermissions?.includes('customer') || 
+                    existingPermissions?.includes('table-room') || 
+                    existingPermissions?.includes('reservation')"
+            >
                 Operation
             </p>
             <div class="flex flex-col">
@@ -75,7 +95,8 @@ import {
                     :href="route('inventory')"
                     :active="route().current('inventory') || route().current('inventory.viewStockHistories') || 
                     route().current('inventory.viewKeepHistories') || route().current('activeKeptItem')"
-                >
+                    v-if="existingPermissions?.includes('inventory')" 
+                    >
                     <template #icon>
                         <InventoryIcon aria-hidden="true" />
                     </template>
@@ -84,6 +105,7 @@ import {
                     title="Waiter" 
                     :href="route('waiter')"
                     :active="route().current('waiter') || route().current('waiter.waiter-details')"
+                    v-if="existingPermissions?.includes('waiter')" 
                 >
                     <template #icon>
                         <WaiterIcon aria-hidden="true" />
@@ -92,7 +114,9 @@ import {
                 <SidebarLink 
                     title="Customer" 
                     :href="route('customer')"
-                    :active="route().current('customer')">
+                    :active="route().current('customer')"
+                    v-if="existingPermissions?.includes('customer')" 
+                >
                     <template #icon>
                         <CustomerIcon aria-hidden="true" />
                     </template>
@@ -101,6 +125,7 @@ import {
                     title="Table & Room" 
                     :href="route('table-room')"
                     :active="route().current('table-room')"
+                    v-if="existingPermissions?.includes('table-room')" 
                 >
                     <template #icon>
                         <TableRoomIcon aria-hidden="true" />
@@ -110,6 +135,7 @@ import {
                     title="Reservation" 
                     :href="route('reservations')"
                     :active="route().current('reservations') || route().current('reservations.viewReservationHistory')"
+                    v-if="existingPermissions?.includes('reservation')" 
                 >
                     <template #icon>
                         <ReservationIcon aria-hidden="true" />
@@ -119,7 +145,10 @@ import {
         </div>
 
         <div class="flex flex-col gap-[24px]">
-            <p class="text-grey-300 text-xs tracking-[4.32px] uppercase">
+            <p class="text-grey-300 text-xs tracking-[4.32px] uppercase"
+                v-if="existingPermissions?.includes('loyalty-programme') || existingPermissions?.includes('admin-user') ||
+                existingPermissions?.includes('sales-analysis') || existingPermissions?.includes('configuration')"
+            >
                 Others
             </p>
             <div class="flex flex-col">
@@ -127,15 +156,27 @@ import {
                     title="Loyalty Programme"
                     :href="route('loyalty-programme')"
                     :active="route().current('loyalty-programme') || route().current('loyalty-programme.tiers.show') || route().current('loyalty-programme.points.show')"
+                    v-if="existingPermissions?.includes('loyalty-programme')" 
                 >
                     <template #icon>
                         <LoyaltyIcon aria-hidden="true" />
+                    </template>
+                </SidebarLink>
+                <SidebarLink
+                    title="Admin User"
+                    :href="route('admin-user')"
+                    :active="route().current('admin-user')"
+                    v-if="existingPermissions?.includes('admin-user')" 
+                >
+                    <template #icon>
+                        <UsersIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
                 <SidebarLink 
                     title="Summary Reports" 
                     :href="route('summary.report')" 
                     :active="route().current('summary.report')"
+                    v-if="existingPermissions?.includes('sales-analysis')" 
                 >
                     <template #icon>
                         <SummaryReportIcon aria-hidden="true" />
@@ -145,6 +186,7 @@ import {
                     title="Configuration"
                     :href="route('configurations')"
                     :active="route().current('configurations') || route().current('configurations.productDetails') || route().current('configuration.incentCommDetail')"
+                    v-if="existingPermissions?.includes('configuration')" 
                 >
                     <template #icon>
                         <ConfigurationIcon aria-hidden="true" />

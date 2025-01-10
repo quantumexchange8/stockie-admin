@@ -75,7 +75,7 @@ class ReservationController extends Controller
             }
         });
 
-        $waiters = User::where('role', 'waiter')
+        $waiters = User::where('position', 'waiter')
                         ->get(['id', 'full_name'])
                         ->map(function ($waiter) { 
                             return [

@@ -14,13 +14,14 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Permission\Traits\HasRoles;
 /**
  * @method HasMany attendances()
  */
 
 class User extends Authenticatable implements HasMedia
 {
-    use HasFactory, Notifiable, SoftDeletes, InteractsWithMedia, LogsActivity, HasApiTokens;
+    use HasFactory, Notifiable, SoftDeletes, InteractsWithMedia, LogsActivity, HasApiTokens, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -34,7 +35,7 @@ class User extends Authenticatable implements HasMedia
         'worker_email', 
         'phone', 
         'password',  
-        'role',
+        'position',
         'role_id', 
         'passcode', 
         'profile_photo',

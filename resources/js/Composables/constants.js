@@ -127,3 +127,27 @@ export const deleteReason = [
     { text: "Customer asked to delete", value: 'Customer asked to delete'},
     { text: "Others (specify under Remarks)", value: 'Others'},
 ]
+
+// ----------------------------------------------------------------------------------
+//                                  Admin Users
+// ----------------------------------------------------------------------------------
+
+export const permissionList = [
+    { text: "Dashboard", value: 'dashboard' },
+    { text: "Order Management", value: 'order-management' },
+    { text: "Shift Control", value: 'shift-control' },
+    { text: "Shift Record", value: 'shift-record' },
+    { text: "Menu Management", value: 'menu-management' },
+    { text: "Inventory", value: 'inventory' },
+    { text: "Waiter", value: 'waiter' },
+    { text: "Customer", value: 'customer' },
+    { text: "Table & Room", value: 'table-room' },
+    { text: "Reservation", value: 'reservation' },
+    { text: "Transaction Listing", value: 'transcation-listing' },
+    { text: "e-Invoice Submission", value: 'e-invoice-submission' },
+    { text: "Loyalty Programme", value: 'loyalty-programme' },
+    { text: "Admin User", value: 'admin-user' },
+    { text: "Sales Analysis", value: 'sales-analysis' },
+    { text: "Activity Logs", value: 'activity-logs' },
+    { text: "Configuration", value: 'configuration' },
+]

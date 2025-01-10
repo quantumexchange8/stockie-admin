@@ -23,7 +23,7 @@ class AuthController extends Controller
                 'email',
                 Rule::exists('users')->where(function ($query) use ($request) {
                     $query->where('email', $request->email)
-                            ->where('role', 'waiter');
+                            ->where('position', 'waiter');
                 }),
             ],
             'password' => 'required|string',
@@ -52,7 +52,7 @@ class AuthController extends Controller
             return response()->json($response, 401);   
         }
 
-        $user = User::where('role', 'waiter')->find(Auth::user()->id);
+        $user = User::where('position', 'waiter')->find(Auth::user()->id);
 
         // Revoke all existing tokens before creating a new one
         $user->tokens()->delete();

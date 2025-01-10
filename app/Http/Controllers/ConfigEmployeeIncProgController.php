@@ -16,7 +16,7 @@ class ConfigEmployeeIncProgController extends Controller
 {
     public function index()
     {
-        $allWaiters = User::select('id', 'full_name')->where('role', 'waiter')->orderBy('full_name')->get();
+        $allWaiters = User::select('id', 'full_name')->where('position', 'waiter')->orderBy('full_name')->get();
         $allWaiters->each(function ($waiter){
             $waiter->image = $waiter->getFirstMediaUrl('user');
         });
@@ -153,7 +153,7 @@ class ConfigEmployeeIncProgController extends Controller
 
         // dd($entitled);
 
-        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('role', 'waiter')])
+        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('position', 'waiter')])
                             ->where([
                                 ['status', 'Served'],
                                 ['type', 'Normal'],
@@ -278,7 +278,7 @@ class ConfigEmployeeIncProgController extends Controller
                                             ])
                                             ->get();
 
-        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('role', 'waiter')])
+        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('position', 'waiter')])
                             ->where([
                                 ['status', 'Served'],
                                 ['type', 'Normal'],
@@ -397,7 +397,7 @@ class ConfigEmployeeIncProgController extends Controller
 
         $incentive = ConfigIncentive::with('incentiveEmployees')->find($achievementId);
 
-        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('role', 'waiter')])
+        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('position', 'waiter')])
                             ->where([
                                 ['status', 'Served'],
                                 ['type', 'Normal'],

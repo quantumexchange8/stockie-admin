@@ -32,6 +32,10 @@ const props = defineProps({
         type: String,
         default: "",
     },
+    required: {
+        type: Boolean,
+        default: false,
+    },
     maxlength: Number,
 });
 
@@ -44,6 +48,7 @@ const {
     hintText,
     placeholder,
     disabled,
+    required
 } = props;
 
 defineEmits(["update:modelValue", "blur"]);
@@ -98,6 +103,7 @@ onMounted(() => {
     <div class="w-full">
         <Label
             :for="inputName"
+            :required="required"
             :class="[
                 'mb-1 text-xs !font-medium',
                 {

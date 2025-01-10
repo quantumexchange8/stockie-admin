@@ -106,7 +106,7 @@ class DashboardController extends Controller
         })->flatten(1);
 
         //on duty today
-        $waiters = User::where('role', 'waiter')->get();
+        $waiters = User::where('position', 'waiter')->get();
         $onDuty = [];
         $today = Carbon::today();
 
@@ -215,7 +215,7 @@ class DashboardController extends Controller
             }
         });
 
-        $waiters = User::where('role', 'waiter')
+        $waiters = User::where('position', 'waiter')
                         ->get(['id', 'full_name'])
                         ->map(function ($waiter) { 
                             return [

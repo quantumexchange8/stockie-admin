@@ -126,7 +126,7 @@ const getTableClasses = (table) => ({
 
 const waitersArr = computed(() => {
     return props.users
-        .filter(({role}) => role === 'waiter')
+        .filter(({position}) => position === 'waiter')
         .map(({id, full_name, image}) => {
             return {
                 'text': full_name,

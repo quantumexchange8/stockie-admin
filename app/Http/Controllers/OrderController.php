@@ -81,7 +81,7 @@ class OrderController extends Controller
         // dd($zones);
 
         // $waiters = Waiter::orderBy('id')->get();
-        $users = User::select(['id', 'full_name', 'role'])->orderBy('id')->get();
+        $users = User::select(['id', 'full_name', 'position'])->orderBy('id')->get();
         $users->each(function($user){
             $user->image = $user->getFirstMediaUrl('user');
         });

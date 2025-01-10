@@ -24,7 +24,7 @@ class WaiterController extends Controller
 {
    public function waiter(Request $request)
    {
-        $waiters = User::where('role', 'waiter')->get();
+        $waiters = User::where('position', 'waiter')->get();
         $waiters->each(function($waiter){
             $waiter->image = $waiter->getFirstMediaUrl('user');
         });
@@ -32,7 +32,7 @@ class WaiterController extends Controller
         $message = $request->session()->get('message');
 
         //for sales performance graph 
-        $allWaiters = User::where('role', 'waiter')
+        $allWaiters = User::where('position', 'waiter')
                             ->select('id', 'full_name', 'profile_photo')
                             ->get()
                             ->keyBy('id');
@@ -76,7 +76,7 @@ class WaiterController extends Controller
                                 ->whereYear('created_at', now()->year)
                                 ->get();
         
-        $waitersList = User::where('role', 'waiter')->get()->keyBy('id'); 
+        $waitersList = User::where('position', 'waiter')->get()->keyBy('id'); 
         $result = [];
 
         //prepare for each waiter
@@ -103,7 +103,7 @@ class WaiterController extends Controller
                                             ->get()
                                             ->toArray();
             foreach ($commType as $comm) {
-                // Log::info($order->handledBy->role);
+                // Log::info($order->handledBy->position);
                 $rate = $comm['rate']; 
                 $commTypeValue = $comm['comm_type']; 
                 if ($commTypeValue === 'Fixed amount per sold product') {
@@ -112,7 +112,7 @@ class WaiterController extends Controller
                     $commission = $productPrice * $rate / 100 * $itemQty;
                 }
 
-                if (isset($result[$waiterId]) && $order->handledBy->role === 'waiter') {
+                if (isset($result[$waiterId]) && $order->handledBy->position === 'waiter') {
                     $result[$waiterId]['commission'] += $commission; 
                 }
             }
@@ -150,7 +150,7 @@ class WaiterController extends Controller
             'phone' => $validatedData['phone'],
             'email'=>$validatedData['email'],
             'role_id' => $validatedData['role_id'],
-            'role' => 'waiter',
+            'position' => 'waiter',
             'salary'=> $validatedData['salary'],
             'worker_email' => $validatedData['stockie_email'],
             'password' => Hash::make($validatedData['password']),
@@ -615,7 +615,7 @@ class WaiterController extends Controller
 
     public function filterSalesPerformance (Request $request)
     {
-        $allWaiters = User::where('role', 'waiter')->select('id', 'full_name')->get()->keyBy('id');
+        $allWaiters = User::where('position', 'waiter')->select('id', 'full_name')->get()->keyBy('id');
 
         $waitersSalesDetail = OrderItem::with('order.waiter')
                                         ->where('status', 'Served')
@@ -671,7 +671,7 @@ class WaiterController extends Controller
                                 })
                                 ->get();
         
-        $waitersList = User::where('role', 'waiter')->get()->keyBy('id'); 
+        $waitersList = User::where('position', 'waiter')->get()->keyBy('id'); 
         $result = [];
 
         //prepare for each waiter
@@ -698,7 +698,6 @@ class WaiterController extends Controller
                                             ->get()
                                             ->toArray();
             foreach ($commType as $comm) {
-                // Log::info($order->handledBy->role);
                 $rate = $comm['rate']; 
                 $commTypeValue = $comm['comm_type']; 
                 if ($commTypeValue === 'Fixed amount per sold product') {
@@ -707,7 +706,7 @@ class WaiterController extends Controller
                     $commission = $productPrice * $rate / 100 * $itemQty;
                 }
 
-                if (isset($result[$waiterId]) && $order->handledBy->role === 'waiter') {
+                if (isset($result[$waiterId]) && $order->handledBy->position === 'waiter') {
                     $result[$waiterId]['commission'] += $commission; 
                 }
             }

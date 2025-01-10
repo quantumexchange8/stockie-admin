@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConfigCommissionController;
 use App\Http\Controllers\ConfigDiscountController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SummaryReportController;
+use App\Http\Middleware\CheckPermission;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WaiterController;
@@ -33,16 +35,16 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
 
-   /********* Dashboard **********/
     // Route::get('/dashboard', function () {
-    //     return Inertia::render('Dashboard/Dashboard');
-    // })->name('dashboard');
+        //     return Inertia::render('Dashboard/Dashboard');
+        // })->name('dashboard');
     Route::get('/allNotifications', [NotificationController::class, 'index'])->name('notifications');
     Route::get('/notifications/latestNotification', [NotificationController::class, 'latestNotification'])->name('notifications.latest-notifications');
     Route::get('/notifications/filterNotification', [NotificationController::class, 'filterNotification'])->name('notifications.filter-notifications');
     Route::post('/notifications/markAsRead', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
-
-    Route::prefix('dashboard')->group(function(){
+        
+    /********* Dashboard **********/
+    Route::prefix('dashboard')->middleware([CheckPermission::class . ':dashboard'])->group(function(){
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/filterSale', [DashboardController::class, 'filterSales'])->name('dashboard.filter-sales');
         Route::get('/activeTables', [DashboardController::class, 'getActiveTables'])->name('dashboard.active-tables');
@@ -55,7 +57,7 @@ Route::middleware('auth')->group(function () {
     })->name('components');
 
     /********* Waiter **********/
-    Route::prefix('waiter')->group(function(){
+    Route::prefix('waiter')->middleware([CheckPermission::class . ':waiter'])->group(function(){
         Route::get('/', [WaiterController::class, 'waiter'])->name('waiter');
         Route::post('/createWaiter', [WaiterController::class, 'store'])->name('waiter.add-waiter');
         Route::delete('/deleteWaiter/{id}', [WaiterController::class, 'deleteWaiter'])->name('waiter.delete-waiter');
@@ -70,7 +72,7 @@ Route::middleware('auth')->group(function () {
     });
  
     /********* Menu Management **********/
-    Route::prefix('menu-management')->group(function () {
+    Route::prefix('menu-management')->middleware([CheckPermission::class . ':menu-management'])->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->name('products');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
         Route::post('/products/storeFromInventoryItems', [ProductController::class, 'storeFromInventoryItems'])->name('products.storeFromInventoryItems');
@@ -96,7 +98,7 @@ Route::middleware('auth')->group(function () {
     });
 
      /********* Inventory **********/
-     Route::prefix('inventory')->group(function () {
+     Route::prefix('inventory')->middleware([CheckPermission::class . ':inventory'])->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
         Route::post('/inventory/store', [InventoryController::class, 'store'])->name('inventory.store');
         Route::post('/inventory/updateInventoryItemStock/{id}', [InventoryController::class, 'updateInventoryItemStock'])->name('inventory.updateInventoryItemStock');
@@ -122,7 +124,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     /******* Configuration ********/
-    Route::prefix('configurations')->group(function () {
+    Route::prefix('configurations')->middleware([CheckPermission::class . ':configuration'])->group(function () {
         Route::get('/configurations', [ConfigPromotionController::class, 'index'])->name('configurations');
 
         /******* Stock ********/
@@ -175,7 +177,7 @@ Route::middleware('auth')->group(function () {
     });
 
     /******** Loyalty Programme **********/
-    Route::prefix('loyalty-programme')->group(function(){
+    Route::prefix('loyalty-programme')->middleware([CheckPermission::class . ':loyalty-programme'])->group(function(){
         Route::get('/loyalty-programme', [LoyaltyController::class, 'index'])->name('loyalty-programme');
         
         /******* Tier ********/
@@ -200,7 +202,7 @@ Route::middleware('auth')->group(function () {
     });
 
      /********Table and room **********/
-     Route::prefix('table-room')->group(function(){
+     Route::prefix('table-room')->middleware([CheckPermission::class . ':table-room'])->group(function(){
         Route::get('/table-room', [TableRoomController::class, 'index'])->name('table-room');
         Route::post('/add-zones', [TableRoomController::class,'addZone'])->name('tableroom.add-zone');
         Route::delete('/table-room/deleteZone/{id}', [TableRoomController::class, 'deleteZone'])->name('tableroom.delete-zone');
@@ -213,7 +215,7 @@ Route::middleware('auth')->group(function () {
      });
      
     /******** Order Management **********/
-    Route::prefix('order-management')->group(function(){
+    Route::prefix('order-management')->middleware([CheckPermission::class . ':order-management'])->group(function(){
         Route::get('/orders', [OrderController::class, 'index'])->name('orders');
         Route::get('/orders/getOrderPaymentDetails{id}', [OrderController::class, 'getOrderPaymentDetails'])->name('orders.getOrderPaymentDetails');
         Route::get('/orders/getOccupiedTablePayments{id}', [OrderController::class, 'getOccupiedTablePayments'])->name('orders.getOccupiedTablePayments');
@@ -259,7 +261,7 @@ Route::middleware('auth')->group(function () {
     });
 
      /********* Customer **********/
-     Route::prefix('customer')->group(function(){
+     Route::prefix('customer')->middleware([CheckPermission::class . ':customer'])->group(function(){
         Route::get('/',[CustomerController::class,'index'])->name('customer');
         Route::get('/filterCustomer', [CustomerController::class,'getFilteredCustomers'])->name('customer.filter-customer');
         Route::get('/getRedeemableItems', [CustomerController::class,'getRedeemableItems'])->name('customer.getRedeemableItems');
@@ -271,14 +273,14 @@ Route::middleware('auth')->group(function () {
      });
 
      /********* Summary Report **********/
-     Route::prefix('summary-report')->group(function(){
+     Route::prefix('summary-report')->middleware([CheckPermission::class . ':sales-analysis'])->group(function(){
         Route::get('/', [SummaryReportController::class, 'index'])->name('summary.report');
         Route::get('/filterOrder', [SummaryReportController::class, 'filterOrder'])->name('summary-report.filter-order');
         Route::get('/filterSales', [SummaryReportController::class, 'filterSales'])->name('summary-report.filter-sales');
      });
 
     /******** Reservation **********/
-    Route::prefix('reservation')->group(function(){
+    Route::prefix('reservation')->middleware([CheckPermission::class . ':reservation'])->group(function(){
         Route::get('', [ReservationController::class, 'index'])->name('reservations');
         Route::post('', [ReservationController::class, 'store'])->name('reservations.store');
         Route::put('/{id}', [ReservationController::class, 'update'])->name('reservations.update');
@@ -294,6 +296,16 @@ Route::middleware('auth')->group(function () {
         // View reservation history
         Route::get('/reservation-history', [ReservationController::class, 'viewReservationHistory'])->name('reservations.viewReservationHistory');
         Route::get('/filter-reservation-history', [ReservationController::class, 'filterReservationHistory'])->name('reservations.filterReservationHistory');
+    });
+
+    /********* Admin User **********/
+    Route::prefix('admin-user')->middleware([CheckPermission::class . ':admin-user'])->group(function(){
+        Route::get('', [AdminUserController::class, 'index'])->name('admin-user');
+        Route::delete('/delete-admin-user/{id}', [AdminUserController::class, 'deleteAdmin'])->name('delete-admin');
+        Route::post('/edit-permission', [AdminUserController::class, 'editPermission'])->name('edit-permission');
+        Route::put('/edit-admin-details', [AdminUserController::class, 'editDetails'])->name('edit-admin-details');
+        Route::post('/add-sub-admin', [AdminUserController::class, 'addSubAdmin'])->name('add-sub-admin');
+        Route::get('/refetch-admin-users', [AdminUserController::class, 'refetchAdminUsers'])->name('refetch-admin-users');
     });
 });
 
