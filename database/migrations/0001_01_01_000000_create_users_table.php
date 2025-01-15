@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('worker_email')->unique()->nullable()->default(NULL);
             $table->string('phone')->unique()->nullable()->default(NULL);
             $table->string('password');
-            $table->string('role')->nullable()->default(NULL);
+            $table->string('position')->nullable()->default(NULL);
             $table->string('role_id')->nullable()->default(NULL);
             $table->integer('passcode')->nullable()->default(NULL);
             $table->string('passcode_status')->nullable()->default(NULL);

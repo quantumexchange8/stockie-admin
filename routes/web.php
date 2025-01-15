@@ -171,6 +171,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/addTax', [ConfigPromotionController::class, 'addTax'])->name('configurations.addTax');
         Route::get('/getTax', [ConfigPromotionController::class, 'getTax'])->name('configurations.getTax');
         Route::delete('/deleteTax/{id}', [ConfigPromotionController::class, 'deleteTax'])->name('configuration.deleteTax');
+        Route::get('/getClassificationCodes', [ConfigPromotionController::class, 'getClassificationCodes'])->name('configuration.getClassificationCodes');
+        Route::get('/refetchMerchant', [ConfigPromotionController::class, 'refetchMerchant'])->name('configurations.refetchMerchant');
+        Route::get('/getMSICCodes', [ConfigPromotionController::class, 'getMSICCodes'])->name('configurations.getMSICCodes');
+        Route::put('/editAddress', [ConfigPromotionController::class, 'editAddress'])->name('configurations.editAddress');
+        Route::put('/editTax', [ConfigPromotionController::class, 'editTax'])->name('configurations.editTax');
 
         /******* Points Settings ********/
         Route::post('/pointCalculate', [ConfigPromotionController::class, 'pointCalculate'])->name('configuration.pointCalculate');
@@ -271,6 +276,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/tierRewards/{id}', [CustomerController::class,'tierRewards'])->name('customer.tier-rewards');
         Route::post('/returnKeepItem/{id}', [CustomerController::class,'returnKeepItem'])->name('customer.returnKeepItem');
         Route::delete('/deleteCustomer/{id}', [CustomerController::class, 'deleteCustomer'])->name('customer.delete-customer');
+        Route::post('/adjustPoint', [CustomerController::class, 'adjustPoint'])->name('customer.adjustPoint');
      });
 
      /********* Summary Report **********/

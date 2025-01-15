@@ -49,6 +49,7 @@ class CustomerController extends Controller
 
                                     foreach ($customer->keepItems as $key => $keepItem) {
                                         $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                                        $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
                                         unset($keepItem->orderItemSubitem);
 
                                         $keepItem->image = $keepItem->orderItemSubitem->productItem 
@@ -359,4 +360,51 @@ class CustomerController extends Controller
         return response()->json($customer->rewards);
     }
     
+    public function adjustPoint(Request $request)
+    {
+
+        $request->validate([
+            'id' => ['required', 'integer'],
+            'point' => ['required', 'integer'],
+            'reason' => ['required', 'string', 'max:255'],
+            'addition' => ['required', 'boolean'],
+        ], [
+            'required' => 'This field is required.',
+            'integer' => 'Invalid input. Please try again.',
+            'string' => 'Invalid input. Please try again.', 
+            'boolean' => 'Invalid input. Please try again.',
+            'max' => 'This field only accepts input of maximum 255 characters.',
+        ]);
+
+        $targetCustomer = Customer::find($request->id);
+
+        PointHistory::create([
+            'type' => 'Adjusted',
+            'point_type' => 'Adjustment',
+            'qty' => 0,
+            'amount' => $request->point,
+            'old_balance' => $targetCustomer->point,
+            'new_balance' => !!$request->addition ? $targetCustomer->point + $request->point : $targetCustomer->point - $request->point,
+            'remark' => $request->reason ? $request->reason : '',
+            'customer_id' => $request->id,
+            'handled_by' => auth()->user()->id,
+            'redemption_date' => now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+        ]);
+
+        $targetCustomer->update([
+            'point' => !!$request->addition ? $targetCustomer->point + $request->point : $targetCustomer->point - $request->point,
+        ]);
+
+        $targetCustomer->save();
+
+        $data = $this->getCustomers();
+
+        return response()->json($data->find( $request->id)->point);
+    }
+
+    private function getCustomers(){
+        $data = Customer::all();
+
+        return $data;
+    }
 }

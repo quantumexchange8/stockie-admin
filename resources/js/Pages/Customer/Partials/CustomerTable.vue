@@ -391,6 +391,7 @@ watch (() => searchQuery.value, (newValue) => {
         <CustomerDetail 
             :customer="selectedCustomer"
             @update:customerKeepItems="selectedCustomer.keep_items = $event"
+            @update:customerPoints="selectedCustomer.point = $event"
         />
      </RightDrawer>
 </template>

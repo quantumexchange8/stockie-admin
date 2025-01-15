@@ -55,6 +55,11 @@ const removeAddZone = (id) => {
     newZones.zones = newZones.zones.filter(zone => zone.index !== id); 
 }
 
+const discardChanges = () => {
+    isEditing.value = false;
+    form.reset();
+}
+
 const submit = () => {
     //only submit if its edited, else just return default state
     if(isEdited.value){
@@ -143,7 +148,6 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
     emit('isDirty', newFormValue.isDirty || newIsEdited);
 });
 
-
 </script>
 
 <template>
@@ -190,6 +194,32 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                                 :ref="el => (inputRefs[`zones${zonesArr.value}`] = el)"
                                 @keydown.enter.prevent.stop="submit()"
                             />
+
+                            <Button
+                                :type="'submit'"
+                                :variant="'tertiary'" 
+                                :size="'lg'" 
+                                :class="{ 'opacity-25': form.processing }"
+                                :disabled="form.processing"
+                                v-if="isEditing"
+                                @click="discardChanges()"
+                                class="!w-fit"
+                            >
+                                Cancel
+                            </Button>
+
+                            <Button
+                                :type="'submit'"
+                                :variant="'primary'" 
+                                :size="'lg'" 
+                                :class="{ 'opacity-25': form.processing }"
+                                :disabled="form.processing"
+                                v-if="isEditing"
+                                @click="submit()"
+                                class="!w-fit"
+                            >
+                                Save
+                            </Button>
                         </template>
                     </div>
 
@@ -203,12 +233,36 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             :ref="el => (inputRefs[`zones${zones.index}`] = el)" 
                             :errorMessage="newZones.errors ? newZones.errors['zones.' + zones.index + '.name'] : null"
                         />
-                        <div class="size-6">
+                        <!-- <div class="size-6">
                             <DeleteIcon 
                                 class="w-6 h-6 text-primary-600 hover:text-primary-700 cursor-pointer" 
                                 @click="removeAddZone(zones.index)" 
                             />
-                        </div>
+                        </div> -->
+
+                        <Button
+                            :type="'submit'"
+                            :variant="'tertiary'" 
+                            :size="'lg'" 
+                            :class="{ 'opacity-25': newZones.processing }"
+                            :disabled="newZones.processing"
+                            @click="removeAddZone(zones.index)"
+                            class="!w-fit"
+                        >
+                            Cancel
+                        </Button>
+
+                        <Button
+                            :type="'submit'"
+                            :variant="'primary'" 
+                            :size="'lg'" 
+                            :class="{ 'opacity-25': newZones.processing }"
+                            :disabled="newZones.processing"
+                            @click="submit()"
+                            class="!w-fit"
+                        >
+                            Add
+                        </Button>
                     </div>
 
                     <!-- buttons -->
@@ -220,7 +274,6 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             :iconPosition="'left'"
                             :class="{ 'opacity-25': newZones.processing }"
                             :disabled="newZones.processing"
-                            v-if="!isEditing"
                             @click="addZone"
                         >
                             <template #icon>
@@ -231,7 +284,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             New Zone
                         </Button>
 
-                        <Button
+                        <!-- <Button
                             :type="'submit'"
                             :variant="'primary'" 
                             :size="'lg'" 
@@ -241,9 +294,9 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             @click="submit()"
                         >
                             {{ isEdited ? 'Save changes' : 'Discard' }}
-                        </Button>
+                        </Button> -->
 
-                        <Button
+                        <!-- <Button
                             :type="'button'"
                             :variant="'primary'" 
                             :size="'lg'" 
@@ -253,7 +306,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             @click="submit()"
                         >
                             Add Zone
-                        </Button>
+                        </Button> -->
                     </div>
                 </div>
             </div>

@@ -3,8 +3,15 @@ import { PointsIllust } from '@/Components/Icons/illus';
 import { HistoryIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import Toast from '@/Components/Toast.vue';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import RedeemHistory from './RedeemHistory.vue';
+import Button from '@/Components/Button.vue';
+import Modal from '@/Components/Modal.vue';
+import TextInput from '@/Components/TextInput.vue';
+import { useForm } from '@inertiajs/vue3';
+import Textarea from '@/Components/Textarea.vue';
+import axios from 'axios';
+import { useCustomToast } from '@/Composables';
 
 const props = defineProps({
     customer:{
@@ -12,9 +19,22 @@ const props = defineProps({
         default: () => {},
     }
 })
+
+const emit = defineEmits(['update:customerPoints']);
+const { showMessage } = useCustomToast();
+
 const customer = ref(props.customer);
 const redeemables = ref([]);
 const isPointHistoryDrawerOpen = ref(false);
+const isAdjustOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+
+const form = useForm({
+    id: '',
+    point: '',
+    reason: '',
+    addition: false,
+})
 
 const openHistoryDrawer = (id) => {
     isPointHistoryDrawerOpen.value = true;
@@ -41,6 +61,52 @@ const getRedeemables = async () => {
     }
 }
 
+const openAdjust = () => {
+    isAdjustOpen.value = true;
+}
+
+const closeAdjust = (status) => {
+    switch (status) {
+        case 'close': {
+            if(form.isDirty) isUnsavedChangesOpen.value = true;
+            else isAdjustOpen.value = close;
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isAdjustOpen.value = false;
+            form.errors = [];
+            break;
+        }
+    }
+}
+
+const submit = async (addition) => {
+    form.id = props.customer.id;
+    form.addition = addition;
+    
+    try {
+        const response = await axios.post(route('customer.adjustPoint'), form);
+        emit('update:customerPoints', response.data);
+        showMessage({ 
+            severity: 'success',
+            summary: 'Customer point adjusted.',
+        });
+        closeAdjust('leave');
+        form.reset();
+    } catch (error) {
+        if (error.response && error.response.data.errors) {
+            form.errors = error.response.data.errors; 
+        }
+        console.error(error);
+    }
+}
+const isFormValid = computed(() => ['point', 'reason'].every(field => form[field]));
+
 onMounted(() => getRedeemables());
 </script>
 
@@ -49,9 +115,20 @@ onMounted(() => getRedeemables());
         <!-- current points -->
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
-                <span class="self-stretch text-grey-900 text-base font-medium">Current Points</span>
+                <span class="self-stretch text-grey-900 text-base text-center font-medium">Current Points</span>
                 <div class="flex flex-col justify-center items-center gap-2">
-                    <span class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-[40px] font-normal">{{ formatPoints(customer.point) }}</span>
+                    <div class="flex justify-center items-center gap-2 self-stretch">
+                        <span class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-[40px] font-normal">{{ formatPoints(customer.point) }}</span>
+                        <Button
+                            :variant="'primary'"
+                            :type="'button'"
+                            :size="'md'"
+                            class="!w-fit z-[1101] inset-0"
+                            @click="openAdjust"
+                        >
+                            Adjust
+                        </Button>
+                    </div>
                     <span class="text-primary-950 text-base font-medium">pts</span>
                 </div>
                 <PointsIllust class="absolute"/>
@@ -106,4 +183,72 @@ onMounted(() => getRedeemables());
             <RedeemHistory :customerId="customer.id"/>
         </template>
     </RightDrawer>
+
+    <!-- Adjust Point -->
+    <Modal
+        :title="'Adjust Point'"
+        :maxWidth="'xs'"
+        :show="isAdjustOpen"
+        @close="closeAdjust('close')"
+    >
+        <form novalidate @submit.prevent="submit">
+            <div class="flex flex-col items-start gap-6">
+                <div class="flex flex-col items-start gap-4 self-stretch">
+                    <div class="flex flex-col items-start gap-1 self-stretch">
+                        <span class="self-stretch text-grey-950 text-base font-bold">Point</span>
+                        <span class="self-stretch text-grey-950 text-sm font-normal">Please enter the amount of point you want to add to or substract from this customer's account.</span>
+                    </div>
+                    <TextInput 
+                        :errorMessage="form.errors.point ? form.errors.point[0] : ''"
+                        :iconPosition="'right'"
+                        :inputName="'point'"
+                        :placeholder="'0'"
+                        v-model="form.point"
+                    >
+                        <template #prefix>
+                            <span class="text-grey-900 text-base font-normal">pts</span>
+                        </template>
+                    </TextInput>
+                </div>
+
+                <Textarea 
+                    :inputName="'reason'"
+                    :labelText="'Reason of adjust'"
+                    :errorMessage="form.errors.reason ? form.errors.reason[0] : ''"
+                    :placeholder="'Enter'"
+                    :rows="3"
+                    v-model="form.reason"
+                />
+
+                <div class="flex pt-3 items-start gap-3 self-stretch">
+                    <Button
+                        :variant="'red'"
+                        :type="'button'"
+                        :size="'lg'"
+                        :disabled="form.processing || !isFormValid"
+                        @click="submit(false)"
+                    >
+                        Substract
+                    </Button>
+                    <Button
+                        :variant="'green'"
+                        :type="'button'"
+                        :size="'lg'"
+                        :disabled="form.processing || !isFormValid"
+                        @click="submit(true)"
+                    >
+                        Add
+                    </Button>
+                </div>
+            </div>
+        </form>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeAdjust('stay')"
+            @leave="closeAdjust('leave')"
+        />
+    </Modal>
 </template>

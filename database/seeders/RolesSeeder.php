@@ -23,16 +23,17 @@ class RolesSeeder extends Seeder
             Role::firstOrCreate(['name' => $role]);
         }
 
-        $user = User::firstOrCreate([
-            'full_name' => 'Admin',
-            'name' => 'admin',
-            'email' => 'admin@admin.com',
-            'password' => Hash::make('Test1234.'),
-        ]);
+        // $user = User::firstOrCreate([
+        //     'full_name' => 'Admin',
+        //     'name' => 'admin',
+        //     'email' => 'admin@admin.com',
+        //     'password' => Hash::make('Test1234.'),
+        // ]);
         
-        if (!$user->hasRole('Super Admin')) {
-            $user->assignRole('Super Admin');
-        }
+        // if (!$user->hasRole('Super Admin')) {
+        //     $user->assignRole('Super Admin');
+        // }
+        User::find(1)->assignRole('Super Admin');
 
         // Delete any roles that are not in the list
         Role::whereNotIn('name', $roles)->delete();

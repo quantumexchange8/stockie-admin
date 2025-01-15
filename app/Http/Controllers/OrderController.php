@@ -117,7 +117,7 @@ class OrderController extends Controller
                                     ];
                                 });
 
-        $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address')->first();
+        $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address_line1')->first();
 
         $merchant->image = $merchant->getFirstMediaUrl('merchant_settings');
         

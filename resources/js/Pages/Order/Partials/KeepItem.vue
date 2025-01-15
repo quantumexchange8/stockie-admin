@@ -658,7 +658,7 @@ onMounted(() => {
                                                     v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
                                                     v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'cm'"
                                                     :disabled="totalSubItemQty(order_item, sub_item) === (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
-                                                    @keypress="isValidNumberKey($event, false)"
+                                                    @keypress="isValidNumberKey($event, true)"
                                                     @update:modelValue="checkMaxValue($event, order_item, sub_item.id)"
                                                     class="!w-36"
                                                 />

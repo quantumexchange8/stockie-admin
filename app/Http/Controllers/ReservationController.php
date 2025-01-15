@@ -369,7 +369,7 @@ class ReservationController extends Controller
                                                 'reservedBy', 
                                                 'handledBy'
                                             ])
-                                            // ->whereDate('reservation_date', '<', $yesterday)
+                                            ->whereDate('reservation_date', '>', Carbon::now()->timezone('Asia/Kuala_Lumpur')->subMonth())
                                             ->whereIn('status', ['Completed', 'No show', 'Cancelled'])
                                             ->orderBy('id')
                                             ->get();
@@ -393,6 +393,7 @@ class ReservationController extends Controller
     public function filterReservationHistory(Request $request) 
     {
         $dateFilter = $request->input('date_filter');
+        $status = $request->input('checkedFilters.status') ?? ['Completed', 'No show', 'Cancelled'];
         $dateFilter = array_map(function ($date){
             return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d H:i:s');
         }, $dateFilter);
@@ -409,7 +410,7 @@ class ReservationController extends Controller
                                 'handledBy'
                             ])
                             // ->whereDate('reservation_date', '<', $yesterday)
-                            ->whereIn('status', ['Completed', 'No show', 'Cancelled'])
+                            ->whereIn('status', $status)
                             ->orderBy('id')
                             ->get();
 

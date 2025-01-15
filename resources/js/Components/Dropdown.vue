@@ -56,6 +56,14 @@ const props = defineProps({
     loading: {
         type: Boolean,
         default: false
+    },
+    required: {
+        type: Boolean,
+        default: false,
+    },
+    filter: {
+        type: Boolean,
+        default: false,
     }
 });
 
@@ -115,6 +123,7 @@ onUnmounted(() => {
         <Label
             :value="props.labelText"
             :for="props.inputName"
+            :required="props.required"
             :class="[
                 'mb-1 text-xs !font-medium',
                 {
@@ -128,6 +137,7 @@ onUnmounted(() => {
         <Dropdown 
             v-model="localValue" 
             :options="options" 
+            :filter="props.filter"
             :placeholder="placeholder" 
             :ariaLabelledby="inputName"
             :disabled="disabled"
@@ -138,11 +148,10 @@ onUnmounted(() => {
             optionLabel="text"
             optionValue='value'
             @change="updateSelectedOption"
-            @click="open = !open"
             :pt="{
                 root: ({ props, state, parent }) => {
-                    open = state.overlayVisible ? true : false;
-                    state.overlayVisible = !open || !state.focused || !state.clicked ? false : true;
+                    open = state.overlayVisible;
+                    isOverlayOpen = state.overlayVisible;
                     return {
                         class: [
                             'inline-flex relative w-full mb-1 max-h-[44px] cursor-pointer select-none',
@@ -220,8 +229,42 @@ onUnmounted(() => {
                         'rounded-[5px]', 
                         'shadow-[0px_15px_23.6px_0px_rgba(102,30,30,0.05)]', 
                         'bg-white', 
-                        'text-grey-800'
+                        'text-grey-800',
+                        'max-w-min overflow-y-auto scrollbar-webkit scrollbar-thin'
                     ]
+                },
+                wrapper: {
+                    class: [
+                        'max-h-[calc(100dvh-20.5rem)]',
+                        'overflow-y-auto',
+                        'scrollbar-webkit',
+                        'scrollbar-thin'
+                    ]
+                },
+                filterInput: {
+                    placeholder: 'Search',
+                    class: [
+                        '!w-full max-h-[44px] flex relative justify-between items-center hover:text-primary-900 active:text-primary-900 focus:text-primary-900',
+                        'rounded-[5px] text-primary-900 active:ring-0 border-y border-l border-primary-900 bg-transparent',
+                        'hover:border-primary-900 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                        'active:border-primary-900 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
+                        'focus:border-primary-900 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
+                        '[&>button]:hover:border-primary-100 placeholder-grey-200',
+                        {
+                            'border-grey-100': props.disabled === true,
+                            'border-grey-300': props.disabled === false,
+                            'border-primary-500 focus:border-primary-500 hover:border-primary-500': errorMessage,
+                        },
+                    ],
+                },
+                filterContainer: {
+                    class: 'flex items-center gap-[10px] flex-[1_0_0] ',
+                },
+                filterIcon: {
+                    class: 'hidden'
+                },
+                header: {
+                    class: 'flex px-4 py-3 items-center gap-[10px] self-stretch w-full'
                 },
             }"
         >
@@ -275,7 +318,7 @@ onUnmounted(() => {
                 </slot>
             </template>
             <template #option="slotProps">
-                <div class="flex flex-nowrap items-center gap-2">
+                <div class="flex flex-nowrap items-center gap-2 w-fit">
                     <!-- <div class="size-5 bg-primary-100 rounded-full" v-if="imageOption"></div> -->
                     <img 
                         :src="slotProps.option.image ? slotProps.option.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClassificationCode;
 use App\Models\ConfigMerchant;
 use App\Models\ConfigPromotion;
 use App\Models\ItemCategory;
+use App\Models\MSICCodes;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -43,7 +45,11 @@ class ConfigPromotionController extends Controller
         //     $inactive->promotion_image = $inactive->getFirstMediaUrl('promotion');
         // });
 
-        $merchant = ConfigMerchant::first();
+        $merchant = ConfigMerchant::with('classificationCode', 'msicCode')->first();
+        $merchant->code = $merchant->classificationCode->code . ' - ' . $merchant->classificationCode->description;
+        $merchant->msic = $merchant->msicCode->Code . ' - ' . $merchant->msicCode->Description;
+        unset($merchant->classificationCode);
+        unset($merchant->msicCode);
         $merchant->merchant_image = $merchant->getFirstMediaUrl('merchant_settings');
 
         $selectedTab = $request->session()->get('selectedTab');
@@ -206,18 +212,36 @@ class ConfigPromotionController extends Controller
     public function updateMerchant(Request $request)
     {
         $request->validate([
-            'merchant_name' => ['required', 'string'],
-            'merchant_contact' => ['required', 'string'],
-            'merchant_address' => ['required', 'max:255'],
+            'name' => ['required', 'string'],
+            'tin_no' => ['required', 'string'],
+            'registration_no' => ['required', 'string'],
+            'msic_code' => ['required', 'integer'],
+            'phone_no' => ['required', 'string'],
+            'email_address' => ['required', 'string', 'email'],
+            'sst_registration_no' => ['required', 'string'],
+            'description' => ['required', 'string'],
+            'classification_code' => ['required', 'integer'],
             'merchant_image' => ['required'],
+        ], [
+            'required' => 'This field is required.',
+            'string' => 'Invalid input. Please try another.',
+            'integer' => 'Invalid input. Please try another.',
+            'email' => 'Invalid format. Please try again.',
         ]);
 
-        $config_merchant = ConfigMerchant::find($request->merchant_id);
+        $config_merchant = ConfigMerchant::find($request->id);
 
         $config_merchant->update([
-            'merchant_name' => $request->merchant_name,
-            'merchant_contact' => $request->merchant_contact,
-            'merchant_address' => $request->merchant_address,
+            'name' => $request->name,
+            'merchant_name' => $request->name,
+            'tin_no' => $request->tin_no,
+            'registration_no' => $request->registration_no,
+            'msic_code' => $request->msic_code,
+            'merchant_contact' => $request->prefix . $request->phone_no,
+            'email_address' => $request->email_address,
+            'sst_registration_no' => $request->sst_registration_no,
+            'description' => $request->description,
+            'classification_code' => $request->classification_code,
         ]);
 
         if($request->hasFile('merchant_image')){
@@ -225,7 +249,12 @@ class ConfigPromotionController extends Controller
             $config_merchant->addMedia($request->merchant_image)->toMediaCollection('merchant_settings');
         }
 
-        return redirect()->back()->with('updated succesfully');
+        $config_merchant->save();
+
+        // return redirect()->back();
+        $data = $this->getMerchantDetails();
+
+        return response()->json($data);
     }
 
     public function addTax(Request $request)
@@ -354,5 +383,125 @@ class ConfigPromotionController extends Controller
             'existingPoint' => (string)$setting->point ?? null,
             'respectiveValue' => $setting->value ?? null,
         ]);
+    }
+
+    public function getClassificationCodes()
+    {
+        $codes = ClassificationCode::all();
+
+        return response()->json($codes);
+    }
+
+    public function getMSICCodes()
+    {
+        $codes = MSICCodes::where('code', '!=', '00000')->get();
+
+        return response()->json($codes);
+    }
+
+    private function getMerchantDetails()
+    {
+        $merchant = ConfigMerchant::with('classificationCode', 'msicCode')->first();
+        $merchant->code = $merchant->classificationCode->code . ' - ' . $merchant->classificationCode->description;
+        $merchant->msic = $merchant->msicCode->Code . ' - ' . $merchant->msicCode->Description;
+        unset($merchant->classificationCode);
+        unset($merchant->msicCode);
+        $merchant->merchant_image = $merchant->getFirstMediaUrl('merchant_settings');
+
+        return $merchant;
+    }
+
+    public function refetchMerchant()
+    {
+        $data = $this->getMerchantDetails();
+
+        return response()->json($data);
+    }
+
+    public function editAddress(Request $request)
+    {
+        $request->validate([
+            'id' => ['required'],
+            'address_line1' => ['required', 'string', 'max:255'],
+            'address_line2' => ['required', 'string', 'max:255'],
+            'postal_code' => ['required', 'integer', 'digits:5'],
+            'area' => ['required', 'string'],
+            'state' => ['required', 'string'],
+        ], [
+            'required' => 'This field is required.',
+            'string' => 'Invalid input. Please try again.',
+            'integer' => 'Invalid input. Please try again.',
+            'max' => 'This input must not more than 255 characters.',
+            'digits' => 'Invalid format.'
+        ]);
+        
+        $targetMerchant = ConfigMerchant::find($request->id);
+        $targetMerchant->update([
+            'merchant_address_line1' => $request->address_line1,
+            'merchant_address_line2' => $request->address_line2,
+            'postal_code' => $request->postal_code,
+            'area' => $request->area,
+            'state' => $request->state,
+        ]);
+
+        $data = $this->getMerchantDetails();
+
+        return response()->json($data);
+    }
+
+    public function editTax(Request $request)
+    {
+        // dd($request->all());
+
+        $taxesErrors = [];
+        $validatedTaxes = [];
+        foreach ($request->input('taxes') as $taxes) { 
+            if (!isset($taxes['id'])) {
+                continue; 
+            }
+
+            $validator = Validator::make($taxes, [
+                'id' => 'required|integer',
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255'
+                ],
+                'percentage' => 'required|numeric|min:0',
+            ], [
+                'name.required' => 'Tax name is required.',
+                'percentage.required' => 'Tax value is required.',
+            ]);
+            
+
+            if ($validator->fails()) {
+                foreach ($validator->errors()->messages() as $field => $messages) {
+                    $taxesErrors["$field.{$taxes['id']}"] = $messages;
+                }
+            } else {
+                $validated = $validator->validated();
+                if (isset($validated['id'])) {
+                    $validated['id'] = $taxes['id'];
+                }
+                $validatedTaxes[] = $validated;
+            }
+        }
+        
+        if (!empty($taxesErrors)) {
+            return redirect()->back()->withErrors($taxesErrors);
+        }
+        
+
+        foreach($validatedTaxes as $items){{
+                Setting::find($items['id'])
+                        ->update([
+                        'name' => $items['name'],
+                        'value' => round($items['percentage'], 2),
+                        'type' => 'tax',
+                        'value_type' => 'percentage',
+                ]);
+            }
+        }
+        return redirect()->back();
     }
 }

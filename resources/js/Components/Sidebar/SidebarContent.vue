@@ -173,7 +173,7 @@ const existingPermissions = page.props.auth.user.data.permission;
                     </template>
                 </SidebarLink>
                 <SidebarLink 
-                    title="Summary Reports" 
+                    title="Sales Analysis" 
                     :href="route('summary.report')" 
                     :active="route().current('summary.report')"
                     v-if="existingPermissions?.includes('sales-analysis')" 

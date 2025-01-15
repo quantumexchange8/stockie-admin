@@ -1,8 +1,8 @@
 <script setup>
 import Button from '@/Components/Button.vue';
-import { CircledArrowHeadRightIcon2, CommentIcon, CrownImage, EmptyProfilePic, GiftImage, HistoryIcon, MedalImage } from '@/Components/Icons/solid';
+import { CircledArrowHeadRightIcon2, GiftImage, HistoryIcon, MedalImage } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import ViewHistory from './ViewHistory.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import ReturnItem from './ReturnItem.vue';
@@ -23,7 +23,8 @@ const props = defineProps ({
     customer: Object
 })
 const { showMessage } = useCustomToast();
-const emit = defineEmits(['update:customerKeepItems']);
+const emit = defineEmits(['update:customerKeepItems', 'update:customerPoints']);
+const initialEditForm = ref();
 const selectedCustomer = ref(null);
 const selectedItem = ref(null);
 const returnItemOverlay = ref(null);
@@ -41,6 +42,8 @@ const editForm = useForm({
     kept_amount: '',
     remark: '',
     expired_to: '',
+    keptIn: '',
+    customer_id: props.customer.id,
 })
 
 const extendForm = useForm({
@@ -97,6 +100,10 @@ const openActionsOverlay = (event, item) => {
     editForm.expired_to = selectedItem.value.expired_to ? dayjs(selectedItem.value.expired_to).format('DD/MM/YYYY') : '';
     editForm.kept_amount = parseFloat(selectedItem.value.cm) > parseFloat(selectedItem.value.qty) ? (selectedItem.value.cm).toString() : selectedItem.value.qty;
     editForm.remark = selectedItem.value.remark ? selectedItem.value.remark : '';
+    editForm.keptIn = parseFloat(selectedItem.value.cm) > parseFloat(selectedItem.value.qty) ? 'cm' : 'qty';
+    editForm.customer_id = props.customer.id;
+
+    initialEditForm.value = {...editForm};
 
     extendForm.id = selectedItem.value.id;
 
@@ -121,11 +128,14 @@ const openModal = (action) => {
 const closeModal = (status) => {
     switch(status) {
         case 'close': {
+            if(initialEditForm.isDirty) isUnsavedChangesOpen.value = true;
+            else isEditKeptItemOpen.value = false; editForm.clearErrors();
+
             if(extendForm.expired_to !== 2) isUnsavedChangesOpen.value = true;
-            else isExtendExpirationOpen.value = false;
+            else isExtendExpirationOpen.value = false; extendForm.clearErrors();
 
             if(deleteForm.remark !== '' || deleteForm.remark_description !== '') isUnsavedChangesOpen.value = true;
-            else isDeleteKeptItemOpen.value = false;
+            else isDeleteKeptItemOpen.value = false; deleteForm.clearErrors();
             break;
         };
         case 'stay': {
@@ -134,13 +144,17 @@ const closeModal = (status) => {
         };
         case 'leave': {
             isUnsavedChangesOpen.value = false;
-            // isEditKeptItemOpen.value = false;
+            isEditKeptItemOpen.value = false;
             isExtendExpirationOpen.value = false;
             isDeleteKeptItemOpen.value = false;
 
+            selectedItem.value = '';
+
+            editForm.reset();
             extendForm.reset();
             deleteForm.reset();
-            // editForm.isDirty = false;
+
+            editForm.isDirty = false;
             extendForm.isDirty = false;
             deleteForm.isDirty = false;
             break;
@@ -153,7 +167,20 @@ const newExpiredTo = computed(() => {
 });
 
 const editKeptItem = async () => {
-    console.log(editForm.data());
+    try {
+        const response = await axios.put(`/order-management/editKeptItemDetail`, editForm);
+        emit('update:customerKeepItems', response.data);
+        closeModal('leave');
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: 'Successfully edited.',
+            });
+        }, 200)
+        editForm.reset();
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 const extendKeptItem = async () => {
@@ -207,6 +234,13 @@ const formatPoints = (points) => {
     const pointsStr = points.toString();
     return pointsStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
+
+watch((editForm), (newValue) => {
+    initialEditForm.isDirty = newValue.id !== initialEditForm.value.id ||
+                            newValue.kept_amount !== initialEditForm.value.kept_amount ||
+                            newValue.remark !== initialEditForm.value.remark ||
+                            newValue.expired_to !== initialEditForm.value.expired_to;
+})
 
 </script>
 
@@ -410,7 +444,10 @@ const formatPoints = (points) => {
         :show="isPointDrawerOpen"
         @close="closeDrawer"
     >
-        <PointsDrawer :customer="selectedCustomer"/>
+        <PointsDrawer 
+            :customer="selectedCustomer"
+            @update:customerPoints="emit('update:customerPoints', $event)"
+        />
     </RightDrawer>
 
     <!-- tier drawer -->
@@ -434,15 +471,15 @@ const formatPoints = (points) => {
     
     <!-- More Actions -->
     <OverlayPanel ref="isMoreActionOpen" @close="closeActionsOverlay" class="[&>div]:!p-1 [&>div]:!gap-0.5">
-        <!-- <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('edit')">
+        <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('edit')">
             <span class="text-grey-900 text-base font-medium">Edit kept detail</span>
-        </div> -->
-        <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('extend')" v-if="selectedItem.expired_to">
+        </div>
+        <!-- <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('extend')" v-if="selectedItem.expired_to">
             <span class="text-grey-900 text-base font-medium">Extend expiration date</span>
         </div>
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-not-allowed pointer-events-none bg-grey-50" @click="openModal('extend')" v-else>
             <span class="text-grey-300 text-base font-medium">Extend expiration date</span>
-        </div>
+        </div> -->
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('delete')">
             <span class="text-primary-800 text-base font-medium">Delete kept item</span>
         </div>
@@ -453,7 +490,7 @@ const formatPoints = (points) => {
         :show="isEditKeptItemOpen"
         :title="'Edit Kept Item Detail'"
         :maxWidth="'sm'"
-        @close="closeModal"
+        @close="closeModal('close')"
     >  
         <form novalidate @submit.prevent="editKeptItem">
             <div class="flex flex-col items-start gap-8 self-stretch">
@@ -513,11 +550,9 @@ const formatPoints = (points) => {
                         :errorMessage="editForm.errors?.expired_to"
                         :range="false"
                         :inputName="'expiration_date'"
-                        :minDate="new Date()"
-                        :disabled="selectedItem.expired_to !== null"
+                        :minDate="editForm.expired_to ? new Date(dayjs(editForm.expired_to).format('DD/MM/YYYY')) : new Date()"
                         v-model="editForm.expired_to"
                         class="col-span-2"
-                        :class="selectedItem.expired_to !== null ? '[&>span>input]:!text-grey-200 [&>span>input]:!bg-grey-50 [&>span>input]:!border-grey-100 [&>span>div>svg]:!hidden pr-5' : ''"
                     />
                 </div>
 
@@ -526,6 +561,7 @@ const formatPoints = (points) => {
                         :variant="'tertiary'"
                         :type="'button'"
                         :size="'lg'"
+                        @click="closeModal('close')"
                     >
                         Cancel
                     </Button>
@@ -539,6 +575,14 @@ const formatPoints = (points) => {
                 </div>
             </div>
         </form>
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
     </Modal>
 
      <!-- Extend expiration date -->

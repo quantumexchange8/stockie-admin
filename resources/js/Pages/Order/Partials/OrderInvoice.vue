@@ -65,7 +65,9 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
                     <div class="flex items-start px-1">
                         <div class="flex flex-col justify-center items-start gap-y-1 pr-1">
                             <p class="text-primary-100 text-md font-medium self-stretch">{{ merchant.merchant_name }}</p>
-                            <p class="text-primary-25 text-sm font-normal self-stretch">{{ merchant.merchant_address }}</p>
+                            <p class="text-primary-25 text-sm font-normal self-stretch">{{ merchant.merchant_address_line1 }}, {{ merchant.merchant_address_line2 }}</p>
+                            <p class="text-primary-25 text-sm font-normal self-stretch">{{ merchant.postal_code }} {{ merchant.area }}, {{ merchant.state }}</p>
+
                             <p class="text-primary-25 text-sm font-normal self-stretch">{{ formatPhone(merchant.merchant_contact) }}</p>
                         </div>
                         <img 

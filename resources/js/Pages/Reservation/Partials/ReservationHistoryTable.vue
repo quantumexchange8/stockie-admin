@@ -11,6 +11,8 @@ import { useCustomToast, usePhoneUtils, useFileExport } from '@/Composables/inde
 import { EmptyIllus } from '@/Components/Icons/illus.jsx';
 import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';
+import Checkbox from '@/Components/Checkbox.vue';
+import Button from '@/Components/Button.vue';
 
 const props = defineProps({
     tables: Array,
@@ -39,15 +41,19 @@ const defaultLatestMonth = computed(() => {
     return [lastMonth.toDate(), currentDate.toDate()];
 });
 const date_filter = ref(defaultLatestMonth.value);
-
 const isLoading = ref(false);
+const reservationStatus = ref(['Completed', 'No Show', 'Cancelled']);
+const checkedFilters = ref({
+    status: [],
+})
 
-const filterReservationHistory = async (filters = {}) => {
+const filterReservationHistory = async (filters = {}, checkedFilters = {}) => {
     isLoading.value = true;
     try {
         const response = await axios.get(route('reservations.filterReservationHistory'), {
             params: {
                 date_filter: filters,
+                checkedFilters: checkedFilters,
             }
         });
         rows.value = response.data;
@@ -69,6 +75,32 @@ const hideReservationDetailForm = () => {
     setTimeout(() => {
         selectedReservation.value = null;
     }, 300);
+}
+
+const resetFilters = () => {
+    return {
+        status: [],
+    };
+}
+
+const clearFilters = (close) => {
+    checkedFilters.value = resetFilters();
+    filterReservationHistory(date_filter.value, checkedFilters.value);
+    close();
+}
+
+const toggleStatus = (status) => {
+    const index = checkedFilters.value.status.indexOf(status);
+    if(index > -1) {
+        checkedFilters.value.status.splice(index, 1);
+    } else {
+        checkedFilters.value.status.push(status);
+    }
+};
+
+const applyCheckedFilters = (close) => {
+    filterReservationHistory(date_filter.value, checkedFilters.value);
+    close();
 }
 
 const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
@@ -183,9 +215,44 @@ watch(() => date_filter.value, (newValue) => {
         <div class="flex justify-end items-start gap-5 self-stretch">
             <SearchBar
                 placeholder="Search"
-                :showFilter="false"
+                :showFilter="true"
                 v-model="searchQuery"
-            />
+            >
+            <template #default="{ hideOverlay }">
+                <div class="flex flex-col self-stretch gap-4 items-start">
+                    <span class="text-grey-900 text-base font-semibold">Status</span>
+                    <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
+                        <div 
+                            v-for="(status, index) in reservationStatus" 
+                            :key="index"
+                            class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
+                        >
+                            <Checkbox
+                                :checked="checkedFilters.status.includes(status)"
+                                @click="toggleStatus(status)"
+                            />
+                            <span class="text-grey-700 text-sm font-medium">{{ status }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
+                    <Button
+                        :type="'button'"
+                        :variant="'tertiary'"
+                        :size="'lg'"
+                        @click="clearFilters(hideOverlay)"
+                    >
+                        Clear All
+                    </Button>
+                    <Button
+                        :size="'lg'"
+                        @click="applyCheckedFilters(hideOverlay)"
+                    >
+                        Apply
+                    </Button>
+                </div>
+            </template>
+            </SearchBar>
 
             <DateInput
                 :inputName="'date_filter'"
