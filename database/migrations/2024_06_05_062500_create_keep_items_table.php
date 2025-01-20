@@ -20,8 +20,8 @@ return new class extends Migration
             $table->string('remark')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('status');
-            $table->dateTime('expired_from')->nullable();
-            $table->dateTime('expired_to')->nullable();
+            $table->dateTime('expired_from');
+            $table->dateTime('expired_to');
             $table->softDeletes();
             $table->timestamps();
         });

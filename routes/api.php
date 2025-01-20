@@ -36,7 +36,7 @@ Route::controller(AttendanceController::class)->group(function(){
 Route::controller(PromotionController::class)->group(function(){
     Route::get('promotions', 'getAllPromotions');
     Route::get('promotions/most_recent_promotions', 'getMostRecentPromotions');
-    Route::get('promotions/promotion_details/{id}', 'getPromotionDetails');
+    Route::get('promotions/promotion_details', 'getPromotionDetails');
 });
 
 /********* Insights **********/

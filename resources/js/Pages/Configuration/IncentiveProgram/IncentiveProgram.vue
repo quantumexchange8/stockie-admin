@@ -264,14 +264,16 @@ watch(() => searchQuery.value, (newValue) => {
                 </Button>
             </div>
 
-            <Toast 
-                inline
-                severity="info"
-                actionLabel="OK"
-                summary="Set different commission for different level of achievement"
-                detail="Employee can earn certain amount of commission for accomplishing a specific achievement/sales target."
-                :closable="false"
-            />
+            <div class="w-full">
+                <Toast 
+                    inline
+                    severity="info"
+                    actionLabel="OK"
+                    summary="Set different commission for different level of achievement"
+                    detail="Employee can earn certain amount of commission for accomplishing a specific achievement/sales target."
+                    :closable="false"
+                />
+            </div>
 
             <Table
                 :columns="incentProgColumn"

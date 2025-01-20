@@ -25,13 +25,13 @@ const props = defineProps({
         required: true,
     },
     rowType: Object,
-    totalPages: Number,
-    rowsPerPage: Number,
 })
+
+const { exportToCSV } = useFileExport();
 
 const waiter = ref(props.waiter);
 const attendance = ref(props.attendance);
-const { exportToCSV } = useFileExport();
+const attendanceRowsPerPage = ref(11);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -73,6 +73,10 @@ const csvExport = () => {
     }));
     exportToCSV(mappedAttendance, `Waiter_${waiterName}_Attendance Report`);
 }
+
+const attendanceTotalPages = computed(() => {
+    return Math.ceil(attendance.value.length / attendanceRowsPerPage.value);
+})
 
 </script>
 
@@ -145,8 +149,8 @@ const csvExport = () => {
                 :searchFilter="true"
                 :filters="filters"
                 :rowType="rowType"
-                :totalPages="totalPages"
-                :rowsPerPage="rowsPerPage"
+                :totalPages="attendanceTotalPages"
+                :rowsPerPage="attendanceRowsPerPage"
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>

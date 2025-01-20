@@ -29,6 +29,10 @@ const props = defineProps({
     withImages: {
         type: Boolean,
         default: false,
+    },
+    loading: {
+        type: Boolean,
+        default: false
     }
 })
 
@@ -145,6 +149,7 @@ onUnmounted(() => {
             :disabled="disabled"
             :placeholder="placeholder"
             :maxSelectedLabels="7" 
+            :loading="loading"
             display="chip"
             filter 
             @change="updateSelectedOption"

@@ -5,11 +5,15 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\ConfigEmployeeComm;
 use App\Models\ConfigEmployeeCommItem;
+use App\Models\ConfigIncentive;
+use App\Models\EmployeeIncentive;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
@@ -25,15 +29,18 @@ class ReportController extends Controller
 
         // Sales
         $salesEachMonth = Payment::query()
-                                    ->join('orders', 'payments.order_id', '=', 'orders.id')
+                                    ->join('orders', function ($join) {
+                                        $join->on('payments.order_id', '=', 'orders.id')
+                                                ->where('orders.status', 'Order Completed');
+                                    })
                                     ->join('order_items', function ($join) use ($user) {
                                         $join->on('orders.id', '=', 'order_items.order_id')
                                                 ->where('order_items.user_id', $user->id)
                                                 ->where('order_items.status', 'Served');
                                     })
-                                    ->selectRaw('MONTH(payments.receipt_end_date) as month, SUM(order_items.amount) as total_sales')
+                                    ->selectRaw('MONTH(orders.created_at) as month, SUM(order_items.amount) as total_sales')
                                     ->where('payments.status', 'Successful')
-                                    ->whereYear('payments.receipt_end_date', now()->year)
+                                    ->whereYear('orders.created_at', now()->year)
                                     ->whereHas('order.orderItems', fn ($query) => $query->where('user_id', $user->id))
                                     ->groupBy('month')
                                     ->orderBy('month')
@@ -41,7 +48,10 @@ class ReportController extends Controller
 
         // Commissions: Pre-aggregate commissions data by month
         $commissionsEachMonth = OrderItem::query()
-                                            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                                            ->join('orders', function ($join) {
+                                                $join->on('order_items.order_id', '=', 'orders.id')
+                                                        ->where('orders.status', 'Order Completed');
+                                            })
                                             ->join('payments', function ($join) {
                                                 $join->on('orders.id', '=', 'payments.order_id')
                                                         ->where('payments.status', 'Successful');
@@ -57,7 +67,7 @@ class ReportController extends Controller
                                                         ->whereNull('comms.deleted_at');
                                             })
                                             ->selectRaw("
-                                                MONTH(order_items.created_at) as month,
+                                                MONTH(orders.created_at) as month,
                                                 SUM(
                                                     CASE
                                                         WHEN comms.comm_type = 'Fixed amount per sold product'
@@ -71,7 +81,7 @@ class ReportController extends Controller
                                                 ['order_items.status', 'Served'],
                                                 ['order_items.type', 'Normal']
                                             ])
-                                            ->whereYear('payments.updated_at', now()->year)
+                                            ->whereYear('orders.created_at', now()->year)
                                             ->groupBy('month')
                                             ->pluck('total_commission', 'month');
 
@@ -127,6 +137,15 @@ class ReportController extends Controller
      */
     public function getSalesCommissionDetails()
     {
+        $user = User::find(2);
+        $totalSales = $user->itemSales()
+                            ->whereHas('order', function ($query) {
+                                $query->whereMonth('created_at', now()->month)
+                                        ->whereYear('created_at', now()->year);
+                            })
+                            ->sum('amount');
+
+        return response()->json($totalSales);
     }
 
     /**

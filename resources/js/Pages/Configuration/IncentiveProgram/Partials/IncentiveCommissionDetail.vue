@@ -48,6 +48,7 @@ const totalPages = ref(Math.ceil(props.details.length /4));
 const searchQuery = ref('');
 const rows = ref([]);
 const waiters = ref([]);
+const incentiveDetails = ref(props.achievementDetails);
 
 const { formatAmount } = transactionFormat();
 const { showMessage } = useCustomToast();
@@ -69,22 +70,18 @@ const computedRowsPerPage = computed(() => {
     return detail.value.slice(start, end);
 });
 
-const getEmployeeIncent = async (id = 0) => {
+const getEmployeeIncent = async (id) => {
     isLoading.value = true;
     try {
-        const response = await axios.get('/configurations/configurations/getIncentDetail', {
-            method: 'GET',
-            params: {
-                id: id,
-            }
-        });
-        waiters.value = response.data.waiters;
-        detail.value = response.data.incentiveProg.map(incentive => {
-            return {
-                ...incentive, 
-                isRate: incentive.type !== 'fixed' 
-            };
-        });
+        const response = await axios.get(`/configurations/configurations/getIncentDetail/${id}`);
+        // waiters.value = response.data.waiters;
+        // detail.value = response.data.incentiveProg.map(incentive => {
+        //     return {
+        //         ...incentive, 
+        //         isRate: incentive.type !== 'fixed' 
+        //     };
+        // });
+        incentiveDetails.value = response.data.achievementDetails;
     } catch (error) {
         console.error(error);
     } finally {
@@ -92,24 +89,29 @@ const getEmployeeIncent = async (id = 0) => {
     }
 }
 
-const updateStatus = async (selectedStatus = null, id = 0, achievementId = 0) => {
+const updateStatus =  (selectedStatus, id) => {
     isLoading.value = true;
     try {
-        const response = await axios.get('/configurations/configurations/updateStatus', {
-            method: 'GET',
-            params: {
-                selectedStatus: selectedStatus,
-                id: id,
-                achievementId: achievementId,
+        axios.post(`/configurations/configurations/updateStatus/${id}`, { selectedStatus: selectedStatus });
+
+        // Find and update the specific record directly without nested loops
+        const targetGroup = detail.value.find(group => 
+            group.data.some(data => data.id === id)
+        );
+
+        if (targetGroup) {
+            const targetData = targetGroup.data.find(data => data.id === id);
+            if (targetData) {
+                targetData.status = selectedStatus;
             }
-        });
-        detail.value = response.data;
+        }
+
         setTimeout(() => {
-                showMessage({ 
-                    severity: 'success',
-                    summary: 'Achiever status has been updated.',
-                });
-            }, 200)
+            showMessage({ 
+                severity: 'success',
+                summary: 'Achiever status has been updated.',
+            });
+        }, 200)
     } catch (error) {
         console.error(error);
     } finally {
@@ -343,7 +345,7 @@ watch(() => searchQuery.value, (newValue) => {
                                                                     :class="data.status === 'Paid' 
                                                                         ? 'bg-green-50 border border-green-100 text-green-700 hover:bg-green-100' 
                                                                         : 'bg-primary-50 border border-primary-200 text-primary-500 hover:bg-primary-100'"
-                                                                    >
+                                                                >
                                                                     {{ data.status }}
                                                                     <svg 
                                                                         width="20" 
@@ -367,19 +369,21 @@ watch(() => searchQuery.value, (newValue) => {
                                                                 leave-from-class="transform scale-100 opacity-100" 
                                                                 leave-to-class="transform scale-95 opacity-0"
                                                             >
-                                                                <MenuItems
-                                                                    class="absolute z-10 right-0 mt-2 w-32 p-1 gap-0.5 origin-top-right divide-y divide-y-grey-100 rounded-md bg-white shadow-lg"
-                                                                    >
+                                                                <MenuItems class="absolute z-10 right-0 mt-2 w-32 p-1 gap-0.5 origin-top-right divide-y divide-y-grey-100 rounded-md bg-white shadow-lg">
                                                                     <MenuItem v-slot="{ active }" v-for="status in statuses">
-                                                                    <button type="button" :class="[
-                                                                        { 'bg-primary-100': active },
-                                                                        { 'group flex items-center gap-2.5 px-4 py-2 self-stretch rounded-[5px] bg-primary-50 text-primary-900' : (data.status === status)},
+                                                                        <button 
+                                                                            type="button" 
+                                                                            :class="[
+                                                                                { 'bg-primary-100': active },
+                                                                                { 'group flex items-center gap-2.5 px-4 py-2 self-stretch rounded-[5px] bg-primary-50 text-primary-900' : (data.status === status)},
 
-                                                                        'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                                                                                'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
 
-                                                                    ]" @click="updateStatus(status, data.id, props.achievementDetails.id)">
-                                                                        {{ status }}
-                                                                    </button>
+                                                                            ]" 
+                                                                            @click="updateStatus(status, data.id, props.achievementDetails.id)"
+                                                                        >
+                                                                            {{ status }}
+                                                                        </button>
                                                                     </MenuItem>
                                                                 </MenuItems>
                                                             </transition>
@@ -588,7 +592,7 @@ watch(() => searchQuery.value, (newValue) => {
             </div>
 
             <AchievementDetails 
-                :achievementDetails="achievementDetails"
+                :achievementDetails="incentiveDetails"
                 :waiterName="waiterName"
                 @getEmployeeIncent="getEmployeeIncent"
             />

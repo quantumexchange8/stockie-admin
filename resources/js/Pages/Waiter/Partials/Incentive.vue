@@ -40,9 +40,9 @@ const { exportToCSV } = useFileExport();
 const csvExport = () => {
     const waiterName = props.waiter || 'Unknown Waiter';
     const mappedData = incentiveData.value.map(data => ({
-        'Date': data.monthYear,
-        'Total': data.totalSales,
-        'Incentive': data.incentiveAmt,
+        'Date': data.period_start,
+        'Total': data.amount,
+        'Incentive': data.sales_target,
         'Status': data.status,        
     }));
     exportToCSV(mappedData, `${waiterName}_Monthly Incentive Report`);
@@ -59,8 +59,7 @@ const filters = ref({
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Monthly Incentive Report</span>
             <Menu as="div" class="relative inline-block text-left">
                 <div>
-                    <MenuButton
-                        class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
+                    <MenuButton class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
                         Export
                         <UploadIcon class="size-4 cursor-pointer" />
                     </MenuButton>
@@ -74,27 +73,25 @@ const filters = ref({
                     leave-from-class="transform scale-100 opacity-100" 
                     leave-to-class="transform scale-95 opacity-0"
                 >
-                    <MenuItems
-                        class="absolute z-10 right-0 mt-2 w-32 p-1 gap-0.5 origin-top-right divide-y divide-y-grey-100 rounded-md bg-white shadow-lg"
-                        >
+                    <MenuItems class="absolute z-10 right-0 mt-2 w-32 p-1 gap-0.5 origin-top-right divide-y divide-y-grey-100 rounded-md bg-white shadow-lg">
                         <MenuItem v-slot="{ active }">
-                        <button type="button" :class="[
-                            { 'bg-primary-100': active },
-                            { 'bg-grey-50 pointer-events-none': incentiveData.length === 0 },
-                            'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="incentiveData.length === 0" @click="csvExport">
-                            CSV
-                        </button>
+                            <button type="button" :class="[
+                                { 'bg-primary-100': active },
+                                { 'bg-grey-50 pointer-events-none': incentiveData.length === 0 },
+                                'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                            ]" :disabled="incentiveData.length === 0" @click="csvExport">
+                                CSV
+                            </button>
                         </MenuItem>
 
                         <MenuItem v-slot="{ active }">
-                        <button type="button" :class="[
-                            // { 'bg-primary-100': active },
-                            { 'bg-grey-50 pointer-events-none': incentiveData.length === 0 },
-                            'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                        ]" :disabled="incentiveData.length === 0">
-                            PDF
-                        </button>
+                            <button type="button" :class="[
+                                // { 'bg-primary-100': active },
+                                { 'bg-grey-50 pointer-events-none': incentiveData.length === 0 },
+                                'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                            ]" :disabled="incentiveData.length === 0">
+                                PDF
+                            </button>
                         </MenuItem>
                     </MenuItems>
                 </transition>
@@ -123,31 +120,23 @@ const filters = ref({
                     <UndetectableIllus class="w-44 h-44"/>
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
-                <template #monthYear="incentiveData">
-                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">{{ incentiveData.monthYear }}</span>
+                <template #period_start="row">
+                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">{{ dayjs(row.period_start).format('MMMM YYYY') }}</span>
                 </template>
-                <template #totalSales="incentiveData">
-                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(incentiveData.totalSales) }}</span>
+                <template #amount="row">
+                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(row.amount) }}</span>
                 </template>
-                <template #incentiveAmt="incentiveData">
-                    <div v-if="incentiveData.incentiveAmt != 0" class="inline-flex items-center whitespace-nowrap gap-0.5">
-                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(incentiveData.incentiveAmt) }} </span>
-                            <span class="line-clamp-1 text-primary-900 text-ellipsis text-sm font-medium">
-                                <template v-if="incentiveData.type == 'fixed'">
-                                    ( RM {{ incentiveData.rate }} of total sales )
-                                </template>
-                                <template v-if="incentiveData.type == 'percentage'">
-                                     ( {{ parseInt(incentiveData.rate * 100) }}% of total sales )
-                                </template>
-                            </span>
+                <template #sales_target="row">
+                    <div v-if="row.sales_target != 0" class="inline-flex items-center whitespace-nowrap gap-0.5">
+                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(row.sales_target) }} </span>
+                        <span class="line-clamp-1 text-primary-900 text-ellipsis text-sm font-medium">
+                            ({{ row.type == 'percentage' ? `${parseInt(row.rate * 100)}%` : `RM ${row.rate}` }} of total sales)
+                        </span>
                     </div>
                 </template>
-                <template #status="incentiveData">
-                    <Link :href="route('configuration.incentCommDetail', incentiveData.incentiveId)">
-                        <Tag
-                            :variant="'green'"
-                            :value="incentiveData.status"
-                        />
+                <template #status="row">
+                    <Link :href="route('configuration.incentCommDetail', row.incentive_id)">
+                        <Tag :variant="'green'" :value="row.status" />
                     </Link>
                 </template>
             </Table>

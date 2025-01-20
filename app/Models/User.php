@@ -105,9 +105,12 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(Order::class, 'user_id');
     }
 
-    public function currentAttendance(): HasOne
+    public function currentAttendance(): ?WaiterAttendance
     {
-        return $this->hasOne(WaiterAttendance::class, 'user_id')->where('status', 'Checked in')->latest('check_in')->first();
+        return $this->hasOne(WaiterAttendance::class, 'user_id')
+                    ->where('status', 'Checked in')
+                    ->latest('check_in')
+                    ->first();
     }
 
     public function attendances(): HasMany
@@ -145,6 +148,23 @@ class User extends Authenticatable implements HasMedia
     public function commissions(): HasMany
     {
         return $this->hasMany(EmployeeCommission::class, 'user_id');
+    }
+
+    /**
+     * Payment Model
+     * Get the order payment receipts.
+     */
+    public function itemSales(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'user_id')
+                    ->whereHas('order', function ($query) {
+                        $query->where('status', 'Order Completed')
+                                ->whereHas('payment', fn ($subQuery) => $subQuery->where('status', 'Successful'));
+                    })
+                    ->where([
+                        ['type', 'Normal'],
+                        ['status', 'Served']
+                    ]);
     }
 
     // /**

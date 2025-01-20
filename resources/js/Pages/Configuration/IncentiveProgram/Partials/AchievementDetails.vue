@@ -1,10 +1,14 @@
 <script setup>
-import { CalendarIcon, CommissionIcon, DeleteIcon, EditIcon, RecurringIcon, TargetIcon } from '@/Components/Icons/solid';
+import { CalendarIcon, CommissionIcon, DeleteIcon, EditIcon, PlusIcon, RecurringIcon, TargetIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import EditAchievement from './EditAchievement.vue';
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
+import Button from '@/Components/Button.vue';
+import MultiSelect from '@/Components/MultiSelect.vue';
+import { useForm } from '@inertiajs/vue3';
+import AddEntitledEmployees from './AddEntitledEmployees.vue';
 
 const props = defineProps ({
     achievementDetails: {
@@ -22,6 +26,7 @@ const emit = defineEmits(['getEmployeeIncent', 'getIncentDetail']);
 const isDeleteWaiterOpen = ref(false);
 const isEditAchievementOpen = ref(false);
 const isDeleteAchievementOpen = ref(false);
+const isAddEntitledEmployeesOpen = ref(false);
 const selectedAchievement = ref(null);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
@@ -29,6 +34,11 @@ const selectedWaiter = ref(null);
 const isRate = ref({
     ...props.achievementDetails,
     isRate: props.achievementDetails.type !== 'fixed'
+});
+const waiters = ref([]);
+
+const form = useForm({
+    entitled_employees: []
 });
 
 const getSuffix = (day) => {
@@ -71,6 +81,30 @@ const closeEditModal = () => {
     isUnsavedChangesOpen.value = isDirty.value ? true : false;
     isEditAchievementOpen.value = !isDirty.value ? false : true;
 }
+const openModal = (action, achievement = null, waiter = null) => {
+    switch(action) {
+        case 'edit-achievement': 
+            isDirty.value = false;
+            isEditAchievementOpen.value = true;
+            selectedAchievement.value = achievement;
+            break;
+
+        case 'add-entitled-employees': 
+            isDirty.value = false;
+            isAddEntitledEmployeesOpen.value = true;
+            break;
+
+        case 'delete-achievement': 
+            isDeleteAchievementOpen.value = true;
+            selectedAchievement.value = achievement.id;
+            break;
+
+        case 'delete-waiter' : 
+            isDeleteWaiterOpen.value = true;
+            selectedWaiter.value = waiter.id;
+            break;
+    }
+}
 
 const closeModal = (status) => {
     switch(status){
@@ -79,6 +113,9 @@ const closeModal = (status) => {
                 isUnsavedChangesOpen.value = true;
             } else {
                 isEditAchievementOpen.value = false;
+                isDeleteWaiterOpen.value = false
+                isDeleteAchievementOpen.value = false;
+                isAddEntitledEmployeesOpen.value = false;
             }
             break;
         };
@@ -89,6 +126,7 @@ const closeModal = (status) => {
         case 'leave': {
             isUnsavedChangesOpen.value = false;
             isEditAchievementOpen.value = false;
+            isAddEntitledEmployeesOpen.value = false;
             break;
         }
     }
@@ -111,6 +149,15 @@ const leaveModal = () => {
     isEditAchievementOpen.value = false;
 }
 
+watch(() => props.achievementDetails, (newValue) => {
+    isRate.value = {
+        ...newValue,
+        isRate: newValue.type !== 'fixed'
+    };
+})
+
+watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
+
 </script>
 
 <template>
@@ -121,11 +168,11 @@ const leaveModal = () => {
                 <div class="flex flex-nowrap gap-2">
                     <EditIcon 
                         class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="showEditAchievement(isRate)"
+                        @click="openModal('edit-achievement', isRate)"
                     />
                     <DeleteIcon 
                         class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
-                        @click="showDeleteAchievement(isRate.id)"
+                        @click="openModal('delete-achievement', isRate)"
                     />
                 </div>
             </div>
@@ -200,12 +247,26 @@ const leaveModal = () => {
                             </div>
                             <DeleteIcon 
                                 class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click="showDeleteWaiter(waiter.id)"
+                                @click="openModal('delete-waiter', null, waiter)"
                             />
                         </div>
                     </template>
                 </div>
             </div>
+
+            <Button
+                :type="'button'"
+                :size="'lg'"
+                :variant="'tertiary'"
+                :iconPosition="'left'"
+                class="flex items-center gap-2"
+                @click="openModal('add-entitled-employees')"
+            >
+                <template #icon>
+                    <PlusIcon />
+                </template>
+                Add Entitled Employees
+            </Button>
         </div>
     </div>
 
@@ -234,6 +295,29 @@ const leaveModal = () => {
         </Modal>
     </Modal>
 
+    <Modal
+        :show="isAddEntitledEmployeesOpen"
+        :maxWidth="'md'"
+        :closeable="true"
+        :title="'Add Entitled Employees'"
+        @close="closeModal('close')"
+    >
+        <AddEntitledEmployees
+            @isDirty="isDirty = $event"
+            @closeModal="closeModal"
+        />
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        >
+        </Modal>
+    </Modal>
+
     <Modal 
         :show="isDeleteAchievementOpen" 
         :maxWidth="'2xs'" 
@@ -242,7 +326,7 @@ const leaveModal = () => {
         :deleteUrl="`/configurations/configurations/deleteAchievement/${selectedAchievement}`"
         :confirmationTitle="'Delete achievement?'"
         :confirmationMessage="'Are you sure you want to delete this achievement? All the data in this achievement will be lost.'"
-        @close="closeDeleteAchievement"
+        @close="closeModal('close')"
         v-if="selectedAchievement"
     />
 
@@ -255,7 +339,7 @@ const leaveModal = () => {
         :confirmationTitle="'Delete this entitled employee?'"
         :confirmationMessage="'Starting from next recurring date, the selected employee will no longer be entitled to this incentive commission.'"
         :toastMessage="'Selected employee has been removed from this achievement. '"
-        @close="closeDeleteWaiter"
+        @close="closeModal('close')"
         v-if="selectedWaiter"
     />
 

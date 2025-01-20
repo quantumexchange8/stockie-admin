@@ -80,7 +80,7 @@ const form = useForm({
     rate: selectedIncent.value.type === 'fixed'
         ? selectedIncent.value.rate.toString()
         : parseFloat((selectedIncent.value.rate * 100).toFixed(2)).toString(),
-    effective_date: dayjs(selectedIncent.value.effective_date).add(1, 'month').toDate(),
+    effective_date: dayjs(selectedIncent.value.effective_date).add(1, 'month').date(props.selectedIncent.recurring_on).toDate(),
     // recurring_on: recurringDates.value.find(item => item.value === selectedIncent.value.recurring_on) || recurringDates.value[0],
     monthly_sale: parseFloat(selectedIncent.value.monthly_sale).toFixed(2),
 });

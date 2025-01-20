@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NotAllowedToKeep from './NotAllowedToKeep.vue';
+import InputError from '@/Components/InputError.vue';
 
 const props = defineProps({
     errors: Object,
@@ -127,9 +128,10 @@ const submit = async () => {
 
         emit('update:customerKeepItems', response.data);
         emit('close');
+        form.clearErrors()
         form.reset();
     } catch (error) {
-        console.error(error);
+        form.setError(error.response.data.errors);
     } finally {
         form.processing = false;
     }
@@ -732,11 +734,11 @@ onMounted(() => {
                                             :inputName="'date_range_' + index"
                                             :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                                             :range="true"
-                                            :errorMessage="form.errors ? form.errors['items.' + index + '.expired_to']  : ''"
                                             :disabled="order_item.type === 'Keep'"
                                             @onChange="updateValidPeriod(order_item.id, $event)"
                                             v-model="form.items.find(i => i.order_item_id === order_item.id).date_range"
                                         />
+                                        <InputError :message="form.errors ? form.errors['items.0.expired_from'][0]  : ''" v-if="form.errors && form.errors['items.0.expired_from']" />
                                     </div>
                                 <!-- </template> -->
                             </div>

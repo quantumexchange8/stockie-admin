@@ -52,9 +52,9 @@ class PromotionController extends Controller
     /**
      * Get individual promotion's details
      */
-    public function getPromotionDetails(string $id)
+    public function getPromotionDetails(Request $request)
     {
-        $promotion = ConfigPromotion::findOrFail($id);
+        $promotion = ConfigPromotion::findOrFail($request->id);
                         
         $promotion->promotion_image = $promotion->getFirstMediaUrl('promotion');
                         

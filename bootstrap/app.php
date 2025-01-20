@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('configuration:update-product-discount')->dailyAt('00:00');
         $schedule->command('keepitems:check-expiration')->dailyAt('00:00');
         $schedule->command('general:clear-notification')->dailyAt('00:00');
+        $schedule->command('configuration:update-employee-incentives')->dailyAt('17:34');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {

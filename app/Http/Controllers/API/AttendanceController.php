@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WaiterAttendance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\RateLimiter;
@@ -18,7 +19,7 @@ class AttendanceController extends Controller
      */
     public function getCheckInTime()
     {
-        $user = User::find(2); // Should get auth user
+        $user = User::findOrFail(Auth::id()); // Should get auth user
         
         $latestCheckedIn = $user->attendances()
                                         ->where('status', 'Checked in')
@@ -38,7 +39,7 @@ class AttendanceController extends Controller
      */
     public function getTodayAttendance()
     {
-        $user = User::find(2); // Should get auth user
+        $user = User::findOrFail(Auth::id()); // Should get auth user
         $today = today()->toDateString();
     
         $todayAttendance = $user->attendances()
@@ -101,7 +102,7 @@ class AttendanceController extends Controller
      */
     public function checkIn(Request $request)
     {
-        $this->checkRecentAttendance(User::findOrFail(2)); // Should get auth user
+        $this->checkRecentAttendance(User::findOrFail(Auth::id())); // Should get auth user
 
         try {
             $validatedData = $request->validate(
@@ -117,7 +118,7 @@ class AttendanceController extends Controller
                 ]
             );
 
-            $user = User::findOrFail(2); // Should get auth user
+            $user = User::findOrFail(Auth::id()); // Should get auth user
             $checkInTime = Carbon::parse($validatedData['check_in']);
                     
             $existingAttendance = $this->checkExistingAttendance($user, today());
@@ -325,7 +326,7 @@ class AttendanceController extends Controller
                 ]
             );
 
-            $user = User::findOrFail(2); // Should get auth user
+            $user = User::findOrFail(Auth::id()); // Should get auth user
 
             // Verify existing passcode
             if ($user->passcode !== $validatedData['passcode']) {
@@ -367,7 +368,7 @@ class AttendanceController extends Controller
                 ]
             );
 
-            $user = User::findOrFail(2); // Should get auth user
+            $user = User::findOrFail(Auth::id()); // Should get auth user
 
             $user->update(['passcode' => $validatedData['passcode']]);
             
@@ -395,7 +396,7 @@ class AttendanceController extends Controller
      */
     public function checkOut(Request $request)
     {
-        $user = User::findOrFail(2); // Should get auth user
+        $user = User::findOrFail(Auth::id()); // Should get auth user
 
         $existingAttendance = $this->checkExistingAttendance($user);
         if ($existingAttendance) {

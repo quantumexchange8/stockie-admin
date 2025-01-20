@@ -205,7 +205,12 @@ function customTooltipHandler(context) {
 
     // Construct tooltip body
     if (tooltipModel.body) {
-        const body = tooltipModel.body.map(item => item.lines);
+        const body = tooltipModel.body.map(item => {
+            const unformattedPrice = item.lines[0].replace(/,/g, "");
+            const reformattedPrice = parseFloat(unformattedPrice).toFixed(2);
+
+            return reformattedPrice;
+        });
 
         let innerHtml = `<div style="
             display: flex; 

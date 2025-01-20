@@ -16,7 +16,6 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        // return response()->json('sup', 200);
         $validator = Validator::make($request->all(), [
             'email' => [
                 'required',

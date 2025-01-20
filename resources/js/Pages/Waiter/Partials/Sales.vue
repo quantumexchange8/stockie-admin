@@ -31,14 +31,13 @@ const props = defineProps({
         required: true,
     },
     rowType: Object,
-    totalPages: Number,
-    rowsPerPage: Number,
 })
 const isDetailModalOpen = ref(false);
 const selectedOrder = ref(null);
 const order = ref(props.order);
 const waiter = ref(props.waiter);
 const isLoading = ref(false);
+const salesRowsPerPage = ref(11);
 
 const { formatAmount } = transactionFormat();
 const { exportToCSV } = useFileExport();
@@ -53,7 +52,7 @@ const defaultLatest7Days = computed(() => {
 
 const viewOrderDetail = (items) => {
     isDetailModalOpen.value = true;
-    selectedOrder.value = items;
+    selectedOrder.value = items.filter((item) => item.commission > 0);
 }
 
 const viewSalesReport = async (filters = {}, id) => {
@@ -105,7 +104,9 @@ const csvExport = () => {
     exportToCSV(mappedOrders, `${waiterName}_Daily Sales Report`);
 }
 
-
+const salesTotalPages = computed(() => {
+    return Math.ceil(order.value.length / salesRowsPerPage.value);
+})
 
 </script>
 
@@ -180,8 +181,8 @@ const csvExport = () => {
                 :searchFilter="true"
                 :filters="filters"
                 :rowType="rowType"
-                :totalPages="totalPages"
-                :rowsPerPage="rowsPerPage"
+                :totalPages="salesTotalPages"
+                :rowsPerPage="salesRowsPerPage"
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>

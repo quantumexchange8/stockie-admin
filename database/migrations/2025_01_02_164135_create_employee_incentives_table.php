@@ -14,13 +14,15 @@ return new class extends Migration
         Schema::create('employee_incentives', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('incentive_id');
             $table->string('type');
             $table->string('rate');
-            $table->unsignedBigInteger('product_id');
             $table->decimal('amount', 13, 2);
             $table->decimal('sales_target', 13, 2);
             $table->string('recurring_on');
             $table->dateTime('effective_date');
+            $table->dateTime('period_start');
+            $table->dateTime('period_end');
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

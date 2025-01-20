@@ -24,5 +24,11 @@ class ConfigIncentive extends Model
         return $this->hasMany(ConfigIncentiveEmployee::class, 'incentive_id');
     }
 
-    
+    /**
+     * Get all the earned incentives.
+     */
+    public function earnedIncentives() : HasMany
+    {
+        return $this->hasMany(EmployeeIncentive::class, 'incentive_id');
+    }
 }

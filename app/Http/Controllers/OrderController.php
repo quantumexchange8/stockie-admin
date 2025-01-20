@@ -716,7 +716,7 @@ class OrderController extends Controller
                     'keep_item_id' => $orderItem->keep_item_id,
                     'order_item_id' => $orderItem->id,
                     'qty' => $keepHistory->qty,
-                    'cm' => $keepHistory->cm,
+                    'cm' => number_format((float) $keepHistory->cm, 2, '.', ''),
                     'keep_date' => $keepItem->created_at,
                     'status' => 'Served',
                 ]);
@@ -1165,8 +1165,8 @@ class OrderController extends Controller
             'order_item_subitem_id' => 'required|integer',
             'amount' => 'required|decimal:0,2',
             'remark' => 'nullable|string',
-            'expired_from' => 'nullable|date_format:Y-m-d',
-            'expired_to' => 'nullable|date_format:Y-m-d',
+            'expired_from' => 'required|date_format:Y-m-d',
+            'expired_to' => 'required|date_format:Y-m-d',
         ];
         $requestMessages = [
             'required' => 'This field is required.',
@@ -1197,7 +1197,8 @@ class OrderController extends Controller
 
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) {
-            return redirect()->back()->withErrors($allItemErrors)->withInput();
+            // return redirect()->back()->withErrors($allItemErrors);
+            return response()->json(['errors' => $allItemErrors], 422);
         }
 
         if (count($validatedItems) > 0) {
@@ -1229,18 +1230,21 @@ class OrderController extends Controller
                                         KeepHistory::create([
                                             'keep_item_id' => $reqItem['keep_id'],
                                             'order_item_id' => $reqItem['order_item_id'],
-                                            'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
-                                            'cm' => $reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
+                                            'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0,
+                                            'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
                                             'keep_date' => $keepItem->updated_at,
                                             'status' => 'Keep',
                                         ]);
                                     } else {
+                                    //     dd($reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
+                                    // number_format((float) '8.258', 2, '.', ''));
+                                        dd($item['expired_from']);
                                         $newKeep = KeepItem::create([
                                             'customer_id' => $request->customer_id,
                                             'order_item_subitem_id' => $item['order_item_subitem_id'],
                                             'qty' => $reqItem['type'] === 'qty' ? $item['amount'] : 0,
                                             'cm' => $reqItem['type'] === 'cm' ? $item['amount'] : 0,
-                                            'remark' => $item['remark'] ?: '',
+                                            'remark' => $item['remark'] ?: null,
                                             'user_id' => $request->user_id,
                                             'status' => 'Keep',
                                             'expired_from' => $item['expired_from'],
@@ -1250,7 +1254,7 @@ class OrderController extends Controller
                                         KeepHistory::create([
                                             'keep_item_id' => $newKeep->id,
                                             'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
-                                            'cm' => $reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
+                                            'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
                                             'keep_date' => $newKeep->created_at,
                                             'status' => 'Keep',
                                         ]);
@@ -1614,7 +1618,7 @@ class OrderController extends Controller
                 'keep_item_id' => $id,
                 'order_item_id' => $newOrderItem->id,
                 'qty' => $request->type === 'qty' ? round($request->return_qty, 2) : 0.00,
-                'cm' => $request->type === 'cm' ? round($keepItem->cm, 2) : 0.00,
+                'cm' => $request->type === 'cm' ? number_format((float) $keepItem->cm, 2, '.', '') : '0.00',
                 'keep_date' => $keepItem->created_at,
                 'status' => 'Served',
             ]);
@@ -2483,7 +2487,7 @@ class OrderController extends Controller
         KeepHistory::create([
             'keep_item_id' => $targetItem->keepItem->id,
             'qty' => $targetItem->keepItem->qty,
-            'cm' => $targetItem->keepItem->cm,
+            'cm' => number_format((float) $targetItem->keepItem->cm, 2, '.', ''),
             'keep_date' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
             'status' => 'Extended'
         ]);
@@ -2516,7 +2520,7 @@ class OrderController extends Controller
         KeepHistory::create([
             'keep_item_id' => $targetItem->id,
             'qty' => $targetItem->qty,
-            'cm' => $targetItem->cm,
+            'cm' => number_format((float) $targetItem->cm, 2, '.', ''),
             'keep_date' => $targetItem->created_at,
             'remark' => $validatedData['remark'] . $remarkDesc,
             'status' => 'Deleted',
@@ -2614,7 +2618,7 @@ class OrderController extends Controller
         KeepHistory::create([
             'keep_item_id' => $validatedData['id'],
             'qty' => $request->input('keptIn') === 'qty' ? round($validatedData['kept_amount'], 2) : 0.00,
-            'cm' => $request->input('keptIn') === 'cm' ? round($validatedData['kept_amount'], 2) : 0.00,
+            'cm' => $request->input('keptIn') === 'cm' ? number_format((float) $validatedData['kept_amount'], 2, '.', '') : '0.00',
             'keep_date' => $targetItem->expired_to,
             'remark' => $targetItem->remark,
             'status' => 'Edited',

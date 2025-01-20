@@ -37,10 +37,6 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
-    incentiveThisMonth: {
-        type: Number,
-        default: 0,
-    }
 })
 const home = ref({
     label: 'Waiter',
@@ -54,11 +50,10 @@ const items = ref([
 const { formatAmount } = transactionFormat();
 const waiter = ref(props.waiter);
 const attendance = ref(props.attendance);
-const salesRowsPerPage = ref(11);
 const commissionRowsPerPage = ref(11);
 const incentiveRowsPerPage = ref(11);
-const attendanceRowsPerPage = ref(11);
 const tabs = ref(['Sales', 'Commission', 'Incentive', 'Attendance']);
+
 const salesColumn = ref([
     {field: 'created_at', header: 'Date', sortable: true},
     {field: 'order_no', header: 'Order',sortable: true},
@@ -74,9 +69,9 @@ const commissionColumn = ref([
 ]);
 
 const incentiveColumn = ref([
-    {field: 'monthYear', header: 'Month', width: '25', sortable: true},
-    {field: 'totalSales', header: 'Total Sales', width: '25', sortable: true},
-    {field: 'incentiveAmt', header: 'Incentive', width: '30', sortable: true},
+    {field: 'period_start', header: 'Month', width: '23', sortable: true},
+    {field: 'amount', header: 'Incentive', width: '23', sortable: true},
+    {field: 'sales_target', header: 'Total Sales', width: '34', sortable: true},
     {field: 'status', header: 'Status', width: '20', sortable: true},
 ]);
 
@@ -99,20 +94,12 @@ const actions = {
     delete: () => ``,
 };
 
-const salesTotalPages = computed(() => {
-    return Math.ceil(props.order.length / salesRowsPerPage.value);
-})
-
 const commissionTotalPages = computed(() => {
     return Math.ceil(props.incentiveData.length / commissionRowsPerPage.value);
 })
 
 const incentiveTotalPages = computed(() => {
     return Math.ceil(props.commissionData.length / incentiveRowsPerPage.value);
-})
-
-const attendanceTotalPages = computed(() => {
-    return Math.ceil(props.attendance.length / attendanceRowsPerPage.value);
 })
 
 </script>
@@ -153,7 +140,7 @@ const attendanceTotalPages = computed(() => {
                             <div class="flex flex-col gap-1 self-stretch">
                                 <CommissionIcon />
                                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Commission in this month</span>
-                                <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ formatAmount(props.incentiveThisMonth + props.commissionThisMonth) }}</span>
+                                <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ formatAmount(props.commissionThisMonth) }}</span>
                                 <!-- <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ formatAmount(props.commissionThisMonth) }} + RM {{ formatAmount(props.incentiveThisMonth) }})</span> -->
                             </div>
                         </div>
@@ -187,8 +174,6 @@ const attendanceTotalPages = computed(() => {
                                 :columns="salesColumn" 
                                 :actions="actions"
                                 :rowType="rowType"
-                                :totalPages="salesTotalPages"
-                                :rowsPerPage="salesRowsPerPage"
                             />
                         </template>
 
@@ -222,8 +207,6 @@ const attendanceTotalPages = computed(() => {
                                 :dateFilter="defaultDateFilter" 
                                 :attendance="attendance"
                                 :rowType="rowType"
-                                :totalPages="attendanceTotalPages"
-                                :rowsPerPage="attendanceRowsPerPage"
                             />
                         </template>
 

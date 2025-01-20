@@ -24,7 +24,7 @@ class TotalSalesService
 
         // return $waiters;
         $waiter = User::where('id', $waiterID)
-                        ->withSum('orderedItems', 'amount')
+                        ->withSum('itemSales', 'amount')
                         ->first();
 
         return $waiter->ordered_items_sum_amount ?? 0;

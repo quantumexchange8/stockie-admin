@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ConfigIncentive;
 use App\Models\ConfigIncentiveEmployee;
+use App\Models\EmployeeIncentive;
 use App\Models\OrderItem;
 use App\Models\Setting;
 use App\Models\User;
@@ -142,13 +143,14 @@ class ConfigEmployeeIncProgController extends Controller
                                             ->with([
                                                 'configIncentive',
                                                 'waiters:id,full_name',
-                                                'waiters.orderedItems' => function($query) use ($incentive) {
-                                                    $query->where([
-                                                        ['status', 'Served'],
-                                                        ['type', 'Normal'],
-                                                        // ['created_at', '>=', $incentive->effective_date],
-                                                    ]);
-                                                }
+                                                'waiters.itemSales'
+                                                // 'waiters.orderedItems' => function($query) use ($incentive) {
+                                                //     $query->where([
+                                                //         ['status', 'Served'],
+                                                //         ['type', 'Normal'],
+                                                //         // ['created_at', '>=', $incentive->effective_date],
+                                                //     ]);
+                                                // }
                                             ])
                                             ->get();
         // dd($entitled);
@@ -172,229 +174,257 @@ class ConfigEmployeeIncProgController extends Controller
         // })->flatten(1)->unique('id');
 
         // dd($entitled);
+        /**/
+        // $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('position', 'waiter')])
+        //                     ->where([
+        //                         ['status', 'Served'],
+        //                         ['type', 'Normal'],
+        //                         ['created_at', '>=', $incentive->effective_date],
+        //                     ])
+        //                     ->get()
 
-        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('position', 'waiter')])
-                            ->where([
-                                ['status', 'Served'],
-                                ['type', 'Normal'],
-                                ['created_at', '>=', $incentive->effective_date],
-                            ])
-                            ->get()
-
-                            // group item according to reccuring date
-                            ->groupBy(function ($order) use ($incentive) {
-                                $orderDate = Carbon::parse($order->created_at);
-                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recurring_on);
-                                $endOfMonth = $startOfMonth->copy()->addMonth()->subDay();
+        //                     // group item according to reccuring date
+        //                     ->groupBy(function ($order) use ($incentive) {
+        //                         $orderDate = Carbon::parse($order->created_at);
+        //                         $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recurring_on);
+        //                         $endOfMonth = $startOfMonth->copy()->addMonth()->subDay();
                         
-                                if ($orderDate->between($startOfMonth, $endOfMonth)) {
-                                    return $startOfMonth->format('F Y'); 
-                                } else {
-                                    return $startOfMonth->subMonth()->format('F Y');
-                                }
-                            })
+        //                         if ($orderDate->between($startOfMonth, $endOfMonth)) {
+        //                             return $startOfMonth->format('F Y'); 
+        //                         } else {
+        //                             return $startOfMonth->subMonth()->format('F Y');
+        //                         }
+        //                     })
 
-                            //start matching respective orders to their waiter
-                            ->map(function ($dateGroup, $month) use ($incentive, $id) {
-                                $data = $dateGroup->groupBy('user_id')->map(function ($userGroup) use ($incentive, $id, $month) {
-                                    $totalSales = $userGroup->sum('amount');
+        //                     //start matching respective orders to their waiter
+        //                     ->map(function ($dateGroup, $month) use ($incentive, $id) {
+        //                         $data = $dateGroup->groupBy('user_id')->map(function ($userGroup) use ($incentive, $id, $month) {
+        //                             $totalSales = $userGroup->sum('amount');
                                     
-                                    if ($totalSales > $incentive->monthly_sale) {
-                                        // calculate incentive amount
-                                        if ($incentive->type === 'fixed') {
-                                            $incentiveAmt = $incentive->rate;
-                                        } else {
-                                            $incentiveAmt = $totalSales * $incentive->rate;
-                                        }
+        //                             if ($totalSales > $incentive->monthly_sale) {
+        //                                 // calculate incentive amount
+        //                                 if ($incentive->type === 'fixed') {
+        //                                     $incentiveAmt = $incentive->rate;
+        //                                 } else {
+        //                                     $incentiveAmt = $totalSales * $incentive->rate;
+        //                                 }
                                 
-                                        // status
-                                        $status = $incentive->incentiveEmployees
-                                                    ->where('incentive_id', $id)
-                                                    ->where('user_id', optional($userGroup->first()->handledBy)->id)
-                                                    ->filter(function ($employeeIncentive) use ($month) {
-                                                        return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
-                                                    })
-                                                    ->first() 
-                                                    ->status ?? 'not found';
+        //                                 // status
+        //                                 $status = $incentive->incentiveEmployees
+        //                                             ->where('incentive_id', $id)
+        //                                             ->where('user_id', optional($userGroup->first()->handledBy)->id)
+        //                                             ->filter(function ($employeeIncentive) use ($month) {
+        //                                                 return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
+        //                                             })
+        //                                             ->first() 
+        //                                             ->status ?? 'not found';
 
-                                        $empIncentiveId = $incentive->incentiveEmployees
-                                                        ->where('incentive_id', $id)
-                                                        ->where('user_id', optional($userGroup->first()->handledBy)->id)
-                                                        ->filter(function ($employeeIncentive) use ($month) {
-                                                            return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
-                                                        })
-                                                        ->first() 
-                                                        ->id ?? null;
+        //                                 $empIncentiveId = $incentive->incentiveEmployees
+        //                                                 ->where('incentive_id', $id)
+        //                                                 ->where('user_id', optional($userGroup->first()->handledBy)->id)
+        //                                                 ->filter(function ($employeeIncentive) use ($month) {
+        //                                                     return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
+        //                                                 })
+        //                                                 ->first() 
+        //                                                 ->id ?? null;
                                 
-                                        $result = [
-                                            'id' => $empIncentiveId,
-                                            'name' => $userGroup->first()->handledBy->full_name ?? null, // achiever
-                                            'total_sales' => $totalSales, // sales
-                                            'monthly_sale' => $incentive->monthly_sale,
-                                            'incentive' => round($incentiveAmt, 2), // earned
-                                            'status' => $status, // status
-                                            'image' => $userGroup->first()->handledBy ? $userGroup->first()->handledBy->getFirstMediaUrl('user') : null,
-                                        ];
+        //                                 $result = [
+        //                                     'id' => $empIncentiveId,
+        //                                     'name' => $userGroup->first()->handledBy->full_name ?? null, // achiever
+        //                                     'total_sales' => $totalSales, // sales
+        //                                     'monthly_sale' => $incentive->monthly_sale,
+        //                                     'incentive' => round($incentiveAmt, 2), // earned
+        //                                     'status' => $status, // status
+        //                                     'image' => $userGroup->first()->handledBy ? $userGroup->first()->handledBy->getFirstMediaUrl('user') : null,
+        //                                 ];
 
-                                        return in_array(null, $result, true) ? null : $result;
-                                    }
-                                    return null;
+        //                                 return in_array(null, $result, true) ? null : $result;
+        //                             }
+        //                             return null;
 
-                                })->filter()->values();
+        //                         })->filter()->values();
 
-                                if ($data->isNotEmpty()) {
-                                    return [
-                                        'month' => $month, 
-                                        'data' => $data->toArray(), 
-                                    ];
-                                }
-                                return null;
-                            })
-                            ->filter()
-                            ->values()
-                            ->toArray();
+        //                         if ($data->isNotEmpty()) {
+        //                             return [
+        //                                 'month' => $month, 
+        //                                 'data' => $data->toArray(), 
+        //                             ];
+        //                         }
+        //                         return null;
+        //                     })
+        //                     ->filter()
+        //                     ->values()
+        //                     ->toArray();
 
                             // dd($sales);
 
-            $waiterName = $entitled->map(function($entitleds) {
-                return $entitleds->waiters->map(function($waiter) {
-                    return [
-                        'id' => $waiter->id,
-                        'name' => $waiter->full_name,
-                        'image' => $waiter->getFirstMediaUrl('user'),
-                    ];
-                });
-            })
-            ->flatten(1)
-            ->unique('name')
-            ->sortByDesc('name');
-        
+        $employeeIncentives = $incentive->earnedIncentives()
+                                        ->with('waiter:id,full_name')
+                                        ->select([
+                                            'id', 'user_id', 'amount','sales_target', 
+                                            'rate', 'status', 'period_start'
+                                        ])
+                                        ->orderBy('period_start')
+                                        ->get()
+                                        ->map(fn ($empIncentive) => [
+                                            'id' => $empIncentive->id,
+                                            'name' => $empIncentive->waiter?->full_name,
+                                            'total_sales' => $empIncentive->amount,
+                                            'monthly_sale' => number_format($empIncentive->sales_target, 2),
+                                            'incentive' => round($empIncentive->rate, 2),
+                                            'status' => $empIncentive->status,
+                                            'image' => $empIncentive->waiter?->getFirstMediaUrl('user'),
+                                            'period_start' => $empIncentive->period_start
+                                        ])
+                                        ->groupBy(fn($item) => Carbon::parse($item['period_start'])->format('F Y'))
+                                        ->map(fn ($group, $month) => [
+                                            'month' => $month,
+                                            'data' => $group->map(fn($item) => collect($item)
+                                                ->except('period_start')
+                                                ->toArray()
+                                            )->values()->all()
+                                        ])
+                                        ->values()
+                                        ->all();
+                                            
+        $waiterName = $entitled->map(function($entitleds) {
+                                    return $entitleds->waiters->map(function($waiter) {
+                                        return [
+                                            'id' => $waiter->id,
+                                            'name' => $waiter->full_name,
+                                            'image' => $waiter->getFirstMediaUrl('user'),
+                                        ];
+                                    });
+                                })
+                                ->flatten(1)
+                                ->unique('name')
+                                ->sortByDesc('name');
+
         return Inertia::render('Configuration/IncentiveProgram/Partials/IncentiveCommissionDetail', [
-            'details' => $sales,
+            'details' => $employeeIncentives,
             'achievementDetails' => $incentive,
             'waiterName' => $waiterName,
         ]);
     }
 
-    public function getIncentDetail(Request $request)
+    public function getIncentDetail(string $id)
     {
-        $id = $request->input('id');
         $incentive = ConfigIncentive::with('incentiveEmployees')->find($id);
 
         // get related waiters
-        $entitled = ConfigIncentiveEmployee::where('incentive_id', $id)
-                                            ->orderBy('created_at')
-                                            ->where('created_at', '>=', $incentive->effective_date)
-                                            ->with([
-                                                'configIncentive',
-                                                'waiters:id,full_name',
-                                                'waiters.orderedItems' => function($query) use ($incentive) {
-                                                    $query->where([
-                                                        ['status', 'Served'],
-                                                        ['type', 'Normal'],
-                                                        ['created_at', '>=', $incentive->effective_date],
-                                                    ]);
-                                                }
-                                            ])
-                                            ->get();
+        // $entitled = ConfigIncentiveEmployee::where('incentive_id', $id)
+        //                                     ->orderBy('created_at')
+        //                                     ->where('created_at', '>=', $incentive->effective_date)
+        //                                     ->with([
+        //                                         'configIncentive',
+        //                                         'waiters:id,full_name',
+        //                                         'waiters.itemSales' => function($query) use ($incentive) {
+        //                                             $query->where([
+        //                                                 // ['status', 'Served'],
+        //                                                 // ['type', 'Normal'],
+        //                                                 ['created_at', '>=', $incentive->effective_date],
+        //                                             ]);
+        //                                         }
+        //                                     ])
+        //                                     ->get();
 
-        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('position', 'waiter')])
-                            ->where([
-                                ['status', 'Served'],
-                                ['type', 'Normal'],
-                                ['created_at', '>=', $incentive->effective_date],
-                            ])
-                            ->get()
+        // $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('position', 'waiter')])
+        //                     ->where([
+        //                         ['status', 'Served'],
+        //                         ['type', 'Normal'],
+        //                         ['created_at', '>=', $incentive->effective_date],
+        //                     ])
+        //                     ->get()
 
-                            // group item according to reccuring date
-                            ->groupBy(function ($order) use ($incentive) {
-                                $orderDate = Carbon::parse($order->created_at);
-                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recurring_on);
-                                $endOfMonth = $startOfMonth->copy()->addMonth()->subDay();
+        //                     // group item according to reccuring date
+        //                     ->groupBy(function ($order) use ($incentive) {
+        //                         $orderDate = Carbon::parse($order->created_at);
+        //                         $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recurring_on);
+        //                         $endOfMonth = $startOfMonth->copy()->addMonth()->subDay();
                         
-                                if ($orderDate->between($startOfMonth, $endOfMonth)) {
-                                    return $startOfMonth->format('F Y'); 
-                                } else {
-                                    return $startOfMonth->subMonth()->format('F Y');
-                                }
-                            })
+        //                         if ($orderDate->between($startOfMonth, $endOfMonth)) {
+        //                             return $startOfMonth->format('F Y'); 
+        //                         } else {
+        //                             return $startOfMonth->subMonth()->format('F Y');
+        //                         }
+        //                     })
 
-                            //start matching respective orders to their waiter
-                            ->map(function ($dateGroup, $month) use ($incentive, $id) {
-                                $data = $dateGroup->groupBy('user_id')->map(function ($userGroup) use ($incentive, $id, $month) {
-                                    $totalSales = $userGroup->sum('amount');
+        //                     //start matching respective orders to their waiter
+        //                     ->map(function ($dateGroup, $month) use ($incentive, $id) {
+        //                         $data = $dateGroup->groupBy('user_id')->map(function ($userGroup) use ($incentive, $id, $month) {
+        //                             $totalSales = $userGroup->sum('amount');
                                 
-                                    if ($totalSales > $incentive->monthly_sale) {
-                                        // calculate incentive amount
-                                        if ($incentive->type === 'fixed') {
-                                            $incentiveAmt = $incentive->rate;
-                                        } else {
-                                            $incentiveAmt = $totalSales * $incentive->rate;
-                                        }
+        //                             if ($totalSales > $incentive->monthly_sale) {
+        //                                 // calculate incentive amount
+        //                                 if ($incentive->type === 'fixed') {
+        //                                     $incentiveAmt = $incentive->rate;
+        //                                 } else {
+        //                                     $incentiveAmt = $totalSales * $incentive->rate;
+        //                                 }
                                 
-                                        // status
-                                        $status = $incentive->incentiveEmployees
-                                                    ->where('incentive_id', $id)
-                                                    ->where('user_id', optional($userGroup->first()->handledBy)->id)
-                                                    ->filter(function ($employeeIncentive) use ($month) {
-                                                        return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
-                                                    })
-                                                    ->first() 
-                                                    ->status ?? 'not found';
+        //                                 // status
+        //                                 $status = $incentive->incentiveEmployees
+        //                                             ->where('incentive_id', $id)
+        //                                             ->where('user_id', optional($userGroup->first()->handledBy)->id)
+        //                                             ->filter(function ($employeeIncentive) use ($month) {
+        //                                                 return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
+        //                                             })
+        //                                             ->first() 
+        //                                             ->status ?? 'not found';
 
-                                        $empIncentiveId = $incentive->incentiveEmployees
-                                                        ->where('incentive_id', $id)
-                                                        ->where('user_id', optional($userGroup->first()->handledBy)->id)
-                                                        ->filter(function ($employeeIncentive) use ($month) {
-                                                            return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
-                                                        })
-                                                        ->first() 
-                                                        ->id ?? null;
+        //                                 $empIncentiveId = $incentive->incentiveEmployees
+        //                                                 ->where('incentive_id', $id)
+        //                                                 ->where('user_id', optional($userGroup->first()->handledBy)->id)
+        //                                                 ->filter(function ($employeeIncentive) use ($month) {
+        //                                                     return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
+        //                                                 })
+        //                                                 ->first() 
+        //                                                 ->id ?? null;
                                 
-                                        $result = [
-                                            'id' => $empIncentiveId,
-                                            'name' => $userGroup->first()->handledBy->full_name ?? null, // achiever
-                                            'total_sales' => $totalSales, // sales
-                                            'monthly_sale' => $incentive->monthly_sale,
-                                            'incentive' => round($incentiveAmt, 2), // earned
-                                            'status' => $status, // status
-                                        ];
+        //                                 $result = [
+        //                                     'id' => $empIncentiveId,
+        //                                     'name' => $userGroup->first()->handledBy->full_name ?? null, // achiever
+        //                                     'total_sales' => $totalSales, // sales
+        //                                     'monthly_sale' => $incentive->monthly_sale,
+        //                                     'incentive' => round($incentiveAmt, 2), // earned
+        //                                     'status' => $status, // status
+        //                                 ];
 
-                                        return in_array(null, $result, true) ? null : $result;
-                                    }
-                                    return null;
+        //                                 return in_array(null, $result, true) ? null : $result;
+        //                             }
+        //                             return null;
 
-                                })->filter()->values();
+        //                         })->filter()->values();
 
-                                if ($data->isNotEmpty()) {
-                                    return [
-                                        'month' => $month, 
-                                        'data' => $data->toArray(), 
-                                    ];
-                                }
-                                return null;
-                            })
-                            ->filter()
-                            ->values()
-                            ->toArray();
+        //                         if ($data->isNotEmpty()) {
+        //                             return [
+        //                                 'month' => $month, 
+        //                                 'data' => $data->toArray(), 
+        //                             ];
+        //                         }
+        //                         return null;
+        //                     })
+        //                     ->filter()
+        //                     ->values()
+        //                     ->toArray();
 
-            $waiterName = $entitled->map(function($entitleds) {
-                return $entitleds->waiters->map(function($waiter) {
-                    return [
-                        'id' => $waiter->id,
-                        'name' => $waiter->full_name,
-                    ];
-                });
-            })
-            ->flatten(1)
-            ->unique('name')
-            ->sortByDesc('name');
+        // $waiterName = $entitled->map(function($entitleds) {
+        //                             return $entitleds->waiters->map(function($waiter) {
+        //                                 return [
+        //                                     'id' => $waiter->id,
+        //                                     'name' => $waiter->full_name,
+        //                                 ];
+        //                             });
+        //                         })
+        //                         ->flatten(1)
+        //                         ->unique('name')
+        //                         ->sortByDesc('name');
 
-            return response()->json(data: [
-                'incentiveProg' => $sales,
-                'achievementDetails' => $incentive,
-                'waiters' => $waiterName,
-            ]);
+        return response()->json(data: [
+            'achievementDetails' => $incentive,
+            // 'incentiveProg' => $sales,
+            // 'waiters' => $waiterName,
+        ]);
     }
 
     public function deleteEntitled (String $achievement, String $id)
@@ -405,100 +435,13 @@ class ConfigEmployeeIncProgController extends Controller
                                 
     }
 
-    public function updateStatus(Request $request)
+    public function updateStatus(Request $request, string $id)
     {
         $status = $request->input('selectedStatus');
-        $id = $request->input('id');
-        $achievementId = $request->input('achievementId');
+
+        EmployeeIncentive::find($id)->update(['status' => $status]);
     
-        ConfigIncentiveEmployee::find($id)->update([
-            'status' => $status
-        ]);
-
-        $incentive = ConfigIncentive::with('incentiveEmployees')->find($achievementId);
-
-        $sales = OrderItem::with(['handledBy' => fn($query) => $query->where('position', 'waiter')])
-                            ->where([
-                                ['status', 'Served'],
-                                ['type', 'Normal'],
-                                ['created_at', '>=', $incentive->effective_date],
-                            ])
-                            ->get()
-
-                            // group item according to reccuring date
-                            ->groupBy(function ($order) use ($incentive) {
-                                $orderDate = Carbon::parse($order->created_at);
-                                $startOfMonth = Carbon::create($orderDate->year, $orderDate->month, $incentive->recurring_on);
-                                $endOfMonth = $startOfMonth->copy()->addMonth()->subDay();
-                        
-                                if ($orderDate->between($startOfMonth, $endOfMonth)) {
-                                    return $startOfMonth->format('F Y'); 
-                                } else {
-                                    return $startOfMonth->subMonth()->format('F Y');
-                                }
-                            })
-
-                            //start matching respective orders to their waiter
-                            ->map(function ($dateGroup, $month) use ($incentive, $id) {
-                                $data = $dateGroup->groupBy('user_id')->map(function ($userGroup) use ($incentive, $id, $month) {
-                                    $totalSales = $userGroup->sum('amount');
-                                    
-                                    if ($totalSales > $incentive->monthly_sale) {
-                                        // calculate incentive amount
-                                        if ($incentive->type === 'fixed') {
-                                            $incentiveAmt = $incentive->rate;
-                                        } else {
-                                            $incentiveAmt = $totalSales * $incentive->rate;
-                                        }
-                                
-                                        // status
-                                        $status = $incentive->incentiveEmployees
-                                                    ->where('incentive_id', $id)
-                                                    ->where('user_id', optional($userGroup->first()->handledBy)->id)
-                                                    ->filter(function ($employeeIncentive) use ($month) {
-                                                        return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
-                                                    })
-                                                    ->first() 
-                                                    ->status ?? 'not found';
-
-                                        $empIncentiveId = $incentive->incentiveEmployees
-                                                        ->where('incentive_id', $id)
-                                                        ->where('user_id', optional($userGroup->first()->handledBy)->id)
-                                                        ->filter(function ($employeeIncentive) use ($month) {
-                                                            return Carbon::parse($employeeIncentive->created_at)->format('F Y') === $month;
-                                                        })
-                                                        ->first() 
-                                                        ->id ?? null;
-                                
-                                        $result = [
-                                            'id' => $empIncentiveId,
-                                            'name' => $userGroup->first()->handledBy->full_name ?? null, // achiever
-                                            'total_sales' => $totalSales, // sales
-                                            'monthly_sale' => $incentive->monthly_sale,
-                                            'incentive' => round($incentiveAmt, 2), // earned
-                                            'status' => $status, // status
-                                            'image' => $userGroup->first()->handledBy ? $userGroup->first()->handledBy->getFirstMediaUrl('user') : null,
-                                        ];
-
-                                        return in_array(null, $result, true) ? null : $result;
-                                    }
-                                    return null;
-
-                                })->filter()->values();
-
-                                if ($data->isNotEmpty()) {
-                                    return [
-                                        'month' => $month, 
-                                        'data' => $data->toArray(), 
-                                    ];
-                                }
-                                return null;
-                            })
-                            ->filter()
-                            ->values()
-                            ->toArray();
-    
-        return response()->json($sales);
+        return redirect()->back();
     }
 
     public function updateIncentiveRecurringDay(Request $request)
@@ -506,6 +449,9 @@ class ConfigEmployeeIncProgController extends Controller
         $newRecurringDay = $request->recurring_on;
         // dd($this->incentiveRecurringDay);
         $this->incentiveRecurringDay->update(['value' => $newRecurringDay]);
+
+        $incentives = ConfigIncentive::get();
+        $incentives->each(fn ($incentive) => $incentive->update(['recurring_on' => $newRecurringDay]));
 
         return response()->json($newRecurringDay);
     }
