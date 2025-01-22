@@ -151,14 +151,16 @@ Route::middleware('auth')->group(function () {
 
         /******* Employee Incentive Programme ********/
         Route::get('/configurations/incentive', [ConfigEmployeeIncProgController::class, 'index'])->name('configurations.incentive');
-        Route::post('configuration/addAchievement', [ConfigEmployeeIncProgController::class, 'addAchievement'])->name('configurations.addAchievement');
-        Route::delete('/configurations/deleteAchievement/{id}', [ConfigEmployeeIncProgController::class, 'deleteAchievement'])->name('configurations.deleteAchievement');
-        Route::post('/configurations/editAchievement', [ConfigEmployeeIncProgController::class, 'editAchievement'])->name('configurations.editAchievement');
         Route::get('/configurations/incentCommDetail/{id}', [ConfigEmployeeIncProgController::class, 'incentCommDetail'])->name('configuration.incentCommDetail');
-        Route::delete('/configurations/deleteEntitled/{achievement}/{id}', [ConfigEmployeeIncProgController::class, 'deleteEntitled'])->name('configuration.deleteEntitled');
-        Route::post('/configurations/updateStatus/{id}', [ConfigEmployeeIncProgController::class, 'updateStatus'])->name('configurations.updateStatus');
         Route::get('/configurations/getIncentDetail/{id}', [ConfigEmployeeIncProgController::class, 'getIncentDetail'])->name('configurations.getIncentDetail');
+        Route::get('/configurations/getAllWaiters/{id}', [ConfigEmployeeIncProgController::class, 'getAllWaiters'])->name('configurations.getAllWaiters');
+        Route::post('configuration/addAchievement', [ConfigEmployeeIncProgController::class, 'addAchievement'])->name('configurations.addAchievement');
+        Route::post('/configurations/editAchievement', [ConfigEmployeeIncProgController::class, 'editAchievement'])->name('configurations.editAchievement');
+        Route::post('/configurations/updateStatus/{id}', [ConfigEmployeeIncProgController::class, 'updateStatus'])->name('configurations.updateStatus');
         Route::post('/configurations/updateIncentiveRecurringDay', [ConfigEmployeeIncProgController::class, 'updateIncentiveRecurringDay'])->name('configurations.updateIncentiveRecurringDay');
+        Route::post('/configurations/addEntitledEmployees/{id}', [ConfigEmployeeIncProgController::class, 'addEntitledEmployees'])->name('configurations.addEntitledEmployees');
+        Route::put('/configurations/deleteEntitled/{id}', [ConfigEmployeeIncProgController::class, 'deleteEntitled'])->name('configuration.deleteEntitled');
+        Route::delete('/configurations/deleteAchievement/{id}', [ConfigEmployeeIncProgController::class, 'deleteAchievement'])->name('configurations.deleteAchievement');
 
         /******* Promotion ********/
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');

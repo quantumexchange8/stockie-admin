@@ -3,12 +3,13 @@ import { CalendarIcon, CommissionIcon, DeleteIcon, EditIcon, PlusIcon, Recurring
 import Modal from '@/Components/Modal.vue';
 import { onMounted, ref, watch } from 'vue';
 import EditAchievement from './EditAchievement.vue';
-import { transactionFormat } from '@/Composables';
+import { transactionFormat, useCustomToast } from '@/Composables';
 import dayjs from 'dayjs';
 import Button from '@/Components/Button.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
 import { useForm } from '@inertiajs/vue3';
 import AddEntitledEmployees from './AddEntitledEmployees.vue';
+import { DeleteIllus } from '@/Components/Icons/illus';
 
 const props = defineProps ({
     achievementDetails: {
@@ -20,25 +21,27 @@ const props = defineProps ({
         required: true,
     }
 })
-const { formatDate, formatAmount } = transactionFormat();
+const { formatAmount } = transactionFormat();
+const { showMessage } = useCustomToast();
+
 const emit = defineEmits(['getEmployeeIncent', 'getIncentDetail']);
 
 const isDeleteWaiterOpen = ref(false);
 const isEditAchievementOpen = ref(false);
 const isDeleteAchievementOpen = ref(false);
 const isAddEntitledEmployeesOpen = ref(false);
-const selectedAchievement = ref(null);
+// const selectedAchievement = ref(null);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
-const selectedWaiter = ref(null);
-const isRate = ref({
+// const selectedWaiter = ref(null);
+const waiters = ref(props.waiterName);
+const achievement = ref({
     ...props.achievementDetails,
     isRate: props.achievementDetails.type !== 'fixed'
 });
-const waiters = ref([]);
 
 const form = useForm({
-    entitled_employees: []
+    entitled_employee_id: null
 });
 
 const getSuffix = (day) => {
@@ -61,32 +64,11 @@ const getEmployeeIncent = () => {
     emit('getEmployeeIncent', props.achievementDetails.id);
 }
 
-const showEditAchievement = (achievement) => {
-    isDirty.value = false;
-    isEditAchievementOpen.value = true;
-    selectedAchievement.value = achievement;
-}
-
-const showDeleteAchievement = (id) => {
-    isDeleteAchievementOpen.value = true;
-    selectedAchievement.value = id;
-}
-
-const showDeleteWaiter = (id) => {
-    isDeleteWaiterOpen.value = true;
-    selectedWaiter.value = id;
-}
-
-const closeEditModal = () => {
-    isUnsavedChangesOpen.value = isDirty.value ? true : false;
-    isEditAchievementOpen.value = !isDirty.value ? false : true;
-}
-const openModal = (action, achievement = null, waiter = null) => {
+const openModal = (action, waiter = null) => {
     switch(action) {
         case 'edit-achievement': 
             isDirty.value = false;
             isEditAchievementOpen.value = true;
-            selectedAchievement.value = achievement;
             break;
 
         case 'add-entitled-employees': 
@@ -96,12 +78,11 @@ const openModal = (action, achievement = null, waiter = null) => {
 
         case 'delete-achievement': 
             isDeleteAchievementOpen.value = true;
-            selectedAchievement.value = achievement.id;
             break;
 
         case 'delete-waiter' : 
             isDeleteWaiterOpen.value = true;
-            selectedWaiter.value = waiter.id;
+            form.entitled_employee_id = waiter.id;
             break;
     }
 }
@@ -110,6 +91,7 @@ const closeModal = (status) => {
     switch(status){
         case 'close': {
             if(isDirty.value){
+                console.log(isDirty.value);
                 isUnsavedChangesOpen.value = true;
             } else {
                 isEditAchievementOpen.value = false;
@@ -126,31 +108,40 @@ const closeModal = (status) => {
         case 'leave': {
             isUnsavedChangesOpen.value = false;
             isEditAchievementOpen.value = false;
+            isDeleteWaiterOpen.value = false
+            isDeleteAchievementOpen.value = false;
             isAddEntitledEmployeesOpen.value = false;
             break;
         }
     }
 }
 
-const closeDeleteWaiter = () => {
-    isDeleteWaiterOpen.value = false;
+const submit = async () => {
+    form.processing = true;
+    try {
+        const response = await axios.put(`/configurations/configurations/deleteEntitled/${props.achievementDetails.id}`, form);
+        waiters.value = response.data;
+
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: 'Selected employee has been removed from this achievement.',
+            });
+        }, 200);
+        
+        closeModal('leave');
+        form.reset();
+    } catch (error) {
+        form.setError(error.response?.data?.errors);
+        console.log(error);
+    } finally {
+        form.processing = false;
+    }
 }
 
-const closeDeleteAchievement = () => {
-    isDeleteAchievementOpen.value = false;
-}
-
-const stayModal = () => {
-    isUnsavedChangesOpen.value = false;
-}
-
-const leaveModal = () => {
-    isUnsavedChangesOpen.value = false;
-    isEditAchievementOpen.value = false;
-}
 
 watch(() => props.achievementDetails, (newValue) => {
-    isRate.value = {
+    achievement.value = {
         ...newValue,
         isRate: newValue.type !== 'fixed'
     };
@@ -168,11 +159,11 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
                 <div class="flex flex-nowrap gap-2">
                     <EditIcon 
                         class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer"
-                        @click="openModal('edit-achievement', isRate)"
+                        @click="openModal('edit-achievement')"
                     />
                     <DeleteIcon 
                         class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
-                        @click="openModal('delete-achievement', isRate)"
+                        @click="openModal('delete-achievement')"
                     />
                 </div>
             </div>
@@ -231,23 +222,24 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
                 </div>
 
                 <div class="flex flex-col items-start gap-1 self-stretch">
-                    <template v-for="(waiter, index) in Object.values(props.waiterName).sort((a, b) => a.name.localeCompare(b.name))" :key="index">
-                        <div class="flex px-3 py-2 justify-between items-center self-stretch rounded-[5px]"
-                            :class="(index + 1) % 2 === 0 ? 'bg-primary-25' : 'bg-white'"
+                    <template v-for="(waiter, index) in Object.values(waiters).sort((a, b) => a.name.localeCompare(b.name))" :key="index">
+                        <div
+                            :class="[
+                                'flex px-3 py-2 justify-between items-center self-stretch rounded-[5px]',
+                                (index + 1) % 2 === 0 ? 'bg-primary-25' : 'bg-white'
+                            ]"
                         >
                             <div class="flex items-center gap-2.5 flex-[1_0_0]">
-                                <!-- <div class="size-7 rounded-full bg-primary-700"></div> -->
                                 <img 
-                                    :src="waiter.image ? waiter.image 
-                                                    : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                    alt=""
+                                    :src="waiter.image ? waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    alt="WaiterProfileImage"
                                     class="size-7 rounded-full"
                                 >
                                 <span class="text-grey-900 text-sm font-medium">{{ waiter.name }}</span>
                             </div>
                             <DeleteIcon 
                                 class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click="openModal('delete-waiter', null, waiter)"
+                                @click="openModal('delete-waiter', waiter)"
                             />
                         </div>
                     </template>
@@ -278,7 +270,7 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
         @close="closeModal('close')"
     >
         <EditAchievement
-            :selectedIncent="selectedAchievement"
+            :selectedIncent="achievement"
             @isDirty="isDirty = $event"
             @closeModal="closeModal"
             @getEmployeeIncent="getEmployeeIncent"
@@ -291,8 +283,7 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
             :show="isUnsavedChangesOpen"
             @close="closeModal('stay')"
             @leave="closeModal('leave')"
-        >
-        </Modal>
+        />
     </Modal>
 
     <Modal
@@ -303,6 +294,8 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
         @close="closeModal('close')"
     >
         <AddEntitledEmployees
+            :achievement="achievement"
+            @update:waiters="waiters = $event"
             @isDirty="isDirty = $event"
             @closeModal="closeModal"
         />
@@ -314,8 +307,7 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
             :show="isUnsavedChangesOpen"
             @close="closeModal('stay')"
             @leave="closeModal('leave')"
-        >
-        </Modal>
+        />
     </Modal>
 
     <Modal 
@@ -323,14 +315,54 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
         :maxWidth="'2xs'" 
         :closeable="true" 
         :deleteConfirmation="true"
-        :deleteUrl="`/configurations/configurations/deleteAchievement/${selectedAchievement}`"
+        :deleteUrl="`/configurations/configurations/deleteAchievement/${achievement.id}`"
         :confirmationTitle="'Delete achievement?'"
         :confirmationMessage="'Are you sure you want to delete this achievement? All the data in this achievement will be lost.'"
         @close="closeModal('close')"
-        v-if="selectedAchievement"
+        v-if="achievement.id"
     />
 
     <Modal 
+        maxWidth="2xs" 
+        :closeable="true"
+        :show="isDeleteWaiterOpen"
+        :withHeader="false"
+        class="z-[1106] [&>div:nth-child(2)>div>div]:p-0"
+        @close="closeModal('leave')"
+    >
+        <form novalidate @submit.prevent="submit">
+            <div class="flex flex-col justify-center gap-9">
+                <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                    <slot name="deleteimage">
+                        <DeleteIllus />
+                    </slot>
+                </div>
+                <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6">
+                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">Delete this entitled employee?</p>
+                    <p class="text-center text-grey-900 text-base font-medium self-stretch">Starting from next recurring date, the selected employee will no longer be entitled to this incentive commission.</p>
+                </div>
+                <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        size="lg"
+                        @click="closeModal('leave')"
+                    >
+                        Keep
+                    </Button>
+                    <Button
+                        variant="red"
+                        size="lg"
+                        :disabled="form.processing"
+                    >
+                        Delete
+                    </Button>
+                </div>
+            </div>
+        </form>
+    </Modal>
+
+    <!-- <Modal 
         :show="isDeleteWaiterOpen" 
         :maxWidth="'2xs'" 
         :closeable="true" 
@@ -341,7 +373,7 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
         :toastMessage="'Selected employee has been removed from this achievement. '"
         @close="closeModal('close')"
         v-if="selectedWaiter"
-    />
+    /> -->
 
 </template>
 

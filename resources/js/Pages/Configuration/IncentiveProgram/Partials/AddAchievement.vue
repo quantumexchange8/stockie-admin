@@ -62,7 +62,6 @@ const form = useForm({
     comm_type: comm_type.value[0],
     rate: '',
     effective_date: '',
-    // recurring_on: recurringDates.value[0],
     monthly_sale: '',
     entitled: '',
 })
