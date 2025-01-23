@@ -22,8 +22,10 @@ import {
     LoyaltyIcon,
     ReservationIcon,
     UsersIcon,
+    ActivityLogsIcon,
 } from "@/Components/Icons/solid";
 import { usePage } from "@inertiajs/vue3";
+import SidebarTree from "./SidebarTree.vue";
 
 const page = usePage();
 const existingPermissions = page.props.auth.user.data.permission;
@@ -66,6 +68,7 @@ const existingPermissions = page.props.auth.user.data.permission;
                         <OrderIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
+                <SidebarTree />
                 <SidebarLink 
                     title="Menu Management" 
                     :href="route('products')"
@@ -180,6 +183,16 @@ const existingPermissions = page.props.auth.user.data.permission;
                 >
                     <template #icon>
                         <SummaryReportIcon aria-hidden="true" />
+                    </template>
+                </SidebarLink>
+                <SidebarLink 
+                    title="Activity Logs" 
+                    :href="route('activity-logs')" 
+                    :active="route().current('activity-logs')"
+                    v-if="existingPermissions?.includes('activity-logs')" 
+                >
+                    <template #icon>
+                        <ActivityLogsIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
                 <SidebarLink

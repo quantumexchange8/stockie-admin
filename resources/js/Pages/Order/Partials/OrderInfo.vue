@@ -9,11 +9,15 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import OrderInvoice from './OrderInvoice.vue';
 import { useCustomToast } from '@/Composables/index.js';
 import CustomerDetail from './CustomerDetail.vue';
-import { TimesIcon } from '@/Components/Icons/solid';
+import { KeepItemIcon, MergedIcon, PlaceOrderIcon, TimesIcon, TransferIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import MakePaymentForm from './MakePaymentForm.vue';
 import PaymentHistory from './PaymentHistory.vue';
 import PendingServe from './PendingServe.vue';
+import AddOrderItems from './AddOrderItems.vue';
+import KeepItem from './KeepItem.vue';
+import Checkbox from '@/Components/Checkbox.vue';
+import MergeTableForm from './MergeTableForm.vue';
 
 const props = defineProps({
     errors: Object,
@@ -43,11 +47,32 @@ const customer = ref({});
 const cancelOrderFormIsOpen = ref(false);
 const removeRewardFormIsOpen = ref(false);
 const orderCompleteModalIsOpen = ref(false);
-const orderInvoiceModalIsOpen = ref(false);
+const mergeTableIsOpen = ref(false);
 const drawerIsVisible = ref(false);
 const selectedTab = ref(0);
 const currentOrderTable = ref({});
 const pendingServeItems = ref([]);
+const actionType = ref();
+const op = ref(null);
+
+const computedOrder = computed(() => {
+    if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') return [];
+    
+    return {
+        ...order.value,
+        order_items: order.value.order_items.map((item) => {
+            // Calculate total quantities
+            const total_qty = item.sub_items.reduce((total, sub_item) => total + (item.item_qty * sub_item.item_qty), 0);
+            const total_served_qty = item.sub_items.reduce((total, sub_item) => total + sub_item.serve_qty, 0);
+            
+            return {
+                ...item,
+                total_qty,
+                total_served_qty,
+            };
+        }),
+    };
+});
 
 const fetchOrderDetails = async () => {
     try {
@@ -105,6 +130,19 @@ const fetchPendingServe = async () => {
     }
 }
 
+const closeOverlay = () => {
+    if (op.value) {
+        op.value.hide();  // Ensure op.value is not null before calling hide
+    }
+};
+
+const closeOrderDetails = () => {
+    closeOverlay();
+    setTimeout(() => emit('fetchZones'), 200);
+    setTimeout(() => fetchOrderDetails(), 300);
+    setTimeout(() => fetchPendingServe(), 400);
+};
+
 onMounted(async () => {
     await fetchOrderDetails();
     await fetchPendingServe();
@@ -126,7 +164,18 @@ const form = useForm({
     action_type: ''
 });
 
-const closeDrawer = () => emit('close');
+const openDrawer = (action) => {
+    actionType.value = action;
+
+    if (!drawerIsVisible.value) {
+        drawerIsVisible.value = true;
+    }
+};
+
+const closeDrawer = () => {
+    drawerIsVisible.value = false;
+    actionType.value = null;
+};
 
 const openPaymentDrawer = () => {
     if (!drawerIsVisible.value) drawerIsVisible.value = true;
@@ -154,6 +203,14 @@ const showOrderCompleteModal = () => {
 //     closeDrawer();
 //     orderCompleteModalIsOpen.value = false;
 // }
+
+const showMergeTableForm = () => {
+    mergeTableIsOpen.value = true;
+};
+
+const hideMergeTableForm = () => {
+    mergeTableIsOpen.value = false;
+}
 
 const showCancelOrderForm = () => {
     cancelOrderFormIsOpen.value = true;
@@ -352,6 +409,45 @@ watch(order.value, () => {
 
 <template>
     <RightDrawer 
+        :header="actionType === 'keep' ? 'Keep Item' : actionType === 'add' ? '' : 'Make Payment'" 
+        :withHeader="actionType !== 'add'"
+        previousTab
+        v-model:show="drawerIsVisible"
+        @close="actionType ? closeDrawer() : closePaymentDrawer()"
+    >
+        <template v-if="actionType === 'keep'">
+            <KeepItem
+                :order="order" 
+                :selectedTable="selectedTable"
+                @update:customerKeepItems="$emit('update:customerKeepItems', $event)"
+                @close="closeDrawer();closeOrderDetails()"
+            />
+        </template>
+        <template v-else-if="actionType === 'add'">
+            <AddOrderItems
+                :order="computedOrder" 
+                :selectedTable="selectedTable"
+                :matchingOrderDetails="matchingOrderDetails"
+                @fetchZones="$emit('fetchZones')"
+                @fetchOrderDetails="fetchOrderDetails"
+                @fetchPendingServe="fetchPendingServe"
+                @close="closeDrawer();closeOverlay()"
+            />
+        </template>
+        <template v-else>
+            <MakePaymentForm 
+                :order="order" 
+                :selectedTable="selectedTable"
+                @fetchZones="$emit('fetchZones')"
+                @fetchPendingServe="fetchPendingServe"
+                @update:customer-point="customer.point = $event"
+                @update:customer-rank="customer.rank = $event"
+                @close="closePaymentDrawer"
+            />
+        </template>
+    </RightDrawer>
+<!-- 
+    <RightDrawer 
         :header="'Make Payment'" 
         previousTab
         v-model:show="drawerIsVisible"
@@ -366,12 +462,40 @@ watch(order.value, () => {
             @update:customer-rank="customer.rank = $event"
             @close="closePaymentDrawer"
         />
-    </RightDrawer>
+    </RightDrawer> -->
 
-    <div class="flex flex-col gap-6 items-start rounded-[5px]">
+    <div class="flex flex-col gap-4 items-start rounded-[5px]">
         <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
             <span class="text-primary-950 text-center text-md font-medium">Detail - {{ orderTableNames }}</span>
             <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer" />
+        </div>
+
+        <div class="flex px-5 items-start gap-4 self-stretch">
+            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
+                @click="openDrawer('add')"
+            >
+                <PlaceOrderIcon class="text-primary-950 size-6" />
+            </div>
+
+            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
+                @click="openDrawer('keep')"
+            >
+                <KeepItemIcon class="text-primary-950 size-6" />
+            </div>
+            
+            <div class="relative flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
+                @click="showMergeTableForm()"
+            >
+                <MergedIcon class="size-6" :class="props.selectedTable.order_tables.length > 1 ? 'text-primary-800' : 'text-primary-950'" />
+                <Checkbox :checked="true" class="absolute size-4 top-1.5 right-1.5" v-if="props.selectedTable.order_tables.length > 1" />
+            </div>
+
+            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
+                @click="console.log(props.selectedTable.order_tables.length)"
+            >
+                <TransferIcon class="text-primary-950 size-6" />
+            </div>
+
         </div>
 
         <div 
@@ -624,4 +748,20 @@ watch(order.value, () => {
             <OrderInvoice :order="formattedOrder" />
         </template>
     </Modal> -->
+
+    <Modal
+        :title="'Merge with'"
+        :maxWidth="'xl'" 
+        :closeable="true"
+        :show="mergeTableIsOpen"
+        @close="hideMergeTableForm"
+    >
+        <MergeTableForm 
+            :currentOrderTable="currentOrderTable"
+            :currentOrderCustomer="order.customer"
+            @close="hideMergeTableForm"
+            @closeDrawer="$emit('close')"
+            @fetchZones="$emit('fetchZones')"
+        />
+    </Modal>
 </template>

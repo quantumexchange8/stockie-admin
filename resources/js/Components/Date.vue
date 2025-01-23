@@ -12,6 +12,7 @@ import {
     CircledArrowHeadUpIcon,
     CircledArrowHeadDownIcon,
     Calendar,
+    ClockIcon,
 } from "./Icons/solid";
 
 const props = defineProps({
@@ -45,6 +46,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    timeOnly: {
+        type: Boolean,
+        default: false,
+    }
 });
 
 const calendarRef = ref(null);
@@ -164,7 +169,7 @@ onMounted(() => {
             :modelValue="modelValue"
             dateFormat="dd/mm/yy"
             iconDisplay="input"
-            hourFormat="12"
+            :hourFormat="timeOnly ? '24' : '12'"
             :selectionMode="props.range === true ? 'range' : 'single'"
             showIcon
             :manualInput="false"
@@ -173,6 +178,7 @@ onMounted(() => {
             :showTime="props.withTime"
             :placeholder="props.placeholder"
             :disabled="disabled"
+            :timeOnly="timeOnly"
             @update:modelValue="updateValue"
             @focus="handleFocus"
             @blur="handleBlur"
@@ -198,14 +204,18 @@ onMounted(() => {
                             // Colors
                             'text-primary-900',
                             'placeholder:text-grey-200 placeholder:text-[13px]',
-                            'bg-white',
+                            {
+                                'bg-grey-50': props.disabled,
+                                'bg-white':!props.disabled,
+
+                            },
                             'border',
                             {
                                 'border-grey-300':
                                     !props.disabled &&
                                     !props.invalid &&
                                     props.modelValue === '',
-                                'border-primry-900':
+                                'border-primary-900':
                                     !props.disabled &&
                                     !props.invalid &&
                                     (props.modelValue !== '' || (!range && withTime)),
@@ -229,7 +239,7 @@ onMounted(() => {
                                 'border-primary-500 focus:border-primary-500 hover:border-primary-500':
                                     props.errorMessage,
                             },
-                            { 'border-grey-300': props.disabled },
+                            { 'border-grey-100': props.disabled },
                             // Filled State *for FloatLabel
                             {
                                 filled:
@@ -348,8 +358,11 @@ onMounted(() => {
         >
             <template #inputicon="{ clickCallback }">
                 <div class="flex justify-center">
-                    <template v-if="modelValue === ''">
-                        <Calendar :class="['size-4 flex-shrink-0 cursor-pointer transform !-translate-x-[90%] !-translate-y-[10%]', isFocused ? 'text-primary-200' : 'text-grey-400']" @click="clickCallback" />
+                    <template v-if="modelValue === '' && !timeOnly">
+                        <Calendar :class="['size-4 flex-shrink-0 cursor-pointer transform !-translate-x-[90%] !-translate-y-[10%]', disabled ? 'text-grey-100' : isFocused ? 'text-primary-200' : 'text-grey-400']" @click="clickCallback" />
+                    </template>
+                    <template v-if="modelValue === '' && timeOnly">
+                        <ClockIcon :class="['size-4 flex-shrink-0 transform !-translate-x-[90%] !-translate-y-[10%] hover:text-primary-800', disabled ? 'text-grey-100' : isFocused ? 'text-primary-200' : 'text-grey-400']" @click="clickCallback" />
                     </template>
                     <CircledTimesIcon
                         class="w-4 h-4 flex-shrink-0 fill-primary-50 text-primary-900 hover:text-primary-900 cursor-pointer transform !-translate-x-[90%]"

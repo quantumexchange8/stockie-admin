@@ -207,6 +207,16 @@ class ProductController extends Controller
             'availability' => 'Available',
         ]);
 
+        activity()->useLog('create-product')
+                        ->performedOn($newProduct)
+                        ->event('added')
+                        ->withProperties([
+                            'created_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'category_name' => $newProduct->name,
+                        ])
+                        ->log("New product '$newProduct->name' is added.");
+
         if ($request->hasFile('image')) {
             $newProduct->addMedia($validatedData['image'])->toMediaCollection('product');
         }
@@ -537,6 +547,16 @@ class ProductController extends Controller
                 'category_id' => $validatedData['category_id'],
             ]);
 
+            activity()->useLog('edit-product-detail')
+                        ->performedOn($existingProduct)
+                        ->event('updated')
+                        ->withProperties([
+                            'created_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'product_name' => $existingProduct->product_name,
+                        ])
+                        ->log("Product '$existingProduct->product_name' is updated.");
+
             if ($request->hasFile('image')) {
                 $existingProduct->clearMediaCollection('product');
                 $existingProduct->addMedia($validatedData['image'])->toMediaCollection('product');
@@ -663,11 +683,23 @@ class ProductController extends Controller
 
     public function updateAvailability(Request $request)
     {
-        $selectedProduct = Product::find($request->id);
+        $selectedProduct = Product::where('id', $request->id)->first();
 
         if ($selectedProduct) {
             $selectedProduct->update(['availability' => $request->availabilityWord]);
         }
+
+        $word = strtolower($request->availabilityWord);
+
+        activity()->useLog('deactivate-product')
+                    ->performedOn($selectedProduct)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'product_name' => $selectedProduct->product_name,
+                    ])
+                    ->log("Product '$selectedProduct->product_name' is now $word.");
 
         return redirect()->back();
     }
@@ -732,7 +764,16 @@ class ProductController extends Controller
         }
 
         foreach($validatedZones as $newCategories) {
-            Category::create(['name' => $newCategories['name']]);
+            $newCategory = Category::create(['name' => $newCategories['name']]);
+            activity()->useLog('create-category')
+                        ->performedOn($newCategory)
+                        ->event('added')
+                        ->withProperties([
+                            'created_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'category_name' => $newCategory->name,
+                        ])
+                        ->log("New product category '$newCategory->name' is added.");
         }
 
         return response()->json($this->getAllCategories());
@@ -754,6 +795,16 @@ class ProductController extends Controller
 
         $editZone = Category::find($id);
         $editZone->update(['name' => $validatedData['edit_name']]);
+
+        activity()->useLog('edit-category-name')
+                    ->performedOn($editZone)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'category_name' => $editZone->name,
+                    ])
+                    ->log("Category name '$editZone->name' is updated.");
 
         return response()->json($this->getAllCategories());
     }
@@ -810,7 +861,17 @@ class ProductController extends Controller
         $category = Category::find($id);                                         
 
         if ($category) {
+            activity()->useLog('delete-category')
+                        ->performedOn($category)
+                        ->event('deleted')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'name' => $category->name,
+                        ])
+                        ->log("$category->name is deleted.");
             $category->delete();
+            
         }
 
         return response()->json($this->getAllCategories());

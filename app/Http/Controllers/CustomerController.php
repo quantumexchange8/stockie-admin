@@ -4,23 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CustomerRequest;
 use App\Models\Customer;
-use App\Models\IventoryItem;
 use App\Models\KeepHistory;
 use App\Models\KeepItem;
-use App\Models\Order;
-use App\Models\Point;
 use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\Ranking;
-use App\Models\RankingReward;
-use Carbon\Carbon;
 use Hash;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
-use Log;
 
 class CustomerController extends Controller
 {
@@ -76,6 +70,17 @@ class CustomerController extends Controller
         $customer = Customer::find($id);
         $user = Auth::user();
         if($customer && (Hash::check($request->password, $user->password)) ) {
+
+            activity()->useLog('delete-customer')
+                        ->performedOn($customer)
+                        ->event('deleted')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'item_name' => $customer->full_name,
+                        ])
+                        ->log("Customer '$customer->full_name' is deleted.");
+
             $customer->delete();
             $message = [
                 'severity' => 'success',
@@ -284,7 +289,8 @@ class CustomerController extends Controller
                                             'payment.order:id,order_no',
                                             'redeemableItem:id,product_name',
                                             'customer:id,ranking',
-                                            'customer.rank:id,name'
+                                            'customer.rank:id,name',
+                                            'handledBy:id,full_name'
                                         ]) 
                                         ->where('customer_id', $id)
                                         ->orderBy('created_at','desc')
@@ -292,6 +298,7 @@ class CustomerController extends Controller
 
         $pointHistories->each(function ($record) {
             $record->image = $record->redeemableItem?->getFirstMediaUrl('product');
+            $record->waiter_image = $record->handledBy->getFirstMediaUrl('user');
         });
 
         return response()->json($pointHistories);

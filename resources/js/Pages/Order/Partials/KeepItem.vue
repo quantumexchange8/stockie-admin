@@ -533,9 +533,7 @@ onMounted(() => {
                 <!-- message header -->
                 <div class="flex items-start gap-3 self-stretch">
                     <div class="flex items-start gap-3 flex-[1_0_0]">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2.00098C6.49094 2.00098 2 6.49052 2 12C2 17.5094 6.49094 21.9986 12 21.9986C17.5091 21.9986 22 17.5094 22 12C22 6.49052 17.5091 2.00098 12 2.00098ZM12 16.9992C11.4481 16.9992 10.999 16.5512 10.999 15.9992C10.999 15.4473 11.4481 14.9996 12 14.9996C12.5519 14.9996 13.001 15.4473 13.001 15.9992C13.001 16.5512 12.5519 16.9992 12 16.9992ZM13.001 12.9996C13.001 13.5515 12.5519 13.9996 12 13.9996C11.4481 13.9996 10.999 13.5515 10.999 12.9996V8.00028C10.999 7.44835 11.4481 7.00029 12 7.00029C12.5519 7.00029 13.001 7.44835 13.001 8.00028V12.9996Z" fill="#DEA622"/>
-                        </svg>
+                        <WarningIcon />
                         <div class="flex flex-col justify-between items-start flex-[1_0_0]">
                             <span class="self-stretch text-[#A35F1A] text-base font-bold">Item(s) not allowed to keep.</span>
                             <span class="self-stretch text-[#3E200A] text-sm font-normal"><span class="!font-bold">{{ notAllowToKeep.length }} items</span> will be removed from keep item listing.</span>

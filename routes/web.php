@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConfigCommissionController;
@@ -139,6 +140,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/editDiscount/{id}', [ConfigDiscountController::class, 'editDiscount'])->name('configurations.editDiscount');
         Route::get('/editProductDetails/{id}', [ConfigDiscountController::class, 'editProductDetails'])->name('configurations.editProductDetails');
 
+        /******* Bill Discount ********/
+        Route::get('/getAllTiers', [ConfigDiscountController::class, 'getAllTiers'])->name('configurations.getAllTiers');
+        Route::get('/getAllBillDiscounts', [ConfigDiscountController::class, 'getAllBillDiscounts'])->name('configurations.getAllBillDiscounts');
+        Route::post('/addBillDiscount', [ConfigDiscountController::class, 'addBillDiscount'])->name('configurations.addBillDiscount');
+        Route::put('/editBillDiscount/{id}', [ConfigDiscountController::class, 'editBillDiscount'])->name('configurations.editBillDiscount');
+        Route::delete('deleteBillDiscount/{id}', [ConfigDiscountController::class, 'deleteBillDiscount'])->name('configurations.deleteBillDiscount');
+        Route::post('updateBillStatus/{id}', [ConfigDiscountController::class, 'updateBillStatus'])->name('configurations.updateBillStatus');
+
         /******* Employee Commission ********/
         Route::get('/configurations/commission', [ConfigCommissionController::class, 'index'])->name('configurations.commission');
         Route::post('/addCommission', [ConfigCommissionController::class, 'addCommission'])->name('configurations.addCommission');
@@ -238,6 +247,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');
         Route::put('/orders/reservation/{id}', [OrderController::class, 'updateReservation'])->name('orders.reservations.update');
         Route::delete('/orders/reservation/{id}', [OrderController::class, 'deleteReservation'])->name('orders.reservations.destroy');
+        Route::post('/orders/mergeTable', [OrderController::class, 'mergeTable'])->name('orders.mergeTable');
         
         // Order items
         Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');
@@ -256,6 +266,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/customer/reward/redeemEntryRewardToOrder/{id}', [OrderController::class, 'redeemEntryRewardToOrder'])->name('orders.customer.reward.redeemEntryRewardToOrder');
 
         Route::get('/getRedeemableItems', [OrderController::class, 'getRedeemableItems'])->name('orders.getRedeemableItems');
+        Route::get('/orders/getAllCustomers', [OrderController::class, 'getAllCustomer'])->name('orders.getAllCustomer');
         Route::get('/getAllZones', [OrderController::class, 'getAllZones'])->name('orders.getAllZones');
         Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');
         Route::get('/getCurrentTableOrder/{id}', [OrderController::class, 'getCurrentTableOrder'])->name('orders.getCurrentTableOrder');
@@ -315,6 +326,12 @@ Route::middleware('auth')->group(function () {
         Route::put('/edit-admin-details', [AdminUserController::class, 'editDetails'])->name('edit-admin-details');
         Route::post('/add-sub-admin', [AdminUserController::class, 'addSubAdmin'])->name('add-sub-admin');
         Route::get('/refetch-admin-users', [AdminUserController::class, 'refetchAdminUsers'])->name('refetch-admin-users');
+    });
+
+    /********* Admin User **********/
+    Route::prefix('activity-log')->middleware([CheckPermission::class . ':activity-logs'])->group(function(){
+        Route::get('', [ActivityLogController::class, 'index'])->name('activity-logs');
+        Route::get('/filter-logs', [ActivityLogController::class, 'filterLogs'])->name('activity-logs.filter-logs');
     });
 });
 

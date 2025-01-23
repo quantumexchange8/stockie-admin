@@ -311,7 +311,7 @@ const isMerged = (targetTable) => {
                             :class="getTableClasses(table).state.value"
                             @click="openOverlay($event, table)"
                         >
-                            <MergedIcon class="absolute left-[8.375px] top-[8px] size-5" v-if="isMerged(table)"/>
+                            <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
                             <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                 {{ getCurrentOrderTableDuration(table) }}
@@ -362,7 +362,7 @@ const isMerged = (targetTable) => {
                                 :class="getTableClasses(table).state.value"
                                 @click="openOverlay($event, table)"
                             >
-                                 <MergedIcon class="absolute left-[8.375px] top-[8px] size-5" v-if="isMerged(table)"/>
+                                 <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
                                 <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                 <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                     {{ getCurrentOrderTableDuration(table) }}

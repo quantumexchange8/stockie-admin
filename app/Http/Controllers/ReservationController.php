@@ -101,7 +101,7 @@ class ReservationController extends Controller
     {   
         $customer = is_int($request->name) ? Customer::find($request->name) : null;
 
-        Reservation::create(attributes: [
+        $newReservation = Reservation::create(attributes: [
             'reservation_no' => RunningNumberService::getID('reservation'),
             'customer_id' => $customer?->id ?? null,
             'name' => $customer?->full_name ?? $request->name,
@@ -115,6 +115,17 @@ class ReservationController extends Controller
             'handled_by' => $request->reserved_by,
             'reserved_by' => $request->reserved_by,
         ]);
+
+        activity()->useLog('create-reservation')
+                    ->performedOn($newReservation)
+                    ->event('added')
+                    ->withProperties([
+                        'created_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'reserved_by' => $newReservation->name,
+                        'reservation_date' => $newReservation->reservation_date,
+                    ])
+                    ->log("Reservation for $newReservation->name on $newReservation->reservation_date is added.");
 
         return redirect()->back();
     }
@@ -153,6 +164,17 @@ class ReservationController extends Controller
             'handled_by' => $request->reserved_by,
             'reserved_by' => $request->reserved_by,
         ]);
+        
+        activity()->useLog('edit-reservation-detail')
+                    ->performedOn($reservation)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'reserved_for' => $reservation->name,
+                        'reservation_date' => $reservation->reservation_date,
+                    ])
+                    ->log("Reservation detail for $reservation->name on $reservation->reservation_date is updated.");
 
         return response()->json($reservation);
         // return redirect()->back();
@@ -265,6 +287,17 @@ class ReservationController extends Controller
         $reservation->update([
             'status' => 'No show'
         ]);
+
+        activity()->useLog('mark-as-no-show')
+                    ->performedOn($reservation)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'reserved_for' => $reservation->name,
+                        'reservation_date' => $reservation->reservation_date,
+                    ])
+                    ->log("Reservation for $reservation->name on $reservation->reservation_date is marked as no show.");
         
         return redirect()->back();
     }
@@ -289,6 +322,17 @@ class ReservationController extends Controller
             'handled_by' => $validatedData['handled_by'],
             'status' => 'Delayed',
         ]);
+
+        activity()->useLog('delay-reservation')
+                    ->performedOn($reservation)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'reserved_for' => $reservation->name,
+                        'reservation_date' => $reservation->reservation_date,
+                    ])
+                    ->log("Reservation for $reservation->name on $reservation->reservation_date is delayed.");
         
         return redirect()->back();
     }
@@ -315,6 +359,17 @@ class ReservationController extends Controller
             'handled_by' => $validatedData['handled_by'],
             'status' => 'Cancelled',
         ]);
+
+        activity()->useLog('cancel-reservation')
+                    ->performedOn($reservation)
+                    ->event('cancelled')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'reserved_for' => $reservation->name,
+                        'reservation_date' => $reservation->reservation_date,
+                    ])
+                    ->log("Reservation for $reservation->name on $reservation->reservation_date is cancelled.");
         
         return redirect()->back();
     }
@@ -472,6 +527,18 @@ class ReservationController extends Controller
     public function delete(string $id)
     {
         $reservation = Reservation::find($id);
+
+        activity()->useLog('delete-reservation')
+                    ->performedOn($reservation)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'reserved_for' => $reservation->name,
+                        'reservation_date' => $reservation->reservation_date,
+                    ])
+                    ->log("Reservation for $reservation->name on $reservation->reservation_date is deleted.");
+
         if ($reservation) $reservation->delete();
         
         return redirect()->back();

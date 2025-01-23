@@ -84,10 +84,20 @@ class ConfigCommissionController extends Controller
             $product = Product::find($productId);
         
             if ($product) {
-                ConfigEmployeeCommItem::create([
+                $newComm = ConfigEmployeeCommItem::create([
                     'comm_id' => $newDataId,
                     'item' => $product->id,
                 ]);
+
+                activity()->useLog('create-commission-type')
+                            ->performedOn($newComm)
+                            ->event('added')
+                            ->withProperties([
+                                'created_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'product_name' => $product->product_name,
+                            ])
+                            ->log("Commission for '$product->product_name' is added.");
             }
         }
         
@@ -104,8 +114,26 @@ class ConfigCommissionController extends Controller
     {
         if($id)
         {
-            ConfigEmployeeComm::where('id', $id)->delete();
-            ConfigEmployeeCommItem::where('comm_id', $id)->delete();
+            $deleteComm = ConfigEmployeeComm::where('id', $id)->first();
+            $deleteCommItem = ConfigEmployeeCommItem::where('comm_id', $id)->get();
+            $productNames = ConfigEmployeeCommItem::where('comm_id', $id)
+                                                    ->with('product')
+                                                    ->get()
+                                                    ->pluck('product')
+                                                    ->pluck('product_name')
+                                                    ->implode(', ');
+            activity()->useLog('delete-commission-type')
+                        ->performedOn($deleteComm)
+                        ->event('deleted')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'waiter_name' => $deleteComm->full_name,
+                        ])
+                        ->log("Commission type for $productNames are deleted.");
+            $deleteComm->delete();
+
+            $deleteCommItem->delete();
         }
 
         return redirect()->route('configurations')->with(['selectedTab' => 1]);
@@ -116,7 +144,8 @@ class ConfigCommissionController extends Controller
         if ($request->id) {
             //delete first, then re-create
             ConfigEmployeeCommItem::where('comm_id', $request->id)->delete();
-            ConfigEmployeeComm::where('id', $request->id)->update([
+            $editComm = ConfigEmployeeComm::where('id', $request->id)->first();
+            $editComm->update([
                 'comm_type' => $request->commType,
                 'rate' => $request->commRate,
             ]);
@@ -125,7 +154,18 @@ class ConfigCommissionController extends Controller
                     'comm_id' => $request->id,
                     'item' => $products,
                 ]);
+
+                activity()->useLog('edit-commission-type')
+                            ->performedOn($editComm)
+                            ->event('updated')
+                            ->withProperties([
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'product_name' => Product::where('id', $products)->first()->pluck('product_name'),
+                            ])
+                            ->log("Commission type for ':properties.product_name' is updated.");
             }
+
         }
         // else{
         //     $message = [

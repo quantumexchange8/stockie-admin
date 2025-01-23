@@ -492,7 +492,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         variant="tertiary"
                         :type="'button'"
                         :size="'lg'"
-                        @click="console.log(form.rewards)"
+                        @click="closeModal('close')"
                     >
                         Cancel
                     </Button>

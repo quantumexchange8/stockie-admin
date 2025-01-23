@@ -112,6 +112,16 @@ class ConfigPromotionController extends Controller
             'promotion_to' => $request->promotion_to,
             'status' => $status,
         ]);
+        
+        activity()->useLog('create-promotion')
+                    ->performedOn($promotion)
+                    ->event('added')
+                    ->withProperties([
+                        'created_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'promotion_name' => $promotion->title,
+                    ])
+                    ->log("Promotion '$promotion->title' is added."); 
 
         if ($request->hasfile('promotion_image'))
         {
@@ -149,7 +159,7 @@ class ConfigPromotionController extends Controller
             ['required' => 'This field is required.']
         );
 
-        $editPromotion = ConfigPromotion::find($request->id);
+        $editPromotion = ConfigPromotion::where('id', $request->id)->first();
 
         $editPromotion->update([
             'title' => $validatedData['title'],
@@ -158,6 +168,16 @@ class ConfigPromotionController extends Controller
             'promotion_to' => $request->promotion_to,
             'status' => $editPromotion->status,
         ]);
+
+        activity()->useLog('edit-promotion-detail')
+                    ->performedOn($editPromotion)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'title' => $editPromotion->title,
+                    ])
+                    ->log("Promotion '$editPromotion->title' is updated.");
 
         if($request->hasfile('promotion_image')) {
             $editPromotion->clearMediaCollection('promotion');
@@ -171,7 +191,18 @@ class ConfigPromotionController extends Controller
     public function delete(Request $request)
     {
         
-        $editPromotion = ConfigPromotion::find($request->id);
+        $editPromotion = ConfigPromotion::where('id', $request->id)->first();
+
+        activity()->useLog('delete-promotion')
+                    ->performedOn($editPromotion)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'promotion_name' => $editPromotion->title,
+                    ])
+                    ->log("$editPromotion->title is deleted.");
+
         $editPromotion->delete();
 
         return redirect()->back();
@@ -229,7 +260,7 @@ class ConfigPromotionController extends Controller
             'email' => 'Invalid format. Please try again.',
         ]);
 
-        $config_merchant = ConfigMerchant::find($request->id);
+        $config_merchant = ConfigMerchant::where('id', $request->id)->first();
 
         $config_merchant->update([
             'name' => $request->name,
@@ -250,6 +281,16 @@ class ConfigPromotionController extends Controller
         }
 
         $config_merchant->save();
+
+        activity()->useLog('edit-merchant-detail')
+                        ->performedOn($config_merchant)
+                        ->event('updated')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'merchant_name' => $config_merchant->name
+                        ])
+                        ->log("Merchant $config_merchant->name's detail updated.");
 
         // return redirect()->back();
         $data = $this->getMerchantDetails();
@@ -365,6 +406,15 @@ class ConfigPromotionController extends Controller
                 'value' => $request->value,
                 'point' => $request->point,
             ]);
+
+            activity()->useLog('return-kept-item')
+                        ->performedOn($isPointExist)
+                        ->event('updated')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                        ])
+                        ->log("Point settings updated.");
         } else {
             Setting::create([
                 'name' => 'Point',
@@ -374,6 +424,7 @@ class ConfigPromotionController extends Controller
                 'point' => $request->point,
             ]);
         }
+
     }
 
     public function getPoint() {
@@ -490,16 +541,25 @@ class ConfigPromotionController extends Controller
         if (!empty($taxesErrors)) {
             return redirect()->back()->withErrors($taxesErrors);
         }
-        
 
         foreach($validatedTaxes as $items){{
-                Setting::find($items['id'])
-                        ->update([
-                        'name' => $items['name'],
-                        'value' => round($items['percentage'], 2),
-                        'type' => 'tax',
-                        'value_type' => 'percentage',
-                ]);
+                $editTier = Setting::find($items['id'])
+                                    ->update([
+                                    'name' => $items['name'],
+                                    'value' => round($items['percentage'], 2),
+                                    'type' => 'tax',
+                                    'value_type' => 'percentage',
+                                ]); 
+
+                activity()->useLog('edit-tax-settings')
+                            ->performedOn($editTier)
+                            ->event('updated')
+                            ->withProperties([
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'tax_name' => $editTier->name
+                            ])
+                            ->log("Tax $editTier->name updated.");
             }
         }
         return redirect()->back();

@@ -250,6 +250,16 @@ class LoyaltyController extends Controller
             $ranking->addMedia($validatedData['icon'])->toMediaCollection('ranking');
         }
 
+        activity()->useLog('create-tier')
+                    ->performedOn($ranking)
+                    ->event('added')
+                    ->withProperties([
+                        'created_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'tier_name' => $ranking->name,
+                    ])
+                    ->log("Tier '$ranking->name' is added.");
+
         if($validatedData['reward'] === 'active' && count($validatedRankingRewards) > 0) {
             foreach ($validatedRankingRewards as $value) {
                 RankingReward::create([
@@ -516,6 +526,16 @@ class LoyaltyController extends Controller
                 'icon' => ''
             ]);
 
+            activity()->useLog('edit-tier-detail')
+                        ->performedOn($existingRanking)
+                        ->event('updated')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'tier_name' => $existingRanking->name,
+                        ])
+                        ->log("Detail for tier '$existingRanking->name' is updated.");
+
             if($request->hasFile('icon')) {                
                 $existingRanking->clearMediaCollection('ranking');
                 $existingRanking->addMedia($validatedData['icon'])->toMediaCollection('ranking');
@@ -525,7 +545,7 @@ class LoyaltyController extends Controller
         if($validatedData['reward'] === 'active' && count($validatedRankingRewards) > 0) {
             foreach ($validatedRankingRewards as $value) {
                 if (isset($value['id'])) {
-                    $existingRankingReward = RankingReward::find($value['id']);
+                    $existingRankingReward = RankingReward::where('id', $value['id'])->first();
 
                     $existingRankingReward->update([
                         'ranking_id' => $request->id,
@@ -539,7 +559,19 @@ class LoyaltyController extends Controller
                         // 'valid_period_from' => $value['valid_period_from'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
                         // 'valid_period_to' => $value['valid_period_to'], // DO NOT REMOVE code that has until confirmed is not needed by requirements
                         'status' => $value['status'],
+
                     ]);
+
+                    activity()->useLog('edit-reward-types')
+                                ->performedOn($existingRankingReward)
+                                ->event('updated')
+                                ->withProperties([
+                                    'edited_by' => auth()->user()->full_name,
+                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                    'tier_name' => $existingRanking->name,
+                                ])
+                                ->log("Reward type for tier '$existingRanking->name' is updated.");
+
                 } else {
                     RankingReward::create([
                         'ranking_id' => $request->id,
@@ -603,6 +635,16 @@ class LoyaltyController extends Controller
         ];
 
         if ($existingRanking) {
+            activity()->useLog('delete-tier')
+                        ->performedOn($existingRanking)
+                        ->event('deleted')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'tier_name' => $existingRanking->name,
+                        ])
+                        ->log("Tier '$existingRanking->name' and its ranking rewards are deleted.");
+
             // Soft delete all related ranking rewards in bulk
             $existingRanking->rankingRewards()->delete();
     

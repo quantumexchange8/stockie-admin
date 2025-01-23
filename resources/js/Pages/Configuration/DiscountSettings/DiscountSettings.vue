@@ -7,6 +7,7 @@ import Toast from '@/Components/Toast.vue';
 import { onMounted, ref, watch } from 'vue';
 import AddDiscount from './Partials/AddDiscount.vue';
 import DiscountTable from './Partials/DiscountTable.vue';
+import BillDiscount from './Partials/BillDiscount.vue';
 
 const isAddDiscountOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
@@ -95,46 +96,51 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col p-6 gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
-        <div class="flex flex-col justify-center">
-            <span class="text-primary-900 text-md font-medium">Discount Settings</span>
-        </div>
-        
-        <Toast 
-            inline
-            severity="info"
-            actionLabel="OK"
-            summary="Looking to boost your sales?"
-            detail="Offer your product at a lower price! Set up your discount here to attract more customers and increase sales."
-            :closable=false
-        />
-
-        <div class="flex items-start gap-5 self-stretch">
-            <SearchBar 
-                placeholder="Search"
-                :showFilter="false"
-                v-model="searchQuery"
+    <div class="flex flex-col max-w-full justify-end items-start gap-5 self-stretch">
+        <div class="flex flex-col p-6 gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
+            <div class="flex flex-col justify-center">
+                <span class="text-primary-900 text-md font-medium">Discount Settings</span>
+            </div>
+            
+            <Toast 
+                inline
+                severity="info"
+                actionLabel="OK"
+                summary="Looking to boost your sales?"
+                detail="Offer your product at a lower price! Set up your discount here to attract more customers and increase sales."
+                :closable=false
             />
 
-            <Button
-                type="button"
-                size="lg"
-                iconPosition="left"
-                class="!w-fit"
-                @click="openAddDiscount"
-            >
-                <template #icon>
-                    <PlusIcon />
-                </template>
-                New Discount
-            </Button>
-        </div>
+            <div class="flex items-start gap-5 self-stretch">
+                <SearchBar 
+                    placeholder="Search"
+                    :showFilter="false"
+                    v-model="searchQuery"
+                />
 
-        <DiscountTable 
-            :details="details"
-            @discountDetails="discountDetails"
-        />
+                <Button
+                    type="button"
+                    size="lg"
+                    iconPosition="left"
+                    class="!w-fit"
+                    @click="openAddDiscount"
+                >
+                    <template #icon>
+                        <PlusIcon />
+                    </template>
+                    New Discount
+                </Button>
+            </div>
+
+            <DiscountTable 
+                :details="details"
+                @discountDetails="discountDetails"
+            />
+        </div>
+        
+        <BillDiscount />
     </div>
+
 
     <Modal
         :show="isAddDiscountOpen"

@@ -150,13 +150,14 @@ onUnmounted(() => {
             @change="updateSelectedOption"
             :pt="{
                 root: ({ props, state, parent }) => {
-                    open = state.overlayVisible;
-                    isOverlayOpen = state.overlayVisible;
+                    open = state.overlayVisible ? true : false;
+                    if (!filter) state.overlayVisible = !open || !state.focused || !state.clicked ? false : true;
+                    else state.overlayVisible = !open ? false : true;
                     return {
                         class: [
                             'inline-flex relative w-full mb-1 max-h-[44px] cursor-pointer select-none',
                             { 
-                                'bg-white border border-grey-300': !plainStyle,
+                                'bg-white border border-grey-300': !plainStyle && !props.disabled,
                                 'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !plainStyle,
                                 'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !plainStyle,
                                 'rounded-md': parent.instance.$name !== 'InputGroup',
@@ -181,7 +182,11 @@ onUnmounted(() => {
                     return {
                         class: [
                             'block relative flex items-center w-full rounded-none',
-                            'text-base bg-transparent border-0',
+                            'text-base',
+                            {
+                                'bg-transparent border-0': !props.disabled,
+                                'bg-grey-50 border border-solid border-grey-100 border-r-0': props.disabled
+                            },
                             'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
                             'transition duration-200 focus:ring-0',
                             'focus:outline-none focus:shadow-none',
@@ -266,6 +271,12 @@ onUnmounted(() => {
                 header: {
                     class: 'flex px-4 py-3 items-center gap-[10px] self-stretch w-full'
                 },
+                trigger: {
+                    class: [
+                        'flex items-center justify-center shrink-0 text-grey-500 w-10 rounded-tr-md rounded-br-md',
+                        { 'border border-l-0 border-solid border-grey-100 bg-grey-50': props.disabled === true },
+                    ]
+                }
             }"
         >
             <template #value="slotProps">

@@ -389,7 +389,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                     </template>
                 </div>
 
-                <div class="flex gap-2.5 pb-6 items-center self-stretch">
+                <!-- <div class="flex gap-2.5 pb-6 items-center self-stretch">
                     <Button
                         v-if="order.customer_id"
                         type="button"
@@ -412,7 +412,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         </template>
                         Place Order
                     </Button>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>

@@ -91,7 +91,6 @@ const closeModal = (status) => {
     switch(status){
         case 'close': {
             if(isDirty.value){
-                console.log(isDirty.value);
                 isUnsavedChangesOpen.value = true;
             } else {
                 isEditAchievementOpen.value = false;

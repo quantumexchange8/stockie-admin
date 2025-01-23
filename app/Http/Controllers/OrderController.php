@@ -1238,7 +1238,7 @@ class OrderController extends Controller
                                     } else {
                                     //     dd($reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
                                     // number_format((float) '8.258', 2, '.', ''));
-                                        dd($item['expired_from']);
+                                        // dd($item['expired_from']);
                                         $newKeep = KeepItem::create([
                                             'customer_id' => $request->customer_id,
                                             'order_item_subitem_id' => $item['order_item_subitem_id'],
@@ -1250,7 +1250,23 @@ class OrderController extends Controller
                                             'expired_from' => $item['expired_from'],
                                             'expired_to' => $item['expired_to'],
                                         ]);
-            
+
+                                        $item = OrderItemSubitem::where('id', $item['order_item_subitem_id'])
+                                                                ->with(['productItem:id,inventory_item_id', 'productItem.inventoryItem:id,item_name'])
+                                                                ->first();
+                                        $name = Customer::where('id', $request->customer_id)->first()->pluck('full_name');
+                                        
+                                        activity()->useLog('keep-item-from-customer')
+                                                    ->performedOn($newKeep)
+                                                    ->event('kept')
+                                                    ->withProperties([
+                                                        'edited_by' => auth()->user()->full_name,
+                                                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                                                        'item_name' => $item->item_name,
+                                                        'customer_name' => $name,
+                                                    ])
+                                                    ->log("'$item->item_name' is kept in $name's account.");
+                            
                                         KeepHistory::create([
                                             'keep_item_id' => $newKeep->id,
                                             'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
@@ -1591,7 +1607,11 @@ class OrderController extends Controller
         $validatedData = $validator->validated();
 
         if ($validatedData) {
-            $keepItem = KeepItem::with(['orderItemSubitem:id,order_item_id,product_item_id', 'orderItemSubitem.productItem:id,product_id', 'orderItemSubitem.orderItem:id'])->find($id);
+            $keepItem = KeepItem::with(['orderItemSubitem:id,order_item_id,product_item_id', 
+                                                    'orderItemSubitem.productItem:id,product_id',
+                                                    'orderItemSubitem.productItem.inventoryItem:id,item_name', 
+                                                    'orderItemSubitem.orderItem:id'])
+                                ->find($id);
 
             $newOrderItem = OrderItem::create([
                 'order_id' => $request->order_id,
@@ -1623,7 +1643,18 @@ class OrderController extends Controller
                 'status' => 'Served',
             ]);
 
-            $order = Order::with(['orderTable.table'])->find($request->order_id);
+            $order = Order::with(['orderTable.table', 'customer:id,full_name'])->find($request->order_id);
+
+            activity()->useLog('return-kept-item')
+                        ->performedOn($newOrderItem)
+                        ->event('updated')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'item_name' => $newOrderItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                            'customer_name' => $order->customer->full_name
+                        ])
+                        ->log(":properties.item_name is returned to :properties.customer_name.");
 
             if ($request->type === 'qty') {
                 $keepItem->update([
@@ -2047,6 +2078,7 @@ class OrderController extends Controller
 
         $waiter = User::select(['id', 'full_name'])->find($validatedData['user_id']);
         $waiter->image = $waiter->getFirstMediaUrl('user');
+        $customer = Customer::select(['id', 'full_name'])->find($validatedData['customer_id']);
 
         if ($validatedData) {
             if ($addNewOrder) {
@@ -2106,6 +2138,17 @@ class OrderController extends Controller
                                 'waiter_image' => $waiter->image,
                             ])
                             ->log("placed an order for :properties.table_name.");
+
+            activity()->useLog('redeem-product')
+                        ->performedOn($newOrderItem)
+                        ->event('redeemed')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'customer_name' => $customer->full_name,
+                            'item_name' => $redeemableItem->product_name
+                        ])
+                        ->log("$customer->full_name has redeemed $redeemableItem->product_name.");
             
             $redeemableItem->productItems->each(function ($item) use ($newOrderItem) {
                 $inventoryItem = $item->inventoryItem;
@@ -2221,6 +2264,7 @@ class OrderController extends Controller
 
         $waiter = User::select(['id', 'full_name'])->find($validatedData['user_id']);
         $waiter->image = $waiter->getFirstMediaUrl('user');
+        $customer = Customer::select(['id', 'full_name'])->find($validatedData['customer_id']);
 
         if ($validatedData) {
             $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
@@ -2287,6 +2331,17 @@ class OrderController extends Controller
                                     'waiter_image' => $waiter->image,
                                 ])
                                 ->log("placed an order for :properties.table_name.");
+
+                activity()->useLog('redeem-tier-reward')
+                            ->performedOn($newOrderItem)
+                            ->event('cancelled')
+                            ->withProperties([
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'customer_name' => $customer->full_name,
+                                'item_name' => $freeProduct->product_name
+                            ])
+                            ->log("$customer->full_name has redeemed $freeProduct->product_name.");
                 
                 $freeProduct->productItems->each(function ($item) use ($newOrderItem) {
                     $inventoryItem = $item->inventoryItem;
@@ -2482,7 +2537,7 @@ class OrderController extends Controller
 
     public function reactivateExpiredItems(Request $request)
     {
-        $targetItem = KeepHistory::with('keepItem')->find($request->input('id'));
+        $targetItem = KeepHistory::with('keepItem')->find($request->input('id'))->first();
 
         KeepHistory::create([
             'keep_item_id' => $targetItem->keepItem->id,
@@ -2492,10 +2547,20 @@ class OrderController extends Controller
             'status' => 'Extended'
         ]);
         
-        KeepItem::find($targetItem->keepItem->id)->update([
+        $item = KeepItem::find($targetItem->keepItem->id)->with('orderItemSubitem.productItem.inventoryItem')->update([
             'expired_to' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
             'status' => 'Keep',
         ]);
+
+        activity()->useLog('extend-expiration-date')
+                    ->performedOn($item)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'item' => $item->orderItemSubitem->productItem->inventoryItem->item_name,
+                    ])
+                    ->log("Category name ':properties.item''s detail is updated.");
 
         return redirect()->back();
     }
@@ -2515,8 +2580,21 @@ class OrderController extends Controller
 
         $remarkDesc = $validatedData['remark_description'] ? ': ' . $validatedData['remark_description'] : '';
 
-        $targetItem = KeepItem::find($validatedData['id']);
+        $targetItem = KeepItem::where('id',$validatedData['id'])
+                                ->with(['orderItemSubitem:id,product_item_id','productItem:id,inventory_item_id','inventoryItem:id,item_name'])
+                                ->first();
         $targetItem->update(['status' => 'Deleted']);
+
+        activity()->useLog('delete-category')
+                    ->performedOn($targetItem)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'item_name' => $targetItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                    ])
+                    ->log(":properties.item_name is deleted.");
+
         KeepHistory::create([
             'keep_item_id' => $targetItem->id,
             'qty' => $targetItem->qty,
@@ -2649,5 +2727,76 @@ class OrderController extends Controller
         }
 
         return response()->json($customer->keepItems);
+    }
+
+    public function mergeTable(Request $request) {
+        // dd($request->all());
+        $request->validate([
+            'customer_id' => ['required'],
+            'id' => ['required', 'integer'],
+            'tables' => ['required', 'array'],
+        ]);
+
+        dd($request->all());
+
+        // calculate total pax for all the merged tables
+        $totalPax = collect($request['tables'])
+                    ->flatMap(fn($table) => $table['order_tables'] ?? [])
+                    ->sum(fn($orderTable) => (int)($orderTable['pax'] ?? 0));
+
+        // calculate total sum for all the merged tables
+        $totalAmount = collect($request['tables'])
+                    ->flatMap(fn($table) => $table['order_tables'] ?? [])
+                    ->sum(fn($orderTable) => (float)($orderTable['order']['total_amount'] ?? 0));
+        
+        //step 1: create new order
+        $newOrder = Order::create([
+            'order_no' => RunningNumberService::getID('order'),
+            'pax' => $totalPax, //combined pax
+            'user_id' => auth()->user()->id,
+            'amount' => $totalAmount,
+            'total_amount' => $totalAmount,
+            'status' => 'Order Completed',
+        ]);
+
+        //step 2: update listed tables to order merged & create new order table
+        foreach($request['tables'] as $tables){
+            foreach($tables['order_tables'] as $orderTable){
+                $mergingTable = OrderTable::find($orderTable['id']);
+                $mergingTable->update(['status' => 'Order Merged']);
+                $mergingTable->save();
+
+                
+            }
+
+            OrderTable::create([
+                'table_id' => $tables['id'],
+                'pax' => $totalPax,
+                'user_id' => auth()->user()->id,
+                'status' => 'All Order Served',
+                'order_id' => $newOrder->id,                
+            ]);
+        }
+
+        //step 3: transfer all the order item to this new order (update order_id)
+
+
+        //step 4: update all tables' status
+
+    }
+
+    private function getAllCustomers() {
+        $users = Customer::all();
+        foreach($users as $user){
+            $user->image = $user->getFirstMediaUrl('customer');
+        }
+
+        return $users;
+    }
+
+    public function getAllCustomer(){
+        $users = $this->getAllCustomers();
+
+        return response()->json($users);
     }
 }

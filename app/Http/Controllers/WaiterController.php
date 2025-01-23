@@ -198,6 +198,16 @@ class WaiterController extends Controller
             $newWaiter->addMedia($request->image)->toMediaCollection('user');
        }
 
+       activity()->useLog('create-waiter')
+                ->performedOn($newWaiter)
+                ->event('added')
+                ->withProperties([
+                    'created_by' => auth()->user()->full_name,
+                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                    'waiter_name' => $newWaiter->name,
+                ])
+                ->log("Waiter '$newWaiter->name' is added.");
+
        return redirect()->route('waiter');
    }
 
@@ -208,6 +218,17 @@ class WaiterController extends Controller
 
         if ($id) {
             $deleteWaiter = User::find($id);
+
+            activity()->useLog('delete-waiter')
+                        ->performedOn($deleteWaiter)
+                        ->event('deleted')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'waiter_name' => $deleteWaiter->full_name,
+                        ])
+                        ->log("Waiter '$deleteWaiter->full_name' is deleted.");
+
             $deleteWaiter->delete();
 
             $severity = 'success';
@@ -232,7 +253,7 @@ class WaiterController extends Controller
    {
         $validatedData = $request->validated();
         
-        $waiter = User::find($request->id);
+        $waiter = User::where('id', $request->id)->first();
 
         $waiter->update([
             'name' => $validatedData['full_name'],
@@ -245,6 +266,16 @@ class WaiterController extends Controller
             'profile_photo' => $validatedData['image'],
             'passcode' => $validatedData['passcode'],
         ]);
+
+        activity()->useLog('edit-waiter-detail')
+                    ->performedOn($waiter)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'waiter_name' => $waiter->full_name,
+                    ])
+                    ->log("Waiter $waiter->full_name's detail is updated.");
 
         if ($validatedData['password'] != '') {
             $waiter->update([

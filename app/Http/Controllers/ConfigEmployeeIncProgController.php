@@ -195,8 +195,19 @@ class ConfigEmployeeIncProgController extends Controller
                                                     ['incentive_id', $id]
                                                 ])
                                                 ->first();
+        $targetEntitled = User::where('id', $request->entitled_employee_id)->first();
 
         $entitlement->update(['status' => 'Inactive']);
+
+        activity()->useLog('delete-entitled')
+                    ->performedOn($entitlement)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'entitled_name' => $targetEntitled->full_name,
+                    ])
+                    ->log("$targetEntitled->full_name is deleted from entitled incentive listing.");
 
         $entitled = User::where('position', 'waiter')
                         ->wherehas('configIncentEmployee', fn ($query) => $query->where([['incentive_id', $id], ['status', 'Active']]))

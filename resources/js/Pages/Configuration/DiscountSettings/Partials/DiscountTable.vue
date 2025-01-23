@@ -239,7 +239,7 @@ watch(() => props.details, () => {
         </tbody>
     </table>
 
-    <Paginator
+    <!-- <Paginator
         v-if="props.details.length > 0"
         :rows="4" 
         :totalRecords="props.details.length"
@@ -418,7 +418,7 @@ watch(() => props.details, () => {
                 />
             </svg>
         </template>
-    </Paginator>
+    </Paginator> -->
 
     <Modal
         :title="'Edit Discount'"

@@ -110,9 +110,19 @@ class TableRoomController extends Controller
         }
 
         foreach($validatedZones as $newZones) {
-            Zone::create([
+            $newZone = Zone::create([
                 'name' => $newZones['name']
             ]);
+
+            activity()->useLog('create-zone')
+                        ->performedOn($newZone)
+                        ->event('added')
+                        ->withProperties([
+                            'created_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'zone_name' => $newZone->name,
+                        ])
+                        ->log("Zone '$newZone->name' is added.");
         }
 
         return redirect()->route('table-room');
@@ -128,7 +138,7 @@ class TableRoomController extends Controller
             'zone_id'=> 'required|integer',
         ]);
 
-        Table::create([
+        $newTable = Table::create([
             'type'=> 'table',
             'table_no' => $validatedData['table_no'],
             'seat' => $validatedData['seat'],
@@ -136,13 +146,44 @@ class TableRoomController extends Controller
             'status' => 'Empty Seat',
         ]);
 
+        activity()->useLog('create-table')
+                    ->performedOn($newTable)
+                    ->event('added')
+                    ->withProperties([
+                        'created_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'table_no' => $newTable->table_no,
+                    ])
+                    ->log("Table '$newTable->table_no' is added.");
+
         return redirect()->route('table-room');
     }
 
     public function deleteZone($id)
     {
-        Zone::where('id', $id)->delete();
-        Table::where('zone_id', $id)->delete();
+        $deleteZone = Zone::where('id', $id)->first();
+        activity()->useLog('delete-zone')
+                    ->performedOn($deleteZone)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'zone_name' => $deleteZone->name,
+                    ])
+                    ->log("Zone '$deleteZone->name' is deleted.");
+        $deleteZone->delete();
+
+        $deleteTable = Table::where('zone_id', $id);
+        activity()->useLog('delete-table')
+                    ->performedOn($deleteTable)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'table_no' => $deleteTable->table_no,
+                    ])
+                    ->log("Table '$deleteTable->table_no' is deleted.");
+        $deleteTable->delete();
 
         $message = [
             'severity' => 'success',
@@ -177,17 +218,28 @@ class TableRoomController extends Controller
             'zone_id' => 'required'
         ]);
 
-        $editTable = Table::find($request->id);
+        $editTable = Table::where('id', $request->id)->first();
         if ($editTable->table_no !== $validatedData['table_no']) {
             $request->validate([
                 'table_no' => 'unique:tables,table_no'
             ]);
         }
+
         $editTable->update([
             'table_no' => $validatedData['table_no'],
             'seat' => $validatedData['seat'],
             'zone_id' => $validatedData['zone_id'],
         ]);
+
+        activity()->useLog('edit-table-detail')
+                    ->performedOn($editTable)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'table_no' => $editTable->table_no,
+                    ])
+                    ->log("Table '$editTable->table_no' is updated.");
 
         return redirect()->route('table-room');
     }
@@ -200,10 +252,20 @@ class TableRoomController extends Controller
             Rule::unique('zones','name')->ignore($request->id)->whereNull('deleted_at')],
         ]);
 
-        $editZone = Zone::find($request->id);
+        $editZone = Zone::where('id', $request->id)->first();
         $editZone->update([
             'name' => $validatedData['edit_name'],
         ]);
+
+        activity()->useLog('edit-zone-name')
+                    ->performedOn($editZone)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'zone_name' => $editZone->name,
+                    ])
+                    ->log("Zone name '$editZone->name' is updated.");
 
     }
 }

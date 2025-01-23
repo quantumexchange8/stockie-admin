@@ -66,7 +66,7 @@ const capitilize = (string) => {
 
 const openDetail = (user) => {
     selectedUser.value = user;
-    form.id = selectedUser.value.id;
+    form.id = user.id;
     isDetailShow.value = true;
 
 }
@@ -149,7 +149,7 @@ const closeAddAdmin = (status) => {
 const editPermission = async (permission) => {
     isProcessing.value = true;
     form.permission = permission;
-    let hasPermission = !props.users
+    let hasPermission = !users.value
         .find(user => user.id === form.id)?.permissions
         .find(exist_permission => exist_permission.name === permission.value);
     try {
@@ -176,7 +176,7 @@ const editPermission = async (permission) => {
         setTimeout(() => {
             isProcessing.value = false; 
         }, 2000);
-        form.reset();
+        form.reset('permission');
     } catch (error) {
         console.error(error);
     }

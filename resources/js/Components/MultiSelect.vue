@@ -30,6 +30,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    filter: {
+        type: Boolean,
+        default: true
+    },
     loading: {
         type: Boolean,
         default: false
@@ -151,7 +155,7 @@ onUnmounted(() => {
             :maxSelectedLabels="7" 
             :loading="loading"
             display="chip"
-            filter 
+            :filter="props.filter" 
             @change="updateSelectedOption"
             :pt="{
                 root: ({ props, state, parent }) => {
@@ -160,15 +164,19 @@ onUnmounted(() => {
                     // state.overlayVisible = isOpened;
                     return {
                         class: [
-                            'p-multiselect inline-flex flex-row relative min-h-[44px] mb-1 w-full justify-between py-2 pl-2 pr-4 rounded-md',
-                            'bg-white border border-grey-300',
+                            'p-multiselect inline-flex flex-row relative min-h-[44px] mb-1 w-full justify-between py-2 pl-4 pr-4 rounded-md',
+                            { 
+                                'bg-white border': !props.disabled,
+                                'bg-grey-50 border': props.disabled 
+                            },
                             'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                             'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                             'cursor-pointer select-none overflow-hidden',
                             { 
                                 'first:ml-0 ml-[-1px]': parent.instance.$name == 'InputGroup' && !props.showButtons,
-                                'border-grey-300': !props.invalid,
+                                'border-grey-300': !props.invalid && !props.disabled,
                                 'border-primary-500': props.invalid,
+                                'border-grey-100': props.disabled,
                                 'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !state.focused,
                                 'border-primary-500 focus:border-primary-500 hover:border-primary-500': props.errorMessage,
                                 'outline-none border-primary-300 shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': state.focused,
@@ -197,7 +205,10 @@ onUnmounted(() => {
                     class: 'text-grey-700 text-xs font-normal whitespace-nowrap overflow-hidden'
                 },
                 trigger: {
-                    class: 'flex items-center text-primary-300'
+                    class: ['flex items-center', {
+                        'text-primary-300': !props.disabled,
+                        'text-grey-200': props.disabled
+                    }]
                 },
                 input: ({ props, parent }) => {
                     var _a;
@@ -275,7 +286,12 @@ onUnmounted(() => {
                     class: 'hidden'
                 },
                 header: {
-                    class: 'flex px-4 py-3 items-center gap-[10px] self-stretch w-full'
+                    class: [
+                        'flex px-4 py-3 items-center gap-[10px] self-stretch w-full',
+                        {
+                            'hidden': !props.filter
+                        }
+                    ]
                 },
                 headerCheckbox: ({ props, state, global, context, parent, instance }) => {
                     return {

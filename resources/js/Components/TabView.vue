@@ -16,7 +16,7 @@ const props = defineProps({
         default: false
     },
     tabFooter: {
-        type: Object,
+        type: [Object, Array],
         default: () => {}
     },
 });
@@ -66,7 +66,7 @@ const tranformedTabs = computed(() => {
                 >
                     <button
                         :class="[
-                            'p-3 text-sm font-medium leading-none focus:outline-none whitespace-nowrap',
+                            'p-3 text-sm font-medium leading-none focus:outline-none whitespace-nowrap group',
                             { 'text-grey-200': !selected },
                             { 'text-primary-900 border-b-2 border-primary-900': selected },
                             { 'hover:bg-white/[0.12] hover:text-primary-800': withDisabled ? !tab.disabled : true },
@@ -75,6 +75,7 @@ const tranformedTabs = computed(() => {
                     >
                         {{ withDisabled ? tab.title : tab }}
                         <slot name="tabFooter" v-if="props.tabFooter === tab"></slot>
+                        <slot name="count" :tabs="tab" :selected="selected"></slot>
                     </button>
                 </Tab>
             </template>

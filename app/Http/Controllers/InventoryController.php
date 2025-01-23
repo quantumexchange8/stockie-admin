@@ -169,6 +169,16 @@ class InventoryController extends Controller
 
         $newGroup = Iventory::create(['name' => $validatedData['name']]);
 
+        activity()->useLog('create-inventory-group')
+                        ->performedOn($newGroup)
+                        ->event('added')
+                        ->withProperties([
+                            'created_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'category_name' => $newGroup->name,
+                        ])
+                        ->log("New product '$newGroup->name' is added.");
+
         if ($request->hasFile('image')) {
             $newGroup->addMedia($validatedData['image'])->toMediaCollection('inventory');
         };
@@ -415,7 +425,7 @@ class InventoryController extends Controller
 
                 $calculatedStock = $value['stock_qty'] + $value['add_stock_qty'];
 
-                $existingItem = IventoryItem::find($value['id']);
+                $existingItem = IventoryItem::where('id', $value['id'])->first();
 
                 // if ($key === 2) dd($calculatedStock);
                 
@@ -431,6 +441,16 @@ class InventoryController extends Controller
                     'stock_qty' => $calculatedStock,
                     'status' => $newStatus
                 ]);
+
+                activity()->useLog('replenish-stock')
+                            ->performedOn($existingItem)
+                            ->event('updated')
+                            ->withProperties([
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'item_name' => $existingItem->item_name,
+                            ])
+                            ->log("$existingItem->item_name is replenished.");
 
                 if ($value['add_stock_qty'] > 0) {
                     StockHistory::create([
@@ -529,6 +549,16 @@ class InventoryController extends Controller
                 'name' => $inventoryData['name'],
             ]);
 
+            activity()->useLog('edit-group-detail')
+                        ->performedOn($existingGroup)
+                        ->event('updated')
+                        ->withProperties([
+                            'created_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'group_name' => $existingGroup->name,
+                        ])
+                        ->log("Group name '$existingGroup->name' is updated.");
+
             if($request->hasFile('image')){
                 $existingGroup->clearMediaCollection('inventory');
                 $existingGroup->addMedia($inventoryData['image'])->toMediaCollection('inventory');
@@ -547,7 +577,7 @@ class InventoryController extends Controller
                 }
 
                 if (isset($value['id'])) {
-                    $existingItem = IventoryItem::find($value['id']);
+                    $existingItem = IventoryItem::where('id', $request['id'])->first();
 
                     $existingItem->update([
                         'item_name' => $value['item_name'],
@@ -558,8 +588,18 @@ class InventoryController extends Controller
                         'keep' => $value['keep'],
                         'status' => $newStatus,
                     ]);
+
+                    activity()->useLog('edit-item-detail')
+                                ->performedOn($existingItem)
+                                ->event('updated')
+                                ->withProperties([
+                                    'created_by' => auth()->user()->full_name,
+                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                    'item_name' => $existingItem->item_name,
+                                ])
+                                ->log("Item details for '$existingItem->item_name' is updated.");
                 } else {
-                    IventoryItem::create([
+                    $newItem = IventoryItem::create([
                         'inventory_id' => $id,
                         'item_name' => $value['item_name'],
                         'item_code' => $value['item_code'],
@@ -569,6 +609,16 @@ class InventoryController extends Controller
                         'keep' => $value['keep'],
                         'status' => $newStatus,
                     ]);
+
+                    activity()->useLog('create-inventory-item')
+                                ->performedOn($newItem)
+                                ->event('added')
+                                ->withProperties([
+                                    'created_by' => auth()->user()->full_name,
+                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                    'item_name' => $newItem->item_name,
+                                ])
+                                ->log("Inventory item '$newItem->item_name' is added.");
                 }
             }
         }
@@ -597,6 +647,16 @@ class InventoryController extends Controller
                 }
             }
         }
+
+        activity()->useLog('delete-inventory-group')
+                    ->performedOn($existingGroup)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'group_name' => $existingGroup->name,
+                    ])
+                    ->log("$existingGroup->name is deleted.");
 
         $existingGroup->delete();
 

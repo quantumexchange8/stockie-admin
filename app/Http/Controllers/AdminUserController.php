@@ -27,6 +27,17 @@ class AdminUserController extends Controller
     public function deleteAdmin(String $id)
     {
         $targetUser = User::find($id);
+
+        activity()->useLog('delete-sub-admin')
+                    ->performedOn($targetUser)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'sub_admin' => $targetUser->full_name,
+                    ])
+                    ->log("Sub admin '$targetUser->full_name' is deleted.");
+
         $targetUser->delete();
 
         return redirect()->back();
@@ -62,13 +73,23 @@ class AdminUserController extends Controller
             'max' => 'Invalid input.'
         ]);
 
-        $targetUser = User::find($validatedData['id']);
+        $targetUser = User::where('id', $validatedData['id'])->first();
         $targetUser->update([
             'role_id' => $validatedData['role_id'],
             'full_name' => $validatedData['full_name'],
             'position' => $validatedData['position'],
             'password' => Hash::make($validatedData['password']),
         ]);
+
+        activity()->useLog('edit-sub-admin')
+                    ->performedOn($targetUser)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'sub_admin' => $targetUser->full_name,
+                    ])
+                    ->log("Sub-admin $targetUser->name's detail is updated.");
 
         if($request->hasfile('image')){
             $targetUser->clearMediaCollection('user');
@@ -103,6 +124,16 @@ class AdminUserController extends Controller
             'role_id' => $validatedData['role_id'],
             'position' => $validatedData['position'],
         ]);
+
+        activity()->useLog('create-sub-admin')
+                    ->performedOn($targetUser)
+                    ->event('added')
+                    ->withProperties([
+                        'created_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'sub_admin_name' => $targetUser->full_name,
+                    ])
+                    ->log("Sub-admin '$targetUser->full_name' is added.");
 
         if($request->hasFile('image')){
             $targetUser->addMedia($request->image)->toMediaCollection('user');
