@@ -3,18 +3,13 @@
 import SidebarLink from "@/Components/Sidebar/SidebarLink.vue";
 // import { DashboardIcon } from '@/Components/Icons/outline'
 // import { TemplateIcon } from '@heroicons/vue/outline'
-import DropdownLink from "@/Components/DropdownLink.vue";
 import { sidebarState } from "@/Composables";
 import {
     HomeIcon,
     OrderIcon,
     MenuIcon,
-    OperationIcon,
     SummaryReportIcon,
-    BillingIcon,
     ConfigurationIcon,
-    AdminUserIcon,
-    OutIcon,
     WaiterIcon,
     InventoryIcon,
     CustomerIcon,
@@ -23,12 +18,41 @@ import {
     ReservationIcon,
     UsersIcon,
     ActivityLogsIcon,
+    ShiftManagementIcon,
 } from "@/Components/Icons/solid";
 import { usePage } from "@inertiajs/vue3";
 import SidebarTree from "./SidebarTree.vue";
+import { ref } from "vue";
 
 const page = usePage();
 const existingPermissions = page.props.auth.user.data.permission;
+const expandedKeys = ref({});
+const nodes = ref([
+            {
+                key: '0',
+                label: 'Shift Management',
+                children: [
+                    { key: '1-0', label: 'Shift Report', data: route('shift-management'), type: 'url' },
+                    { key: '1-1', label: 'Shift Control', data: route('shift-record'), type: 'url' },
+                ]
+            }])
+
+const toggleNode = (node) => {
+    if (node.children && node.children.length) {
+        // If the node is already expanded, collapse it
+        if (expandedKeys.value[node.key]) {
+            delete expandedKeys.value[node.key];
+        } else {
+            // Otherwise, expand the node
+            expandedKeys.value[node.key] = true;
+        }
+
+        // Recursively toggle children
+        for (let child of node.children) {
+            toggleNode(child);
+        }
+    }
+};
 
 </script>
 
@@ -68,7 +92,17 @@ const existingPermissions = page.props.auth.user.data.permission;
                         <OrderIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarTree />
+                <SidebarTree 
+                    :value="nodes" 
+                    :active="route().current('shift-management')"
+                    :expandedKeys="expandedKeys"
+                    @expand="toggleNode"
+                >
+                    <template #togglericon="slotProps">
+                        <ShiftManagementIcon v-if="slotProps.node.key === '0'"/>
+                        <div class="size-[25px]" v-else></div>
+                    </template>
+                </SidebarTree>
                 <SidebarLink 
                     title="Menu Management" 
                     :href="route('products')"

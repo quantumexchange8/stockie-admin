@@ -32,10 +32,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('keepitems:check-expiration')->dailyAt('00:00');
         $schedule->command('general:clear-notification')->dailyAt('00:00');
         $schedule->command('configuration:update-employee-incentives')->dailyAt('17:34');
+        $schedule->command('activitylog:clean')->daily();
+        $schedule->command('configurations:set-bill-discount-active')->everyTwoMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
-            if (in_array($response->getStatusCode(), [400, 401, 403, 404, 408, 429, 500, 502, 503])) {
+            if (in_array($response->getStatusCode(), [400, 401, 403, 404, 408, 429, 502, 503])) {
                 return Inertia::render('Error', ['status' => $response->getStatusCode()])
                     ->toResponse($request)
                     ->setStatusCode($response->getStatusCode());

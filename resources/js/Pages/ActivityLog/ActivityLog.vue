@@ -175,7 +175,7 @@ watch(() => date_filter.value, (newValue) => {
                             <DefaultIcon class="size-9 rounded-full" v-else />
                             <div class="flex flex-col justify-center items-start gap-4 flex-[1_0_0]">
                                 <div class="flex flex-col items-start self-stretch">
-                                    <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-sm font-bold">{{ log.properties.created_by }}</span>
+                                    <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-sm font-bold">{{ log.properties.created_by ?? log.properties.edited_by ?? log.properties.deleted_by }}</span>
                                     <span class="self-stretch text-grey-900 text-sm font-normal">{{ log.description }}</span>
                                 </div>
                                 <div class="flex items-start gap-1 self-stretch">

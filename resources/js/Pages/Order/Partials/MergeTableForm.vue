@@ -141,6 +141,10 @@ const setupDuration = (created_at) => {
 
 onUnmounted(() => intervals.value.forEach(clearInterval));
 
+const filterZones = () => {
+
+}
+
 const getCurrentOrderTableDuration = (table) => {
     let currentOrderTable = table.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1 
             ? table.order_tables.filter((table) => table.status !== 'Pending Clearance')[0].created_at
@@ -287,7 +291,36 @@ onMounted(() => {
                         </div>
                     </div>
                 </template>
-                <!-- <template  -->
+                <template
+                    v-for="tab in tabs.filter(tab => tab !== 'All').map((tab) => tab.toLowerCase().replace(/[/\s_]+/g, '-'))"
+                    :key="tab"
+                    v-slot:[tab]
+                >
+                    <div class="flex flex-col px-6 items-start gap-6 self-stretch">
+                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap">
+                        <template v-for="zone in zones.filter(zone => zone.text.toLowerCase().replace(/[/\s_]+/g, '-') === tab)">
+                            <template v-for="table in zone.tables">
+                                <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative" 
+                                    :class="getTableClasses(table).state.value"
+                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) ? '' : addToMerged(table)"
+                                >
+                                    <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                    <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
+                                        {{ getCurrentOrderTableDuration(table) }}
+                                    </div>
+                                    <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                                    <Checkbox 
+                                        :checked="!!form.tables.find((formTable) => formTable.id === table.id)"
+                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table)"
+                                        class="absolute top-[11px] right-[12px]"
+                                    />
+                                    <MergedIcon class="text-white size-5 absolute left-2 top-2" v-if="isMerged(table)" />
+                                </div>
+                            </template>
+                        </template>
+                        </div>
+                    </div>
+                </template> 
             </TabView>
         </div>
         <div class="flex flex-col px-6 pt-6 pb-2 items-center gap-4 self-stretch rounded-b-[5px] bg-white shadow-[0_-8px_16.6px_0_rgba(0,0,0,0.04)] mx-[-20px]">

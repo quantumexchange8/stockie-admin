@@ -150,7 +150,7 @@ class ConfigCommissionController extends Controller
                 'rate' => $request->commRate,
             ]);
             foreach ($request->involvedProducts as $products) {
-                ConfigEmployeeCommItem::create([
+                $newComm = ConfigEmployeeCommItem::with('product')->create([
                     'comm_id' => $request->id,
                     'item' => $products,
                 ]);
@@ -161,7 +161,7 @@ class ConfigCommissionController extends Controller
                             ->withProperties([
                                 'edited_by' => auth()->user()->full_name,
                                 'image' => auth()->user()->getFirstMediaUrl('user'),
-                                'product_name' => Product::where('id', $products)->first()->pluck('product_name'),
+                                'product_name' => $newComm->product->product_name,
                             ])
                             ->log("Commission type for ':properties.product_name' is updated.");
             }

@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SummaryReportController;
 use App\Http\Middleware\CheckPermission;
 use Illuminate\Foundation\Application;
@@ -332,6 +333,16 @@ Route::middleware('auth')->group(function () {
     Route::prefix('activity-log')->middleware([CheckPermission::class . ':activity-logs'])->group(function(){
         Route::get('', [ActivityLogController::class, 'index'])->name('activity-logs');
         Route::get('/filter-logs', [ActivityLogController::class, 'filterLogs'])->name('activity-logs.filter-logs');
+    });
+
+    /********* Shift Management **********/
+    Route::prefix('shift-management')->middleware([CheckPermission::class . ':shift-management'])->group(function(){
+        Route::get('', [ShiftController::class, 'index'])->name('shift-management');
+    });
+
+    Route::prefix('shift-record')->middleware([CheckPermission::class . ':shift-management'])->group(function(){
+        Route::get('', [ShiftController::class, 'record'])->name('shift-record');
+
     });
 });
 
