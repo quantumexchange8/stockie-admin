@@ -32,7 +32,7 @@ class PromotionController extends Controller
     /**
      * Get all promotions
      */
-    public function getAllPromotions(Request $request)
+    public function getAllPromotions()
     {
         $allPromotions = ConfigPromotion::where('status', 'Active')
                                         ->orderByDesc('promotion_from')
@@ -58,9 +58,7 @@ class PromotionController extends Controller
                         
         $promotion->promotion_image = $promotion->getFirstMediaUrl('promotion');
                         
-        $response = [
-            'promotion' => $promotion,
-        ];
+        $response = ['promotion' => $promotion,];
 
         return response()->json($response);
     }

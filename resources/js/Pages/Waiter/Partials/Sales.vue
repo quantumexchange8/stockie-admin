@@ -195,10 +195,10 @@ const salesTotalPages = computed(() => {
                     <span class="text-primary-900 text-sm font-medium">{{ order.order_no }}</span>
                 </template>
                 <template #total_amount="order">
-                    <span class="text-grey-900 text-sm font-medium">RM {{ order.total_amount }}</span>
+                    <span class="text-grey-900 text-sm font-medium">RM {{ formatAmount(order.total_amount) }}</span>
                 </template>
                 <template #commission="order">
-                    <span class="text-grey-900 text-sm font-medium">RM {{ order.commission }}</span>
+                    <span class="text-grey-900 text-sm font-medium">RM {{ formatAmount(order.commission) }}</span>
                 </template>
                 <template #action="order">
                     <DetailIcon 

@@ -124,6 +124,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :labelText="'Commission type'"
                     :inputArray="comm_type"
                     :dataValue="form.comm_type.value"
+                    :errorMessage="form.errors?.comm_type"
                     v-model="form.comm_type.value"
                     @onChange="setIsRate(form.comm_type.value)"
                 >
@@ -133,6 +134,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     labelText="Rate"
                     :inputName="'comm_rate'"
                     :iconPosition="isRate ? 'right' : 'left'"
+                    :errorMessage="form.errors?.rate"
                     v-model="form.rate"
                     @keypress="isValidNumberKey($event, true)"
                 >
@@ -147,6 +149,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :placeholder="'DD/MM/YYYY'"
                     :range="false"
                     :hintText="'Changes will take effect only starting from next month.'"
+                    :errorMessage="form.errors?.effective_date"
                     v-model="form.effective_date"
                 />
 
@@ -154,18 +157,12 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :labelText="'Monthly sales hits above'"
                     :inputName="'monthly_sale'"
                     :iconPosition="'left'"
+                    :errorMessage="form.errors?.monthly_sale"
                     v-model="form.monthly_sale"
                     @keypress="isValidNumberKey($event, true)"
                 >
                     <template #prefix>RM</template>
                 </TextInput>
-                <!-- <Dropdown
-                    :inputName="'recurring_on'"
-                    :labelText="'Recurring on'"
-                    :inputArray="recurringDates"
-                    :dataValue="form.recurring_on.value"
-                    v-model="form.recurring_on.value"
-                /> -->
             </div>
         </div>
 

@@ -47,6 +47,7 @@ Route::controller(ReportController::class)->group(function(){
     Route::get('insights/sales_commissions/recent_histories', 'getRecentSalesHistories');
     Route::get('insights/sales_commissions/histories', 'getSalesHistories');
     Route::get('insights/sales_commissions/sales_details', 'getSalesDetails');
+    Route::get('insights/sales_commissions/order_histories', 'getOrderHistories');
     
     // Incentive
     Route::get('insights/incentive/summary', 'getIncentiveSummary');

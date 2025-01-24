@@ -151,20 +151,12 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
-     * Payment Model
-     * Get the order payment receipts.
+     * OrderItem Model
+     * Get the order items that are served of which it's order is completed and payment has been made.
      */
-    public function itemSales(): HasMany
+    public function sales()
     {
-        return $this->hasMany(OrderItem::class, 'user_id')
-                    ->whereHas('order', function ($query) {
-                        $query->where('status', 'Order Completed')
-                                ->whereHas('payment', fn ($subQuery) => $subQuery->where('status', 'Successful'));
-                    })
-                    ->where([
-                        ['type', 'Normal'],
-                        ['status', 'Served']
-                    ]);
+        return OrderItem::itemSales()->where('order_items.user_id', $this->id);                        
     }
 
     // /**

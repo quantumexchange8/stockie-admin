@@ -37,7 +37,10 @@ class ConfigEmployeeIncProgController extends Controller
             $waiter->image = $waiter->getFirstMediaUrl('user');
         });
 
-        $incentiveProg = ConfigIncentive::with('incentiveEmployees.waiters')
+        $incentiveProg = ConfigIncentive::with(['incentiveEmployees' => function ($query) {
+                                            $query->where('status', 'Active')->with('waiter:id,full_name');
+                                        }])
+                                        ->orderBy('monthly_sale')
                                         ->get()
                                         ->map(function ($incentive) {
                                             return [
@@ -47,15 +50,13 @@ class ConfigEmployeeIncProgController extends Controller
                                                 'effective_date' => $incentive->effective_date,
                                                 'recurring_on' => $incentive->recurring_on,
                                                 'monthly_sale' => $incentive->monthly_sale,
-                                                'entitled' => $incentive->incentiveEmployees->where('status', 'Active')->flatMap(function ($employee) {
-                                                    return $employee->waiters->map(function ($waiter) {
-                                                        return [
-                                                            'id' => $waiter->id ?? null,
-                                                            'name' => $waiter->full_name ?? null,
-                                                            'image' => $waiter->getFirstMediaUrl('user') ?? null,
-                                                        ];
-                                                    });
-                                                })->unique('id')->sortBy('name')->values(),
+                                                'entitled' => $incentive->incentiveEmployees->map(function ($incentiveEmployee) {
+                                                    return [
+                                                        'id' => $incentiveEmployee->waiter?->id,
+                                                        'name' => $incentiveEmployee->waiter?->full_name,
+                                                        'image' => $incentiveEmployee->waiter?->getFirstMediaUrl('user'),
+                                                    ];
+                                                }),
                                             ];
                                         });
 
@@ -69,15 +70,11 @@ class ConfigEmployeeIncProgController extends Controller
     public function addAchievement(Request $request)
     {
         $validatedData = $request->validate([
-            'comm_type' => 'required|string',
-            'rate' => 'required|string',
+            'comm_type' => 'required',
+            'rate' => 'required|decimal:0,2',
             'effective_date' => 'required|date',
             'monthly_sale' => 'required',
-            'entitled' => 'required',
-        ], [
-            'required' => 'This field is required.',
-            'string' => 'This field must be a valid string.',
-        ]);
+        ], ['required' => 'This field is required.']);
 
         $rate = $validatedData['comm_type']['value'] == 'fixed' ? $validatedData['rate'] : $validatedData['rate'] / 100;
 
@@ -89,7 +86,7 @@ class ConfigEmployeeIncProgController extends Controller
             'monthly_sale' => round($validatedData['monthly_sale'], 2),
         ]);
 
-        foreach ($validatedData['entitled'] as $entitledWaiters) {
+        foreach ($request->entitled as $entitledWaiters) {
             ConfigIncentiveEmployee::create([
                 'incentive_id' => $incentive->id,
                 'user_id' => $entitledWaiters,
@@ -110,14 +107,11 @@ class ConfigEmployeeIncProgController extends Controller
     public function editAchievement(Request $request)
     {
         $validatedData = $request->validate([
-            'comm_type' => 'required|string',
-            'rate' => 'required|string',
+            'comm_type' => 'required',
+            'rate' => 'required|decimal:0.2',
             'effective_date' => 'required|date',
             'monthly_sale' => 'required',
-        ], [
-            'required' => 'This field is required.',
-            'string' => 'This field must be a valid string.',
-        ]);
+        ], ['required' => 'This field is required.']);
         
         ConfigIncentive::find($request->id)->update([
             'type' => $validatedData['comm_type']['value'],

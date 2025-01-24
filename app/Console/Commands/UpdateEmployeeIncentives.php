@@ -42,13 +42,15 @@ class UpdateEmployeeIncentives extends Command
         
         if ($dates) {
             $incentives = ConfigIncentive::get();
-            $waiters = User::where('position', 'waiter')->get();
+            $incentiveEmployees = $incentives->incentiveEmployees()->where('status', 'Active');
             
-            foreach ($waiters as $waiter) {
+            foreach ($incentiveEmployees as $incentiveEmployee) {
+                $waiter = $incentiveEmployee->waiter();
+
                 // Calculate total sales for the period
                 $totalSales = $waiter->itemSales()
-                                        ->whereHas('order', fn ($query) => $query->whereBetween('created_at', [$dates['start'], $dates['end']]))
-                                        ->sum('amount');
+                                        ->whereBetween('orders.created_at', [$dates['start'], $dates['end']])
+                                        ->sum('order_items.amount');
                 
                 // Find the highest achievable incentive
                 $achievedIncentive = $this->findHighestAchievableIncentive($incentives, $totalSales, $recurringDay);

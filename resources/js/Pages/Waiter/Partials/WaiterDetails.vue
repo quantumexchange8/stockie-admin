@@ -70,8 +70,8 @@ const commissionColumn = ref([
 
 const incentiveColumn = ref([
     {field: 'period_start', header: 'Month', width: '23', sortable: true},
-    {field: 'amount', header: 'Incentive', width: '23', sortable: true},
-    {field: 'sales_target', header: 'Total Sales', width: '34', sortable: true},
+    {field: 'amount', header: 'Total Sales', width: '23', sortable: true},
+    {field: 'sales_target', header: 'Incentive', width: '34', sortable: true},
     {field: 'status', header: 'Status', width: '20', sortable: true},
 ]);
 
