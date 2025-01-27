@@ -15,20 +15,26 @@ use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
+    protected $currentYear;
     protected $authUser;
     protected $sales;
     protected $salesCommissions;
     
     public function __construct()
     {
-        $this->authUser = User::findOrFail(2); // Should get auth user
+        $this->currentYear = now()->year;
+
+        $this->authUser = User::findOrFail(Auth::id()); // Should get auth user
+
         // Get all item sales of the auth user
         $this->sales = OrderItem::itemSales()->where('order_items.user_id', $this->authUser->id);
+
         $this->salesCommissions = $this->sales
                                         ->clone()
                                         ->join('products', 'order_items.product_id', '=', 'products.id')
@@ -37,6 +43,15 @@ class ReportController extends Controller
                                         ->whereColumn('comm_items.created_at', '<=', 'order_items.created_at')
                                         ->whereNull('comm_items.deleted_at')
                                         ->whereNull('comms.deleted_at');
+    }
+
+    private function formatDateFilter($dateFilter)
+    {
+        return $dateFilter 
+                ? collect($dateFilter)
+                        ->map(fn($date) => Carbon::parse($date)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'))
+                        ->toArray() 
+                : [];
     }
 
     //----------------------------------------------------------------------------
@@ -49,7 +64,7 @@ class ReportController extends Controller
     {
         // Sales
         $salesEachMonth = $this->sales->clone()
-                                        ->whereYear('orders.created_at', now()->year)
+                                        ->whereYear('orders.created_at', $this->currentYear)
                                         ->selectRaw('MONTH(orders.created_at) as month, SUM(order_items.amount) as total_sales')
                                         ->groupBy('month')
                                         ->orderBy('month')
@@ -57,7 +72,7 @@ class ReportController extends Controller
 
         // Commissions: Pre-aggregate commissions data by month
         $commissionsEachMonth = $this->salesCommissions->clone()
-                                                        ->whereYear('orders.created_at', now()->year)
+                                                        ->whereYear('orders.created_at', $this->currentYear)
                                                         ->selectRaw("
                                                             MONTH(orders.created_at) as month,
                                                             SUM(
@@ -70,42 +85,8 @@ class ReportController extends Controller
                                                         ")
                                                         ->groupBy('month')
                                                         ->pluck('total_commission', 'month');
-
-        // $commissionsEachMonthSample = OrderItem::query()
-        //                                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
-        //                                 ->join('payments', function ($join) {
-        //                                     $join->on('orders.id', '=', 'payments.order_id')
-        //                                             ->where('payments.status', 'Successful');
-        //                                 })
-        //                                 ->join('products', 'order_items.product_id', '=', 'products.id')
-        //                                 ->join('config_employee_comm_items as comm_items', function ($join) {
-        //                                     $join->on('products.id', '=', 'comm_items.item')
-        //                                         ->whereColumn('comm_items.created_at', '<=', 'order_items.created_at')
-        //                                         ->whereNull('comm_items.deleted_at');
-        //                                 })
-        //                                 ->join('config_employee_comms as comms', function ($join) {
-        //                                     $join->whereColumn('comm_items.comm_id', '=', 'comms.id')
-        //                                             ->whereNull('comms.deleted_at');
-        //                                 })
-        //                                 ->selectRaw("
-        //                                     MONTHNAME(order_items.created_at) as month,
-        //                                     order_items.user_id,
-        //                                     SUM(
-        //                                         CASE
-        //                                             WHEN comms.comm_type = 'Fixed amount per sold product'
-        //                                             THEN comms.rate * order_items.item_qty
-        //                                             ELSE products.price * order_items.item_qty * (comms.rate / 100)
-        //                                         END
-        //                                     ) as total_commission
-        //                                 ")
-        //                                 ->where('order_items.user_id', $user->id)
-        //                                 ->where('order_items.status', 'Served')
-        //                                 ->where('order_items.type', 'Normal')
-        //                                 ->whereYear('payments.updated_at', now()->year)
-        //                                 ->groupBy('month')
-        //                                 ->get();
                                 
-        $sales_commissions_array = collect(range(1,  12))->map(function ($month) use ($salesEachMonth, $commissionsEachMonth) {
+        $salesCommissionsArray = collect(range(1,  12))->map(function ($month) use ($salesEachMonth, $commissionsEachMonth) {
             return [
                 'month' => Carbon::createFromDate(null, $month, 1)->format('F'),
                 'total_sales' => number_format($salesEachMonth->get($month, 0), 2),
@@ -113,7 +94,7 @@ class ReportController extends Controller
             ];
         });
 
-        return response()->json(['sales_commissions_array' => $sales_commissions_array]);
+        return response()->json($salesCommissionsArray);
     }
 
     /**
@@ -121,15 +102,52 @@ class ReportController extends Controller
      */
     public function getSalesCommissionDetails()
     {
-        $user = User::find(2);
-        $totalSales = $user->itemSales()
-                            ->whereHas('order', function ($query) {
-                                $query->whereMonth('created_at', now()->month)
-                                        ->whereYear('created_at', now()->year);
-                            })
-                            ->sum('amount');
+        // Sales
+        $salesEachMonth = $this->sales->clone()
+                                        ->whereYear('orders.created_at', $this->currentYear)
+                                        ->selectRaw('MONTH(orders.created_at) as month, SUM(order_items.amount) as total_sales')
+                                        ->groupBy('month')
+                                        ->orderBy('month')
+                                        ->get()
+                                        ->mapWithKeys(fn ($item) => [$item->month => (float) $item->total_sales]);
 
-        return response()->json($totalSales);
+        // Commissions: Pre-aggregate commissions data by month
+        $commissionsEachMonth = $this->salesCommissions->clone()
+                                                        ->whereYear('orders.created_at', $this->currentYear)
+                                                        ->selectRaw("
+                                                            MONTH(orders.created_at) as month,
+                                                            SUM(
+                                                                CASE
+                                                                    WHEN comms.comm_type = 'Fixed amount per sold product'
+                                                                    THEN comms.rate * order_items.item_qty
+                                                                    ELSE products.price * order_items.item_qty * (comms.rate / 100)
+                                                                END
+                                                            ) as total_commission
+                                                        ")
+                                                        ->groupBy('month')
+                                                        ->get()
+                                                        ->mapWithKeys(fn ($item) => [$item->month => (float) $item->total_commission]);
+
+        // Pre-generate month names
+        $monthNames = collect(range(1, 12))->mapWithKeys(function ($month) {
+            return [$month => Carbon::createFromDate($this->currentYear, $month, 1)->format('F')];
+        });
+
+        $salesCommissionsArray = $monthNames->map(function ($monthName, $month) use ($salesEachMonth, $commissionsEachMonth) {
+            return [
+                'month' => $monthName,
+                'total_sales' => number_format($salesEachMonth->get($month, 0), 2),
+                'total_commissions' => number_format($commissionsEachMonth->get($month, 0), 2),
+            ];
+        })->values();
+
+        $data = [
+            'current_total_sales' => number_format($salesEachMonth->sum(), 2),
+            'current_total_commissions' => number_format($commissionsEachMonth->sum(), 2),
+            'sales_commissions' => $salesCommissionsArray
+        ];
+
+        return response()->json($data);
     }
 
     /**
@@ -139,7 +157,7 @@ class ReportController extends Controller
     {
         // Sales
         $salesHistories = $this->sales->clone()
-                                        ->whereYear('orders.created_at', now()->year)
+                                        ->whereYear('orders.created_at', $this->currentYear)
                                         ->selectRaw('DATE(orders.created_at) as order_date, COUNT(DISTINCT orders.id) as total_orders, SUM(order_items.amount) as total_sales')
                                         ->groupBy('order_date')
                                         ->orderByDesc('order_date')
@@ -148,7 +166,7 @@ class ReportController extends Controller
 
         // Commissions
         $commissionsHistories = $this->salesCommissions->clone()
-                                                        ->whereYear('orders.created_at', now()->year)
+                                                        ->whereYear('orders.created_at', $this->currentYear)
                                                         ->selectRaw('
                                                             DATE(orders.created_at) as order_date,
                                                             SUM(
@@ -179,93 +197,70 @@ class ReportController extends Controller
     /**
      * Get the waiter's sales histories 
      */
-    public function getSalesHistories()
+    public function getSalesHistories(Request $request)
     {
+        $dateFilter = $this->formatDateFilter($request->date_range);
+
         // Sales
         $salesHistories = $this->sales->clone()
-                                        ->whereYear('orders.created_at', now()->year)
+                                        ->when(count($dateFilter) === 1, fn($query) => 
+                                            $query->whereDate('orders.created_at', $dateFilter[0])
+                                        )
+                                        ->when(count($dateFilter) > 1, fn($query) => 
+                                            $query->whereDate('orders.created_at', '>=', $dateFilter[0])
+                                                    ->whereDate('orders.created_at', '<=', $dateFilter[1])
+                                        )
                                         ->selectRaw('DATE(orders.created_at) as order_date, COUNT(DISTINCT orders.id) as total_orders, SUM(order_items.amount) as total_sales')
                                         ->groupBy('order_date')
                                         ->orderByDesc('order_date')
-                                        ->limit(3)
                                         ->get();
 
-        // Commissions
-        $commissionsHistories = $this->salesCommissions->clone()
-                                                        ->whereYear('orders.created_at', now()->year)
-                                                        ->selectRaw('
-                                                            DATE(orders.created_at) as order_date,
-                                                            SUM(
-                                                                CASE
-                                                                    WHEN comms.comm_type = "Fixed amount per sold product"
-                                                                    THEN comms.rate * order_items.item_qty
-                                                                    ELSE products.price * order_items.item_qty * (comms.rate / 100)
-                                                                END
-                                                            ) as total_commissions
-                                                        ')
-                                                        ->groupBy('order_date')
-                                                        ->orderByDesc('order_date')
-                                                        ->limit(3)
-                                                        ->pluck('total_commissions', 'order_date');
+        if (count($salesHistories) > 0) {
+            // Commissions
+            $commissionsHistories = $this->salesCommissions->clone()
+                                                            ->when(count($dateFilter) === 1, fn($query) => 
+                                                                $query->whereDate('orders.created_at', $dateFilter[0])
+                                                            )
+                                                            ->when(count($dateFilter) > 1, fn($query) => 
+                                                                $query->whereDate('orders.created_at', '>=', $dateFilter[0])
+                                                                        ->whereDate('orders.created_at', '<=', $dateFilter[1])
+                                                            )
+                                                            ->selectRaw('
+                                                                DATE(orders.created_at) as order_date,
+                                                                SUM(
+                                                                    CASE
+                                                                        WHEN comms.comm_type = "Fixed amount per sold product"
+                                                                        THEN comms.rate * order_items.item_qty
+                                                                        ELSE products.price * order_items.item_qty * (comms.rate / 100)
+                                                                    END
+                                                                ) as total_commissions
+                                                            ')
+                                                            ->groupBy('order_date')
+                                                            ->orderByDesc('order_date')
+                                                            ->pluck('total_commissions', 'order_date');
+    
+            $saleHistories = $salesHistories->map(function ($item) use ($commissionsHistories) {
+                return [
+                    'date' => $item->order_date,
+                    'total_orders' => $item->total_orders,
+                    'total_sales' => number_format($item->total_sales, 2),
+                    'total_commissions' => number_format($commissionsHistories->get($item->order_date, 0), 2)
+                ];
+            });
 
-        $saleHistories = $salesHistories->map(function ($item) use ($commissionsHistories) {
-            return [
-                'date' => $item->order_date,
-                'total_orders' => $item->total_orders,
-                'total_sales' => number_format($item->total_sales, 2),
-                'total_commissions' => number_format($commissionsHistories->get($item->order_date, 0), 2)
-            ];
-        });
+            return response()->json($saleHistories);
+        }
 
-        return response()->json($saleHistories);
+        return response()->json([]);
     }
 
     /**
      * Get the waiter's sale's details 
      */
-    public function getOrderHistories(Request $request)
+    public function getOrderHistories()
     {
-        $orderDate = Carbon::parse($request->date)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d');
-
-        
-        $salesEachMonth = $this->sales->whereYear('orders.created_at', now()->year)
-                                        ->selectRaw('MONTH(orders.created_at) as month, SUM(order_items.amount) as total_sales')
-                                        ->groupBy('month')
-                                        ->orderBy('month')
-                                        ->pluck('total_sales', 'month');
-        
-        $orderHistories = $this->salesCommissions
-                                ->whereDate('orders.created_at', $orderDate)
-                                ->select(
-                                    'orders.id as order_id',
-                                    'orders.order_no',
-                                    'orders.created_at',
-                                    DB::raw('SUM(order_items.amount) as total_amount'),
-                                    DB::raw('SUM(
-                                        CASE 
-                                            WHEN comms.comm_type = "Fixed amount per sold product"
-                                            THEN comms.rate * order_items.item_qty
-                                            WHEN comms.comm_type IS NOT NULL 
-                                            THEN products.price * order_items.item_qty * (comms.rate / 100)
-                                            ELSE 0
-                                        END
-                                    ) as total_commission')
-                                )
-                                ->groupBy('orders.id')
-                                ->get()
-                                ->map(fn($order) => [
-                                    'order_id' => $order->order_id,
-                                    'order_no' => $order->order_no,
-                                    'created_at' => $order->created_at->format('Y-m-d H:i:s'),
-                                    'total_amount' => number_format($order->total_amount, 2),
-                                    'total_commission' => number_format($order->total_commission, 2)
-                                ])
-                                ->toArray();
-
-                                
         // Sales for the specific date
         $salesDetails = $this->sales->clone()
-                                    ->whereDate('orders.created_at', $orderDate)
                                     ->selectRaw('
                                         orders.id, 
                                         orders.order_no,
@@ -277,7 +272,6 @@ class ReportController extends Controller
 
         // Commissions for the specific date
         $commissionsDetails = $this->salesCommissions->clone()
-                                                        ->whereDate('orders.created_at', $orderDate)
                                                         ->selectRaw('
                                                             orders.id,
                                                             SUM(
@@ -299,7 +293,7 @@ class ReportController extends Controller
                 'total_sales' => number_format($item->total_sales, 2),
                 'total_commissions' => number_format($commissionsDetails->get($item->id, 0), 2)
             ];
-        });
+        })->sortByDesc('order_date')->values();
         
         return response()->json($orderDetails);
     }
@@ -309,30 +303,36 @@ class ReportController extends Controller
      */
     public function getSalesDetails(Request $request)
     {
-        $salesDetails = $this->sales->clone()->where('order_items.order_id', $request->id);
-        $orderItemsDetails = $salesDetails->clone()
-                                        ->with(['product:id,product_name', 'commission:id,order_item_id'])
-                                        ->select(
-                                            'order_items.order_id',
-                                            'order_items.amount',
-                                            'order_items.item_qty',
-                                            'orders.order_no',
-                                            'orders.user_id',
-                                            'orders.created_at',
-                                            'order_items.product_id'
-                                        )
-                                        ->get();
+        $orderItemsDetails = $this->sales->clone()
+                                            ->where('order_items.order_id', $request->id)
+                                            ->with(['product:id,product_name', 'commission:id,order_item_id,amount'])
+                                            ->select(
+                                                'order_items.id',
+                                                'order_items.order_id',
+                                                'order_items.amount',
+                                                'order_items.item_qty',
+                                                'order_items.product_id',
+                                                'orders.order_no',
+                                                'orders.user_id',
+                                                'orders.created_at'
+                                            )
+                                            ->get();
+
+        // Since we know all items are from the same order, we can use the first item
+        $firstItem = $orderItemsDetails->first();
 
         $orderDetails = [
-            'id' => $salesDetails->clone()->value('order_items.order_id'),
-            'order_no' => $salesDetails->clone()->value('orders.order_no'),
-            'created_at' => $salesDetails->clone()->value('orders.created_at'),
-            'waiter' => $salesDetails->clone()->value('orders.user_id'),
+            'id' => $firstItem->order_id,
+            'order_no' => $firstItem->order_no,
+            'created_at' => $firstItem->created_at,
+            'waiter' => $firstItem->user_id,
             'order_items' => $orderItemsDetails->map(fn ($item) => [
+                'id' => $item->id,
+                'order_id' => $item->order_id,
                 'product_name' => $item->product->product_name,
                 'item_qty' => $item->item_qty,
                 'amount' => number_format($item->amount, 2),
-                'commission' => $item->commission, // need fix
+                'commission' => number_format($item->commission?->amount ?? 0, 2),
             ]),
         ];
 
@@ -347,13 +347,76 @@ class ReportController extends Controller
      */
     public function getIncentiveSummary()
     {
+        $incentiveData = $this->authUser->incentives()
+                                        ->whereYear('period_start', 2024)
+                                        ->orderBy('period_start')
+                                        ->get(['rate', 'amount', 'period_start'])
+                                        ->map(fn ($incentive) => [
+                                            'month' => Carbon::parse($incentive->period_start)->format('n'),
+                                            'month_name' => Carbon::parse($incentive->period_start)->format('F'),
+                                            'sales' => number_format($incentive->amount, 2),
+                                            'incentive_rate' => number_format($incentive->rate, 2),
+                                        ])
+                                        ->keyBy('month');;
+
+        $incentivesArray = collect(range(1,  12))->map(function ($month) use ($incentiveData) {
+            $monthData = $incentiveData->get($month, [
+                'sales' => '0.00',
+                'incentive_rate' => '0.00'
+            ]);
+            
+            return [
+                'month' => Carbon::createFromDate(null, $month, 1)->format('F'),
+                'sales' => $monthData['sales'] ?? '0.00',
+                'incentive_rate' => $monthData['incentive_rate'] ?? '0.00',
+            ];
+        });
+
+        return response()->json($incentivesArray);
     }
 
     /**
      * Get the waiter's incentive details & chart data
      */
-    public function getIncentiveDetails()
+    public function getIncentiveDetails(Request $request)
     {
+        $yearFilter = $request->year ?: $this->currentYear;
+
+        $incentiveData = $this->authUser->incentives()
+                                        ->whereYear('period_start', $yearFilter)
+                                        ->orderBy('period_start')
+                                        ->get(['rate', 'amount', 'period_start'])
+                                        ->map(function ($incentive) {
+                                            $date = Carbon::parse($incentive->period_start);
+                                        
+                                            return [
+                                                'month' => $date->format('n'),
+                                                'month_name' => $date->format('F'),
+                                                'incentive_rate' => (float) $incentive->rate,
+                                            ];
+                                        })
+                                        ->keyBy('month');
+
+        // Pre-generate all month names to avoid multiple Carbon instances
+        $monthNames = collect(range(1, 12))->mapWithKeys(function ($month) use ($yearFilter) {
+            return [$month => Carbon::createFromDate($yearFilter, $month, 1)->format('F')];
+        });
+    
+        $incentivesArray = $monthNames->map(function ($monthName, $month) use ($incentiveData) {
+            $monthData = $incentiveData->get($month, ['incentive_rate' => '0.00']);
+            
+            return [
+                'month' => $monthName,
+                'incentive_rate' => number_format($monthData['incentive_rate'], 2),
+            ];
+        })->values();
+
+        $data = [
+            'current_total_incentive_rate' => number_format($incentiveData->sum('incentive_rate'), 2),
+            'incentives' => $incentivesArray
+        ];
+    
+        return response()->json($data);
     }
 
     /**
@@ -361,12 +424,44 @@ class ReportController extends Controller
      */
     public function getRecentIncentiveHistories()
     {
+        $incentiveData = $this->authUser->incentives()
+                                        ->orderBy('period_start')
+                                        ->limit(3)
+                                        ->get(['rate', 'amount', 'period_start'])
+                                        ->map(fn ($incentive) => [
+                                            'month' => Carbon::parse($incentive->period_start)->format('M Y'),
+                                            'start_date' => Carbon::parse($incentive->period_start)->format('d/m/Y'),
+                                            'sales' => number_format($incentive->amount, 2),
+                                            'incentive_rate' => number_format($incentive->rate, 2),
+                                        ]);
+
+        return $incentiveData;
     }
 
     /**
      * Get the waiter's incentive histories 
      */
-    public function getIncentiveHistories()
+    public function getIncentiveHistories(Request $request)
     {
+        $dateFilter = $this->formatDateFilter($request->date_range);
+
+        $incentiveData = $this->authUser->incentives()
+                                        ->when(count($dateFilter) === 1, fn($query) => 
+                                            $query->whereDate('period_start', $dateFilter[0])
+                                        )
+                                        ->when(count($dateFilter) > 1, fn($query) => 
+                                            $query->whereDate('period_start', '>=', $dateFilter[0])
+                                                    ->whereDate('period_start', '<=', $dateFilter[1])
+                                        )
+                                        ->orderBy('period_start')
+                                        ->get(['rate', 'amount', 'period_start'])
+                                        ->map(fn ($incentive) => [
+                                            'month' => Carbon::parse($incentive->period_start)->format('M Y'),
+                                            'start_date' => Carbon::parse($incentive->period_start)->format('d/m/Y'),
+                                            'sales' => number_format($incentive->amount, 2),
+                                            'incentive_rate' => number_format($incentive->rate, 2),
+                                        ]);
+
+        return count($incentiveData) > 0 ? $incentiveData : [];
     }
 }

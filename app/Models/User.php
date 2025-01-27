@@ -159,6 +159,15 @@ class User extends Authenticatable implements HasMedia
         return OrderItem::itemSales()->where('order_items.user_id', $this->id);                        
     }
 
+    /**
+     * EmployeeIncentive Model
+     * Get the incentives achieved by the employee.
+     */
+    public function incentives(): HasMany
+    {
+        return $this->hasMany(EmployeeIncentive::class, 'user_id');
+    }
+
     // /**
     //  * Reservation Model
     //  * Get the reservations handled by the user.

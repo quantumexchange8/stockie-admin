@@ -14,17 +14,22 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class AttendanceController extends Controller
 {
+    protected $authUser;
+    
+    public function __construct()
+    {
+        $this->authUser = User::findOrFail(Auth::id());
+    }
+
     /**
      * Get the user's current clock in time if 
      */
     public function getCheckInTime()
     {
-        $user = User::findOrFail(Auth::id()); // Should get auth user
-        
-        $latestCheckedIn = $user->attendances()
-                                        ->where('status', 'Checked in')
-                                        ->latest('check_in')
-                                        ->first();
+        $latestCheckedIn = $this->authUser->attendances()
+                                            ->where('status', 'Checked in')
+                                            ->latest('check_in')
+                                            ->first();
 
         $response = [
             'is_checked_in' => $latestCheckedIn !== null,
@@ -39,21 +44,20 @@ class AttendanceController extends Controller
      */
     public function getTodayAttendance()
     {
-        $user = User::findOrFail(Auth::id()); // Should get auth user
         $today = today()->toDateString();
     
-        $todayAttendance = $user->attendances()
-                                        ->where(function ($query) use ($today) {
-                                            // Clock in on today's date
-                                            $query->whereDate('check_in', $today)
-                                                    // OR clock in before today but check out after today's start
-                                                    ->orWhere(function ($subQuery) use ($today) {
-                                                        $subQuery->whereDate('check_in', '<', $today)
-                                                                ->whereDate('check_out', '>=', $today);
-                                                    });
-                                        })
-                                        ->orderByDesc('check_in')
-                                        ->first();
+        $todayAttendance = $this->authUser->attendances()
+                                            ->where(function ($query) use ($today) {
+                                                // Clock in on today's date
+                                                $query->whereDate('check_in', $today)
+                                                        // OR clock in before today but check out after today's start
+                                                        ->orWhere(function ($subQuery) use ($today) {
+                                                            $subQuery->whereDate('check_in', '<', $today)
+                                                                    ->whereDate('check_out', '>=', $today);
+                                                        });
+                                            })
+                                            ->orderByDesc('check_in')
+                                            ->first();
 
         $response = [
             'has_attendance' => !!$todayAttendance,
@@ -102,7 +106,7 @@ class AttendanceController extends Controller
      */
     public function checkIn(Request $request)
     {
-        $this->checkRecentAttendance(User::findOrFail(Auth::id())); // Should get auth user
+        $this->checkRecentAttendance($this->authUser); // Should get auth user
 
         try {
             $validatedData = $request->validate(
@@ -118,10 +122,9 @@ class AttendanceController extends Controller
                 ]
             );
 
-            $user = User::findOrFail(Auth::id()); // Should get auth user
             $checkInTime = Carbon::parse($validatedData['check_in']);
                     
-            $existingAttendance = $this->checkExistingAttendance($user, today());
+            $existingAttendance = $this->checkExistingAttendance($this->authUser, today());
             if ($existingAttendance) {
                 return response()->json([
                     'status' => 'error',
@@ -130,12 +133,12 @@ class AttendanceController extends Controller
             }
 
             // Case 1: No passcode exists
-            if (is_null($user->passcode)) {
-                return $this->handleNewPasscode($user, $checkInTime);
+            if (is_null($this->authUser->passcode)) {
+                return $this->handleNewPasscode($this->authUser, $checkInTime);
             }
 
             // Check if account is locked
-            if ($user->passcode_status === 'Locked') {
+            if ($this->authUser->passcode_status === 'Locked') {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Your account is locked. Please contact an administrator to reset your passcode.',
@@ -152,12 +155,12 @@ class AttendanceController extends Controller
             // }
 
             // Case 2: Verify existing passcode
-            if ($user->passcode !== $validatedData['passcode']) {
+            if ($this->authUser->passcode !== $validatedData['passcode']) {
                 // RateLimiter::hit($this->throttleKey($validatedData['passcode']));
-                return $this->handleFailedAttempt($user, $validatedData['passcode']);
+                return $this->handleFailedAttempt($this->authUser, $validatedData['passcode']);
             }
 
-            return $this->handleSuccessfulCheckIn($user, $checkInTime);
+            return $this->handleSuccessfulCheckIn($this->authUser, $checkInTime);
 
         }catch (ValidationException $e) {
             return response()->json([
@@ -326,11 +329,9 @@ class AttendanceController extends Controller
                 ]
             );
 
-            $user = User::findOrFail(Auth::id()); // Should get auth user
-
             // Verify existing passcode
-            if ($user->passcode !== $validatedData['passcode']) {
-                return $this->handleFailedAttempt($user, $validatedData['passcode']);
+            if ($this->authUser->passcode !== $validatedData['passcode']) {
+                return $this->handleFailedAttempt($this->authUser, $validatedData['passcode']);
             }
             
             return response()->json([
@@ -368,9 +369,7 @@ class AttendanceController extends Controller
                 ]
             );
 
-            $user = User::findOrFail(Auth::id()); // Should get auth user
-
-            $user->update(['passcode' => $validatedData['passcode']]);
+            $this->authUser->update(['passcode' => $validatedData['passcode']]);
             
             return response()->json([
                 'status' => 'success',
@@ -396,9 +395,7 @@ class AttendanceController extends Controller
      */
     public function checkOut(Request $request)
     {
-        $user = User::findOrFail(Auth::id()); // Should get auth user
-
-        $existingAttendance = $this->checkExistingAttendance($user);
+        $existingAttendance = $this->checkExistingAttendance($this->authUser);
         if ($existingAttendance) {
             $checkOutAt = now();
             $existingAttendance->update(['check_out' => $checkOutAt]);
