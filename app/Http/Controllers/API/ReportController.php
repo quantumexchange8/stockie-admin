@@ -30,7 +30,7 @@ class ReportController extends Controller
     {
         $this->currentYear = now()->year;
 
-        $this->authUser = User::findOrFail(Auth::id()); // Should get auth user
+        $this->authUser = User::findOrFail(2); // Should get auth user
 
         // Get all item sales of the auth user
         $this->sales = OrderItem::itemSales()->where('order_items.user_id', $this->authUser->id);
@@ -100,55 +100,115 @@ class ReportController extends Controller
     /**
      * Get the waiter's sales & commissions details & chart data
      */
-    public function getSalesCommissionDetails()
+    public function getSalesCommissionDetails(Request $request)
     {
-        // Sales
-        $salesEachMonth = $this->sales->clone()
-                                        ->whereYear('orders.created_at', $this->currentYear)
-                                        ->selectRaw('MONTH(orders.created_at) as month, SUM(order_items.amount) as total_sales')
-                                        ->groupBy('month')
-                                        ->orderBy('month')
-                                        ->get()
-                                        ->mapWithKeys(fn ($item) => [$item->month => (float) $item->total_sales]);
+        $now = Carbon::now(); 
+        $filterType = $request->date_filter;
 
-        // Commissions: Pre-aggregate commissions data by month
-        $commissionsEachMonth = $this->salesCommissions->clone()
-                                                        ->whereYear('orders.created_at', $this->currentYear)
-                                                        ->selectRaw("
-                                                            MONTH(orders.created_at) as month,
-                                                            SUM(
-                                                                CASE
-                                                                    WHEN comms.comm_type = 'Fixed amount per sold product'
-                                                                    THEN comms.rate * order_items.item_qty
-                                                                    ELSE products.price * order_items.item_qty * (comms.rate / 100)
-                                                                END
-                                                            ) as total_commission
-                                                        ")
-                                                        ->groupBy('month')
-                                                        ->get()
-                                                        ->mapWithKeys(fn ($item) => [$item->month => (float) $item->total_commission]);
+        $periodLabels = collect(); 
+        $salesData = collect(); 
+        $commissionsData = collect();   
+        
+        switch ($filterType) { 
+            case 'week': 
+                $startOfWeek = $now->clone()->startOfWeek(Carbon::SUNDAY);
+                $endOfWeek = $now->clone()->endOfWeek(Carbon::SATURDAY); 
+                $dateRange = [$startOfWeek, $endOfWeek]; // Labels for the week 
+                $periodLabels = collect(range(0, 6))->mapWithKeys(fn ($day) => [$day + 1 => $startOfWeek->copy()->addDays($day)->format('l')]); 
+                $dateColumn = 'DAYOFWEEK'; 
+                break; 
 
-        // Pre-generate month names
-        $monthNames = collect(range(1, 12))->mapWithKeys(function ($month) {
-            return [$month => Carbon::createFromDate($this->currentYear, $month, 1)->format('F')];
-        });
+            case 'month': 
+                $startOfMonth = $now->clone()->startOfMonth(); 
+                $endOfMonth = $now->clone()->endOfMonth(); 
+                $dateRange = [$startOfMonth, $endOfMonth]; // Labels for the month 
+                $periodLabels = collect(range(1, $now->daysInMonth))->mapWithKeys(fn ($day) => [$day => $day]); $dateColumn = 'DAY'; 
+                break; 
+                
+            case 'year': 
+            default: 
+                $startOfYear = $request->year ? Carbon::create($request->year)->startOfYear() : $now->clone()->startOfYear(); 
+                $endOfYear = $request->year ? Carbon::create($request->year)->endOfYear() : $now->clone()->endOfYear(); 
+                $dateRange = [$startOfYear, $endOfYear];
 
-        $salesCommissionsArray = $monthNames->map(function ($monthName, $month) use ($salesEachMonth, $commissionsEachMonth) {
-            return [
-                'month' => $monthName,
-                'total_sales' => number_format($salesEachMonth->get($month, 0), 2),
-                'total_commissions' => number_format($commissionsEachMonth->get($month, 0), 2),
-            ];
-        })->values();
+                // Labels for the year 
+                $periodLabels = collect(range(1, 12))->mapWithKeys(fn ($month) => [$month => Carbon::createFromDate($now->year, $month, 1)->format('F')]); 
 
-        $data = [
-            'current_total_sales' => number_format($salesEachMonth->sum(), 2),
-            'current_total_commissions' => number_format($commissionsEachMonth->sum(), 2),
-            'sales_commissions' => $salesCommissionsArray
+                $dateColumn = 'MONTH'; 
+                break; 
+        }
+        
+        // Sales Data Query 
+        $salesData = $this->sales
+                            ->clone()
+                            ->whereBetween('orders.created_at', $dateRange) 
+                            ->selectRaw("$dateColumn(orders.created_at) as period, SUM(order_items.amount) as total_sales") 
+                            ->groupBy('period') 
+                            ->orderBy('period') 
+                            ->get() 
+                            ->mapWithKeys(fn ($item) => [$item->period => (float) $item->total_sales]); 
+
+        // Commissions Data Query                         
+        $commissionsData = $this->salesCommissions 
+                                ->clone()
+                                ->whereBetween('orders.created_at', $dateRange) 
+                                ->selectRaw(" 
+                                    $dateColumn(orders.created_at) as period, 
+                                    SUM( 
+                                        CASE WHEN comms.comm_type = 'Fixed amount per sold product' 
+                                        THEN comms.rate * order_items.item_qty ELSE products.price * order_items.item_qty * (comms.rate / 100) 
+                                        END 
+                                    ) as total_commission 
+                                ") 
+                                ->groupBy('period') 
+                                ->orderBy('period') 
+                                ->get() 
+                                ->mapWithKeys(fn ($item) => [$item->period => (float) $item->total_commission]); 
+                
+        // Structure sales and commissions data for response 
+        $salesCommissionsArray = $periodLabels->map(function ($label, $period) use ($salesData, $commissionsData) { 
+            return [ 
+                'period' => $label, 
+                'total_sales' => number_format($salesData->get($period, 0), 2), 
+                'total_commissions' => number_format($commissionsData->get($period, 0), 2), 
+            ]; 
+        })->values(); 
+        
+        $data = [ 
+            'current_total_sales' => number_format($salesData->sum(), 2), 
+            'current_total_commissions' => number_format($commissionsData->sum(), 2), 
+            'sales_commissions' => $salesCommissionsArray 
         ];
-
+    
         return response()->json($data);
     }
+
+    /**
+     * Get the list of years since the first sales made by the waiter 
+     */
+    public function getSalesYearList()
+    {
+        $oldestSale = $this->sales->clone()
+                                ->orderBy('orders.created_at')
+                                ->first('orders.created_at');
+
+        if (!$oldestSale) {
+            return response()->json([now()->year]);
+        }
+    
+        $startYear = Carbon::parse($oldestSale->created_at)->year;
+        $currentYear = now()->year;
+        
+        $years = collect(range($startYear, $currentYear))
+                    ->map(fn($year) => [
+                        'value' => $year,
+                        'label' => (string) $year
+                    ])
+                    ->values();
+    
+        return response()->json($years);
+    }
+
 
     /**
      * Get the waiter's recent sales histories 

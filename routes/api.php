@@ -44,6 +44,7 @@ Route::controller(ReportController::class)->group(function(){
     // Sales & Commissions
     Route::get('insights/sales_commissions/summary', 'getSalesCommissionSummary');
     Route::get('insights/sales_commissions/details', 'getSalesCommissionDetails');
+    Route::get('insights/sales_commissions/sales_year_list', 'getSalesYearList');
     Route::get('insights/sales_commissions/recent_histories', 'getRecentSalesHistories');
     Route::get('insights/sales_commissions/histories', 'getSalesHistories');
     Route::get('insights/sales_commissions/sales_details', 'getSalesDetails');
