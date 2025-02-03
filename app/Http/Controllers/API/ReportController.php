@@ -103,13 +103,13 @@ class ReportController extends Controller
     public function getSalesCommissionDetails(Request $request)
     {
         $now = Carbon::now(); 
-        $filterType = $request->date_filter;
+        $timeframe = $request->timeframe;
 
         $periodLabels = collect(); 
         $salesData = collect(); 
         $commissionsData = collect();   
         
-        switch ($filterType) { 
+        switch ($timeframe) { 
             case 'week': 
                 $startOfWeek = $now->clone()->startOfWeek(Carbon::SUNDAY);
                 $endOfWeek = $now->clone()->endOfWeek(Carbon::SATURDAY); 

@@ -18,6 +18,7 @@ const props = defineProps({
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
 const isUnsavedChangesOpen = ref(false);
+const selectedTable = ref(null);
 
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
@@ -94,6 +95,42 @@ const tablesArr = computed(() => {
     })
 });
 
+// Computed property for maximum seats
+const maxSeats = computed(() => selectedTable.value?.reduce((total, table) => total + table.seat, 0) ?? 0);
+
+// Helper function to validate and format pax value
+const validatePaxValue = (value) => {
+    const numValue = parseInt(value) || '';
+    
+    if (numValue < 0) return '';
+
+    if (numValue >= maxSeats.value && maxSeats.value !== 0) {
+        return selectedTable.value ? maxSeats.value : numValue;
+    }
+    
+    return numValue;
+}
+
+const updateSelectedTables = (event) => {
+    // More efficient table selection using Set for O(1) lookups
+    const selectedIds = new Set(event);
+    selectedTable.value = props.tables.filter(table => selectedIds.has(table.id));
+    
+    // Reset selected table
+    if (!selectedTable.value) {
+        selectedTable.value = null;
+    } 
+  
+    // Update pax value based on new selection
+    form.pax = validatePaxValue(form.pax).toString();
+};
+
+const paxInputValidation = (event) => {
+    const pax = validatePaxValue(event.target.value).toString();
+    event.target.value = pax;
+    form.pax = pax;
+}
+
 const isFormValid = computed(() => {
     return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables'].every(field => form[field]) && !form.processing;
 });
@@ -124,6 +161,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :errorMessage="form.errors?.pax || ''"
                     v-model="form.pax"
                     @keypress="isValidNumberKey($event, false)"
+                    @input="paxInputValidation"
                 />
                 <Dropdown
                     inputName="name"
@@ -157,6 +195,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :inputArray="tablesArr"
                     :errorMessage="form.errors?.table_no || ''"
                     v-model="form.tables"
+                    @onChange="updateSelectedTables"
                 />
             </div>
 

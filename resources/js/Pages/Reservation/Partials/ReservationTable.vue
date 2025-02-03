@@ -99,14 +99,16 @@ const openForm = (action, reservation) => {
     isDirty.value = false;
 
     if (actionType.value === 'create') makeReservationFormIsOpen.value = true;
+    
     if (reservation) {
         // Set value of selected reservation on open
         if (actionType.value !== 'create') selectedReservation.value = reservation;
-
-        if (actionType.value === 'show') reservationDetailIsOpen.value = true;
-        if (actionType.value === 'check-in') checkInFormIsOpen.value = true;
-        if (actionType.value === 'delay') delayReservationFormIsOpen.value = true;
-        if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = true;
+        switch(actionType.value) {
+            case 'show': reservationDetailIsOpen.value = true; break;
+            case 'check-in': checkInFormIsOpen.value = true; break;
+            case 'delay' : delayReservationFormIsOpen.value = true; break;
+            case 'cancel' : cancelReservationFormIsOpen.value = true; break;
+        }
 
         setTimeout(() => closeOverlay(), 100);
     }
@@ -117,25 +119,25 @@ const closeForm = (type) => {
 
     switch(type){
         case 'close':{
-            if(isDirty.value){
+            if (isDirty.value) {
                 isUnsavedChangesOpen.value = true;
             } else {
-                if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
-                if (actionType.value === 'show') reservationDetailIsOpen.value = false;
-                if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
-                if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
-                if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+                makeReservationFormIsOpen.value = false;
+                reservationDetailIsOpen.value = false;
+                checkInFormIsOpen.value = false;
+                delayReservationFormIsOpen.value = false;
+                cancelReservationFormIsOpen.value = false;
             }
             break;
         }
         case 'stay': isUnsavedChangesOpen.value = false; break;
         case 'leave': {
             isUnsavedChangesOpen.value = false;
-            if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
-            if (actionType.value === 'show') reservationDetailIsOpen.value = false;
-            if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
-            if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
-            if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+            makeReservationFormIsOpen.value = false;
+            reservationDetailIsOpen.value = false;
+            checkInFormIsOpen.value = false;
+            delayReservationFormIsOpen.value = false;
+            cancelReservationFormIsOpen.value = false;
             break;
         }
     }
@@ -170,6 +172,11 @@ const getStatusVariant = (status) => {
         case 'Cancelled': return 'grey'
     }
 };
+
+const handleCheckIn = (reservation, event) => {
+    event.stopPropagation(); // Stop event from bubbling up
+    openForm('check-in', reservation);
+}
 
 watch(() => searchQuery.value, (newValue) => {
     if (newValue === '') {
@@ -373,9 +380,9 @@ watch(() => props.rows, (newRows) => {
                         </div>
                         <Button
                             :variant="'primary'"
-                            :type="'submit'"
+                            :type="'button'"
                             :disabled="reservation.status === 'Checked in'"
-                            @click="openForm('check-in', selectedReservation)"
+                            @click="handleCheckIn(reservation, $event)"
                         >
                             {{ reservation.status === 'Checked in' ?  'Customer checked-in' : 'Check-in customer' }}
                         </Button>

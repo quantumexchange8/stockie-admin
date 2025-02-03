@@ -139,12 +139,13 @@ const waitersArr = computed(() => {
 const tablesArr = computed(() => {
     const seenTableNos = new Set();
     return props.zones.reduce((allTables, zone) => {
-        zone.tables.forEach(({ table_no, id }) => {
+        zone.tables.forEach(({ table_no, id, seat }) => {
             if (!seenTableNos.has(table_no)) {
                 seenTableNos.add(table_no);
                 allTables.push({
                     text: table_no,
                     value: id,
+                    seat: seat,
                     'disabled': props.occupiedTables.some((occupiedTable) => occupiedTable.id === id),
                 });
             }

@@ -28,6 +28,7 @@ const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close']);
 
+const selectedTable = ref(props.table);
 const selectedTableName = ref(props.table.table_no);
 
 const form = useForm({
@@ -62,20 +63,61 @@ const isFormValid = computed(() => {
     return ['tables','pax', 'assigned_waiter'].every(field => form[field]) && !form.processing;
 });
 
-watch(() => form.merge_table, (newValue) => form.assigned_waiter = newValue ? form.assigned_waiter : '');
+const maxSeats = computed(() => 
+    Array.isArray(selectedTable.value) 
+            ? selectedTable.value.reduce((total, table) => total + table.seat, 0) 
+            : selectedTable.value.seat
+);
+
+// Helper function to validate and format pax value
+const validatePaxValue = (value) => {
+    const numValue = parseInt(value) || '';
+    
+    if (numValue < 0) return '';
+    
+    return numValue >= maxSeats.value && maxSeats.value !== 0
+            ? maxSeats.value
+            : numValue;
+}
+
+const resetTableSelection = () => {
+    selectedTable.value = props.table;
+    selectedTableName.value = props.table.table_no;
+    form.tables = [props.table.id];
+}
+
+watch(() => form.merge_table, (newValue) => {
+    form.assigned_waiter = newValue ? form.assigned_waiter : '';
+    resetTableSelection();
+    form.pax = validatePaxValue(form.pax).toString();
+});
 
 const updateSelectedTables = (event) => {
+    selectedTable.value = 
+        props.tablesArr.map(table => event.find((value) => table.value === value) ? table : null)
+                    .filter((table) => table !== null);
+
     selectedTableName.value = 
         props.tablesArr.map(table => event.find((value) => table.value === value) ? table.text : null)
                     .filter((table) => table !== null)
                     .join(', ');
 
+    console.log(maxSeats.value);
+    form.pax = validatePaxValue(form.pax).toString();
+
     // Reset selected table
     if (!selectedTableName.value) {
-        selectedTableName.value = props.table.table_no;
-        form.tables = [props.table.id];
+        resetTableSelection();
     } 
 };
+
+const paxInputValidation = (event) => {
+    const value = parseInt(event.target.value) || '';
+    const pax = validatePaxValue(value).toString();
+
+    event.target.value = pax;
+    form.pax = pax;
+}
 
 </script>
 
@@ -123,6 +165,7 @@ const updateSelectedTables = (event) => {
                         :errorMessage="form.errors?.pax || ''"
                         v-model="form.pax"
                         @keypress="isValidNumberKey($event, false)"
+                        @input="paxInputValidation($event)"
                     />
                     <Dropdown
                         imageOption
