@@ -25,37 +25,53 @@ use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
-    public function index (Request $request){
+    protected $sales;
+    
+    public function __construct()
+    {
+        $this->sales = Payment::query()
+                                ->join('orders', 'payments.order_id', '=', 'orders.id')
+                                ->where([
+                                    ['payments.status', 'Successful'],
+                                    ['orders.status', 'Order Completed']
+                                ]);
+    }
 
+    public function index (Request $request)
+    {
         $message = $request->session()->get('message');
 
         //sales today
         // $salesToday = Order::whereDate('created_at', Carbon::today())
         //                 ->where('status', 'Order Completed')
         //                 ->sum('total_amount');
-        $salesToday = Payment::whereDate('receipt_end_date', Carbon::today())
-                                ->where('status', 'Successful')
-                                ->sum('total_amount');
 
-        $salesYesterday = Payment::whereDate('created_at', Carbon::yesterday())
-                                ->where('status','Successful')
-                                ->sum('total_amount');
+        $salesToday = $this->sales->clone()
+                                    ->whereDate('orders.created_at', Carbon::today())
+                                    ->select('payments.grand_total')
+                                    ->sum('payments.grand_total');
+
+        $salesYesterday = $this->sales->clone()
+                                        ->whereDate('orders.created_at', Carbon::yesterday())
+                                        ->select('payments.grand_total')
+                                        ->sum('payments.grand_total');
         $comparedSale = 0;
-        if($salesYesterday !== 0){
-            $comparedSale = ($salesToday - $salesYesterday) / $salesYesterday*100; 
+        if ($salesYesterday !== 0) {
+            $comparedSale = ($salesToday - $salesYesterday) / $salesYesterday * 100; 
         };
 
         //product sold today
         // $productSold = OrderItem::whereDate('created_at', Carbon::today())
         //                         ->where('status', 'Served')
         //                         ->sum('item_qty');
+
         $productSold = SaleHistory::whereDate('created_at', Carbon::today())
                                     ->sum('qty');
 
         $productSoldYesterday = SaleHistory::whereDate('created_at', Carbon::yesterday())
                                             ->sum('qty');
         $comparedSold = 0;
-        if($productSoldYesterday !== 0){
+        if ($productSoldYesterday !== 0) {
             $comparedSold = ($productSold - $productSoldYesterday) / $productSoldYesterday*100; 
         };
 
@@ -71,7 +87,7 @@ class DashboardController extends Controller
                                 ->with(['payment' => fn($query) => $query->where('status', 'Successful')])
                                 ->count();
         $comparedOrder = 0;
-        if($orderYesterday !== 0){
+        if ($orderYesterday !== 0) {
             $comparedOrder = ($order - $orderYesterday)/$orderYesterday*100; 
         };
 
@@ -152,33 +168,9 @@ class DashboardController extends Controller
         });
 
         //sales graph
-        // $salesEachMonth = SaleHistory::selectRaw('DATE_FORMAT(created_at, "%b") as month, 
-        //                                                 MONTH(created_at) as month_num, 
-        //                                                 SUM(total_price) as total_sales')
-        //                                 ->whereYear('created_at', Carbon::now()->year)
-        //                                 ->groupBy('month', 'month_num')
-        //                                 ->orderBy('month_num')
-        //                                 ->get();
-        $salesEachMonth = Payment::where('status', 'Successful')
-                                ->selectRaw('DATE_FORMAT(receipt_end_date, "%b") as month,
-                                                        MONTH(receipt_end_date) as month_num,
-                                                        SUM(total_amount) as total_sales')
-                                ->whereYear('receipt_end_date', Carbon::now()->year)
-                                ->groupBy('month', 'month_num')
-                                ->orderBy('month_num')
-                                ->get();
-                                
-        // $months = $saslesEachMonth->pluck('month')->toArray();
-        $months = array_fill(0, 12, 0);
-        foreach ($salesEachMonth as $sales) {
-            $months[$sales->month_num - 1] = $sales->total_sales;
-        }
 
-        $totalSalesArray = $salesEachMonth->pluck('total_sales')
-                                            ->map(function ($value) {
-                                                return (float) $value;
-                                            })->toArray();
-        
+        $filteredSalesData = $this->getFilteredSalesChartData();
+
         $products = collect($allProducts)
                     ->sortBy('stock_qty')
                     ->take(4)
@@ -235,8 +227,8 @@ class DashboardController extends Controller
             'compareSale' => (int) round($comparedSale),
             'compareOrder' => (int) round($comparedOrder),
             'onDuty' => $onDuty,
-            'salesGraph' => $totalSalesArray,
-            'monthly' => $months,
+            'salesData' => $filteredSalesData['data'],
+            'labels' => $filteredSalesData['labels'],
             'activeTables' => $activeTables,
             'reservations' => $todayReservations,
             'customers' => Customer::all(),
@@ -246,86 +238,101 @@ class DashboardController extends Controller
         ]);
     }
 
+     /**
+     * Filter sales graph data
+     */
+    public function getFilteredSalesChartData(string $timeframe = 'month')
+    {
+        $now = Carbon::now(); 
+
+        $periodLabels = collect(); 
+        $salesData = collect(); 
+        
+        switch ($timeframe) { 
+            case 'week': 
+                $startOfWeek = $now->clone()->startOfWeek(Carbon::SUNDAY);
+                $endOfWeek = $now->clone()->endOfWeek(Carbon::SATURDAY); 
+                $dateRange = [$startOfWeek, $endOfWeek]; 
+                
+                // Labels for the week 
+                $periodLabels = collect(range(0, 6))->mapWithKeys(fn ($day) => [$day + 1 => $startOfWeek->copy()->addDays($day)->format('l')]); 
+                $dateColumn = 'DAYOFWEEK'; 
+                break; 
+
+            case 'year': 
+                // Changed to show previous 9 years + current year
+                $startOfRange = $now->clone()->subYears(9)->startOfYear();
+                $endOfRange = $now->clone()->endOfYear();
+                $dateRange = [$startOfRange, $endOfRange];
+
+                // Labels for the last 10 years
+                $periodLabels = collect(range(0, 9))->mapWithKeys(function ($yearOffset) use ($now) {
+                    $year = $now->year - (9 - $yearOffset);
+                    return [$year => $year];
+                });
+                $dateColumn = 'YEAR';
+                break;
+                
+            case 'month': 
+            default: 
+                $startOfYear = $now->clone()->startOfYear(); 
+                $endOfYear = $now->clone()->endOfYear(); 
+                $dateRange = [$startOfYear, $endOfYear];
+
+                // Labels for all the months 
+                $periodLabels = collect(range(1, 12))->mapWithKeys(fn ($month) => [$month => Carbon::createFromDate($now->year, $month, 1)->format('M')]); 
+
+                $dateColumn = 'MONTH'; 
+                break; 
+        }
+
+        // Sales Data Query                         
+        $salesData = $timeframe === 'year'
+                ? $this->sales
+                        ->clone()
+                        ->whereBetween('orders.created_at', $dateRange)
+                        ->selectRaw("
+                            $dateColumn(orders.created_at) as period,
+                            SUM(payments.grand_total) as total
+                        ")
+                        ->groupBy('period')
+                        ->orderBy('period')
+                        ->get()
+                        ->pluck('total', 'period')
+                : $this->sales
+                        ->clone()
+                        ->whereBetween('orders.created_at', $dateRange)
+                        ->selectRaw("
+                            $dateColumn(orders.created_at) as period,
+                            payments.grand_total
+                        ")
+                        ->orderBy('period')
+                        ->get()
+                        ->groupBy('period')
+                        ->map(function ($group) {
+                            return $group->sum('grand_total');
+                        });
+
+        // Structure sales and commissions data for response 
+        $salesArray = $periodLabels->map(function ($label, $period) use ($salesData) { 
+            return $salesData->get($period, 0); 
+        })->values(); 
+
+        return [
+            'labels' => $periodLabels->values()->toArray(),
+            'data' => $salesArray->toArray()
+        ];
+    }
+
+
     public function filterSales(Request $request)
     {
         $filterType = $request->input('activeFilter');
-
-        $salesQuery = Payment::query();
-
-        switch ($filterType) {
-            case 'month':
-                // $salesEachPeriod = SaleHistory::selectRaw('DATE_FORMAT(created_at, "%b") as month, 
-                //                                         MONTH(created_at) as month_num, 
-                //                                         YEAR(created_at) as year, 
-                //                                         SUM(total_price) as total_sales')
-                //                                 ->whereYear('created_at', Carbon::now()->year)                  
-                //                                 ->groupBy('month', 'month_num', 'year')
-                //                                 ->orderBy('year')
-                //                                 ->orderBy('month_num')
-                //                                 ->get();
-                $salesEachPeriod = $salesQuery->where('status', 'Successful')
-                                            ->selectRaw('DATE_FORMAT(receipt_end_date, "%b") as month,
-                                                                    MONTH(receipt_end_date) as month_num,
-                                                                    YEAR(receipt_end_date) as year, 
-                                                                    SUM(total_amount) as total_sales')
-                                            ->whereYear('receipt_end_date', Carbon::now()->year)
-                                            ->groupBy('month', 'month_num', 'year')
-                                            ->orderBy('year')
-                                            ->orderBy('month_num')
-                                            ->get();
-                // $labels = $salesEachPeriod->pluck('month')
-                //                             ->toArray();
-                $labels = array_fill(0, 12, 0);
-                foreach($salesEachPeriod as $sales) {
-                    $labels[$sales->month_num - 1] = $sales->total_sales;
-                }
-                break;
-
-                case 'year':
-                    $lastFiveYears = range(now()->year - 4, now()->year); // Array of last 5 years
-                
-                    $salesEachPeriod = $salesQuery->where('status', 'Successful')
-                                                    ->selectRaw('YEAR(receipt_end_date) as period, SUM(total_amount) as total_sales')
-                                                  ->groupBy('period')
-                                                  ->orderBy('period')
-                                                  ->get();
-                
-                    // Initialize labels with 0 for each of the last 5 years
-                    $labels = array_fill(0, 5, 0);
-                
-                    foreach ($salesEachPeriod as $sales) {
-                        $yearIndex = array_search($sales->period, $lastFiveYears); 
-                        if ($yearIndex !== false) {
-                            $labels[$yearIndex] = $sales->total_sales;
-                        }
-                    }
-                    break;
-
-            default:
-                $salesEachPeriod = SaleHistory::selectRaw('MONTHNAME(created_at) as month, 
-                                                        MONTH(created_at) as month_num, 
-                                                        YEAR(created_at) as year, 
-                                                        SUM(total_amount) as total_sales')
-                                                ->whereYear('created_at', Carbon::now()->year)                  
-                                                ->groupBy('month', 'month_num', 'year')
-                                                ->orderBy('year')
-                                                ->orderBy('month_num')
-                                                ->get();
-                $labels = array_fill(0, 12, 0);
-                    foreach($salesEachPeriod as $sales) {
-                        $labels[$sales->month_num - 1] = $sales->total_sales;
-                }
-                break;
-        }
-
-        // $totalSalesArray = $salesEachPeriod->pluck('total_sales')
-        //                                     ->map(function ($value) {
-        //                                         return (float) $value;
-        //                                     })->toArray();
-
+        $filteredSalesData = $this->getFilteredSalesChartData($filterType);
+        
         return response()->json([
-            'totalSales' => $salesEachPeriod,
-            'labels' => $labels
+            'salesData' => $filteredSalesData['data'],
+            'labels' => $filteredSalesData['labels']
         ]);
     }
 

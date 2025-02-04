@@ -49,18 +49,12 @@ const props = defineProps({
         type: Array,
         required: true,
     },
-    salesGraph: {
-        type: Array,
-        required: true,
-    },
-    monthly: {
-        type: Array,
-        required: true,
-    },
     activeTables: {
         type: Array,
         required: true,
     },
+    salesData: Array,
+    labels: Array,
     reservations: Array,
     customers: Array,
     tables: Array,
@@ -70,8 +64,8 @@ const props = defineProps({
 const { flashMessage } = useCustomToast();
 
 const activeFilter = ref('month');
-const salesGraph = ref(props.salesGraph);
-const monthly = ref(props.monthly);
+const salesData = ref(props.salesData);
+const labels = ref(props.labels);
 const reservations = ref(props.reservations);
 const reservationRowsPerPage = ref(10);
 const isLoading = ref(false);
@@ -116,11 +110,8 @@ const filterSales = async (filters = {}) => {
                 activeFilter: filters,
             }
         });
-        const totalSales = response.data.totalSales;
-        const labelData = response.data.labels;
-
-        salesGraph.value = totalSales;  
-        monthly.value = labelData;
+        salesData.value = response.data.salesData;
+        labels.value = response.data.labels;
     } catch (error) {
         console.error(error);
     } finally {
@@ -176,8 +167,8 @@ onMounted(async()=> {
 
                     <!-- sales graph -->
                     <SalesGraph 
-                        :salesGraph="salesGraph" 
-                        :monthly="monthly" 
+                        :salesData="salesData" 
+                        :labels="labels" 
                         :activeFilter="activeFilter"
                         :isLoading="isLoading"
                         @isLoading="isLoading=$event"

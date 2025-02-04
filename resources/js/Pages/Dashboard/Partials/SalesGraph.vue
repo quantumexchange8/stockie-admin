@@ -5,14 +5,8 @@ import Chart from "primevue/chart";
 import { ref, onMounted, watch, computed } from "vue";
 
 const props = defineProps ({
-    salesGraph: {
-        type: Array,
-        required: true,
-    },
-    monthly: {
-        type: Array,
-        required: true,
-    },
+    salesData: Array,
+    labels: Array,
     activeFilter: String,
     isLoading: Boolean,
 })
@@ -21,18 +15,11 @@ const chartOptions = ref();
 const emit = defineEmits(["applyTimeFilter", "isLoading"]);
         
 const setChartData = () => {
-    const salesData = props.monthly;
-    const monthLabels = computed(() => {
-    if (props.activeFilter === 'month') {
-        return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    } else {
-        const currentYear = new Date().getFullYear();
-        return Array.from({ length: 5 }, (_, i) => currentYear - i).reverse();
-    }
-});
+    const salesData = props.salesData;
+    const monthLabels = props.labels;
 
     return {
-        labels: monthLabels.value,
+        labels: monthLabels,
         datasets: [
             {
                 label: '',
@@ -243,7 +230,7 @@ const updateChart = () => {
 };
 
 watch(
-    [() => props.salesGraph.value, () => props.monthly.value, () => props.activeFilter],
+    [() => props.salesData.value, () => props.activeFilter],
     () => {
         updateChart();
     },
@@ -269,12 +256,26 @@ onMounted(() => {
                     :disabled="isLoading"
                     :class="
                         { 'pointer-events-none cursor-not-allowed !bg-white': isLoading,
+                        'bg-primary-50 hover:bg-primary-100': activeFilter === 'week', 
+                        'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'week'}
+                        "
+                    @click="setActive('week')"
+                >
+                    Week
+                </Button>
+                <Button
+                    :type="'button'"
+                    :variant="'secondary'"
+                    :size="'md'"
+                    :disabled="isLoading"
+                    :class="
+                        { 'pointer-events-none cursor-not-allowed !bg-white': isLoading,
                         'bg-primary-50 hover:bg-primary-100': activeFilter === 'month', 
                         'bg-white !text-grey-200 hover:!bg-[#ffe1e233] hover:!text-primary-800': activeFilter !== 'month'}
                         "
                     @click="setActive('month')"
                 >
-                Month
+                    Month
                 </Button>
                 <Button
                     :type="'button'"
@@ -288,11 +289,11 @@ onMounted(() => {
                         "
                     @click="setActive('year')"
                 >
-                Year
+                    Year
                 </Button>
             </div>
         </div>
-        <div class="flex justify-content-center h-full w-full" v-if="props.monthly.length > 0 && props.salesGraph.length > 0 && !isLoading">
+        <div class="flex justify-content-center h-full w-full" v-if="props.salesData.length > 0 && !isLoading">
             <Chart 
                 type="line" 
                 :data="chartData" 
