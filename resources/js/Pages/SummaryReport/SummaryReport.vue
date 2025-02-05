@@ -31,6 +31,7 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    categories: Array,
     salesCategory: {
         type: Array,
         required: true,
@@ -42,8 +43,7 @@ const props = defineProps({
 })
 const salesCategory = ref(props.salesCategory);
 const lastPeriodSales = ref(props.lastPeriodSales)
-const categories = ['Beer', 'Wine', 'Liquor', 'Others'];
-const selectedCategory = ref(categories[0]);
+const selectedCategory = ref(props.categories[0]);
 const ordersArray = ref(props.ordersArray);
 const isOrderLoading = ref(false);
 const isSalesLoading = ref(false);
@@ -149,6 +149,7 @@ onMounted(async()=> {
             </div>
 
             <SalesCategory 
+                :categories="props.categories"
                 :salesCategory="salesCategory"
                 :lastPeriodSales="lastPeriodSales"
                 :isLoading="isSalesLoading"

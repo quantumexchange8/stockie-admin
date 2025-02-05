@@ -16,15 +16,16 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    categories: Array,
     isLoading: Boolean,
 })
 const emit = defineEmits(['applySalesFilter', 'isLoading']);
 const chartData = ref();
 const chartOptions = ref();
-const categories = ['Beer', 'Wine', 'Liquor', 'Others'];
+const categories = ref(props.categories);
 const { exportToCSV } = useFileExport();
 
-const selectedCategory = ref(categories[0]);
+const selectedCategory = ref(props.categories[0]);
 
 const setActive = (button, year) => {
     emit('isLoading', true);

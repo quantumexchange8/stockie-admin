@@ -270,8 +270,10 @@ const isNumber = (e, withDot = true, item) => {
 };
 
 // Function to check if the input exceeds max on change
-const checkMaxValue = (value, item, subitem_id) => {
-    const validatedValue = value.replace(/\D+/g, '').replace(/^0+/, '');
+const checkMaxValue = (event, item, subitem_id) => {
+    const validatedValue = event.target.value.replace(/[^\d.]/g, '')  // Keep only digits and decimal point
+                               .replace(/\.(?=.*\.)/g, '') // Remove extra decimal points
+                               .replace(/^0+(\d)/, '$1'); // Remove leading zeros except if single 0
     const formItem = form.items.find(i => i.order_item_subitem_id === subitem_id);
 
     // Check if there is an old history and set maxValue accordingly
@@ -283,13 +285,23 @@ const checkMaxValue = (value, item, subitem_id) => {
         return; // Exit the function as no further checks are needed
     }
     
-    const maxValueStr = maxValue.toString();
+    const maxValueFloat = parseFloat(maxValue);
+    const inputFloat = parseFloat(validatedValue);
 
-    // Remove leading zeros and trim to max digit length
-    let sanitizedValue = validatedValue.slice(0, maxValueStr.length);
+    // Handle the decimal places
+    const decimalPlaces = Math.max(
+        (maxValue.toString().split('.')[1] || '').length,
+        (validatedValue.split('.')[1] || '').length
+    );
 
-    // Set to maxValue if sanitizedValue exceeds maxValue numerically
-    formItem.amount = parseInt(sanitizedValue, 10) > maxValue ? maxValueStr : sanitizedValue || '0';
+    // Set to maxValue if validatedValue exceeds maxValue numerically
+    if (!isNaN(inputFloat) && inputFloat > maxValueFloat) {
+        formItem.amount = maxValueFloat.toFixed(decimalPlaces);
+        event.target.value = maxValueFloat.toFixed(decimalPlaces);
+    } else {
+        formItem.amount = validatedValue || '0';
+        event.target.value = validatedValue || '0';
+    }
 };
 
 // Function to update textarea value for all subitems
@@ -658,8 +670,8 @@ onMounted(() => {
                                                     v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
                                                     v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'cm'"
                                                     :disabled="totalSubItemQty(order_item, sub_item) === (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
-                                                    @keypress="isValidNumberKey($event, true)"
-                                                    @update:modelValue="checkMaxValue($event, order_item, sub_item.id)"
+                                                    @keypress="isValidNumberKey($event)"
+                                                    @input="checkMaxValue($event, order_item, sub_item.id)"
                                                     class="!w-36"
                                                 />
                                             </div>

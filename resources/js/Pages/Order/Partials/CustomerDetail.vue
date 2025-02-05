@@ -102,7 +102,7 @@ const openOverlay = (event, item) => {
     
     if (selectedItem.value) {
         form.type = selectedItem.value.qty > selectedItem.value.cm ? 'qty' : 'cm'
-        form.return_qty = form.type === 'cm' ? 1 : 0;
+        form.return_qty = form.type === 'cm' ? 1 : selectedItem.value.qty;
         op.value.show(event);
     }
 };

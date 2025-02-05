@@ -197,26 +197,26 @@ const isMerged = (targetTable) => {
 };
 
 const mergeTable = () => {
-    form.customer_id = isSelectedCustomer.value.id;
-    const currentTable = zones.value.flatMap((zone) => zone.tables).find((table) => table.id === props.currentOrderTable.id);
-    form.tables.push(currentTable);
-    form.post(route('orders.mergeTable'), {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            setTimeout(() => {
-                showMessage({
-                    severity: 'success',
-                    summary: `Selected table has been successfully merged with '${props.currentOrderTable.table_no}'.`
-                })
-            }, 200);
-            form.reset();
-            emit('fetchZones');
-            closeConfirm();
-            emit('close');
-            emit('closeDrawer');
-        }
-    })
+    // form.customer_id = isSelectedCustomer.value.id;
+    // const currentTable = zones.value.flatMap((zone) => zone.tables).find((table) => table.id === props.currentOrderTable.id);
+    // form.tables.push(currentTable);
+    // form.post(route('orders.mergeTable'), {
+    //     preserveScroll: true,
+    //     preserveState: true,
+    //     onSuccess: () => {
+    //         setTimeout(() => {
+    //             showMessage({
+    //                 severity: 'success',
+    //                 summary: `Selected table has been successfully merged with '${props.currentOrderTable.table_no}'.`
+    //             })
+    //         }, 200);
+    //         form.reset();
+    //         emit('fetchZones');
+    //         closeConfirm();
+    //         emit('close');
+    //         emit('closeDrawer');
+    //     }
+    // })
 }
 
 const openConfirm = () => {

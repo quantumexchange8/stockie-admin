@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -13,91 +14,41 @@ use Illuminate\Support\Facades\Log;
 
 class SummaryReportController extends Controller
 {
+    protected $sales;
+    
+    public function __construct()
+    {
+        $this->sales = Payment::query()
+                                ->join('orders', 'payments.order_id', '=', 'orders.id')
+                                ->where([
+                                    ['payments.status', 'Successful'],
+                                    ['orders.status', 'Order Completed']
+                                ]);
+    }
     public function index(Request $request)
     {
         $message = $request->session()->get('message');
 
         // total sales
-        $totalSales = Payment::where('status', 'Successful')->sum('grand_total');
+        $totalSales = $this->sales->clone()
+                                    ->select('payments.grand_total')
+                                    ->sum('payments.grand_total');
 
         //total product sold
         $totalProducts = SaleHistory::sum('qty');
 
         //total orders
-        $totalOrders = Order::whereHas('payment', function ($query) {
-                                $query->where('status', 'Successful');
-                            })
-                            ->count();
-
+        $totalOrders = $this->sales->clone()->count('orders.id');
 
         //order summary
-        $ordersByMonth = array_fill(0, 12, 0);
-
-        $orderSummary = Order::whereHas('payment', function ($query) {
-                                    $query->where('status', 'Successful');
-                                })
-                                ->selectRaw('MONTHNAME(updated_at) as month, 
-                                            MONTH(updated_at) as month_num, 
-                                            COUNT(*) as total_order')
-                                ->whereYear('updated_at', Carbon::now()->year)
-                                ->groupBy('month', 'month_num')
-                                ->orderBy('month_num')
-                                ->get();
-
-        foreach ($orderSummary as $summary) {
-            $ordersByMonth[$summary->month_num - 1] = $summary->total_order;
-        }
+        $ordersByMonth = $this->getFilteredChartData('orders');
 
         // sales in category
-        $monthlySales = array_fill(0, 12, 0);
+        $salesByMonth = $this->getFilteredChartData('sales');
 
-        $orders = Order::whereHas('payment', function ($query) {
-                            $query->where('status', 'Successful');
-                        })
-                        ->with(['orderItems.product.category', 'payment'])
-                        ->whereYear('created_at', Carbon::now()->year)
-                        ->get();
-
-        foreach ($orders as $order) {
-            foreach ($order->orderItems as $orderItem) {
-                if ($orderItem->product->category->name === 'Beer') {
-                    $monthIndex = (int) $order->created_at->format('n') - 1;
-                    $monthlySales[$monthIndex] += $orderItem->amount;
-                }
-            }
-        }
-
-        // $totalSalesCategory = array_reduce($monthlySales, function ($carry, $item) {
-        //     return $carry + $item;
-        // }, 0);
-        
-        // dd($totalSales, $totalSalesCategory);
-
-        $lastPeriodSales = array_fill(0, 12, 0);
-
-        $lastPeriodOrders = Order::whereHas('payment', function ($query) {
-                                $query->where('status', 'Successful');
-                            })
-                        ->with('orderItems.product.category')
-                        ->whereYear('created_at', Carbon::now()->subYear()->year)
-                        ->get();
-
-        // foreach ($lastPeriodOrders as $lastPeriodOrder) {
-        //     foreach ($lastPeriodOrder->orderItems as $orderItem) {
-        //         if ($orderItem->product->category->name === 'Beer') {
-        //             $monthIndex = (int)Carbon::parse($lastPeriodOrder->receipt_end_date)->format('n')-1;
-        //             $lastPeriodSales[$monthIndex] += $orderItem->amount * $orderItem->item_qty;
-        //         }
-        //     }
-        // }
-        foreach ($lastPeriodOrders as $lastPeriodOrder) {
-            foreach ($lastPeriodOrder->orderItems as $orderItem) {
-                if ($orderItem->product->category->name === 'Beer') {
-                    $monthIndex = (int) $lastPeriodOrder->created_at->format('n') - 1;
-                    $lastPeriodSales[$monthIndex] += $orderItem->amount;
-                }
-            }
-        }
+        $categories = Category::orderBy('name')
+                                ->pluck('name')
+                                ->toArray();
 
         return Inertia::render('SummaryReport/SummaryReport', [
             'message' => $message ?? [],
@@ -105,33 +56,103 @@ class SummaryReportController extends Controller
             'totalProducts' => (int)$totalProducts,
             'totalOrders' => $totalOrders,
             'ordersArray' => $ordersByMonth,
-            'salesCategory' => $monthlySales,
-            'lastPeriodSales' => $lastPeriodSales,
+            'categories' => $categories,
+            'salesCategory' => $salesByMonth['currentYearData'],
+            'lastPeriodSales' => $salesByMonth['previousYearData'],
         ]);
+    }
+
+     /**
+     * Filter order summary graph data
+     */
+    public function getFilteredChartData(string $type, string $year = null, string $category = 'Beer')
+    {
+        $year ??= Carbon::now()->year;
+        
+        // Create date range for the specified year
+        $startOfYear = Carbon::createFromDate($year, 1, 1)->startOfYear();
+        $endOfYear = Carbon::createFromDate($year, 12, 31)->endOfYear();
+        
+        // Get all months with their short names
+        $monthLabels = collect(range(1, 12))->mapWithKeys(fn ($month) => [
+            $month => Carbon::createFromDate($year, $month, 1)->format('M')
+        ]);
+
+        switch ($type) { 
+            case 'orders': 
+                // Orders Data Query                         
+                $data = $this->sales->clone()
+                                            ->whereBetween('orders.created_at', [$startOfYear, $endOfYear])
+                                            ->selectRaw('MONTH(orders.created_at) as month, COUNT(DISTINCT orders.id) as order_count')
+                                            ->groupBy('month')
+                                            ->orderBy('month')
+                                            ->get()
+                                            ->pluck('order_count', 'month');
+    
+                // Map counts to all months, filling in zeros for months with no orders
+                $monthlyData = $monthLabels
+                        ->map(fn($label, $month) => $data->get($month, 0))
+                        ->values();
+        
+                return $monthlyData->toArray();
+
+
+            case 'sales': 
+                // Orders Data Query                         
+                $currentYearData = $this->sales->clone()
+                                            ->leftJoin('order_items', 'orders.id', '=', 'order_items.order_id')
+                                            ->join('products', 'order_items.product_id', '=', 'products.id')
+                                            ->join('categories', 'products.category_id', '=', 'categories.id')
+                                            ->where([
+                                                ['categories.name', $category],
+                                                ['order_items.status', 'Served'],
+                                                ['order_items.type', 'Normal']
+                                            ])
+                                            ->whereBetween('orders.created_at', [$startOfYear, $endOfYear])
+                                            ->selectRaw('MONTH(orders.created_at) as month, SUM(order_items.amount) as total_sales')
+                                            ->groupBy('month')
+                                            ->orderBy('month')
+                                            ->get()
+                                            ->pluck('total_sales', 'month');
+        
+                $previousYearData = $this->sales->clone()
+                                            ->leftJoin('order_items', 'orders.id', '=', 'order_items.order_id')
+                                            ->join('products', 'order_items.product_id', '=', 'products.id')
+                                            ->join('categories', 'products.category_id', '=', 'categories.id')
+                                            ->where([
+                                                ['categories.name', $category],
+                                                ['order_items.status', 'Served'],
+                                                ['order_items.type', 'Normal']
+                                            ])
+                                            ->whereBetween('orders.created_at', [$startOfYear->clone()->subYear(), $endOfYear->clone()->subYear()])
+                                            ->selectRaw('MONTH(orders.created_at) as month, SUM(order_items.amount) as total_sales')
+                                            ->groupBy('month')
+                                            ->orderBy('month')
+                                            ->get()
+                                            ->pluck('total_sales', 'month');
+    
+                // Map counts to all months, filling in zeros for months with no orders
+                $currentYearMonthlyData = $monthLabels
+                        ->map(fn($label, $month) => $currentYearData->get($month, 0))
+                        ->values();
+    
+                // Map counts to all months, filling in zeros for months with no orders
+                $previousYearMonthlyData = $monthLabels
+                        ->map(fn($label, $month) => $previousYearData->get($month, 0))
+                        ->values();
+        
+                return [
+                    'currentYearData' => $currentYearMonthlyData->toArray(),
+                    'previousYearData' => $previousYearMonthlyData->toArray()
+                ];
+        }
     }
 
     public function filterOrder(Request $request)
     {
-
         $filterYear = $request->input('selected');
 
-        $ordersByMonth = array_fill(0, 12, 0);
-
-        //order summary
-        $orderInYear = Order::whereHas('payment', function ($query) {
-                                    $query->where('status', 'Successful');
-                                })
-                                ->selectRaw('MONTHNAME(updated_at) as month, 
-                                            MONTH(updated_at) as month_num, 
-                                            COUNT(*) as total_order')
-                                ->whereYear('updated_at', $filterYear)
-                                ->groupBy('month', 'month_num')
-                                ->orderBy('month_num')
-                                ->get();
-
-        foreach ($orderInYear as $summary) {
-            $ordersByMonth[$summary->month_num - 1] = $summary->total_order;
-        }
+        $ordersByMonth = $this->getFilteredChartData('orders', $filterYear);
 
         return response()->json($ordersByMonth); 
     }
@@ -141,44 +162,11 @@ class SummaryReportController extends Controller
         $selectedYear = $request->input('selectedYear');
         $selectedCategory = $request->input('selectedCategory');
 
-        $thisPeriod = array_fill(0, 12, 0);
-        $orders = Order::whereHas('payment', function ($query) {
-                            $query->where('status', 'Successful');
-                        })
-                        ->with('orderItems.product.category')
-                        ->whereYear('created_at', $selectedYear)
-                        ->get();
-
-        foreach ($orders as $order) {
-            foreach ($order->orderItems as $orderItem) {
-                if ($orderItem->product->category->name === $selectedCategory) {
-                    $monthIndex = (int) $order->created_at->format('n') - 1;
-                    $thisPeriod[$monthIndex] += $orderItem->amount;
-                }
-            }
-        }
-
-        $lastPeriod = array_fill(0, 12, 0);
-        $lastPeriodOrders = Order::whereHas('payment', function ($query) {
-                    $query->where('status', 'Successful');
-                })
-                ->with('orderItems.product.category')
-                ->whereYear('created_at', $selectedYear-1)
-                ->get();
-
-        foreach ($lastPeriodOrders as $order) {
-            foreach ($order->orderItems as $orderItem) {
-                if ($orderItem->product->category->name === $selectedCategory) {
-                    $monthIndex = (int) $order->created_at->format('n') - 1;
-                    $lastPeriod[$monthIndex] += $orderItem->amount;
-                }
-            }
-        }
+        $ordersByMonth = $this->getFilteredChartData('sales', $selectedYear, $selectedCategory);
         
-
         return response()->json([ 
-            'thisPeriod' => $thisPeriod,
-            'lastPeriod' => $lastPeriod
+            'thisPeriod' => $ordersByMonth['currentYearData'],
+            'lastPeriod' => $ordersByMonth['previousYearData']
         ]);
     }
 

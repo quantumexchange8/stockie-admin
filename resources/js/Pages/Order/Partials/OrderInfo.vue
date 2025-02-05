@@ -266,8 +266,9 @@ const submit = (action) => {
                                 severity: 'success',
                                 summary: 'Selected table is now available for next customers.',
                             });
+                            closeDrawer();
+                            emit('close');
                         }, 200);
-                        closeDrawer();
                     }
                     form.reset();
                 },
@@ -287,7 +288,9 @@ const submit = (action) => {
                     }, 200);
                     form.reset();
                     emit('fetchZones');
+                    hideCancelOrderForm();
                     closeDrawer();
+                    emit('close');
                 },
             })
         }
@@ -491,8 +494,8 @@ watch(order.value, () => {
             </div>
 
             <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
-                @click="console.log(props.selectedTable.order_tables.length)"
             >
+            <!-- @click="console.log(props.selectedTable.order_tables.length)" -->
                 <TransferIcon class="text-primary-950 size-6" />
             </div>
 

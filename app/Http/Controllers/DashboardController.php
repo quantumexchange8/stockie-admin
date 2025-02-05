@@ -72,7 +72,7 @@ class DashboardController extends Controller
                                             ->sum('qty');
         $comparedSold = 0;
         if ($productSoldYesterday !== 0) {
-            $comparedSold = ($productSold - $productSoldYesterday) / $productSoldYesterday*100; 
+            $comparedSold = ($productSold - $productSoldYesterday) / $productSoldYesterday * 100; 
         };
 
 
@@ -86,9 +86,11 @@ class DashboardController extends Controller
                                 ->where('status','Order Completed')
                                 ->with(['payment' => fn($query) => $query->where('status', 'Successful')])
                                 ->count();
+
+        // dd($productSold, $productSoldYesterday);
         $comparedOrder = 0;
         if ($orderYesterday !== 0) {
-            $comparedOrder = ($order - $orderYesterday)/$orderYesterday*100; 
+            $comparedOrder = ($order - $orderYesterday) / $orderYesterday * 100; 
         };
 
         //table room activity
@@ -313,7 +315,7 @@ class DashboardController extends Controller
                             return $group->sum('grand_total');
                         });
 
-        // Structure sales and commissions data for response 
+        // Structure sales data for response 
         $salesArray = $periodLabels->map(function ($label, $period) use ($salesData) { 
             return $salesData->get($period, 0); 
         })->values(); 
