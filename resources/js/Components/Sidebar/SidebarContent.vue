@@ -92,7 +92,8 @@ const toggleNode = (node) => {
                         <OrderIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <SidebarTree 
+                <!-- Work In Progress -->
+                <!-- <SidebarTree 
                     :value="nodes" 
                     :active="route().current('shift-management')"
                     :expandedKeys="expandedKeys"
@@ -102,7 +103,7 @@ const toggleNode = (node) => {
                         <ShiftManagementIcon v-if="slotProps.node.key === '0'"/>
                         <div class="size-[25px]" v-else></div>
                     </template>
-                </SidebarTree>
+                </SidebarTree> -->
                 <SidebarLink 
                     title="Menu Management" 
                     :href="route('products')"

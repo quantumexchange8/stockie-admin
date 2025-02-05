@@ -224,13 +224,17 @@ const openConfirm = () => {
                                     .filter((order_table) => !!order_table.order.customer_id)
                                     .map((order_table) => order_table.order.customer_id);
 
-    isCheckedIn.push(props.currentOrderCustomer.id);
+    isCheckedIn.push(props.currentOrderCustomer?.id);
     checkedIn.value = customers.value.filter((customer) =>
         isCheckedIn.includes(customer.id)
     );
 
     isSelectedCustomer.value = checkedIn.value.length > 0 ? checkedIn.value[0] : null;
-    isConfirmShow.value = true;
+    if (checkedIn.value.length > 0) {
+        isConfirmShow.value = true;
+    } else {
+        mergeTable();
+    }
 };
 
 
