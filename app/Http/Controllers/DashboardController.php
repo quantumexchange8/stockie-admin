@@ -42,10 +42,6 @@ class DashboardController extends Controller
         $message = $request->session()->get('message');
 
         //sales today
-        // $salesToday = Order::whereDate('created_at', Carbon::today())
-        //                 ->where('status', 'Order Completed')
-        //                 ->sum('total_amount');
-
         $salesToday = $this->sales->clone()
                                     ->whereDate('orders.created_at', Carbon::today())
                                     ->select('payments.grand_total')
@@ -61,20 +57,13 @@ class DashboardController extends Controller
         };
 
         //product sold today
-        // $productSold = OrderItem::whereDate('created_at', Carbon::today())
-        //                         ->where('status', 'Served')
-        //                         ->sum('item_qty');
+        $productSold = SaleHistory::soldToday();
+        $productSoldYesterday = SaleHistory::soldYesterday();
 
-        $productSold = SaleHistory::whereDate('created_at', Carbon::today())
-                                    ->sum('qty');
-
-        $productSoldYesterday = SaleHistory::whereDate('created_at', Carbon::yesterday())
-                                            ->sum('qty');
         $comparedSold = 0;
         if ($productSoldYesterday !== 0) {
             $comparedSold = ($productSold - $productSoldYesterday) / $productSoldYesterday * 100; 
         };
-
 
         //order today
         $order = Order::whereDate('created_at', Carbon::today())

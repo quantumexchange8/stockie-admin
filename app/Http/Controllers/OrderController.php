@@ -1770,6 +1770,7 @@ class OrderController extends Controller
             }
 
             SaleHistory::create([
+                'order_id' => $item->order_id,
                 'product_id' => $item->product_id,
                 'total_price' => $item->amount,
                 'qty' => (int) $item->item_qty,

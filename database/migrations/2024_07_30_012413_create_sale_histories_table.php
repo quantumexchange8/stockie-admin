@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('sale_histories', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('order_id');
             $table->unsignedBigInteger('product_id');
             $table->double('total_price');
             $table->integer('qty');

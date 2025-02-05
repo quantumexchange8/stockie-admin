@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,6 +15,7 @@ class SaleHistory extends Model
     protected $table = "sale_histories";
 
     protected $fillable = [
+        'order_id',
         'product_id',
         'total_price',
         'qty',
@@ -26,5 +28,19 @@ class SaleHistory extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function scopeSoldToday($query)
+    {
+        return $query->join('orders', 'sale_histories.order_id', '=', 'orders.id')
+                        ->whereDate('orders.created_at', Carbon::today())
+                        ->sum('sale_histories.qty');
+    }
+
+    public function scopeSoldYesterday($query)
+    {
+        return $query->join('orders', 'sale_histories.order_id', '=', 'orders.id')
+                        ->whereDate('orders.created_at', Carbon::yesterday())
+                        ->sum('sale_histories.qty');
     }
 }
