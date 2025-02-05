@@ -30,6 +30,15 @@ class SaleHistory extends Model
         return $this->belongsTo(Product::class, 'product_id');
     }
 
+    /**
+     * Order Model
+     * Get the order of the sale histories.
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
+
     public function scopeSoldToday($query)
     {
         return $query->join('orders', 'sale_histories.order_id', '=', 'orders.id')

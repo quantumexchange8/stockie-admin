@@ -100,4 +100,13 @@ class Order extends Model
     {
         return $this->belongsTo(RankingReward::class,'voucher_id');
     }
+
+    /**
+     * SaleHistory Model
+     * Get the sale histories of the order.
+     */
+    public function saleHistories(): HasMany
+    {
+        return $this->hasMany(SaleHistory::class, 'order_id');
+    }
 }
