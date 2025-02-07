@@ -2623,8 +2623,8 @@ class OrderController extends Controller
             unset($keepItem->orderItemSubitem);
 
             $keepItem->image = $keepItem->orderItemSubitem->productItem 
-            ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-            : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
 
             $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
         }
@@ -2652,6 +2652,7 @@ class OrderController extends Controller
                                         'order.customer:id,full_name'
                                     ])
                                     ->select('table_id', 'order_id', 'id')
+                                    ->orderByDesc('id')
                                     ->get();
 
         // if($currentTable->order->customer) {
@@ -2659,12 +2660,14 @@ class OrderController extends Controller
         // }
 
         $currentTable->each(function ($table) {
-            if ($table->order && $table->order->customer_id) {
-                $table->order->customer->image = $table->order->customer->getFirstMediaUrl('customer');
-            }
+            if ($table->order) {
+                if ($table->order->customer_id) {
+                    $table->order->customer->image = $table->order->customer->getFirstMediaUrl('customer');
+                }
 
-            foreach ($table->order->orderItems as $orderItem) {
-                $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+                foreach ($table->order->orderItems as $orderItem) {
+                    $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+                }
             }
         });
     

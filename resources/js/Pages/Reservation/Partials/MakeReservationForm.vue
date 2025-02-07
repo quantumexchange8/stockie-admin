@@ -48,16 +48,18 @@ const submit = () => {
     form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
     const reservedTables = [];
 
-    form.tables.forEach(selectedTable => {
-        props.tables.forEach(table => {
-            if (table.id === selectedTable) {
-                reservedTables.push({
-                    id : table.id,
-                    name : table.table_no,
-                });
-            };
+    if (form.tables && form.tables.length > 0) {
+        form.tables.forEach(selectedTable => {
+            props.tables.forEach(table => {
+                if (table.id === selectedTable) {
+                    reservedTables.push({
+                        id : table.id,
+                        name : table.table_no,
+                    });
+                };
+            });
         });
-    });
+    };
 
     form.table_no = reservedTables;
 

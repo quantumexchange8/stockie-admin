@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\DashboardController;
+use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\PromotionController;
 use App\Http\Controllers\API\ReportController;
 use Illuminate\Http\Request;
@@ -55,4 +56,14 @@ Route::controller(ReportController::class)->group(function(){
     Route::get('insights/incentive/details', 'getIncentiveDetails');
     Route::get('insights/incentive/recent_histories', 'getRecentIncentiveHistories');
     Route::get('insights/incentive/histories', 'getIncentiveHistories');
+});
+
+Route::controller(OrderController::class)->group(function(){
+    Route::get('orders/tables', 'getAllTables');
+    Route::get('orders/order/order_summary', 'getOrderSummary');
+    Route::get('orders/order/products', 'getAllProducts');
+    Route::get('orders/order/pending_serve_items', 'getPendingServeItems');
+    Route::get('orders/order/product_categories', 'getAllCategories');
+    Route::post('orders/check_in_table', 'checkInTable');
+    Route::post('orders/check_in_customer', 'checkInCustomer');
 });

@@ -102,7 +102,6 @@ const updateSelectedTables = (event) => {
                     .filter((table) => table !== null)
                     .join(', ');
 
-    console.log(maxSeats.value);
     form.pax = validatePaxValue(form.pax).toString();
 
     // Reset selected table

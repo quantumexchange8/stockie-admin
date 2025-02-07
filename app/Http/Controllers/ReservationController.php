@@ -193,7 +193,7 @@ class ReservationController extends Controller
                 'tables' => 'required|array',
                 'handled_by' => 'required|integer',
             ], 
-            ['assigned_waiter.required' => 'This field is required.']
+            ['required' => 'This field is required.']
         );
 
         $reservation = Reservation::find($id);
@@ -264,9 +264,6 @@ class ReservationController extends Controller
 
         Notification::send(User::all(), new OrderAssignedWaiter($orderTables, auth()->user()->id, $waiter->id));
 
-
-
-        
         // Update reservation details
         $reservation->update([
             'status' => 'Checked in',
