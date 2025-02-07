@@ -66,4 +66,5 @@ Route::controller(OrderController::class)->group(function(){
     Route::get('orders/order/product_categories', 'getAllCategories');
     Route::post('orders/check_in_table', 'checkInTable');
     Route::post('orders/check_in_customer', 'checkInCustomer');
+    Route::put('orders/order/serve_item', 'serveOrderItem');
 });
