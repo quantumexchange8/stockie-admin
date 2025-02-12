@@ -422,7 +422,7 @@ watch(order.value, () => {
             <KeepItem
                 :order="order" 
                 :selectedTable="selectedTable"
-                @update:customerKeepItems="$emit('update:customerKeepItems', $event)"
+                @update:customerKeepItems="customer.keep_items = $event"
                 @close="closeDrawer();closeOrderDetails()"
             />
         </template>
@@ -470,7 +470,7 @@ watch(order.value, () => {
     <div class="flex flex-col gap-4 items-start rounded-[5px]">
         <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
             <span class="text-primary-950 text-center text-md font-medium">Detail - {{ orderTableNames }}</span>
-            <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer" />
+            <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer;$emit('close')" />
         </div>
 
         <div class="flex px-5 items-start gap-4 self-stretch">

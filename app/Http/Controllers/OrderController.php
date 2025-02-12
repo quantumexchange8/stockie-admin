@@ -1157,6 +1157,8 @@ class OrderController extends Controller
      */
     public function addItemToKeep(Request $request)
     {
+        $request->validate(['customer_id' => 'required|integer'], ['required' => 'This field is required.']);
+
         $items = $request->items;
         $validatedItems = [];
         $allItemErrors = [];
@@ -1239,6 +1241,7 @@ class OrderController extends Controller
                                     //     dd($reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
                                     // number_format((float) '8.258', 2, '.', ''));
                                         // dd($item['expired_from']);
+                                        
                                         $newKeep = KeepItem::create([
                                             'customer_id' => $request->customer_id,
                                             'order_item_subitem_id' => $item['order_item_subitem_id'],
@@ -1251,21 +1254,24 @@ class OrderController extends Controller
                                             'expired_to' => $item['expired_to'],
                                         ]);
 
-                                        $item = OrderItemSubitem::where('id', $item['order_item_subitem_id'])
+                                        $associatedSubItem = OrderItemSubitem::where('id', $item['order_item_subitem_id'])
                                                                 ->with(['productItem:id,inventory_item_id', 'productItem.inventoryItem:id,item_name'])
                                                                 ->first();
+
+                                        $inventoryItemName = $associatedSubItem->productItem->inventoryItem->item_name;
+
                                         $name = Customer::where('id', $request->customer_id)->first()->pluck('full_name');
-                                        
+
                                         activity()->useLog('keep-item-from-customer')
                                                     ->performedOn($newKeep)
                                                     ->event('kept')
                                                     ->withProperties([
                                                         'edited_by' => auth()->user()->full_name,
                                                         'image' => auth()->user()->getFirstMediaUrl('user'),
-                                                        'item_name' => $item->item_name,
+                                                        'item_name' => $inventoryItemName,
                                                         'customer_name' => $name,
                                                     ])
-                                                    ->log("'$item->item_name' is kept in $name's account.");
+                                                    ->log("'$inventoryItemName' is kept in $name's account.");
                             
                                         KeepHistory::create([
                                             'keep_item_id' => $newKeep->id,
@@ -1277,7 +1283,9 @@ class OrderController extends Controller
                                     }
 
                                     if ($orderItem->status === 'Pending Serve') {
-                                        $subItem->increment('serve_qty', $reqItem['type'] === 'cm' ? 1 : $item['amount']);
+                                        $toBeServed = ($reqItem['totalKept'] + $item['amount']) - $subItem['serve_qty'];
+                                        
+                                        $subItem->increment('serve_qty', $reqItem['type'] === 'cm' ? 1 : $toBeServed);
                                     }
                                     $subItem->save();
                                     $subItem->refresh();
@@ -1337,18 +1345,20 @@ class OrderController extends Controller
                             ])
                             ->find($request->current_customer_id);
         
-        foreach ($customer->keepItems as $key => $keepItem) {
-            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-            unset($keepItem->orderItemSubitem);
-            
-            $keepItem->image = $keepItem->orderItemSubitem->productItem 
-                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
-            
-            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+        if ($customer) {
+            foreach ($customer->keepItems as $key => $keepItem) {
+                $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                unset($keepItem->orderItemSubitem);
+                
+                $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                        ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                        : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                
+                $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+            }
         }
 
-        return response()->json($customer->keepItems);
+        return response()->json($customer?->keepItems);
         
         // $validated = $request->validate([
         //     'customer_id' => 'required|integer',
@@ -1902,7 +1912,10 @@ class OrderController extends Controller
         
 
         // Update payment status
-        $payment->update(['status' => 'Successful']);
+        $payment->update([
+            'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+            'status' => 'Successful'
+        ]);
 
         // Update the total amount of the order based on the payment's grandtotal
         $order->update(['total_amount' => $payment->grand_total]);
@@ -2476,6 +2489,9 @@ class OrderController extends Controller
                                         'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
                                         'order.orderItems.product',
                                         'order.orderItems.subItems.productItem.inventoryItem',
+                                        'order.orderItems.subItems.keepItems.oldestKeepHistory' => function ($query) {
+                                            $query->where('status', 'Keep');
+                                        },
                                         'order.orderItems.keepItem.oldestKeepHistory'  => function ($query) {
                                             $query->where('status', 'Keep');
                                         }
