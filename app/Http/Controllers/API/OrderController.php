@@ -27,6 +27,7 @@ use App\Notifications\OrderCheckInCustomer;
 use App\Notifications\OrderPlaced;
 use App\Services\RunningNumberService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -36,7 +37,7 @@ class OrderController extends Controller
     protected $authUser;
     public function __construct()
     {
-        $this->authUser = User::findOrFail(2); // Should get auth user
+        $this->authUser = User::find(Auth::id());
         $this->authUser->image = $this->authUser->getFirstMediaUrl('user');
     }
     
@@ -435,7 +436,7 @@ class OrderController extends Controller
 
                 foreach ($subItems as $key => $item) {
                     foreach ($request->items as $key => $updated_item) {
-                        if ($item['id'] === $updated_item['sub_item_id']) {
+                        if ($item['id'] === $item['serve_qty'] && $item['serve_qty'] !== ($item['item_qty'] * $$orderItem->item_qty)) {
                             $item->update(['serve_qty' => $item['serve_qty'] + $updated_item['serving_qty']]);
                             $item->save();
                             $item->refresh();

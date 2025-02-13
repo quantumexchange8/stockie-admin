@@ -586,7 +586,7 @@ onMounted(() => {
                 <div class="flex flex-col pt-4 pb-2 items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)] "
                     v-if="item.order_items.some(orderItem =>
                         orderItem.sub_items.some(subItem => subItem.product_item.inventory_item.keep !== 'Inactive')
-                    ) && item.order_items.every((item) => getTotalKeptQuantity(item) !== getTotalServedQty(item))"
+                    ) && !item.order_items.every((item) => getTotalKeptQuantity(item) === getTotalServedQty(item))"
                 >
                     <!-- item header -->
                     <div class="flex px-4 justify-center items-center gap-2.5 self-stretch">

@@ -30,7 +30,7 @@ class ReportController extends Controller
     {
         $this->currentYear = now()->year;
 
-        $this->authUser = User::findOrFail(2); // Should get auth user
+        $this->authUser = User::find(Auth::id());
 
         // Get all item sales of the auth user
         $this->sales = OrderItem::itemSales()->where('order_items.user_id', $this->authUser->id);

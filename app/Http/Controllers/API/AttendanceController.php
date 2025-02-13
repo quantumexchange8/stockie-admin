@@ -18,7 +18,7 @@ class AttendanceController extends Controller
     
     public function __construct()
     {
-        $this->authUser = User::findOrFail(Auth::id());
+        $this->authUser = User::find(Auth::id());
     }
 
     /**
@@ -84,7 +84,7 @@ class AttendanceController extends Controller
         }
     
         // Order and retrieve attendances
-        $allAttendances = $query->where('user_id', 2) // Should get auth user
+        $allAttendances = $query->where('user_id', $this->authUser->id)
                                 ->orderBy('check_in', 'desc')
                                 ->get(['check_in', 'check_out']);
     
@@ -106,7 +106,7 @@ class AttendanceController extends Controller
      */
     public function checkIn(Request $request)
     {
-        $this->checkRecentAttendance($this->authUser); // Should get auth user
+        $this->checkRecentAttendance($this->authUser);
 
         try {
             $validatedData = $request->validate(
