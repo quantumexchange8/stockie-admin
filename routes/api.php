@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\ActivityController;
 use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\DashboardController;
@@ -67,5 +68,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/check_in_table', 'checkInTable');
         Route::post('/check_in_customer', 'checkInCustomer');
         Route::put('/order/serve_item', 'serveOrderItem');
+    });
+
+    Route::controller(ActivityController::class)->prefix('activity')->group(function(){
+        Route::get('/recent_activities', 'getRecentActivityLogs');
+        Route::get('/activities', 'getAllActivityLogs');
     });
 });
