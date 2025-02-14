@@ -13,6 +13,7 @@ import Modal from '@/Components/Modal.vue';
 import RemoveOrderItem from './RemoveOrderItem.vue';
 import KeepItem from './KeepItem.vue';
 import Dropdown from '@/Components/Dropdown.vue';
+import SelectCustomer from './SelectCustomer.vue';
 
 const props = defineProps({
     errors: Object,
@@ -41,8 +42,12 @@ const actionType = ref(null);
 const op = ref(null);
 const op2 = ref(null);
 const selectedItem = ref();
+const orderCustomer = ref(order.value.customer);
+const isCustomerModalOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 
-// watch(props.order, (newValue) => order.value = newValue)
+watch(order, (newValue) => orderCustomer.value = newValue.customer);
 
 const form = useForm({
     current_order_id: order.value.id,
@@ -209,6 +214,33 @@ const getItemTypeName = (type) => {
     }
 }
 
+const showCustomerModal = () => {
+    isCustomerModalOpen.value = true;
+    isDirty.value = false;
+}
+
+const closeModal = (status) => {
+    switch(status){
+        case 'close': {
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isCustomerModalOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isCustomerModalOpen.value = false;
+            break;
+        }
+    }
+}
+
 const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0) && !form.processing);
 
 </script>
@@ -241,7 +273,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
             />
         </template>
     </RightDrawer>
-    <div class="w-full flex flex-col gap-6 items-start rounded-[5px] pr-1 max-h-[calc(100dvh-23.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <div class="w-full flex flex-col gap-6 items-start rounded-[5px] pr-1 max-h-[calc(100dvh-28.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col items-start gap-4 self-stretch">
             <div class="flex flex-col items-start gap-y-4 py-4 self-stretch">
                 <div class="w-full flex flex-row gap-x-3 items-start">
@@ -273,7 +305,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                     </div>
                     <div class="basis-1/2 flex flex-col gap-2 items-start">
                         <p class="text-grey-900 text-sm font-medium">Customer</p>
-                        <Dropdown
+                        <!-- <Dropdown
                             inputName="customer_id"
                             imageOption
                             plainStyle
@@ -283,7 +315,32 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             :disabled="tableStatus === 'Pending Clearance'"
                             v-model="updateOrderCustomerForm.customer_id"
                             @onChange="updateOrderCustomer"
-                        />
+                        /> -->
+                        <div 
+                            class="flex justify-between items-center gap-x-2 w-full cursor-pointer" 
+                            @click="showCustomerModal"
+                        >
+                            <div class="flex gap-x-2 w-full">
+                                <img 
+                                    :src="orderCustomer ? orderCustomer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    alt="WaiterProfileImage"
+                                    class="size-5 rounded-full"
+                                    v-if="orderCustomer"
+                                >
+                                <p :class="['text-base font-normal cursor-pointer', orderCustomer ? 'text-grey-700' : 'text-grey-300']">{{ orderCustomer?.full_name ?? 'Select' }}</p>
+                            </div>
+                            <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_4705_26673)">
+                                    <path d="M4.26826 7.61216H11.7331C12.0352 7.61216 12.3123 7.44478 12.4533 7.17785C12.5941 6.91038 12.5755 6.58772 12.4048 6.33789L8.62642 0.81698C8.49115 0.619372 8.2672 0.501073 8.02765 0.500002C7.78836 0.499418 7.5637 0.616258 7.42734 0.813282L3.59911 6.33429C3.42657 6.58302 3.40649 6.90726 3.54698 7.17575C3.68747 7.44378 3.96533 7.61216 4.26826 7.61216Z" fill="#7E171B"/>
+                                    <path d="M11.7331 9.38867H4.26825C3.96532 9.38867 3.68746 9.55712 3.54697 9.82512C3.40648 10.0936 3.42659 10.4178 3.5991 10.6665L7.42733 16.1875C7.56369 16.3845 7.78835 16.5014 8.02764 16.5009C8.26719 16.4999 8.49114 16.3814 8.62641 16.1839L12.4048 10.6629C12.5755 10.4131 12.594 10.0904 12.4533 9.82291C12.3123 9.55605 12.0352 9.38867 11.7331 9.38867Z" fill="#7E171B"/>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_4705_26673">
+                                        <rect width="16" height="16" fill="white" transform="translate(0 0.5)"/>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -496,4 +553,29 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
             </form>
         </template>
     </OverlayPanel>
+    
+    <Modal
+        :title="'Checked-in customer'"
+        :maxWidth="'xs'"
+        :closeable="true"
+        :show="isCustomerModalOpen"
+        @close="closeModal('close')"
+    >
+        <SelectCustomer
+            :orderId="order.id"
+            :customers="customers"
+            @closeOrderDetails="closeOrderDetails"
+            @closeModal="closeModal"
+            @isDirty="isDirty = $event"
+        />
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal>
 </template>

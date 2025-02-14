@@ -9,22 +9,30 @@ import Modal from '@/Components/Modal.vue';
 import Toast from '@/Components/Toast.vue';
 
 const props = defineProps({
-    customer: Object,
+    // errors: Object,
+    // itemCategoryArr: {
+    //     type: Array,
+    //     default: () => [],
+    // },
+    // categoryArr: {
+    //     type: Array,
+    //     default: () => [],
+    // },
 });
 
 const emit = defineEmits(['close', 'isDirty', 'update:customerListing']);
 
 const { showMessage } = useCustomToast();
-const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
+const { transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();
 
 const isUnsavedChangesOpen = ref(false);
 
 const form = useForm({
-    full_name: props.customer.full_name,
-    phone: props.customer.phone,
-    phone_temp: formatPhone(props.customer.phone, true, true),
-    email: props.customer.email,
+    full_name: '',
+    phone: '',
+    phone_temp: "",
+    email: '',
     password: '',
 });
 
@@ -35,7 +43,7 @@ const unsaved = (status) => {
 const submit = async () => { 
     form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
     try {
-        const response = await axios.put(`/customer/${props.customer.id}`, form);
+        const response = await axios.post('/customer/', form);
 
         showMessage({
             severity: 'success',
@@ -54,7 +62,7 @@ const submit = async () => {
     }
 };
 
-const requiredFields = ['full_name', 'phone_temp', 'email'];
+const requiredFields = ['full_name', 'phone_temp', 'email', 'password'];
 
 const isFormValid = computed(() => requiredFields.every(field => form[field]) && !form.processing);
 
@@ -128,7 +136,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Save
+                Add
             </Button>
         </div>
         <Modal

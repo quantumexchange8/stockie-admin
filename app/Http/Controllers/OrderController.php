@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CustomerRequest;
 use App\Http\Requests\OrderTableRequest;
 use App\Jobs\GiveBonusPoint;
 use App\Jobs\GiveEntryReward;
@@ -42,6 +43,7 @@ use App\Models\Zone;
 use App\Services\RunningNumberService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Notification;
@@ -108,13 +110,16 @@ class OrderController extends Controller
         // });
 
         $customers = Customer::orderBy('full_name')
-                                ->get()
+                                ->get(['id', 'full_name', 'phone'])
                                 ->map(function ($customer) {
-                                    return [
-                                        'text' => $customer->full_name,
-                                        'value' => $customer->id,
-                                        'image' => $customer->getFirstMediaUrl('customer'),
-                                    ];
+                                    $customer->image = $customer->getFirstMediaUrl('customer');
+
+                                    return $customer;
+                                    // return [
+                                        // 'text' => $customer->full_name,
+                                        // 'value' => $customer->id,
+                                        // 'image' => $customer->getFirstMediaUrl('customer'),
+                                    // ];
                                 });
 
         $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address_line1')->first();
@@ -2818,5 +2823,32 @@ class OrderController extends Controller
         $users = $this->getAllCustomers();
 
         return response()->json($users);
+    }
+
+    public function createCustomerFromOrder(CustomerRequest $request)
+    {
+        $validatedData = $request->validated();
+
+        Customer::create([
+            'uuid' => RunningNumberService::getID('customer'),
+            'full_name' => $validatedData['full_name'],
+            'phone' => $validatedData['phone'],
+            'email' => $validatedData['email'],
+            'password' => Hash::make($validatedData['password']),
+            'ranking' => 24,
+            'point' => 0,
+            'total_spending' => 0.00,
+        ]);
+
+        $customers = Customer::orderBy('full_name')
+                                ->get(['id', 'full_name', 'phone'])
+                                ->map(function ($customer) {
+                                    $customer->image = $customer->getFirstMediaUrl('customer');
+
+                                    return $customer;
+                                });
+       
+
+        return response()->json($customers);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Customer;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CustomerRequest extends FormRequest
 {
@@ -24,21 +25,34 @@ class CustomerRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'password' => [
-                'required',
-                'string',
-                // 'exists:customers,password',
-            ],
+            'full_name'=>'required|string|max:255',
+            'phone' => 'required|string|max:255',
         ];
+
+        $rules['password'] = [
+            $this->input('id') ? 'nullable' : 'required',
+            'string'
+        ];
+
+        $rules['email'] = [
+            'required',
+            'email',
+            $this->input('id') 
+                    ? Rule::unique('customers')->ignore($this->input('id'))->whereNull('deleted_at')
+                    : 'unique:customers,email'
+        ];
+
         return $rules;
     }
+
 
     public function messages()
     {
         return [
-            'verification_code.required' => 'This field is required',
-            'verification_code.integer' => 'This field must be an string.',
-            // 'verification_code.exists'=> 'Invalid verification code.',
+            'email.unique' => 'Email has already been taken.',
+            'email.email' => 'Invalid email.',
+            'required' => 'This field is required.',
+            'email' => 'Invalid email',
         ];
     }
 }

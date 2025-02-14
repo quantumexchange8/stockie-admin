@@ -249,6 +249,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/orders/reservation/{id}', [OrderController::class, 'updateReservation'])->name('orders.reservations.update');
         Route::delete('/orders/reservation/{id}', [OrderController::class, 'deleteReservation'])->name('orders.reservations.destroy');
         Route::post('/orders/mergeTable', [OrderController::class, 'mergeTable'])->name('orders.mergeTable');
+        Route::post('/orders/createCustomerFromOrder', [OrderController::class,'createCustomerFromOrder'])->name('orders.createCustomerFromOrder');
         
         // Order items
         Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');
@@ -288,9 +289,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/getKeepHistories/{id}', [CustomerController::class,'getKeepHistories'])->name('customer.getKeepHistories');
         Route::get('/getCustomerPointHistories/{id}', [CustomerController::class,'getCustomerPointHistories'])->name('customer.getCustomerPointHistories');
         Route::get('/tierRewards/{id}', [CustomerController::class,'tierRewards'])->name('customer.tier-rewards');
+        Route::post('/', [CustomerController::class,'store'])->name('customer.store');
         Route::post('/returnKeepItem/{id}', [CustomerController::class,'returnKeepItem'])->name('customer.returnKeepItem');
-        Route::delete('/deleteCustomer/{id}', [CustomerController::class, 'deleteCustomer'])->name('customer.delete-customer');
         Route::post('/adjustPoint', [CustomerController::class, 'adjustPoint'])->name('customer.adjustPoint');
+        Route::put('/{id}', [CustomerController::class, 'update'])->name('customer.update');
+        Route::delete('/deleteCustomer/{id}', [CustomerController::class, 'deleteCustomer'])->name('customer.delete-customer');
      });
 
      /********* Summary Report **********/

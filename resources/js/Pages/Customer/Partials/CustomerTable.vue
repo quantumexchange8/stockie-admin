@@ -1,7 +1,7 @@
 <script setup>
 import Button from "@/Components/Button.vue";
 import { DeleteCustomerIllust, UndetectableIllus } from "@/Components/Icons/illus";
-import { DeleteIcon, EditIcon, UploadIcon } from "@/Components/Icons/solid";
+import { DeleteIcon, EditIcon, PlusIcon, UploadIcon } from "@/Components/Icons/solid";
 import Modal from "@/Components/Modal.vue";
 import SearchBar from "@/Components/SearchBar.vue";
 import Table from "@/Components/Table.vue";
@@ -17,6 +17,8 @@ import RightDrawer from "@/Components/RightDrawer/RightDrawer.vue";
 import CustomerDetail from "./CustomerDetail.vue";
 import { useFileExport } from "@/Composables";
 import dayjs from "dayjs";
+import CreateCustomer from "./CreateCustomer.vue";
+import EditCustomer from "./EditCustomer.vue";
 
 
 const props = defineProps ({
@@ -38,10 +40,14 @@ const { exportToCSV } = useFileExport();
 
 const customer = ref(props.customers);
 const isSidebarOpen = ref(false);
+const isCreateCustomerOpen = ref(false);
+const isEditCustomerOpen = ref(false);
 const isDeleteCustomerOpen = ref(false);
 const selectedCustomer = ref(null);
 const highestPoints = ref(props.highestPoints);
 const searchQuery = ref('');
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const showSideBar = (customer) => {
     isSidebarOpen.value = true;
@@ -52,15 +58,62 @@ const hideSideBar = () => {
     isSidebarOpen.value = false;
 }
 
-const showDeleteModal = (id) => {
-    isDeleteCustomerOpen.value = true;
-    form.id = id;
+const openModal = (action, data) => {
+    isDirty.value = false;
+    switch(action) {
+        case 'create': 
+            isCreateCustomerOpen.value = true;
+            break;
+        case 'edit': 
+            selectedCustomer.value = data;
+            isEditCustomerOpen.value = true;
+            break;
+        case 'delete': 
+            isDeleteCustomerOpen.value = true;
+            form.id = data;
+            break;
+    };
 }
 
-const closeModal = () => {
-    isDeleteCustomerOpen.value = false;
-    setTimeout(() => form.reset(), 300);
+const closeModal = (status) => {
+    switch(status) {
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isCreateCustomerOpen.value = false;
+                isEditCustomerOpen.value = false;
+                isDeleteCustomerOpen.value = false;
+                selectedCustomer.value = null;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            isCreateCustomerOpen.value = false;
+            isEditCustomerOpen.value = false;
+            isDeleteCustomerOpen.value = false;
+            selectedCustomer.value = null;
+
+            break;
+        }
+    }
+
 }
+
+// const showDeleteModal = (id) => {
+//     isDeleteCustomerOpen.value = true;
+//     form.id = id;
+// }
+
+// const closeModal = () => {
+//     isDeleteCustomerOpen.value = false;
+//     setTimeout(() => form.reset(), 300);
+// }
 
 const form = useForm({
     id: customer.id,
@@ -284,6 +337,19 @@ watch (() => searchQuery.value, (newValue) => {
                         </div>
                     </template>
                 </SearchBar>
+                
+                <Button
+                    :type="'button'"
+                    :size="'lg'"
+                    :iconPosition="'left'"
+                    class="!w-fit"
+                    @click="openModal('create')"
+                >
+                    <template #icon>
+                        <PlusIcon class="w-6 h-6"/>
+                    </template>
+                    New Customer
+                </Button>
             </div>
 
             <Table
@@ -302,10 +368,16 @@ watch (() => searchQuery.value, (newValue) => {
                     <UndetectableIllus class="w-44 h-44"/>
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
+                <template #editAction="customer">
+                    <EditIcon
+                        class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
+                        @click.stop="openModal('edit', customer)"
+                    />
+                </template>
                 <template #deleteAction="customer">
                     <DeleteIcon
                         class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
-                        @click="showDeleteModal(customer.id)"
+                        @click="openModal('delete', customer.id)"
                     />
                 </template>
                 <template #ranking="customer">
@@ -379,6 +451,55 @@ watch (() => searchQuery.value, (newValue) => {
                 </div>
             </div>
         </form>
+    </Modal>
+
+    <Modal 
+        :title="'Create New Customer'"
+        :show="isCreateCustomerOpen" 
+        :maxWidth="'xs'" 
+        :closeable="true" 
+        @close="closeModal('close')"
+    >
+        <CreateCustomer
+            @update:customerListing="customer = $event"
+            @close="closeModal" 
+            @isDirty="isDirty=$event"
+        />
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal>
+
+    <Modal 
+        :title="'Edit Customer'"
+        :show="isEditCustomerOpen" 
+        :maxWidth="'xs'" 
+        :closeable="true" 
+        @close="closeModal('close')"
+    >
+        <template v-if="selectedCustomer">
+            <EditCustomer
+                :customer="selectedCustomer"
+                @update:customerListing="customer = $event"
+                @close="closeModal"
+                @isDirty="isDirty=$event"
+            />
+    
+            <Modal
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeModal('stay')"
+                @leave="closeModal('leave')"
+            />
+        </template>
     </Modal>
 
     <!-- right drawer -->

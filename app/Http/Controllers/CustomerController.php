@@ -9,7 +9,8 @@ use App\Models\KeepItem;
 use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\Ranking;
-use Hash;
+use App\Services\RunningNumberService;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -65,11 +66,131 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function deleteCustomer(CustomerRequest $request, string $id)
+    public function store(CustomerRequest $request)
     {
+        $validatedData = $request->validated();
+
+        Customer::create([
+            'uuid' => RunningNumberService::getID('customer'),
+            'full_name' => $validatedData['full_name'],
+            'phone' => $validatedData['phone'],
+            'email' => $validatedData['email'],
+            'password' => Hash::make($validatedData['password']),
+            'ranking' => 24,
+            'point' => 0,
+            'total_spending' => 0.00,
+        ]);
+    
+        $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'created_at')
+                                ->with([
+                                    'rank:id,name',
+                                    'keepItems' => function ($query) {
+                                        $query->where('status', 'Keep')
+                                                ->with([
+                                                    'orderItemSubitem.productItem:id,inventory_item_id',
+                                                    'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                    'waiter:id,full_name'
+                                                ]);
+                                    }
+                                ])
+                                ->get()
+                                ->map(function ($customer) {
+                                    $customer->image = $customer->getFirstMediaUrl('customer');
+                                    $customer->keep_items_count = $customer->keepItems->count();
+
+                                    if ($customer->rank) {
+                                        $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
+                                    }
+
+                                    foreach ($customer->keepItems as $key => $keepItem) {
+                                        $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                                        $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+                                        unset($keepItem->orderItemSubitem);
+
+                                        $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+                                        $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+                                    }
+
+                                    return $customer;
+                                });
+
+        return response()->json($customers);
+    }
+
+    public function update(CustomerRequest $request, string $id)
+    {
+        $validatedData = $request->validated();
+
+        $customer = Customer::where('id', $id)->first();
+
+        $customer->update([
+            'full_name' => $validatedData['full_name'],
+            'phone' => $validatedData['phone'],
+            'email' => $validatedData['email'],
+        ]);
+    
+        if ($validatedData['password'] != '') {
+            $customer->update([
+                'password' => Hash::make($validatedData['password']),
+            ]);
+        }
+
+        $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'created_at')
+                                ->with([
+                                    'rank:id,name',
+                                    'keepItems' => function ($query) {
+                                        $query->where('status', 'Keep')
+                                                ->with([
+                                                    'orderItemSubitem.productItem:id,inventory_item_id',
+                                                    'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                    'waiter:id,full_name'
+                                                ]);
+                                    }
+                                ])
+                                ->get()
+                                ->map(function ($customer) {
+                                    $customer->image = $customer->getFirstMediaUrl('customer');
+                                    $customer->keep_items_count = $customer->keepItems->count();
+
+                                    if ($customer->rank) {
+                                        $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
+                                    }
+
+                                    foreach ($customer->keepItems as $key => $keepItem) {
+                                        $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                                        $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+                                        unset($keepItem->orderItemSubitem);
+
+                                        $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+                                        $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+                                    }
+
+                                    return $customer;
+                                });
+
+        return response()->json($customers);
+    }
+
+    public function deleteCustomer(Request $request, string $id)
+    {
+        $validatedData = $request->validate([
+            'password' => 'required|string|max:255',
+        ], [
+            'verification_code.required' => 'This field is required',
+            'verification_code.integer' => 'This field must be an string.',
+            // 'verification_code.exists'=> 'Invalid verification code.',
+        ]);
+        
         $customer = Customer::find($id);
+
         $user = Auth::user();
-        if($customer && (Hash::check($request->password, $user->password)) ) {
+        if($customer && (Hash::check($validatedData['password'], $user->password)) ) {
 
             activity()->useLog('delete-customer')
                         ->performedOn($customer)
@@ -414,4 +535,5 @@ class CustomerController extends Controller
 
         return $data;
     }
+
 }

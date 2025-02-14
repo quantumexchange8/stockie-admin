@@ -35,7 +35,7 @@ const customerColumn = ref([
     { field: 'point', header: 'Points', width: '13', sortable: true},
     { field: 'keep_items_count', header: 'Keep', width: '13', sortable: true},
     { field: 'created_at', header: 'Joined date', width: '20', sortable: true},
-    { field: 'action', header: '', width: '13', sortable: false},
+    { field: 'action', header: '', width: '13', sortable: false, edit: true},
 ])
 
 const actions = {
