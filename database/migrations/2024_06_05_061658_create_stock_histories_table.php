@@ -19,6 +19,7 @@ return new class extends Migration
             $table->double('in');
             $table->double('out');
             $table->double('current_stock');
+            $table->integer('kept_balance')->nullable()->default(0);
             $table->softDeletes();
             $table->timestamps();
         });

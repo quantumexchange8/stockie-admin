@@ -117,6 +117,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/inventory/getLatestInventory', [InventoryController::class, 'getLatestInventory']);
         Route::get('/inventory/activeKeptItem', [InventoryController::class, 'activeKeptItem'])->name('activeKeptItem');
         Route::get('/inventory/filterKeptItem', [InventoryController::class, 'filterKeptItem'])->name('filterKeptItem');
+        Route::get('/inventory/getStockFlowDetail', [InventoryController::class, 'getStockFlowDetail'])->name('getStockFlowDetail');
     });
 
     /******* Profile ********/
@@ -250,6 +251,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/orders/reservation/{id}', [OrderController::class, 'deleteReservation'])->name('orders.reservations.destroy');
         Route::post('/orders/mergeTable', [OrderController::class, 'mergeTable'])->name('orders.mergeTable');
         Route::post('/orders/createCustomerFromOrder', [OrderController::class,'createCustomerFromOrder'])->name('orders.createCustomerFromOrder');
+        Route::post('/orders/transferTable', [OrderController::class,'transferTable'])->name('orders.transferTable');
         
         // Order items
         Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');

@@ -22,6 +22,8 @@ class IventoryItem extends Model
         'stock_qty',
         'low_stock_qty',
         'keep',
+        'current_kept_amt',
+        'total_kept',
         'status',
     ];
     

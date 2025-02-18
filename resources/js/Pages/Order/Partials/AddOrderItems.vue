@@ -4,6 +4,7 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import { onMounted, ref, computed, watch } from 'vue';
 import Button from '@/Components/Button.vue';
 import TabView from '@/Components/TabView.vue';
+import Modal from '@/Components/Modal.vue';
 import SearchBar from '@/Components/SearchBar.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
@@ -40,6 +41,8 @@ const tabs = ref(['All']);
 const products = ref([]);
 const newOrderId = ref({});
 const categories = ref([]);
+const isStockDetailModalOpen = ref(false);
+const selectedProduct = ref('');
 
 const form = useForm({
     user_id: userId.value,
@@ -189,6 +192,41 @@ const quantityComputed = (productId) => {
 
 const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
 
+const getCurrentProductKeptAmount = (product) => {
+    return product.product_items.reduce((total, item) => {
+        return total + item.inventory_item.current_kept_amt;
+    }, 0);
+}
+const getAvailableForSaleQty = (product) => {
+    let temp = [];
+    product.product_items.forEach((item) => {
+        const qty = item.qty;
+        const stockLeft = item.inventory_item.stock_qty;
+        const keptAmt = item.inventory_item.current_kept_amt;
+
+        let availableStockToSell = Math.floor((stockLeft + keptAmt) / qty);
+        temp.push(availableStockToSell);
+    });
+    
+    return Math.min(...temp);
+}
+
+const getTotalQtyAvailable = (product) => {
+    return product.product_items.reduce((total, item) => {
+        return total + (item.qty * product.stock_left);
+    }, 0);
+}
+
+const openStockDetailItemModal = (product) => {
+    selectedProduct.value = product;
+    isStockDetailModalOpen.value = true;
+}
+
+const closeStockDetailItemModal = () => {
+    isStockDetailModalOpen.value = false;
+    setTimeout(()=> selectedProduct.value = '', 200);
+}
+
 </script>
 
 <template>
@@ -224,7 +262,7 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                                 alt="ProductImage"
                                                 :class="[
                                                     'size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain',
-                                                    { 'opacity-30': product.stock_left == 0 }
+                                                    { 'opacity-30': getCurrentProductKeptAmount(product) + product.stock_left == 0 }
                                                 ]"
                                             >
                                             <div class="flex flex-col justify-center items-start self-stretch gap-2">
@@ -233,7 +271,7 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                                     <p 
                                                         :class="[
                                                             'text-ellipsis overflow-hidden text-base font-medium',
-                                                            product.stock_left > 0 ? 'text-grey-900' : 'text-grey-500'
+                                                            getCurrentProductKeptAmount(product) + product.stock_left > 0 ? 'text-grey-900' : 'text-grey-500'
                                                         ]"
                                                     >
                                                         {{ product.product_name }}
@@ -248,7 +286,13 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                                         <span class="text-primary-950 text-base font-medium" v-else>RM {{ parseFloat(product.price).toFixed(2) }}</span>
                                                         <span class="text-grey-200">&#x2022;</span>
                                                     </template>
-                                                    <p class="text-green-700 text-sm font-normal">{{ product.stock_left > 0 ? `${product.stock_left} left` : product.status }}</p>
+                                                    <p class="text-green-700 text-sm font-normal cursor-pointer" @click="openStockDetailItemModal(product)">
+                                                        {{ getCurrentProductKeptAmount(product) + product.stock_left > 0
+                                                                ? getCurrentProductKeptAmount(product) > 0
+                                                                    ? `${getTotalQtyAvailable(product)} (+${getCurrentProductKeptAmount(product)}) left`
+                                                                    : `${getTotalQtyAvailable(product)} left`
+                                                                : product.status }}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -256,8 +300,8 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                         <NumberCounter
                                             :inputName="`item_${product.id}_item_qty`"
                                             :errorMessage="(form.errors) ? form.errors[`item_${product.id}.item_qty`] : ''"
-                                            :maxValue="product.stock_left"
-                                            :disabled="product.stock_left === 0"
+                                            :maxValue="getCurrentProductKeptAmount(product) <= 0 ? product.stock_left : product.bucket === 'set' ? getAvailableForSaleQty(product) : getCurrentProductKeptAmount(product) + product.stock_left"
+                                            :disabled="getCurrentProductKeptAmount(product) > 0 ? (getCurrentProductKeptAmount(product) + product.stock_left) === 0 : product.stock_left === 0"
                                             v-model="quantityComputed(product.id).value"
                                             @onChange="updateProductQuantity(product.id, $event)"
                                             class="col-span-full sm:col-span-4"
@@ -291,14 +335,14 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                                 alt="ProductImage"
                                                 :class="[
                                                     'size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100',
-                                                    { 'opacity-30': product.stock_left == 0 }
+                                                    { 'opacity-30': getCurrentProductKeptAmount(product) + product.stock_left == 0 }
                                                 ]"
                                             >
                                             <div class="flex flex-col justify-center items-start self-stretch gap-2">
                                                 <p 
                                                     :class="[
                                                         'text-ellipsis overflow-hidden text-base font-medium self-stretch',
-                                                        product.stock_left > 0 ? 'text-grey-900' : 'text-grey-500'
+                                                        getCurrentProductKeptAmount(product) + product.stock_left > 0 ? 'text-grey-900' : 'text-grey-500'
                                                     ]"
                                                 >
                                                     {{ product.product_name }}
@@ -312,7 +356,13 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                                         <span class="text-primary-950 text-base font-medium" v-else>RM {{ parseFloat(product.price).toFixed(2) }}</span>
                                                         <span class="text-grey-200">&#x2022;</span>
                                                     </template>
-                                                    <p class="text-green-700 text-sm font-normal">{{ product.stock_left > 0 ? `${product.stock_left} left` : product.status }}</p>
+                                                    <p class="text-green-700 text-sm font-normal cursor-pointer" @click="openStockDetailItemModal(product)">
+                                                        {{ getCurrentProductKeptAmount(product) + product.stock_left > 0
+                                                                ? getCurrentProductKeptAmount(product) > 0
+                                                                    ? `${product.stock_left} (+${getCurrentProductKeptAmount(product)}) left`
+                                                                    : `${product.stock_left} left`
+                                                                : product.status }}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -320,8 +370,8 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
                                         <NumberCounter
                                             :inputName="`item_${product.id}_item_qty`"
                                             :errorMessage="(form.errors) ? form.errors[`item_${product.id}.item_qty`] : ''"
-                                            :maxValue="product.stock_left"
-                                            :disabled="product.stock_left === 0"
+                                            :maxValue="getCurrentProductKeptAmount(product) <= 0 ? product.stock_left : product.bucket === 'set' ? getAvailableForSaleQty(product) : getCurrentProductKeptAmount(product) + product.stock_left"
+                                            :disabled="getCurrentProductKeptAmount(product) > 0 ? (getCurrentProductKeptAmount(product) + product.stock_left) === 0 : product.stock_left === 0"
                                             v-model="quantityComputed(product.id).value"
                                             @onChange="updateProductQuantity(product.id, $event)"
                                             class="col-span-full sm:col-span-4"
@@ -362,5 +412,40 @@ const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
             </div>
         </div>
     </form>
+
+    <Modal
+        :title="'Stock detail'"
+        :maxWidth="'xs'"
+        :closeable="true"
+        :show="isStockDetailModalOpen"
+        @close="closeStockDetailItemModal"
+    >
+        <template v-if="selectedProduct">
+        <div class="flex flex-col gap-y-4">
+            <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
+                <div class="flex py-3 justify-between self-stretch items-start bg-blue-50 w-full">
+                    <p class="text-blue-600 font-normal text-base">Available for sale</p>
+                    <p class="text-blue-600 font-semibold text-base">{{ selectedProduct.bucket === 'set' ? getAvailableForSaleQty(selectedProduct) : getCurrentProductKeptAmount(selectedProduct) + selectedProduct.stock_left }} {{ selectedProduct.bucket === 'set' ? 'set' : '' }}</p>
+                </div>
+            </div>
+
+            <div class="w-full divide-y divide-grey-200 flex flex-col">
+                <div class="flex flex-col items-start gap-4 rounded-[5px] bg-white py-2" v-for="item in selectedProduct.product_items" :key="item.id">
+                    <p class="text-grey-900 font-semibold text-medium">{{ item.inventory_item.item_name }}</p>
+                    <div class="flex flex-col gap-y-2 w-full">
+                        <div class="flex justify-between self-stretch items-center">
+                            <p class="text-grey-900 font-normal text-base">Available stock</p>
+                            <p class="text-grey-900 font-semibold text-base">{{ item.qty * selectedProduct.stock_left }} left</p>
+                        </div>
+                        <div class="flex justify-between self-stretch items-center">
+                            <p class="text-grey-900 font-normal text-base">Kept item</p>
+                            <p class="text-grey-900 font-semibold text-base">{{ item.inventory_item.current_kept_amt }} left</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </template>
+    </Modal>
 </template>
     

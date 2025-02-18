@@ -20,6 +20,8 @@ return new class extends Migration
             $table->double('stock_qty')->default(0);
             $table->integer('low_stock_qty');
             $table->string('keep');
+            $table->integer('current_kept_amt');
+            $table->integer('total_kept');
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

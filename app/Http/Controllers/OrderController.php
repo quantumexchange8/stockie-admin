@@ -408,7 +408,7 @@ class OrderController extends Controller
                     $temp += $newItemAmount;
                     
                     foreach ($item['product_items'] as $key => $value) {
-                        $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty')->find($value['id']);
+                        $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty,current_kept_amt')->find($value['id']);
                         $inventoryItem = $productItem->inventoryItem;
     
                         // Deduct stock
@@ -424,7 +424,8 @@ class OrderController extends Controller
 
                         $inventoryItem->update([
                             'stock_qty' => $newStockQty,
-                            'status' => $newStatus
+                            'status' => $newStatus,
+                            'current_kept_amt' => $newStockQty < 0 ? $inventoryItem->current_kept_amt + $newStockQty : $inventoryItem->current_kept_amt
                         ]);
                         $inventoryItem->refresh();
     
@@ -435,6 +436,7 @@ class OrderController extends Controller
                             'in' => 0,
                             'out' => $stockToBeSold,
                             'current_stock' => $inventoryItem->stock_qty,
+                            'kept_balance' => $inventoryItem->current_kept_amt
                         ]);
                         
                         $serveQty = $serveNow ? $value['qty'] * $item['item_qty'] : 0;
@@ -498,7 +500,7 @@ class OrderController extends Controller
     public function getAllProducts()
     {
         $products = Product::with([
-                                'productItems', 
+                                'productItems.inventoryItem', 
                                 'category:id,name', 
                             ])
                             ->where('availability', 'Available')
@@ -616,7 +618,7 @@ class OrderController extends Controller
     public function cancelOrder(string $id)
     {
         $existingOrder = Order::with([
-                                    'orderItems.subItems.productItem.inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id', 
+                                    'orderItems.subItems.productItem.inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id,current_kept_amt', 
                                     'orderTable.table',
                                 ])->find($id);
 
@@ -652,6 +654,7 @@ class OrderController extends Controller
                                 'in' => $restoredQty,
                                 'out' => 0,
                                 'current_stock' => $inventoryItem->stock_qty,
+                                'kept_balance' => $inventoryItem->current_kept_amt,
                             ]);
                         }
                     }
@@ -785,7 +788,7 @@ class OrderController extends Controller
     {
         $zones = Zone::with([
                             'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled']),
-                            'tables.orderTables.order',
+                            'tables.orderTables.order.orderItems',
                         ])
                         ->select('id', 'name')
                         ->get()
@@ -803,6 +806,14 @@ class OrderController extends Controller
                                         }, 0);
                                         return $pendingCount + $orderPendingCount;
                                     }, 0);
+
+                                    $table->orderTables->each(function ($orderTab) {
+                                        $orderTab->order->orderItems->each(function ($item) {
+                                            $item->product_name = $item->product->product_name;
+                                            $item->bucket = $item->product->bucket;
+                                            unset($item->product);
+                                        });
+                                    });
                     
                                     $table->pending_count = $pendingCount;
                                     return $table;
@@ -1056,7 +1067,7 @@ class OrderController extends Controller
                             $subItems = OrderItemSubitem::where('order_item_id', $item['id'])->get();
                                                 
                             foreach ($subItems as $subItem) {
-                                $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id')->find($subItem->product_item_id);
+                                $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id,current_kept_amt')->find($subItem->product_item_id);
                                 $inventoryItem = $productItem->inventoryItem;
                                 
                                 // $qtySold = $subItem['serve_qty'];
@@ -1084,6 +1095,7 @@ class OrderController extends Controller
                                     'in' => $restoredQty,
                                     'out' => 0,
                                     'current_stock' => $inventoryItem->stock_qty,
+                                    'kept_balance' => $inventoryItem->current_kept_amt,
                                 ]);
                             }
 
@@ -1234,14 +1246,25 @@ class OrderController extends Controller
                                         $keepItem->save();
                                         $keepItem->refresh();
             
+                                        $associatedSubItem = OrderItemSubitem::where('id', $reqItem['order_item_subitem_id'])
+                                                                                ->with(['productItem:id,inventory_item_id'])
+                                                                                ->first();
+                                        $tempInventoryItem = $associatedSubItem->productItem->inventory_item_id;
+                                        $tempOrderItem = IventoryItem::find($tempInventoryItem);
+                                        
                                         KeepHistory::create([
                                             'keep_item_id' => $reqItem['keep_id'],
                                             'order_item_id' => $reqItem['order_item_id'],
                                             'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0,
                                             'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
                                             'keep_date' => $keepItem->updated_at,
+                                            'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
                                             'status' => 'Keep',
                                         ]);
+                                        
+                                        $tempOrderItem->increment('total_kept', $item['amount']);
+                                        $tempOrderItem->increment('current_kept_amt', $item['amount']);
+
                                     } else {
                                     //     dd($reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
                                     // number_format((float) '8.258', 2, '.', ''));
@@ -1278,13 +1301,21 @@ class OrderController extends Controller
                                                     ])
                                                     ->log("'$inventoryItemName' is kept in $name's account.");
                             
+                                                    
+                                        $tempInventoryItem = $associatedSubItem->productItem->inventory_item_id;
+                                        $tempOrderItem = IventoryItem::find($tempInventoryItem);
+
                                         KeepHistory::create([
                                             'keep_item_id' => $newKeep->id,
                                             'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
                                             'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
                                             'keep_date' => $newKeep->created_at,
+                                            'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
                                             'status' => 'Keep',
                                         ]);
+
+                                        $tempOrderItem->increment('total_kept', $item['amount']);
+                                        $tempOrderItem->increment('current_kept_amt', $item['amount']);
                                     }
 
                                     if ($orderItem->status === 'Pending Serve') {
@@ -2131,7 +2162,7 @@ class OrderController extends Controller
 
             $redeemableItem = Product::with([
                                             'productItems:id,product_id,inventory_item_id,qty',
-                                            'productItems.inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty'
+                                            'productItems.inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty,current_kept_amt'
                                         ])
                                         ->find($validatedData['selected_item']['id']);
 
@@ -2196,6 +2227,7 @@ class OrderController extends Controller
                     'in' => 0,
                     'out' => $stockToBeSold,
                     'current_stock' => $inventoryItem->stock_qty,
+                    'kept_balance' => $inventoryItem->current_kept_amt,
                 ]);
 
                 OrderItemSubitem::create([
@@ -2291,7 +2323,7 @@ class OrderController extends Controller
                                                 'rankingReward:id,reward_type,discount,free_item,item_qty',
                                                 'rankingReward.product:id,product_name',
                                                 'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
-                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty'
+                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
                                             ])
                                             ->findOrFail($validatedData['customer_reward_id']);
 
@@ -2389,6 +2421,7 @@ class OrderController extends Controller
                         'in' => 0,
                         'out' => $stockToBeSold,
                         'current_stock' => $inventoryItem->stock_qty,
+                        'kept_balance' => $inventoryItem->current_kept_amt,
                     ]);
 
                     OrderItemSubitem::create([
@@ -2829,13 +2862,15 @@ class OrderController extends Controller
     {
         $validatedData = $request->validated();
 
+        $defaultRank = Ranking::where('name', 'Member')->first(['id', 'name']);
+
         Customer::create([
             'uuid' => RunningNumberService::getID('customer'),
             'full_name' => $validatedData['full_name'],
             'phone' => $validatedData['phone'],
             'email' => $validatedData['email'],
             'password' => Hash::make($validatedData['password']),
-            'ranking' => 24,
+            'ranking' => $defaultRank->id,
             'point' => 0,
             'total_spending' => 0.00,
         ]);
@@ -2850,5 +2885,324 @@ class OrderController extends Controller
        
 
         return response()->json($customers);
+    }
+
+    public function transferTable(Request $request)
+    {
+        $currentTable = $request->currentTable;
+        $targetTable = $request->targetTable;
+
+        $currentTableItems = $request->currentTable['order_items'];
+        $targetTableItems = $request->targetTable['order_items'];
+        $filteredCurrentTableItems = collect($currentTableItems)->filter(fn ($item) => $item['transfer_status'] === 'transferred' || $item['transfer_qty'] !== $item['original_qty']);
+        $filteredTargetTableItems = collect($targetTableItems)->filter(fn ($item) => $item['transfer_status'] === 'transferred' || $item['transfer_qty'] !== $item['original_qty']);
+
+        $totalCurrentOrderAmount = 0.00;
+        $totalCurrentOrderDiscountedAmount = 0.00;
+        $totalTargetOrderAmount = 0.00;
+        $totalTargetOrderDiscountedAmount = 0.00;
+
+        $filteredCurrentTableItems->each(function ($item) use (&$totalCurrentOrderAmount, 
+            &$totalCurrentOrderDiscountedAmount, 
+            &$totalTargetOrderAmount, 
+            &$totalTargetOrderDiscountedAmount, 
+            $currentTable,
+            $request) 
+        {
+            $balanceQty = $item['balance_qty'];
+            $originalQty = $item['original_qty'];
+            $transferPercentage = round($balanceQty / $originalQty, 2);
+            $balancePercentage = round(($originalQty - $balanceQty) / $originalQty, 2);
+
+            if ($currentTable['status'] === 'Pending Clearance' || $currentTable['status'] === 'Empty Seat') {
+                $newOrder = Order::create([
+                    'order_no' => RunningNumberService::getID('order'),
+                    'pax' => $currentTable['pax'],
+                    'user_id' => $request->user()->id,
+                    'customer_id' => $currentTable['customer_id'],
+                    'amount' => 0.00,
+                    'total_amount' => 0.00,
+                    'status' => 'Pending Serve',
+                ]);
+
+                $currentTable['order_id'] = $newOrder->id;
+        
+                foreach ($currentTable['tables'] as $selectedTable) {
+                    $table = Table::find($selectedTable['id']);
+                    $table->update([
+                        'status' => 'Pending Order',
+                        'order_id' => $newOrder->id
+                    ]);
+            
+                    OrderTable::create([
+                        'table_id' => $selectedTable['id'],
+                        'pax' => $currentTable['pax'],
+                        'user_id' => $request->user()->id,
+                        'status' => 'Pending Order',
+                        'order_id' => $newOrder->id
+                    ]);
+                }
+            }
+
+            $orderItem = OrderItem::find($item['id']);
+
+            if ($item['order_id'] !== $currentTable['order_id']) {
+                if ($balanceQty === $originalQty) {
+                    $orderItem->update(['order_id' => $currentTable['order_id']]);
+                    
+                    $totalCurrentOrderAmount += $orderItem->amount;
+                    $totalCurrentOrderDiscountedAmount += $orderItem->discount_amount;
+                    $totalTargetOrderAmount -= $orderItem->amount;
+                    $totalTargetOrderDiscountedAmount -= $orderItem->discount_amount;
+
+                } else {
+                    $newOrderItem = OrderItem::create([
+                        'order_id' => $currentTable['order_id'],
+                        'user_id' => $item['user_id'],
+                        'type' => $item['type'],
+                        'product_id' => $item['product_id'],
+                        'item_qty' => $balanceQty,
+                        'amount_before_discount' => $item['amount_before_discount'] * $transferPercentage,
+                        'discount_id' => $item['discount_id'],
+                        'discount_amount' => $item['discount_amount'] * $transferPercentage,
+                        'amount' => $item['amount'] * $transferPercentage,
+                        'status' => $item['status']
+                    ]);
+                    
+                    $totalCurrentOrderAmount += $item['amount'] * $transferPercentage;
+                    $totalCurrentOrderDiscountedAmount += $item['discount_amount'] * $transferPercentage;
+
+                    $orderItem->update([
+                        'item_qty' => $originalQty - $balanceQty,
+                        'amount_before_discount' => $item['amount_before_discount'] * $balancePercentage,
+                        'discount_id' => $item['discount_id'],
+                        'discount_amount' => $item['discount_amount'] * $balancePercentage,
+                        'amount' => $item['amount'] * $balancePercentage,
+                    ]);
+
+                    // $totalTargetOrderAmount -= $item['amount'] * $balancePercentage;
+                    // $totalTargetOrderDiscountedAmount -= $item['discount_amount'] * $balancePercentage;
+
+                    $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem) {
+                        $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
+                        $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
+
+                        OrderItemSubitem::create([
+                            'order_item_id' => $newOrderItem->id,
+                            'product_item_id' => $subItem['product_item_id'],
+                            'item_qty' => $subItem['item_qty'],
+                            'serve_qty' => $newQtyServed,
+                        ]);
+
+                        $subItem->decrement('serve_qty', $newQtyServed);
+                    });
+                }
+
+            } else {
+                if ($balanceQty !== $originalQty) {
+                    $orderItem->update([
+                        'item_qty' => $originalQty - $balanceQty,
+                        'amount_before_discount' => $item['amount_before_discount'] * $balancePercentage,
+                        'discount_id' => $item['discount_id'],
+                        'discount_amount' => $item['discount_amount'] * $balancePercentage,
+                        'amount' => $item['amount'] * $balancePercentage,
+                    ]);
+
+                    $totalCurrentOrderAmount -= $item['amount'] * $balancePercentage;
+                    $totalCurrentOrderDiscountedAmount -= $item['discount_amount'] * $balancePercentage;
+
+                    $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem) {
+                        $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
+                        $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
+
+                        $subItem->decrement('serve_qty', $newQtyServed);
+                    });
+                }
+            }
+        });
+    
+        $filteredTargetTableItems->each(function ($item) use (&$totalCurrentOrderAmount, 
+            &$totalCurrentOrderDiscountedAmount, 
+            &$totalTargetOrderAmount, 
+            &$totalTargetOrderDiscountedAmount, 
+            $targetTable,
+            $request) 
+        {
+            $balanceQty = $item['balance_qty'];
+            $originalQty = $item['original_qty'];
+            $transferPercentage = round($balanceQty / $originalQty, 2);
+            $balancePercentage = round(($originalQty - $balanceQty) / $originalQty, 2);
+
+            if ($targetTable['status'] === 'Pending Clearance' || $targetTable['status'] === 'Empty Seat') {
+                $newOrder = Order::create([
+                    'order_no' => RunningNumberService::getID('order'),
+                    'pax' => $targetTable['pax'],
+                    'user_id' => $request->user()->id,
+                    'customer_id' => $targetTable['customer_id'],
+                    'amount' => 0.00,
+                    'total_amount' => 0.00,
+                    'status' => 'Pending Serve',
+                ]);
+
+                $targetTable['order_id'] = $newOrder->id;
+        
+                foreach ($targetTable['tables'] as $selectedTable) {
+                    $table = Table::find($selectedTable['id']);
+                    $table->update([
+                        'status' => 'Pending Order',
+                        'order_id' => $newOrder->id
+                    ]);
+            
+                    OrderTable::create([
+                        'table_id' => $selectedTable['id'],
+                        'pax' => $targetTable['pax'],
+                        'user_id' => $request->user()->id,
+                        'status' => 'Pending Order',
+                        'order_id' => $newOrder->id
+                    ]);
+                }
+            }
+
+            $orderItem = OrderItem::find($item['id']);
+
+            if ($item['order_id'] !== $targetTable['order_id']) {
+                if ($balanceQty === $originalQty) {
+                    $orderItem->update(['order_id' => $targetTable['order_id']]);
+                    
+                    $totalTargetOrderAmount += $orderItem->amount;
+                    $totalTargetOrderDiscountedAmount += $orderItem->discount_amount;
+                    $totalCurrentOrderAmount -= $orderItem->amount;
+                    $totalCurrentOrderDiscountedAmount -= $orderItem->discount_amount;
+
+                } else {
+                    $newOrderItem = OrderItem::create([
+                        'order_id' => $targetTable['order_id'],
+                        'user_id' => $item['user_id'],
+                        'type' => $item['type'],
+                        'product_id' => $item['product_id'],
+                        'item_qty' => $balanceQty,
+                        'amount_before_discount' => $item['amount_before_discount'] * $transferPercentage,
+                        'discount_id' => $item['discount_id'],
+                        'discount_amount' => $item['discount_amount'] * $transferPercentage,
+                        'amount' => $item['amount'] * $transferPercentage,
+                        'status' => $item['status']
+                    ]);
+                    
+                    $totalTargetOrderAmount += $item['amount'] * $transferPercentage;
+                    $totalTargetOrderDiscountedAmount += $item['discount_amount'] * $transferPercentage;
+
+                    $orderItem->update([
+                        'item_qty' => $originalQty - $balanceQty,
+                        'amount_before_discount' => $item['amount_before_discount'] * $balancePercentage,
+                        'discount_id' => $item['discount_id'],
+                        'discount_amount' => $item['discount_amount'] * $balancePercentage,
+                        'amount' => $item['amount'] * $balancePercentage,
+                    ]);
+
+                    // $totalCurrentOrderAmount -= $item['amount'] * $balancePercentage;
+                    // $totalCurrentOrderDiscountedAmount -= $item['discount_amount'] * $balancePercentage;
+
+                    $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem) {
+                        $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
+                        $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
+
+                        OrderItemSubitem::create([
+                            'order_item_id' => $newOrderItem->id,
+                            'product_item_id' => $subItem['product_item_id'],
+                            'item_qty' => $subItem['item_qty'],
+                            'serve_qty' => $newQtyServed,
+                        ]);
+
+                        $subItem->decrement('serve_qty', $newQtyServed);
+                    });
+                }
+
+            } else {
+                if ($balanceQty !== $originalQty) {
+                    $orderItem->update([
+                        'item_qty' => $originalQty - $balanceQty,
+                        'amount_before_discount' => $item['amount_before_discount'] * $balancePercentage,
+                        'discount_id' => $item['discount_id'],
+                        'discount_amount' => $item['discount_amount'] * $balancePercentage,
+                        'amount' => $item['amount'] * $balancePercentage,
+                    ]);
+
+                    $totalTargetOrderAmount -= $item['amount'] * $balancePercentage;
+                    $totalTargetOrderDiscountedAmount -= $item['discount_amount'] * $balancePercentage;
+
+                    $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem) {
+                        $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
+                        $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
+
+                        $subItem->decrement('serve_qty', $newQtyServed);
+                    });
+                }
+            }
+        });
+        
+        $currentOrder = Order::with('orderTable.table')->find($currentTable['order_id']);
+        $targetOrder = Order::with('orderTable.table')->find($targetTable['order_id']);
+
+        if ($currentOrder) {
+            $statusArr = collect($currentOrder->orderItems->pluck('status')->unique());
+            $orderStatus = 'Pending Serve';
+            $orderTableStatus = 'Pending Order';
+        
+            if ($statusArr->contains('Pending Serve')) {
+                $orderStatus = 'Pending Serve';
+                $orderTableStatus = 'Order Placed';
+            } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+                $orderStatus = 'Order Served';
+                $orderTableStatus = 'All Order Served';
+            } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+                $orderStatus = 'Order Served';
+                $orderTableStatus = 'All Order Served';
+            }
+            
+            $currentOrder->update([
+                'amount' => $currentOrder->amount + $totalCurrentOrderAmount,
+                'total_amount' => $currentOrder->amount + $totalCurrentOrderAmount,
+                'discount_amount' => $currentOrder->discount_amount + $totalCurrentOrderDiscountedAmount,
+                'status' => $orderStatus
+            ]);
+            
+            // Update all tables associated with this order
+            $currentOrder->orderTable->each(function ($tab) use ($orderTableStatus) {
+                $tab->table->update(['status' => $orderTableStatus]);
+                $tab->update(['status' => $orderTableStatus]);
+            });
+        }
+        
+        if ($targetOrder) {
+            $statusArr = collect($targetOrder->orderItems->pluck('status')->unique());
+            $orderStatus = 'Pending Serve';
+            $orderTableStatus = 'Pending Order';
+        
+            if ($statusArr->contains('Pending Serve')) {
+                $orderStatus = 'Pending Serve';
+                $orderTableStatus = 'Order Placed';
+            } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+                $orderStatus = 'Order Served';
+                $orderTableStatus = 'All Order Served';
+            } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+                $orderStatus = 'Order Served';
+                $orderTableStatus = 'All Order Served';
+            }
+            
+            $targetOrder->update([
+                'amount' => $targetOrder->amount + $totalTargetOrderAmount,
+                'total_amount' => $targetOrder->amount + $totalTargetOrderAmount,
+                'discount_amount' => $targetOrder->discount_amount + $totalTargetOrderDiscountedAmount,
+                'status' => $orderStatus
+            ]);
+            
+            // Update all tables associated with this order
+            $targetOrder->orderTable->each(function ($tab) use ($orderTableStatus) {
+                $tab->table->update(['status' => $orderTableStatus]);
+                $tab->update(['status' => $orderTableStatus]);
+            });
+        }
+
+        return redirect()->back();
     }
 }

@@ -18,6 +18,7 @@ import AddOrderItems from './AddOrderItems.vue';
 import KeepItem from './KeepItem.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import MergeTableForm from './MergeTableForm.vue';
+import TransferTableForm from './TransferTableForm.vue';
 
 const props = defineProps({
     errors: Object,
@@ -48,12 +49,15 @@ const cancelOrderFormIsOpen = ref(false);
 const removeRewardFormIsOpen = ref(false);
 const orderCompleteModalIsOpen = ref(false);
 const mergeTableIsOpen = ref(false);
+const transferOptionIsOpen = ref(false);
+const transferTableIsOpen = ref(false);
 const drawerIsVisible = ref(false);
 const selectedTab = ref(0);
 const currentOrderTable = ref({});
 const pendingServeItems = ref([]);
 const actionType = ref();
 const op = ref(null);
+const transferType = ref('');
 
 const computedOrder = computed(() => {
     if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') return [];
@@ -210,6 +214,25 @@ const showMergeTableForm = () => {
 
 const hideMergeTableForm = () => {
     mergeTableIsOpen.value = false;
+}
+
+const showTransferOptionForm = () => {
+    transferOptionIsOpen.value = true;
+};
+
+const hideTransferOptionForm = () => {
+    transferOptionIsOpen.value = false;
+}
+
+const showTransferTableForm = (type) => {
+    transferType.value = type;
+    transferTableIsOpen.value = true;
+    hideTransferOptionForm();
+};
+
+const hideTransferTableForm = () => {
+    transferType.value = '';
+    transferTableIsOpen.value = false;
 }
 
 const showCancelOrderForm = () => {
@@ -474,28 +497,20 @@ watch(order.value, () => {
         </div>
 
         <div class="flex px-5 items-start gap-4 self-stretch">
-            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
-                @click="openDrawer('add')"
-            >
+            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="openDrawer('add')">
                 <PlaceOrderIcon class="text-primary-950 size-6" />
             </div>
 
-            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
-                @click="openDrawer('keep')"
-            >
+            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="openDrawer('keep')">
                 <KeepItemIcon class="text-primary-950 size-6" />
             </div>
             
-            <div class="relative flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
-                @click="showMergeTableForm()"
-            >
+            <div class="relative flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="">
                 <MergedIcon class="size-6" :class="props.selectedTable.order_tables.length > 1 ? 'text-primary-800' : 'text-primary-950'" />
                 <Checkbox :checked="true" class="absolute size-4 top-1.5 right-1.5" v-if="props.selectedTable.order_tables.length > 1" />
             </div>
 
-            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer"
-            >
-            <!-- @click="console.log(props.selectedTable.order_tables.length)" -->
+            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="showTransferOptionForm()" >
                 <TransferIcon class="text-primary-950 size-6" />
             </div>
 
@@ -763,6 +778,44 @@ watch(order.value, () => {
             :currentOrderTable="currentOrderTable"
             :currentOrderCustomer="order.customer"
             @close="hideMergeTableForm"
+            @closeDrawer="$emit('close')"
+            @fetchZones="$emit('fetchZones')"
+        />
+    </Modal>
+
+    <Modal
+        :maxWidth="'sm'" 
+        :closeable="true"
+        :withHeader="false"
+        :show="transferOptionIsOpen"
+        @close="hideTransferOptionForm"
+    >
+        <div class="flex flex-col gap-6">
+            <p class="text-center text-primary-950 text-xl font-normal">How would you like to transfer this table's order?</p>
+            <div class="flex flex-col gap-y-4 items-start h-[338px] w-[526px]">
+                <!-- showTransferTableForm('all') -->
+                <div @click="" class="size-full max-h-[161px] max-w-[526px] flex justify-center items-center self-stretch gap-2.5 py-3 px-4 rounded-[5px] border border-grey-200 bg-grey-50">
+                    <p class="text-center text-primary-950/60 text-md font-medium">Transfer all order</p>
+                </div>
+                <div @click="showTransferTableForm('item')" class="size-full max-h-[161px] max-w-[526px] flex justify-center items-center self-stretch gap-2.5 py-3 px-4 rounded-[5px] border border-grey-200 cursor-pointer">
+                    <p class="text-center text-primary-950 text-md font-medium">Transfer item only</p>
+                </div>
+            </div>
+        </div>
+    </Modal>
+
+    <Modal
+        :title="'Transfer to'"
+        :maxWidth="'xl'" 
+        :closeable="true"
+        :show="transferTableIsOpen"
+        @close="hideTransferTableForm"
+    >
+        <TransferTableForm
+            :currentOrderTable="currentOrderTable"
+            :currentOrderCustomer="order.customer"
+            :transferType="transferType"
+            @close="hideTransferTableForm"
             @closeDrawer="$emit('close')"
             @fetchZones="$emit('fetchZones')"
         />

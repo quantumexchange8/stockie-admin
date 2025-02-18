@@ -29,21 +29,6 @@ const selectedCustomer = ref('');
 const form = useForm({
     customer_id: ''
 })
-// const toggleAddProduct = (id) => {
-//     const index = addingProduct.value.indexOf(id);
-
-//     if (index === -1) {
-//         addingProduct.value.push(id);
-//     } else {
-//         addingProduct.value.splice(index, 1);
-//     }
-
-//     if (addingProduct.value.length === 0) {
-//         isAddingProductEmpty.value = true;
-//     } else {
-//         isAddingProductEmpty.value = false;
-//     }
-// };
 
 const submit = () => {
     form.put(route('orders.updateOrderCustomer', props.orderId), {
@@ -104,40 +89,17 @@ const filterCustomerList = computed(() => {
             });
 });
 
-// watch(
-//     () => searchQuery.value,
-//     (newValue) => {
-//         if (newValue === '') {
-//             notifications.value = [...props.notifications];
-//             return;
-//         }
-
-//         const query = newValue.toLowerCase();
-
-//         notifications.value = props.notifications.filter(notification => {
-//             const waiterName = notification.waiter_name?.toLowerCase() || '';
-
-//             return (
-//                 waiterName.includes(query)
-//             );
-//         });
-//     },
-//     { immediate: true }
-// );
-
-// watch(() => props.customers, (newValue) => {
-//     // customerList.value = newValue;
-//     console.log(newValue);
-// });
+const clearSelection = () => {
+    form.customer_id = '';
+    selectedCustomer.value = '';
+    isDirty.value = false;
+};
 
 watch(
     selectedCustomer,
     (newValue) => {
-        // Update `isDirty` by emitting the status of `addingProduct`
-        if (newValue !== '' || newValue !== null) {
-            emit('isDirty', true); // `isDirty` is true if array is not empty
-        }
-    } // Watch deeply to track changes in array content
+        emit('isDirty', newValue !== '' && newValue !== null);
+    }
 );
 
 </script>
@@ -185,7 +147,7 @@ watch(
                         :type="'button'"
                         :variant="'tertiary'"
                         :size="'lg'"
-                        @click="unsaved('close')"
+                        @click="clearSelection"
                     >
                         Clear
                     </Button>

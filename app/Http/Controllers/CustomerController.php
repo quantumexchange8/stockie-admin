@@ -70,13 +70,15 @@ class CustomerController extends Controller
     {
         $validatedData = $request->validated();
 
+        $defaultRank = Ranking::where('name', 'Member')->first(['id', 'name']);
+
         Customer::create([
             'uuid' => RunningNumberService::getID('customer'),
             'full_name' => $validatedData['full_name'],
             'phone' => $validatedData['phone'],
             'email' => $validatedData['email'],
             'password' => Hash::make($validatedData['password']),
-            'ranking' => 24,
+            'ranking' => $defaultRank->id,
             'point' => 0,
             'total_spending' => 0.00,
         ]);

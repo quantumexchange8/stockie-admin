@@ -14,7 +14,9 @@ import CreateInventoryForm from './CreateInventoryForm.vue';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import Paginator from 'primevue/paginator';
 import TextInput from '@/Components/TextInput.vue';
+import TabView from '@/Components/TabView.vue';
 import AddItemToMenuForm from './AddItemToMenuForm.vue';
+import StockFlowDetail from './StockFlowDetail.vue';
 
 const props = defineProps({
     errors: Object,
@@ -42,11 +44,23 @@ const editGroupFormIsOpen = ref(false);
 const deleteGroupFormIsOpen = ref(false);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
+const isStockFlowDetailModalOpen = ref(false);
 
 const selectedGroup = ref(null);
 const selectedGroupItems = ref(null);
 const inventoryToAdd = ref({});
 const selectedCategory = ref(0);
+const selectedItem = ref('');
+
+const openStockFlowDetailItemModal = (product) => {
+    selectedItem.value = product;
+    isStockFlowDetailModalOpen.value = true;
+}
+
+const closeStockFlowDetailItemModal = () => {
+    isStockFlowDetailModalOpen.value = false;
+    setTimeout(()=> selectedItem.value = '', 200);
+}
 
 const checkedFilters = ref({
     itemCategory: [],
@@ -567,6 +581,7 @@ const totalInventoryItemStock = (items) => {
                                             <div 
                                                 class="w-full flex items-center gap-x-3 rounded-[5px] text-sm text-grey-900 font-medium odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900 hover:bg-primary-50" 
                                                 v-for="(item, index) in group.inventory_items" :key="index"
+                                                @click.stop="openStockFlowDetailItemModal(item)"
                                             >
                                                 <div class="w-[4%] py-2 px-3"></div>
                                                 <div class="w-[27%] py-2 px-3 truncate">{{ item.item_name }}</div>
@@ -944,5 +959,20 @@ const totalInventoryItemStock = (items) => {
             @close="closeForm('delete', 'close')"
             v-if="selectedGroup"
         />
+
+        <Modal
+            :title="'Stock Flow Detail'"
+            :maxWidth="'sm'"
+            :closeable="true"
+            :show="isStockFlowDetailModalOpen"
+            @close="closeStockFlowDetailItemModal"
+        >
+            <template v-if="selectedItem">
+                <StockFlowDetail 
+                    :selectedItem="selectedItem"
+                    @close="closeStockFlowDetailItemModal"
+                />
+            </template>
+        </Modal>
     </div>
 </template>

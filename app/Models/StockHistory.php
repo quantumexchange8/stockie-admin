@@ -20,7 +20,8 @@ class StockHistory extends Model
         'in',
         'out',
         'current_stock',
-        'date',
+        'kept_balance',
+        // 'date',
     ];
     
     /**

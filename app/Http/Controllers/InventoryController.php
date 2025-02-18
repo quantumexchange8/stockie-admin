@@ -201,6 +201,8 @@ class InventoryController extends Controller
                     'stock_qty' => $value['stock_qty'],
                     'low_stock_qty' => $value['low_stock_qty'],
                     'keep' => $value['keep'],
+                    'current_kept_amt' => 0,
+                    'total_kept' => 0,
                     'status' => $newStatus,
                 ]);    
 
@@ -212,6 +214,7 @@ class InventoryController extends Controller
                         'in' => $value['stock_qty'],
                         'out' => 0,
                         'current_stock' => $value['stock_qty'],
+                        'kept_balance' => 0
                     ]);
                 }
             }
@@ -453,6 +456,13 @@ class InventoryController extends Controller
                             ->log("$existingItem->item_name is replenished.");
 
                 if ($value['add_stock_qty'] > 0) {
+                    if ($value['stock_qty'] < 0) {
+                        $existingItem->increment('current_kept_amt', $value['stock_qty'] + $value['add_stock_qty'] > 0 ? abs($value['stock_qty']) : $value['add_stock_qty']);
+                        $existingItem->refresh();
+                    }
+                    
+                    $currentKeptAmount = $existingItem->current_kept_amt;
+
                     StockHistory::create([
                         'inventory_id' => $existingItem->inventory_id,
                         'inventory_item' => $value['item_name'],
@@ -461,6 +471,7 @@ class InventoryController extends Controller
                         'out' => 0,
                         // 'out' => $value['add_stock_qty'] < 0 ? abs($value['add_stock_qty']) : 0,
                         'current_stock' => $existingItem->stock_qty,
+                        'kept_balance' => $currentKeptAmount
                     ]);
                 }
             }
@@ -607,6 +618,8 @@ class InventoryController extends Controller
                         'stock_qty' => $value['stock_qty'],
                         'low_stock_qty' => $value['low_stock_qty'],
                         'keep' => $value['keep'],
+                        'current_kept_amt' => 0,
+                        'total_kept' => 0,
                         'status' => $newStatus,
                     ]);
 
@@ -916,6 +929,47 @@ class InventoryController extends Controller
         $currentKeptItem = $this->getKeptItem($dateFilter, $checkedFilter);
     
         return response()->json($currentKeptItem);
+    }
+
+    public function getStockFlowDetail(Request $request)
+    {
+        $keepHistories = KeepHistory::with([
+                                        'keepItem.orderItemSubitem.productItem.inventoryItem' => fn ($query) => (
+                                            $query->where([
+                                                ['id', $request->inventory_item_id],
+                                                ['item_name', $request->item_name],
+                                            ])
+                                        ),
+                                        'keepItem.customer:id,full_name', 
+                                        'keepItem.waiter:id,full_name'
+                                    ])
+                                    ->where('status', 'Keep')
+                                    ->whereColumn('qty', '>', 'cm')
+                                    ->orderBy('created_at', 'desc')
+                                    ->get();
+        
+        $stockHistories = StockHistory::with([
+                                            'inventory' => fn ($query) => (
+                                                $query->where('id', $request->inventory_id)
+                                                        ->select('id', 'name')
+                                            ), 
+                                            'inventory.inventoryItems' => fn ($query) => (
+                                                $query->where([
+                                                    ['id', $request->inventory_item_id],
+                                                    ['item_name', $request->item_name],
+                                                ])
+                                            ), 
+                                        ])
+                                        ->orderBy('created_at', 'desc')
+                                        ->get();
+
+        $data = [
+            'keepHistories' => $keepHistories,
+            'stockHistories' => $stockHistories
+        ];
+
+
+        return response()->json($data);
     }
     
 
