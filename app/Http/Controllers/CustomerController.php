@@ -81,6 +81,7 @@ class CustomerController extends Controller
             'ranking' => $defaultRank->id,
             'point' => 0,
             'total_spending' => 0.00,
+            'first_login' => '1',
         ]);
     
         $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'created_at')

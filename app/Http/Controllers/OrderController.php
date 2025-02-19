@@ -2873,6 +2873,7 @@ class OrderController extends Controller
             'ranking' => $defaultRank->id,
             'point' => 0,
             'total_spending' => 0.00,
+            'first_login' => '1',
         ]);
 
         $customers = Customer::orderBy('full_name')
