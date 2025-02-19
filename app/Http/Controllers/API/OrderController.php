@@ -111,13 +111,11 @@ class OrderController extends Controller
                 [
                     'tables' => 'required|array',
                     'pax' => 'required|string|max:255',
-                    'order_id' => 'nullable|integer'
                 ], 
                 [
                     'required' => 'This field is required.',
                     'string' => 'This field must be a string.',
                     'max' => 'This field must not exceed 255 characters.',
-                    'integer' => 'This field must be an integer.',
                     'array' => 'This field must be an array.',
                 ]
             );
@@ -129,7 +127,7 @@ class OrderController extends Controller
             $newOrder = Order::create([
                 'order_no' => RunningNumberService::getID('order'),
                 'pax' => $validatedData['pax'],
-                'user_id' => $validatedData['assigned_waiter'],
+                'user_id' => $waiter->id,
                 'amount' => 0.00,
                 'total_amount' => 0.00,
                 'status' => 'Pending Serve',
@@ -145,7 +143,7 @@ class OrderController extends Controller
                 OrderTable::create([
                     'table_id' => $selectedTable,
                     'pax' => $validatedData['pax'],
-                    'user_id' => $request->user_id,
+                    'user_id' => $waiter->id,
                     'status' => 'Pending Order',
                     'order_id' => $newOrder->id
                 ]);
@@ -181,18 +179,18 @@ class OrderController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Customer has been checked-in to $tableString.",
+                'title' => "Customer has been checked-in to $tableString.",
             ], 201);
 
         } catch (ValidationException $e) {
             return response()->json([
-                'message' => 'The given data was invalid.',
+                'title' => 'The given data was invalid.',
                 'errors' => $e->errors()
             ], 422);
             
         } catch (\Exception  $e) {
             return response()->json([
-                'status' => 'Error checking in.',
+                'title' => 'Error checking in.',
                 'errors' => $e
             ]);
         };
@@ -207,9 +205,9 @@ class OrderController extends Controller
             $validatedData = $request->validate(
                 [
                     'order_id' => 'required|integer',
-                    'customer_uuid' => 'required|integer',
-                    'table_no' => 'required|array',
-                    'type' => 'required|string',
+                    'customer_uuid' => 'required|string',
+                    'tables' => 'required|array',
+                    'type' => 'nullable|string',
                 ], 
                 ['required' => 'This field is required.']
             );
@@ -218,36 +216,40 @@ class OrderController extends Controller
 
             $tableString = $this->getTableName($validatedData['tables']);
             
-            if ($order && $order->customer_id) {
-                $customerName = $order->customer()->full_name;
+            if ($order && $order->customer_id && $validatedData['type'] === 'new') {
+                $customerName = $order->customer->full_name;
 
                 return response()->json([
-                    'status' => 'Another customer is already checked-in to this table',
+                    'title' => 'Another customer is already checked-in to this table',
                     'message' => "This table is currently assigned to $customerName. Would you like to update the check-in to a different customer?",
-                    'order_id' => $validatedData['order_id'],
-                    'customer_uuid' => $validatedData['customer_uuid'],
+                    // 'order_id' => $validatedData['order_id'],
+                    // 'customer_uuid' => $validatedData['customer_uuid'],
                 ], 201);
             }
 
-            $order->update(['customer_id' => $validatedData['customer_id']]);
+            $customer = Customer::where('uuid', $validatedData['customer_uuid'])->first();
+
+            $order->update(['customer_id' => $customer->id]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => $validatedData['type']
-                        ? "Customer has been checked-in to $tableString."
-                        : "Check-in customer from $tableString has been updated."
+                'message' => $validatedData['type'] === 'update'
+                        ? "Check-in customer from $tableString has been updated."
+                        : "Customer has been checked-in to $tableString."
             ], 201);
 
         } catch (ValidationException $e) {
             return response()->json([
-                'message' => 'QR code not found...',
-                'errors' => "We couldn't locate this QR code in our system. Try scanning again or use a different one."
+                'title' => 'QR code not found...',
+                'message' => "We couldn't locate this QR code in our system. Try scanning again or use a different one.",
+                'errors' => $e->errors()
             ], 422);
             
         } catch (\Exception  $e) {
             return response()->json([
-                'status' => 'QR code not found...',
-                'errors' => "We couldn't locate this QR code in our system. Try scanning again or use a different one."
+                'title' => 'QR code not found...',
+                'message' => "We couldn't locate this QR code in our system. Try scanning again or use a different one.",
+                'errors' => $e
             ]);
         };
     }
@@ -297,6 +299,7 @@ class OrderController extends Controller
             // $currentOrderTable->order->pending_count = $currentOrderTable->order->orderItems()->where('status', 'Pending Serve')->count();
 
             // dd($currentOrderTable->order->orderItems->where('status', 'Pending Serve')->count());
+            
             $data = [
                 'currentOrderTable' => $currentOrderTable->table,
                 'order' => $currentOrderTable->order

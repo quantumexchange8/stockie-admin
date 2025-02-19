@@ -11,14 +11,17 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Customer extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia, LogsActivity;
+    use HasFactory, SoftDeletes, InteractsWithMedia, LogsActivity, Notifiable, HasApiTokens;
 
     protected $table = "customers";
 
     protected $fillable = [
+        'uuid',
         'name',
         'full_name',
         'email',
@@ -27,7 +30,9 @@ class Customer extends Model implements HasMedia
         'ranking',
         'role',
         'point',
-        'total_spending'
+        'total_spending',
+        'first_login',
+        'status'
     ];
 
     /**
@@ -37,6 +42,7 @@ class Customer extends Model implements HasMedia
      */
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
     /**
