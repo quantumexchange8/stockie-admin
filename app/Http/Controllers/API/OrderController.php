@@ -26,6 +26,7 @@ use App\Notifications\OrderAssignedWaiter;
 use App\Notifications\OrderCheckInCustomer;
 use App\Notifications\OrderPlaced;
 use App\Services\RunningNumberService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
@@ -561,7 +562,7 @@ class OrderController extends Controller
 
         $tableString = $this->getTableName($tablesArray);
 
-        $waiter = User::find($request->user_id);
+        $waiter = $this->authUser;
         $waiter->image = $waiter->getFirstMediaUrl('user');
 
         foreach ($orderItems as $index => $item) {
@@ -621,7 +622,7 @@ class OrderController extends Controller
                     OrderTable::create([
                         'table_id' => $selectedTable,
                         'pax' => $currentOrder->pax,
-                        'user_id' => $request->user_id,
+                        'user_id' => $waiter->id,
                         'status' => 'Pending Order',
                         'order_id' => $newOrder->id
                     ]);
@@ -644,7 +645,7 @@ class OrderController extends Controller
     
                     $new_order_item = OrderItem::create([
                         'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
-                        'user_id' => $request->user_id,
+                        'user_id' => $waiter->id,
                         'type' => 'Normal',
                         'product_id' => $item['product_id'],
                         'item_qty' => $item['item_qty'],
@@ -729,7 +730,7 @@ class OrderController extends Controller
         
                     $newOrderItem = OrderItem::create([
                         'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
-                        'user_id' => $request->user_id,
+                        'user_id' => $waiter->id,
                         'type' => 'Keep',
                         'product_id' => $keepItem->orderItemSubitem->productItem->product_id,
                         'keep_item_id' => $item['id'],
@@ -823,14 +824,110 @@ class OrderController extends Controller
         ], 201);
     }
     
-    public function getAllCustomers() {
-        $users = Customer::all(['id', 'full_name', 'phone'])
+    public function getAllCustomers() 
+    {
+        $customers = Customer::all(['id', 'full_name', 'phone'])
                             ->each(function ($customer) {
                                 $customer->image = $customer->getFirstMediaUrl('customer');
 
                                 return $customer;
                             });
 
-        return response()->json($users);
+        return response()->json($customers);
+    }
+    
+    public function getOrderCustomer(Request $request) 
+    {
+        $customer = Customer::with([
+                                'rank:id,name',
+                                'keepItems' => function ($query) {
+                                    $query->where('status', 'Keep')
+                                            ->with([
+                                                'orderItemSubitem.productItem:id,inventory_item_id',
+                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                'waiter:id,full_name'
+                                            ]);
+                                },
+                                'rewards:id,customer_id,ranking_reward_id,status,updated_at',
+                                'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
+                                'rewards.rankingReward.product:id,product_name'
+                            ])
+                            ->find($request->id);
+        
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+            unset($keepItem->orderItemSubitem);
+
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+
+        }
+
+        return response()->json($customer);
+    }
+    
+    public function getTableKeepItems(Request $request) 
+    {
+        $orderTables = OrderTable::with([
+                                        'table',
+                                        'order.payment.customer',
+                                        'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
+                                        'order.orderItems.product',
+                                        'order.orderItems.subItems.productItem.inventoryItem',
+                                        'order.orderItems.subItems.keepItems.oldestKeepHistory' => function ($query) {
+                                            $query->where('status', 'Keep');
+                                        },
+                                        'order.orderItems.keepItem.oldestKeepHistory'  => function ($query) {
+                                            $query->where('status', 'Keep');
+                                        }
+                                    ])
+                                    ->where('table_id', $request->id)
+                                    ->where(function ($query){
+                                        $query->where('status', 'Pending Clearance')
+                                            ->orWhere('status', 'All Order Served')
+                                            ->orWhere('status', 'Order Placed');
+                                    })
+                                    ->orderByDesc('updated_at')
+                                    ->get()
+                                    ->map(function ($orderTable) {
+                                        $orderTable->order->orderItems->each(function ($item) {
+                                            if ($item['keep_item_id']) {
+                                                $item['item_name'] = $item->subItems[0]->productItem->inventoryItem['item_name'];
+                                            }
+
+                                            return $item;
+                                        });
+
+                                        return $orderTable;
+                                    }); 
+
+        //get images
+        foreach ($orderTables as $orderTable) {
+            if ($orderTable->order) {
+                foreach ($orderTable->order->orderItems as $orderItem) {
+                    if ($orderItem->product) {
+                        $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
+                    }
+                }
+            }
+        }
+
+        $uniqueOrders = $orderTables->pluck('order')->unique('id')->map(function ($order) {
+            if ($order->customer) {
+                $order->customer->image = $order->customer->getFirstMediaUrl('customer');
+            }
+            return [
+                'order_time' => Carbon::parse($order->created_at)->format('d/m/Y, H:i'),
+                'order_no' => $order->order_no,
+                'order_items' => $order->orderItems,
+                'customer' => $order->customer,
+            ];
+        })->values();
+
+        return response()->json($uniqueOrders);
     }
 }
