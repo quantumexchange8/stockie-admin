@@ -449,7 +449,7 @@ onMounted(() => {
 
         <div class="flex flex-col justify-center items-start gap-3 self-stretch min-h-[360px]">
             <div class="w-full h-full">
-                <template v-if="props.waiterCommission && props.waiterNames && !isLoading">
+                <template v-if="props.waiterCommission && props.waiterNames && props.waiterCommission.length > 0 && props.waiterNames.length > 0 && !isLoading">
                     <Chart 
                         type="bar" 
                         :data="chartData" 

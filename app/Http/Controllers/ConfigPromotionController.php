@@ -46,12 +46,14 @@ class ConfigPromotionController extends Controller
         // });
 
         $merchant = ConfigMerchant::with('classificationCode', 'msicCode')->first();
-        $merchant->code = $merchant->classificationCode->code . ' - ' . $merchant->classificationCode->description;
-        $merchant->msic = $merchant->msicCode->Code . ' - ' . $merchant->msicCode->Description;
-        unset($merchant->classificationCode);
-        unset($merchant->msicCode);
-        $merchant->merchant_image = $merchant->getFirstMediaUrl('merchant_settings');
-
+        
+        if ($merchant) {
+            $merchant->code = $merchant->classificationCode->code . ' - ' . $merchant->classificationCode->description;
+            $merchant->msic = $merchant->msicCode->Code . ' - ' . $merchant->msicCode->Description;
+            unset($merchant->classificationCode);
+            unset($merchant->msicCode);
+            $merchant->merchant_image = $merchant->getFirstMediaUrl('merchant_settings');
+        }
         $selectedTab = $request->session()->get('selectedTab');
 
         return Inertia::render('Configuration/MainConfiguration', [

@@ -87,27 +87,27 @@ const getMSICCodes = async () => {
 }
 
 const merchantForm = useForm({
-    id: merchant_detail.value.id ?? '',
-    merchant_image: merchant_detail.value.merchant_image ?? '',
-    name: merchant_detail.value.merchant_name ?? '',
-    tin_no: merchant_detail.value.tin_no ?? '',
-    prefix: phonePrefixes.value[0].value,
-    registration_no: merchant_detail.value.registration_no ?? '',
-    msic_code: merchant_detail.value.msic_code ?? '',
-    phone_no: merchant_detail.value.merchant_contact ? formatPhone(merchant_detail.value.merchant_contact, false, true) : '',
-    email_address: merchant_detail.value.email_address ?? '',
-    sst_registration_no: merchant_detail.value.sst_registration_no ?? '',
-    description: merchant_detail.value.description ?? '',
-    classification_code: merchant_detail.value.classification_code ?? '',
+    id: merchant_detail.value?.id ?? '',
+    merchant_image: merchant_detail.value?.merchant_image ?? '',
+    name: merchant_detail.value?.merchant_name ?? '',
+    tin_no: merchant_detail.value?.tin_no ?? '',
+    prefix: phonePrefixes.value[0]?.value,
+    registration_no: merchant_detail.value?.registration_no ?? '',
+    msic_code: merchant_detail.value?.msic_code ?? '',
+    phone_no: merchant_detail.value?.merchant_contact ? formatPhone(merchant_detail.value?.merchant_contact, false, true) : '',
+    email_address: merchant_detail.value?.email_address ?? '',
+    sst_registration_no: merchant_detail.value?.sst_registration_no ?? '',
+    description: merchant_detail.value?.description ?? '',
+    classification_code: merchant_detail.value?.classification_code ?? '',
 })
 
 const addressForm = useForm({
-    id: merchant_detail.value.id ?? '',
-    address_line1: merchant_detail.value.merchant_address_line1 ?? '',
-    address_line2: merchant_detail.value.merchant_address_line2 ?? '',
-    postal_code: merchant_detail.value.postal_code ?? '',
-    area: merchant_detail.value.area ?? '',
-    state: merchant_detail.value.state ?? '',
+    id: merchant_detail.value?.id ?? '',
+    address_line1: merchant_detail.value?.merchant_address_line1 ?? '',
+    address_line2: merchant_detail.value?.merchant_address_line2 ?? '',
+    postal_code: merchant_detail.value?.postal_code ?? '',
+    area: merchant_detail.value?.area ?? '',
+    state: merchant_detail.value?.state ?? '',
 })
 
 const taxForm = useForm({
@@ -321,13 +321,13 @@ onMounted(() => {
                                 :withDescription="true"
                                 :loading="isLoading"
                                 :inputArray="msic_codes"
-                                :dataValue="props.merchant.msic_code ?? ''"
+                                :dataValue="props.merchant?.msic_code ?? ''"
                                 @click="msic_codes.length > 0 ? '' : getMSICCodes()"
                                 v-model="merchantForm.msic_code"
                             >
                                 <template #value="slotProps">
                                     <!-- <span>{{ codes.length > 0 ? (codes.find(code => code.id === slotProps.value)) : '-' }}</span> -->
-                                    <span class="w-[200px]">{{ msic_codes.length > 0 && !isLoading && props.merchant.msic_code !== merchantForm.msic_code ? `${msic_codes[slotProps.value-2].text} - ${msic_codes[slotProps.value-2].description}` : props.merchant.msic }}</span>
+                                    <span class="w-[200px]">{{ msic_codes.length > 0 && !isLoading && props.merchant?.msic_code !== merchantForm.msic_code ? `${msic_codes[slotProps.value-2].text} - ${msic_codes[slotProps.value-2].description}` : props.merchant?.msic }}</span>
                                 </template>
                                 <template #description="slotProps">
                                     <span class="text-grey-500 text-sm font-base text-wrap max-w-full">{{ msic_codes[slotProps.index].description }}</span>
@@ -394,14 +394,14 @@ onMounted(() => {
                                 :withDescription="true"
                                 :loading="isLoading"
                                 :inputArray="codes"
-                                :dataValue="props.merchant.code ?? ''"
+                                :dataValue="props.merchant?.code ?? ''"
                                 @click="codes.length > 0 ? '' : getClassificationCodes()"
                                 v-model="merchantForm.classification_code"
                                 class="!w-1/2"
                             >
                                 <template #value="slotProps">
                                     <!-- <span>{{ codes.length > 0 ? (codes.find(code => code.id === slotProps.value)) : '-' }}</span> -->
-                                    <span>{{ codes.length > 0 && !isLoading && props.merchant.classification_code !== merchantForm.classification_code ? `${codes[slotProps.value-1].text} - ${codes[slotProps.value-1].description}` : props.merchant.code }}</span>
+                                    <span>{{ codes.length > 0 && !isLoading && props.merchant?.classification_code !== merchantForm.classification_code ? `${codes[slotProps.value-1].text} - ${codes[slotProps.value-1].description}` : props.merchant?.code }}</span>
                                 </template>
                                 <template #description="slotProps">
                                     <span class="text-grey-500 text-sm font-base text-wrap max-w-full">{{ codes[slotProps.index].description }}</span>
