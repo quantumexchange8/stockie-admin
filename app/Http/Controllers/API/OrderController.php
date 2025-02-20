@@ -552,16 +552,11 @@ class OrderController extends Controller
         $validatedOrderItems = [];
         $allItemErrors = [];
 
-        // $fixedOrderDetails = Order::select('id', 'pax', 'amount', 'customer_id', 'user_id', 'status')
-        //                             ->with('orderTable:id,table_id,status,order_id')
-        //                             ->find($request->order_id);
-
         $currentOrder = Order::select('id', 'pax', 'amount', 'customer_id', 'user_id', 'status')
                                     ->with('orderTable:id,table_id,status,order_id')
                                     ->find($request->order_id);
 
         $addNewOrder = $currentOrder->status === 'Order Completed' && $currentOrder->orderTable->every(fn ($table) => $table->status === 'Pending Clearance');
-        $serveNow = $request->action_type === 'now' ? true : false;
         $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id);
 
         $tableString = $this->getTableName($tablesArray);
@@ -570,8 +565,13 @@ class OrderController extends Controller
         $waiter->image = $waiter->getFirstMediaUrl('user');
 
         foreach ($orderItems as $index => $item) {
-            $rules = ['item_qty' => 'required|integer'];
-            $requestMessages = ['item_qty.required' => 'This field is required.', 'item_qty.integer' => 'This field must be an integer.'];
+            $rules = $item['item_type'] === 'normal'
+                    ? ['item_qty' => 'required|integer']
+                    : ['return_qty' => 'required|integer'];
+
+            $requestMessages = $item['item_type'] === 'normal'
+                    ? ['item_qty.required' => 'This field is required.', 'item_qty.integer' => 'This field must be an integer.']
+                    : ['return_qty.required' => 'This field is required.', 'return_qty.integer' => 'This field must be an integer.'];
 
             // Validate order items data
             $orderItemsValidator = Validator::make($item, $rules, $requestMessages);
@@ -594,7 +594,7 @@ class OrderController extends Controller
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) {
             return response()->json([
-                'message' => 'Error placing order',
+                'title' => 'Error placing order',
                 'errors' => $allItemErrors
             ], 422);
         }
@@ -633,89 +633,153 @@ class OrderController extends Controller
             $totalDiscountedAmount = 0.00;
 
             foreach ($orderItems as $key => $item) {
-                $status = $serveNow ? 'Served' : 'Pending Serve'; 
-                $product = Product::select('id', 'discount_id')->find($item['product_id']);
+                $status = $item['action_type'] === 'now' ? 'Served' : 'Pending Serve'; 
 
-                $originalItemAmount = $item['price'] * $item['item_qty'];
-                $currentProductDiscount = $product->discountSummary($product->discount_id)?->first();
-                $newItemAmount = round($currentProductDiscount ? $currentProductDiscount['price_after'] * $item['item_qty'] : $originalItemAmount, 2);
-
-                $new_order_item = OrderItem::create([
-                    'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
-                    'user_id' => $request->user_id,
-                    'type' => 'Normal',
-                    'product_id' => $item['product_id'],
-                    'item_qty' => $item['item_qty'],
-                    'amount_before_discount' => $originalItemAmount,
-                    'discount_id' => $currentProductDiscount ? $currentProductDiscount['id'] : null,
-                    'discount_amount' => $originalItemAmount - $newItemAmount,
-                    'amount' => $newItemAmount,
-                    'status' => $status,
-                ]);
-
-                $totalDiscountedAmount += $currentProductDiscount ? ($currentProductDiscount['price_before'] - $currentProductDiscount['price_after']) * $item['item_qty'] : 0.00;
-
-                Notification::send(User::all(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
-
-                // placed an order for {{table name}}.
-                activity()->useLog('Order')
-                            ->performedOn($new_order_item)
-                            ->event('place to order')
-                            ->withProperties([
-                                'waiter_name' => $waiter->full_name, 
-                                'table_name' => $tableString,
-                                'waiter_image' => $waiter->image,
-                            ])
-                            ->log("placed an order for :properties.table_name.");
-
-                if (count($item['product_items']) > 0) {
-                    $temp += $newItemAmount;
-                    
-                    foreach ($item['product_items'] as $key => $value) {
-                        $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty')->find($value['id']);
-                        $inventoryItem = $productItem->inventoryItem;
+                if ($item['item_type'] === 'normal') {
+                    $product = Product::select('id', 'discount_id')->find($item['product_id']);
     
-                        // Deduct stock
-                        $stockToBeSold = $value['qty'] * $item['item_qty'];
-                        $oldStockQty = $inventoryItem->stock_qty;
-                        $newStockQty = $oldStockQty - $stockToBeSold;
-
-                        $newStatus = match(true) {
-                            $newStockQty == 0 => 'Out of stock',
-                            $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
-                            default => 'In stock'
-                        };
-
-                        $inventoryItem->update([
-                            'stock_qty' => $newStockQty,
-                            'status' => $newStatus
-                        ]);
-                        $inventoryItem->refresh();
+                    $originalItemAmount = $item['price'] * $item['item_qty'];
+                    $currentProductDiscount = $product->discountSummary($product->discount_id)?->first();
+                    $newItemAmount = round($currentProductDiscount ? $currentProductDiscount['price_after'] * $item['item_qty'] : $originalItemAmount, 2);
     
-                        StockHistory::create([
-                            'inventory_id' => $inventoryItem->inventory_id,
-                            'inventory_item' => $inventoryItem->item_name,
-                            'old_stock' => $oldStockQty,
-                            'in' => 0,
-                            'out' => $stockToBeSold,
-                            'current_stock' => $inventoryItem->stock_qty,
-                        ]);
+                    $new_order_item = OrderItem::create([
+                        'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
+                        'user_id' => $request->user_id,
+                        'type' => 'Normal',
+                        'product_id' => $item['product_id'],
+                        'item_qty' => $item['item_qty'],
+                        'amount_before_discount' => $originalItemAmount,
+                        'discount_id' => $currentProductDiscount ? $currentProductDiscount['id'] : null,
+                        'discount_amount' => $originalItemAmount - $newItemAmount,
+                        'amount' => $newItemAmount,
+                        'status' => $status,
+                    ]);
+    
+                    $totalDiscountedAmount += $currentProductDiscount ? ($currentProductDiscount['price_before'] - $currentProductDiscount['price_after']) * $item['item_qty'] : 0.00;
+    
+                    Notification::send(User::all(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
+    
+                    // placed an order for {{table name}}.
+                    activity()->useLog('Order')
+                                ->performedOn($new_order_item)
+                                ->event('place to order')
+                                ->withProperties([
+                                    'waiter_name' => $waiter->full_name, 
+                                    'table_name' => $tableString,
+                                    'waiter_image' => $waiter->image,
+                                ])
+                                ->log("placed an order for :properties.table_name.");
+    
+                    if (count($item['product_items']) > 0) {
+                        $temp += $newItemAmount;
                         
-                        $serveQty = $serveNow ? $value['qty'] * $item['item_qty'] : 0;
-                        OrderItemSubitem::create([
-                            'order_item_id' => $new_order_item->id,
-                            'product_item_id' => $value['id'],
-                            'item_qty' => $value['qty'],
-                            'serve_qty' => $serveQty,
-                        ]);
-
-                        if($newStatus === 'Out of stock'){
-                            Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
-                        };
-
-                        if($newStatus === 'Low in stock'){
-                            Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                        foreach ($item['product_items'] as $key => $value) {
+                            $productItem = ProductItem::with('inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty')->find($value['id']);
+                            $inventoryItem = $productItem->inventoryItem;
+        
+                            // Deduct stock
+                            $stockToBeSold = $value['qty'] * $item['item_qty'];
+                            $oldStockQty = $inventoryItem->stock_qty;
+                            $newStockQty = $oldStockQty - $stockToBeSold;
+    
+                            $newStatus = match(true) {
+                                $newStockQty == 0 => 'Out of stock',
+                                $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
+                                default => 'In stock'
+                            };
+    
+                            $inventoryItem->update([
+                                'stock_qty' => $newStockQty,
+                                'status' => $newStatus
+                            ]);
+                            $inventoryItem->refresh();
+        
+                            StockHistory::create([
+                                'inventory_id' => $inventoryItem->inventory_id,
+                                'inventory_item' => $inventoryItem->item_name,
+                                'old_stock' => $oldStockQty,
+                                'in' => 0,
+                                'out' => $stockToBeSold,
+                                'current_stock' => $inventoryItem->stock_qty,
+                            ]);
+                            
+                            $serveQty = $item['action_type'] === 'now' ? $value['qty'] * $item['item_qty'] : 0;
+                            OrderItemSubitem::create([
+                                'order_item_id' => $new_order_item->id,
+                                'product_item_id' => $value['id'],
+                                'item_qty' => $value['qty'],
+                                'serve_qty' => $serveQty,
+                            ]);
+    
+                            if($newStatus === 'Out of stock'){
+                                Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                            };
+    
+                            if($newStatus === 'Low in stock'){
+                                Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                            }
                         }
+                    }
+                } else if ($item['item_type'] === 'keep') {
+                    $keepItem = KeepItem::with(['orderItemSubitem:id,order_item_id,product_item_id', 
+                                                            'orderItemSubitem.productItem:id,product_id',
+                                                            'orderItemSubitem.productItem.inventoryItem:id,item_name', 
+                                                            'orderItemSubitem.orderItem:id'])
+                                        ->find($item['id']);
+        
+                    $newOrderItem = OrderItem::create([
+                        'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
+                        'user_id' => $request->user_id,
+                        'type' => 'Keep',
+                        'product_id' => $keepItem->orderItemSubitem->productItem->product_id,
+                        'keep_item_id' => $item['id'],
+                        'item_qty' => $item['return_qty'],
+                        'amount_before_discount' => 0.00,
+                        'discount_id' => null,
+                        'discount_amount' => 0.00,
+                        'amount' => 0.00,
+                        'status' => 'Served',
+                    ]);
+                    
+                    OrderItemSubitem::create([
+                        'order_item_id' => $newOrderItem->id,
+                        'product_item_id' => $keepItem->orderItemSubitem->productItem->id,
+                        'item_qty' => 1,
+                        'serve_qty' => $item['return_qty'],
+                    ]);
+        
+                    KeepHistory::create([
+                        'keep_item_id' => $item['id'],
+                        'order_item_id' => $newOrderItem->id,
+                        'qty' => $item['type'] === 'qty' ? round($item['return_qty'], 2) : 0.00,
+                        'cm' => $item['type'] === 'cm' ? number_format((float) $keepItem->cm, 2, '.', '') : '0.00',
+                        'keep_date' => $keepItem->created_at,
+                        'status' => 'Served',
+                    ]);
+        
+                    $currOrder = Order::with(['orderTable.table', 'customer:id,full_name'])->find($addNewOrder ? $newOrder->id : $request->order_id);
+        
+                    activity()->useLog('return-kept-item')
+                                ->performedOn($newOrderItem)
+                                ->event('updated')
+                                ->withProperties([
+                                    'edited_by' => auth()->user()->full_name,
+                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                    'item_name' => $keepItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                                    'customer_name' => $currOrder->customer->full_name
+                                ])
+                                ->log(":properties.item_name is returned to :properties.customer_name.");
+        
+                    if ($item['type'] === 'qty') {
+                        $keepItem->update([
+                            'qty' => ($keepItem->qty - $item['return_qty']) > 0 ? $keepItem->qty - $item['return_qty'] : 0.00,
+                            'status' => ($keepItem->qty - $item['return_qty']) > 0 ? 'Keep' : 'Returned'
+                        ]);
+                    } else {
+                        $keepItem->update([
+                            'cm' => 0.00,
+                            'status' => 'Returned'
+                        ]);
                     }
                 }
             }
@@ -755,7 +819,18 @@ class OrderController extends Controller
     
         return response()->json([
             'status' => 'success',
-            'message' => "Order has been successfully placed."
+            'title' => "Order has been successfully placed."
         ], 201);
+    }
+    
+    public function getAllCustomers() {
+        $users = Customer::all(['id', 'full_name', 'phone'])
+                            ->each(function ($customer) {
+                                $customer->image = $customer->getFirstMediaUrl('customer');
+
+                                return $customer;
+                            });
+
+        return response()->json($users);
     }
 }

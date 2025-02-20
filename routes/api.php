@@ -60,13 +60,17 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::controller(OrderController::class)->prefix('orders')->group(function(){
+        // Tables
         Route::get('/tables', 'getAllTables');
+        Route::post('/check_in_table', 'checkInTable');
+        Route::post('/check_in_customer', 'checkInCustomer');
+
+        // Order
         Route::get('/order/order_summary', 'getOrderSummary');
         Route::get('/order/products', 'getAllProducts');
         Route::get('/order/pending_serve_items', 'getPendingServeItems');
         Route::get('/order/product_categories', 'getAllCategories');
-        Route::post('/check_in_table', 'checkInTable');
-        Route::post('/check_in_customer', 'checkInCustomer');
+        Route::post('/order/place_order_items', 'placeOrderItem');
         Route::put('/order/serve_item', 'serveOrderItem');
     });
 
