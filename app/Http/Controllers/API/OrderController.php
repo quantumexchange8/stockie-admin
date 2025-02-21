@@ -808,8 +808,22 @@ class OrderController extends Controller
                     }
                 }
             }
+
+            $oldVoucherId = $request->old_voucher_id ?: null;
         
-            if ($request->new_voucher_id) {
+            if ($request->new_voucher_id && $request->new_voucher_id !== $request->oldVoucherId) {
+                $oldSelectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
+                                            ->with([
+                                                'rankingReward:id,reward_type,discount,free_item,item_qty',
+                                                'rankingReward.product:id,product_name',
+                                                'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
+                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+                                            ])
+                                            ->findOrFail($request->oldVoucherId);
+                                        
+                $oldSelectedReward->update(['status' => 'Active']);
+
+
                 $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
                                             ->with([
                                                 'rankingReward:id,reward_type,discount,free_item,item_qty',
@@ -817,12 +831,21 @@ class OrderController extends Controller
                                                 'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
                                                 'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
                                             ])
-                                            ->findOrFail($request->voucher_id);
+                                            ->findOrFail($request->new_voucher_id);
 
                 $tierReward = $selectedReward->rankingReward;
             }
 
-            $order = Order::with('orderTable.table')->find($addNewOrder ? $newOrder->id : $request->order_id);
+            $order = Order::with([
+                                'orderTable.table', 
+                                'payment', 
+                                'orderItems' => fn ($query) => (
+                                    $query->where([
+                                        ['type', 'Normal'],
+                                        ['user_id', $this->authUser->id],
+                                    ])
+                                )
+                            ])->find($addNewOrder ? $newOrder->id : $request->order_id);
 
             if ($order) {
                 $statusArr = collect($order->orderItems->pluck('status')->unique());
@@ -842,13 +865,13 @@ class OrderController extends Controller
                 
                 $order->update([
                     'amount' => $order->amount + $temp,
-                    'voucher_id' => in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)']) ? $tierReward->id : null,
+                    'voucher_id' => $request->new_voucher_id && isset($tierReward) && in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)']) ? $tierReward->id : $oldVoucherId,
                     'total_amount' => $order->amount + $temp,
                     'discount_amount' => $order->discount_amount + $totalDiscountedAmount,
                     'status' => $orderStatus
                 ]);
                 
-                if (in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
+                if (isset($tierReward) && in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
                     $selectedReward->update(['status' => 'Redeemed']);
                 };
                 
@@ -859,9 +882,29 @@ class OrderController extends Controller
                 });
             }
 
+            $currentTable = $this->getPendingServeItemsQuery($request->table_id)->get();
+
+            $pendingServeItems = collect();
+
+            $currentTable->each(function ($table) use (&$pendingServeItems) {
+                if ($table->order) {
+                    if ($table->order->customer_id) {
+                        $table->order->customer->image = $table->order->customer->getFirstMediaUrl('customer');
+                    }
+
+                    foreach ($table->order->orderItems as $orderItem) {
+                        $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+                        $pendingServeItems->push($orderItem);
+                    }
+                }
+            });
+
             return response()->json([
                 'status' => 'success',
-                'title' => "Order has been successfully placed."
+                'title' => "Order has been successfully placed.",
+                'pendingServeItems' => $pendingServeItems,
+                'order' => $order,
+                'earned_commission' => round($order->orderItems->sum('amount'), 2)
             ], 201);
         }
     
