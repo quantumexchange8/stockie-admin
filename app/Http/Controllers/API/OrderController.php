@@ -7,6 +7,7 @@ use App\Http\Requests\OrderTableRequest;
 use App\Models\Category;
 use App\Models\ConfigMerchant;
 use App\Models\Customer;
+use App\Models\CustomerReward;
 use App\Models\IventoryItem;
 use App\Models\KeepHistory;
 use App\Models\KeepItem;
@@ -49,44 +50,67 @@ class OrderController extends Controller
     {
         $zones = Zone::with([
                             'tables:id,table_no,seat,zone_id,status,order_id',
-                            'tables.orderTables' => fn ($query) => (
+                            'tables.orderTables' => function ($query) {
                                 $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled'])
-                                        ->select('id','table_id','pax','user_id','status','order_id','created_at')
-                            ),
-                            'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty'
-                        ])
-                        ->get(['id', 'name']);
-        
-        if (count($zones) == 0 ) {
+                                    ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at');
+                            },
+                            'tables.orderTables.order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
+                            // 'tables.orderTables.order.customer:id,full_name',
+                            // 'tables.orderTables.order.customer.rewards' => function ($query) {
+                            //     $query->where('status', 'Active')->select('id','customer_id', 'ranking_reward_id', 'status');
+                            // },
+                            // 'tables.orderTables.order.customer.rewards.rankingReward',
+                            'tables.orderTables.order.voucher:id,reward_type,discount'
+                        ])->get(['id', 'name']);
+    
+        if ($zones->isEmpty()) {
             return response()->json([]);
         }
-                            
-        $zones = $zones->map(function ($zone) {
-            $tablesArray = $zone->tables?->map(function ($table) {
-                $table->pending_count = $table->orderTables->sum(function ($orderTable) { 
+    
+        $zones = $zones->map(function ($zone) use ($zones){
+            $tablesArray = $zone->tables?->map(function ($table) use ($zones) {
+                $table->pending_count = $table->orderTables->sum(function ($orderTable) {
                     return $orderTable->order
                             ->orderItems
                             ->where('status', 'Pending Serve')
-                            ->sum(function ($orderItem) { 
+                            ->sum(function ($orderItem) {
                                 return $orderItem->subItems
-                                        ->sum(function ($subItem) use ($orderItem) { 
-                                            return $subItem->item_qty * $orderItem->item_qty - $subItem->serve_qty;
-                                        }); 
+                                    ->sum(fn ($subItem) => $subItem->item_qty * $orderItem->item_qty - $subItem->serve_qty);
                             });
-                }); 
+                });
+    
+                $currentOrderTable = $table->orderTables->firstWhere('status', '!=', 'Pending Clearance')
+                    ?? $table->orderTables->first();
+    
+                // if ($currentOrderTable && $currentOrderTable->order && $currentOrderTable->order->customer) {
+                //     $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
+                // }
                 
-                // Unset the order property for each orderTable 
-                $table->unsetRelation('orderTables'); 
-                
+                if ($currentOrderTable && $currentOrderTable->order) unset($currentOrderTable->order->orderItems);
+
+                $table->order = $currentOrderTable->order ?? null;
+    
+                // Determine if the table is merged
+                $table->is_merged = $zones->some(fn ($z) => 
+                    $z->tables->some(fn ($t) => 
+                        $t->id !== $table->id 
+                        && $t->order_id === $table->order_id 
+                        && $t->status !== 'Empty Seat'
+                    )
+                );
+
+                // Unset the orderTables property to clean up the response
+                $table->unsetRelation('orderTables');
+    
                 return $table;
             });
-
+    
             return [
                 'name' => $zone->name,
                 'tables' => $tablesArray
             ];
         })->filter(fn ($zone) => $zone['tables'] != null);
-
+    
         return response()->json($zones);
     }
 
@@ -255,62 +279,62 @@ class OrderController extends Controller
         };
     }
     
-    /**
-     * Check in customer to table.
-     */
-    public function getOrderSummary(Request $request)
-    {
-        // Fetch only the main order tables first, selecting only necessary columns
-        $orderTables = OrderTable::select('id', 'table_id', 'status', 'updated_at', 'order_id')
-                                    ->with('table:id,table_no,status')
-                                    ->where('table_id', $request->id)
-                                    ->orderByDesc('updated_at')
-                                    ->get();
+    // /**
+    //  * Check in customer to table.
+    //  */
+    // public function getOrderSummary(Request $request)
+    // {
+    //     // Fetch only the main order tables first, selecting only necessary columns
+    //     $orderTables = OrderTable::select('id', 'table_id', 'status', 'updated_at', 'order_id')
+    //                                 ->with('table:id,table_no,status')
+    //                                 ->where('table_id', $request->id)
+    //                                 ->orderByDesc('updated_at')
+    //                                 ->get();
 
-        // Find the first non-pending clearance table
-        $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled'])
-                                            ->firstWhere('status', '!=', 'Pending Clearance') 
-                            ?? $orderTables->first();
+    //     // Find the first non-pending clearance table
+    //     $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled'])
+    //                                         ->firstWhere('status', '!=', 'Pending Clearance') 
+    //                         ?? $orderTables->first();
 
-        if (!!$currentOrderTable) {
-            // Lazy load relationships only for the selected table
-            $currentOrderTable->load([
-                'order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
-                'order.customer:id,full_name',
-                'order.customer.rewards' => function ($query) {
-                    $query->where('status', 'Active')->select('id','customer_id', 'ranking_reward_id', 'status');
-                },
-                'order.customer.rewards.rankingReward',
-                'order.voucher:id,reward_type,discount'
-            ]);
+    //     if (!!$currentOrderTable) {
+    //         // Lazy load relationships only for the selected table
+    //         $currentOrderTable->load([
+    //             'order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
+    //             'order.customer:id,full_name',
+    //             'order.customer.rewards' => function ($query) {
+    //                 $query->where('status', 'Active')->select('id','customer_id', 'ranking_reward_id', 'status');
+    //             },
+    //             'order.customer.rewards.rankingReward',
+    //             'order.voucher:id,reward_type,discount'
+    //         ]);
 
-            // if ($currentOrderTable->order->orderItems) {
-            //     foreach ($currentOrderTable->order->orderItems as $orderItem) {
-            //         $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
-            //         $orderItem->handledBy->image = $orderItem->handledBy->getFirstMediaUrl('user');
-            //         $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
-            //         unset($orderItem->product->discountItems);
-            //     }
-            // }
+    //         // if ($currentOrderTable->order->orderItems) {
+    //         //     foreach ($currentOrderTable->order->orderItems as $orderItem) {
+    //         //         $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
+    //         //         $orderItem->handledBy->image = $orderItem->handledBy->getFirstMediaUrl('user');
+    //         //         $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+    //         //         unset($orderItem->product->discountItems);
+    //         //     }
+    //         // }
 
-            if ($currentOrderTable->order->customer) {
-                $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
-            };
+    //         if ($currentOrderTable->order->customer) {
+    //             $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
+    //         };
 
-            // $currentOrderTable->order->pending_count = $currentOrderTable->order->orderItems()->where('status', 'Pending Serve')->count();
+    //         // $currentOrderTable->order->pending_count = $currentOrderTable->order->orderItems()->where('status', 'Pending Serve')->count();
 
-            // dd($currentOrderTable->order->orderItems->where('status', 'Pending Serve')->count());
+    //         // dd($currentOrderTable->order->orderItems->where('status', 'Pending Serve')->count());
             
-            $data = [
-                'currentOrderTable' => $currentOrderTable->table,
-                'order' => $currentOrderTable->order
-            ];
-        } else {
-            $data = null;
-        }
+    //         $data = [
+    //             'currentOrderTable' => $currentOrderTable->table,
+    //             'order' => $currentOrderTable->order
+    //         ];
+    //     } else {
+    //         $data = null;
+    //     }
 
-        return response()->json($data);
-    }
+    //     return response()->json($data);
+    // }
 
     /**
      * Get all products.
@@ -558,7 +582,7 @@ class OrderController extends Controller
                                     ->find($request->order_id);
 
         $addNewOrder = $currentOrder->status === 'Order Completed' && $currentOrder->orderTable->every(fn ($table) => $table->status === 'Pending Clearance');
-        $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id);
+        $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id)->toArray();
 
         $tableString = $this->getTableName($tablesArray);
 
@@ -785,6 +809,19 @@ class OrderController extends Controller
                 }
             }
         
+            if ($request->new_voucher_id) {
+                $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
+                                            ->with([
+                                                'rankingReward:id,reward_type,discount,free_item,item_qty',
+                                                'rankingReward.product:id,product_name',
+                                                'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
+                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+                                            ])
+                                            ->findOrFail($request->voucher_id);
+
+                $tierReward = $selectedReward->rankingReward;
+            }
+
             $order = Order::with('orderTable.table')->find($addNewOrder ? $newOrder->id : $request->order_id);
 
             if ($order) {
@@ -805,10 +842,15 @@ class OrderController extends Controller
                 
                 $order->update([
                     'amount' => $order->amount + $temp,
+                    'voucher_id' => in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)']) ? $tierReward->id : null,
                     'total_amount' => $order->amount + $temp,
                     'discount_amount' => $order->discount_amount + $totalDiscountedAmount,
                     'status' => $orderStatus
                 ]);
+                
+                if (in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
+                    $selectedReward->update(['status' => 'Redeemed']);
+                };
                 
                 // Update all tables associated with this order
                 $order->orderTable->each(function ($tab) use ($orderTableStatus) {
@@ -816,59 +858,91 @@ class OrderController extends Controller
                     $tab->update(['status' => $orderTableStatus]);
                 });
             }
+
+            return response()->json([
+                'status' => 'success',
+                'title' => "Order has been successfully placed."
+            ], 201);
         }
     
         return response()->json([
-            'status' => 'success',
-            'title' => "Order has been successfully placed."
-        ], 201);
+            'status' => 'error',
+            'title' => "No items selected to be placed."
+        ]);
     }
     
     public function getAllCustomers() 
     {
-        $customers = Customer::all(['id', 'full_name', 'phone'])
-                            ->each(function ($customer) {
-                                $customer->image = $customer->getFirstMediaUrl('customer');
+        $customers = Customer::with([
+                                    'rank:id,name',
+                                    'keepItems' => function ($query) {
+                                        $query->where('status', 'Keep')
+                                                ->with([
+                                                    'orderItemSubitem.productItem:id,inventory_item_id',
+                                                    'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                    'waiter:id,full_name'
+                                                ]);
+                                    },
+                                    'rewards:id,customer_id,ranking_reward_id,status,updated_at',
+                                    'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
+                                    'rewards.rankingReward.product:id,product_name'
+                                ])
+                                ->get()
+                                ->each(function ($customer) {
+                                    $customer->image = $customer->getFirstMediaUrl('customer');
 
-                                return $customer;
-                            });
+                                    foreach ($customer->keepItems as $key => $keepItem) {
+                                        $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                                        $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+                                        unset($keepItem->orderItemSubitem);
+                            
+                                        $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                                            ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                                            : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                            
+                                        $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+                            
+                                    }
+
+                                    return $customer;
+                                });
 
         return response()->json($customers);
     }
     
-    public function getOrderCustomer(Request $request) 
-    {
-        $customer = Customer::with([
-                                'rank:id,name',
-                                'keepItems' => function ($query) {
-                                    $query->where('status', 'Keep')
-                                            ->with([
-                                                'orderItemSubitem.productItem:id,inventory_item_id',
-                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
-                                                'waiter:id,full_name'
-                                            ]);
-                                },
-                                'rewards:id,customer_id,ranking_reward_id,status,updated_at',
-                                'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
-                                'rewards.rankingReward.product:id,product_name'
-                            ])
-                            ->find($request->id);
+    // public function getOrderCustomer(Request $request) 
+    // {
+    //     $customer = Customer::with([
+    //                             'rank:id,name',
+    //                             'keepItems' => function ($query) {
+    //                                 $query->where('status', 'Keep')
+    //                                         ->with([
+    //                                             'orderItemSubitem.productItem:id,inventory_item_id',
+    //                                             'orderItemSubitem.productItem.inventoryItem:id,item_name',
+    //                                             'waiter:id,full_name'
+    //                                         ]);
+    //                             },
+    //                             'rewards:id,customer_id,ranking_reward_id,status,updated_at',
+    //                             'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
+    //                             'rewards.rankingReward.product:id,product_name'
+    //                         ])
+    //                         ->find($request->id);
         
-        foreach ($customer->keepItems as $key => $keepItem) {
-            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-            $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
-            unset($keepItem->orderItemSubitem);
+    //     foreach ($customer->keepItems as $key => $keepItem) {
+    //         $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+    //         $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+    //         unset($keepItem->orderItemSubitem);
 
-            $keepItem->image = $keepItem->orderItemSubitem->productItem 
-                                ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-                                : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+    //         $keepItem->image = $keepItem->orderItemSubitem->productItem 
+    //                             ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+    //                             : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
 
-            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+    //         $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
 
-        }
+    //     }
 
-        return response()->json($customer);
-    }
+    //     return response()->json($customer);
+    // }
     
     public function getTableKeepItems(Request $request) 
     {

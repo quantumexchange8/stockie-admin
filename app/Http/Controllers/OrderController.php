@@ -124,7 +124,9 @@ class OrderController extends Controller
 
         $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address_line1')->first();
 
-        $merchant->image = $merchant->getFirstMediaUrl('merchant_settings');
+        if ($merchant) {
+            $merchant->image = $merchant->getFirstMediaUrl('merchant_settings');
+        }
         
         // Get the flashed messages from the session
         // $message = $request->session()->get('message');

@@ -67,11 +67,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/check_in_customer', 'checkInCustomer');
 
         // Order
-        Route::get('/order/order_summary', 'getOrderSummary');
+        // Route::get('/order/order_summary', 'getOrderSummary');
         Route::get('/order/products', 'getAllProducts');
         Route::get('/order/pending_serve_items', 'getPendingServeItems');
         Route::get('/order/product_categories', 'getAllCategories');
-        Route::get('/order/customer', 'getOrderCustomer');
+        // Route::get('/order/customer', 'getOrderCustomer');
         Route::get('/order/table_keep_items', 'getTableKeepItems');
         Route::post('/order/place_order_items', 'placeOrderItem');
         Route::put('/order/serve_item', 'serveOrderItem');
