@@ -342,7 +342,7 @@ class OrderController extends Controller
     public function getAllProducts()
     {
         $products = Product::with([
-                                'productItems', 
+                                'productItems.inventoryItem', 
                                 'category:id,name', 
                             ])
                             ->where('availability', 'Available')
@@ -359,8 +359,7 @@ class OrderController extends Controller
                                     $stockCountArr = [];
 
                                     foreach ($product_items as $key => $value) {
-                                        $inventory_item = IventoryItem::select('stock_qty')->find($value['inventory_item_id']);
-
+                                        $inventory_item = $value->inventoryItem;
                                         $stockQty = $inventory_item->stock_qty;
                                         
                                         $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
@@ -453,98 +452,96 @@ class OrderController extends Controller
      */
     public function serveOrderItem(Request $request)
     {        
-        if (isset($id)) {
-            $orderItem = OrderItem::with(['subItems', 'product', 'keepHistory'])->find($request->order_item_id);
-            $subItems = $orderItem->subItems;
-            
-            if ($subItems) {
-                $totalItemQty = 0;
-                $totalServedQty = 0;
-                $hasServeQty = false;
+        $orderItem = OrderItem::with(['subItems', 'product', 'keepHistory'])->find($request->order_item_id);
+        $subItems = $orderItem->subItems;
+        
+        if ($subItems) {
+            $totalItemQty = 0;
+            $totalServedQty = 0;
+            $hasServeQty = false;
 
-                foreach ($subItems as $key => $item) {
-                    foreach ($request->items as $key => $updated_item) {
-                        if ($item['id'] === $item['serve_qty'] && $item['serve_qty'] !== ($item['item_qty'] * $$orderItem->item_qty)) {
-                            $item->update(['serve_qty' => $item['serve_qty'] + $updated_item['serving_qty']]);
-                            $item->save();
-                            $item->refresh();
+            foreach ($subItems as $key => $item) {
+                foreach ($request->items as $key => $updated_item) {
+                    if ($item['id'] === $updated_item['sub_item_id']) {
+                        $item->update(['serve_qty' => $item['serve_qty'] + $updated_item['serving_qty']]);
+                        $item->save();
+                        $item->refresh();
 
-                            $totalItemQty += $item['item_qty'] * $orderItem->item_qty;
-                            $totalServedQty += $item['serve_qty'];
-                            $hasServeQty = $updated_item['serving_qty'] > 0 || $hasServeQty ? true : false;
-                        }
+                        $totalItemQty += $item['item_qty'] * $orderItem->item_qty;
+                        $totalServedQty += $item['serve_qty'];
+                        $hasServeQty = $updated_item['serving_qty'] > 0 || $hasServeQty ? true : false;
                     }
                 }
-                
-                if ($hasServeQty) {
-                    $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
-                    $orderItem->save();
-                }
             }
             
-            $orderItem->refresh();
+            if ($hasServeQty) {
+                $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
+                $orderItem->save();
+            }
+        }
+        
+        $orderItem->refresh();
 
-            if ($orderItem->status === 'Served' && $orderItem->type === 'Keep' && $orderItem->keep_item_id) {
-                $keepItem = KeepItem::find($orderItem->keep_item_id);
-                $keepHistory = $orderItem->keepHistory;
+        if ($orderItem->status === 'Served' && $orderItem->type === 'Keep' && $orderItem->keep_item_id) {
+            $keepItem = KeepItem::find($orderItem->keep_item_id);
+            $keepHistory = $orderItem->keepHistory;
 
-                $keepItem->update(['status' => 'Served']);
+            $keepItem->update(['status' => 'Served']);
 
-                KeepHistory::create([
-                    'keep_item_id' => $orderItem->keep_item_id,
-                    'order_item_id' => $orderItem->id,
-                    'qty' => $keepHistory->qty,
-                    'cm' => number_format((float) $keepHistory->cm, 2, '.', ''),
-                    'keep_date' => $keepItem->created_at,
-                    'status' => 'Served',
-                ]);
+            KeepHistory::create([
+                'keep_item_id' => $orderItem->keep_item_id,
+                'order_item_id' => $orderItem->id,
+                'qty' => $keepHistory->qty,
+                'cm' => number_format((float) $keepHistory->cm, 2, '.', ''),
+                'keep_date' => $keepItem->created_at,
+                'status' => 'Served',
+            ]);
+        }
+
+        $order = Order::with(['orderTable', 'orderItems'])->find($orderItem->order_id);
+        
+        if ($order) {
+            $allOrderItems = $order->orderItems;
+            $statusArr = [];
+            $orderStatus = 'Pending Serve';
+            $orderTableStatus = 'Pending Order';
+
+            foreach ($allOrderItems as $key => $item) {
+                array_push($statusArr, $item['status']);
             }
 
-            $order = Order::with(['orderTable', 'orderItems'])->find($orderItem->order_id);
-            
-            if ($order) {
-                $allOrderItems = $order->orderItems;
-                $statusArr = [];
+            $uniqueStatuses = array_unique($statusArr);
+
+            if (in_array("Pending Serve", $uniqueStatuses)) {
                 $orderStatus = 'Pending Serve';
-                $orderTableStatus = 'Pending Order';
-    
-                foreach ($allOrderItems as $key => $item) {
-                    array_push($statusArr, $item['status']);
-                }
-    
-                $uniqueStatuses = array_unique($statusArr);
-    
-                if (in_array("Pending Serve", $uniqueStatuses)) {
-                    $orderStatus = 'Pending Serve';
-                    $orderTableStatus = 'Order Placed';
-                }
-    
-                if (count($uniqueStatuses) === 1) {
-                    if ($uniqueStatuses[0] === 'Served' || $uniqueStatuses[0] === 'Cancelled') {
-                        $orderStatus = 'Order Served';
-                        $orderTableStatus = 'All Order Served';
-                    }
-                } else if (count($uniqueStatuses) === 2) {
-                    if (in_array('Served', $uniqueStatuses) && in_array('Cancelled', $uniqueStatuses)) {
-                        $orderStatus = 'Order Served';
-                        $orderTableStatus = 'All Order Served';
-                    }
-                }
+                $orderTableStatus = 'Order Placed';
+            }
 
-                $allClearance = $order->orderTable->every(function($table){
-                    return $table->status === 'Pending Clearance';
+            if (count($uniqueStatuses) === 1) {
+                if ($uniqueStatuses[0] === 'Served' || $uniqueStatuses[0] === 'Cancelled') {
+                    $orderStatus = 'Order Served';
+                    $orderTableStatus = 'All Order Served';
+                }
+            } else if (count($uniqueStatuses) === 2) {
+                if (in_array('Served', $uniqueStatuses) && in_array('Cancelled', $uniqueStatuses)) {
+                    $orderStatus = 'Order Served';
+                    $orderTableStatus = 'All Order Served';
+                }
+            }
+
+            $allClearance = $order->orderTable->every(function($table){
+                return $table->status === 'Pending Clearance';
+            });
+
+            if(($request->input('current_order_id') === $request->input('order_id')) && !$allClearance){
+                // Update all tables associated with this order
+                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
+                    $table = Table::find($tab['table_id']);
+                    $table->update(['status' => $orderTableStatus]);
+                    $tab->update(['status' => $orderTableStatus]);
                 });
 
-                if(($request->input('current_order_id') === $request->input('order_id')) && !$allClearance){
-                    // Update all tables associated with this order
-                    $order->orderTable->each(function ($tab) use ($orderTableStatus) {
-                        $table = Table::find($tab['table_id']);
-                        $table->update(['status' => $orderTableStatus]);
-                        $tab->update(['status' => $orderTableStatus]);
-                    });
-    
-                    $order->update(['status' => $orderStatus]);
-                }
+                $order->update(['status' => $orderStatus]);
             }
         }
         
@@ -836,16 +833,8 @@ class OrderController extends Controller
                 $tierReward = $selectedReward->rankingReward;
             }
 
-            $order = Order::with([
-                                'orderTable.table', 
-                                'payment', 
-                                'orderItems' => fn ($query) => (
-                                    $query->where([
-                                        ['type', 'Normal'],
-                                        ['user_id', $this->authUser->id],
-                                    ])
-                                )
-                            ])->find($addNewOrder ? $newOrder->id : $request->order_id);
+            $order = Order::with(['orderTable.table', 'payment', 'orderItems'])
+                            ->find($addNewOrder ? $newOrder->id : $request->order_id);
 
             if ($order) {
                 $statusArr = collect($order->orderItems->pluck('status')->unique());
@@ -899,12 +888,35 @@ class OrderController extends Controller
                 }
             });
 
+            $earnedCommission = OrderItem::join('orders', 'order_items.order_id', '=', 'orders.id')
+                                            ->join('products', 'order_items.product_id', '=', 'products.id')
+                                            ->join('config_employee_comm_items as comm_items', 'products.id', '=', 'comm_items.item')
+                                            ->join('config_employee_comms as comms', 'comm_items.comm_id', '=', 'comms.id')
+                                            ->where([
+                                                ['order_items.type', 'Normal'],
+                                                ['order_items.user_id', $this->authUser->id],
+                                                ['orders.id', $order->id]
+                                            ])
+                                            ->whereColumn('comm_items.created_at', '<=', 'order_items.created_at')
+                                            ->whereNull('comm_items.deleted_at')
+                                            ->whereNull('comms.deleted_at')
+                                            ->selectRaw("
+                                                SUM(
+                                                    CASE
+                                                        WHEN comms.comm_type = 'Fixed amount per sold product'
+                                                        THEN comms.rate * order_items.item_qty
+                                                        ELSE products.price * order_items.item_qty * (comms.rate / 100)
+                                                    END
+                                                ) as total_commission
+                                            ")
+                                            ->value('total_commission');
+
             return response()->json([
                 'status' => 'success',
                 'title' => "Order has been successfully placed.",
                 'pendingServeItems' => $pendingServeItems,
                 'order' => $order,
-                'earned_commission' => round($order->orderItems->sum('amount'), 2)
+                'earned_commission' => round($earnedCommission, 2)
             ], 201);
         }
     
@@ -1046,5 +1058,261 @@ class OrderController extends Controller
         })->values();
 
         return response()->json($uniqueOrders);
+    }
+
+    public function getOrderDetails(Request $request) 
+    {
+        $order = Order::with(['orderTable.table', 'payment'])
+                        ->find($request->order_id);
+
+        $currentTable = $this->getPendingServeItemsQuery($request->table_id)->get();
+
+        $pendingServeItems = collect();
+
+        $currentTable->each(function ($table) use (&$pendingServeItems) {
+            if ($table->order) {
+                if ($table->order->customer_id) {
+                    $table->order->customer->image = $table->order->customer->getFirstMediaUrl('customer');
+                }
+
+                foreach ($table->order->orderItems as $orderItem) {
+                    $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+                    $pendingServeItems->push($orderItem);
+                }
+            }
+        });
+
+        return response()->json([
+            'order' => $order,
+            'pendingServeItems' => $pendingServeItems,
+        ]);
+    }
+
+    /**
+     * Add the items to keep.
+     */
+    public function addItemToKeep(Request $request)
+    {
+        $request->validate(['customer_id' => 'required|integer'], ['required' => 'This field is required.']);
+
+        $items = $request->items;
+        $validatedItems = [];
+        $allItemErrors = [];
+        
+        $rules = [
+            'order_item_subitem_id' => 'required|integer',
+            'amount' => 'required|decimal:0,2',
+            'remark' => 'nullable|string',
+            'expired_from' => 'required|date_format:Y-m-d',
+            'expired_to' => 'required|date_format:Y-m-d',
+        ];
+        $requestMessages = [
+            'required' => 'This field is required.',
+            'integer' => 'This field must be an integer.',
+            'decimal' => 'This field must be a decimal number.',
+            'string' => 'This field must be an string.',
+            'date_format' => 'This field must be in a date format: Y-m-d.',
+        ];
+
+        foreach ($items as $index => $item) {
+            // Validate items data
+            $orderItemsValidator = Validator::make($item, $rules, $requestMessages);
+            
+            if ($orderItemsValidator->fails()) {
+                // Collect the errors for each item and add to the array with item index
+                foreach ($orderItemsValidator->errors()->messages() as $field => $messages) {
+                    $allItemErrors["items.$index.$field"] = $messages;
+                }
+            } else {
+                // Collect the validated item and manually add the 'id' field back
+                $validatedItem = $orderItemsValidator->validated();
+                if (isset($item['id'])) {
+                    $validatedItem['id'] = $item['id'];
+                }
+                $validatedItems[] = $validatedItem;
+            }
+        }
+
+        // If there are any item validation errors, return them
+        if (!empty($allItemErrors)) {
+            // return redirect()->back()->withErrors($allItemErrors);
+            return response()->json(['errors' => $allItemErrors], 422);
+        }
+
+        if (count($validatedItems) > 0) {
+            $order = Order::with(['orderTable.table', 'orderItems.subItems', 'orderItems.product'])->find($request->order_id);
+            $currentOrder = Order::with(['orderTable.table', 'orderItems.subItems', 'orderItems.product'])->find($request->current_order_id);
+
+            $orderItems = $order->orderItems;
+            foreach ($orderItems as $orderItemKey => $orderItem) {
+                $totalItemQty = 0;
+                $totalServedQty = 0;
+                $hasServeQty = false;
+
+                foreach ($orderItem->subItems as $subItemKey => $subItem) {
+                    foreach ($validatedItems as $key => $item) {
+                        foreach ($request->items as $reqItemKey => $reqItem) {
+                            if ($item['order_item_subitem_id'] === $reqItem['order_item_subitem_id'] && $subItem['id'] === $item['order_item_subitem_id']) {
+                                if ($item['amount'] > 0) {
+                                    if ($reqItem['keep_id']) {
+                                        $keepItem = KeepItem::find($reqItem['keep_id']);
+                                        $keepItem->update([
+                                            'qty' => $reqItem['type'] === 'qty' ? $keepItem->qty + $item['amount'] : $keepItem->qty,
+                                            'cm' => $reqItem['type'] === 'cm' ? $keepItem->cm + $item['amount'] : $keepItem->cm,
+                                            'status' => 'Keep',
+                                        ]);
+
+                                        $keepItem->save();
+                                        $keepItem->refresh();
+            
+                                        $associatedSubItem = OrderItemSubitem::where('id', $reqItem['order_item_subitem_id'])
+                                                                                ->with(['productItem:id,inventory_item_id'])
+                                                                                ->first();
+                                        $tempInventoryItem = $associatedSubItem->productItem->inventory_item_id;
+                                        $tempOrderItem = IventoryItem::find($tempInventoryItem);
+                                        
+                                        KeepHistory::create([
+                                            'keep_item_id' => $reqItem['keep_id'],
+                                            'order_item_id' => $reqItem['order_item_id'],
+                                            'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0,
+                                            'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
+                                            'keep_date' => $keepItem->updated_at,
+                                            'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
+                                            'status' => 'Keep',
+                                        ]);
+                                        
+                                        $tempOrderItem->increment('total_kept', $item['amount']);
+                                        $tempOrderItem->increment('current_kept_amt', $item['amount']);
+
+                                    } else {
+                                    //     dd($reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
+                                    // number_format((float) '8.258', 2, '.', ''));
+                                        // dd($item['expired_from']);
+                                        
+                                        $newKeep = KeepItem::create([
+                                            'customer_id' => $request->customer_id,
+                                            'order_item_subitem_id' => $item['order_item_subitem_id'],
+                                            'qty' => $reqItem['type'] === 'qty' ? $item['amount'] : 0,
+                                            'cm' => $reqItem['type'] === 'cm' ? $item['amount'] : 0,
+                                            'remark' => $item['remark'] ?: null,
+                                            'user_id' => $request->user_id,
+                                            'status' => 'Keep',
+                                            'expired_from' => $item['expired_from'],
+                                            'expired_to' => $item['expired_to'],
+                                        ]);
+
+                                        $associatedSubItem = OrderItemSubitem::where('id', $item['order_item_subitem_id'])
+                                                                ->with(['productItem:id,inventory_item_id', 'productItem.inventoryItem:id,item_name'])
+                                                                ->first();
+
+                                        $inventoryItemName = $associatedSubItem->productItem->inventoryItem->item_name;
+
+                                        $name = Customer::where('id', $request->customer_id)->first()->pluck('full_name');
+
+                                        activity()->useLog('keep-item-from-customer')
+                                                    ->performedOn($newKeep)
+                                                    ->event('kept')
+                                                    ->withProperties([
+                                                        'edited_by' => auth()->user()->full_name,
+                                                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                                                        'item_name' => $inventoryItemName,
+                                                        'customer_name' => $name,
+                                                    ])
+                                                    ->log("'$inventoryItemName' is kept in $name's account.");
+                            
+                                                    
+                                        $tempInventoryItem = $associatedSubItem->productItem->inventory_item_id;
+                                        $tempOrderItem = IventoryItem::find($tempInventoryItem);
+
+                                        KeepHistory::create([
+                                            'keep_item_id' => $newKeep->id,
+                                            'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
+                                            'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
+                                            'keep_date' => $newKeep->created_at,
+                                            'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
+                                            'status' => 'Keep',
+                                        ]);
+
+                                        $tempOrderItem->increment('total_kept', $item['amount']);
+                                        $tempOrderItem->increment('current_kept_amt', $item['amount']);
+                                    }
+
+                                    if ($orderItem->status === 'Pending Serve') {
+                                        $toBeServed = ($reqItem['totalKept'] + $item['amount']) - $subItem['serve_qty'];
+                                        
+                                        $subItem->increment('serve_qty', $reqItem['type'] === 'cm' ? 1 : $toBeServed);
+                                    }
+                                    $subItem->save();
+                                    $subItem->refresh();
+                                }
+        
+                                $totalItemQty += $subItem['item_qty'] * $orderItem->item_qty;
+                                $totalServedQty += $subItem['serve_qty'];  
+                                $hasServeQty = $item['amount'] > 0 || $hasServeQty ? true : false;
+                            }
+                        }
+                    }
+                }
+
+                if ($hasServeQty) {
+                    $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
+                }
+            }
+            $currentOrder->refresh();
+
+            if ($currentOrder) {
+                $statusArr = collect($currentOrder->orderItems->pluck('status')->unique());
+            
+                $orderStatus = 'Pending Serve';
+                $orderTableStatus = 'Pending Order';
+            
+                if ($statusArr->contains('Pending Serve')) {
+                    $orderStatus = 'Pending Serve';
+                    $orderTableStatus = 'Order Placed';
+                } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+                    $orderStatus = 'Order Served';
+                    $orderTableStatus = 'All Order Served';
+                } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+                    $orderStatus = 'Order Served';
+                    $orderTableStatus = 'All Order Served';
+                }
+                
+                $currentOrder->update(['status' => $orderStatus]);
+                
+                // Update all tables associated with this order
+                $currentOrder->orderTable->each(function ($tab) use ($orderTableStatus) {
+                    $tab->table->update(['status' => $orderTableStatus]);
+                    $tab->update(['status' => $orderTableStatus]);
+                });
+            }
+        }
+        
+        $customer = Customer::with([
+                                'keepItems' => function ($query) {
+                                    $query->select('id', 'customer_id', 'order_item_subitem_id', 'user_id', 'qty', 'cm', 'remark', 'status', 'expired_to', 'created_at')
+                                            ->where('status', 'Keep')
+                                            ->with([
+                                                'orderItemSubitem.productItem:id,inventory_item_id',
+                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                'waiter:id,full_name'
+                                            ]);
+                                }
+                            ])
+                            ->find($request->current_customer_id);
+        
+        if ($customer) {
+            foreach ($customer->keepItems as $key => $keepItem) {
+                $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                unset($keepItem->orderItemSubitem);
+                
+                $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                        ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                        : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                
+                $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+            }
+        }
+
+        return response()->json($customer?->keepItems);
     }
 }

@@ -68,6 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Order
         // Route::get('/order/order_summary', 'getOrderSummary');
+        Route::get('/order', 'getOrderDetails');
         Route::get('/order/products', 'getAllProducts');
         Route::get('/order/pending_serve_items', 'getPendingServeItems');
         Route::get('/order/product_categories', 'getAllCategories');

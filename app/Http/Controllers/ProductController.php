@@ -47,7 +47,7 @@ class ProductController extends Controller
 
                                     foreach ($product_items as $key => $value) {
                                         $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])->find($value['inventory_item_id']);
-                                        $stockCount = (int)bcdiv($inventory_item->stock_qty, (int)$value['qty']);
+                                        $stockCount = $inventory_item ? (int)bcdiv($inventory_item->stock_qty, (int)$value['qty']) : 0;
 
                                         array_push($stockCountArr, $stockCount);
                                     }
