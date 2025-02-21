@@ -1341,9 +1341,10 @@ class OrderController extends Controller
                     $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
                 }
             }
-            $currentOrder->refresh();
 
-            if ($currentOrder) {
+            $currentOrderLatestTable = $currentOrder->orderTable->sortByDesc('id')->first();
+
+            if ($currentOrder && !in_array($currentOrderLatestTable->status, ['Pending Clearance', 'Order Cancelled'])) {
                 $statusArr = collect($currentOrder->orderItems->pluck('status')->unique());
             
                 $orderStatus = 'Pending Serve';
