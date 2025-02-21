@@ -811,7 +811,7 @@ class OrderController extends Controller
 
             $oldVoucherId = $request->old_voucher_id ?: null;
         
-            if ($request->new_voucher_id && $request->new_voucher_id !== $request->oldVoucherId) {
+            if ($request->new_voucher_id && $request->new_voucher_id !== $oldVoucherId) {
                 $oldSelectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
                                             ->with([
                                                 'rankingReward:id,reward_type,discount,free_item,item_qty',
@@ -819,7 +819,7 @@ class OrderController extends Controller
                                                 'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
                                                 'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
                                             ])
-                                            ->findOrFail($request->oldVoucherId);
+                                            ->findOrFail($oldVoucherId);
                                         
                 $oldSelectedReward->update(['status' => 'Active']);
 
