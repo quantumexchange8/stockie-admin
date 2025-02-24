@@ -75,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::get('/order/customer', 'getOrderCustomer');
         Route::get('/order/table_keep_items', 'getTableKeepItems');
         Route::post('/order/place_order_items', 'placeOrderItem');
+        Route::post('/order/keep', 'addItemToKeep');
         Route::put('/order/serve_item', 'serveOrderItem');
     });
 

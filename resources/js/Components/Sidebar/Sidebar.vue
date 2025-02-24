@@ -11,9 +11,10 @@ onMounted(() => {
 
     if (screenWidth.value <= 1024) {
         sidebarState.isOpen = false
-    } else {
-        sidebarState.isOpen = true
-    }
+    };
+    // else {
+    //     sidebarState.isOpen = true
+    // }
 });
 
 onUnmounted(() => {

@@ -24,11 +24,20 @@ class InventoryController extends Controller
     {
         $inventories = Iventory::with([
                                     'inventoryItems' => function ($query) {
-                                        $query->selectRaw('iventory_items.*, SUM(keep_items.qty) as total_keep_qty')
-                                                ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
-                                                ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
-                                                ->leftJoin('keep_items', 'order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
-                                                ->groupBy('iventory_items.id');
+                                        $query->selectRaw('
+                                                iventory_items.*, 
+                                                SUM(
+                                                    CASE 
+                                                        WHEN keep_items.qty > 0 AND COALESCE(keep_items.cm, 0) = 0 THEN keep_items.qty
+                                                        WHEN COALESCE(keep_items.qty, 0) = 0 AND keep_items.cm > 0 THEN 1
+                                                        ELSE 0 
+                                                    END
+                                                ) as total_keep_qty
+                                            ')
+                                            ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
+                                            ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
+                                            ->leftJoin('keep_items', 'order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                            ->groupBy('iventory_items.id');
                                     },
                                     'inventoryItems.itemCategory:id,name',
                                     'inventoryItems.productItems:id,inventory_item_id,product_id',

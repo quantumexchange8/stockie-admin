@@ -161,33 +161,50 @@ class TableRoomController extends Controller
 
     public function deleteZone($id)
     {
-        $deleteZone = Zone::where('id', $id)->first();
-        activity()->useLog('delete-zone')
-                    ->performedOn($deleteZone)
-                    ->event('deleted')
-                    ->withProperties([
-                        'edited_by' => auth()->user()->full_name,
-                        'image' => auth()->user()->getFirstMediaUrl('user'),
-                        'zone_name' => $deleteZone->name,
-                    ])
-                    ->log("Zone '$deleteZone->name' is deleted.");
-        $deleteZone->delete();
+        $deleteTable = Table::where('zone_id', $id)->get();
 
-        $deleteTable = Table::where('zone_id', $id);
-        activity()->useLog('delete-table')
-                    ->performedOn($deleteTable)
-                    ->event('deleted')
-                    ->withProperties([
-                        'edited_by' => auth()->user()->full_name,
-                        'image' => auth()->user()->getFirstMediaUrl('user'),
-                        'table_no' => $deleteTable->table_no,
-                    ])
-                    ->log("Table '$deleteTable->table_no' is deleted.");
-        $deleteTable->delete();
+        if ($deleteTable->every(fn ($table) => $table->status === 'Empty Seat')) {
+            if ($deleteTable->count() > 0) {
+                $deleteTable->each(function ($table) {
+                    activity()->useLog('delete-table')
+                                ->performedOn($table)
+                                ->event('deleted')
+                                ->withProperties([
+                                    'edited_by' => auth()->user()->full_name,
+                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                    'table_no' => $table->table_no,
+                                ])
+                                ->log("Table '$table->table_no' is deleted.");
+    
+                    $table->delete();
+                });
+            }
+    
+            $deleteZone = Zone::where('id', $id)->first();
 
+            activity()->useLog('delete-zone')
+                        ->performedOn($deleteZone)
+                        ->event('deleted')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'zone_name' => $deleteZone->name,
+                        ])
+                        ->log("Zone '$deleteZone->name' is deleted.");
+
+            $deleteZone->delete();
+    
+            $message = [
+                'severity' => 'success',
+                'summary' => "Selected zone has been deleted successfully."
+            ];
+    
+            return redirect()->route('table-room')->with(['message' => $message]);
+        }
+            
         $message = [
-            'severity' => 'success',
-            'summary' => "Selected zone has been deleted successfully."
+            'severity' => 'warn',
+            'summary' => "Selected zone still has some table that are checked in."
         ];
 
         return redirect()->route('table-room')->with(['message' => $message]);

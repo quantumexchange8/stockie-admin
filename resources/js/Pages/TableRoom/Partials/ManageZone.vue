@@ -39,6 +39,7 @@ const newZones = useForm({
 
 const addZone = () => {
     isEditing.value = false;
+    isEdited.value = true;
     newZoneCounter.value++;
     newZones.zones.push({name: '', index: newZoneCounter.value})
     
@@ -53,10 +54,19 @@ const addZone = () => {
 
 const removeAddZone = (id) => { 
     newZones.zones = newZones.zones.filter(zone => zone.index !== id); 
+    if (newZones.zones.length == 0) { 
+        isEdited.value = false;
+        emit('isDirty', false);
+    }
 }
 
 const discardChanges = () => {
     isEditing.value = false;
+    isEdited.value = true;
+    emit('isDirty', false);    
+    currentZoneId.value = null;
+    initialZoneName.value = null;
+
     form.reset();
 }
 
@@ -114,7 +124,6 @@ const showDeleteGroupForm = (event, id) => {
 const hideDeleteProductForm = () => {
     deleteProductFormIsOpen.value = false;
 }
-
 
 const startEditing = (zonesArr) => {
     isEditing.value = true;
@@ -224,7 +233,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                     </div>
 
                     <!-- new zones -->
-                    <div v-if="newZones.zones.length" v-for="zones in newZones.zones" class="flex w-full px-3 gap-3 justify-center items-center">
+                    <div v-if="newZones.zones.length" v-for="zones in newZones.zones" class="flex w-full px-3 gap-3 justify-center items-start">
                         <TextInput 
                             :placeholder="'eg: Main Area'" 
                             inputId="name" 
@@ -253,6 +262,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                         </Button>
 
                         <Button
+                            v-if="newZones.zones.length <= 1"
                             :type="'submit'"
                             :variant="'primary'" 
                             :size="'lg'" 
@@ -284,7 +294,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             New Zone
                         </Button>
 
-                        <!-- <Button
+                        <Button
                             :type="'submit'"
                             :variant="'primary'" 
                             :size="'lg'" 
@@ -294,19 +304,19 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             @click="submit()"
                         >
                             {{ isEdited ? 'Save changes' : 'Discard' }}
-                        </Button> -->
+                        </Button>
 
-                        <!-- <Button
+                        <Button
                             :type="'button'"
                             :variant="'primary'" 
                             :size="'lg'" 
                             :class="{ 'opacity-25': newZones.processing }"
                             :disabled="newZones.processing"
-                            v-if="newZones.zones.length"
+                            v-if="newZones.zones.length > 1"
                             @click="submit()"
                         >
                             Add Zone
-                        </Button> -->
+                        </Button>
                     </div>
                 </div>
             </div>

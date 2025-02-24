@@ -26,7 +26,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'fetchZones']);
 
 const selectedTable = ref(props.table);
 const selectedTableName = ref(props.table.table_no);
@@ -45,7 +45,7 @@ const form = useForm({
 const formSubmit = () => { 
     form.post(route('orders.tables.store'), {
         preserveScroll: true,
-        preserveState: 'errors',
+        preserveState: true,
         onSuccess: () => {
             setTimeout(() => {
                 showMessage({ 
@@ -55,6 +55,7 @@ const formSubmit = () => {
                 form.reset();
             }, 200);
             emit('close');
+            emit('fetchZones');
         },
     })
 };
@@ -158,6 +159,7 @@ const paxInputValidation = (event) => {
                         @onChange="updateSelectedTables"
                     />
                     <TextInput
+                        :inputType="'number'"
                         :inputName="'pax'"
                         :labelText="'No. of pax'"
                         :placeholder="'No. of pax'"

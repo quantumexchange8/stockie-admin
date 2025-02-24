@@ -4,7 +4,8 @@ import { usePage } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 
 export const sidebarState = reactive({
-    isOpen: window.innerWidth > 1024,
+    // isOpen: window.innerWidth > 1024,
+    isOpen: false,
     isHovered: false,
     // handleHover(value) {
     //     if (window.innerWidth < 1440) {
@@ -15,9 +16,10 @@ export const sidebarState = reactive({
     handleWindowResize() {
         if (window.innerWidth <= 1024) {
             sidebarState.isOpen = false
-        } else {
-            sidebarState.isOpen = true
-        }
+        };
+        // else {
+        //     sidebarState.isOpen = true
+        // }
     },
 })
 

@@ -1260,12 +1260,14 @@ class OrderController extends Controller
                                             'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0,
                                             'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
                                             'keep_date' => $keepItem->updated_at,
-                                            'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
+                                            'kept_balance' => $reqItem['type'] === 'qty' ? $tempOrderItem->current_kept_amt + $item['amount'] : $tempOrderItem->current_kept_amt,
                                             'status' => 'Keep',
                                         ]);
                                         
-                                        $tempOrderItem->increment('total_kept', $item['amount']);
-                                        $tempOrderItem->increment('current_kept_amt', $item['amount']);
+                                        if ($reqItem['type'] === 'qty') {
+                                            $tempOrderItem->increment('total_kept', $item['amount']);
+                                            $tempOrderItem->increment('current_kept_amt', $item['amount']);
+                                        }
 
                                     } else {
                                     //     dd($reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,

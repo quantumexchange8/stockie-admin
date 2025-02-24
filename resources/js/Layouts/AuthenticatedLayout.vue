@@ -117,6 +117,7 @@ watch(() => notificationLength.value, (newValue) => {
 
 onMounted(() => {
     rightSidebarState.isOpen = false;
+    sidebarState.isOpen = false;
     getNotifications();
     const savedLanguage = localStorage.getItem('selectedLanguage');
     if(savedLanguage){

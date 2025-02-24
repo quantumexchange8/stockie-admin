@@ -467,6 +467,7 @@ const isMerged = (targetTable) => {
             :waiters="waitersArr"
             :tablesArr="tablesArr"
             @close="closeOverlay"
+            @fetchZones="$emit('fetchZones')"
         />
     </OverlayPanel>
 </template>

@@ -36,7 +36,11 @@ class CustomerController extends Controller
                                 ->get()
                                 ->map(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
-                                    $customer->keep_items_count = $customer->keepItems->count();
+                                    $customer->keep_items_count = $customer->keepItems->reduce(function ($total, $item) {
+                                        $itemQty = $item->qty > $item->cm ? $item->qty : 1;
+
+                                        return $total + $itemQty;
+                                    }, 0);
 
                                     if ($customer->rank) {
                                         $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
