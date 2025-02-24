@@ -816,10 +816,11 @@ class OrderController extends Controller
                                                 'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
                                                 'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
                                             ])
-                                            ->findOrFail($oldVoucherId);
+                                            ->find($oldVoucherId);
                                         
-                $oldSelectedReward->update(['status' => 'Active']);
-
+                if ($oldSelectedReward) {
+                    $oldSelectedReward->update(['status' => 'Active']);
+                }
 
                 $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
                                             ->with([
@@ -828,9 +829,11 @@ class OrderController extends Controller
                                                 'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
                                                 'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
                                             ])
-                                            ->findOrFail($request->new_voucher_id);
+                                            ->find($request->new_voucher_id);
 
-                $tierReward = $selectedReward->rankingReward;
+                if ($selectedReward) {
+                    $tierReward = $selectedReward->rankingReward;
+                }
             }
 
             $order = Order::with(['orderTable.table', 'payment', 'orderItems'])
