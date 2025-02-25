@@ -31,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('configuration:update-product-discount')->dailyAt('00:00');
         $schedule->command('keepitems:check-expiration')->dailyAt('00:00');
         $schedule->command('general:clear-notification')->dailyAt('00:00');
-        $schedule->command('configuration:update-employee-incentives')->dailyAt('17:34');
+        $schedule->command('configuration:update-employee-incentives')->dailyAt('00:00');
         $schedule->command('activitylog:clean')->daily();
         $schedule->command('configurations:set-bill-discount-active')->everyTwoMinutes();
     })

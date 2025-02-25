@@ -507,10 +507,9 @@ class ConfigPromotionController extends Controller
 
     public function editTax(Request $request)
     {
-        // dd($request->all());
-
         $taxesErrors = [];
         $validatedTaxes = [];
+
         foreach ($request->input('taxes') as $taxes) { 
             if (!isset($taxes['id'])) {
                 continue; 
@@ -518,11 +517,7 @@ class ConfigPromotionController extends Controller
 
             $validator = Validator::make($taxes, [
                 'id' => 'required|integer',
-                'name' => [
-                    'required',
-                    'string',
-                    'max:255'
-                ],
+                'name' => 'required|string|max:255',
                 'percentage' => 'required|numeric|min:0',
             ], [
                 'name.required' => 'Tax name is required.',
@@ -547,26 +542,27 @@ class ConfigPromotionController extends Controller
             return redirect()->back()->withErrors($taxesErrors);
         }
 
-        foreach($validatedTaxes as $items){{
-                $editTier = Setting::find($items['id'])
-                                    ->update([
-                                    'name' => $items['name'],
-                                    'value' => round($items['percentage'], 2),
-                                    'type' => 'tax',
-                                    'value_type' => 'percentage',
-                                ]); 
+        foreach($validatedTaxes as $items) {
+            $tax = Setting::find($items['id']);
 
-                activity()->useLog('edit-tax-settings')
-                            ->performedOn($editTier)
-                            ->event('updated')
-                            ->withProperties([
-                                'edited_by' => auth()->user()->full_name,
-                                'image' => auth()->user()->getFirstMediaUrl('user'),
-                                'tax_name' => $editTier->name
-                            ])
-                            ->log("Tax $editTier->name updated.");
-            }
+            activity()->useLog('edit-tax-settings')
+                        ->performedOn($tax)
+                        ->event('updated')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'tax_name' => $tax->name
+                        ])
+                        ->log("Tax $tax->name updated.");
+
+            $tax->update([
+                'name' => $items['name'],
+                'value' => round($items['percentage'], 2),
+                'type' => 'tax',
+                'value_type' => 'percentage',
+            ]); 
         }
+
         return redirect()->back();
     }
 }

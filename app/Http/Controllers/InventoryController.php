@@ -435,9 +435,9 @@ class InventoryController extends Controller
             foreach ($data['items'] as $key => $value) {
                 if ($value['add_stock_qty'] > 0) array_push($replenishedItem, '\'' . $value['item_name'] . '\'');
 
-                $calculatedStock = $value['stock_qty'] + $value['add_stock_qty'];
-
                 $existingItem = IventoryItem::where('id', $value['id'])->first();
+                $oldStock = $existingItem->stock_qty;
+                $calculatedStock = $value['stock_qty'] + $value['add_stock_qty'];
 
                 // if ($key === 2) dd($calculatedStock);
                 
@@ -465,8 +465,10 @@ class InventoryController extends Controller
                             ->log("$existingItem->item_name is replenished.");
 
                 if ($value['add_stock_qty'] > 0) {
-                    if ($value['stock_qty'] < 0) {
-                        $existingItem->increment('current_kept_amt', $value['stock_qty'] + $value['add_stock_qty'] > 0 ? abs($value['stock_qty']) : $value['add_stock_qty']);
+                    $toBeReplenished = $value['add_stock_qty'] - ($value['stock_qty'] + $value['add_stock_qty']);
+
+                    if ($toBeReplenished > 0) {
+                        $existingItem->increment('current_kept_amt', $toBeReplenished);
                         $existingItem->refresh();
                     }
                     

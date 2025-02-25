@@ -15,6 +15,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemSubitem;
 use App\Models\OrderTable;
+use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\StockHistory;
@@ -1065,7 +1066,7 @@ class OrderController extends Controller
 
     public function getOrderDetails(Request $request) 
     {
-        $order = Order::with(['orderTable.table', 'payment'])
+        $order = Order::with(['orderTable.table', 'payment', 'orderItems', 'voucher'])
                         ->find($request->order_id);
 
         $currentTable = $this->getPendingServeItemsQuery($request->table_id)->get();
@@ -1258,7 +1259,6 @@ class OrderController extends Controller
                         $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
                     }
                 }
-                $currentOrder->refresh();
 
                 if ($currentOrder) {
                     $statusArr = collect($currentOrder->orderItems->pluck('status')->unique());
@@ -1385,5 +1385,121 @@ class OrderController extends Controller
                 'errors' => $e
             ]);
         };
+    }
+
+    public function getTablePaymentHistories(Request $request) 
+    {
+        $orderTables = OrderTable::with([
+                                        'table', 
+                                        'order.voucher:id,reward_type,discount', 
+                                        'order.payment.customer', 
+                                        'order.orderItems' => fn($query) => $query->whereNotIn('status', ['Cancelled']),
+                                        'order.orderItems.product',
+                                        'order.orderItems.subItems.productItem.inventoryItem',
+                                    ])
+                                    ->where([
+                                        ['table_id', $request->id],
+                                        ['status', 'Pending Clearance'],
+                                    ])
+                                    ->orderByDesc('updated_at')
+                                    ->get()
+                                    ->map(function ($orderTable) {
+                                        $orderTable->order->orderItems->each(function ($item) {
+                                            if ($item['keep_item_id']) {
+                                                $item['item_name'] = $item->subItems[0]->productItem->inventoryItem['item_name'];
+                                            }
+
+                                            unset($item->subItems[0]->productItem);
+
+                                            return $item;
+                                        });
+
+                                        return $orderTable;
+                                    });
+
+        foreach ($orderTables as $orderTable) {
+            if ($orderTable->order) {  
+                foreach ($orderTable->order->orderItems as $orderItem) {
+                    if ($orderItem->product) { 
+                        $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
+                        $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first(); 
+                    }
+                }
+            }
+        }
+
+        // Get unique orders and include each order's payment details
+        $uniqueOrders = $orderTables->pluck('order')->unique('id')->map(function ($order) {
+            if($order->customer){
+                $order->customer->image = $order->customer->getFirstMediaUrl('customer');
+            }
+            return [
+                'order_id' => $order->id,
+                'order_no' => $order->order_no,
+                'pax' => $order->pax,
+                'payment' => $order->payment,
+                'voucher' => $order->voucher,
+                'order_items' => $order->orderItems,
+                'customer' => $order->customer,
+            ];
+        })->values();
+        
+        return response()->json($uniqueOrders);
+    }
+
+    public function getRedeemableItems() 
+    {
+        $redeemables = Product::select('id','product_name', 'point')
+                                ->with([
+                                    'productItems:id,product_id,inventory_item_id,qty', 
+                                    'productItems.inventoryItem:id,inventory_id,item_name,stock_qty,status',
+                                    'productItems.inventoryItem.inventory:id,name',
+                                ])
+                                ->where('is_redeemable', true)
+                                ->get()
+                                ->map(function ($product) {
+                                    $product->image = $product->getFirstMediaUrl('product');
+                                    $product_items = $product->productItems;
+                                    $minStockCount = 0;
+    
+                                    if (count($product_items) > 0) {
+                                        $stockCountArr = [];
+    
+                                        foreach ($product_items as $key => $value) {
+                                            $inventory_item = IventoryItem::select('stock_qty')->find($value['inventory_item_id']);
+                                            $stockQty = $inventory_item->stock_qty;
+                                            $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
+    
+                                            array_push($stockCountArr, $stockCount);
+                                        }
+                                        $minStockCount = min($stockCountArr);
+                                    }
+                                    $product['stock_left'] = $minStockCount;
+                                    unset($product->productItems);
+    
+                                    return $product;
+                                });
+        
+        return response()->json($redeemables);
+    }
+
+    public function getCustomerPointHistories(Request $request)
+    {
+        $pointHistories = PointHistory::with([
+                                            'payment:id,order_id,point_earned',
+                                            'payment.order:id,order_no',
+                                            'redeemableItem:id,product_name',
+                                            'customer:id,ranking',
+                                            'customer.rank:id,name'
+                                        ]) 
+                                        ->where('customer_id', $request->id)
+                                        ->orderBy('created_at','desc')
+                                        ->get();
+
+        $pointHistories->each(function ($record) {
+            $record->image = $record->redeemableItem?->getFirstMediaUrl('product');
+        });
+
+        return response()->json($pointHistories);
     }
 }

@@ -1702,7 +1702,7 @@ class OrderController extends Controller
                         ->withProperties([
                             'edited_by' => auth()->user()->full_name,
                             'image' => auth()->user()->getFirstMediaUrl('user'),
-                            'item_name' => $keepItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                            'item_name' => $keepItem->item_name,
                             'customer_name' => $order->customer->full_name
                         ])
                         ->log(":properties.item_name is returned to :properties.customer_name.");
