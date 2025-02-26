@@ -13,7 +13,10 @@ class AdminUserController extends Controller
 {
     public function index()
     {
-        $users = User::withoutRole('Super Admin')->with('permissions:name')->get();
+        $users = User::withoutRole('Super Admin')
+                        ->with('permissions:name')
+                        ->where('position', '!=', 'waiter')
+                        ->get();
 
         $users->each(function($user){
             $user->image = $user->getFirstMediaUrl('user');
