@@ -325,13 +325,14 @@ class ProductController extends Controller
      */
     public function getAllCategories()
     {
-        return Category::select(['id', 'name'])
+        return Category::select(['id', 'name', 'keep_type'])
                         ->orderBy('id')
                         ->get()
                         ->map(function ($category) {
                             return [
                                 'text' => $category->name,
-                                'value' => $category->id
+                                'value' => $category->id,
+                                'keep_type' => $category->keep_type
                             ];
                         });
     }
@@ -739,7 +740,8 @@ class ProductController extends Controller
                     'string',
                     'max:255',
                     Rule::unique('categories')->whereNull('deleted_at'),
-                ]
+                ],
+                'keep_type' => 'required|string|max:255',
             ], [
                 'required' => 'This field is required.',
                 'name.string' => 'Invalid input.',
@@ -760,11 +762,16 @@ class ProductController extends Controller
         }
 
         if(!empty($categoriesError)){
-            return redirect()->back()->withErrors($categoriesError);
+            return response()->json(['errors' => $categoriesError], 422);
+            // return redirect()->back()->withErrors($categoriesError);
         }
 
         foreach($validatedZones as $newCategories) {
-            $newCategory = Category::create(['name' => $newCategories['name']]);
+            $newCategory = Category::create([
+                'name' => $newCategories['name'],
+                'keep_type' => $newCategories['keep_type']
+            ]);
+
             activity()->useLog('create-category')
                         ->performedOn($newCategory)
                         ->event('added')
@@ -784,17 +791,25 @@ class ProductController extends Controller
      */
     public function updateCategory(Request $request, string $id)
     {
-        $validatedData = $request->validate([
-            'edit_name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('categories','name')->ignore($id)->whereNull('deleted_at')],
-            ]
+        $validatedData = $request->validate(
+            [
+                'edit_name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('categories','name')->ignore($id)->whereNull('deleted_at')
+                ],
+                'keep_type' => 'required|string|max:255'
+            ],
+            ['required' => 'This field is required.']
         );
 
         $editZone = Category::find($id);
-        $editZone->update(['name' => $validatedData['edit_name']]);
+        
+        $editZone->update([
+            'name' => $validatedData['edit_name'],
+            'keep_type' => $validatedData['keep_type']
+        ]);
 
         activity()->useLog('edit-category-name')
                     ->performedOn($editZone)

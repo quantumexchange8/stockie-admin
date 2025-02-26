@@ -17,6 +17,7 @@ class Category extends Model
 
     protected $fillable = [
         'name',
+        'keep_type',
     ];
 
     public function getActivitylogOptions(): LogOptions

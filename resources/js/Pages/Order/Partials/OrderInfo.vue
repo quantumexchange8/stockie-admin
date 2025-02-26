@@ -593,12 +593,13 @@ watch(order.value, () => {
                         <TimesIcon class="size-4 text-primary-500 hover:text-primary-600 cursor-pointer" @click="showRemoveRewardForm"/>
                     </div>
                 </div>
-                <div class="flex flex-col items-center self-stretch gap-3">
-                    <div class="flex items-start self-stretch gap-3">
+                <div class="flex flex-col items-center self-stretch gap-3 w-full">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 items-start self-stretch gap-3">
                         <Button
                             type="button"
                             variant="tertiary"
                             size="lg"
+                            class="col-span-1"
                             :disabled="hasServedItem || hasPreviousPending"
                             @click="showCancelOrderForm"
                         >
@@ -607,6 +608,7 @@ watch(order.value, () => {
                         <Button
                             size="lg"
                             variant="tertiary"
+                            class="col-span-1"
                             :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0"
                             @click="form.action_type = 'clear'"
                         >
@@ -616,6 +618,7 @@ watch(order.value, () => {
                     <Button
                         size="lg"
                         :disabled="!isOrderCompleted"
+                        class="w-full"
                         @click="form.action_type = 'complete'"
                     >
                         Make Payment

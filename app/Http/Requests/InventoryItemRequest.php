@@ -25,7 +25,7 @@ class InventoryItemRequest extends FormRequest
         $rules = [
             'item_name' => 'required|string|max:255',
             'item_cat_id' => 'required|integer',
-            'stock_qty' => 'required|decimal:0,2|min:0',
+            'stock_qty' => 'required|decimal:0,2',
             'low_stock_qty' => 'required|integer|min:0',
             'status' => 'required|string|max:255',
             'keep' => 'required|string|max:255',

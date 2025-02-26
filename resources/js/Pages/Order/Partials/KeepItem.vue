@@ -222,7 +222,9 @@ const addItemToList = (item) => {
                 order_item_subitem_id: subItem.id,
                 // customer_id: subItem.id,
                 type: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward'
-                        ? 'qty' 
+                        ? item.product.category.keep_type !== 'cm'
+                            ? 'qty' 
+                            : 'cm'
                         : parseFloat(item.keep_item.oldest_keep_history.qty) > parseFloat(item.keep_item.oldest_keep_history.cm) 
                             ? 'qty'
                             : 'cm',
@@ -232,12 +234,15 @@ const addItemToList = (item) => {
                 //             ? (subItem.item_qty * item.item_qty) - getTotalKeptQuantity(item)
                 //             : item.keep_item.oldest_keep_history.cm,
                 totalKept: getTotalKeptQuantity(item),
-                amount: subItem.product_item.inventory_item.keep === 'Active' ?
-                        item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
-                        ? (subItem.item_qty * item.item_qty) - getKeptQuantity(subItem) 
-                        : parseFloat(item.keep_item.oldest_keep_history.qty) > parseFloat(item.keep_item.oldest_keep_history.cm) 
-                            ? (subItem.item_qty * item.item_qty) - getTotalKeptQuantity(item)
-                            : item.keep_item.oldest_keep_history.cm : 0,
+                amount: subItem.product_item.inventory_item.keep === 'Active' 
+                        ? item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
+                            ? item.product.category.keep_type !== 'cm'
+                                ? (subItem.item_qty * item.item_qty) - getKeptQuantity(subItem) 
+                                : "0"
+                            : parseFloat(item.keep_item.oldest_keep_history.qty) > parseFloat(item.keep_item.oldest_keep_history.cm) 
+                                ? (subItem.item_qty * item.item_qty) - getTotalKeptQuantity(item)
+                                : item.keep_item.oldest_keep_history.cm 
+                        : 0,
                 remark: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.remark ? item.keep_item.remark : '',
                 expiration: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? false : item.keep_item.expired_from ? true : false,
                 expired_period: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? 0 : '',
@@ -669,7 +674,7 @@ onMounted(() => {
                                                     <RadioButton
                                                         :optionArr="keepTypes"
                                                         :checked="form.items.find(i => i.order_item_subitem_id === sub_item.id).type"
-                                                        :disabled="totalSubItemQty(order_item, sub_item) === getKeptQuantity(sub_item) || order_item.type === 'Keep'"
+                                                        :disabled="totalSubItemQty(order_item, sub_item) === getKeptQuantity(sub_item) || order_item.type === 'Keep' || order_item.product.category.keep_type !== 'all'"
                                                         v-model:checked="form.items.find(i => i.order_item_subitem_id === sub_item.id).type"
                                                         @onChange="updateKeepAmount(form.items.find(i => i.order_item_subitem_id === sub_item.id), $event)"
                                                     />

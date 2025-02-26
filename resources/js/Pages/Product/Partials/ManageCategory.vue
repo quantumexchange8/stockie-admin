@@ -8,6 +8,8 @@ import Modal from '@/Components/Modal.vue';
 import { useCustomToast } from "@/Composables";
 import OverlayPanel from "@/Components/OverlayPanel.vue";
 import ReassignedProductCategory from "./ReassignedProductCategory.vue";
+import Dropdown from "@/Components/Dropdown.vue";
+import Tag from "@/Components/Tag.vue";
 
 const props = defineProps({
     categoryArr: {
@@ -32,11 +34,17 @@ const reassignCategoryFormIsOpen = ref(false);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isAfterAction = ref(false);
+const keepTypesArray = ref([
+    { text: 'Keep in quantity or cm', value: 'all' },
+    { text: 'Keep in quantity', value: 'qty' },
+    { text: 'Keep in cm', value: 'cm' }
+]);
 
 const form = useForm({
     name: "",
     edit_name: "",
     id: "",
+    keep_type: "",
 });
 
 const newCategories = useForm({
@@ -46,7 +54,11 @@ const newCategories = useForm({
 const addCategory = () => {
     isEditing.value = false;
     newCategoriesCounter.value++;
-    newCategories.categories.push({name: '', index: newCategoriesCounter.value})
+    newCategories.categories.push({
+        name: '', 
+        index: newCategoriesCounter.value,
+        keep_type: '',
+    })
     
     //when clicked, auto focus the latest added input
     nextTick(() => {
@@ -60,11 +72,12 @@ const addCategory = () => {
 const removeAddCategory = (id) => { 
     newCategories.categories = id !== 'clear' ? newCategories.categories.filter(category => category.index !== id) : []; 
     newCategoriesCounter.value = id !== 'clear' ? newCategoriesCounter.value - 1 : 0;
+    newCategories.clearErrors();
 }
 
 const submit = async () => {
     //only submit if its edited, else just return default state
-    if(isEdited.value){
+    // if(isEdited.value){
         if(isEditing.value){
             form.processing = true;
 
@@ -76,33 +89,18 @@ const submit = async () => {
                 setTimeout(() => {
                     showMessage({
                         severity: 'success',
-                        summary: 'Category name has been edited successfully.'
+                        summary: 'Category has been edited successfully.'
                     });
                 }, 200);
 
                 emit('update:categories', data);
                 emit('isDirty', false);
             } catch (error) {
-                console.error(error);
+                form.setError(error.response.data.errors);
             } finally {
                 form.processing = false;
             }
 
-            // form.post(route('products.category.update', form.id), {
-            //     preserveScroll: true,
-            //     preserveState: true,
-            //     onSuccess: () => {
-            //         isEditing.value = false;
-            //         form.reset();
-            //         setTimeout(() => {
-            //             showMessage({
-            //                 severity: 'success',
-            //                 summary: 'Category name has been edited successfully.'
-            //             });
-            //         }, 200);
-            //         emit('update:categories', );
-            //     }
-            // })
         } else {
             newCategories.processing = true;
 
@@ -117,31 +115,30 @@ const submit = async () => {
                     });
                 }, 200);
 
+                newCategoriesCounter.value = 0;
+                newCategories.reset();
+
                 emit('update:categories', data);
                 emit('isDirty', false);
             } catch (error) {
-                console.error(error);
+                newCategories.setError(error.response.data.errors);
             } finally {
                 newCategories.processing = false;
             }
 
-            // newCategories.post(route("products.category.store"), {
-            //     preserveScroll: true,
-            //     preserveState: 'errors',
-            //     onSuccess: () => {
-            //         form.reset();
-            //         emit('close', 'leave');
-            //         showMessage({
-            //             severity: 'success',
-            //             summary: 'Category has been added successfully.'
-            //         });
-            //     }
-            // });
         }
-    } else {
-        isEditing.value = false;
-    }
+    // } else {
+    //     isEditing.value = false;
+    //     emit('isDirty', false);
+    // }
 };
+
+const cancelEditing = () => {
+    isEditing.value = false;
+    form.reset();
+    form.clearErrors();
+    emit('isDirty', false);
+}
 
 const handleDefaultClick = (event) => {
     event.stopPropagation();  
@@ -153,7 +150,10 @@ const startEditing = (categoryArr) => {
         isEditing.value = true;
         form.edit_name = categoryArr.text;
         form.id = categoryArr.value;
+        form.keep_type = categoryArr.keep_type;
         currentCategoryId.value = categoryArr.value;
+        
+        emit('isDirty', true);
     
         nextTick(() => {
             const inputRefName = `categories${categoryArr.value}`;
@@ -203,22 +203,34 @@ const updateCategories = (event) => {
     emit('update:categories', event);
 };
 
+const getKeepTypeText = (keepType) => {
+    switch (keepType) {
+        case 'all': return 'Keep in quantity or cm';
+        case 'qty': return 'Keep in quantity';
+        case 'cm': return 'Keep in cm';
+    }
+}
+
 watch(() => props.categoryArr, (newValue) => {
-    categories.value = newValue ? newValue : {};
+    categories.value = newValue ? newValue.slice(1) : {};
 }, { immediate: true });
 
 watch(() => form.edit_name, (newVal) => {
     isEdited.value = newVal !== initialCategoryName.value; 
 }, { immediate: true });
 
-watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
-    emit('isDirty', newFormValue.isDirty ?? newIsEdited);
+watch(newCategoriesCounter, (newVal) => {
+    emit('isDirty', newVal);
+});
+
+watch(isEditing, (newVal) => {
+    emit('isDirty', newVal);
 });
 
 </script>
 
 <template>
-    <!-- <form novalidate spellcheck="false" @submit.prevent="submit"> -->
+    <form novalidate @submit.prevent="submit">
         <div class="max-h-[calc(100dvh-18rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <div class="w-full flex flex-col ">
                 <div class="flex flex-col gap-[16px]">
@@ -240,7 +252,10 @@ watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
                                         stroke-linecap="round"
                                         stroke-linejoin="round" />
                                 </svg>
-                                <span class="w-full" @click="startEditing(categoryArr)">{{ categoryArr.text }}</span>
+                                <span class="w-full" @click="startEditing(categoryArr)">
+                                    {{ categoryArr.text }}
+                                    <Tag :value="getKeepTypeText(categoryArr.keep_type)"/>
+                                </span>
                             </div>
                             <div>
                                 <DeleteIcon 
@@ -251,7 +266,7 @@ watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
                         </div>
                         <template v-if="isEditing && currentCategoryId === categoryArr.value">
                             <TextInput
-                                :errorMessage="form.errors.edit_name"
+                                :errorMessage="form.errors && form.errors.edit_name ? form.errors.edit_name[0] : ''"
                                 :id="'category'"
                                 input-name="edit_zone_name"
                                 inputId="edit_name"
@@ -259,25 +274,68 @@ watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
                                 :ref="el => (inputRefs[`categories${categoryArr.value}`] = el)"
                                 @keydown.enter.prevent.stop="submit()"
                             />
+                            <Dropdown
+                                :inputName="'keep_type'"
+                                :inputArray="keepTypesArray"
+                                :dataValue="form.keep_type"
+                                :errorMessage="form.errors && form.errors.keep_type ? form.errors.keep_type[0] : ''"
+                                v-model="form.keep_type"
+                            />
+                            <Button
+                                :type="'button'"
+                                :variant="'tertiary'" 
+                                :size="'lg'" 
+                                :disabled="newCategories.processing"
+                                @click="cancelEditing"
+                                class="!size-fit"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                :variant="'primary'" 
+                                :size="'lg'" 
+                                :disabled="newCategories.processing"
+                                class="!size-fit"
+                            >
+                                Save
+                            </Button>
                         </template>
                     </div>
 
                     <!-- new categories -->
-                    <div v-if="newCategories.categories.length" v-for="categories in newCategories.categories" class="flex w-full px-3 gap-3 justify-center items-center">
+                    <div v-if="newCategories.categories.length" v-for="categories in newCategories.categories" class="flex w-full px-3 gap-3 justify-center items-start">
                         <TextInput 
                             :placeholder="'eg: Beer'" 
                             inputId="name" 
                             type="'text'" 
                             v-model="categories.name"
                             :ref="el => (inputRefs[`categories${categories.index}`] = el)" 
-                            :errorMessage="newCategories.errors ? newCategories.errors['categories.' + categories.index + '.name'] : null"
+                            :errorMessage="newCategories.errors && newCategories.errors['categories.' + categories.index + '.name'] ? newCategories.errors['categories.' + categories.index + '.name'][0] : ''"
                         />
-                        <div class="size-6">
-                            <DeleteIcon 
-                                class="w-6 h-6 text-primary-600 hover:text-primary-700 cursor-pointer" 
-                                @click="removeAddCategory(categories.index)" 
-                            />
-                        </div>
+                        <Dropdown
+                            :inputName="'keep_type'"
+                            :inputArray="keepTypesArray"
+                            :errorMessage="newCategories.errors && newCategories.errors['categories.' + categories.index + '.keep_type'] ? newCategories.errors['categories.' + categories.index + '.keep_type'][0] : ''"
+                            v-model="categories.keep_type"
+                        />
+                        <Button
+                            :type="'button'"
+                            :variant="'tertiary'" 
+                            :size="'lg'" 
+                            :disabled="newCategories.processing"
+                            @click="removeAddCategory(categories.index)"
+                            class="!size-fit"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            :variant="'primary'" 
+                            :size="'lg'" 
+                            :disabled="newCategories.processing"
+                            class="!size-fit"
+                        >
+                            Add
+                        </Button>
                     </div>
 
                     <!-- buttons -->
@@ -288,8 +346,7 @@ watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
                             :size="'lg'" 
                             :iconPosition="'left'"
                             :class="{ 'opacity-25': newCategories.processing }"
-                            :disabled="newCategories.processing"
-                            v-if="!isEditing"
+                            :disabled="newCategories.processing || newCategories.categories.length > 0 || isEditing"
                             @click="addCategory"
                         >
                             <template #icon>
@@ -297,35 +354,11 @@ watch([newCategories, isEdited], ([newFormValue, newIsEdited]) => {
                             </template>
                             New Category
                         </Button>
-
-                        <Button
-                            :type="'submit'"
-                            :variant="'primary'" 
-                            :size="'lg'" 
-                            :class="{ 'opacity-25': form.processing }"
-                            :disabled="form.processing"
-                            v-if="isEditing"
-                            @click="submit()"
-                        >
-                            {{ isEdited ? 'Save changes' : 'Discard' }}
-                        </Button>
-
-                        <Button
-                            :type="'button'"
-                            :variant="'primary'" 
-                            :size="'lg'" 
-                            :class="{ 'opacity-25': newCategories.processing }"
-                            :disabled="newCategories.processing"
-                            v-if="newCategories.categories.length"
-                            @click="submit()"
-                        >
-                            Add Category
-                        </Button>
                     </div>
                 </div>
             </div>
         </div>
-    <!-- </form> -->
+    </form>
 
     <Modal 
         :title="'Reassign Category'"

@@ -223,11 +223,14 @@ const deleteKeptItem = async () => {
 }
 
 const formatKeepItems = (keepItems) => {
-    return keepItems.map((item) => {
-        item.qty = parseFloat(item.qty);
-        item.cm = parseFloat(item.cm);
-        return item;
-    }).sort((a, b) => dayjs(b.created_at).diff(dayjs(a.created_at)));
+    return keepItems
+            .map((item) => {
+                item.qty = parseFloat(item.qty);
+                item.cm = parseFloat(item.cm);
+                return item;
+            })
+            .sort((a, b) => dayjs(b.created_at).diff(dayjs(a.created_at)))
+            .filter((item) => ((item.qty == 0 && item.cm > 0) || (item.qty > 0 && item.cm == 0)) && item.status === 'Keep');
 };
 
 const formatPoints = (points) => {
@@ -315,7 +318,7 @@ watch((editForm), (newValue) => {
             <!-- keep item -->
             <div class="w-full flex flex-col items-center gap-3 self-stretch">
                 <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
-                    <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Keep Item ({{ customer.keep_items.length }})</span>
+                    <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Keep Item ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
                     <div class="flex items-center gap-2 cursor-pointer" @click="openHistoryDrawer(customer)">
                         <HistoryIcon class="w-4 h-4" />
                         <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">View History</div>

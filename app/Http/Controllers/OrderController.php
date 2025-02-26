@@ -1219,7 +1219,7 @@ class OrderController extends Controller
         // If there are any item validation errors, return them
         if (!empty($allItemErrors)) {
             // return redirect()->back()->withErrors($allItemErrors);
-            return response()->json(['errors' => $allItemErrors], 422);
+            return response()->json(['errors' => $allItemErrors], 400);
         }
 
         if (count($validatedItems) > 0) {
@@ -2530,7 +2530,7 @@ class OrderController extends Controller
                                         'table',
                                         'order.payment.customer',
                                         'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
-                                        'order.orderItems.product',
+                                        'order.orderItems.product.category:id,keep_type',
                                         'order.orderItems.subItems.productItem.inventoryItem',
                                         'order.orderItems.subItems.keepItems.oldestKeepHistory' => function ($query) {
                                             $query->where('status', 'Keep');
