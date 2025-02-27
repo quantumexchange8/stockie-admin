@@ -90,7 +90,7 @@ class LoyaltyController extends Controller
                                 'productItems:id,product_id,inventory_item_id,qty',
                                 'productItems.inventoryItem:id,stock_qty'
                             ])
-                            ->where([['availability', 'Available'], ['status', '!=', 'Out of stock']])
+                            // ->where([['availability', 'Available'], ['status', '!=', 'Out of stock']])
                             ->orderBy('id')
                             ->get()
                             ->map(function ($product) {

@@ -228,17 +228,18 @@ export function usePhoneUtils() {
     function transformPhone(phone) {
         if (!phone) return phone; 
 
-        // Remove whitespace and underscore, then add '+60' if it doesn't already exist
-        let formattedPhone = phone.startsWith('+60') 
-            ? phone.replace(/[\s_]+/g, '') 
-            : `+60${phone.replace(/[\s_]+/g, '')}`;
+        // Remove whitespace and underscore
+        let formattedPhone = phone.replace(/[\s_|-]+/g, '')
+        // let formattedPhone = phone.startsWith('+60') 
+        //     ? phone.replace(/[\s_]+/g, '') 
+        //     : `+60${phone.replace(/[\s_]+/g, '')}`;
 
         // Determine the maximum allowed length based on phone number patterns
-        const maxLength = formattedPhone.startsWith('+6011') 
-            ? 14 // +60 11-xxxx xxxx (mobile)
-            : formattedPhone.startsWith('+601') || formattedPhone.startsWith('+603') 
-                ? 13 // +60 1x-xxx xxxx (mobile) or +60 3-xxxx xxxx (landline)
-                : 12; // +60 8x-xxx xxx (landline) or default
+        const maxLength = formattedPhone.startsWith('11') 
+            ? 10 // +60 11-xxxx xxxx (mobile)
+            : formattedPhone.startsWith('1') || formattedPhone.startsWith('3') 
+                ? 9 // +60 1x-xxx xxxx (mobile) or +60 3-xxxx xxxx (landline)
+                : 8; // +60 8x-xxx xxx (landline) or default
 
         return formattedPhone.slice(0, maxLength);
     };

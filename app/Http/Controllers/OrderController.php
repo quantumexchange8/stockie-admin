@@ -1659,16 +1659,19 @@ class OrderController extends Controller
 
         if ($validatedData) {
             $keepItem = KeepItem::with(['orderItemSubitem:id,order_item_id,product_item_id', 
-                                                    'orderItemSubitem.productItem:id,product_id',
-                                                    'orderItemSubitem.productItem.inventoryItem:id,item_name', 
+                                                    'orderItemSubitem.productItem:id,product_id,inventory_item_id',
+                                                    'orderItemSubitem.productItem.inventoryItem', 
                                                     'orderItemSubitem.orderItem:id'])
                                 ->find($id);
+
+            $productItem = $keepItem->orderItemSubitem->productItem;
+            $inventoryItem = $productItem->inventoryItem;
 
             $newOrderItem = OrderItem::create([
                 'order_id' => $request->order_id,
                 'user_id' => $request->user_id,
                 'type' => 'Keep',
-                'product_id' => $keepItem->orderItemSubitem->productItem->product_id,
+                'product_id' => $productItem->product_id,
                 'keep_item_id' => $id,
                 'item_qty' => $request->return_qty,
                 'amount_before_discount' => 0.00,
@@ -1680,7 +1683,7 @@ class OrderController extends Controller
             
             OrderItemSubitem::create([
                 'order_item_id' => $newOrderItem->id,
-                'product_item_id' => $keepItem->orderItemSubitem->productItem->id,
+                'product_item_id' => $productItem->id,
                 'item_qty' => 1,
                 'serve_qty' => $request->return_qty,
             ]);
@@ -1691,6 +1694,7 @@ class OrderController extends Controller
                 'qty' => $request->type === 'qty' ? round($request->return_qty, 2) : 0.00,
                 'cm' => $request->type === 'cm' ? number_format((float) $keepItem->cm, 2, '.', '') : '0.00',
                 'keep_date' => $keepItem->created_at,
+                'kept_balance' => $request->type === 'qty' ? $inventoryItem->current_kept_amt - $request->return_qty : $inventoryItem->current_kept_amt,
                 'status' => 'Served',
             ]);
 
@@ -1708,6 +1712,9 @@ class OrderController extends Controller
                         ->log(":properties.item_name is returned to :properties.customer_name.");
 
             if ($request->type === 'qty') {
+                $inventoryItem->decrement('total_kept', $request->return_qty);
+                $inventoryItem->decrement('current_kept_amt', $request->return_qty);
+
                 $keepItem->update([
                     'qty' => ($keepItem->qty - $request->return_qty) > 0 ? $keepItem->qty - $request->return_qty : 0.00,
                     'status' => ($keepItem->qty - $request->return_qty) > 0 ? 'Keep' : 'Returned'
@@ -1740,15 +1747,15 @@ class OrderController extends Controller
                             ])
                             ->find($request->customer_id);
 
-        foreach ($customer->keepItems as $key => $keepItem) {
-            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-            unset($keepItem->orderItemSubitem);
+        foreach ($customer->keepItems as $key => $keptItem) {
+            $keptItem->item_name = $keptItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            unset($keptItem->orderItemSubitem);
 
-            $keepItem->image = $keepItem->orderItemSubitem->productItem 
-                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+            $keptItem->image = $keptItem->orderItemSubitem->productItem 
+                    ? $keptItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                    : $keptItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
 
-            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+            $keptItem->waiter->image = $keptItem->waiter->getFirstMediaUrl('user');
         }
 
         return response()->json($customer->keepItems);

@@ -28,15 +28,18 @@ class InventoryController extends Controller
                                                 iventory_items.*, 
                                                 SUM(
                                                     CASE 
-                                                        WHEN keep_items.qty > 0 AND COALESCE(keep_items.cm, 0) = 0 THEN keep_items.qty
-                                                        WHEN COALESCE(keep_items.qty, 0) = 0 AND keep_items.cm > 0 THEN 1
+                                                        WHEN keep_items.qty > 0 AND keep_items.cm = 0 THEN keep_items.qty
+                                                        WHEN keep_items.qty = 0 AND keep_items.cm > 0 THEN 1
                                                         ELSE 0 
                                                     END
                                                 ) as total_keep_qty
                                             ')
                                             ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
                                             ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
-                                            ->leftJoin('keep_items', 'order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                            ->leftJoin('keep_items', function ($join) {
+                                                $join->on('order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                                     ->where('keep_items.status', 'Keep');
+                                            })
                                             ->groupBy('iventory_items.id');
                                     },
                                     'inventoryItems.itemCategory:id,name',
@@ -47,6 +50,8 @@ class InventoryController extends Controller
                                 ->orderBy('id')
                                 ->get()
                                 ->map(function ($group) {
+                                    $group->inventory_image = $group->getFirstMediaUrl('inventory');
+
                                     $group->inventoryItems->each(function ($item) {
                                         // Collect unique product and assign to $item->products
                                         $item->products = $item->productItems
@@ -66,10 +71,6 @@ class InventoryController extends Controller
 
                                     return $group;
                                 });
-
-        $inventories->each(function($inventory){
-            $inventory->inventory_image = $inventory->getFirstMediaUrl('inventory');
-        });
 
         $endDate = Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->addDay()->format('Y-m-d');
         $startDate = Carbon::now()->subDays(30)->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
@@ -264,10 +265,20 @@ class InventoryController extends Controller
 
         $inventories = Iventory::with([
                                     'inventoryItems' => function ($query) {
-                                        $query->selectRaw('iventory_items.*, SUM(keep_items.qty) as total_keep_qty')
+                                        $query->selectRaw('
+                                                    iventory_items.*, 
+                                                    SUM(
+                                                        CASE 
+                                                            WHEN keep_items.qty > 0 AND COALESCE(keep_items.cm, 0) = 0 THEN keep_items.qty
+                                                            WHEN COALESCE(keep_items.qty, 0) = 0 AND keep_items.cm > 0 THEN 1
+                                                            ELSE 0 
+                                                        END
+                                                    ) as total_keep_qty
+                                                ')
                                                 ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
                                                 ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
                                                 ->leftJoin('keep_items', 'order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                                ->where('keep_items.status', 'Keep')
                                                 ->groupBy('iventory_items.id');
                                     },
                                     'inventoryItems.itemCategory:id,name',
@@ -413,15 +424,15 @@ class InventoryController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * Get inventory items.
-     */
-    public function getInventoryItems(string $id)
-    {
-        $data = Iventory::with('inventoryItems')->find($id);
+    // /**
+    //  * Get inventory items.
+    //  */
+    // public function getInventoryItems(string $id)
+    // {
+    //     $data = Iventory::with('inventoryItems')->find($id);
 
-        return response()->json($data);
-    }
+    //     return response()->json($data);
+    // }
 
     /**
      * Update inventory item's stock.
@@ -465,10 +476,14 @@ class InventoryController extends Controller
                             ->log("$existingItem->item_name is replenished.");
 
                 if ($value['add_stock_qty'] > 0) {
-                    $toBeReplenished = $value['add_stock_qty'] - ($value['stock_qty'] + $value['add_stock_qty']);
+                    $toBeReplenished = $oldStock < 0;
 
-                    if ($toBeReplenished > 0) {
-                        $existingItem->increment('current_kept_amt', $toBeReplenished);
+                    if ($toBeReplenished) {
+                        $replenishKeepAmt = ($existingItem->current_kept_amt + $value['add_stock_qty']) > $existingItem->total_kept 
+                                ? $existingItem->total_kept - $existingItem->current_kept_amt
+                                : $value['add_stock_qty'];
+
+                        $existingItem->increment('current_kept_amt', $replenishKeepAmt);
                         $existingItem->refresh();
                     }
                     
@@ -944,41 +959,73 @@ class InventoryController extends Controller
 
     public function getStockFlowDetail(Request $request)
     {
+        $selectedtem = $request->selectedItem;
+
         $keepHistories = KeepHistory::with([
                                         'keepItem.orderItemSubitem.productItem.inventoryItem' => fn ($query) => (
                                             $query->where([
-                                                ['id', $request->inventory_item_id],
-                                                ['item_name', $request->item_name],
+                                                ['id', $selectedtem['id']],
+                                                ['item_name', $selectedtem['item_name']],
                                             ])
                                         ),
                                         'keepItem.customer:id,full_name', 
                                         'keepItem.waiter:id,full_name'
                                     ])
-                                    ->where('status', 'Keep')
+                                    ->whereIn('status', ['Keep', 'Served', 'Returned'])
                                     ->whereColumn('qty', '>', 'cm')
                                     ->orderBy('created_at', 'desc')
-                                    ->get();
-        
+                                    ->get()
+                                    ->map(function ($record) {
+                                        return [
+                                            'type' => 'keep',
+                                            'keep_item' => $record->keepItem,
+                                            'date' => $record->created_at,
+                                            'kept' => $record->status === 'Keep' ? $record->qty : 0,
+                                            'reallocated' => in_array($record->status, ['Served', 'Returned']) ? $record->qty * -1 : 0,
+                                            'kept_balance' => $record->kept_balance
+                                        ];
+                                    });
+
         $stockHistories = StockHistory::with([
                                             'inventory' => fn ($query) => (
-                                                $query->where('id', $request->inventory_id)
+                                                $query->where('id', $selectedtem['inventory_id'])
+                                                        ->with(['inventoryItems' => fn ($query) => (
+                                                            $query->where('id', $selectedtem['id'])
+                                                        )])
                                                         ->select('id', 'name')
-                                            ), 
-                                            'inventory.inventoryItems' => fn ($query) => (
-                                                $query->where([
-                                                    ['id', $request->inventory_item_id],
-                                                    ['item_name', $request->item_name],
-                                                ])
-                                            ), 
+                                            )
                                         ])
                                         ->orderBy('created_at', 'desc')
                                         ->get();
 
+        $stockReallocatedHistories = $stockHistories->filter(fn ($record) => 
+                                                        $record->old_stock < 0 || $record->current_stock < 0
+                                                    )
+                                                    ->map(function ($record) {
+                                                        $inventoryItem = $record->inventory->inventoryItems->first();
+                                                        $replenishedKeepStockQty = $record->old_stock + $record->in > 0 
+                                                                ? $record->in - ($record->old_stock + $record->in)
+                                                                : $record->in;
+                                                        $toBeReallocatedQty = $record->old_stock < $record->current_stock ? $replenishedKeepStockQty : $record->out * -1;
+
+                                                        return [
+                                                            'type' => 'stock',
+                                                            'inventory_id' => $record->inventory_id,
+                                                            'inventory_item' => $inventoryItem->item_name,
+                                                            'date' => $record->created_at,
+                                                            'kept' => 0,
+                                                            'reallocated' => $toBeReallocatedQty,
+                                                            'kept_balance' => $record->kept_balance
+                                                        ];
+                                                    });
+
+        // Merge & sort by date for the histories of kept item flow
+        $mergedHistories = $keepHistories->concat($stockReallocatedHistories)->sortByDesc('date');
+
         $data = [
-            'keepHistories' => $keepHistories,
+            'mergedHistories' => $mergedHistories->values(),
             'stockHistories' => $stockHistories
         ];
-
 
         return response()->json($data);
     }

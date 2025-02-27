@@ -111,7 +111,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/inventory/stock_history', [InventoryController::class, 'viewStockHistories'])->name('inventory.viewStockHistories');
         // Route::get('/inventory/getDropdownValue', [InventoryController::class, 'getDropdownValue']);
         Route::get('/inventory/getInventories', [InventoryController::class, 'getInventories']);
-        Route::get('/inventory/getInventoryItems/{id}', [InventoryController::class, 'getInventoryItems']);
+        // Route::get('/inventory/getInventoryItems/{id}', [InventoryController::class, 'getInventoryItems']);
         Route::get('/inventory/getAllStockHistory', [InventoryController::class, 'getAllStockHistory']);
         Route::post('/inventory/getAllKeepHistory', [InventoryController::class, 'getAllKeepHistory']);
         Route::get('/inventory/getLatestInventory', [InventoryController::class, 'getLatestInventory']);

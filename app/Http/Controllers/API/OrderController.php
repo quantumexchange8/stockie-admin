@@ -841,7 +841,7 @@ class OrderController extends Controller
                 }
             }
 
-            $order = Order::with(['orderTable.table', 'payment', 'orderItems'])
+            $order = Order::with(['orderTable.table', 'orderItems'])
                             ->find($addNewOrder ? $newOrder->id : $request->order_id);
 
             if ($order) {
@@ -1011,7 +1011,6 @@ class OrderController extends Controller
     {
         $orderTables = OrderTable::with([
                                         'table',
-                                        'order.payment.customer',
                                         'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
                                         'order.orderItems.product',
                                         'order.orderItems.subItems.productItem.inventoryItem',
@@ -1070,7 +1069,7 @@ class OrderController extends Controller
 
     public function getOrderDetails(Request $request) 
     {
-        $order = Order::with(['orderTable.table', 'payment', 'orderItems', 'voucher'])
+        $order = Order::with(['orderTable.table', 'orderItems', 'voucher'])
                         ->find($request->order_id);
 
         $currentTable = $this->getPendingServeItemsQuery($request->table_id)->get();
@@ -1319,7 +1318,6 @@ class OrderController extends Controller
 
             $orderTables = OrderTable::with([
                                         'table',
-                                        'order.payment.customer',
                                         'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
                                         'order.orderItems.product',
                                         'order.orderItems.subItems.productItem.inventoryItem',

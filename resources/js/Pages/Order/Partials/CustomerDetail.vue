@@ -340,7 +340,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
         </template>
     </RightDrawer>
 
-    <div class="w-full flex flex-col gap-6 items-start rounded-[5px] py-4 pr-1 max-h-[calc(100dvh-23rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <div class="w-full flex flex-col gap-6 items-start rounded-[5px] py-4 pr-1 max-h-[calc(100dvh-28rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="w-full flex flex-col items-center gap-3 pt-6">
             <img 
                 :src="customer && customer.image ? customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 

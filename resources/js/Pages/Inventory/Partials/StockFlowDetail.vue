@@ -29,7 +29,7 @@ const mergedTables = ref([]);
 const isConfirmShow = ref(false);
 const isSelectedCustomer = ref();
 const selectedTable = ref('');
-const keepHistories = ref();
+const mergedHistories = ref();
 const stockHistories = ref();
 const checkedIn = ref([]);
 const isTransferItemModalOpen = ref(false);
@@ -42,9 +42,11 @@ const form = useForm({
     selectedItem: props.selectedItem,
 });
 
-const filterKeepHistories = (records) => {
+const filterMergedHistories = (records) => {
     return records.filter((record) => 
-        record.keep_item.order_item_subitem.product_item.inventory_item_id === props.selectedItem.id
+        record.type === 'keep' 
+            ? record.keep_item.order_item_subitem.product_item.inventory_item_id === props.selectedItem.id
+            : record.inventory_id === props.selectedItem.inventory_id && record.inventory_item === props.selectedItem.item_name
     );
 };
 
@@ -57,8 +59,8 @@ const filterStockHistories = (records) => {
 const getStockFlowDetail = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get('/inventory/inventory/getStockFlowDetail', form);
-        keepHistories.value = filterKeepHistories(response.data.keepHistories);
+        const response = await axios.get(route('getStockFlowDetail', form));
+        mergedHistories.value = filterMergedHistories(response.data.mergedHistories);
         stockHistories.value = filterStockHistories(response.data.stockHistories);
 
     } catch (error) {
@@ -68,13 +70,13 @@ const getStockFlowDetail = async () => {
     }
 };
 
-const keptItemFlowRecords = computed(() => {
-    let filteredStockHistories = stockHistories.value.filter((record) => record.current_stock < 0 || (record.old_stock < 0 && record.current_stock > 0));
+// const keptItemFlowRecords = computed(() => {
+//     let filteredStockHistories = stockHistories.value.filter((record) => record.current_stock < 0 || (record.old_stock < 0 && record.current_stock > 0));
 
-    // let mergedRecords = [...filteredStockHistories, ...keepHistories.value];
+    // let mergedRecords = [...filteredStockHistories, ...mergedHistories.value];
 
-    return keepHistories.value;
-});
+//     return mergedHistories.value;
+// });
 
 onMounted(() => {
     getStockFlowDetail();
@@ -90,22 +92,22 @@ onMounted(() => {
                     <table class="w-full border-spacing-3 border-collapse">
                         <thead class="bg-grey-100">
                             <tr>
-                                <th class="w-[46%] py-2 px-3" @click="">
+                                <th class="w-[46%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
                                         Date
                                     </span> 
                                 </th>
-                                <th class="w-[18%] py-2 px-3" @click="">
+                                <th class="w-[18%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
                                         Sold
                                     </span>
                                 </th>
-                                <th class="w-[18%] py-2 px-3" @click="">
+                                <th class="w-[18%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
                                         Replenish
                                     </span>
                                 </th>
-                                <th class="w-[18%] py-2 px-3" @click="">
+                                <th class="w-[18%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
                                         Balance
                                     </span>
@@ -150,22 +152,22 @@ onMounted(() => {
                     <table class="w-full border-spacing-3 border-collapse">
                         <thead class="bg-grey-100">
                             <tr>
-                                <th class="w-[40%] py-2 px-3" @click="">
+                                <th class="w-[40%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
                                         Date
                                     </span> 
                                 </th>
-                                <th class="w-[15%] py-2 px-3" @click="">
+                                <th class="w-[15%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
                                         Kept
                                     </span>
                                 </th>
-                                <th class="w-[20%] py-2 px-3" @click="">
+                                <th class="w-[20%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
                                         Reallocated
                                     </span>
                                 </th>
-                                <th class="w-[25%] py-2 px-3" @click="">
+                                <th class="w-[25%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
                                         Kept Balance
                                     </span>
@@ -173,13 +175,13 @@ onMounted(() => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(record, index) in keptItemFlowRecords" :key="index" class="border-b border-grey-100">
+                            <tr v-for="(record, index) in mergedHistories" :key="index" class="border-b border-grey-100">
                                 <td class="w-[40%]">
                                     <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(record.created_at).format('HH:mm, DD/MM/YYYY') }}</span>
                                 </td>
                                 <td class="w-[15%]">
                                     <div class="flex justify-start items-center gap-3 px-3">
-                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.qty ?? 0 }}</span>
+                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.kept ?? 0 }}</span>
                                     </div>
                                 </td>
                                 <td class="w-[20%]">
@@ -187,11 +189,12 @@ onMounted(() => {
                                         <span 
                                             :class="[
                                                 'text-sm font-medium text-ellipsis overflow-hidden py-4',
-                                                { 'text-grey-900': record.current_stock > 0 },
-                                                { 'text-primary-500': record.current_stock <= 0 }
+                                                { 'text-grey-900': record.reallocated == 0 },
+                                                { 'text-green-500': record.reallocated > 0 },
+                                                { 'text-primary-500': record.reallocated < 0 }
                                             ]"
                                         >
-                                            {{ record.current_stock < 0 ? record.current_stock : (record.old_stock < 0 && record.current_stock > 0) ?  record.old_stock + record.in : 0}}
+                                            {{ record.reallocated <= 0 ? record.reallocated : `+${record.reallocated}` }}
                                         </span>
                                     </div>
                                 </td>

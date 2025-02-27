@@ -9,6 +9,7 @@ import CreateCustomer from '@/Pages/Customer/Partials/CreateCustomer.vue';
 import { useForm } from '@inertiajs/vue3';
 import { FilterMatchMode } from 'primevue/api';
 import { computed, ref, watch } from 'vue';
+import { usePhoneUtils } from '@/Composables/index.js';
 
 const props = defineProps({
     orderId: Number,
@@ -19,6 +20,8 @@ const props = defineProps({
     
 })
 const emit = defineEmits(['closeModal', 'isDirty', 'closeOrderDetails']);
+const { formatPhone } = usePhoneUtils();
+
 const customerList = ref(props.customers);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
@@ -124,7 +127,7 @@ watch(
                             />
                             <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
                                 <span class="text-grey-900 text-base font-bold">{{ customer.full_name }}</span>
-                                <span class="text-grey-500 text-base font-normal">{{ customer.phone }}</span>
+                                <span class="text-grey-500 text-base font-normal">{{ formatPhone(customer.phone) }}</span>
                             </div>
                         </div>
 
