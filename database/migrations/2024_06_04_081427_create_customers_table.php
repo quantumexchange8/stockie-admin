@@ -14,21 +14,21 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('uuid');
-            $table->string('name');
+            $table->string('name')->nullable()->default(NULL);
             $table->string('full_name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('phone')->unique();
             $table->string('password');
             $table->string('ranking')->nullable()->default(NULL);
-            $table->string('role');
+            $table->string('role')->nullable()->default(NULL);
             $table->string('point');
             $table->decimal('total_spending', 13, 2)->default(0.00);
-            $table->string('profile_photo');
+            $table->string('profile_photo')->nullable()->default(NULL);
             $table->string('verification_code')->nullable();
             $table->timestamp('verification_code_expires_at')->nullable();
-            $table->string('first_login');
-            $table->string('status');
+            $table->string('first_login')->nullable()->default(NULL);
+            $table->string('status')->nullable()->default(NULL);
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();

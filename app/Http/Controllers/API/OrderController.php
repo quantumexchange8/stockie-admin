@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CustomerRequest;
 use App\Http\Requests\OrderTableRequest;
 use App\Models\Category;
 use App\Models\ConfigMerchant;
@@ -18,6 +19,7 @@ use App\Models\OrderTable;
 use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\ProductItem;
+use App\Models\Ranking;
 use App\Models\StockHistory;
 use App\Models\Table;
 use App\Models\User;
@@ -31,9 +33,11 @@ use App\Services\RunningNumberService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Random\Randomizer;
 
 class OrderController extends Controller
 {
@@ -1501,5 +1505,72 @@ class OrderController extends Controller
         });
 
         return response()->json($pointHistories);
+    }
+    
+    public function createCustomerFromOrder(Request $request)
+    {
+        try {
+            $existingCustomer = Customer::where('email', $request->email)
+                                        ->orWhere('phone', $request->phone)
+                                        ->first(['id', 'full_name', 'phone']);
+
+            if ($existingCustomer) {
+                $existingCustomer->image = $existingCustomer->getFirstMediaUrl('customer');
+
+                return response()->json([
+                    'status' => 'info',
+                    'title' => "Existing Account Found",
+                    'message' => "We found an account associated with this email address, do you want to check-in this customer account instead?",
+                    'existing_customer' => $existingCustomer
+                ]);
+            }
+
+            $validatedData = $request->validate(
+                [
+                    'full_name' => 'required|string|max:255',
+                    'phone' => 'required|string|max:255',
+                    'email' => 'required|email|unique:customers,email',
+                ], 
+                [
+                    'email.unique' => 'Email has already been taken.',
+                    'email.email' => 'Invalid email.',
+                    'required' => 'This field is required.',
+                    'email' => 'Invalid email',
+                ]
+            );
+
+            $defaultRank = Ranking::where('name', 'Member')->first(['id', 'name']);
+        
+            Customer::create([
+                'uuid' => RunningNumberService::getID('customer'),
+                'full_name' => $validatedData['full_name'],
+                'phone' => $validatedData['phone'],
+                'email' => $validatedData['email'],
+                'password' => Hash::make('testtest'), // new Randomizer()->getBytes(8)
+                'ranking' => $defaultRank->id,
+                'point' => 0,
+                'total_spending' => 0.00,
+                'first_login' => '1',
+            ]);
+
+            // need to send email to customer to show their new account details and password
+
+            return response()->json([
+                'status' => 'succcess',
+                'title' => "Customer's account has been successfully created and checked-in to current table.",
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'title' => 'The given data was invalid.',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception  $e) {
+            return response()->json([
+                'title' => 'Error creating customer.',
+                'errors' => $e
+            ]);
+        };
     }
 }
