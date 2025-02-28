@@ -28,3 +28,8 @@ h1, h2, h3, h4, h5, p {
 .notification-icon:hover {
     transform: rotate(18deg); /* Adjust the angle to match the On Hover Icon's tilt */
 }
+
+.calendar-timeonly_panel {
+
+    z-index: 1112;
+}

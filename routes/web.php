@@ -19,6 +19,7 @@ use App\Http\Controllers\WaiterController;
 use App\Http\Controllers\LoyaltyController;
 use Inertia\Inertia;
 use App\Http\Controllers\ConfigPromotionController;
+use App\Http\Controllers\ConfigShiftSettingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
@@ -172,6 +173,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/configurations/addEntitledEmployees/{id}', [ConfigEmployeeIncProgController::class, 'addEntitledEmployees'])->name('configurations.addEntitledEmployees');
         Route::put('/configurations/deleteEntitled/{id}', [ConfigEmployeeIncProgController::class, 'deleteEntitled'])->name('configuration.deleteEntitled');
         Route::delete('/configurations/deleteAchievement/{id}', [ConfigEmployeeIncProgController::class, 'deleteAchievement'])->name('configurations.deleteAchievement');
+
+        /******* Employee Shift setting ********/
+        Route::get('/configurations/shift-setting', [ConfigShiftSettingController::class, 'shiftSetting'])->name('configurations.shift-setting');
+        Route::get('/getShift', [ConfigShiftSettingController::class, 'getShift'])->name('configurations.getShift');
+
+        Route::post('/create-shift', [ConfigShiftSettingController::class, 'createShift'])->name('configurations.create-shift');
+        
 
         /******* Promotion ********/
         Route::get('/promotions', [ConfigPromotionController::class, 'index'])->name('configurations.promotions.index');

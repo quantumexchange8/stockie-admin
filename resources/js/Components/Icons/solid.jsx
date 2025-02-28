@@ -3082,3 +3082,49 @@ export const ShiftManagementIcon = defineComponent({
         );
     },
 });
+
+const ChevronLeft = () => {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M12.5 15L7.5 10L12.5 5" stroke="#3C4750" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    )
+}
+
+const ChevronRight = () => {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M7.5 15L12.5 10L7.5 5" stroke="#3C4750" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    )
+}
+
+const TimeIcon = () => {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <g clip-path="url(#clip0_8909_43653)">
+                <path d="M9.99935 5.0013V10.0013L13.3327 11.668M18.3327 10.0013C18.3327 14.6037 14.6017 18.3346 9.99935 18.3346C5.39698 18.3346 1.66602 14.6037 1.66602 10.0013C1.66602 5.39893 5.39698 1.66797 9.99935 1.66797C14.6017 1.66797 18.3327 5.39893 18.3327 10.0013Z" stroke="#889BA8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+            <defs>
+                <clipPath id="clip0_8909_43653">
+                <rect width="20" height="20" fill="white"/>
+                </clipPath>
+            </defs>
+        </svg>
+    )
+}
+
+const CheckWhiteIcon = () => {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M16.6673 5L7.50065 14.1667L3.33398 10" stroke="white" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    )
+}
+
+export {
+    ChevronLeft,
+    ChevronRight,
+    TimeIcon,
+    CheckWhiteIcon,
+}
