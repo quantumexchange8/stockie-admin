@@ -185,7 +185,11 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
                 </template>
                 <template #status="row">
                     <Tag
-                        :variant="row.status === 'Order Completed' ? 'green' : 'red'"
+                        :variant="row.status === 'Order Completed' 
+                                ? 'green' 
+                                : row.status === 'Order Cancelled' 
+                                    ? 'red'
+                                    : 'blue'"
                         :value="row.status"
                     />
                 </template>

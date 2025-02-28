@@ -161,7 +161,7 @@ const getItemTypeName = (type) => {
                         <div class="flex flex-col gap-y-6 items-start self-stretch">
                             <div class="flex flex-col gap-y-6 items-start self-stretch">
                                 <div class="flex flex-col gap-y-4 items-start self-stretch">
-                                    <template v-for="row in order.order_items.filter((item) => item.status !== 'Cancelled')">
+                                    <template v-for="row in order.order_items.filter((item) => item.status !== 'Cancelled' && item.item_qty > 0)">
                                         <div class="flex flex-col gap-y-2 self-stretch">
                                             <div class="flex flex-row items-center self-stretch gap-x-3">
                                                 <p class="w-8/12 text-grey-950 text-base font-medium self-stretch"> {{ row.type === 'Normal' ? '' : `(${getItemTypeName(row.type)})`  }} {{ row.product.product_name }}</p>

@@ -53,7 +53,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $zones = Zone::with([
-                            'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled']),
+                            'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']),
                             'tables.orderTables.order',
                             'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty'
                         ])
@@ -625,6 +625,10 @@ class OrderController extends Controller
                                 ])->find($id);
 
         if ($existingOrder) {
+            $isAllKeepType = $existingOrder->orderItems->every(function ($orderItem, int $key) {
+                return $orderItem->type === 'Keep';
+            });
+
             foreach ($existingOrder->orderItems as $item) {
                 if ($item['status'] === 'Pending Serve') {
                     foreach ($item->subItems as $subItem) {
@@ -662,18 +666,18 @@ class OrderController extends Controller
                     }
                 }
 
-                $item->update(['status' => 'Cancelled']);
+                $item->update(['status' => $isAllKeepType ? 'Voided' : 'Cancelled']);
             }
-
-            $existingOrder->update(['status' => 'Order Cancelled']);
+            
+            $existingOrder->update(['status' => $isAllKeepType ? 'Order Voided' : 'Order Cancelled']);
 
             // Update all tables associated with this order
-            $existingOrder->orderTable->each(function ($tab) {
+            $existingOrder->orderTable->each(function ($tab) use ($isAllKeepType) {
                 $tab->table->update([
                     'status' => 'Empty Seat',
                     'order_id' => null
                 ]);
-                $tab->update(['status' => 'Order Cancelled']);
+                $tab->update(['status' => $isAllKeepType ? 'Order Voided' : 'Order Cancelled']);
             });
         }
 
@@ -982,13 +986,13 @@ class OrderController extends Controller
 
         // Ensure `date` condition applies to all `status` filters
         $query->where(function ($query) {
-            $query->where('status', 'Order Cancelled')
-                ->orWhere(function ($subQuery) {
-                    $subQuery->where('status', 'Order Completed')
-                        ->whereHas('payment', function ($paymentQuery) {
-                            $paymentQuery->where('status', 'Successful');
-                        });
-                });
+            $query->whereIn('status', ['Order Cancelled', 'Order Voided'])
+                    ->orWhere(function ($subQuery) {
+                        $subQuery->where('status', 'Order Completed')
+                            ->whereHas('payment', function ($paymentQuery) {
+                                $paymentQuery->where('status', 'Successful');
+                            });
+                    });
         });
 
         $orders = $query->with([
@@ -1231,6 +1235,8 @@ class OrderController extends Controller
                 $totalItemQty = 0;
                 $totalServedQty = 0;
                 $hasServeQty = false;
+                $keepQty = 0;
+                $keepSubItemQty = 0;
 
                 foreach ($orderItem->subItems as $subItemKey => $subItem) {
                     foreach ($validatedItems as $key => $item) {
@@ -1269,11 +1275,15 @@ class OrderController extends Controller
                                             $tempOrderItem->increment('current_kept_amt', $item['amount']);
                                         }
 
+                                        $toBeKept = $reqItem['type'] === 'cm' ? 1 : $item['amount'];
+                                        $keepQty = $toBeKept;
+
+                                        $subItem->update([
+                                            'serve_qty' => $subItem['serve_qty'] > ($subItem['item_qty'] * $orderItem->item_qty - $toBeKept) ? $subItem['serve_qty'] - $toBeKept : $subItem['serve_qty']
+                                            // 'serve_qty' => $reqItem['type'] === 'cm' ? 1 : $toBeServed
+                                        ]);
+
                                     } else {
-                                    //     dd($reqItem['type'] === 'cm' ? round($item['amount'], 2) : 0.00,
-                                    // number_format((float) '8.258', 2, '.', ''));
-                                        // dd($item['expired_from']);
-                                        
                                         $newKeep = KeepItem::create([
                                             'customer_id' => $request->customer_id,
                                             'order_item_subitem_id' => $item['order_item_subitem_id'],
@@ -1320,15 +1330,18 @@ class OrderController extends Controller
 
                                         $tempOrderItem->increment('total_kept', $item['amount']);
                                         $tempOrderItem->increment('current_kept_amt', $item['amount']);
+
+                                        if ($orderItem->status === 'Pending Serve') {
+                                            $toBeServed = ($reqItem['totalKept'] + $item['amount']) - $subItem['serve_qty'];
+                                            
+                                            $subItem->increment('serve_qty', $reqItem['type'] === 'cm' ? 1 : $toBeServed);
+                                        }
                                     }
 
-                                    if ($orderItem->status === 'Pending Serve') {
-                                        $toBeServed = ($reqItem['totalKept'] + $item['amount']) - $subItem['serve_qty'];
-                                        
-                                        $subItem->increment('serve_qty', $reqItem['type'] === 'cm' ? 1 : $toBeServed);
-                                    }
                                     $subItem->save();
                                     $subItem->refresh();
+
+                                    if ($reqItem['keep_id']) ($keepSubItemQty = $subItem['item_qty']);
                                 }
         
                                 $totalItemQty += $subItem['item_qty'] * $orderItem->item_qty;
@@ -1340,7 +1353,19 @@ class OrderController extends Controller
                 }
 
                 if ($hasServeQty) {
-                    $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
+                    if ($keepQty > 0) {
+                        $newOrderItemQty = $orderItem->item_qty - $keepQty;
+
+                        $orderItem->update([
+                            'item_qty' => $keepQty > 0 ? $newOrderItemQty : $orderItem->item_qty,
+                            'status' => $totalServedQty === $keepSubItemQty * $newOrderItemQty ? 'Served' : 'Pending Serve'
+                        ]);
+
+                    } else {
+                        $orderItem->update([
+                            'status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve'
+                        ]);
+                    }
                 }
             }
 

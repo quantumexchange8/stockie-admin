@@ -510,6 +510,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                             :variant="'primary'"
                             :type="'button'"
                             :size="'md'"
+                            :disabled="tableStatus === 'Pending Clearance'"
                             @click="openOverlay($event, item)"
                         >
                             Add to Order
@@ -626,6 +627,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :inputName="'kept_amount'"
                         v-model="editForm.kept_amount"
                         class="!col-span-1"
+                        disabled
                         v-if="parseFloat(selectedItem.qty) > parseFloat(selectedItem.cm)"
                     />
                     <TextInput 
@@ -634,6 +636,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :iconPosition="'right'"
                         v-model="editForm.kept_amount"
                         class="!col-span-2 [&>div>input]:!text-start [&>div>input]:!pl-4"
+                        disabled
                         v-else
                     >
                         <template #prefix>

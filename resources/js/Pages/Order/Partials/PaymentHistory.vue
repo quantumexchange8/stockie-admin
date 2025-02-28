@@ -57,7 +57,7 @@ const getKeepItemName = (item) => {
 </script>
 
 <template>
-    <div class="w-full max-h-[calc(100dvh-23.6rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <div class="w-full max-h-[calc(100dvh-28rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col gap-y-6 pr-1 py-4 items-start rounded-[5px]">
             <div 
                 v-if="tableOrders && tableOrders.length > 0"
@@ -88,7 +88,7 @@ const getKeepItemName = (item) => {
                     </div>
                 </div>
                 <div class="w-full flex flex-col gap-y-2 items-start self-stretch">
-                    <div class="w-full grid grid-cols-12 justify-between gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
+                    <div class="w-full grid grid-cols-12 justify-between gap-3 items-center py-3" v-for="(item, index) in order.order_items.filter((item) => item.item_qty > 0)" :key="index">
                         <div class="col-span-9 grid grid-cols-12 gap-3 items-center">
                             <img 
                                 :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 

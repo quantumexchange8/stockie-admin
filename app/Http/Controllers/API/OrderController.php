@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Log;
 use Random\Randomizer;
 
 class OrderController extends Controller
@@ -222,7 +223,7 @@ class OrderController extends Controller
             return response()->json([
                 'title' => 'Error checking in.',
                 'errors' => $e
-            ]);
+            ], 422);
         };
     }
     
@@ -280,7 +281,7 @@ class OrderController extends Controller
                 'title' => 'QR code not found...',
                 'message' => "We couldn't locate this QR code in our system. Try scanning again or use a different one.",
                 'errors' => $e
-            ]);
+            ], 422);
         };
     }
     
@@ -1156,7 +1157,9 @@ class OrderController extends Controller
                     $totalItemQty = 0;
                     $totalServedQty = 0;
                     $hasServeQty = false;
-
+                    $keepQty = 0;
+                    $keepSubItemQty = 0;
+    
                     foreach ($orderItem->subItems as $subItemKey => $subItem) {
                         foreach ($validatedItems as $key => $item) {
                             foreach ($request->items as $reqItemKey => $reqItem) {
@@ -1169,7 +1172,7 @@ class OrderController extends Controller
                                                 'cm' => $reqItem['type'] === 'cm' ? $keepItem->cm + $item['amount'] : $keepItem->cm,
                                                 'status' => 'Keep',
                                             ]);
-
+    
                                             $keepItem->save();
                                             $keepItem->refresh();
                 
@@ -1185,13 +1188,23 @@ class OrderController extends Controller
                                                 'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0,
                                                 'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
                                                 'keep_date' => $keepItem->updated_at,
-                                                'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
+                                                'kept_balance' => $reqItem['type'] === 'qty' ? $tempOrderItem->current_kept_amt + $item['amount'] : $tempOrderItem->current_kept_amt,
                                                 'status' => 'Keep',
                                             ]);
                                             
-                                            $tempOrderItem->increment('total_kept', $item['amount']);
-                                            $tempOrderItem->increment('current_kept_amt', $item['amount']);
-
+                                            if ($reqItem['type'] === 'qty') {
+                                                $tempOrderItem->increment('total_kept', $item['amount']);
+                                                $tempOrderItem->increment('current_kept_amt', $item['amount']);
+                                            }
+    
+                                            $toBeKept = $reqItem['type'] === 'cm' ? 1 : $item['amount'];
+                                            $keepQty = $toBeKept;
+    
+                                            $subItem->update([
+                                                'serve_qty' => $subItem['serve_qty'] > ($subItem['item_qty'] * $orderItem->item_qty - $toBeKept) ? $subItem['serve_qty'] - $toBeKept : $subItem['serve_qty']
+                                                // 'serve_qty' => $reqItem['type'] === 'cm' ? 1 : $toBeServed
+                                            ]);
+    
                                         } else {
                                             $newKeep = KeepItem::create([
                                                 'customer_id' => $request->customer_id,
@@ -1204,15 +1217,15 @@ class OrderController extends Controller
                                                 'expired_from' => $item['expired_from'],
                                                 'expired_to' => $item['expired_to'],
                                             ]);
-
+    
                                             $associatedSubItem = OrderItemSubitem::where('id', $item['order_item_subitem_id'])
                                                                     ->with(['productItem:id,inventory_item_id', 'productItem.inventoryItem:id,item_name'])
                                                                     ->first();
-
+    
                                             $inventoryItemName = $associatedSubItem->productItem->inventoryItem->item_name;
-
+    
                                             $name = Customer::where('id', $request->customer_id)->first()->pluck('full_name');
-
+    
                                             activity()->useLog('keep-item-from-customer')
                                                         ->performedOn($newKeep)
                                                         ->event('kept')
@@ -1227,7 +1240,7 @@ class OrderController extends Controller
                                                         
                                             $tempInventoryItem = $associatedSubItem->productItem->inventory_item_id;
                                             $tempOrderItem = IventoryItem::find($tempInventoryItem);
-
+    
                                             KeepHistory::create([
                                                 'keep_item_id' => $newKeep->id,
                                                 'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
@@ -1236,18 +1249,21 @@ class OrderController extends Controller
                                                 'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
                                                 'status' => 'Keep',
                                             ]);
-
+    
                                             $tempOrderItem->increment('total_kept', $item['amount']);
                                             $tempOrderItem->increment('current_kept_amt', $item['amount']);
+    
+                                            if ($orderItem->status === 'Pending Serve') {
+                                                $toBeServed = ($reqItem['totalKept'] + $item['amount']) - $subItem['serve_qty'];
+                                                
+                                                $subItem->increment('serve_qty', $reqItem['type'] === 'cm' ? 1 : $toBeServed);
+                                            }
                                         }
-
-                                        if ($orderItem->status === 'Pending Serve') {
-                                            $toBeServed = ($reqItem['totalKept'] + $item['amount']) - $subItem['serve_qty'];
-                                            
-                                            $subItem->increment('serve_qty', $reqItem['type'] === 'cm' ? 1 : $toBeServed);
-                                        }
+    
                                         $subItem->save();
                                         $subItem->refresh();
+    
+                                        if ($reqItem['keep_id']) ($keepSubItemQty = $subItem['item_qty']);
                                     }
             
                                     $totalItemQty += $subItem['item_qty'] * $orderItem->item_qty;
@@ -1257,13 +1273,27 @@ class OrderController extends Controller
                             }
                         }
                     }
-
+    
                     if ($hasServeQty) {
-                        $orderItem->update(['status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve']);
+                        if ($keepQty > 0) {
+                            $newOrderItemQty = $orderItem->item_qty - $keepQty;
+    
+                            $orderItem->update([
+                                'item_qty' => $keepQty > 0 ? $newOrderItemQty : $orderItem->item_qty,
+                                'status' => $totalServedQty === $keepSubItemQty * $newOrderItemQty ? 'Served' : 'Pending Serve'
+                            ]);
+    
+                        } else {
+                            $orderItem->update([
+                                'status' => $totalServedQty === $totalItemQty ? 'Served' : 'Pending Serve'
+                            ]);
+                        }
                     }
                 }
-
-                if ($currentOrder) {
+    
+                $currentOrderLatestTable = $currentOrder->orderTable->sortByDesc('id')->first();
+    
+                if ($currentOrder && !in_array($currentOrderLatestTable->status, ['Pending Clearance', 'Order Cancelled'])) {
                     $statusArr = collect($currentOrder->orderItems->pluck('status')->unique());
                 
                     $orderStatus = 'Pending Serve';
@@ -1328,7 +1358,7 @@ class OrderController extends Controller
                                             $query->where('status', 'Keep');
                                         }
                                     ])
-                                    ->where('table_id', $request->id)
+                                    ->where('table_id', $request->table_id)
                                     ->where(function ($query){
                                         $query->where('status', 'Pending Clearance')
                                             ->orWhere('status', 'All Order Served')
@@ -1370,9 +1400,41 @@ class OrderController extends Controller
                 ];
             })->values();
 
+            // return response()->json();
+
+            // $tableKeepHistories = KeepHistory::with([
+            //                             'keepItem.orderItemSubitem.orderItem.order.orderTable', 
+            //                             'keepItem.orderItemSubitem.productItem:id,inventory_item_id', 
+            //                             'keepItem.orderItemSubitem.productItem.inventoryItem:id,item_name', 
+            //                             'keepItem.waiter:id,full_name',
+            //                             'orderItem.order.orderTable:id,order_id,table_id'
+            //                         ])
+            //                         ->orderByDesc('id')
+            //                         ->get()
+            //                         ->filter(fn ($history) => 
+            //                                 $history->keepItem->orderItemSubitem->orderItem->order->orderTable->table_id === $request->table_id
+            //                                 && in_array($history->keepItem->orderItemSubitem->orderItem->order->orderTable->status, ['Pending Order', 'Order Placed', 'All Order Served', 'Pending Clearance'])
+            //                                 && $history->status === 'Keep'
+            //                         )
+            //                         ->map(function ($history) {
+            //                             // Assign item_name and unset unnecessary relationship data
+            //                             if ($history->keepItem && $history->keepItem->orderItemSubitem) {
+            //                                 $history->keepItem->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+            //                                 unset($history->keepItem->orderItemSubitem); // Clean up the response
+
+            //                                 $history->keepItem->image = $history->keepItem->orderItemSubitem->productItem 
+            //                                                     ? $history->keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+            //                                                     : $history->keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                                
+            //                                 $history->keepItem->waiter->image = $history->keepItem->waiter->getFirstMediaUrl('user');
+            //                             }
+            //                             return $history;
+            //                         });
+
             return response()->json([
-                'table_keep_list' => $customer?->keepItems,
-                'table_keep_histories' => $uniqueOrders,
+                'customer_keep_list' => $customer?->keepItems,
+                'table_keep_list' => $uniqueOrders,
+                // 'table_keep_histories' => $tableKeepHistories,
             ], 201);
 
         } catch (ValidationException $e) {
@@ -1382,10 +1444,11 @@ class OrderController extends Controller
             ], 422);
             
         } catch (\Exception  $e) {
+            Log::error('Error fetching order data: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
-                'title' => 'Error checking in.',
+                'title' => 'Error keeping item.',
                 'errors' => $e
-            ]);
+            ], 422);
         };
     }
 
@@ -1528,6 +1591,7 @@ class OrderController extends Controller
                     'full_name' => 'required|string|max:255',
                     'phone' => 'required|string|max:255',
                     'email' => 'required|email|unique:customers,email',
+                    'order_id' => 'required',
                 ], 
                 [
                     'email.unique' => 'Email has already been taken.',
@@ -1539,7 +1603,7 @@ class OrderController extends Controller
 
             $defaultRank = Ranking::where('name', 'Member')->first(['id', 'name']);
         
-            Customer::create([
+            $newCustomer = Customer::create([
                 'uuid' => RunningNumberService::getID('customer'),
                 'full_name' => $validatedData['full_name'],
                 'phone' => $validatedData['phone'],
@@ -1550,6 +1614,9 @@ class OrderController extends Controller
                 'total_spending' => 0.00,
                 'first_login' => '1',
             ]);
+
+            $order = Order::find($validatedData['order_id']);
+            $order->update(['customer_id' => $newCustomer->id]);
 
             // need to send email to customer to show their new account details and password
 
@@ -1568,7 +1635,7 @@ class OrderController extends Controller
             return response()->json([
                 'title' => 'Error creating customer.',
                 'errors' => $e
-            ]);
+            ], 422);
         };
     }
 }

@@ -140,17 +140,19 @@ const computedOrder = computed(() => {
     
     return {
         ...order.value,
-        order_items: order.value.order_items.map((item) => {
-            // Calculate total quantities
-            const total_qty = item.sub_items.reduce((total, sub_item) => total + (item.item_qty * sub_item.item_qty), 0);
-            const total_served_qty = item.sub_items.reduce((total, sub_item) => total + sub_item.serve_qty, 0);
-            
-            return {
-                ...item,
-                total_qty,
-                total_served_qty,
-            };
-        }),
+        order_items: order.value.order_items
+                .filter((item) => item.item_qty > 0)
+                .map((item) => {
+                    // Calculate total quantities
+                    const total_qty = item.sub_items.reduce((total, sub_item) => total + (item.item_qty * sub_item.item_qty), 0);
+                    const total_served_qty = item.sub_items.reduce((total, sub_item) => total + sub_item.serve_qty, 0);
+                    
+                    return {
+                        ...item,
+                        total_qty,
+                        total_served_qty,
+                    };
+                }),
     };
 });
 
@@ -317,8 +319,11 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             @onChange="updateOrderCustomer"
                         /> -->
                         <div 
-                            class="flex justify-between items-center gap-x-2 w-full cursor-pointer" 
-                            @click="showCustomerModal"
+                            :class="[
+                                'flex justify-between items-center gap-x-2 w-full', 
+                                tableStatus !== 'Pending Clearance' ? 'cursor-pointer' : 'cursor-not-allowed'
+                            ]"
+                            @click="tableStatus !== 'Pending Clearance' ? showCustomerModal() : ''"
                         >
                             <div class="flex gap-x-2 w-full">
                                 <img 
@@ -327,7 +332,15 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                     class="size-5 rounded-full"
                                     v-if="orderCustomer"
                                 >
-                                <p :class="['text-base font-normal cursor-pointer', orderCustomer ? 'text-grey-700' : 'text-grey-300']">{{ orderCustomer?.full_name ?? 'Select' }}</p>
+                                <p 
+                                    :class="[
+                                        'text-base font-normal', 
+                                        orderCustomer ? 'text-grey-700' : 'text-grey-300',
+                                        tableStatus !== 'Pending Clearance' ? 'cursor-pointer' : 'cursor-not-allowed'
+                                    ]"
+                                >
+                                    {{ orderCustomer?.full_name ?? 'Select' }}
+                                </p>
                             </div>
                             <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <g clip-path="url(#clip0_4705_26673)">

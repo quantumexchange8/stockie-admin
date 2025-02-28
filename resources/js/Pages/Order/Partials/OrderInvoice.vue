@@ -105,7 +105,7 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
     
                 <Table 
                     :variant="'list'"
-                    :rows="order.order_items.filter((item) => item.status === 'Served')"
+                    :rows="order.order_items.filter((item) => item.status === 'Served' && item.item_qty > 0)"
                     :columns="invoiceOrderItemsColumns"
                     :rowType="rowType"
                     :paginator="false"

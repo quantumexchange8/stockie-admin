@@ -411,6 +411,10 @@ const getVoucherDiscountedPrice = (subtotal, voucher) => {
     }
 }
 
+const cancelOrderIsDisabled = computed(() => {
+   return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || props.selectedTable.status === 'Pending Clearance';
+});
+
 watch(
     () => order.value.customer_id,
     async (newCustomerId) => {
@@ -600,7 +604,7 @@ watch(order.value, () => {
                             variant="tertiary"
                             size="lg"
                             class="col-span-1"
-                            :disabled="hasServedItem || hasPreviousPending"
+                            :disabled="cancelOrderIsDisabled"
                             @click="showCancelOrderForm"
                         >
                             Cancel Order
