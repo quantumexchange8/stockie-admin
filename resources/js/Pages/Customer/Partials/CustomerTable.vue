@@ -377,7 +377,7 @@ watch (() => searchQuery.value, (newValue) => {
                 <template #deleteAction="customer">
                     <DeleteIcon
                         class="w-6 h-6 text-primary-600 hover:text-primary-800 cursor-pointer"
-                        @click="openModal('delete', customer.id)"
+                        @click.stop="openModal('delete', customer.id)"
                     />
                 </template>
                 <template #ranking="customer">
@@ -411,7 +411,7 @@ watch (() => searchQuery.value, (newValue) => {
         :show="isDeleteCustomerOpen"
         :confirmationTitle="`Passcode Required`"
         :confirmationMessage="`To delete this customer, you have to enter the passcode provided from the master admin.`"
-        @close="closeModal"
+        @close="closeModal('close')"
         :withHeader="false"
     >
         <form @submit.prevent="submit">
@@ -437,7 +437,7 @@ watch (() => searchQuery.value, (newValue) => {
                         variant="tertiary"
                         size="lg"
                         type="button"
-                        @click="closeModal"
+                        @click="closeModal('close')"
                     >
                         Cancel
                     </Button>

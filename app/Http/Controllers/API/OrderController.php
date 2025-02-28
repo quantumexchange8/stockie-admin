@@ -1013,12 +1013,15 @@ class OrderController extends Controller
         $orderTables = OrderTable::with([
                                         'table',
                                         'order.orderItems' => fn($query) => $query->where('status', 'Served')->orWhere('status', 'Pending Serve'),
-                                        'order.orderItems.product',
+                                        'order.orderItems.product.category',
                                         'order.orderItems.subItems.productItem.inventoryItem',
                                         'order.orderItems.subItems.keepItems.oldestKeepHistory' => function ($query) {
                                             $query->where('status', 'Keep');
                                         },
                                         'order.orderItems.keepItem.oldestKeepHistory'  => function ($query) {
+                                            $query->where('status', 'Keep');
+                                        },
+                                        'order.orderItems.keepItem.keepHistories'  => function ($query) {
                                             $query->where('status', 'Keep');
                                         }
                                     ])
@@ -1035,6 +1038,24 @@ class OrderController extends Controller
                                             if ($item['keep_item_id']) {
                                                 $item['item_name'] = $item->subItems[0]->productItem->inventoryItem['item_name'];
                                             }
+                                            // return response()->json($item);
+
+                                            $item->sub_items =  $item->subItems->map(function ($subItem) use ($item) {
+                                                $isKeepType = !($item['type'] === 'Normal' || $item['type'] === 'Redemption' || $item['type'] === 'Reward');
+                                                $totalKept = $isKeepType
+                                                    ?   $item->keepItem?->keepHistories?->reduce(fn ($total, $history) => (
+                                                            $total + ((int)$history->qty ?? 0) + (((float)$history->cm ?? 0) > 0 ? 1 : 0)
+
+                                                        ), 0) ?? 0
+                                                    :   $subItem->keepItems?->reduce(fn ($total, $keepItem) => (
+                                                            $total + ((int)$keepItem?->oldestKeepHistory?->qty ?? 0) + (((float)$keepItem?->oldestKeepHistory?->cm ?? 0) > 0 ? 1 : 0)
+
+                                                        ), 0) ?? 0;
+
+                                                $subItem['total_kept'] = $totalKept;
+
+                                                return $subItem;
+                                            });
 
                                             return $item;
                                         });

@@ -158,7 +158,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :labelText="'Current stock'"
                                     :placeholder="'e.g. 100'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.stock_qty'] : ''"
-                                    disabled
+                                    :disabled="!!item.created_at"
                                     v-model="item.stock_qty"
                                     @keypress="isValidNumberKey($event, false)"
                                 />
