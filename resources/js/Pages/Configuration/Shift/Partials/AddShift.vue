@@ -9,10 +9,9 @@ import DateInput from '@/Components/Date.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import Dropdown from "@/Components/Dropdown.vue";
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(["close", "shift-added"]);
 const time = ref();
 const selectedColor = ref(null);
-const selectDays = ref([]);
 
 const form = useForm({
     shift_name: '',
@@ -45,17 +44,9 @@ const days = [
 ]
 
 const timeType = [
-    { value: 'hour'},
-    { value: 'minutes'},
+    { text: 'hour', value: 'hour'},
+    { text: 'minutes', value: 'minutes'},
 ]
-
-const toggleDay = (day) => {
-    if (form.days.includes(day)) {
-        form.days = form.days.filter(d => d !== day); // Remove if already selected
-    } else {
-        form.days.push(day); // Add if not selected
-    }
-};
 
 const selectColor = (color) => {
     selectedColor.value = color;
@@ -75,7 +66,14 @@ const removeBreak = (id) => {
 };
 
 const submit = () => {
-    form.post('/configurations/create-shift');
+    form.post('/configurations/create-shift', {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
+            emit('close');
+            emit("shift-added");
+        }
+    });
 }
 
 </script>
@@ -238,7 +236,8 @@ const submit = () => {
             <div class="flex flex-wrap gap-5">
                 <div v-for="day in days" :key="day.name" class="flex items-center gap-2">
                     <Checkbox 
-                        :checked="selectDays.includes(day.name)"
+                        v-model:checked="form.days"
+                        :value="day.name"
                     />
                     <span>{{ day.name }}</span>
                 </div>

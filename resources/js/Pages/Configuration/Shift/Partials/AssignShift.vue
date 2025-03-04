@@ -3,7 +3,9 @@ import Button from '@/Components/Button.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import RadioButton from 'primevue/radiobutton';
+import Dropdown from '@/Components/Dropdown.vue';
 
 const days = [
     { name: 'Monday'},
@@ -17,21 +19,58 @@ const days = [
 
 const emit = defineEmits(['close']);
 const selectDays = ref([]);
+const shifts = ref([]);
+const waiters = ref([]);
+
+const fetchShift = async () => {
+    try {
+
+        const response = await axios.get('/configurations/getShift');
+        shifts.value = response.data;
+
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+const fetchWaiter = async () => {
+    try {
+
+        const response = await axios.get('/configurations/getWaiter');
+        waiters.value = response.data;
+
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+onMounted(() => {
+    fetchShift();
+    fetchWaiter();
+});
+
+const waitersArr = computed(() => {
+    return waiters.value.map(waiter => ({
+        text: waiter.full_name,
+        value: waiter.id
+    }));
+});
 
 const form = useForm({
-    shift_name: '',
-    shift_code: '',
-    time_start: '',
-    time_end: '',
-    late: '',
-    color: '',
-    breaks: [{ id: 1, break_value: '', break_time: '' }],
-    days: [],
+    waiter_id: '',
+    days: [], // Holds selected days e.g., ["Monday", "Tuesday"]
+    assign_shift: {} // Object to store selected shift per day { "Monday": shift_id, "Tuesday": shift_id }
 });
 
 const submit = () => {
-    
-}
+    form.post('/configurations/assign-shift', {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
+            emit('close');
+        }
+    });
+};
 
 </script>
 
@@ -44,11 +83,13 @@ const submit = () => {
                 <div class="text-gray-950 text-sm font-normal">Assign shift to selected employee.</div>
             </div>
             <div>
-                <TextInput
-                    :inputName="'shift_name'"
-                    :placeholder="'Morning shift'"
-                    :errorMessage="form.errors.shift_name ? form.errors.shift_name[0] : ''"
-                    v-model="form.shift_name"
+                <Dropdown 
+                    imageOption
+                    :inputName="'waiter_id'" 
+                    :labelText="'Assign Waiter'"
+                    :inputArray="waitersArr"
+                    :errorMessage="form.errors?.waiter_id || ''"
+                    v-model="form.waiter_id"
                 />
             </div>
         </div>
@@ -60,7 +101,8 @@ const submit = () => {
             <div class="flex flex-wrap gap-5">
                 <div v-for="day in days" :key="day.name" class="flex items-center gap-2">
                     <Checkbox 
-                        :checked="selectDays.includes(day.name)"
+                        v-model:checked="form.days"
+                        :value="day.name"
                     />
                     <span>{{ day.name }}</span>
                 </div>
@@ -76,8 +118,33 @@ const submit = () => {
 
             <!-- loop -->
             <div class="flex flex-col gap-6">
-                <div v-for="item in items" :key="item.id">
-                    
+                <div v-for="selectedDay in form.days" :key="selectedDay">
+                    <div class="font-semibold text-lg">{{ selectedDay }}</div>
+
+                    <div class="flex flex-wrap items-center gap-4 w-full">
+                        <div v-for="shift in shifts" :key="shift.id" :class="[
+                                'p-4 rounded-[5px] max-w-[246px] w-1/2 flex gap-4 border',
+                                form.assign_shift[selectedDay] === shift.id 
+                                    ? 'border-primary-900 bg-primary-25' 
+                                    : 'border-gray-100'
+                            ]"
+                        >
+                            <div class="flex flex-col max-w-[165px] w-full">
+                                <div class="text-gray-950 text-base font-semibold">{{ shift.shift_name }}</div>
+                                <div class="text-gray-700 text-base font-normal">{{ shift.shift_start }} - {{ shift.shift_end }}</div>
+                            </div>
+
+                            <!-- Radio Button to select one shift per day -->
+                            <div>
+                                <RadioButton 
+                                    v-model="form.assign_shift[selectedDay]" 
+                                    :inputId="`shift-${selectedDay}-${shift.id}`" 
+                                    :name="selectedDay" 
+                                    :value="shift.id" 
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -26,11 +26,23 @@ const props = defineProps({
 
 const proxyChecked = computed({
     get() {
-        return props.defaultChecked ? true : props.checked;
+        if (Array.isArray(props.checked)) {
+            return props.checked.includes(props.value);
+        }
+        return props.checked;
+        // return props.defaultChecked ? true : props.checked;
     },
 
     set(val) {
-        emit("update:checked", val);
+        let updatedValue;
+        if (Array.isArray(props.checked)) {
+            updatedValue = val 
+                ? [...props.checked, props.value] 
+                : props.checked.filter(item => item !== props.value);
+        } else {
+            updatedValue = val;
+        }
+        emit("update:checked", updatedValue);
     },
 });
 </script>

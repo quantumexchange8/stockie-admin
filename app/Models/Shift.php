@@ -12,11 +12,15 @@ class Shift extends Model
 
         'shift_name',
         'shift_code',
-        'time_start',
-        'time_end',
+        'shift_start',
+        'shift_end',
         'late',
         'color',
-        'days',
+        'apply_days',
     ];
     
+    protected $casts = [
+        'apply_days' => 'array',
+    ];
+
 }

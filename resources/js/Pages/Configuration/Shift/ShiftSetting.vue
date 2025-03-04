@@ -127,7 +127,7 @@ const closeAssignShift = () => {
                 :closeable="true" 
                 @close="closeNewShift"
             >
-                <AddShift @close="closeNewShift" />
+                <AddShift @close="closeNewShift" @shift-added="fetchShift" />
             </Modal>
         </div>
         <div class="p-6 flex flex-col gap-6 border border-primary-100 rounded-[5px]">

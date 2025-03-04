@@ -177,8 +177,10 @@ Route::middleware('auth')->group(function () {
         /******* Employee Shift setting ********/
         Route::get('/configurations/shift-setting', [ConfigShiftSettingController::class, 'shiftSetting'])->name('configurations.shift-setting');
         Route::get('/getShift', [ConfigShiftSettingController::class, 'getShift'])->name('configurations.getShift');
+        Route::get('/getWaiter', [ConfigShiftSettingController::class, 'getWaiter'])->name('configurations.getWaiter');
 
         Route::post('/create-shift', [ConfigShiftSettingController::class, 'createShift'])->name('configurations.create-shift');
+        Route::post('/assign-shift', [ConfigShiftSettingController::class, 'assignShift'])->name('configurations.assign-shift');
         
 
         /******* Promotion ********/

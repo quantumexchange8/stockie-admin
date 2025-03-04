@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Shift;
 use App\Models\ShiftBreak;
+use App\Models\User;
+use App\Models\WaiterShift;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,9 +29,17 @@ class ConfigShiftSettingController extends Controller
         return response()->json($shifts);
     }
 
+    public function getWaiter()
+    {
+
+        $waiters = User::where('position', 'waiter')->get();
+
+        return response()->json($waiters);
+    }
+
     public function createShift(Request $request)
     {
-        dd($request->all());
+        // dd($request->all());
         $validated = $request->validate([
             'shift_name' => ['required'],
             'shift_code' => ['required'],
@@ -37,29 +47,64 @@ class ConfigShiftSettingController extends Controller
             'time_end' => ['required'],
             'late' => ['required'],
             'color' => ['required'],
-            'break' => ['required', 'array', 'min:1'],
+            'breaks' => ['required', 'array', 'min:1'],
             'days' => ['required', 'array', 'min:1'],
         ]);
 
         $shift = Shift::create([
             'shift_name' => $request->shift_name,
             'shift_code' => $request->shift_code,
-            'time_start' => Carbon::parse($request->time_start)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
-            'time_end' => Carbon::parse($request->time_end)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
+            'shift_start' => Carbon::parse($request->time_start)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
+            'shift_end' => Carbon::parse($request->time_end)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
             'late' => $request->late,
             'color' => $request->color,
-            'days' => $request->days,
+            'apply_days' => $request->days,
         ]);
 
-        foreach ($request->break as $break) {
+        
+
+        foreach ($request->breaks as $break) {
 
             $shiftBreak = ShiftBreak::create([
                 'shift_id' => $shift->id,
-                'break_value' => $break->break_value,
-                'break_time' => $break->break_time,
+                'break_value' => $break['break_value'],
+                'break_time' => $break['break_time'],
             ]);
         }
         
+
+        return redirect()->back();
+    }
+
+    public function assignShift(Request $request)
+    {
+
+        // dd($request->all());
+
+        $validatedData = $request->validate([
+            'waiter_id' => ['required', 'exists:users,id'], // Ensure waiter exists
+            'assign_shift' => ['required', 'array'], // Ensure assign_shift is an array
+            'assign_shift.*' => ['required', 'integer', 'exists:shifts,id'], // Ensure shift IDs are valid
+            'days' => ['required', 'array', 'min:1'], // Ensure at least one day is selected
+        ]);
+
+        $waiter_id = $validatedData['waiter_id'];
+
+        $allDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        $now = Carbon::now()->startOfWeek(Carbon::MONDAY);
+
+        foreach ($allDays as $index => $day) {
+            $shift_id = $validatedData['assign_shift'][$day] ?? 'off'; // If not selected, set as "off"
+            $dayDate = $now->copy()->addDays($index)->toDateString(); // Calculate date for each weekday
+    
+            WaiterShift::create([
+                'waiter_id' => $waiter_id,
+                'shift_id' => $shift_id,
+                'weeks' => $now->format('Y-m-d') . ' - ' . $now->copy()->endOfWeek(Carbon::SUNDAY)->format('Y-m-d'), // Week range
+                'days' => $day,
+                'date' => $dayDate, // Assign correct date for each day
+            ]);
+        }
 
         return redirect()->back();
     }
