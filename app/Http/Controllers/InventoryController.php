@@ -179,7 +179,10 @@ class InventoryController extends Controller
             return redirect()->back()->withErrors($allItemErrors);
         }
 
-        $newGroup = Iventory::create(['name' => $validatedData['name']]);
+        $newGroup = Iventory::create([
+            'name' => $validatedData['name'],
+            'status' => 'Active',
+        ]);
 
         activity()->useLog('create-inventory-group')
                         ->performedOn($newGroup)
