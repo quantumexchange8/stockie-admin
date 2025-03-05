@@ -29,10 +29,50 @@ class ConfigShiftSettingController extends Controller
         return response()->json($shifts);
     }
 
+    public function getWaiterShift()
+    {
+
+        $waiterShifts = WaiterShift::get();
+
+        return response()->json($waiterShifts);
+    }
+
     public function getWaiter()
     {
 
         $waiters = User::where('position', 'waiter')->get();
+
+        return response()->json($waiters);
+    }
+
+    public function viewShift(Request $request)
+    {
+        
+        $waiters = WaiterShift::where('waiter_id', $request->waiter_id)
+                    ->where('weeks', $request->weeks)
+                    ->with(['users:id,name,full_name,profile_photo', 'shifts'])
+                    ->get();
+
+        
+        return response()->json($waiters);
+    }
+
+    public function getFilterShift(Request $request)
+    {
+        
+
+        $formattedDate = Carbon::createFromFormat('d M Y', $request->date)->format('Y-m-d');
+
+        $waiters = WaiterShift::where('shift_id', $request->shift_id)
+                ->whereDate('date', $formattedDate)
+                ->with(['users:id,name,full_name,profile_photo'])
+                ->get();
+
+        $waiters->each(function ($waiter) {
+            if ($waiter->users) {
+                $waiter->users->profile_photo_url = $waiter->users->getFirstMediaUrl('profile_photo'); 
+            }
+        });
 
         return response()->json($waiters);
     }
@@ -91,7 +131,13 @@ class ConfigShiftSettingController extends Controller
         $waiter_id = $validatedData['waiter_id'];
 
         $allDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-        $now = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $now = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeek();
+
+        $nextMonday = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeek();
+        $nextSunday = $nextMonday->copy()->endOfWeek(Carbon::SUNDAY);
+        $weekRange = $nextMonday->format('Y-m-d') . ' to ' . $nextSunday->format('Y-m-d');
+
+        $week = Carbon::now()->addWeek()->week;
 
         foreach ($allDays as $index => $day) {
             $shift_id = $validatedData['assign_shift'][$day] ?? 'off'; // If not selected, set as "off"
@@ -100,7 +146,8 @@ class ConfigShiftSettingController extends Controller
             WaiterShift::create([
                 'waiter_id' => $waiter_id,
                 'shift_id' => $shift_id,
-                'weeks' => $now->format('Y-m-d') . ' - ' . $now->copy()->endOfWeek(Carbon::SUNDAY)->format('Y-m-d'), // Week range
+                'week_range' => $weekRange, // Week range
+                'weeks' => $week, // Week 
                 'days' => $day,
                 'date' => $dayDate, // Assign correct date for each day
             ]);

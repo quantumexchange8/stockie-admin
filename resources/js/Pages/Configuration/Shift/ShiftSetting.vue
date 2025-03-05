@@ -8,12 +8,22 @@ import Column from 'primevue/column';
 import Modal from '@/Components/Modal.vue';
 import AddShift from './Partials/AddShift.vue';
 import AssignShift from './Partials/AssignShift.vue';
+import EditShift from './Partials/EditShift.vue';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 
-const today = dayjs().startOf('week'); // Get the start of this week
+dayjs.extend(weekOfYear);
+
+const today = dayjs().startOf('week').add(1, 'day'); // Get the start of this week
 const thisWeek = ref(today); // Default to current week
+const thisWeekVal = ref(today.week()); // Get the current week number
 const shifts = ref([]);
+const waiterShifts = ref([]);
 const newShiftIsOpen = ref(false);
 const assignShiftIsOpen = ref(false);
+const editShiftIsOpen = ref(false);
+const selectedShift = ref(null);
+const selectedDay = ref(null);
+
 
 const fetchShift = async () => {
     try {
@@ -26,16 +36,30 @@ const fetchShift = async () => {
     }
 }
 
+const fetchWaiterShift = async () => {
+    try {
+
+        const response = await axios.get('/configurations/getWaiterShift');
+        waiterShifts.value = response.data;
+
+    } catch (error) {
+        console.error(error)
+    }
+}
+
 onMounted(() => {
     fetchShift();
+    fetchWaiterShift();
 });
 
 const goNextWeek = () => {
     thisWeek.value = thisWeek.value.add(7, 'day');
+    thisWeekVal.value += 1;
 };
 
 const goLastWeek = () => {
     thisWeek.value = thisWeek.value.subtract(7, 'day');
+    thisWeekVal.value -= 1; // Decrement week number
 };
 
 const weekLabel = computed(() => {
@@ -70,7 +94,11 @@ const closeNewShift = () => {
 }
 
 const openEditShift = () => {
+    editShiftIsOpen.value = true;
+}
 
+const closeEditShift = () => {
+    editShiftIsOpen.value = false;
 }
 
 const openAssignShift = () => {
@@ -80,6 +108,13 @@ const openAssignShift = () => {
 const closeAssignShift = () => {
     assignShiftIsOpen.value = false;
 }
+
+const handleCellClick = (day, shift) => {
+    console.log("Clicked Cell for:", day, shift);
+    selectedShift.value = shift;
+    selectedDay.value = day;
+    editShiftIsOpen.value = true;
+};
 
 </script>
 
@@ -134,7 +169,7 @@ const closeAssignShift = () => {
             <div class="flex justify-between">
                 <div class="text-primary-900 text-md font-medium">Timetable</div>
                 <div class="flex items-center gap-3">
-                    <div>
+                    <!-- <div>
                         <Button
                             type="button"
                             size="lg"
@@ -148,7 +183,18 @@ const closeAssignShift = () => {
                             </template>
                             Edit
                         </Button>
-                    </div>
+                    </div> -->
+
+                    <Modal 
+                        :title="'Shift Assignment Detail'"
+                        :show="editShiftIsOpen" 
+                        :maxWidth="'sm'" 
+                        :closeable="true" 
+                        @close="closeEditShift"
+                    >
+                        <EditShift @close="closeEditShift" :selectedShift="selectedShift" :selectedDay="selectedDay" :thisWeekVal="thisWeekVal" />
+                    </Modal>
+
                     <div>
                         <Button
                             type="button"
@@ -187,7 +233,8 @@ const closeAssignShift = () => {
                 </div>
             </div>
             <div>
-                <DataTable :value="weekDays" tableStyle="min-width: 50rem">
+                <DataTable :value="weekDays" tableStyle="min-width: 50rem"> 
+                    <!-- Days Column (Frozen First Column) -->
                     <Column field="date" header="" frozen style="max-width: 156px;">
                         <template #header>
                             <div class="flex flex-col gap-1">
@@ -204,6 +251,8 @@ const closeAssignShift = () => {
                             </div>
                         </template>
                     </Column>
+
+                    <!-- Shift Columns -->
                     <Column v-for="shift in shifts" :key="shift.id">
                         <template #header>
                             <div class="flex flex-col gap-1">
@@ -211,12 +260,22 @@ const closeAssignShift = () => {
                                     {{ shift.shift_name }}
                                 </div>
                                 <div class="text-primary-900 text-sm font-normal">
-                                    {{ shift.shift_start }} - {{ shift.shift_end }}
+                                    {{ shift.shift_start.slice(0,5) }} - {{ shift.shift_end.slice(0,5) }}
                                 </div>
                             </div>
                         </template>
                         <template #body="slotProps">
-                            {{ shift.late }}
+                            <div 
+                                class="cursor-pointer flex items-center hover:bg-primary-25 hover:rounded-[5px] w-full h-full"
+                                @click="handleCellClick(slotProps.data, shift)"
+                            >
+                                {{
+                                    waiterShifts.filter(ws => 
+                                        ws.shift_id == shift.id && 
+                                        dayjs(slotProps.data.date, 'DD MMM YYYY').format('YYYY-MM-DD') === ws.date
+                                    ).length
+                                }}
+                            </div>
                         </template>
                     </Column>
                 </DataTable>

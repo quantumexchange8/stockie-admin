@@ -94,6 +94,10 @@ export function transactionFormat() {
         return new Date(date).toLocaleTimeString('en-CA', options);
     }
 
+    function formatTimeHM(date) {
+        return date.slice(0, 5);
+    }
+
     function getStatusClass(status) {
         if (status === 'Successful') {
             return 'success';
@@ -128,7 +132,8 @@ export function transactionFormat() {
         getStatusClass,
         formatAmount,
         formatType,
-        formatTime
+        formatTime,
+        formatTimeHM,
     };
 }
 

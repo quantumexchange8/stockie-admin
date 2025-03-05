@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('waiter_id')->nullable();
             $table->string('shift_id')->nullable();
-            $table->string('weeks')->nullable();
-            $table->date('days')->nullable();
+            $table->string('week_range')->nullable();
+            $table->integer('weeks')->nullable();
+            $table->string('days')->nullable();
+            $table->date('date')->nullable();
             $table->timestamps();
         });
     }
