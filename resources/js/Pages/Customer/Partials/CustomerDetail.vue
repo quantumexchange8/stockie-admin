@@ -28,14 +28,13 @@ const initialEditForm = ref();
 const selectedCustomer = ref(null);
 const selectedItem = ref(null);
 const returnItemOverlay = ref(null);
-const isPointDrawerOpen = ref(false);
-const isTierDrawerOpen = ref(false);
-const isHistoryDrawerOpen = ref(false);
+const isDrawerOpen = ref(false);
 const isMoreActionOpen = ref(null);
 const isEditKeptItemOpen = ref(false);
 const isExtendExpirationOpen = ref(false);
 const isDeleteKeptItemOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
+const viewType = ref('');
 
 const editForm = useForm({
     id: '',
@@ -61,25 +60,15 @@ const deleteForm = useForm({
 
 
 const { formatPhone } = usePhoneUtils();
-const openHistoryDrawer = (customer) => {
-    isHistoryDrawerOpen.value = true;
-    selectedCustomer.value = customer;
-}
 
-const openPointsDrawer = (customer) => {
-    isPointDrawerOpen.value = true;
+const openDrawer = (action, customer) => {
+    viewType.value = action;
     selectedCustomer.value = customer;
-}
-
-const openTierDrawer = (customer) => {
-    isTierDrawerOpen.value = true;
-    selectedCustomer.value = customer;
+    isDrawerOpen.value = true;
 }
 
 const closeDrawer = () => {
-    isHistoryDrawerOpen.value = false;
-    isTierDrawerOpen.value = false;
-    isPointDrawerOpen.value = false;
+    isDrawerOpen.value = false;
 }
 
 const openItemOverlay = (event, item) => {
@@ -274,7 +263,7 @@ watch((editForm), (newValue) => {
                         <span class="text-base font-semibold text-primary-25 whitespace-nowrap w-full">Current Points</span>
                         <CircledArrowHeadRightIcon2
                             class="w-6 h-6 text-primary-900 [&>rect]:fill-primary-25 [&>rect]:hover:fill-primary-800 cursor-pointer z-10"
-                            @click="openPointsDrawer(customer)" />
+                            @click="openDrawer('currentPoints', customer)" />
                     </div>
                     <div class="flex flex-col items-start gap-1">
                         <span class="text-white text-[36px] leading-normal font-light tracking-[-0.72px]">{{ formatPoints(customer.point) }}</span>
@@ -290,7 +279,7 @@ watch((editForm), (newValue) => {
                         <span class="text-base font-semibold text-primary-900 whitespace-nowrap w-full">Current Tier</span>
                         <CircledArrowHeadRightIcon2
                             class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer z-10"
-                            @click="openTierDrawer(customer)" />
+                            @click="openDrawer('currentTier', customer)" />
                     </div>
                     <div class="w-full flex flex-col justify-center items-start gap-1 self-stretch">
                         <template v-if="customer.rank && customer.rank.name !== 'No Tier'">
@@ -319,7 +308,7 @@ watch((editForm), (newValue) => {
             <div class="w-full flex flex-col items-center gap-3 self-stretch">
                 <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
                     <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Keep Item ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
-                    <div class="flex items-center gap-2 cursor-pointer" @click="openHistoryDrawer(customer)">
+                    <div class="flex items-center gap-2 cursor-pointer" @click="openDrawer('keepHistory', customer)">
                         <HistoryIcon class="w-4 h-4" />
                         <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">View History</div>
                     </div>
@@ -430,37 +419,24 @@ watch((editForm), (newValue) => {
         </div>
     </div>
 
-    <!-- history drawer -->
     <RightDrawer
-        :header="'History'"
+        :header="viewType === 'keepHistory' ? 'History' : viewType === 'currentPoints' ? 'Points' : 'Tier'" 
         :previousTab="true"
-        :show="isHistoryDrawerOpen"
+        :show="isDrawerOpen"
         @close="closeDrawer"
     >
-        <ViewHistory :customer="selectedCustomer" />
-    </RightDrawer>
-
-    <!-- points drawer -->
-    <RightDrawer
-        :header="'Points'"
-        :previousTab="true"
-        :show="isPointDrawerOpen"
-        @close="closeDrawer"
-    >
-        <PointsDrawer 
-            :customer="selectedCustomer"
-            @update:customerPoints="emit('update:customerPoints', $event)"
-        />
-    </RightDrawer>
-
-    <!-- tier drawer -->
-    <RightDrawer
-        :header="'Tier'"
-        :previousTab="true"
-        :show="isTierDrawerOpen"
-        @close="closeDrawer"
-    >
-        <TierDrawer :customer="selectedCustomer"/>
+        <template v-if="viewType === 'keepHistory'"> <!-- customer keep history drawer -->
+            <ViewHistory :customer="selectedCustomer" />
+        </template>
+        <template v-else-if="viewType === 'currentPoints'"> <!-- customer point drawer -->
+            <PointsDrawer 
+                :customer="selectedCustomer"
+                @update:customerPoints="emit('update:customerPoints', $event)"
+            />
+        </template>
+        <template v-else> <!-- customer tier drawer -->
+            <TierDrawer :customer="selectedCustomer"/>
+        </template>
     </RightDrawer>
 
     <OverlayPanel ref="returnItemOverlay">

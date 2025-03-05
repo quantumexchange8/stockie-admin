@@ -2079,7 +2079,7 @@ class OrderController extends Controller
      * Get all redeemable items.
      */
     public function getRedeemableItems() {
-        $redeemables = Product::select('id','product_name', 'point')
+        $redeemables = Product::select('id','product_name', 'point', 'availability')
                                 ->with([
                                     'productItems:id,product_id,inventory_item_id,qty', 
                                     'productItems.inventoryItem:id,inventory_id,item_name,stock_qty,status',
@@ -2524,9 +2524,34 @@ class OrderController extends Controller
                             ->with([
                                 'rewards:id,customer_id,ranking_reward_id,status,updated_at',
                                 'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
-                                'rewards.rankingReward.product:id,product_name'
+                                'rewards.rankingReward.product:id,product_name,availability',
+                                'rewards.rankingReward.product.productItems'
                             ])
                             ->find($id);
+                            
+        foreach ($customer->rewards as $key => $reward) {
+            if ($reward->rankingReward->reward_type === 'Free Item') {
+                $product = $reward->rankingReward->product;
+                $product_items = $product->productItems;
+                $minStockCount = 0;
+    
+                if (count($product_items) > 0) {
+                    $stockCountArr = [];
+    
+                    foreach ($product_items as $key => $value) {
+                        $inventory_item = IventoryItem::select('stock_qty')->find($value['inventory_item_id']);
+    
+                        $stockQty = $inventory_item->stock_qty;
+                        
+                        $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
+                        array_push($stockCountArr, $stockCount);
+                    }
+                    $minStockCount = min($stockCountArr);
+                }
+                $product['stock_left'] = $minStockCount; 
+                unset($product->productItems);
+            }
+        };
 
         return response()->json($customer->rewards);
     }
@@ -2604,7 +2629,13 @@ class OrderController extends Controller
             }
         }
 
-        $allCustomers = Customer::select('id', 'full_name', 'email', 'phone')->get();
+        $allCustomers = Customer::select('id', 'full_name', 'email', 'phone', 'status')
+                                ->where(function ($query) {
+                                    $query->where('status', '!=', 'void')
+                                        ->orWhereNull('status'); // Handle NULL cases
+                                })
+                                ->get();
+                                
         $allCustomers->each(function($customer){
             $customer->image = $customer->getFirstMediaUrl('customer');
         });
@@ -2881,7 +2912,11 @@ class OrderController extends Controller
     }
 
     private function getAllCustomers() {
-        $users = Customer::all();
+        $users = Customer::where(function ($query) {
+                            $query->where('status', '!=', 'void')
+                                ->orWhereNull('status'); // Handle NULL cases
+                        })->all();
+
         foreach($users as $user){
             $user->image = $user->getFirstMediaUrl('customer');
         }
@@ -2911,6 +2946,7 @@ class OrderController extends Controller
             'point' => 0,
             'total_spending' => 0.00,
             'first_login' => '1',
+            'status' => 'verified',
         ]);
 
         $customers = Customer::orderBy('full_name')

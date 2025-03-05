@@ -176,7 +176,6 @@ const totalStockByGroup = computed(() => {
     return totals;
 });
 
-
 paginatedRows.value.forEach(item => {
     forms[item.id] = useForm({
         id: item.id ?? '',
@@ -230,6 +229,13 @@ const updateAvailability = (id) => {
     }
 };
 
+const checkAvailability = (item) => {
+    const isLowInQty = item.stock_left == 0;
+    const itemIsDelete = item.product_items.some((item) => item.inventory_item.status === 'Inactive');
+
+    return forms[item.id]?.processing || isLowInQty || itemIsDelete;
+};
+
 watch(() => props.rows, () => {
     currentPage.value = 1;
 }, { immediate: true });
@@ -241,6 +247,16 @@ onMounted(() => {
     }
 });
 
+watch(paginatedRows, (newValue) => {
+    newValue.forEach(item => {
+        forms[item.id] = useForm({
+            id: item.id ?? '',
+            product_name: item.product_name ?? '',
+            availability: item.availability === 'Available' ? true : false,
+            availabilityWord: '',
+        });
+    });
+})
 
 </script>
 
@@ -669,6 +685,7 @@ onMounted(() => {
                                         :checked="item.availability === 'Available'" 
                                         :inputName="'availability'"
                                         :inputId="'availability'"
+                                        :disabled="checkAvailability(item)"
                                         @change="toggleAvailability(item)"
                                     />
                                     <span class="text-base font-medium" 

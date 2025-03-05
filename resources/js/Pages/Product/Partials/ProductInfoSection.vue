@@ -107,10 +107,10 @@ watch( () => props.product, (newValue) => {
                     class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer"
                     @click="showEditGroupForm"
                 />
-                <DeleteIcon 
+                <!-- <DeleteIcon 
                     class="w-5 h-5 text-primary-600 hover:text-primary-700 cursor-pointer"
                     @click="showDeleteGroupForm"
-                />
+                /> -->
             </div>
         </div>
 

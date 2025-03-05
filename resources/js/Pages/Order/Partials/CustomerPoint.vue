@@ -144,6 +144,11 @@ const getRedeemableMaxQuantity = () => {
 };
 
 const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) && !form.processing);
+
+const isNotRedeemable = (customerPoint, item) => {
+    return customerPoint < item.point || item.stock_left == 0 || item.availability === 'Unavailable'
+}
+
 </script>
 
 <template>
@@ -189,7 +194,7 @@ const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) &&
                         <Button 
                             :type="'button'" 
                             :size="'md'" 
-                            :disabled="customer.point < item.point || item.stock_left == 0"
+                            :disabled="isNotRedeemable(customer.point, item)"
                             class="!w-fit"
                             @click="openOverlay($event, item)"
                         >

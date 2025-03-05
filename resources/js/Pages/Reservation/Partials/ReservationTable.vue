@@ -338,7 +338,7 @@ watch(() => props.rows, (newRows) => {
             </Table> -->
 
             <div class="grid xl:grid-cols-3 grid-cols-3 p-6 items-start gap-2.5 self-stretch" v-if="rows.length > 0">
-                <div class="items-start content-start gap-5 self-stretch flex-wrap" v-for="reservation in rows" @click="openForm('show', reservation)">
+                <div class="items-start content-start gap-5 self-stretch flex-wrap cursor-pointer" v-for="reservation in rows" @click="openForm('show', reservation)">
                     <div class="flex flex-col p-4 items-start gap-4 flex-[1_0_0] rounded-[5px] border border-solid border-grey-100 bg-white shadow-sm">
                         <div class="flex items-start gap-2 self-stretch">
                             <div class="flex items-center gap-2 flex-[1_0_0]">
@@ -346,7 +346,7 @@ watch(() => props.rows, (newRows) => {
                                 <span class="text-grey-950 text-base font-bold">{{ dayjs(reservation.reservation_date).format('HH:mm') }}</span>
                                 <DelayedIcon class="size-5" v-if="reservation.status === 'Delayed'"/>
                             </div>
-                            <div class="flex-shrink-0 cursor-pointer size-5" v-if="['Pending', 'Delayed', 'Checked in'].includes(reservation.status)" @click="openActionMenu($event, reservation)">
+                            <div class="flex-shrink-0 size-5" v-if="['Pending', 'Delayed', 'Checked in'].includes(reservation.status)" @click="openActionMenu($event, reservation)">
                                 <HorizontalDotsIcon />
                             </div>
                         </div>

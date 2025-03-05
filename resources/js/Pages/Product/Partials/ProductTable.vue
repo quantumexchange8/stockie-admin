@@ -214,7 +214,7 @@ const resetFilters = () => {
     return {
         isRedeemable: [],
         stockLevel: [],
-        priceRange: [0, 5000],
+        priceRange: [0, maxProductPrice.value],
     };
 };
 
@@ -314,6 +314,13 @@ const getCategoryFilteredRowsLength = (category) => {
 const updateCategories = (event) => {
     categories.value = event;
     emit('update:categories', event);
+};
+
+const checkAvailability = (row) => {
+    const isLowInQty = row.stock_left == 0;
+    const itemIsDelete = row.product_items.some((item) => item.inventory_item.status === 'Inactive');
+
+    return forms[row.id].processing || isLowInQty || itemIsDelete;
 };
 
 </script>
@@ -544,7 +551,7 @@ const updateCategories = (event) => {
                                 :checked="row.availability === 'Available'" 
                                 :inputName="'availability'"
                                 :inputId="'availability'"
-                                :disabled="forms[row.id].processing"
+                                :disabled="checkAvailability(row)"
                                 v-model="forms[row.id].availability"
                                 @change="toggleAvailability($event, row)"
                             />

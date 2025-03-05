@@ -7,7 +7,7 @@ import Tapbar from '@/Components/Tapbar.vue';
 import AddStockForm from './AddStockForm.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import SearchBar from "@/Components/SearchBar.vue";
-import { EmptyIllus, OrderCompleteIllus } from '@/Components/Icons/illus.jsx';
+import { DeleteIllus, EmptyIllus, OrderCompleteIllus } from '@/Components/Icons/illus.jsx';
 import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon, SquareStickerIcon, TableSortIcon } from '@/Components/Icons/solid';
 import EditInventoryForm from './EditInventoryForm.vue';
 import CreateInventoryForm from './CreateInventoryForm.vue';
@@ -17,6 +17,9 @@ import TextInput from '@/Components/TextInput.vue';
 import TabView from '@/Components/TabView.vue';
 import AddItemToMenuForm from './AddItemToMenuForm.vue';
 import StockFlowDetail from './StockFlowDetail.vue';
+import { useCustomToast } from '@/Composables/index.js';
+import { useForm } from '@inertiajs/vue3';
+import Textarea from '@/Components/Textarea.vue';
 
 const props = defineProps({
     errors: Object,
@@ -26,6 +29,7 @@ const props = defineProps({
     totalPages: Number,
 })
 
+const { showMessage } = useCustomToast();
 const emit = defineEmits(["applyCategoryFilter", "applyCheckedFilters"]);
 
 const categories = ref([]);
@@ -51,6 +55,7 @@ const selectedGroupItems = ref(null);
 const inventoryToAdd = ref({});
 const selectedCategory = ref(0);
 const selectedItem = ref('');
+const confirmationType = ref('group');
 
 const openStockFlowDetailItemModal = (product) => {
     selectedItem.value = product;
@@ -118,7 +123,10 @@ const closeForm = (action, status) => {
                 if(action === 'add-as-product') addAsProductModalIsOpen.value = false;
                 if(action === 'add') addStockFormIsOpen.value = false;
                 if(action === 'edit') editGroupFormIsOpen.value = false;
-                if(action === 'delete') deleteGroupFormIsOpen.value = false;
+                if(action === 'delete') {
+                    deleteGroupFormIsOpen.value = false;
+                    confirmationType.value = 'group';
+                };
             }
             break;
         }
@@ -142,6 +150,7 @@ const closeForm = (action, status) => {
                 //     selectedGroupItems.value = null;
                 // }, 300);
         
+                confirmationType.value = 'group';
                 if (action === 'edit') selectedGroupItems.value = []; // Ensure form resets to initial state on edit
             }
 
@@ -163,7 +172,7 @@ const clearFilters = (close) => {
     checkedFilters.value = resetFilters();
     // emit('applyCategoryFilter', selectedCategory.value);
     emit('applyCheckedFilters', checkedFilters.value);
-    close();
+    if (close) close();
 };
 
 const applyCheckedFilters = (close) => {
@@ -336,7 +345,7 @@ const computedRowsPerPage = computed(() => {
 const totalInventoryItemStock = (items) => {
     // Check if items is an array and not empty
     if (!Array.isArray(items) || items.length === 0) {
-        console.error('Invalid or empty items array');
+        // console.error('Invalid or empty items array');
         return 0;
     }
 
@@ -349,6 +358,57 @@ const totalInventoryItemStock = (items) => {
     
     return total;
 };
+
+const deleteInventoryForm = useForm({
+    remark: '',
+});
+
+// Delete inventory item
+const deleteInventory = async () => {
+    try {
+        // Post using axios and get the new order id if new order is created
+        const response = await axios.post(`/inventory/inventory/deleteInventory/${selectedGroup.value.id}`, deleteInventoryForm);
+        const hasActiveProducts = response.data;
+
+        closeForm('delete', 'close');
+        if (hasActiveProducts) {
+            setTimeout(() => {
+                confirmationType.value = 'product';
+                deleteGroupFormIsOpen.value = true;
+            }, 200);
+
+        } else {
+            setTimeout(() => {
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Inventory item has been successfully deleted.',
+                });
+            }, 200);
+    
+            clearFilters();
+            confirmationType.value = 'group';
+            deleteInventoryForm.remark = '';
+        }
+        
+    } catch (error) {
+        showMessage({ 
+            severity: 'error',
+            summary: error['response']['data'],
+        });
+    }
+};
+
+const deleteModalTitle = computed(() => {
+    return confirmationType.value === 'group'
+        ? 'Delete this group?'
+        : 'This group has items that are in use!';
+});
+
+const deleteModalDescription = computed(() => {
+    return confirmationType.value === 'group'
+        ? 'All the item inside this group will be deleted altogether. Are you sure you want to delete this group?'
+        : "This group cannot be deleted unless you deactivate the products that includes this group's items. Go to deactivate the products?";
+});
 </script>
 
 <template>
@@ -947,7 +1007,7 @@ const totalInventoryItemStock = (items) => {
             />
         </Modal>
 
-        <Modal 
+        <!-- <Modal 
             :show="deleteGroupFormIsOpen" 
             :maxWidth="'2xs'" 
             :closeable="true" 
@@ -958,7 +1018,66 @@ const totalInventoryItemStock = (items) => {
             :toastMessage="'Selected group has been deleted successfully.'"
             @close="closeForm('delete', 'close')"
             v-if="selectedGroup"
-        />
+        /> -->
+
+        <Modal
+            :maxWidth="confirmationType === 'group' ? '2xs' : 'xs'"
+            :closeable="true"
+            :show="deleteGroupFormIsOpen"
+            @close="closeForm('delete', 'close')"
+            :withHeader="false"
+        >
+            <template v-if="selectedGroup">
+                <form @submit.prevent="deleteInventory">
+                    <div class="w-full flex flex-col gap-9" >
+                        <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
+                            <DeleteIllus />
+                        </div>
+                        <div class="flex flex-col gap-5">
+                            <div class="flex flex-col gap-1 text-center">
+                                <span class="text-primary-900 text-lg font-medium self-stretch">{{ deleteModalTitle }}</span>
+                                <span class="text-grey-900 text-base font-medium self-stretch">{{ deleteModalDescription }}</span>
+                            </div>
+                            <Textarea 
+                                :inputName="'remark'"
+                                :labelText="'Reason of inventory item deletetion'"
+                                :errorMessage="deleteInventoryForm.errors.remark ? deleteInventoryForm.errors.remark[0] : ''"
+                                :placeholder="'Enter the reason'"
+                                :rows="3"
+                                v-model="deleteInventoryForm.remark"
+                            />
+                        </div>
+
+                        <div class="flex gap-3 w-full">
+                            <Button
+                                variant="tertiary"
+                                size="lg"
+                                type="button"
+                                @click="closeForm('delete', 'close')"
+                            >
+                                {{ confirmationType === 'group' ? 'Keep' : 'Maybe later' }}
+                            </Button>
+                            <Button
+                                v-if="confirmationType === 'group'"
+                                variant="red"
+                                size="lg"
+                            >
+                                Delete
+                            </Button>
+                            <Button
+                                v-else
+                                :href="route('products')"
+                                variant="red"
+                                size="lg"
+                                type="button"
+                            >
+                                Go deactivate
+                            </Button>
+                        </div>
+                    </div>
+                </form>
+            </template>
+        </Modal>
 
         <Modal
             :title="'Stock Flow Detail'"

@@ -175,6 +175,13 @@ const activeTierRewards = computed(() => rewards.value.filter((reward) => reward
 
 const redeemedTierRewards = computed(() => rewards.value.filter((reward) => reward.status === 'Redeemed'));
 
+const isNotRedeemable = (reward) => {
+    return (reward.ranking_reward.min_purchase === 'active' && reward.ranking_reward.min_purchase_amount > parseFloat(props.matchingOrderDetails.amount)) 
+        || (props.tableStatus === 'Pending Clearance' && reward.ranking_reward.reward_type !== 'Free Item') 
+        || (reward.ranking_reward.reward_type === 'Free Item' && reward.ranking_reward.product.availability === 'Unavailable')
+        || (reward.ranking_reward.reward_type === 'Free Item' && reward.ranking_reward.product.stock_left < reward.ranking_reward.item_qty);
+}
+
 // const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) && !form.processing);
 </script>
 
@@ -238,9 +245,9 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
                                 <p 
                                     :class="[
                                         'text-base font-semibold col-span-4 text-center',
-                                        (reward.ranking_reward.min_purchase === 'active' && reward.ranking_reward.min_purchase_amount > parseFloat(matchingOrderDetails.amount)) || (tableStatus === 'Pending Clearance' && reward.ranking_reward.reward_type !== 'Free Item') ? 'text-grey-300 pointer-events-none' :'text-primary-900 cursor-pointer'
+                                        isNotRedeemable(reward) ? 'text-grey-300 cursor-not-allowed' : 'text-primary-900 cursor-pointer'
                                     ]" 
-                                    @click="openModal(reward)"
+                                    @click="isNotRedeemable(reward) ? '' : openModal(reward)"
                                 >
                                     Redeem Now
                                 </p>

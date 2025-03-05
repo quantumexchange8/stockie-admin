@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { useForm } from '@inertiajs/vue3';
+import { useForm, router } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
@@ -10,6 +10,8 @@ import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast, useInputValidator } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
+import { DeleteCustomerIllust, DeleteIllus } from '@/Components/Icons/illus';
+import Textarea from '@/Components/Textarea.vue';
 
 const props = defineProps({
     errors: Object,
@@ -37,9 +39,24 @@ const { isValidNumberKey } = useInputValidator();
 const emit = defineEmits(['close', 'isDirty'])
 
 const isUnsavedChangesOpen = ref(false);
+const isDeleteItemModalOpen = ref(false);
+const confirmationType = ref('item');
+const selectedItemId = ref('');
+const selectedItemIndex = ref('');
 
 const cancelForm = (status) => {
     emit('close', 'edit', status)
+}
+
+const openModal = (type, itemId, index) => {
+    confirmationType.value = type;
+    selectedItemId.value = itemId;
+    selectedItemIndex.value = index;
+    isDeleteItemModalOpen.value = true;
+}
+
+const closeModal = () => {
+    isDeleteItemModalOpen.value = false;
 }
 
 const form = useForm({
@@ -54,6 +71,10 @@ const form = useForm({
                     return item;
                 })
             :   [],
+});
+
+const deleteInventoryItemForm = useForm({
+    remark: '',
 });
 
 const formSubmit = () => { 
@@ -72,6 +93,47 @@ const formSubmit = () => {
     })
 };
 
+// Delete inventory item
+const deleteInventoryItem = async () => {
+    form.processing = true;
+
+    try {
+        // Post using axios and get the new order id if new order is created
+        const response = await axios.post(`/inventory/inventory/deleteInventoryItem/${selectedItemId.value}`, deleteInventoryItemForm);
+        const hasActiveProducts = response.data;
+
+        closeModal();
+        if (hasActiveProducts) {
+            setTimeout(() => {
+                openModal('product', selectedItemId.value, selectedItemIndex.value)
+            }, 200);
+
+        } else {
+            setTimeout(() => {
+                removeItem(selectedItemIndex.value);
+                showMessage({ 
+                    severity: 'success',
+                    summary: 'Inventory item has been successfully deleted.',
+                });
+            }, 200);
+    
+            cancelForm('leave');
+            confirmationType.value = 'item';
+            selectedItemId.value = '';
+            selectedItemIndex.value = '';
+            deleteInventoryItemForm.remark = '';
+        }
+        
+    } catch (error) {
+        showMessage({ 
+            severity: 'error',
+            summary: error['response']['data'],
+        });
+    } finally {
+        form.processing = false;
+    }
+};
+
 const requiredFields = ['name', 'image', 'items'];
 
 const isFormValid = computed(() => requiredFields.every(field => form[field]) && !form.processing);
@@ -85,6 +147,18 @@ const removeItem = (index) => {
         form.items.splice(index, 1);
     }
 }
+
+const deleteModalTitle = computed(() => {
+    return confirmationType.value === 'item'
+        ? 'Delete this item?'
+        : 'This item is in use!';
+});
+
+const deleteModalDescription = computed(() => {
+    return confirmationType.value === 'item'
+        ? 'The products associated with this item cannot be reactivated and this item cannot recovered. This action cannot be undone. Are you sure you want to delete this item?'
+        : 'This item cannot be deleted unless you deactivate the products that includes this item. Go to deactivate the products?';
+});
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 </script>
@@ -124,7 +198,10 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <div class="flex flex-col gap-4 self-stretch" v-for="(item, i) in form.items" :key="i">
                         <div class="flex flex-row items-center justify-between self-stretch">
                             <p class="text-grey-950 font-semibold text-md">Item {{ i + 1 }}</p>
-                            <DeleteIcon class="size-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer" @click="removeItem(i)" />
+                            <DeleteIcon 
+                                class="size-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer" 
+                                @click="openModal('item', item.id, i)" 
+                            />
                         </div>
 
                         <div class="flex flex-col items-start gap-y-3 self-stretch">
@@ -221,4 +298,61 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             @leave="close('create', 'leave')"
         />
     </form>
+
+    <Modal
+        :maxWidth="confirmationType === 'item' ? '2xs' : 'xs'"
+        :closeable="true"
+        :show="isDeleteItemModalOpen"
+        @close="closeModal"
+        :withHeader="false"
+    >
+        <form @submit.prevent="deleteInventoryItem">
+            <div class="w-full flex flex-col gap-9" >
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
+                    <DeleteIllus />
+                </div>
+                <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1 text-center">
+                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ deleteModalTitle }}</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">{{ deleteModalDescription }}</span>
+                    </div>
+                    <Textarea 
+                        :inputName="'remark'"
+                        :labelText="'Reason of inventory item deletetion'"
+                        :errorMessage="deleteInventoryItemForm.errors.remark ? deleteInventoryItemForm.errors.remark[0] : ''"
+                        :placeholder="'Enter the reason'"
+                        :rows="3"
+                        v-model="deleteInventoryItemForm.remark"
+                    />
+                </div>
+
+                <div class="flex gap-3 w-full">
+                    <Button
+                        variant="tertiary"
+                        size="lg"
+                        type="button"
+                        @click="closeModal"
+                    >
+                        {{ confirmationType === 'item' ? 'Keep' : 'Maybe later' }}
+                    </Button>
+                    <Button
+                        v-if="confirmationType === 'item'"
+                        variant="red"
+                        size="lg"
+                    >
+                        Delete
+                    </Button>
+                    <Button
+                        v-else
+                        :href="route('products')"
+                        variant="red"
+                        size="lg"
+                        type="button"
+                    >
+                        Go deactivate
+                    </Button>
+                </div>
+            </div>
+        </form>
+    </Modal>
 </template>

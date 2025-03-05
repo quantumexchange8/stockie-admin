@@ -19,6 +19,7 @@ import { useFileExport } from "@/Composables";
 import dayjs from "dayjs";
 import CreateCustomer from "./CreateCustomer.vue";
 import EditCustomer from "./EditCustomer.vue";
+import Textarea from "@/Components/Textarea.vue";
 
 
 const props = defineProps ({
@@ -48,6 +49,12 @@ const highestPoints = ref(props.highestPoints);
 const searchQuery = ref('');
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
+
+const form = useForm({
+    id: customer.id,
+    password: '',
+    remark: '',
+})
 
 const showSideBar = (customer) => {
     isSidebarOpen.value = true;
@@ -85,6 +92,8 @@ const closeModal = (status) => {
                 isEditCustomerOpen.value = false;
                 isDeleteCustomerOpen.value = false;
                 selectedCustomer.value = null;
+                form.reset();
+                form.clearErrors();
             }
             break;
         }
@@ -98,6 +107,8 @@ const closeModal = (status) => {
             isEditCustomerOpen.value = false;
             isDeleteCustomerOpen.value = false;
             selectedCustomer.value = null;
+            form.reset();
+            form.clearErrors();
 
             break;
         }
@@ -115,20 +126,14 @@ const closeModal = (status) => {
 //     setTimeout(() => form.reset(), 300);
 // }
 
-const form = useForm({
-    id: customer.id,
-    password: '',
-})
-
 const submit = () => {
     form.delete(route(`customer.delete-customer`, form.id), {
         preserveScroll: true,
         preserveState: 'errors',
         onSuccess: () => {
             closeModal();
-        },
-        onError: (error) => {
-            console.error(error);
+            form.reset();
+            form.clearErrors();
         }
     })
 }
@@ -425,10 +430,20 @@ watch (() => searchQuery.value, (newValue) => {
                         <span class="text-grey-900 text-base font-medium self-stretch">To delete this customer, you have to enter the passcode provided from the master admin.</span>
                     </div>
                     <TextInput
+                        required
                         :labelText="'Passcode'"
                         inputName="password"
                         inputType="password"
+                        :errorMessage="form.errors && form.errors.password ? form.errors.password : ''"
                         v-model="form.password"
+                    />
+                    <Textarea 
+                        :inputName="'remark'"
+                        :labelText="'Reason of customer deletetion'"
+                        :errorMessage="form.errors && form.errors.remark ? form.errors.remark : ''"
+                        :placeholder="'Enter the reason'"
+                        :rows="3"
+                        v-model="form.remark"
                     />
                 </div>
 

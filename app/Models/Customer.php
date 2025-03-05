@@ -32,6 +32,7 @@ class Customer extends Model implements HasMedia
         'point',
         'total_spending',
         'first_login',
+        'remark',
         'status'
     ];
 

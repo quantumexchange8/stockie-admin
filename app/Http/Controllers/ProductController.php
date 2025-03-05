@@ -428,7 +428,8 @@ class ProductController extends Controller
      */
     public function getAllInventories()
     {
-        return Iventory::withWhereHas('inventoryItems')
+        return Iventory::withWhereHas('inventoryItems', fn ($query) => $query->where('status', '!=', 'Inactive'))
+                        ->where('status', 'Active')
                         ->select(['id', 'name'])
                         ->orderBy('id')
                         ->get()

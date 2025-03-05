@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('verification_code')->nullable();
             $table->timestamp('verification_code_expires_at')->nullable();
             $table->string('first_login')->nullable()->default(NULL);
+            $table->string('remark')->nullable()->default(NULL);
             $table->string('status')->nullable()->default(NULL);
             $table->rememberToken();
             $table->softDeletes();

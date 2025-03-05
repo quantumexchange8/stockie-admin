@@ -11,7 +11,7 @@ import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
 import Textarea from '@/Components/Textarea.vue';
 import axios from 'axios';
-import { useCustomToast } from '@/Composables';
+import { useCustomToast, useInputValidator } from '@/Composables';
 
 const props = defineProps({
     customer:{
@@ -22,6 +22,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:customerPoints']);
 const { showMessage } = useCustomToast();
+const { isValidNumberKey } = useInputValidator();
 
 const customer = ref(props.customer);
 const redeemables = ref([]);
@@ -68,8 +69,11 @@ const openAdjust = () => {
 const closeAdjust = (status) => {
     switch (status) {
         case 'close': {
-            if(form.isDirty) isUnsavedChangesOpen.value = true;
-            else isAdjustOpen.value = close;
+            if(form.isDirty) {
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isAdjustOpen.value = false;
+            }
             break;
         }
         case 'stay': {
@@ -204,6 +208,7 @@ onMounted(() => getRedeemables());
                         :inputName="'point'"
                         :placeholder="'0'"
                         v-model="form.point"
+                        @keypress="isValidNumberKey($event, false)"
                     >
                         <template #prefix>
                             <span class="text-grey-900 text-base font-normal">pts</span>

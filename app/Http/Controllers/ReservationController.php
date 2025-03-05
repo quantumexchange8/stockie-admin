@@ -85,9 +85,15 @@ class ReservationController extends Controller
                             ];
                         });
 
+        $customers = Customer::where(function ($query) {
+                                    $query->where('status', '!=', 'void')
+                                        ->orWhereNull('status'); // Handle NULL cases
+                                })
+                                ->get();
+
         return Inertia::render('Reservation/Reservation', [
             'reservations' => $upcomingReservations,
-            'customers' => Customer::all(),
+            'customers' => $customers,
             'tables' => Table::orderBy('zone_id')->get(),
             'occupiedTables' => Table::where('status', '!=', 'Empty Seat')->get(),
             'waiters' => $waiters,

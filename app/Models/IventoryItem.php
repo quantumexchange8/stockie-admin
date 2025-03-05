@@ -24,6 +24,7 @@ class IventoryItem extends Model
         'keep',
         'current_kept_amt',
         'total_kept',
+        'remark',
         'status',
     ];
     

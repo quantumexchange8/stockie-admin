@@ -42,7 +42,7 @@ class ConfigCommissionController extends Controller
         $productNames = Product::select('id', 'product_name')->get();
 
         $products = Product::whereDoesntHave('commItem')->pluck('id');
-        $productsToAdd = Product::whereIn('id', $products)->get(['id', 'product_name']);
+        $productsToAdd = Product::whereIn('id', $products)->where('availability', 'Available')->get(['id', 'product_name']);
         $productsToAdd->each(function ($product){
             $product->image = $product->getFirstMediaUrl('product');
         });

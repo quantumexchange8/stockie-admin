@@ -951,6 +951,10 @@ class OrderController extends Controller
                                     'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
                                     'rewards.rankingReward.product:id,product_name'
                                 ])
+                                ->where(function ($query) {
+                                    $query->where('status', '!=', 'void')
+                                          ->orWhereNull('status'); // Handle NULL cases
+                                })
                                 ->get()
                                 ->each(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
@@ -1634,6 +1638,7 @@ class OrderController extends Controller
                 'point' => 0,
                 'total_spending' => 0.00,
                 'first_login' => '1',
+                'status' => 'verified',
             ]);
 
             $order = Order::find($validatedData['order_id']);

@@ -56,6 +56,7 @@ class ConfigDiscountController extends Controller
                                                 $query->select('id', 'discount_from', 'discount_to');
                                             }
                                         ])
+                                        ->where('availability', 'Available')
                                         ->select('id', 'product_name', 'price', 'category_id', 'status', 'discount_id')
                                         ->get();
         

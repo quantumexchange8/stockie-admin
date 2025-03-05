@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('keep');
             $table->integer('current_kept_amt');
             $table->integer('total_kept');
+            $table->string('remark')->nullable()->default(NULL);
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

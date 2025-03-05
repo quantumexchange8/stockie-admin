@@ -40,6 +40,7 @@ class InventoryController extends Controller
                                                 $join->on('order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
                                                      ->where('keep_items.status', 'Keep');
                                             })
+                                            ->where('iventory_items.status', '!=', 'Inactive')
                                             ->groupBy('iventory_items.id');
                                     },
                                     'inventoryItems.itemCategory:id,name',
@@ -47,6 +48,7 @@ class InventoryController extends Controller
                                     'inventoryItems.productItems.product:id',
                                     'inventoryItems.productItems.orderSubitems:id,product_item_id',
                                 ])
+                                ->where('status', 'Active')
                                 ->orderBy('id')
                                 ->get()
                                 ->map(function ($group) {
@@ -277,8 +279,11 @@ class InventoryController extends Controller
                                                 ')
                                                 ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
                                                 ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
-                                                ->leftJoin('keep_items', 'order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
-                                                ->where('keep_items.status', 'Keep')
+                                                ->leftJoin('keep_items', function ($join) {
+                                                    $join->on('order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                                         ->where('keep_items.status', 'Keep');
+                                                })
+                                                ->where('iventory_items.status', '!=', 'Inactive')
                                                 ->groupBy('iventory_items.id');
                                     },
                                     'inventoryItems.itemCategory:id,name',
@@ -286,6 +291,7 @@ class InventoryController extends Controller
                                     'inventoryItems.productItems.product:id',
                                     'inventoryItems.productItems.orderSubitems:id,product_item_id',
                                 ])
+                                ->where('status', 'Active')
                                 ->orderBy('id')
                                 ->get()
                                 ->map(function ($group) {
@@ -388,12 +394,34 @@ class InventoryController extends Controller
         // Get inventories with filtered items
         $data = $inventoryQuery->whereIn('id', $inventoryIds)
                                 ->with([
-                                    'inventoryItems' => fn ($query) => $query->whereIn('id', $filteredItems->pluck('id')), 
+                                    // 'inventoryItems' => fn ($query) => $query->whereIn('id', $filteredItems->pluck('id'))->where('status', '!=', 'Inactive'), 
+                                    'inventoryItems' => function ($query) use ($filteredItems) {
+                                        $query->selectRaw('
+                                                iventory_items.*, 
+                                                SUM(
+                                                    CASE 
+                                                        WHEN keep_items.qty > 0 AND keep_items.cm = 0 THEN keep_items.qty
+                                                        WHEN keep_items.qty = 0 AND keep_items.cm > 0 THEN 1
+                                                        ELSE 0 
+                                                    END
+                                                ) as total_keep_qty
+                                            ')
+                                            ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
+                                            ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
+                                            ->leftJoin('keep_items', function ($join) {
+                                                $join->on('order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                                     ->where('keep_items.status', 'Keep');
+                                            })
+                                            ->where('iventory_items.status', '!=', 'Inactive')
+                                            ->whereIn('iventory_items.id', $filteredItems->pluck('id'))
+                                            ->groupBy('iventory_items.id');
+                                    },
                                     'inventoryItems.itemCategory:id,name',
                                     'inventoryItems.productItems:id,inventory_item_id,product_id',
                                     'inventoryItems.productItems.product:id',
                                     'inventoryItems.productItems.orderSubitems:id,product_item_id',
                                 ])
+                                ->where('status', 'Active')
                                 ->orderBy('id')
                                 ->get()
                                 ->map(function ($group) {
@@ -673,38 +701,97 @@ class InventoryController extends Controller
     /**
      * Delete inventory along with all its items.
      */
-    public function deleteInventory(Request $request, string $id)
+    public function deleteInventoryItem(Request $request, string $id)
     {
-        $existingGroup = Iventory::with('inventoryItems')->find($id);
-        $existingGroupItems = $existingGroup->inventoryItems;
+        $existingItem = IventoryItem::with('productItems.product')->find($id);
         
-        if (count($existingGroupItems) > 0) {
-            foreach ($existingGroupItems as $key => $value) {
-                if (isset($value['id'])) {
-                    $existingItem = IventoryItem::find($value['id']);
-                    $existingItem->delete();
-                }
+        if ($existingItem) {
+            $hasActiveProducts = false;
+            $productItems = $existingItem->productItems;
+
+            if ($productItems && count($productItems) > 0) {
+                $hasActiveProducts = $productItems->some(function ($productItem) {
+                    return $productItem->product->availability === 'Available';
+                });
             }
+    
+            if ($hasActiveProducts) {
+                return response()->json($hasActiveProducts, 201);
+            }
+
+            activity()->useLog('delete-inventory-item')
+                        ->performedOn($existingItem)
+                        ->event('deleted')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'item_name' => $existingItem->item_name,
+                        ])
+                        ->log("'$existingItem->item_name' is deleted.");
+    
+            $existingItem->update([
+                'remark' => $request->remark,
+                'status' => 'Inactive'
+            ]);
+    
+            return response()->json($hasActiveProducts, 201);
         }
 
-        activity()->useLog('delete-inventory-group')
-                    ->performedOn($existingGroup)
-                    ->event('deleted')
-                    ->withProperties([
-                        'edited_by' => auth()->user()->full_name,
-                        'image' => auth()->user()->getFirstMediaUrl('user'),
-                        'group_name' => $existingGroup->name,
-                    ])
-                    ->log("$existingGroup->name is deleted.");
+        return response()->json('This inventory item cannot be found', 422);
+    }
 
-        $existingGroup->delete();
+    /**
+     * Delete inventory along with all its items.
+     */
+    public function deleteInventory(Request $request, string $id)
+    {
+        $existingGroup = Iventory::with('inventoryItems.productItems.product')->find($id);
+        
+        if ($existingGroup) {
+            $hasActiveProducts = false;
+            $inventoryItems = $existingGroup->inventoryItems;
 
-        // $message = [ 
-        //     'severity' => 'success', 
-        //     'summary' => 'Selected group has been deleted successfully.',
-        // ];
+            foreach ($inventoryItems as $key => $inventoryItem) {
+                $productItems = $inventoryItem->productItems;
+    
+                if ($productItems && count($productItems) > 0) {
+                    $hasActiveProducts = $productItems->some(function ($productItem) {
+                        return $productItem->product->availability === 'Available';
+                    });
+                }
+            }
+    
+            if ($hasActiveProducts) {
+                return response()->json($hasActiveProducts, 201);
+            }
 
-        return redirect()->back();
+            activity()->useLog('delete-inventory-group')
+                        ->performedOn($existingGroup)
+                        ->event('deleted')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                            'group_name' => $existingGroup->name,
+                        ])
+                        ->log("$existingGroup->name is deleted.");
+            
+            $inventoryItems->filter(fn ($inventoryItem) => $inventoryItem->status !== 'Inactive')
+                            ->each(fn ($inventoryItem) => (
+                                $inventoryItem->update([
+                                    'remark' => $request->remark,
+                                    'status' => 'Inactive'
+                                ])
+                            ));
+
+            $existingGroup->update([
+                'remark' => $request->remark,
+                'status' => 'Inactive'
+            ]);
+    
+            return response()->json($hasActiveProducts, 201);
+        }
+
+        return response()->json('This inventory cannot be found', 422);
     }
     
     /**
@@ -719,7 +806,7 @@ class InventoryController extends Controller
 
         $keepHistories = KeepHistory::with([
                                             'keepItem.orderItemSubitem.productItem.inventoryItem',
-                                            'keepItem.customer:id,full_name',
+                                            'keepItem.customer:id,full_name,status',
                                             'keepItem.waiter:id,full_name'
                                         ])
                                         ->whereBetween('created_at', $dateFilter)
@@ -788,7 +875,7 @@ class InventoryController extends Controller
 
         $data = $query->with([
                             'keepItem.orderItemSubitem.productItem.inventoryItem',
-                            'keepItem.customer:id,full_name', 
+                            'keepItem.customer:id,full_name,status', 
                             'keepItem.waiter:id,full_name'
                         ])
                         ->orderBy('created_at', 'desc')
@@ -884,7 +971,7 @@ class InventoryController extends Controller
     private function getKeptItem($dateFilter = null, $checkedFilters = null)
     {
         $query = KeepItem::with([
-                                'customer:email,full_name,id,phone,point,ranking',
+                                'customer:email,full_name,id,phone,point,ranking,status',
                                 'customer.keepItems.waiter:id,full_name',
                                 'customer.rank:id,name',
                                 'customer.keepItems.orderItemSubitem.productItem.inventoryItem',
@@ -1002,7 +1089,7 @@ class InventoryController extends Controller
                                                         $record->old_stock < 0 || $record->current_stock < 0
                                                     )
                                                     ->map(function ($record) {
-                                                        $inventoryItem = $record->inventory->inventoryItems->first();
+                                                        $inventoryItem = $record->inventory?->inventoryItems?->first();
                                                         $replenishedKeepStockQty = $record->old_stock + $record->in > 0 
                                                                 ? $record->in - ($record->old_stock + $record->in)
                                                                 : $record->in;
@@ -1011,7 +1098,7 @@ class InventoryController extends Controller
                                                         return [
                                                             'type' => 'stock',
                                                             'inventory_id' => $record->inventory_id,
-                                                            'inventory_item' => $inventoryItem->item_name,
+                                                            'inventory_item' => $inventoryItem?->item_name,
                                                             'date' => $record->created_at,
                                                             'kept' => 0,
                                                             'reallocated' => $toBeReallocatedQty,

@@ -22,6 +22,8 @@ class Iventory extends Model implements HasMedia
         'name',
         // 'category_id',
         'image',
+        'remark',
+        'status',
     ];
 
     public function getActivitylogOptions(): LogOptions

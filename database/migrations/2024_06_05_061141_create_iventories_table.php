@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('iventories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            // $table->string('category_id');
             $table->string('image')->nullable()->default(NULL);
+            $table->string('remark')->nullable()->default(NULL);
+            $table->string('status')->default('Active');
             $table->softDeletes();
             $table->timestamps();
         });

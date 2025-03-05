@@ -142,8 +142,10 @@ const closeModal = (status) => {
 }
 
 const openDrawer = (row) => {
-    isDrawerOpen.value = true;
-    selectedCustomer.value = row;
+    if (row.status !== 'void') {
+        isDrawerOpen.value = true;
+        selectedCustomer.value = row;
+    }
 }
 
 const closeDrawer = () => {

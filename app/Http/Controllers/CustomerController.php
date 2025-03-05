@@ -21,7 +21,7 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'created_at')
+        $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'status', 'created_at')
                                 ->with([
                                     'rank:id,name',
                                     'keepItems' => function ($query) {
@@ -33,6 +33,10 @@ class CustomerController extends Controller
                                                 ]);
                                     }
                                 ])
+                                ->where(function ($query) {
+                                    $query->where('status', '!=', 'void')
+                                          ->orWhereNull('status'); // Handle NULL cases
+                                })
                                 ->get()
                                 ->map(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
@@ -86,9 +90,10 @@ class CustomerController extends Controller
             'point' => 0,
             'total_spending' => 0.00,
             'first_login' => '1',
+            'status' => 'verified',
         ]);
     
-        $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'created_at')
+        $customers = Customer::select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'status', 'created_at')
                                 ->with([
                                     'rank:id,name',
                                     'keepItems' => function ($query) {
@@ -100,6 +105,10 @@ class CustomerController extends Controller
                                                 ]);
                                     }
                                 ])
+                                ->where(function ($query) {
+                                    $query->where('status', '!=', 'void')
+                                          ->orWhereNull('status'); // Handle NULL cases
+                                })
                                 ->get()
                                 ->map(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
@@ -186,43 +195,48 @@ class CustomerController extends Controller
 
     public function deleteCustomer(Request $request, string $id)
     {
-        $validatedData = $request->validate([
-            'password' => 'required|string|max:255',
-        ], [
-            'verification_code.required' => 'This field is required',
-            'verification_code.integer' => 'This field must be an string.',
-            // 'verification_code.exists'=> 'Invalid verification code.',
-        ]);
+        $validatedData = $request->validate(
+            [
+                'password' => 'required|string|max:255',
+            ], 
+            [
+                'required' => 'This field is required',
+                // 'verification_code.required' => 'This field is required',
+                // 'verification_code.integer' => 'This field must be an string.',
+                // 'verification_code.exists'=> 'Invalid verification code.',
+            ]
+        );
         
         $customer = Customer::find($id);
-
         $user = Auth::user();
-        if($customer && (Hash::check($validatedData['password'], $user->password)) ) {
 
-            activity()->useLog('delete-customer')
-                        ->performedOn($customer)
-                        ->event('deleted')
-                        ->withProperties([
-                            'edited_by' => auth()->user()->full_name,
-                            'image' => auth()->user()->getFirstMediaUrl('user'),
-                            'item_name' => $customer->full_name,
-                        ])
-                        ->log("Customer '$customer->full_name' is deleted.");
+        if ($customer && (Hash::check($validatedData['password'], $user->password))) {
+            // activity()->useLog('delete-customer')
+            //             ->performedOn($customer)
+            //             ->event('deleted')
+            //             ->withProperties([
+            //                 'edited_by' => auth()->user()->full_name,
+            //                 'image' => auth()->user()->getFirstMediaUrl('user'),
+            //                 'item_name' => $customer->full_name,
+            //             ])
+            //             ->log("Customer '$customer->full_name' is deleted.");
 
-            $customer->delete();
+            $customer->update([
+                'remark' => $request->remark,
+                'status' => 'void',
+            ]);
+
             $message = [
                 'severity' => 'success',
-                'summary' => 'Selected customer has been deleted successfully.',
-        ];
-        }
-        else{
-            $message = [
-                'severity' => 'error',
-                'summary' => 'Error deleting customer.',
+                'summary' => "Selected customer has been deleted successfully.",
             ];
+
+            return Redirect::route('customer')->with(['message'=> $message]);
         }
 
-        return Redirect::route('customer')->with(['message'=> $message]);
+        return redirect()->back()->withErrors([
+            'password' => 'The passcode is not valid.'
+        ]);
     }
 
     public function getFilteredCustomers(Request $request)
@@ -375,7 +389,7 @@ class CustomerController extends Controller
     }
 
     public function getRedeemableItems () {
-        $redeemables = Product::select('id','product_name', 'point')->where('is_redeemable', true)->get();
+        $redeemables = Product::select('id','product_name', 'point', 'availability')->where('is_redeemable', true)->get();
         $redeemables->each(function($redeemable){
             $redeemable->image = $redeemable->getFirstMediaUrl('product');
         });
@@ -538,9 +552,24 @@ class CustomerController extends Controller
     }
 
     private function getCustomers(){
-        $data = Customer::all();
+        $data = Customer::where(function ($query) {
+                            $query->where('status', '!=', 'void')
+                                ->orWhereNull('status'); // Handle NULL cases
+                        });
 
         return $data;
     }
 
+    // used by order customer listing
+    public function getAllCustomers(){
+        $customerList = $this->getCustomers()
+                        ->get(['id', 'full_name', 'phone'])
+                        ->map(function ($customer) {
+                            $customer->image = $customer->getFirstMediaUrl('customer');
+
+                            return $customer;
+                        });
+
+        return response()->json($customerList);
+    }
 }
