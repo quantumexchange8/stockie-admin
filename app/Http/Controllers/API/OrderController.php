@@ -750,11 +750,11 @@ class OrderController extends Controller
                     }
                 } else if ($item['item_type'] === 'keep') {
                     $keepItem = KeepItem::with(['orderItemSubitem:id,order_item_id,product_item_id', 
-                                                            'orderItemSubitem.productItem:id,product_id',
+                                                            'orderItemSubitem.productItem:id,product_id,inventory_item_id',
                                                             'orderItemSubitem.productItem.inventoryItem:id,item_name', 
                                                             'orderItemSubitem.orderItem:id'])
                                         ->find($item['id']);
-        
+
                     $newOrderItem = OrderItem::create([
                         'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
                         'user_id' => $waiter->id,
@@ -932,7 +932,7 @@ class OrderController extends Controller
         return response()->json([
             'status' => 'error',
             'title' => "No items selected to be placed."
-        ]);
+        ], 422);
     }
     
     public function getAllCustomers() 
