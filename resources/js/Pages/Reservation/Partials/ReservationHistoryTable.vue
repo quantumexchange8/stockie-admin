@@ -42,7 +42,7 @@ const defaultLatestMonth = computed(() => {
 });
 const date_filter = ref(defaultLatestMonth.value);
 const isLoading = ref(false);
-const reservationStatus = ref(['Completed', 'No Show', 'Cancelled']);
+const reservationStatus = ref(['Completed', 'No show', 'Cancelled']);
 const checkedFilters = ref({
     status: [],
 })
@@ -271,8 +271,7 @@ watch(() => date_filter.value, (newValue) => {
                 >
                     <div class="flex items-start gap-2 self-stretch">
                         <div class="flex items-center gap-2 flex-[1_0_0]">
-                            <span class="text-grey-950 text-base font-bold">{{ dayjs(reservation.reservation_date).format('YYYY-MM-DD') }}</span>
-                            <span class="text-grey-950 text-base font-bold">{{ dayjs(reservation.reservation_date).format('HH:mm') }}</span>
+                            <span class="text-grey-950 text-base font-bold">{{ dayjs(reservation.action_date && reservation.status === 'No show' ? reservation.action_date : reservation.reservation_date).format('YYYY-MM-DD HH:mm') }}</span>
                             <DelayedIcon class="size-5" v-if="reservation.status === 'No show' && reservation.action_date"/>
                         </div>
                     </div>

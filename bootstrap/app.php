@@ -26,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule) {
-        $schedule->command('reservations:mark-no-show')->dailyAt('00:00');
+        $schedule->command('reservations:mark-no-show')->everyFiveMinutes();
         $schedule->command('configuration:update-active-promo')->dailyAt('00:00');
         $schedule->command('configuration:update-product-discount')->dailyAt('00:00');
         $schedule->command('keepitems:check-expiration')->dailyAt('00:00');

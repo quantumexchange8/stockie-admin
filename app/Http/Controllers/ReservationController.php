@@ -25,9 +25,6 @@ class ReservationController extends Controller
 {
     public function index()
     {
-        $cutoffTime = Carbon::now()->subHours(24);
-
-        // $yesterday = now('Asia/Kuala_Lumpur')->subDay();
         $upcomingReservations = Reservation::with([
                                                 'reservedFor.reservations', 
                                                 'reservedFor.reservationCancelled', 
@@ -35,22 +32,18 @@ class ReservationController extends Controller
                                                 'reservedBy', 
                                                 'handledBy'
                                             ])
-                                            // ->whereDate('reservation_date', '>', $yesterday)
-                                            ->where(function ($query) use ($cutoffTime) {
+                                            ->where(function ($query) {
                                                 // Check for 'Pending' status and overdue reservation_date
-                                                $query->where('status', 'Pending')
-                                                    ->where('reservation_date', '>=', $cutoffTime);
+                                                $query->where('status', 'Pending');
                                 
                                                 // Or check for 'Delayed' status and overdue action_date
-                                                $query->orWhere(function ($subQuery) use ($cutoffTime) {
-                                                    $subQuery->where('status', 'Delayed')
-                                                        ->where('action_date', '>=', $cutoffTime);
+                                                $query->orWhere(function ($subQuery) {
+                                                    $subQuery->where('status', 'Delayed');
                                                 });
 
                                                 // Or check for 'Checked in' status
-                                                $query->orWhere(function($subQuery) use ($cutoffTime){
-                                                    $subQuery->where('status', 'Checked in')
-                                                            ->where('action_date', '>=', $cutoffTime);
+                                                $query->orWhere(function($subQuery){
+                                                    $subQuery->where('status', 'Checked in');
                                                 });
                                             })
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
@@ -117,6 +110,7 @@ class ReservationController extends Controller
             'cancel_type' => '',
             'remark' => '',
             'status' => 'Pending',
+            'grace_period' => $request->grace_period,
             'reservation_date' => $request->reservation_date,
             'handled_by' => $request->reserved_by,
             'reserved_by' => $request->reserved_by,
@@ -154,7 +148,6 @@ class ReservationController extends Controller
             $reservation->reservedFor->image = $reservation->reservedFor->getFirstMediaUrl('customer');
         }
 
-
         $customer = is_int($request->name) ? Customer::find($request->name) : null;
 
         $reservation->update([
@@ -166,6 +159,7 @@ class ReservationController extends Controller
             'cancel_type' => $reservation->cancel_type,
             'remark' => $reservation->remark,
             'status' => $reservation->status,
+            'grace_period' => $request->grace_period,
             'reservation_date' => $request->reservation_date,
             'handled_by' => $request->reserved_by,
             'reserved_by' => $request->reserved_by,
@@ -183,7 +177,6 @@ class ReservationController extends Controller
                     ->log("Reservation detail for $reservation->name on $reservation->reservation_date is updated.");
 
         return response()->json($reservation);
-        // return redirect()->back();
     }
     
     /**
@@ -382,8 +375,6 @@ class ReservationController extends Controller
      */
     public function getReservations()
     {
-        $cutoffTime = Carbon::now()->subHours(24);
-        // $yesterday = now('Asia/Kuala_Lumpur')->subDay();
         $upcomingReservations = Reservation::with([
                                                 'reservedFor.reservations', 
                                                 'reservedFor.reservationCancelled', 
@@ -391,21 +382,18 @@ class ReservationController extends Controller
                                                 'reservedBy', 
                                                 'handledBy'
                                             ])
-                                            ->where(function ($query) use ($cutoffTime) {
+                                            ->where(function ($query) {
                                                 // Check for 'Pending' status and overdue reservation_date
-                                                $query->where('status', 'Pending')
-                                                    ->where('reservation_date', '>=', $cutoffTime);
+                                                $query->where('status', 'Pending');
                                 
                                                 // Or check for 'Delayed' status and overdue action_date
-                                                $query->orWhere(function ($subQuery) use ($cutoffTime) {
-                                                    $subQuery->where('status', 'Delayed')
-                                                        ->where('action_date', '>=', $cutoffTime);
+                                                $query->orWhere(function ($subQuery) {
+                                                    $subQuery->where('status', 'Delayed');
                                                 });
 
                                                 // Or check for 'Checked in' status
-                                                $query->orWhere(function($subQuery) use ($cutoffTime){
-                                                    $subQuery->where('status', 'Checked in')
-                                                            ->where('action_date', '>=', $cutoffTime);
+                                                $query->orWhere(function($subQuery){
+                                                    $subQuery->where('status', 'Checked in');
                                                 });
                                             })
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
@@ -419,22 +407,39 @@ class ReservationController extends Controller
      */
     public function viewReservationHistory()
     {
-        // $yesterday = now('Asia/Kuala_Lumpur')->subDay();
-        $pastReservations = Reservation::with([
-                                                'reservedFor.reservations', 
-                                                'reservedFor.reservationCancelled', 
-                                                'reservedFor.reservationAbandoned', 
-                                                'reservedBy', 
-                                                'handledBy'
-                                            ])
-                                            ->whereDate('reservation_date', '>', Carbon::now()->timezone('Asia/Kuala_Lumpur')->subMonth())
-                                            ->whereIn('status', ['Completed', 'No show', 'Cancelled'])
-                                            ->orderBy('id')
-                                            ->get();
+        $dateFilter = [
+            now()->subMonths(1)->timezone('Asia/Kuala_Lumpur')->format('Y-m-d'),
+            now()->timezone('Asia/Kuala_Lumpur')->format('Y-m-d')
+        ];
+
+        $pastReservations = Reservation::where(function ($query) use ($dateFilter) {
+                                            $startDate = Carbon::parse($dateFilter[0])->startOfDay()->format('Y-m-d H:i:s');
+                                            $endDate = Carbon::parse($dateFilter[1])->endOfDay()->format('Y-m-d H:i:s');
+
+                                            $query->where(fn ($q) =>
+                                                        $q->whereNotNull('action_date')
+                                                            ->whereDate('action_date', '>=', $startDate)
+                                                            ->whereDate('action_date', '<=', $endDate)
+                                                    )
+                                                    ->orWhere(fn ($q) =>
+                                                        $q->whereNull('action_date')
+                                                            ->whereDate('reservation_date', '>=', $startDate)
+                                                            ->whereDate('reservation_date', '<=', $endDate)
+                                                    );
+                                        })
+                                        ->with([
+                                            'reservedFor.reservations', 
+                                            'reservedFor.reservationCancelled', 
+                                            'reservedFor.reservationAbandoned', 
+                                            'reservedBy', 
+                                            'handledBy'
+                                        ])
+                                        ->whereIn('status', ['Completed', 'No show', 'Cancelled'])
+                                        ->orderBy('id')
+                                        ->get();
 
         $pastReservations->each(function ($pastReservation){
-            if($pastReservation->reservedFor)
-            {
+            if ($pastReservation->reservedFor) {
                 $pastReservation->reservedFor->image = $pastReservation->reservedFor->getFirstMediaUrl('customer');
             }
         });
@@ -452,13 +457,43 @@ class ReservationController extends Controller
     {
         $dateFilter = $request->input('date_filter');
         $status = $request->input('checkedFilters.status') ?? ['Completed', 'No show', 'Cancelled'];
+
         $dateFilter = array_map(function ($date){
-            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d H:i:s');
+            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+            // return Carbon::parse($date, 'Asia/Kuala_Lumpur')->format('Y-m-d');
         }, $dateFilter);
 
-        $data = Reservation::whereDate('reservation_date', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0])
-                            ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
-                                $subQuery->whereDate('reservation_date', '<=', $dateFilter[1]);
+        $data = Reservation::where(function ($query) use ($dateFilter) {
+                                $startDate = Carbon::parse($dateFilter[0])->startOfDay()->format('Y-m-d H:i:s');
+
+                                // 2 dates condition
+                                if (count($dateFilter) > 1) {
+                                    $endDate = Carbon::parse($dateFilter[1])->endOfDay()->format('Y-m-d H:i:s');
+
+                                    $query->where(fn ($q) =>
+                                                $q->whereNotNull('action_date')
+                                                    ->whereDate('action_date', '>=', $startDate)
+                                                    ->whereDate('action_date', '<=', $endDate)
+                                            )
+                                            ->orWhere(fn ($q) =>
+                                                $q->whereNull('action_date')
+                                                    ->whereDate('reservation_date', '>=', $startDate)
+                                                    ->whereDate('reservation_date', '<=', $endDate)
+                                            );
+                                } else {
+                                    $endDate = Carbon::parse($dateFilter[0])->endOfDay()->format('Y-m-d H:i:s');
+                                    // 1 date condition
+                                    $query->where(fn ($q) =>
+                                                $q->whereNotNull('action_date')
+                                                    ->whereDate('action_date', '>=', $startDate)
+                                                    ->whereDate('action_date', '<=', $endDate)
+                                            )
+                                            ->orWhere(fn ($q) =>
+                                                $q->whereNull('action_date')
+                                                    ->whereDate('reservation_date', '>=', $startDate)
+                                                    ->whereDate('reservation_date', '<=', $endDate)
+                                            );
+                                }
                             })
                             ->with([
                                 'reservedFor.reservations', 
@@ -467,7 +502,6 @@ class ReservationController extends Controller
                                 'reservedBy', 
                                 'handledBy'
                             ])
-                            // ->whereDate('reservation_date', '<', $yesterday)
                             ->whereIn('status', $status)
                             ->orderBy('id')
                             ->get();
@@ -545,5 +579,29 @@ class ReservationController extends Controller
         if ($reservation) $reservation->delete();
         
         return redirect()->back();
+    }
+
+    public function getOccupiedTables()
+    {
+        // Get tables that are not 'Empty Seat'
+        $occupiedTables = Table::where('status', '!=', 'Empty Seat')->get();
+    
+        // Get reserved tables
+        $reservedTableIds = Reservation::whereNotIn('status', ['Cancelled', 'Completed', 'No show']) // Adjust status if needed
+                                        ->pluck('table_no') // Get JSON arrays of table_no
+                                        ->flatMap(function ($tableNos) {
+                                            return array_map(function ($table) {
+                                                return $table['id'];
+                                            }, $tableNos); // Decode JSON only if it's a string
+                                        })
+                                        ->unique();
+
+        // Get table records for reserved tables
+        $reservedTables = Table::whereIn('id', $reservedTableIds)->get();
+    
+        // Merge both occupied and reserved tables
+        $allOccupiedTables = $occupiedTables->merge($reservedTables)->unique('id');
+    
+        return response()->json($allOccupiedTables);
     }
 }

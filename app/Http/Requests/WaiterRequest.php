@@ -26,7 +26,7 @@ class WaiterRequest extends FormRequest
             'phone' => 'required|string|max:255',
             'salary' => 'required|string|min:0',
             'stockie_email' => 'required|email',
-            'image' => 'required',
+            'image' => 'required|max:8000',
         ];
 
         $rules['password'] = [
@@ -76,6 +76,7 @@ class WaiterRequest extends FormRequest
             'salary.min' => 'Salary must be at least 0.',
             'worker_email.email' => 'Invalid email',
             'image.required' => 'Image is required.',
+            'image.max' => 'The size of the image is too big.',
             'required'=> 'This field is required.',
         ];
     }

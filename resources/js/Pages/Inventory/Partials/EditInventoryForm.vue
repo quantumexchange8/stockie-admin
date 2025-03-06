@@ -10,7 +10,7 @@ import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast, useInputValidator } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
-import { DeleteCustomerIllust, DeleteIllus } from '@/Components/Icons/illus';
+import { DeleteCustomerIllust, DeleteIllus, ProductDeactivationIllust } from '@/Components/Icons/illus';
 import Textarea from '@/Components/Textarea.vue';
 
 const props = defineProps({
@@ -157,7 +157,7 @@ const deleteModalTitle = computed(() => {
 const deleteModalDescription = computed(() => {
     return confirmationType.value === 'item'
         ? 'The products associated with this item cannot be reactivated and this item cannot recovered. This action cannot be undone. Are you sure you want to delete this item?'
-        : 'This item cannot be deleted unless you deactivate the products that includes this item. Go to deactivate the products?';
+        : 'You cannot delete this item until you deactivate the products that include it. Would you like to proceed to deactivate those products?';
 });
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
@@ -309,7 +309,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
         <form @submit.prevent="deleteInventoryItem">
             <div class="w-full flex flex-col gap-9" >
                 <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
-                    <DeleteIllus />
+                    <DeleteIllus v-if="confirmationType === 'item'" />
+                    <ProductDeactivationIllust v-else />
                 </div>
                 <div class="flex flex-col gap-5">
                     <div class="flex flex-col gap-1 text-center">
@@ -317,6 +318,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         <span class="text-grey-900 text-base font-medium self-stretch">{{ deleteModalDescription }}</span>
                     </div>
                     <Textarea 
+                        v-if="confirmationType === 'item'"
                         :inputName="'remark'"
                         :labelText="'Reason of inventory item deletetion'"
                         :errorMessage="deleteInventoryItemForm.errors.remark ? deleteInventoryItemForm.errors.remark[0] : ''"
@@ -345,7 +347,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <Button
                         v-else
                         :href="route('products')"
-                        variant="red"
                         size="lg"
                         type="button"
                     >

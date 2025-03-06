@@ -83,10 +83,11 @@ const getTableNames = (table_no) => {
 
 const getStatusLabel = (status) => {
     switch (status) {
-        case 'Checked in': return 'Check in time'
-        case 'Delayed': return 'Delayed to'
-        case 'Completed': return 'Completed time'
-        case 'Cancelled': return 'Cancelled on'
+        case 'Checked in': return 'Check in time';
+        case 'No show':
+        case 'Delayed': return 'Delayed to';
+        case 'Completed': return 'Completed time';
+        case 'Cancelled': return 'Cancelled on';
     }
 }; 
 
@@ -94,6 +95,7 @@ const getHandledByLabel = (status) => {
     switch (status) {
         case 'Checked in':
         case 'Completed': return 'Checked in by';
+        case 'No show':
         case 'Delayed': return 'Update by';
         case 'Cancelled': return 'Cancelled by';
     }
@@ -162,8 +164,15 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                         <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.reserved_by.full_name }}</p>
                     </div>
                 </div>
+                
+                <div class="w-full flex gap-x-5 items-start">
+                    <div class="w-1/2 flex flex-col gap-y-1 items-start">
+                        <p class="text-grey-900 text-base font-normal self-stretch">Grace period</p>
+                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.grace_period}} hour</p>
+                    </div>
+                </div>
 
-                <template v-if="['Checked in', 'Delayed', 'Completed', 'Cancelled'].includes(reservation.status)">
+                <template v-if="['Checked in', 'Delayed', 'Completed', 'Cancelled', 'No show'].includes(reservation.status)">
                     <hr class="w-full border-b border-grey-100">
 
                     <div class="w-full flex gap-x-5 items-start">

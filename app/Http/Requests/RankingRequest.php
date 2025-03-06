@@ -25,7 +25,7 @@ class RankingRequest extends FormRequest
         $rules = [
             'min_amount' => 'required|integer',
             'reward' => 'required|string|max:255',
-            'icon' => 'required',
+            'icon' => 'required|max:8000',
         ];
 
         $rules['name'] = $this->input('id') 
@@ -55,10 +55,11 @@ class RankingRequest extends FormRequest
         return [
             'required' => 'This field is required.',
             'string' => 'This field must be a string.',
-            'max' => 'This field must not exceed 255 characters.',
+            'reward.max' => 'This field must not exceed 255 characters.',
+            'name.max' => 'This field must not exceed 255 characters.',
             'unique' => 'This field must be unique.',
             'integer' => 'This field must be an integer.',
-            'image' => 'This field must have a valid format of an image.',
+            'icon.max' => 'The size of the image is too big.',
         ];
     }
 }

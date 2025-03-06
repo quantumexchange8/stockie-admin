@@ -37,7 +37,11 @@ const props = defineProps({
     loading: {
         type: Boolean,
         default: false
-    }
+    },
+    required: {
+        type: Boolean,
+        default: false,
+    },
 })
 
 const emits = defineEmits(['update:modelValue', 'onChange']);
@@ -133,6 +137,7 @@ onUnmounted(() => {
         <Label
             :value="props.labelText"
             :for="props.inputName"
+            :required="required"
             :class="[
                 'mb-1 text-xs !font-medium w-full',
                 {

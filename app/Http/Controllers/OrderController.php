@@ -27,6 +27,7 @@ use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\Ranking;
+use App\Models\Reservation;
 use App\Models\SaleHistory;
 use App\Models\StockHistory;
 use App\Models\Table;
@@ -52,18 +53,19 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
+        $reservedTablesId = $this->getReservedTablesId();
+
         $zones = Zone::with([
                             'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']),
-                            'tables.orderTables.order',
                             'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty'
                         ])
                         ->select('id', 'name')
                         ->get()
-                        ->map(function ($zone) {
+                        ->map(function ($zone) use ($reservedTablesId) {
                             return [
                                 'text' => $zone->name,
                                 'value' => $zone->id,
-                                'tables' => $zone->tables->map(function ($table) {
+                                'tables' => $zone->tables->map(function ($table) use ($reservedTablesId) {
                                     $pendingCount = $table->orderTables->reduce(function ($pendingCount, $orderTable) {
                                         $orderPendingCount = $orderTable->order->orderItems->where('status', 'Pending Serve')->reduce(function ($itemCount, $orderItem) {
                                             $itemTotalQty = collect($orderItem->subItems)->reduce(function ($subTotal, $subItem) use ($orderItem) {
@@ -73,13 +75,22 @@ class OrderController extends Controller
                                         }, 0);
                                         return $pendingCount + $orderPendingCount;
                                     }, 0);
-                    
+
+                                    $table->orderTables->each(function ($orderTab) {
+                                        $orderTab->order->orderItems->each(function ($item) {
+                                            $item->product_name = $item->product->product_name;
+                                            $item->bucket = $item->product->bucket;
+                                            unset($item->product);
+                                        });
+                                    });
+
+                                    $table->is_reserved = in_array($table->id, $reservedTablesId);
                                     $table->pending_count = $pendingCount;
+
                                     return $table;
                                 }),
                             ];
                         });
-    
         
         // dd($zones);
 
@@ -140,6 +151,21 @@ class OrderController extends Controller
             'customers' => $customers,
             'merchant' => $merchant
         ]);
+    }
+
+    private function getReservedTablesId()
+    {
+        $reservedTableIds = Reservation::whereNotIn('status', ['Cancelled', 'Completed', 'No show']) // Adjust status if needed
+                                        ->pluck('table_no') // Get JSON arrays of table_no
+                                        ->flatMap(function ($tableNos) {
+                                            return array_map(function ($table) {
+                                                return $table['id'];
+                                            }, $tableNos); // Decode JSON only if it's a string
+                                        })
+                                        ->unique()
+                                        ->toArray();
+                    
+        return $reservedTableIds;
     }
 
     /**
@@ -792,17 +818,19 @@ class OrderController extends Controller
      */
     public function getAllZones()
     {
+        $reservedTablesId = $this->getReservedTablesId();
+
         $zones = Zone::with([
-                            'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled']),
-                            'tables.orderTables.order.orderItems',
+                            'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']),
+                            'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty',
                         ])
                         ->select('id', 'name')
                         ->get()
-                        ->map(function ($zone) {
+                        ->map(function ($zone) use ($reservedTablesId) {
                             return [
                                 'text' => $zone->name,
                                 'value' => $zone->id,
-                                'tables' => $zone->tables->map(function ($table) {
+                                'tables' => $zone->tables->map(function ($table) use ($reservedTablesId) {
                                     $pendingCount = $table->orderTables->reduce(function ($pendingCount, $orderTable) {
                                         $orderPendingCount = $orderTable->order->orderItems->where('status', 'Pending Serve')->reduce(function ($itemCount, $orderItem) {
                                             $itemTotalQty = collect($orderItem->subItems)->reduce(function ($subTotal, $subItem) use ($orderItem) {
@@ -821,7 +849,9 @@ class OrderController extends Controller
                                         });
                                     });
                     
+                                    $table->is_reserved = in_array($table->id, $reservedTablesId);
                                     $table->pending_count = $pendingCount;
+                                    
                                     return $table;
                                 }),
                             ];

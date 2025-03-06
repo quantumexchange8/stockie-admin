@@ -31,6 +31,7 @@ class ReservationRequest extends FormRequest
             }],
             'phone' => 'required|string|max:255',
             'table_no' => 'required',
+            'grace_period' => 'required|integer',
         ];
     }
 
@@ -42,22 +43,17 @@ class ReservationRequest extends FormRequest
             'name' => 'Name',
             'phone' => 'Contact no.',
             'table_no' => 'Table',
+            'grace_period' => 'Grace period',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'reservation_date.required' => 'This field is required.',
-            'reservation_date.string' => 'This field must be a string.',
-            'pax.required' => 'This field is required.',
-            'pax.string' => 'This field must be a string.',
-            'pax.max' => 'This field must not exceed 255 characters.',
-            'name.required' => 'This field is required.',
-            'name.max' => 'This field must not exceed 255 characters.',
-            'phone.required' => 'This field is required.',
-            'phone.integer' => 'This field must be an integer.',
-            'table_no.required' => 'This field is required.',
+            'required' => 'This field is required.',
+            'string' => 'This field must be a string.',
+            'max' => 'This field must not exceed 255 characters.',
+            'integer' => 'This field must be an integer.',
         ];
     }
 }

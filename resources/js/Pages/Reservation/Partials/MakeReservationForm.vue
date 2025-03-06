@@ -1,6 +1,6 @@
 <script setup>
 import dayjs from 'dayjs';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import Button from '@/Components/Button.vue';
 import DateInput from "@/Components/Date.vue";
@@ -19,12 +19,29 @@ const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
 const isUnsavedChangesOpen = ref(false);
 const selectedTable = ref(null);
+const occupiedTables = ref([]);
+const isLoading = ref(false);
 
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close', 'isDirty']);
+
+const getOccupiedTables = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get('/reservation/getOccupiedTables');
+        occupiedTables.value = response.data;
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+onMounted(() => getOccupiedTables());
 
 const form = useForm({
     reserved_by: userId.value,
@@ -35,6 +52,8 @@ const form = useForm({
     phone_temp: '',
     table_no: null,
     tables: null,
+    reserved_limit: '',
+    grace_period: '',
 });
 
 const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
@@ -46,6 +65,7 @@ const unsaved = (type) => {
 const submit = () => { 
     form.reservation_date = form.reservation_date ? dayjs(form.reservation_date).format('YYYY-MM-DD HH:mm:ss') : '';
     form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
+    form.grace_period = parseInt(form.reserved_limit);
     const reservedTables = [];
 
     if (form.tables && form.tables.length > 0) {
@@ -93,6 +113,7 @@ const tablesArr = computed(() => {
         return {
             'text': table.table_no,
             'value': table.id,
+            'disabled': occupiedTables.value.some((occupiedTable) => occupiedTable.id === table.id),
         }
     })
 });
@@ -134,7 +155,7 @@ const paxInputValidation = (event) => {
 }
 
 const isFormValid = computed(() => {
-    return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables'].every(field => form[field]) && !form.processing;
+    return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables', 'reserved_limit'].every(field => form[field]) && !form.processing;
 });
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
@@ -150,6 +171,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     labelText="Select date and time"
                     placeholder="Select Date and Time"
                     class="col-span-full sm:col-span-6"
+                    :required="true"
                     withTime
                     :minDate="new Date()"
                     :errorMessage="form.errors?.reservation_date || ''"
@@ -160,6 +182,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     labelText="No. of pax"
                     placeholder="Enter here"
                     class="col-span-full sm:col-span-6"
+                    required
                     :errorMessage="form.errors?.pax || ''"
                     v-model="form.pax"
                     @keypress="isValidNumberKey($event, false)"
@@ -170,6 +193,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     labelText="Select or enter guest name"
                     placeholder="Select"
                     class="col-span-full sm:col-span-6"
+                    required
                     imageOption
                     editable
                     :inputArray="customersArr"
@@ -182,6 +206,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     placeholder="11 1234 5678"
                     iconPosition="left"
                     class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
+                    required
                     :errorMessage="form.errors?.phone || ''"
                     v-model="form.phone_temp"
                     @keypress="isValidNumberKey($event, false)"
@@ -194,11 +219,28 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     labelText="Select table/room"
                     placeholder="Select"
                     class="col-span-full sm:col-span-6"
+                    required
+                    :loading="isLoading"
                     :inputArray="tablesArr"
                     :errorMessage="form.errors?.table_no || ''"
                     v-model="form.tables"
                     @onChange="updateSelectedTables"
                 />
+                <TextInput
+                    inputName="grace_period"
+                    labelText="Grace period"
+                    placeholder="1"
+                    type="'number'"
+                    iconPosition="right"
+                    class="col-span-full sm:col-span-6"
+                    required
+                    :errorMessage="form.errors?.grace_period || ''"
+                    v-model="form.reserved_limit"
+                    @keypress="isValidNumberKey($event, false)"
+                    
+                >
+                    <template #prefix>hour</template>
+                </TextInput>
             </div>
 
             <div class="flex pt-3 justify-center items-end gap-4 self-stretch">

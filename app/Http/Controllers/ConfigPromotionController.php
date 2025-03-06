@@ -93,9 +93,12 @@ class ConfigPromotionController extends Controller
                 'title' => 'required|string',
                 'description' => 'required|string',
                 'promotionPeriod' => 'required',
-                'promotion_image' => 'required|image',
+                'promotion_image' => 'required|image|max:8000',
             ], 
-            ['required' => 'This field is required.']
+            [
+                'required' => 'This field is required.',
+                'promotion_image.max' => 'The size of the image is too big.',
+            ]
         );
 
         // $data = $request->all();
@@ -254,12 +257,13 @@ class ConfigPromotionController extends Controller
             'sst_registration_no' => ['required', 'string'],
             'description' => ['required', 'string'],
             'classification_code' => ['required', 'integer'],
-            'merchant_image' => ['required'],
+            'merchant_image' => ['required', 'max:8000'],
         ], [
             'required' => 'This field is required.',
             'string' => 'Invalid input. Please try another.',
             'integer' => 'Invalid input. Please try another.',
             'email' => 'Invalid format. Please try again.',
+            'merchant_image.max' => 'The size of the image is too big.',
         ]);
 
         $config_merchant = ConfigMerchant::where('id', $request->id)->first();

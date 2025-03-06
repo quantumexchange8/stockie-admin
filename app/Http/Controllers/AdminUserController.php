@@ -112,9 +112,13 @@ class AdminUserController extends Controller
             'role_id' => ['required', 'max:255', 'string', 'unique:users,role_id'],
             'position' => ['required', 'max:255', 'string'],
             'password' => ['required'],
+            'image' => ['required', 'max:8000'],
         ], [
             'required' => 'This field is required.',
-            'max' => 'Invalid input.',
+            'full_name.max' => 'Invalid input.',
+            'role_id.max' => 'Invalid input.',
+            'position.max' => 'Invalid input.',
+            'image.max' => 'The size of the image is too big.',
             'string' => 'Invalid format.',
             'unique' => 'This data already exists. Please try another one.'
         ]);

@@ -342,8 +342,7 @@ watch(() => props.rows, (newRows) => {
                     <div class="flex flex-col p-4 items-start gap-4 flex-[1_0_0] rounded-[5px] border border-solid border-grey-100 bg-white shadow-sm">
                         <div class="flex items-start gap-2 self-stretch">
                             <div class="flex items-center gap-2 flex-[1_0_0]">
-                                <span class="text-grey-950 text-base font-bold line-clamp-1">{{ dayjs(reservation.reservation_date).format('YYYY-MM-DD') }}</span>
-                                <span class="text-grey-950 text-base font-bold">{{ dayjs(reservation.reservation_date).format('HH:mm') }}</span>
+                                <span class="text-grey-950 text-base font-bold line-clamp-1">{{ dayjs(reservation.action_date && reservation.status === 'Delayed' ? reservation.action_date : reservation.reservation_date).format('YYYY-MM-DD HH:mm') }}</span>
                                 <DelayedIcon class="size-5" v-if="reservation.status === 'Delayed'"/>
                             </div>
                             <div class="flex-shrink-0 size-5" v-if="['Pending', 'Delayed', 'Checked in'].includes(reservation.status)" @click="openActionMenu($event, reservation)">

@@ -7,7 +7,7 @@ import Tapbar from '@/Components/Tapbar.vue';
 import AddStockForm from './AddStockForm.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import SearchBar from "@/Components/SearchBar.vue";
-import { DeleteIllus, EmptyIllus, OrderCompleteIllus } from '@/Components/Icons/illus.jsx';
+import { DeleteIllus, EmptyIllus, OrderCompleteIllus, ProductDeactivationIllust } from '@/Components/Icons/illus.jsx';
 import { PlusIcon, ReplenishIcon, EditIcon, DeleteIcon, SquareStickerIcon, TableSortIcon } from '@/Components/Icons/solid';
 import EditInventoryForm from './EditInventoryForm.vue';
 import CreateInventoryForm from './CreateInventoryForm.vue';
@@ -401,13 +401,13 @@ const deleteInventory = async () => {
 const deleteModalTitle = computed(() => {
     return confirmationType.value === 'group'
         ? 'Delete this group?'
-        : 'This group has items that are in use!';
+        : 'Some items in this group are in use!';
 });
 
 const deleteModalDescription = computed(() => {
     return confirmationType.value === 'group'
         ? 'All the item inside this group will be deleted altogether. Are you sure you want to delete this group?'
-        : "This group cannot be deleted unless you deactivate the products that includes this group's items. Go to deactivate the products?";
+        : "You cannot delete this group until you deactivate the products that include the items in this group. Would you like to proceed to deactivate those products?";
 });
 </script>
 
@@ -1031,7 +1031,8 @@ const deleteModalDescription = computed(() => {
                 <form @submit.prevent="deleteInventory">
                     <div class="w-full flex flex-col gap-9" >
                         <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
-                            <DeleteIllus />
+                            <DeleteIllus v-if="confirmationType === 'group'" />
+                            <ProductDeactivationIllust v-else />
                         </div>
                         <div class="flex flex-col gap-5">
                             <div class="flex flex-col gap-1 text-center">
@@ -1039,6 +1040,7 @@ const deleteModalDescription = computed(() => {
                                 <span class="text-grey-900 text-base font-medium self-stretch">{{ deleteModalDescription }}</span>
                             </div>
                             <Textarea 
+                                v-if="confirmationType === 'group'"
                                 :inputName="'remark'"
                                 :labelText="'Reason of inventory item deletetion'"
                                 :errorMessage="deleteInventoryForm.errors.remark ? deleteInventoryForm.errors.remark[0] : ''"
@@ -1067,7 +1069,6 @@ const deleteModalDescription = computed(() => {
                             <Button
                                 v-else
                                 :href="route('products')"
-                                variant="red"
                                 size="lg"
                                 type="button"
                             >

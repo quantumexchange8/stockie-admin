@@ -15,20 +15,23 @@ const props = defineProps({
     tables: Array,
 });
 
-const page = usePage();
-const userId = computed(() => page.props.auth.user.data.id)
-const isUnsavedChangesOpen = ref(false);
-const selectedTable = ref(
-    props.tables.filter((table) => 
-        props.reservation.table_no.some((reservedTable) => reservedTable.id === table.id)
-    )
-);
-
 const { showMessage } = useCustomToast();
 const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close', 'fetchReservations', 'isDirty', 'update:reservation']);
+
+const page = usePage();
+const userId = computed(() => page.props.auth.user.data.id)
+const isUnsavedChangesOpen = ref(false);
+const occupiedTables = ref([]);
+const isLoading = ref(false);
+
+const selectedTable = ref(
+    props.tables.filter((table) => 
+        props.reservation.table_no.some((reservedTable) => reservedTable.id === table.id)
+    )
+);
 
 const form = useForm({
     reserved_by: userId.value,
@@ -39,7 +42,24 @@ const form = useForm({
     phone_temp: formatPhone(props.reservation.phone, true, true),
     table_no: props.reservation.table_no,
     tables: props.reservation.table_no.map((table) => table.id),
+    reserved_limit: props.reservation.grace_period.toString(),
+    grace_period: props.reservation.grace_period.toString(),
 });
+
+const getOccupiedTables = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get('/reservation/getOccupiedTables');
+        occupiedTables.value = response.data.filter((table) => !form.tables.includes(table.id));
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+onMounted(() => getOccupiedTables());
 
 const unsaved = (status) => {
     emit('close', status);
@@ -51,6 +71,7 @@ const submit = async () => {
     form.table_no = props.tables
         .filter(table => form.tables.includes(table.id))  // Filter to only selected tables
         .map(table => ({ id: table.id, name: table.table_no }));  // Map to required format
+    form.grace_period = parseInt(form.reserved_limit);
 
     // form.put(route('reservations.update', props.reservation.id), {
     //     preserveScroll: true,
@@ -72,14 +93,16 @@ const submit = async () => {
         const response = await axios.put(`/reservation/${props.reservation.id}`, form);
         let updatedReservation = response.data;
 
-        form.reserved_by = userId.value,
-        form.reservation_date = dayjs(updatedReservation.reservation_date).toDate(),
-        form.pax = updatedReservation.pax,
-        form.name = updatedReservation.customer_id ?? updatedReservation.name,
-        form.phone = updatedReservation.phone,
-        form.phone_temp = formatPhone(updatedReservation.phone, true, true),
-        form.table_no = updatedReservation.table_no,
-        form.tables = updatedReservation.table_no.map((table) => table.id),
+        form.reserved_by = userId.value;
+        form.reservation_date = dayjs(updatedReservation.reservation_date).toDate();
+        form.pax = updatedReservation.pax;
+        form.name = updatedReservation.customer_id ?? updatedReservation.name;
+        form.phone = updatedReservation.phone;
+        form.phone_temp = formatPhone(updatedReservation.phone, true, true);
+        form.table_no = updatedReservation.table_no;
+        form.tables = updatedReservation.table_no.map((table) => table.id);
+        form.reserved_limit = updatedReservation.grace_period.toString();
+        form.grace_period = updatedReservation.grace_period.toString();
 
         setTimeout(() => {
             showMessage({ 
@@ -112,6 +135,7 @@ const tablesArr = computed(() => {
         return {
             'text': table.table_no,
             'value': table.id,
+            'disabled': occupiedTables.value.some((occupiedTable) => occupiedTable.id === table.id),
         }
     })
 });
@@ -153,7 +177,7 @@ const paxInputValidation = (event) => {
 }
 
 const isFormValid = computed(() => {
-    return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables'].every(field => form[field]) && !form.processing;
+    return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables', 'reserved_limit'].every(field => form[field]) && !form.processing;
 });
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
@@ -214,12 +238,28 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     labelText="Select table/room"
                     placeholder="Select"
                     class="col-span-full sm:col-span-6"
+                    :loading="isLoading"
                     :inputArray="tablesArr"
                     :errorMessage="form.errors?.table_no || ''"
                     :dataValue="form.tables"
                     v-model="form.tables"
                     @onChange="updateSelectedTables"
                 />
+                <TextInput
+                    inputName="grace_period"
+                    labelText="Grace period"
+                    placeholder="1"
+                    type="'number'"
+                    iconPosition="right"
+                    class="col-span-full sm:col-span-6"
+                    required
+                    :errorMessage="form.errors?.grace_period || ''"
+                    v-model="form.reserved_limit"
+                    @keypress="isValidNumberKey($event, false)"
+                    
+                >
+                    <template #prefix>hour</template>
+                </TextInput>
             </div>
 
             <div class="flex pt-3 justify-center items-end gap-4 self-stretch">

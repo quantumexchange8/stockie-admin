@@ -10,7 +10,7 @@ import TextInput from "@/Components/TextInput.vue";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import { FilterMatchMode } from "primevue/api";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import Slider from "@/Components/Slider.vue";
 import RightDrawer from "@/Components/RightDrawer/RightDrawer.vue";
@@ -49,6 +49,7 @@ const highestPoints = ref(props.highestPoints);
 const searchQuery = ref('');
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
+const customerCurrentOrdersCount = ref(0);
 
 const form = useForm({
     id: customer.id,
@@ -65,6 +66,19 @@ const hideSideBar = () => {
     isSidebarOpen.value = false;
 }
 
+const getCurrentOrdersCount = async (id) => {
+    // isLoading.value = true;
+    try {
+        const response = await axios.get(`customer/getCurrentOrdersCount/${id}`);
+        customerCurrentOrdersCount.value = response.data;
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+        // isLoading.value = false;
+    }
+};
+
 const openModal = (action, data) => {
     isDirty.value = false;
     switch(action) {
@@ -76,8 +90,11 @@ const openModal = (action, data) => {
             isEditCustomerOpen.value = true;
             break;
         case 'delete': 
-            isDeleteCustomerOpen.value = true;
+            getCurrentOrdersCount(data);
             form.id = data;
+            setTimeout(() => {
+                isDeleteCustomerOpen.value = true;
+            }, 300);
             break;
     };
 }
@@ -226,6 +243,18 @@ watch (() => searchQuery.value, (newValue) => {
                 // phoneNumber.includes(query);
     })
 }, { immediate: true })
+
+const deleteModalTitle = computed(() => {
+    return customerCurrentOrdersCount.value > 0
+        ? 'This customer still has open orders!'
+        : 'Passcode Required';
+});
+
+const deleteModalDescription = computed(() => {
+    return customerCurrentOrdersCount.value > 0
+        ? 'You cannot delete this customer until all current orders are completed and paid. Would you like to proceed to view customer order?'
+        : 'To delete this customer, you have to enter the passcode provided from the master admin.';
+});
 
 </script>
 
@@ -426,10 +455,11 @@ watch (() => searchQuery.value, (newValue) => {
                 </div>
                 <div class="flex flex-col gap-5">
                     <div class="flex flex-col gap-1 text-center">
-                        <span class="text-primary-900 text-lg font-medium self-stretch">Passcode Required</span>
-                        <span class="text-grey-900 text-base font-medium self-stretch">To delete this customer, you have to enter the passcode provided from the master admin.</span>
+                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ deleteModalTitle }}</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">{{ deleteModalDescription }}</span>
                     </div>
                     <TextInput
+                        v-if="customerCurrentOrdersCount === 0"
                         required
                         :labelText="'Passcode'"
                         inputName="password"
@@ -438,6 +468,7 @@ watch (() => searchQuery.value, (newValue) => {
                         v-model="form.password"
                     />
                     <Textarea 
+                        v-if="customerCurrentOrdersCount === 0"
                         :inputName="'remark'"
                         :labelText="'Reason of customer deletetion'"
                         :errorMessage="form.errors && form.errors.remark ? form.errors.remark : ''"
@@ -454,14 +485,23 @@ watch (() => searchQuery.value, (newValue) => {
                         type="button"
                         @click="closeModal('close')"
                     >
-                        Cancel
+                        {{ customerCurrentOrdersCount > 0 ? 'Maybe later' : 'Cancel' }}
                     </Button>
                     <Button
+                        v-if="customerCurrentOrdersCount === 0"
                         variant="red"
                         size="lg"
                         type="submit"
                     >
                         Delete
+                    </Button>
+                    <Button
+                        v-else
+                        :href="route('orders')"
+                        size="lg"
+                        type="button"
+                    >
+                        Go view
                     </Button>
                 </div>
             </div>

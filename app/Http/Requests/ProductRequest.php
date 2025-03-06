@@ -28,7 +28,7 @@ class ProductRequest extends FormRequest
             'point' => 'required|string|max:255',
             'category_id' => 'required|integer',
             'is_redeemable' => 'required|boolean',
-            'image' => 'required'
+            'image' => 'required|max:8000'
         ];
     }
 
@@ -50,9 +50,11 @@ class ProductRequest extends FormRequest
         return [
             'required' => 'This field is required.',
             'string' => 'This field must be a string.',
-            'max' => 'This field must not exceed 255 characters.',
+            'product_name.max' => 'This field must not exceed 255 characters.',
+            'price.max' => 'This field must not exceed 255 characters.',
+            'point.max' => 'This field must not exceed 255 characters.',
             'integer' => 'This field must be an integer.',
-            'image' => 'Image is required.'
+            'image.max' => 'The size of the image is too big.'
         ];
     }
 }

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue'
@@ -26,25 +26,42 @@ const emit = defineEmits(['close', 'isDirty']);
 const hasChangedTables = ref(false);
 const newSelectedTables = ref('');
 const isUnsavedChangesOpen = ref(false);
+const occupiedTables = ref([]);
+const isLoading = ref(false);
+
+const getOccupiedTables = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get('/reservation/getOccupiedTables');
+        occupiedTables.value = response.data;
+        console.log(occupiedTables.value);
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+onMounted(() => getOccupiedTables());
 
 const selectedTables = computed(() => {
     return props.reservation.table_no.map((table) => {
         return {
             'text': table.name,
-            'disabled': props.occupiedTables.some((occupiedTable) => table.id === occupiedTable.id),
+            // 'disabled': occupiedTables.value.some((occupiedTable) => table.id === occupiedTable.id),
         }
     })
 });
 
 const filteredSelectedTables = computed(() => {
     return props.reservation.table_no.map(selectedTable => {
-        return props.occupiedTables.some((occupiedTable) => selectedTable.id === occupiedTable.id) ? null : selectedTable.id;
+        return occupiedTables.value.some((occupiedTable) => selectedTable.id === occupiedTable.id) ? null : selectedTable.id;
     }).filter((table) => table !== null);
 });
 
 const form = useForm({
     table_no: '',
-    tables: filteredSelectedTables.value,
+    tables: selectedTables.value,
     pax: props.reservation.pax,
     handled_by: userId.value,
     assigned_waiter: '',
@@ -77,7 +94,7 @@ const tablesArr = computed(() => {
         return {
             'text': table.table_no,
             'value': table.id,
-            'disabled': props.occupiedTables.some((occupiedTable) => occupiedTable.id === table.id),
+            'disabled': occupiedTables.value.some((occupiedTable) => occupiedTable.id === table.id),
         }
     })
 });
@@ -126,6 +143,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         labelText="Select table/room"
                         placeholder="Select"
                         class="col-span-full sm:col-span-6"
+                        :loading="isLoading"
                         :inputArray="tablesArr"
                         :errorMessage="form.errors?.table_no || ''"
                         :dataValue="form.tables"

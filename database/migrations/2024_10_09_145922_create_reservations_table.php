@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('cancel_type');
             $table->string('remark');
             $table->string('status');
+            $table->integer('grace_period');
             $table->dateTime('reservation_date');
             $table->dateTime('action_date')->nullable()->default(NULL);
             $table->unsignedBigInteger('order_id')->nullable()->default(NULL);

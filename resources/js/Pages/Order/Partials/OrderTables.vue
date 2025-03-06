@@ -61,12 +61,14 @@ const drawerIsVisible = ref(false);
 // };
 
 const openOverlay = (event, table) => {
-    selectedTable.value = table;
-
-    if (table && table.order_tables.length > 0) {
-        if (!drawerIsVisible.value) drawerIsVisible.value = true;
-    } else {
-        op.value.show(event);
+    if (!table.is_reserved) {
+        selectedTable.value = table;
+    
+        if (table && table.order_tables.length > 0) {
+            if (!drawerIsVisible.value) drawerIsVisible.value = true;
+        } else {
+            op.value.show(event);
+        }
     }
 };
 
@@ -82,27 +84,31 @@ const closeDrawer = () => {
 
 const getTableClasses = (table) => ({
     card: computed(() => [
-        'border rounded-[5px] gap-6 mb-6 hover:cursor-pointer',
+        'border rounded-[5px] gap-6 mb-6',
         {
+            'hover:cursor-pointer': !table.is_reserved,
             'bg-white border-grey-100': table.status === 'Empty Seat',
             'bg-primary-50 border-primary-50': table.status !== 'Empty Seat'
         }
     ]),
     state: computed(() => [
         // 'w-full flex justify-center py-1.5 px-6',
+        table.is_reserved ? 'cursor-not-allowed' : 'cursor-pointer',
         {
-            'bg-grey-50': table.status === 'Empty Seat',
-            'bg-green-600': table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order',
-            'bg-orange-500': table.status === 'Pending Clearance',
+            'bg-grey-50': table.status === 'Empty Seat' && table.is_reserved,
+            'bg-white': table.status === 'Empty Seat' && !table.is_reserved,
+            'bg-green-600': (table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order') && !table.is_reserved,
+            'bg-orange-500': table.status === 'Pending Clearance' && !table.is_reserved,
         }
     ]),
     text: computed(() => [
         'text-xl font-bold self-stretch text-center',
         {
-            'text-primary-900': table.status === 'Empty Seat',
+            'text-primary-900': table.status === 'Empty Seat' && !table.is_reserved,
             // 'text-primary-25': table.status === 'Pending Order',
-            'text-green-50': table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order',
-            'text-orange-25': table.status === 'Pending Clearance',
+            'text-green-50': (table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order') && !table.is_reserved,
+            'text-orange-25': table.status === 'Pending Clearance'  && !table.is_reserved,
+            'text-grey-400': table.is_reserved,
         }
     ]),
     duration: computed(() => [
@@ -307,8 +313,11 @@ const isMerged = (targetTable) => {
         <template v-if="isMainTab"> 
             <div class="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-3 items-start gap-6 self-stretch" v-if="props.isFullScreen === true" >
                 <template v-for="zone in filteredZones" class="flex">
-                    <div class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap relative" v-for="table in zone.tables">
-                        <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] cursor-pointer w-full relative"
+                    <div 
+                        class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap relative" 
+                        v-for="table in zone.tables"
+                    >
+                        <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative"
                             :class="getTableClasses(table).state.value"
                             @click="openOverlay($event, table)"
                         >
@@ -317,7 +326,12 @@ const isMerged = (targetTable) => {
                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                 {{ getCurrentOrderTableDuration(table) }}
                             </div>
-                            <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                            <template v-else>
+                                <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                    <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                </div>
+                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                            </template>
                             <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
                                 v-if="table.pending_count > 0"
                             >
@@ -359,16 +373,21 @@ const isMerged = (targetTable) => {
                             >
                                 <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                             </div> -->
-                            <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] cursor-pointer"
+                            <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px]"
                                 :class="getTableClasses(table).state.value"
                                 @click="openOverlay($event, table)"
                             >
-                                 <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
+                                <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
                                 <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                 <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                     {{ getCurrentOrderTableDuration(table) }}
                                 </div>
-                                <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                                <template v-else>
+                                    <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                        <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                    </div>
+                                    <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                </template>
                                 <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
                                     v-if="table.pending_count > 0"
                                 >
@@ -409,7 +428,7 @@ const isMerged = (targetTable) => {
                     >
                         <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                     </div> -->
-                    <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] cursor-pointer"
+                    <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px]"
                         :class="getTableClasses(table).state.value"
                         @click="openOverlay($event, table)"
                     >
@@ -417,7 +436,12 @@ const isMerged = (targetTable) => {
                         <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                             {{ getCurrentOrderTableDuration(table) }}
                         </div>
-                        <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                        <template v-else>
+                            <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                            </div>
+                            <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                        </template>
                         <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
                             v-if="table.pending_count > 0"
                         >

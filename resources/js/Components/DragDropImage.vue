@@ -62,7 +62,6 @@ const imageClasses = computed(() => [
                 :name="props.inputName" 
                 @select="selectFile($event.files);" 
                 accept="image/*" 
-                :maxFileSize="6000000"
                 :fileLimit="1"
                 :disabled="hasFile"
                 :class="[{ 'hidden h-full': hasFile }]"

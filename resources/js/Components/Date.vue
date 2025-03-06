@@ -49,7 +49,11 @@ const props = defineProps({
     timeOnly: {
         type: Boolean,
         default: false,
-    }
+    },
+    required: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const calendarRef = ref(null);
@@ -153,6 +157,7 @@ onMounted(() => {
         <Label
             :value="labelText"
             :for="inputName"
+            :required="required"
             :class="[
                 'mb-1 text-xs !font-medium',
                 {

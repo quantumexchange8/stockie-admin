@@ -192,7 +192,7 @@ export function usePhoneUtils() {
         let cleanedPhone = phone.replace(/\D/g, '');
     
         if (forEdit) {
-            cleanedPhone = cleanedPhone.slice(2);
+            // cleanedPhone = cleanedPhone.slice(2);
         
             // Check if it's a mobile number starting with '1' or '11', or landline starting with '3' or '8'
             if (cleanedPhone.startsWith('11')) {

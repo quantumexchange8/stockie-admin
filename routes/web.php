@@ -307,6 +307,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/getCustomerPointHistories/{id}', [CustomerController::class,'getCustomerPointHistories'])->name('customer.getCustomerPointHistories');
         Route::get('/tierRewards/{id}', [CustomerController::class,'tierRewards'])->name('customer.tier-rewards');
         Route::get('/getAllCustomers', [CustomerController::class,'getAllCustomers'])->name('customer.all-customers');
+        Route::get('/getCurrentOrdersCount/{id}', [CustomerController::class,'getCurrentOrdersCount'])->name('customer.current-orders-count');
         Route::post('/', [CustomerController::class,'store'])->name('customer.store');
         Route::post('/returnKeepItem/{id}', [CustomerController::class,'returnKeepItem'])->name('customer.returnKeepItem');
         Route::post('/adjustPoint', [CustomerController::class, 'adjustPoint'])->name('customer.adjustPoint');
@@ -330,6 +331,7 @@ Route::middleware('auth')->group(function () {
         
         // Reservation actions
         Route::get('/getReservations', [ReservationController::class, 'getReservations'])->name('reservations.getReservations');
+        Route::get('/getOccupiedTables', [ReservationController::class, 'getOccupiedTables'])->name('reservations.getOccupiedTables');
         Route::post('/checkInGuest/{id}', [ReservationController::class, 'checkInGuest'])->name('reservations.checkInGuest');
         Route::put('/markAsNoShow/{id}', [ReservationController::class, 'markAsNoShow'])->name('reservations.markAsNoShow');
         Route::put('/delayReservation/{id}', [ReservationController::class, 'delayReservation'])->name('reservations.delayReservation');
