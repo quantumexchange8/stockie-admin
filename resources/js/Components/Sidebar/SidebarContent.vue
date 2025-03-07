@@ -184,6 +184,27 @@ const toggleNode = (node) => {
 
         <div class="flex flex-col gap-[24px]">
             <p class="text-grey-300 text-xs tracking-[4.32px] uppercase"
+                v-if="existingPermissions?.includes('transaction-listing') || existingPermissions?.includes('admin-user') ||
+                existingPermissions?.includes('einvoice-submission') || existingPermissions?.includes('configuration')"
+            >
+                SALES MANAGEMENT
+            </p>
+            <div class="flex flex-col">
+                <SidebarLink
+                    title="Transaction Listing"
+                    :href="route('transaction-listing')"
+                    :active="route().current('transaction-listing')"
+                    v-if="existingPermissions?.includes('transaction-listing')" 
+                >
+                    <template #icon>
+                        <LoyaltyIcon aria-hidden="true" />
+                    </template>
+                </SidebarLink>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-[24px]">
+            <p class="text-grey-300 text-xs tracking-[4.32px] uppercase"
                 v-if="existingPermissions?.includes('loyalty-programme') || existingPermissions?.includes('admin-user') ||
                 existingPermissions?.includes('sales-analysis') || existingPermissions?.includes('configuration')"
             >

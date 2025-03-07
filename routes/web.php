@@ -25,7 +25,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\TableRoomController;
-
+use App\Http\Controllers\TransactionController;
 
 Route::get('/', function () {
     return Inertia::render('Auth/Login', [
@@ -370,6 +370,14 @@ Route::middleware('auth')->group(function () {
         Route::get('', [ShiftController::class, 'record'])->name('shift-record');
 
     });
+
+    /********* Transaction Listing **********/
+    Route::prefix('transactions')->middleware([CheckPermission::class . ':transaction-listing'])->group(function(){
+        Route::get('/transaction-listing', [TransactionController::class, 'transactionListing'])->name('transactions.transaction-listing');
+        Route::get('/getSalesTransaction', [TransactionController::class, 'getSalesTransaction'])->name('transactions.getSalesTransaction');
+
+    });
+
 });
 
 require __DIR__.'/auth.php';
