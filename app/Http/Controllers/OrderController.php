@@ -2700,10 +2700,12 @@ class OrderController extends Controller
             'status' => 'Extended'
         ]);
         
-        $item = KeepItem::find($targetItem->keepItem->id)->with('orderItemSubitem.productItem.inventoryItem')->update([
-            'expired_to' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
-            'status' => 'Keep',
-        ]);
+        $item = KeepItem::find($targetItem->keepItem->id)
+                        ->with('orderItemSubitem.productItem.inventoryItem')
+                        ->update([
+                            'expired_to' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
+                            'status' => 'Keep',
+                        ]);
 
         activity()->useLog('extend-expiration-date')
                     ->performedOn($item)
@@ -2713,7 +2715,50 @@ class OrderController extends Controller
                         'image' => auth()->user()->getFirstMediaUrl('user'),
                         'item' => $item->orderItemSubitem->productItem->inventoryItem->item_name,
                     ])
-                    ->log("Category name ':properties.item''s detail is updated.");
+                    ->log("Kept item ':properties.item''s expiration date is updated.");
+
+        
+        // Deduct qty from inventory item stock based on kept item qty (only for kept items with qty)
+        if ($item->qty > $item->cm) {
+            $inventoryItem = $item->orderItemSubitem->productItem->inventoryItem;
+            $expiredKeepQty = $item->qty;
+            $oldStock = $inventoryItem->stock_qty;
+
+            $newStock = $oldStock - $expiredKeepQty;
+            $newKeptBalance = $inventoryItem->current_kept_amt + $expiredKeepQty;
+            $newTotalKept = $inventoryItem->total_kept + $expiredKeepQty;
+
+            $newStatus = match(true) {
+                $newStock == 0 => 'Out of stock',
+                $newStock <= $inventoryItem->low_stock_qty => 'Low in stock',
+                default => 'In stock'
+            };
+
+            $inventoryItem->update([
+                'stock_qty' => $newStock, 
+                'status' => $newStatus,
+                'current_kept_amt' => $newKeptBalance, 
+                'total_kept' => $newTotalKept, 
+            ]);
+
+            StockHistory::create([
+                'inventory_id' => $inventoryItem->inventory_id,
+                'inventory_item' => $inventoryItem->item_name,
+                'old_stock' => $oldStock,
+                'in' => 0.00,
+                'out' => $expiredKeepQty,
+                'current_stock' => $newStock,
+                'kept_balance' => $newKeptBalance
+            ]);
+            
+            if($newStatus === 'Out of stock'){
+                Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+            };
+
+            if($newStatus === 'Low in stock'){
+                Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+            }
+        }
 
         return redirect()->back();
     }
@@ -2734,11 +2779,19 @@ class OrderController extends Controller
         $remarkDesc = $validatedData['remark_description'] ? ': ' . $validatedData['remark_description'] : '';
 
         $targetItem = KeepItem::where('id',$validatedData['id'])
-                                ->with(['orderItemSubitem:id,product_item_id','productItem:id,inventory_item_id','inventoryItem:id,item_name'])
+                                ->with([
+                                    'orderItemSubitem:id,product_item_id',
+                                    'orderItemSubitem.productItem:id,inventory_item_id',
+                                    'orderItemSubitem.productItem.inventoryItem:id,item_name'
+                                ])
                                 ->first();
-        $targetItem->update(['status' => 'Deleted']);
 
-        activity()->useLog('delete-category')
+        $targetItem->update([
+            'qty' => 0.00,
+            'status' => 'Deleted',
+        ]);
+
+        activity()->useLog('delete-kept-item')
                     ->performedOn($targetItem)
                     ->event('deleted')
                     ->withProperties([
@@ -2756,6 +2809,48 @@ class OrderController extends Controller
             'remark' => $validatedData['remark'] . $remarkDesc,
             'status' => 'Deleted',
         ]);
+        
+        // Deduct kept item qty and insert back into inventory item stock (only for kept items with qty)
+        if ($targetItem->qty > $targetItem->cm) {
+            $inventoryItem = $targetItem->orderItemSubitem->productItem->inventoryItem;
+            $deletedKeepQty = $targetItem->qty;
+            $oldStock = $inventoryItem->stock_qty;
+
+            $newStock = $oldStock + $deletedKeepQty;
+            $newKeptBalance = $inventoryItem->current_kept_amt - $deletedKeepQty;
+            $newTotalKept = $inventoryItem->total_kept - $deletedKeepQty;
+
+            $newStatus = match(true) {
+                $newStock == 0 => 'Out of stock',
+                $newStock <= $inventoryItem->low_stock_qty => 'Low in stock',
+                default => 'In stock'
+            };
+
+            $inventoryItem->update([
+                'stock_qty' => $newStock, 
+                'status' => $newStatus,
+                'current_kept_amt' => $newKeptBalance, 
+                'total_kept' => $newTotalKept, 
+            ]);
+
+            StockHistory::create([
+                'inventory_id' => $inventoryItem->inventory_id,
+                'inventory_item' => $inventoryItem->item_name,
+                'old_stock' => $oldStock,
+                'in' => $deletedKeepQty,
+                'out' => 0,
+                'current_stock' => $newStock,
+                'kept_balance' => $newKeptBalance
+            ]);
+            
+            if($newStatus === 'Out of stock'){
+                Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+            };
+
+            if($newStatus === 'Low in stock'){
+                Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+            }
+        }
 
         $customer = Customer::with([
             'keepItems' => function ($query) {
@@ -2841,7 +2936,13 @@ class OrderController extends Controller
             // 'expired_to.datetime' => 'Invalid input.',
         ]);
         
-        $targetItem = KeepItem::find($validatedData['id']);
+        $targetItem = KeepItem::with([
+                                    'orderItemSubitem:id,product_item_id',
+                                    'orderItemSubitem.productItem:id,inventory_item_id',
+                                    'orderItemSubitem.productItem.inventoryItem:id,item_name'
+                                ])
+                                ->find($validatedData['id']);
+
         $targetItem->update([
             'qty' => $request->input('keptIn') === 'qty' ? round($validatedData['kept_amount'], 2) : 0.00,
             'cm' => $request->input('keptIn') === 'cm' ? round($validatedData['kept_amount'], 2) : 0.00,
@@ -2857,6 +2958,16 @@ class OrderController extends Controller
             'remark' => $targetItem->remark,
             'status' => 'Edited',
         ]);
+
+        activity()->useLog('update-kept-item')
+                    ->performedOn($targetItem)
+                    ->event('updated')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'item' => $targetItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                    ])
+                    ->log("Kept item ':properties.item''s details has been updated.");
 
         $customer = Customer::with([
             'keepItems' => function ($query) {

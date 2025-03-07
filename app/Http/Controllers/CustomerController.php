@@ -10,11 +10,16 @@ use App\Models\Order;
 use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\Ranking;
+use App\Models\StockHistory;
+use App\Models\User;
+use App\Notifications\InventoryOutOfStock;
+use App\Notifications\InventoryRunningOutOfStock;
 use App\Services\RunningNumberService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
@@ -209,7 +214,12 @@ class CustomerController extends Controller
         );
         
         $customer = Customer::with('keepItems', function ($query) {
-                                $query->where('status', 'Keep')
+                                $query->with([
+                                            'orderItemSubitem:id,product_item_id',
+                                            'orderItemSubitem.productItem:id,inventory_item_id',
+                                            'orderItemSubitem.productItem.inventoryItem'
+                                        ])
+                                        ->where('status', 'Keep')
                                         ->whereColumn('qty', '>', 'cm');
                             })
                             ->find($id);
@@ -232,9 +242,72 @@ class CustomerController extends Controller
                 'status' => 'void',
             ]);
 
-            // foreach ($customer->keepItems as $key => $item) {
-            //     $item
-            // }
+            foreach ($customer->keepItems as $key => $item) {
+                $item->update([
+                    'qty' => 0.00,
+                    'status' => 'Deleted'
+                ]);
+
+                activity()->useLog('delete-kept-item')
+                            ->performedOn($item)
+                            ->event('deleted')
+                            ->withProperties([
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'item_name' => $item->orderItemSubitem->productItem->inventoryItem->item_name,
+                            ])
+                            ->log(":properties.item_name is deleted.");
+
+                KeepHistory::create([
+                    'keep_item_id' => $item->id,
+                    'qty' => $item->qty,
+                    'cm' => number_format((float) $item->cm, 2, '.', ''),
+                    'keep_date' => $item->created_at,
+                    'remark' => $request->remark,
+                    'status' => 'Deleted',
+                ]);
+
+                if ($item->qty > $item->cm) {
+                    $inventoryItem = $item->orderItemSubitem->productItem->inventoryItem;
+                    $deletedKeepQty = $item->qty;
+                    $oldStock = $inventoryItem->stock_qty;
+
+                    $newStock = $oldStock + $deletedKeepQty;
+                    $newKeptBalance = $inventoryItem->current_kept_amt - $deletedKeepQty;
+                    $newTotalKept = $inventoryItem->total_kept - $deletedKeepQty;
+                    
+                    $newStatus = match(true) {
+                        $newStock == 0 => 'Out of stock',
+                        $newStock <= $inventoryItem->low_stock_qty => 'Low in stock',
+                        default => 'In stock'
+                    };
+
+                    $inventoryItem->update([
+                        'stock_qty' => $newStock, 
+                        'status' => $newStatus,
+                        'current_kept_amt' => $newKeptBalance, 
+                        'total_kept' => $newTotalKept, 
+                    ]);
+
+                    StockHistory::create([
+                        'inventory_id' => $inventoryItem->inventory_id,
+                        'inventory_item' => $inventoryItem->item_name,
+                        'old_stock' => $oldStock,
+                        'in' => $deletedKeepQty,
+                        'out' => 0,
+                        'current_stock' => $newStock,
+                        'kept_balance' => $newKeptBalance
+                    ]);
+            
+                    if($newStatus === 'Out of stock'){
+                        Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                    };
+        
+                    if($newStatus === 'Low in stock'){
+                        Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                    }
+                }
+            }
 
             $message = [
                 'severity' => 'success',

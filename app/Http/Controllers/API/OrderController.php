@@ -1664,4 +1664,253 @@ class OrderController extends Controller
             ], 422);
         };
     }
+    
+    public function redeemItemToOrder(Request $request)
+    {
+        try {
+            $validatedData = $request->validate(
+                [
+                    'table_id' => 'required|integer',
+                    'order_id' => 'required|integer',
+                    'redeem_qty' => 'required|integer',
+                    'selected_item_id' => 'required|integer',
+                ], 
+                ['required' => 'This field is required.']
+            );
+
+            $currentOrder = Order::select('id', 'pax', 'amount', 'customer_id', 'user_id', 'status')
+                                    ->with([
+                                        'orderTable:id,table_id,status,order_id',
+                                        'customer:id,full_name,point'
+                                    ])
+                                    ->find($validatedData['order_id']);
+
+            $addNewOrder = $currentOrder->status === 'Order Completed' && $currentOrder->orderTable->every(fn ($table) => $table->status === 'Pending Clearance');
+            $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id)->toArray();
+    
+            $tableString = $this->getTableName($tablesArray);
+            $pointSpent = 0;
+    
+            $waiter = $this->authUser;
+            $waiter->image = $waiter->getFirstMediaUrl('user');
+
+            $customer = $currentOrder->customer;
+    
+            if ($validatedData) {
+                if ($addNewOrder) {
+                    $newOrder = Order::create([
+                        'order_no' => RunningNumberService::getID('order'),
+                        'pax' => $currentOrder->pax,
+                        'user_id' => $waiter->id,
+                        'customer_id' => $customer->id,
+                        'amount' => 0.00,
+                        'total_amount' => 0.00,
+                        'status' => 'Pending Serve',
+                    ]);
+            
+                    foreach ($tablesArray as $selectedTable) {
+                        $table = Table::find($selectedTable);
+                        $table->update([
+                            'status' => 'Pending Order',
+                            'order_id' => $newOrder->id
+                        ]);
+                
+                        OrderTable::create([
+                            'table_id' => $selectedTable,
+                            'pax' => $currentOrder->pax,
+                            'user_id' => $waiter->id,
+                            'status' => 'Pending Order',
+                            'order_id' => $newOrder->id
+                        ]);
+                    }
+                    $newOrder->refresh();
+                }
+    
+                $redeemableItem = Product::with([
+                                                'productItems:id,product_id,inventory_item_id,qty',
+                                                'productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+                                            ])
+                                            ->find($validatedData['selected_item_id']);
+    
+                $newOrderItem = OrderItem::create([
+                    'order_id' => $addNewOrder ? $newOrder->id : $validatedData['order_id'],
+                    'user_id' => $waiter->id,
+                    'type' => 'Redemption',
+                    'product_id' => $redeemableItem->id,
+                    'item_qty' => $validatedData['redeem_qty'],
+                    'amount_before_discount' => 0.00,
+                    'discount_id' => null,
+                    'discount_amount' => 0.00,
+                    'amount' => 0,
+                    'status' => 'Pending Serve',
+                ]);
+    
+                activity()->useLog('Order')
+                                ->performedOn($newOrderItem)
+                                ->event('place to order')
+                                ->withProperties([
+                                    'waiter_name' => $waiter->full_name, 
+                                    'table_name' => $tableString,
+                                    'waiter_image' => $waiter->image,
+                                ])
+                                ->log("placed an order for :properties.table_name.");
+    
+                activity()->useLog('redeem-product')
+                            ->performedOn($newOrderItem)
+                            ->event('redeemed')
+                            ->withProperties([
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'customer_name' => $customer->full_name,
+                                'item_name' => $redeemableItem->product_name
+                            ])
+                            ->log("$customer->full_name has redeemed $redeemableItem->product_name.");
+                
+                $redeemableItem->productItems->each(function ($item) use ($newOrderItem) {
+                    $inventoryItem = $item->inventoryItem;
+    
+                    // Deduct stock
+                    $stockToBeSold = $newOrderItem->item_qty * $item->qty;
+                    $oldStockQty = $inventoryItem->stock_qty;
+                    $newStockQty = $oldStockQty - $stockToBeSold;
+    
+                    $newStatus = match(true) {
+                        $newStockQty == 0 => 'Out of stock',
+                        $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
+                        default => 'In stock'
+                    };
+    
+                    $inventoryItem->update([
+                        'stock_qty' => $newStockQty,
+                        'status' => $newStatus
+                    ]);
+                    $inventoryItem->refresh();
+    
+                    StockHistory::create([
+                        'inventory_id' => $inventoryItem->inventory_id,
+                        'inventory_item' => $inventoryItem->item_name,
+                        'old_stock' => $oldStockQty,
+                        'in' => 0,
+                        'out' => $stockToBeSold,
+                        'current_stock' => $inventoryItem->stock_qty,
+                        'kept_balance' => $inventoryItem->current_kept_amt,
+                    ]);
+    
+                    OrderItemSubitem::create([
+                        'order_item_id' => $newOrderItem->id,
+                        'product_item_id' => $item->id,
+                        'item_qty' => $item->qty,
+                        'serve_qty' => 0,
+                    ]);
+                });
+
+                $pointSpent = $validatedData['redeem_qty'] * $redeemableItem->point;
+    
+                PointHistory::create([
+                    'product_id' => $redeemableItem->id,
+                    'payment_id' => null,
+                    'type' => 'Used',
+                    'point_type' => 'Redeem', 
+                    'qty' => $validatedData['redeem_qty'],
+                    'amount' => $pointSpent,
+                    'old_balance' => $customer->point,
+                    'new_balance' => $customer->point - $pointSpent,
+                    'customer_id' => $customer->id,
+                    'handled_by' => $waiter->id,
+                    'redemption_date' => now()
+                ]);
+    
+                $customer->decrement('point', $pointSpent);
+    
+                $order = Order::with(['orderTable.table'])->find($addNewOrder ? $newOrder->id : $validatedData['order_id']);
+                
+                if ($order) {
+                    $statusArr = collect($order->orderItems->pluck('status')->unique());
+                    $orderStatus = 'Pending Serve';
+                    $orderTableStatus = 'Pending Order';
+                
+                    if ($statusArr->contains('Pending Serve')) {
+                        $orderStatus = 'Pending Serve';
+                        $orderTableStatus = 'Order Placed';
+                    } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+                        $orderStatus = 'Order Served';
+                        $orderTableStatus = 'All Order Served';
+                    } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+                        $orderStatus = 'Order Served';
+                        $orderTableStatus = 'All Order Served';
+                    }
+    
+                    $order->update(['status' => $orderStatus]);
+                    
+                    // Update all tables associated with this order
+                    $order->orderTable->each(function ($tab) use ($orderTableStatus) {
+                        $tab->table->update(['status' => $orderTableStatus]);
+                        $tab->update(['status' => $orderTableStatus]);
+                    });
+                };
+            
+                $currentTable = $this->getPendingServeItemsQuery($request->table_id)->get();
+    
+                $pendingServeItems = collect();
+    
+                $currentTable->each(function ($table) use (&$pendingServeItems) {
+                    if ($table->order) {
+                        if ($table->order->customer_id) {
+                            $table->order->customer->image = $table->order->customer->getFirstMediaUrl('customer');
+                        }
+    
+                        foreach ($table->order->orderItems as $orderItem) {
+                            $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+                            $pendingServeItems->push($orderItem);
+                        }
+                    }
+                });
+    
+                $earnedCommission = OrderItem::join('orders', 'order_items.order_id', '=', 'orders.id')
+                                                ->join('products', 'order_items.product_id', '=', 'products.id')
+                                                ->join('config_employee_comm_items as comm_items', 'products.id', '=', 'comm_items.item')
+                                                ->join('config_employee_comms as comms', 'comm_items.comm_id', '=', 'comms.id')
+                                                ->where([
+                                                    ['order_items.type', 'Normal'],
+                                                    ['order_items.user_id', $waiter->id],
+                                                    ['orders.id', $order->id]
+                                                ])
+                                                ->whereColumn('comm_items.created_at', '<=', 'order_items.created_at')
+                                                ->whereNull('comm_items.deleted_at')
+                                                ->whereNull('comms.deleted_at')
+                                                ->selectRaw("
+                                                    SUM(
+                                                        CASE
+                                                            WHEN comms.comm_type = 'Fixed amount per sold product'
+                                                            THEN comms.rate * order_items.item_qty
+                                                            ELSE products.price * order_items.item_qty * (comms.rate / 100)
+                                                        END
+                                                    ) as total_commission
+                                                ")
+                                                ->value('total_commission');
+    
+                return response()->json([
+                    'status' => 'success',
+                    'title' => "Product has been successfully redeemed and added to customer's order detail.",
+                    'customerPoint' => $customer->point,
+                    'pendingServeItems' => $pendingServeItems,
+                    'order' => $order,
+                    'earned_commission' => round($earnedCommission, 2)
+                ], 201);
+            }
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'title' => 'The given data was invalid.',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception  $e) {
+            Log::info($e);
+            return response()->json([
+                'title' => 'Error redeeming item.',
+                'errors' => $e
+            ], 422);
+        };
+    }
 }
