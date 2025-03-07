@@ -24,15 +24,26 @@ class ConfigShiftSettingController extends Controller
     public function getShift()
     {
 
-        $shifts = Shift::get();
+        $shifts = Shift::with(['shift_breaks'])->get();
 
         return response()->json($shifts);
     }
 
-    public function getWaiterShift()
+    public function getWaiterShift(Request $request)
     {
 
-        $waiterShifts = WaiterShift::get();
+        if ($request->waiter_id) {
+
+            $waiterShifts = WaiterShift::query()
+                    ->where('waiter_id', $request->waiter_id)
+                    ->where('weeks', $request->weeks)
+                    ->get();
+
+        } else {
+            $waiterShifts = WaiterShift::get();
+        }
+
+        
 
         return response()->json($waiterShifts);
     }
@@ -48,13 +59,20 @@ class ConfigShiftSettingController extends Controller
     public function viewShift(Request $request)
     {
         
-        $waiters = WaiterShift::where('waiter_id', $request->waiter_id)
+        $waiters = WaiterShift::query()
+                    ->where('waiter_id', $request->waiter_id)
                     ->where('weeks', $request->weeks)
-                    ->with(['users:id,name,full_name,profile_photo', 'shifts'])
+                    ->with(['users:id,name,full_name', 'shifts'])
                     ->get();
 
+        $findWaiter = User::find($request->waiter_id);
+
+        $findWaiter->profile_photo_url = $findWaiter->getFirstMediaUrl('user');
         
-        return response()->json($waiters);
+        return response()->json([
+            'waiters' => $waiters,
+            'findWaiter' => $findWaiter,
+        ]);
     }
 
     public function getFilterShift(Request $request)
@@ -63,14 +81,15 @@ class ConfigShiftSettingController extends Controller
 
         $formattedDate = Carbon::createFromFormat('d M Y', $request->date)->format('Y-m-d');
 
-        $waiters = WaiterShift::where('shift_id', $request->shift_id)
+        $waiters = WaiterShift::query()
+                ->where('shift_id', $request->shift_id)
                 ->whereDate('date', $formattedDate)
-                ->with(['users:id,name,full_name,profile_photo'])
+                ->with(['users:id,name,full_name'])
                 ->get();
 
         $waiters->each(function ($waiter) {
             if ($waiter->users) {
-                $waiter->users->profile_photo_url = $waiter->users->getFirstMediaUrl('profile_photo'); 
+                $waiter->users->profile_photo_url = $waiter->users->getFirstMediaUrl('user'); 
             }
         });
 
@@ -101,8 +120,6 @@ class ConfigShiftSettingController extends Controller
             'apply_days' => $request->days,
         ]);
 
-        
-
         foreach ($request->breaks as $break) {
 
             $shiftBreak = ShiftBreak::create([
@@ -112,6 +129,66 @@ class ConfigShiftSettingController extends Controller
             ]);
         }
         
+
+        return redirect()->back();
+    }
+
+    public function editShift(Request $request)
+    {
+        
+        $validated = $request->validate([
+            'shift_name' => ['required'],
+            'shift_code' => ['required'],
+            'time_start' => ['required'],
+            'time_end' => ['required'],
+            'late' => ['required'],
+            'color' => ['required'],
+            'breaks' => ['required', 'array', 'min:1'],
+            'days' => ['required', 'array', 'min:1'],
+        ]);
+
+        $shift = Shift::find($request->shift_id);
+
+        $shift->update([
+            'shift_name' => $request->shift_name,
+            'shift_code' => $request->shift_code,
+            'shift_start' => Carbon::parse($request->time_start)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
+            'shift_end' => Carbon::parse($request->time_end)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
+            'late' => $request->late,
+            'color' => $request->color,
+            'apply_days' => $request->days,
+        ]);
+
+        // Get existing breaks for this shift
+        $existingBreaks = ShiftBreak::where('shift_id', $shift->id)->get()->keyBy('id');
+
+        // Collect incoming break IDs
+        $incomingBreakIds = collect($request->breaks)->pluck('id')->filter()->toArray();
+
+        // Delete breaks that were removed by the user
+        ShiftBreak::where('shift_id', $shift->id)
+            ->whereNotIn('id', $incomingBreakIds)
+            ->delete();
+
+        // Process each break in the request
+        foreach ($request->breaks as $break) {
+
+            if (isset($break['id']) && $break['id']) {
+                // If the break exists, update it
+                if ($existingBreaks->has($break['id'])) {
+                    $existingBreaks[$break['id']]->update([
+                        'break_value' => $break['break_value'],
+                        'break_time' => $break['break_time'],
+                    ]);
+                }
+            } else {
+                ShiftBreak::create([
+                    'shift_id' => $shift->id,
+                    'break_value' => $break['break_value'],
+                    'break_time' => $break['break_time'],
+                ]);
+            }
+        }
 
         return redirect()->back();
     }
@@ -151,6 +228,39 @@ class ConfigShiftSettingController extends Controller
                 'days' => $day,
                 'date' => $dayDate, // Assign correct date for each day
             ]);
+        }
+
+        return redirect()->back();
+    }
+
+    public function deleteShift(Request $request)
+    {
+
+        $shifts = WaiterShift::where('waiter_id', $request->waiter_id)->where('weeks', $request->weeks)->get();
+
+        foreach($shifts as $shift) {
+            $shift->delete();
+        }
+
+        return redirect()->back();
+    }
+
+    public function updateShift(Request $request)
+    {
+
+        // dd($request->all());
+
+        foreach ($request->assign_shift as $waitershift_id => $shift_id) {
+            // Ensure shift_id is stored as an integer
+            $shift_id = (int) $shift_id;
+    
+            // Update the existing WaiterShift record
+            WaiterShift::where('id', $waitershift_id)
+                ->where('waiter_id', $request->waiter_id)
+                ->where('weeks', $request->weeks)
+                ->update([
+                    'shift_id' => $shift_id
+                ]);
         }
 
         return redirect()->back();

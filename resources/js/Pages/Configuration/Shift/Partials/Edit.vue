@@ -4,25 +4,20 @@ import { CheckWhiteIcon, DeleteIcon, PlusIcon, TimeIcon } from '@/Components/Ico
 import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
 import Calendar from 'primevue/calendar';
-import { ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import DateInput from '@/Components/Date.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import Dropdown from "@/Components/Dropdown.vue";
 
-const emit = defineEmits(["close", "shift-added"]);
+const emit = defineEmits(['close', 'fetch-shift']);
 const time = ref();
 const selectedColor = ref(null);
 
-const form = useForm({
-    shift_name: '',
-    shift_code: '',
-    time_start: '',
-    time_end: '',
-    late: '',
-    color: '',
-    breaks: [{ id: 1, break_value: '', break_time: '' }],
-    days: [],
+const props = defineProps({
+    shift: Object,
 });
+
+console.log(props.shift)
 
 const colorCode = [
     { color: '#7E171B'},
@@ -48,14 +43,62 @@ const timeType = [
     { text: 'minutes', value: 'minutes'},
 ]
 
+const form = useForm({
+    shift_id: props.shift.id,
+    shift_name: '',
+    shift_code: '',
+    time_start: props.shift ? props.shift.shift_start.slice(0,5) : '',
+    time_end: props.shift ? props.shift.shift_end.slice(0,5) : '',
+    late: '',
+    color: '',
+    breaks: ref([]),
+    days: [],
+});
+
+const initializeForm = () => {
+    if (props.shift) {
+        console.log("Shift Data:", props.shift.shift_start);
+        form.shift_name = props.shift.shift_name || '';
+        form.shift_code = props.shift.shift_code || '';
+        form.time_start = props.shift.shift_start.slice(0,5) || '10:00';
+        form.time_end = props.shift.shift_end || '';
+        form.late = props.shift.late || '';
+        form.color = props.shift.color || '';
+        if (props.shift && props.shift.shift_breaks) {
+            form.breaks = props.shift.shift_breaks.map((item, index) => ({
+                id: item.id, // Assign a unique ID if missing
+                break_value: String(item.break_value),
+                break_time: String(item.break_time),
+            }));
+        } else {
+            form.breaks = [{ id: 1, break_value: '', break_time: '' }];
+        }
+        form.days = props.shift.apply_days || [];
+    }
+};
+
+onMounted(() => {
+    initializeForm();
+});
+
+watch(() => props.shift, () => {
+    initializeForm();
+}, { deep: true });
+
 const selectColor = (color) => {
     selectedColor.value = color;
     form.color = color; // Store selected color in the form
 };
 
+onMounted(() => {
+    if (props.shift && props.shift.color) {
+        selectedColor.value = props.shift.color;
+    }
+});
+
 const addBreak = () => {
     form.breaks.push({
-        id: '', // Unique ID
+        id: Date.now(), // Unique ID
         break_value: '',
         break_time: ''
     });
@@ -66,17 +109,29 @@ const removeBreak = (id) => {
 };
 
 const submit = () => {
-    form.post('/configurations/create-shift', {
+    const updatedFields = {};
+
+    for (const key in form) {
+        if (form[key] !== props.shift[key]) {
+            updatedFields[key] = form[key];
+        }
+    }
+
+    updatedFields.id = props.shift.id;
+
+    form.post('/configurations/edit-shift', {
         preserveScroll: true,
+        data: updatedFields,
         onSuccess: () => {
             form.reset();
             emit('close');
-            emit("shift-added");
+            emit('fetch-shift')
         }
     });
 }
 
 </script>
+
 
 <template>
 

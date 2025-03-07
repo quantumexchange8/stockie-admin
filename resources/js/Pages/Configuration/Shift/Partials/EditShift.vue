@@ -1,5 +1,5 @@
 <script setup>
-import { WarningSmallIcon } from '@/Components/Icons/solid';
+import { NoImageIcon, NoImgIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import { onMounted, ref, watchEffect } from 'vue';
 import ViewShift from './ViewShift.vue';
@@ -65,18 +65,24 @@ const closeShift = () => {
             </div>
         </div>
         <div v-if="waiters.length > 0 ">
-            <div v-for="waiter in waiters" :key="waiters.id" class="flex flex-col border-b border-gray-100 py-3">
+            <div v-for="waiter in waiters" :key="waiter.id" class="flex flex-col border-b border-gray-100 py-3">
                 <div class="flex items-center gap-4">
                     <div class="w-full max-w-10 max-h-10">
-                        <img :src="waiter.users.profile_photo_url ? waiter.users.profile_photo_url : ''" alt="" >
+                        <img 
+                            v-if="waiter.users?.profile_photo_url" 
+                            :src="waiter.users.profile_photo_url" 
+                            alt="Profile Photo"
+                            class="w-full h-full object-cover rounded-full"
+                        />
+                        <!-- Default Icon -->
+                        <NoImgIcon />
                     </div>
                     <div class="flex items-center w-full">
                         <div class="flex flex-col gap-1 w-full">
                             <div>{{ waiter.users.full_name }}</div>
-                            <div>Total:</div>
-                            
+                            <!-- <div>Total:</div> -->
                         </div>
-                        <div class="text-primary-900 text-sm font-medium max-w-20 w-full" @click="viewShift(waiter.waiter_id)">View shift</div>
+                        <div class="text-primary-900 text-sm font-medium max-w-20 w-full cursor-pointer" @click="viewShift(waiter.waiter_id)">View shift</div>
                     </div>
                 </div>
                 
@@ -91,7 +97,7 @@ const closeShift = () => {
         :closeable="true" 
         @close="closeShift"
     >
-        <ViewShift :selectedWaiter="selectedWaiter" :weekNo="thisWeekVal" />
+        <ViewShift :selectedWaiter="selectedWaiter" :weekNo="thisWeekVal" @close="closeShift" />
     </Modal>
 
 </template>

@@ -158,6 +158,9 @@ export default {
                     950: "#0f280b",
                 },
             },
+            boxShadow: {
+                'shift': '4px 1px 18.6px 0px rgba(50, 50, 50, 0.06)',
+            }
         },
     },
 

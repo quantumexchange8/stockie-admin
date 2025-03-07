@@ -10,6 +10,7 @@ import AddShift from './Partials/AddShift.vue';
 import AssignShift from './Partials/AssignShift.vue';
 import EditShift from './Partials/EditShift.vue';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
+import Edit from './Partials/Edit.vue';
 
 dayjs.extend(weekOfYear);
 
@@ -21,9 +22,10 @@ const waiterShifts = ref([]);
 const newShiftIsOpen = ref(false);
 const assignShiftIsOpen = ref(false);
 const editShiftIsOpen = ref(false);
+const editIsOpen = ref(false);
 const selectedShift = ref(null);
 const selectedDay = ref(null);
-
+const shiftVal = ref(null)
 
 const fetchShift = async () => {
     try {
@@ -116,6 +118,15 @@ const handleCellClick = (day, shift) => {
     editShiftIsOpen.value = true;
 };
 
+const edit = (shift) => {
+    editIsOpen.value = true;
+    shiftVal.value = shift;
+}
+
+const closeEdit = () => {
+    editIsOpen.value = false;
+}
+
 </script>
 
 <template>
@@ -142,8 +153,9 @@ const handleCellClick = (day, shift) => {
             <div class="flex flex-wrap gap-5">
                 <div v-for="shift in shifts" :key="shift.id" class="border border-gray-100  max-w-[270px] w-full">
                     <div 
-                        :class="['py-3 px-6 flex flex-col gap-1 border-l-[3px]']" 
+                        :class="['py-3 px-6 flex flex-col gap-1 border-l-[3px] cursor-pointer']" 
                         :style="{ borderLeftColor: `${shift.color}` }"
+                        @click="edit(shift)"
                     >
                         <div class="text-gray-900 text-base font-medium">
                             {{ shift.shift_name }}
@@ -154,6 +166,16 @@ const handleCellClick = (day, shift) => {
                     </div>
                 </div>
             </div>
+
+            <Modal 
+                :title="'Edit Shift'"
+                :show="editIsOpen" 
+                :maxWidth="'sm'" 
+                :closeable="true" 
+                @close="closeEdit"
+            >
+                <Edit @close="closeEdit" @fetch-shift="fetchShift" :shift="shiftVal" />
+            </Modal>
 
             <Modal 
                 :title="'Add New Shift'"
@@ -282,5 +304,6 @@ const handleCellClick = (day, shift) => {
             </div>
         </div>
     </div>
+
 
 </template>

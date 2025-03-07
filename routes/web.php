@@ -186,6 +186,9 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/create-shift', [ConfigShiftSettingController::class, 'createShift'])->name('configurations.create-shift');
         Route::post('/assign-shift', [ConfigShiftSettingController::class, 'assignShift'])->name('configurations.assign-shift');
+        Route::post('/delete-shift', [ConfigShiftSettingController::class, 'deleteShift'])->name('configurations.delete-shift');
+        Route::post('/update-shift', [ConfigShiftSettingController::class, 'updateShift'])->name('configurations.update-shift');
+        Route::post('/edit-shift', [ConfigShiftSettingController::class, 'editShift'])->name('configurations.edit-shift');
         
 
         /******* Promotion ********/
