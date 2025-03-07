@@ -192,8 +192,8 @@ const toggleNode = (node) => {
             <div class="flex flex-col">
                 <SidebarLink
                     title="Transaction Listing"
-                    :href="route('transaction-listing')"
-                    :active="route().current('transaction-listing')"
+                    :href="route('transactions.transaction-listing')"
+                    :active="route().current('transactions.transaction-listing')"
                     v-if="existingPermissions?.includes('transaction-listing')" 
                 >
                     <template #icon>

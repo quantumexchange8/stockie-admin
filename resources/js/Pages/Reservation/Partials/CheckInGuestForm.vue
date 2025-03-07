@@ -34,7 +34,7 @@ const getOccupiedTables = async () => {
     try {
         const response = await axios.get('/reservation/getOccupiedTables');
         occupiedTables.value = response.data;
-        console.log(occupiedTables.value);
+
     } catch (error) {
         console.error(error);
     } finally {

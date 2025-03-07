@@ -538,7 +538,7 @@ const deleteModalDescription = computed(() => {
         :closeable="true" 
         @close="closeModal('close')"
     >
-        <template v-if="selectedCustomer">
+        <!-- <template v-if="selectedCustomer"> -->
             <EditCustomer
                 :customer="selectedCustomer"
                 @update:customerListing="customer = $event"
@@ -554,7 +554,7 @@ const deleteModalDescription = computed(() => {
                 @close="closeModal('stay')"
                 @leave="closeModal('leave')"
             />
-        </template>
+        <!-- </template> -->
     </Modal>
 
     <!-- right drawer -->

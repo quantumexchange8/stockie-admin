@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('weeks')->nullable();
             $table->string('days')->nullable();
             $table->date('date')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

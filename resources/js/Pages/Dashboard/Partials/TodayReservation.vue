@@ -83,15 +83,16 @@ const openForm = (action, reservation) => {
     actionType.value = action;
     isDirty.value = false;
 
-    if (actionType.value === 'create') makeReservationFormIsOpen.value = true;
     if (reservation) {
         // Set value of selected reservation on open
-        if (actionType.value !== 'create') selectedReservation.value = reservation;
+        selectedReservation.value = reservation;
 
-        if (actionType.value === 'show') reservationDetailIsOpen.value = true;
-        if (actionType.value === 'check-in') checkInFormIsOpen.value = true;
-        if (actionType.value === 'delay') delayReservationFormIsOpen.value = true;
-        if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = true;
+        switch(actionType.value) {
+            case 'show': reservationDetailIsOpen.value = true; break;
+            case 'check-in': checkInFormIsOpen.value = true; break;
+            case 'delay' : delayReservationFormIsOpen.value = true; break;
+            case 'cancel' : cancelReservationFormIsOpen.value = true; break;
+        }
 
         setTimeout(() => closeOverlay(), 100);
     }
@@ -105,66 +106,24 @@ const closeForm = (type) => {
             if(isDirty.value){
                 isUnsavedChangesOpen.value = true;
             } else {
-                if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
-                if (actionType.value === 'show') reservationDetailIsOpen.value = false;
-                if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
-                if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
-                if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+                reservationDetailIsOpen.value = false;
+                checkInFormIsOpen.value = false;
+                delayReservationFormIsOpen.value = false;
+                cancelReservationFormIsOpen.value = false;
             }
             break;
         }
         case 'stay': isUnsavedChangesOpen.value = false; break;
         case 'leave': {
             isUnsavedChangesOpen.value = false;
-            if (actionType.value === 'create') makeReservationFormIsOpen.value = false;
-            if (actionType.value === 'show') reservationDetailIsOpen.value = false;
-            if (actionType.value === 'check-in') checkInFormIsOpen.value = false;
-            if (actionType.value === 'delay') delayReservationFormIsOpen.value = false;
-            if (actionType.value === 'cancel') cancelReservationFormIsOpen.value = false;
+            reservationDetailIsOpen.value = false;
+            checkInFormIsOpen.value = false;
+            delayReservationFormIsOpen.value = false;
+            cancelReservationFormIsOpen.value = false;
             break;
         }
     }
 }
-
-// const showReservationDetailForm = (reservation) => {
-//     selectedReservation.value = reservation;
-//     reservationDetailIsOpen.value = true;
-// }
-
-// const hideReservationDetailForm = () => {
-//     reservationDetailIsOpen.value = false;
-//     setTimeout(() => selectedReservation.value = null, 300);
-// }
-
-// const showCheckInForm = (reservation) => {
-//     selectedReservation.value = reservation;
-//     checkInFormIsOpen.value = true;
-// }
-
-// const hideCheckInForm = () => {
-//     checkInFormIsOpen.value = false;
-//     setTimeout(() =>selectedReservation.value = null, 300);
-// }
-
-// const showDelayReservationForm = (reservation) => {
-//     selectedReservation.value = reservation;
-//     delayReservationFormIsOpen.value = true;
-// }
-
-// const hideDelayReservationForm = () => {
-//     delayReservationFormIsOpen.value = false;
-//     setTimeout(() =>selectedReservation.value = null, 300);
-// }
-
-// const showCancelReservationForm = (reservation) => {
-//     selectedReservation.value = reservation;
-//     cancelReservationFormIsOpen.value = true;
-// }
-
-// const hideCancelReservationForm = () => {
-//     cancelReservationFormIsOpen.value = false;
-//     setTimeout(() =>selectedReservation.value = null, 300);
-// }
 
 const getTableNames = (table_no) => table_no.map(selectedTable => selectedTable.name).join(', ');
 
@@ -190,6 +149,7 @@ const openOverlay = (event) =>  op.value.show(event);
 const closeOverlay = () => {
     if (op.value) op.value.hide();
 };
+
 </script>
 
 <template>
@@ -295,7 +255,7 @@ const closeOverlay = () => {
                             :variant="'primary'"
                             :type="'submit'"
                             :disabled="reservation.status === 'Checked in'"
-                            @click="openForm('check-in', selectedReservation)"
+                            @click.stop="openForm('check-in', reservation)"
                         >
                             {{ reservation.status === 'Checked in' ?  'Customer checked-in' : 'Check-in customer' }}
                         </Button>

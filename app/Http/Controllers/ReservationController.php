@@ -25,27 +25,26 @@ class ReservationController extends Controller
 {
     public function index()
     {
-        $upcomingReservations = Reservation::with([
+        $upcomingReservations = Reservation::where(function ($query) {
+                                                $startDate = now()->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s');
+
+                                                $query->where(fn ($q) =>
+                                                            $q->whereNotNull('action_date')
+                                                                ->whereDate('action_date', '>=', $startDate)
+                                                        )
+                                                        ->orWhere(fn ($q) =>
+                                                            $q->whereNull('action_date')
+                                                                ->whereDate('reservation_date', '>=', $startDate)
+                                                        );
+                                            })
+                                            ->with([
                                                 'reservedFor.reservations', 
                                                 'reservedFor.reservationCancelled', 
                                                 'reservedFor.reservationAbandoned', 
                                                 'reservedBy', 
                                                 'handledBy'
                                             ])
-                                            ->where(function ($query) {
-                                                // Check for 'Pending' status and overdue reservation_date
-                                                $query->where('status', 'Pending');
-                                
-                                                // Or check for 'Delayed' status and overdue action_date
-                                                $query->orWhere(function ($subQuery) {
-                                                    $subQuery->where('status', 'Delayed');
-                                                });
-
-                                                // Or check for 'Checked in' status
-                                                $query->orWhere(function($subQuery){
-                                                    $subQuery->where('status', 'Checked in');
-                                                });
-                                            })
+                                            ->whereIn('status', ['Pending', 'Delayed', 'Checked in'])
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
                                             ->get()
                                             ->map(function ($res) {
@@ -375,27 +374,26 @@ class ReservationController extends Controller
      */
     public function getReservations()
     {
-        $upcomingReservations = Reservation::with([
+        $upcomingReservations = Reservation::where(function ($query) {
+                                                $startDate = now()->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s');
+
+                                                $query->where(fn ($q) =>
+                                                            $q->whereNotNull('action_date')
+                                                                ->whereDate('action_date', '>=', $startDate)
+                                                        )
+                                                        ->orWhere(fn ($q) =>
+                                                            $q->whereNull('action_date')
+                                                                ->whereDate('reservation_date', '>=', $startDate)
+                                                        );
+                                            })
+                                            ->with([
                                                 'reservedFor.reservations', 
                                                 'reservedFor.reservationCancelled', 
                                                 'reservedFor.reservationAbandoned', 
                                                 'reservedBy', 
                                                 'handledBy'
                                             ])
-                                            ->where(function ($query) {
-                                                // Check for 'Pending' status and overdue reservation_date
-                                                $query->where('status', 'Pending');
-                                
-                                                // Or check for 'Delayed' status and overdue action_date
-                                                $query->orWhere(function ($subQuery) {
-                                                    $subQuery->where('status', 'Delayed');
-                                                });
-
-                                                // Or check for 'Checked in' status
-                                                $query->orWhere(function($subQuery){
-                                                    $subQuery->where('status', 'Checked in');
-                                                });
-                                            })
+                                            ->whereIn('status', ['Pending', 'Delayed', 'Checked in'])
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
                                             ->get();
 

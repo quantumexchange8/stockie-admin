@@ -168,32 +168,34 @@ class DashboardController extends Controller
                     ->values()
                     ->all();
    
-        $todayReservations = Reservation::with([
-                                                'reservedFor.reservations', 
-                                                'reservedFor.reservationCancelled', 
-                                                'reservedFor.reservationAbandoned', 
-                                                'reservedBy', 
-                                                'handledBy'
-                                            ])
-                                            ->whereDate('reservation_date', now('Asia/Kuala_Lumpur')->toDateString())
-                                            // ->whereDate('reservation_date', '>', $yesterday)
-                                            ->where(function ($query) {
-                                                // Check for 'Pending' status and overdue reservation_date
-                                                $query->where('status', 'Pending')
-                                                    ->whereDate('reservation_date', now('Asia/Kuala_Lumpur')->toDateString());
-                                
-                                                // Or check for 'Delayed' status and overdue action_date
-                                                $query->orWhere(function ($subQuery)  {
-                                                    $subQuery->where('status', 'Delayed')
-                                                        ->whereDate('action_date', now('Asia/Kuala_Lumpur')->toDateString());
-                                                });
-                                            })
-                                            ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
-                                            ->get();
+        $todayReservations = Reservation::where(function ($query) {
+                                            $startDate = now()->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s');
+                                            $endDate = now()->timezone('Asia/Kuala_Lumpur')->endOfDay()->format('Y-m-d H:i:s');
+
+                                            $query->where(fn ($q) =>
+                                                        $q->whereNotNull('action_date')
+                                                            ->whereDate('action_date', '>=', $startDate)
+                                                            ->whereDate('action_date', '<=', $endDate)
+                                                    )
+                                                    ->orWhere(fn ($q) =>
+                                                        $q->whereNull('action_date')
+                                                            ->whereDate('reservation_date', '>=', $startDate)
+                                                            ->whereDate('reservation_date', '<=', $endDate)
+                                                    );
+                                        })
+                                        ->with([
+                                            'reservedFor.reservations', 
+                                            'reservedFor.reservationCancelled', 
+                                            'reservedFor.reservationAbandoned', 
+                                            'reservedBy', 
+                                            'handledBy'
+                                        ])
+                                        ->whereIn('status', ['Pending', 'Delayed', 'Checked in'])
+                                        ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
+                                        ->get();
 
         $todayReservations->each(function ($todayReservation){
-            if($todayReservation->reservedFor)
-            {
+            if ($todayReservation->reservedFor) {
                 $todayReservation->reservedFor->image = $todayReservation->reservedFor->getFirstMediaUrl('customer');
             }
         });
