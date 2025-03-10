@@ -1631,6 +1631,7 @@ class OrderController extends Controller
             $newCustomer = Customer::create([
                 'uuid' => RunningNumberService::getID('customer'),
                 'full_name' => $validatedData['full_name'],
+                'dial_code' => '+60',
                 'phone' => $validatedData['phone'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make('testtest'), // new Randomizer()->getBytes(8)
