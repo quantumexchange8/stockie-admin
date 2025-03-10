@@ -19,6 +19,7 @@ import {
     UsersIcon,
     ActivityLogsIcon,
     ShiftManagementIcon,
+    TransactionListingIcon,
 } from "@/Components/Icons/solid";
 import { usePage } from "@inertiajs/vue3";
 import SidebarTree from "./SidebarTree.vue";
@@ -197,7 +198,7 @@ const toggleNode = (node) => {
                     v-if="existingPermissions?.includes('transaction-listing')" 
                 >
                     <template #icon>
-                        <LoyaltyIcon aria-hidden="true" />
+                        <TransactionListingIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
             </div>

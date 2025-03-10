@@ -22,7 +22,14 @@ class TransactionController extends Controller
 
         $transactions = Payment::query()
             ->whereNot('status', 'pending')
-            ->with(['customer']);
+            ->with([
+                'customer', 
+                'order:id,amount,total_amount', 
+                'order.orderItems:order_id,product_id,item_qty,amount_before_discount,discount_amount,amount',
+                'order.orderItems.product:id,product_name,price',
+                'order.orderItems.productDiscount:id,discount_id,product_name,price',
+                'voucher:id,reward_type,discount'
+            ]);
 
         if ($request->dateFilter) {
             $startDate = Carbon::parse($request->dateFilter[0])->toDateTimeString();
@@ -31,8 +38,27 @@ class TransactionController extends Controller
             $transactions->whereBetween('receipt_end_date', [$startDate, $endDate]);
         }
 
-        $transactions = $transactions->get();
+        $transactions = $transactions->latest()->get();
+
+        $transactions->each(function ($transaction) {
+            if ($transaction->customer) {
+                $transaction->customer->profile_photo = $transaction->customer->getFirstMediaUrl('customer');
+            }
+        });
 
         return response()->json($transactions);
+    }
+
+    public function voidTransaction(Request $request)
+    {
+
+        dd($request->all());
+
+        $transaction = Payment::find($request->id);
+
+        $transaction->status = 'Voided';
+        $transaction->save();
+
+        return redirect()->back();
     }
 }

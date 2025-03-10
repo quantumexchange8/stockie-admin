@@ -1,5 +1,8 @@
 <script setup>
 
+const props = defineProps({
+    selectedVal: Object,
+});
 
 </script>
 

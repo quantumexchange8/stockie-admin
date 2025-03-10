@@ -160,6 +160,7 @@ export default {
             },
             boxShadow: {
                 'shift': '4px 1px 18.6px 0px rgba(50, 50, 50, 0.06)',
+                'container': '0px 1px 12px 0px rgba(0, 0, 0, 0.06)',
             }
         },
     },
