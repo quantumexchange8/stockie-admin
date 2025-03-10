@@ -7,14 +7,14 @@ use Inertia\Inertia;
 
 class ShiftController extends Controller
 {
-    public function index(){
-        return Inertia::render('ShiftManagement/ShiftManagement', [
+    public function viewShiftControl(){
+        return Inertia::render('ShiftManagement/ShiftControl', [
 
         ]);
     }
 
-    public function record() {
-        return Inertia::render('ShiftManagement/Partials/ShiftReport', [
+    public function viewShiftRecord() {
+        return Inertia::render('ShiftManagement/ShiftReport', [
 
         ]);
     }

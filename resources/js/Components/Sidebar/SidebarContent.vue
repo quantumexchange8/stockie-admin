@@ -33,8 +33,8 @@ const nodes = ref([
                 key: '0',
                 label: 'Shift Management',
                 children: [
-                    { key: '1-0', label: 'Shift Report', data: route('shift-management'), type: 'url' },
-                    { key: '1-1', label: 'Shift Control', data: route('shift-record'), type: 'url' },
+                    { key: '1-0', label: 'Shift Control', data: route('shift-management.control'), type: 'url' },
+                    { key: '1-1', label: 'Shift Report', data: route('shift-management.record'), type: 'url' },
                 ]
             }])
 
@@ -94,9 +94,9 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <!-- Work In Progress -->
-                <!-- <SidebarTree 
+                <SidebarTree 
                     :value="nodes" 
-                    :active="route().current('shift-management')"
+                    :active="route().current('shift-management.control')"
                     :expandedKeys="expandedKeys"
                     @expand="toggleNode"
                 >
@@ -104,7 +104,7 @@ const toggleNode = (node) => {
                         <ShiftManagementIcon v-if="slotProps.node.key === '0'"/>
                         <div class="size-[25px]" v-else></div>
                     </template>
-                </SidebarTree> -->
+                </SidebarTree>
                 <SidebarLink 
                     title="Menu Management" 
                     :href="route('products')"

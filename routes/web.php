@@ -238,7 +238,7 @@ Route::middleware('auth')->group(function () {
         
     });
 
-     /********Table and room **********/
+     /******** Table and room **********/
      Route::prefix('table-room')->middleware([CheckPermission::class . ':table-room'])->group(function(){
         Route::get('/table-room', [TableRoomController::class, 'index'])->name('table-room');
         Route::post('/add-zones', [TableRoomController::class,'addZone'])->name('tableroom.add-zone');
@@ -363,12 +363,8 @@ Route::middleware('auth')->group(function () {
 
     /********* Shift Management **********/
     Route::prefix('shift-management')->middleware([CheckPermission::class . ':shift-management'])->group(function(){
-        Route::get('', [ShiftController::class, 'index'])->name('shift-management');
-    });
-
-    Route::prefix('shift-record')->middleware([CheckPermission::class . ':shift-management'])->group(function(){
-        Route::get('', [ShiftController::class, 'record'])->name('shift-record');
-
+        Route::get('/shift-control', [ShiftController::class, 'viewShiftControl'])->name('shift-management.control');
+        Route::get('/shift-record', [ShiftController::class, 'viewShiftRecord'])->name('shift-management.record');
     });
 
     /********* Transaction Listing **********/
