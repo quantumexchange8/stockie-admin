@@ -42,27 +42,32 @@ const editForm = useForm({
 
 const editDetails = async () => {
     try {
-        editForm.put('admin-user/edit-admin-details', {
-            preserveScroll: true,
-            preserveState: 'errors',
-            onSuccess: () => {
-                showMessage({
-                    severity: 'success',
-                    summary: 'Successfully edited.',
-                });
-            }
-        })
-        // const response = await axios.put('/admin-user/edit-admin-details', editForm);
-        // emit('update:users', response.data);
-        // emit('close', 'leave');
-        // showMessage({
-        //     severity: 'success',
-        //     summary: 'Successfully edited.',
-        // });
-        // editForm.reset();
+        // editForm.put('admin-user/edit-admin-details', {
+        //     preserveScroll: true,
+        //     preserveState: 'errors',
+        //     onSuccess: () => {
+        //         showMessage({
+        //             severity: 'success',
+        //             summary: 'Successfully edited.',
+        //         });
+        //     }
+        // })
+
+        const response = await axios.put('admin-user/edit-admin-details', editForm);
+
+        showMessage({
+            severity: 'success',
+            summary: 'Successfully edited.',
+        });
+
+        emit('update:users', response.data);
+        emit('close', 'leave');
+        editForm.reset();
+        editForm.clearErrors();
+
     } catch (error) {
         if (error.response && error.response.data.errors) {
-            deleteForm.errors = error.response.data.errors; 
+            editForm.setError(error.response.data.errors); 
         }
         console.error(error);
     }

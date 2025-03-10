@@ -18,12 +18,12 @@ const form = useForm({
     permission: [],
     email: '',
 })
-const emit = defineEmits(['close', 'isDirty']);
+const emit = defineEmits(['close', 'isDirty', 'update:users']);
 const { showMessage } = useCustomToast();
 const isAddAdminClicked = ref(false);
 const isProcessing = ref(false);
 
-const addAdmin = () => {
+const addAdmin = async () => {
     isProcessing.value = true;
     try {
         form.post('admin-user/add-sub-admin', {
@@ -40,6 +40,20 @@ const addAdmin = () => {
                 }, 2000);
             }
         })
+
+        const response = await axios.put('admin-user/add-sub-admin', form);
+
+        showMessage({
+            severity: 'success',
+            summary: 'Successfully added.'
+        });
+
+        emit('update:users', response.data);
+        emit('close', 'leave');
+        setTimeout(() => {
+            isProcessing.value = false; 
+        }, 2000);
+
     } catch (error) {
         console.error(error);
         isAddAdminClicked.value = false;

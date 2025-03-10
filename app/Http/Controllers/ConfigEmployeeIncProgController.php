@@ -29,7 +29,10 @@ class ConfigEmployeeIncProgController extends Controller
 
     public function index()
     {
-        $allWaiters = User::where('position', 'waiter')
+        $allWaiters = User::where([
+                                ['position', 'waiter'],
+                                ['status', 'Active']
+                            ])
                             ->orderBy('full_name')
                             ->get(['id', 'full_name']);
 
@@ -98,8 +101,14 @@ class ConfigEmployeeIncProgController extends Controller
 
     public function deleteAchievement(String $id)
     {
-        ConfigIncentiveEmployee::where('incentive_id', $id)->delete();
-        ConfigIncentive::find($id)->delete();
+        $incentive = ConfigIncentive::with('incentiveEmployees')->find($id);
+
+        foreach ($incentive->incentiveEmployees as $key => $employee) {
+            $employee->update(['status' => 'Inactive']);
+            $employee->delete();
+        }
+
+        $incentive->delete();
 
         return redirect()->route('configurations');
     }
@@ -239,7 +248,10 @@ class ConfigEmployeeIncProgController extends Controller
 
     public function getAllWaiters(string $id)
     {
-        $waiters = User::where('position', 'waiter')
+        $waiters = User::where([
+                            ['position', 'waiter'],
+                            ['status', 'Active']
+                        ])
                         ->whereDoesntHave('configIncentEmployee', fn ($query) => $query->where([['incentive_id', $id], ['status', 'Active']]))
                         ->get(['id', 'full_name'])
                         ->map(function ($waiter) {

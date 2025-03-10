@@ -43,7 +43,7 @@ const refetchAdminUsers = async () => {
             <span class="flex flex-col justify-center text-primary-900 text-md font-medium">Admin User List</span>
             
             <AdminUserList 
-                :users="users"
+                :userList="users"
                 @update:users.value="users.value=$event"
             />
         </div>

@@ -41,6 +41,7 @@ class User extends Authenticatable implements HasMedia
         'passcode_status', 
         'profile_photo',
         'salary', 
+        'status', 
     ];
 
     /**

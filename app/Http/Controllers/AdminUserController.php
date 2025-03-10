@@ -13,21 +13,14 @@ class AdminUserController extends Controller
 {
     public function index()
     {
-        $users = User::withoutRole('Super Admin')
-                        ->with('permissions:name')
-                        ->where('position', '!=', 'waiter')
-                        ->get();
-
-        $users->each(function($user){
-            $user->image = $user->getFirstMediaUrl('user');
-        });
+        $users = $this->getAdminUsers();
 
         return Inertia::render('AdminUser/AdminUser', [
             'user' => $users,
         ]);
     }
 
-    public function deleteAdmin(String $id)
+    public function deleteAdmin(string $id)
     {
         $targetUser = User::find($id);
 
@@ -41,9 +34,11 @@ class AdminUserController extends Controller
                     ])
                     ->log("Sub admin '$targetUser->full_name' is deleted.");
 
-        $targetUser->delete();
+        $targetUser->update(['status' => 'Inactive']);
 
-        return redirect()->back();
+        $data = $this->getAdminUsers();
+
+        return response()->json($data);
     }
 
     public function editPermission(Request $request)
@@ -59,6 +54,7 @@ class AdminUserController extends Controller
         // return redirect()->back();
 
         $data = $this->getAdminUsers();
+
         return response()->json($data);
     }
 
@@ -99,9 +95,9 @@ class AdminUserController extends Controller
             $targetUser->addMedia($request->image)->toMediaCollection('user');
         }
 
-        // $data = $this->getAdminUsers();
+        $data = $this->getAdminUsers();
 
-        // return response()->json($data);
+        return response()->json($data);
         // return redirect()->back();
     }
 
@@ -148,15 +144,21 @@ class AdminUserController extends Controller
 
         $targetUser->givePermissionTo($request->input('permission'));
 
-        // $data = $this->getAdminUsers();
+        $data = $this->getAdminUsers();
 
-        // return response()->json($data);
-        return redirect()->back();
+        return response()->json($data);
+        // return redirect()->back();
     }
 
     private function getAdminUsers()
     {
-        $users = User::withoutRole('Super Admin')->with('permissions:name')->get();
+        $users = User::withoutRole('Super Admin')
+                    ->with('permissions:name')
+                    ->where([
+                        ['position', '!=', 'waiter'],
+                        ['status', 'Active']
+                    ])
+                    ->get();
 
         $users->each(function($user){
             $user->image = $user->getFirstMediaUrl('user');

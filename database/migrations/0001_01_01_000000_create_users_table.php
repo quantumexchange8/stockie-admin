@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('passcode_status')->nullable()->default(NULL);
             $table->string('profile_photo')->nullable()->default(NULL);
             $table->string('salary')->nullable()->default(NULL);
+            $table->string('status')->default('Active');
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();

@@ -54,11 +54,12 @@ const rowType = {
     groupRowsBy: "",
 };
 
-const waiterIds = ref(props.waiterIds);
-const waiterSales = ref(props.waiterSales);
-const waiterImages = ref(props.image);
-const waiterNames = ref(props.waiterNames);
-const waiterCommission = ref(props.waiterCommission);
+const waitersList = ref(props.waiters);
+const waiterIdArray = ref(props.waiterIds);
+const waiterSalesArray = ref(props.waiterSales);
+const waiterImages = ref(props.image.map((image) => image ? image : "https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png"));
+const waiterNamesArray = ref(props.waiterNames);
+const waiterCommissionArray = ref(props.waiterCommission);
 const selected = ref('This month');
 const selectedFilter = ref('This month');
 const waitersRowsPerPage = ref(6);
@@ -69,7 +70,7 @@ const isLoading = ref(false);
 const commIsLoading = ref(false);
 
 const waitersTotalPages = computed(() => {
-    return Math.ceil(props.waiters.length / waitersRowsPerPage.value);
+    return Math.ceil(waitersList.value.length / waitersRowsPerPage.value);
 })
 
 const { flashMessage } = useCustomToast();
@@ -115,8 +116,6 @@ const closeModal = (status) => {
     }
 };
 
-
-
 const filterSalesPerformance = async (filters) => {
     isLoading.value = true;
     try {
@@ -126,8 +125,8 @@ const filterSalesPerformance = async (filters) => {
                 selected: filters,
             }
         });
-        waiterIds.value = response.data.waiterIds;
-        waiterSales.value = response.data.waiterSales;
+        waiterIdArray.value = response.data.waiterIds;
+        waiterSalesArray.value = response.data.waiterSales;
     } catch (error) {
         console.error(error);
     } finally {
@@ -144,8 +143,8 @@ const filterCommEarned = async (selectedFilter) => {
                 selectedFilter: selectedFilter,
             }
         });
-        waiterNames.value = response.data.waiterNames;
-        waiterCommission.value = response.data.waiterCommission;
+        waiterNamesArray.value = response.data.waiterNames;
+        waiterCommissionArray.value = response.data.waiterCommission;
 
     } catch (error) {
         console.error(error);
@@ -171,6 +170,14 @@ onMounted(() => {
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
+
+const updateWaitersDetails = (data) => {
+    waitersList.value = data.waiters;
+    waiterIdArray.value = data.waiterIds;
+    waiterSalesArray.value = data.waiterSales;
+    waiterNamesArray.value = data.waiterNames;
+    waiterCommissionArray.value = data.waiterCommission;
+};
 </script>
 
 <template>
@@ -192,8 +199,8 @@ const filters = ref({
                         class="w-full p-6 bg-white sm:rounded-lg border border-solid border-primary-100 rounded-[5px]"
                     >
                         <SalesPerformance 
-                            :waiterName="waiterIds"
-                            :waiterSales="waiterSales"
+                            :waiterName="waiterIdArray"
+                            :waiterSales="waiterSalesArray"
                             :waiterImages="waiterImages"
                             :isLoading="isLoading"
                             @isLoading="isLoading=$event"
@@ -204,8 +211,8 @@ const filters = ref({
                         class="w-full p-6  bg-white sm:rounded-lg border border-solid border-primary-100"
                     >
                         <CommissionEarned 
-                            :waiterNames="waiterNames"
-                            :waiterCommission="waiterCommission"
+                            :waiterNames="waiterNamesArray"
+                            :waiterCommission="waiterCommissionArray"
                             :waiterImages="waiterImages"
                             :isLoading="commIsLoading"
                             @isLoading="commIsLoading=$event"
@@ -243,7 +250,6 @@ const filters = ref({
                                 <AddWaiter 
                                     @close="closeModal" 
                                     @isDirty="isDirty = $event"
-                                    :waiters="waiters" 
                                 />
                                 <Modal
                                     :unsaved="true"
@@ -259,7 +265,7 @@ const filters = ref({
 
                     <div class="w-full">
                         <WaiterTable 
-                            :rows="waiters"
+                            :rows="waitersList"
                             :columns="waiterColumns"
                             :actions="actions"
                             :rowType="rowType"
@@ -267,6 +273,7 @@ const filters = ref({
                             :rowsPerPage="waitersRowsPerPage"
                             :searchFilter="true"
                             :filters="filters"
+                            @update:waiters="updateWaitersDetails"
                         />
                     </div>
                 </div>

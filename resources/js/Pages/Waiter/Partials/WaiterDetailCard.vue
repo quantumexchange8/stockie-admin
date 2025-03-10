@@ -6,6 +6,8 @@ import EditWaiter from './EditWaiter.vue';
 import Button from '@/Components/Button.vue';
 import Tag from '@/Components/Tag.vue';
 import { transactionFormat, usePhoneUtils } from '@/Composables';
+import { useForm } from '@inertiajs/vue3';
+import { DeleteIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
     waiter: {
@@ -22,6 +24,10 @@ const isUnsavedChangesOpen = ref(false);
 const { formatPhone } = usePhoneUtils();
 const { formatAmount } = transactionFormat();
 
+const form = useForm({
+    actionType: 'redirect',
+})
+
 const showEditWaiterForm = (waiterDetail) => {
     isEditWaiterOpen.value = true;
     selectedWaiter.value = waiterDetail;
@@ -31,7 +37,6 @@ const showDeleteWaiterForm = (id) => {
     isDeleteWaiterOpen.value = true;
     selectedWaiter.value = id;
 }
-
 
 const closeModal = (status) => {
     switch(status){
@@ -53,6 +58,23 @@ const closeModal = (status) => {
             isDeleteWaiterOpen.value = false;
             isDirty.value = false;
         }
+    }
+}
+
+const submit = async () => {
+    try {
+        form.post(`/waiter/deleteWaiter/${selectedWaiter.value}`, {
+            preserveScroll: true,
+            preserveState: 'errors',
+            onSuccess: () => {
+                setTimeout(() => {
+                    closeModal('leave');
+                }, 2000);
+            }
+        })
+
+    } catch (error) {
+        console.error(error);
     }
 }
 
@@ -150,17 +172,23 @@ watch( () => props.waiter, (newValue) => {
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="isDeleteWaiterOpen"
-        :deleteConfirmation="true"
-        :deleteUrl="`/waiter/deleteWaiter/${selectedWaiter}`"
-        :confirmationTitle="`Delete this waiter?`"
-        :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
         @close="closeModal('leave')"
         v-if="isDeleteWaiterOpen"
         :withHeader="false"
     >
         <form @submit.prevent="submit">
-            <div class="flex flex-col gap-9" >
-                <div class="flex item-center gap-3">
+            <div class="w-full flex flex-col gap-9" >
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
+                    <DeleteIllus />
+                </div>
+                <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1 text-center">
+                        <span class="text-primary-900 text-lg font-medium self-stretch">Delete this waiter?</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">Are you sure you want to delete the selected waiter? This action cannot be undone.</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 w-full">
                     <Button
                         variant="tertiary"
                         size="lg"

@@ -1,13 +1,13 @@
 <script setup>
 import Button from '@/Components/Button.vue';
-import { EmptyWaiterIllus } from '@/Components/Icons/illus';
+import { DeleteIllus, EmptyWaiterIllus } from '@/Components/Icons/illus';
 import { DeleteIcon, EditIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import Table from '@/Components/Table.vue';
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import EditWaiter from './EditWaiter.vue';
-import { usePhoneUtils } from '@/Composables';
+import { usePhoneUtils, useCustomToast } from '@/Composables';
 
 const props = defineProps({
     rows: {
@@ -38,9 +38,15 @@ const form = useForm({
     salary: '',
     stockie_email: '',
     stockie_password: '',
+    actionType: 'update'
 })
 
+const emit = defineEmits(['update:waiters']);
+
+const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
+
+const waiters = ref(props.rows);
 const isEditWaiterOpen = ref(false);
 const isDeleteWaiterOpen = ref(false);
 const selectedWaiter = ref(null);
@@ -92,12 +98,32 @@ const handleDefaultClick = (event) => {
     event.preventDefault();
 }
 
+const submit = async () => {
+    try {
+        const response = await axios.post(`waiter/deleteWaiter/${form.id}`, form);
+        waiters.value = response.data.waiters;
+
+        showMessage({
+            severity: 'success',
+            summary: `Selected waiter has been successfully deleted.`,
+        })
+        
+        setTimeout(() => {
+            emit('update:waiters', response.data);
+            closeModal('leave');
+        }, 200);
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 </script>
 
 <template>
     <Table
         :columns="columns"
-        :rows="rows"
+        :rows="waiters"
         :actions="actions"
         :variant="'list'"
         :rowType="rowType"
@@ -175,23 +201,29 @@ const handleDefaultClick = (event) => {
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="isDeleteWaiterOpen"
-        :deleteConfirmation="true"
-        :deleteUrl="`/waiter/deleteWaiter/${form.id}`"
-        :confirmationTitle="`Delete this waiter?`"
-        :confirmationMessage="`Are you sure you want to delete the selected waiter? This action cannot be undone.`"
         @close="closeModal('leave')"
         :withHeader="false"
     >
         <form @submit.prevent="submit">
-            <div class="flex flex-col gap-9" >
-                <div class="flex item-center gap-3">
+            <div class="w-full flex flex-col gap-9" >
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
+                    <DeleteIllus />
+                </div>
+                <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1 text-center">
+                        <span class="text-primary-900 text-lg font-medium self-stretch">Delete this waiter?</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">Are you sure you want to delete the selected waiter? This action cannot be undone.</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 w-full">
                     <Button
                         variant="tertiary"
                         size="lg"
                         type="button"
                         @click="closeModal('leave')"
                     >
-                        Keep
+                        Keeps
                     </Button>
                     <Button
                         variant="red"

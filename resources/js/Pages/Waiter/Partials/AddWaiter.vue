@@ -8,12 +8,6 @@ import { computed, ref, watch } from "vue";
 import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
 import Modal from "@/Components/Modal.vue";
 
-const props = defineProps({
-    waiters: {
-        type: Array,
-        required: true
-    },
-})
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();

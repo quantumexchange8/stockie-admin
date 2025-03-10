@@ -23,20 +23,21 @@ use Illuminate\Validation\Rules;
 
 class WaiterController extends Controller
 {
-   public function waiter(Request $request)
+   private function geWaitersDetails()
    {
-        $waiters = User::where('position', 'waiter')->get();
+        $waiters = User::where([
+                            ['position', 'waiter'],
+                            ['status', 'Active']
+                        ])
+                        ->get();
+
         $waiters->each(function($waiter){
             $waiter->image = $waiter->getFirstMediaUrl('user');
         });
 
-        $message = $request->session()->get('message');
-
         //for sales performance graph 
-        $allWaiters = User::where('position', 'waiter')
-                            ->select('id', 'full_name', 'profile_photo')
-                            ->get()
-                            ->keyBy('id');
+        $allWaiters = $waiters->keyBy('id');
+        $waitersDetail = [];
 
         $waitersSalesDetail = OrderItem::itemSales()
                                         ->whereMonth('orders.created_at', now()->month)
@@ -45,27 +46,20 @@ class WaiterController extends Controller
                                         ->groupBy('order_items.user_id')
                                         ->get();
 
-        $waitersDetail = [];
+        //for commission earned
+        // step 1: get the purchased items
+        $result = [];
+
         foreach ($allWaiters as $waiter) {
+            //for sales performance graph 
             $salesDetail = $waitersSalesDetail->firstWhere('waiter_id', $waiter->id);
             $waitersDetail[] = [
                 'waiter_name' => $waiter->full_name,
                 'total_sales' => $salesDetail ? number_format((float)$salesDetail->total_sales, 2, '.', '') : 0.00,
-                'image' => $waiter->getFirstMediaUrl('user'),
+                'image' => $waiter->image,
             ];
-        }
 
-        $waiterIds = array_column($waitersDetail, 'waiter_name');
-        $waiterSales = array_column($waitersDetail, 'total_sales');
-        $waiterImages = array_column($waitersDetail, 'image');
-
-        //for commission earned
-        // step 1: get the purchased items
-        $waitersList = User::where('position', 'waiter')->get()->keyBy('id'); 
-        $result = [];
-
-        //prepare for each waiter
-        foreach ($waitersList as $waiter) {
+            //for commission earned
             $commissionsAmount = $waiter->commissions()
                                         ->whereHas('orderItem.order', function ($query) {
                                             $query->whereMonth('created_at', now()->month)
@@ -81,19 +75,41 @@ class WaiterController extends Controller
             ];
         }
 
+        //for sales performance graph 
+        $waiterIds = array_column($waitersDetail, 'waiter_name');
+        $waiterSales = array_column($waitersDetail, 'total_sales');
+        $waiterImages = array_column($waitersDetail, 'image');
+
+        //for commission earned
         $name = array_column($result, 'waiterName');
         $commission = array_map(function($value) {
             return (float)number_format(ceil($value * 100) / 100, 2, '.', ',');
         }, array_column($result, 'commission'));
 
-        return Inertia::render('Waiter/Waiter', [
+        return [
             'waiters'=> $waiters,
-            'message'=> $message ?? [],
             'waiterIds' => $waiterIds,
             'waiterSales' => $waiterSales,
             'image' => $waiterImages,
             'waiterNames' => $name,
             'waiterCommission' => $commission,
+        ];
+   }
+
+   public function waiter(Request $request)
+   {
+        $waitersDetails = $this->geWaitersDetails();
+
+        $message = $request->session()->get('message');
+
+        return Inertia::render('Waiter/Waiter', [
+            'waiters'=> $waitersDetails['waiters'],
+            'message'=> $message ?? [],
+            'waiterIds' => $waitersDetails['waiterIds'],
+            'waiterSales' => $waitersDetails['waiterSales'],
+            'image' => $waitersDetails['image'],
+            'waiterNames' => $waitersDetails['waiterNames'],
+            'waiterCommission' => $waitersDetails['waiterCommission'],
         ]);
     }
 
@@ -136,28 +152,54 @@ class WaiterController extends Controller
        return redirect()->route('waiter');
    }
 
-   public function deleteWaiter (String $id)
+   public function deleteWaiter(Request $request, string $id)
    {
-        $severity = 'error';  
-        $summary = 'Error deleting selected waiter.';
+        // $severity = 'error';  
+        // $summary = 'Error deleting selected waiter.';
 
-        if ($id) {
-            $deleteWaiter = User::find($id);
+        $deleteWaiter = User::with('configIncentEmployee')->find($id);
 
-            activity()->useLog('delete-waiter')
-                        ->performedOn($deleteWaiter)
-                        ->event('deleted')
-                        ->withProperties([
-                            'edited_by' => auth()->user()->full_name,
-                            'image' => auth()->user()->getFirstMediaUrl('user'),
-                            'waiter_name' => $deleteWaiter->full_name,
-                        ])
-                        ->log("Waiter '$deleteWaiter->full_name' is deleted.");
+        // activity()->useLog('delete-waiter')
+        //             ->performedOn($deleteWaiter)
+        //             ->event('deleted')
+        //             ->withProperties([
+        //                 'edited_by' => auth()->user()->full_name,
+        //                 'image' => auth()->user()->getFirstMediaUrl('user'),
+        //                 'waiter_name' => $deleteWaiter->full_name,
+        //             ])
+        //             ->log("Waiter '$deleteWaiter->full_name' is deleted.");
 
-            $deleteWaiter->delete();
+        $deleteWaiter->update(['status' => 'Inactive']);
 
-            $severity = 'success';
-            $summary = 'Selected waiter has been successfully deleted.';
+        foreach ($deleteWaiter->configIncentEmployee as $key => $employee) {
+            $employee->update(['status' => 'Inactive']);
+            $employee->delete();
+        }
+
+        // $severity = 'success';
+        // $summary = 'Selected waiter has been successfully deleted.';
+
+        if ($request->actionType === 'update') {
+            $waitersDetails = $this->geWaitersDetails();
+    
+            $data = [
+                'waiters'=> $waitersDetails['waiters'],
+                'waiterIds' => $waitersDetails['waiterIds'],
+                'waiterSales' => $waitersDetails['waiterSales'],
+                'image' => $waitersDetails['image'],
+                'waiterNames' => $waitersDetails['waiterNames'],
+                'waiterCommission' => $waitersDetails['waiterCommission'],
+            ];
+            
+            return response()->json($data);
+
+        } else if ($request->actionType === 'redirect') {
+            $message = [ 
+                'severity' => 'success', 
+                'summary' => 'Selected waiter has been successfully deleted.'
+            ];
+
+            return Redirect::route('waiter')->with(['message' => $message]);
         }
         
     //    activity()->useLog('fire')
@@ -165,13 +207,13 @@ class WaiterController extends Controller
     //             ->event('fired')
     //             ->log("$deleteWaiter->full_name is leaving us and we now have $deleteWaiter->salary more to spend, oh yeah");
 
-        $message = [ 
-            'severity' => $severity, 
-            'summary' => $summary
-        ];
+        // $message = [ 
+        //     'severity' => $severity, 
+        //     'summary' => $summary
+        // ];
 
 
-        return Redirect::route('waiter')->with(['message' => $message]);
+        // return Redirect::route('waiter')->with(['message' => $message]);
    }
 
    public function editWaiter (WaiterRequest $request)

@@ -11,17 +11,17 @@ import { useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import EditAdminDetail from './EditAdminDetail.vue';
 import AddSubAdmin from './AddSubAdmin.vue';
-import { UndetectableIllus } from '@/Components/Icons/illus';
+import { DeleteIllus, UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
-    users: {
+    userList: {
         type: Array,
         default: () => [],
     }
 })
 const emit = defineEmits(['update:users']);
 
-const users = ref(props.users);
+const users = ref(props.userList);
 const isDetailShow = ref(false);
 const isDeleteShow = ref(false);
 const isEditShow = ref(false);
@@ -182,6 +182,27 @@ const editPermission = async (permission) => {
     }
 }
 
+const deleteAdmin = async () => {
+    try {
+        const response = await axios.post(`admin-user/delete-admin-user/${selectedUser.value.id}`);
+
+        showMessage({
+            severity: 'success',
+            summary: `This admin has been deleted.`,
+        })
+
+        closeDelete();
+        
+        setTimeout(() => {
+            closeDetail();
+            users.value = response.data;
+        }, 200);
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 watch((editForm), (newValue) => {
     isDirty.value = newValue.full_name !== initialEditForm.value.full_name ||
                     newValue.role_id !== initialEditForm.value.role_id ||
@@ -190,13 +211,13 @@ watch((editForm), (newValue) => {
 
 watch(() => searchQuery.value, (newValue) => {
     if (newValue === '') {
-        users.value = props.users;
+        users.value = props.userList;
         return;
     }
 
     const query = newValue.toLowerCase();
     
-    users.value = props.users.filter(user => {
+    users.value = props.userList.filter(user => {
         const full_name = user.full_name.toLowerCase();
         const position = user.position.toLowerCase();
         const role_id = user.role_id.toLowerCase();
@@ -342,34 +363,74 @@ watch(() => searchQuery.value, (newValue) => {
             </div>
         </div>
 
-            <!-- Edit sub-admin details -->
-            <Modal
-                :show="isEditShow"
-                :maxWidth="'md'"
-                :title="'Edit Sub-admin'"
-                @close="closeEdit('close')"
-            >
-                <EditAdminDetail 
-                    :user="selectedUser"
-                    @close="closeEdit()"
-                    @isDirty="isDirty=$event"
-                    @update:users="users.value=$event"
-                />
+        <!-- Edit sub-admin details -->
+        <Modal
+            :show="isEditShow"
+            :maxWidth="'md'"
+            :title="'Edit Sub-admin'"
+            @close="closeEdit('close')"
+        >
+            <EditAdminDetail 
+                :user="selectedUser"
+                @close="closeEdit()"
+                @isDirty="isDirty=$event"
+                @update:users="users = $event"
+            />
 
-                <Modal 
-                    :unsaved="true"
-                    :maxWidth="'2xs'"
-                    :withHeader="false"
-                    :show="isUnsavedChangesOpen"
-                    @close="closeEdit('stay')"
-                    @leave="closeEdit('leave')"
-                >
-                </Modal>
+            <Modal 
+                :unsaved="true"
+                :maxWidth="'2xs'"
+                :withHeader="false"
+                :show="isUnsavedChangesOpen"
+                @close="closeEdit('stay')"
+                @leave="closeEdit('leave')"
+            >
             </Modal>
+        </Modal>
+            
+        <!-- Delete sub-admin -->
+        <Modal
+            :maxWidth="'xs'"
+            :closeable="true"
+            :show="isDeleteShow"
+            @close="closeDelete"
+            :withHeader="false"
+        >
+            <form @submit.prevent="deleteAdmin">
+                <div class="w-full flex flex-col gap-9" >
+                    <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] pt-6 mx-[-24px] mt-[-24px]">
+                        <DeleteIllus />
+                    </div>
+                    <div class="flex flex-col gap-5">
+                        <div class="flex flex-col gap-1 text-center">
+                            <span class="text-primary-900 text-lg font-medium self-stretch">Delete this admin?</span>
+                            <span class="text-grey-900 text-base font-medium self-stretch">Are you sure you want to delete the selected admin? This action cannot be undone.</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 w-full">
+                        <Button
+                            variant="tertiary"
+                            size="lg"
+                            type="button"
+                            @click="closeDelete"
+                        >
+                            Keep
+                        </Button>
+                        <Button
+                            variant="red"
+                            size="lg"
+                        >
+                            Delete
+                        </Button>
+                    </div>
+                </div>
+            </form>
+        </Modal>
     </Modal>
 
     <!-- Delete sub-admin -->
-    <Modal
+    <!-- <Modal
         :show="isDeleteShow"
         :maxWidth="'2xs'"
         :deleteConfirmation="true"
@@ -379,7 +440,7 @@ watch(() => searchQuery.value, (newValue) => {
         :toastMessage="'Admin deleted successfully.'"
         @close="closeDelete"
     >
-    </Modal>
+    </Modal> -->
 
     <!-- Add sub-admin -->
     <Modal
@@ -391,6 +452,7 @@ watch(() => searchQuery.value, (newValue) => {
         <AddSubAdmin 
             @isDirty="isAddAdminDirty=$event"
             @close="closeAddAdmin"
+            @update:users="users = $event"
         />
 
         <Modal 

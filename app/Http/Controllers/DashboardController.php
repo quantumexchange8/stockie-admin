@@ -113,12 +113,24 @@ class DashboardController extends Controller
         })->flatten(1);
 
         //on duty today
-        $waiters = User::where('position', 'waiter')->get();
+        $waiters = User::where([
+                            ['position', 'waiter'],
+                            ['status', 'Active']
+                        ])
+                        ->get(['id', 'full_name'])
+                        ->map(function ($waiter) { 
+                            return [
+                                'text' => $waiter->full_name,
+                                'value' => $waiter->id,
+                                'image' => $waiter->getFirstMediaUrl('user'),
+                            ];
+                        });
+
         $onDuty = [];
         $today = Carbon::today();
 
         foreach ($waiters as $waiter) {
-            $attendance = WaiterAttendance::where('user_id', $waiter->id)
+            $attendance = WaiterAttendance::where('user_id', $waiter['value'])
                                             ->whereDate('check_in', $today)
                                             ->first();
             
@@ -141,14 +153,14 @@ class DashboardController extends Controller
                 }
             };
 
-            $waiter->image = $waiter->getFirstMediaUrl('user');
+            // $waiter->image = $waiter->getFirstMediaUrl('user');
         
             $onDuty[] = [
-                'id' => $waiter->id,
-                'waiter_name' => $waiter->full_name,
+                'id' => $waiter['value'],
+                'waiter_name' => $waiter['text'],
                 'time' => $time,
                 'status' => $status,
-                'image' => $waiter->image,
+                'image' => $waiter['image'],
             ];
         }
 
@@ -200,15 +212,15 @@ class DashboardController extends Controller
             }
         });
 
-        $waiters = User::where('position', 'waiter')
-                        ->get(['id', 'full_name'])
-                        ->map(function ($waiter) { 
-                            return [
-                                'text' => $waiter->full_name,
-                                'value' => $waiter->id,
-                                'image' => $waiter->getFirstMediaUrl('user'),
-                            ];
-                        });
+        // $waiters = User::where('position', 'waiter')
+        //                 ->get(['id', 'full_name'])
+        //                 ->map(function ($waiter) { 
+        //                     return [
+        //                         'text' => $waiter->full_name,
+        //                         'value' => $waiter->id,
+        //                         'image' => $waiter->getFirstMediaUrl('user'),
+        //                     ];
+        //                 });
 
         return Inertia::render('Dashboard/Dashboard', [
             'message' => $message ?? [],
