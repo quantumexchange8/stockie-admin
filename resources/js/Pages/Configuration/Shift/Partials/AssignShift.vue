@@ -4,11 +4,12 @@ import Checkbox from '@/Components/Checkbox.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
 import { computed, onMounted, ref, watch } from 'vue';
-import RadioButton from 'primevue/radiobutton';
+// import RadioButton from 'primevue/radiobutton';
 import Dropdown from '@/Components/Dropdown.vue';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { transactionFormat } from '@/Composables';
+import RadioButton from '@/Components/RadioButton.vue';
 
 dayjs.extend(weekOfYear);
 
@@ -181,8 +182,9 @@ const submit = () => {
                             <!-- Radio Button to select one shift per day -->
                             <div>
                                 <RadioButton 
-                                    v-model="form.assign_shift[selectedDay]" 
+                                    v-model:checked="form.assign_shift[selectedDay]" 
                                     :inputId="`shift-${selectedDay}-${shift.id}`" 
+                                    :dynamic="false"
                                     :name="selectedDay" 
                                     :value="shift.id" 
                                 />

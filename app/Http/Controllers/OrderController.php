@@ -3007,7 +3007,7 @@ class OrderController extends Controller
             'tables' => ['required', 'array'],
         ]);
 
-        dd($request->all());
+        // dd($request->all());
 
         // calculate total pax for all the merged tables
         $totalPax = collect($request['tables'])
@@ -3058,8 +3058,8 @@ class OrderController extends Controller
     private function getAllCustomers() {
         $users = Customer::where(function ($query) {
                             $query->where('status', '!=', 'void')
-                                ->orWhereNull('status'); // Handle NULL cases
-                        })->all();
+                                    ->orWhereNull('status'); // Handle NULL cases
+                        })->get();
 
         foreach($users as $user){
             $user->image = $user->getFirstMediaUrl('customer');

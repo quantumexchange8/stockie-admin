@@ -1914,4 +1914,54 @@ class OrderController extends Controller
             ], 422);
         };
     }
+
+    public function getTableKeepHistories(Request $request) 
+    {
+        // Fetch order tables with necessary relationships
+        $orderTables = OrderTable::with([
+                                    'table',
+                                    'order.orderItems' => fn($query) => $query->whereIn('status', ['Served', 'Pending Serve']),
+                                    'order.orderItems.subItems.productItem.inventoryItem',
+                                    'order.orderItems.subItems.keepItems.keepHistories' => fn($query) => $query->where('status', 'Keep'),
+                                    'order.orderItems.subItems.keepItems'
+                                ])
+                                ->where('table_id', $request->id)
+                                ->whereIn('status', ['Pending Clearance', 'All Order Served', 'Order Placed'])
+                                ->orderByDesc('updated_at')
+                                ->get();
+    
+        // Collect unique orders and map keep histories
+        $uniqueOrders = $orderTables->pluck('order')->unique('id')->map(function ($order) {
+            return [
+                'order_time' => Carbon::parse($order->created_at)->format('d/m/Y, H:i'),
+                'order_id' => $order->id,
+                'order_no' => $order->order_no,
+                'keep_histories' => $order->orderItems->flatMap(fn($item) =>
+                    $item->subItems->flatMap(fn($subItem) =>
+                        $subItem->keepItems->flatMap(fn($keepItem) =>
+                            $keepItem->keepHistories->map(function ($history) use ($keepItem, $subItem) {
+                                return array_merge($history->toArray(), [
+                                    'keep_item' => [
+                                        'id' => $keepItem->id,
+                                        'sub_item_id' => $keepItem->sub_item_id,
+                                        'product_item_id' => $subItem->productItem->id,
+                                        'inventory_item_name' => $subItem->productItem->inventoryItem->item_name,
+                                        'created_at' => $keepItem->created_at,
+                                        'updated_at' => $keepItem->updated_at,
+                                    ]
+                                ]);
+                            })
+                        )
+                    )
+                )->values(),
+                'customer' => $order->customer ? [
+                    'id' => $order->customer->id,
+                    'name' => $order->customer->name,
+                    'image' => $order->customer->getFirstMediaUrl('customer')
+                ] : null,
+            ];
+        })->values();
+    
+        return response()->json($uniqueOrders);
+    }
 }

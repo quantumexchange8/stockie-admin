@@ -146,6 +146,7 @@ const formatPaymentMethod = (payment_method) => {
                         </div>
                         <RadioButton 
                             :dynamic="false"
+                            :name="'stackable'"
                             :value="true"
                             :checked="true"
                             class="!w-fit"
@@ -160,6 +161,7 @@ const formatPaymentMethod = (payment_method) => {
                         </div>
                         <RadioButton 
                             :dynamic="false"
+                            :name="'stackable'"
                             :value="true"
                             :checked="true"
                             class="!w-fit"
@@ -178,6 +180,7 @@ const formatPaymentMethod = (payment_method) => {
                             <div class="flex items-center gap-4">
                                 <RadioButton 
                                     :dynamic="false"
+                                    :name="'stackable'"
                                     :value="true"
                                     :checked="props.discount.conflict === 'keep'"
                                     :disabled="props.discount.conflict !== 'keep'"
@@ -188,6 +191,7 @@ const formatPaymentMethod = (payment_method) => {
                             <div class="flex items-center gap-4">
                                 <RadioButton 
                                     :dynamic="false"
+                                    :name="'stackable'"
                                     :value="true"
                                     :checked="props.discount.conflict === 'maximum_value'"
                                     :disabled="props.discount.conflict !== 'maximum_value'"

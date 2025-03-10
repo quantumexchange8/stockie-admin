@@ -267,7 +267,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
         </div>
     </div> -->
 
-    <div class="flex flex-col py-3 items-end gap-3 flex-[1_0_0] self-stretch overflow-auto scrollbar-webkit scrollbar-thin max-h-[calc(100dvh-25rem)]" v-if="props.pendingServeItems.length > 0">
+    <div class="flex flex-col py-3 items-end gap-3 flex-[1_0_0] self-stretch overflow-auto scrollbar-webkit scrollbar-thin max-h-[calc(100dvh-28rem)]" v-if="props.pendingServeItems.length > 0">
         <div class="flex flex-col pt-4 pb-2 items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)]" v-for="table in props.pendingServeItems">
             <!-- item header -->
             <div class="flex px-4 justify-center items-center gap-2.5 self-stretch">

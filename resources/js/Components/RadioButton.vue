@@ -5,6 +5,7 @@ import InputError from './InputError.vue';
 
 const props = defineProps({
     errorMessage: String,
+    inputId: String,
     dynamic:  {
         type: Boolean,
         default: true
@@ -84,6 +85,7 @@ const proxyChecked = computed({
                 >
                     <RadioButton 
                         v-model="proxyChecked" 
+                        :inputId="`${name}-${option.value}`"
                         :name="name" 
                         :value="option.value" 
                         :disabled="disabled"
@@ -155,6 +157,7 @@ const proxyChecked = computed({
             <template v-else>
                 <RadioButton 
                     v-model="proxyChecked" 
+                    :inputId="props.inputId ?? `${name}-${value}`" 
                     :name="name" 
                     :value="value"
                     :disabled="disabled"

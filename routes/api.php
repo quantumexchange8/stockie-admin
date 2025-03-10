@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/order/product_categories', 'getAllCategories');
         Route::get('/order/table_keep_items', 'getTableKeepItems');
         Route::get('/order/table_payment_histories', 'getTablePaymentHistories');
+        Route::get('/order/table_keep_histories', 'getTableKeepHistories');
         Route::get('/order/customer/point_histories', 'getCustomerPointHistories');
         Route::get('/order/redeemable_products', 'getRedeemableItems');
         Route::post('/order/place_order_items', 'placeOrderItem');

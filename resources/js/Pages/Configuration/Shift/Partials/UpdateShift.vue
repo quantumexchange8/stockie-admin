@@ -7,7 +7,8 @@ import axios from 'axios';
 import Modal from '@/Components/Modal.vue';
 import { WarningIcon } from '@/Components/Icons/solid';
 import { transactionFormat } from '@/Composables';
-import RadioButton from 'primevue/radiobutton';
+// import RadioButton from 'primevue/radiobutton';
+import RadioButton from '@/Components/RadioButton.vue';
 
 dayjs.extend(weekOfYear);
 const today = dayjs().startOf('week').add(1, 'day');
@@ -39,7 +40,7 @@ const fetchGetShift = async () => {
 
         // Initialize assigned shifts from backend data
         response.data.forEach((waiterShift) => {
-            form.value.assign_shift[waiterShift.id] = waiterShift.shift_id; // Set initial selection
+            form.value.assign_shift[waiterShift.id] = Number(waiterShift.shift_id); // Set initial selection
         });
 
     } catch (error) {
@@ -127,10 +128,11 @@ const updateShift = async () => {
                                 <!-- Radio Button to select one shift per day -->
                                 <div>
                                     <RadioButton 
-                                        v-model="form.assign_shift[Waitershift.id]" 
+                                        v-model:checked="form.assign_shift[Waitershift.id]" 
                                         :inputId="`shift-${Waitershift.id}-${shift.id}`" 
+                                        :dynamic="false"
                                         :name="`shift-${Waitershift.id}`" 
-                                        :value="Number(shift.id)" 
+                                        :value="shift.id" 
                                     />
                                 </div>
                             </div>

@@ -334,6 +334,7 @@ watch(
                             </div>
                             <RadioButton 
                                 :dynamic="false"
+                                :name="'stackable'"
                                 :value="true"
                                 :checked="form.is_stackable"
                                 @update:checked="form.is_stackable = true"
@@ -349,6 +350,7 @@ watch(
                             </div>
                             <RadioButton 
                                 :dynamic="false"
+                                :name="'stackable'"
                                 :value="false"
                                 :checked="form.is_stackable"
                                 @update:checked="form.is_stackable = false"
@@ -399,6 +401,7 @@ watch(
                         <div class="flex items-center gap-2">
                             <RadioButton 
                                 :dynamic="false"
+                                :name="'usage'"
                                 :value="true"
                                 :checked="isCustomerUsage && !isTotalUsage"
                                 @update:checked="isCustomerUsage = true; isTotalUsage = false;"
@@ -409,6 +412,7 @@ watch(
                         <div class="flex items-center gap-2">
                             <RadioButton 
                                 :dynamic="false"
+                                :name="'usage'"
                                 :value="true"
                                 :checked="isTotalUsage && !isCustomerUsage"
                                 @update:checked="isTotalUsage = true; isCustomerUsage = false;"
@@ -419,6 +423,7 @@ watch(
                         <div class="flex items-center gap-2">
                             <RadioButton 
                                 :dynamic="false"
+                                :name="'usage'"
                                 :value="true"
                                 :checked="isCustomerUsage && isTotalUsage"
                                 @update:checked="isCustomerUsage = true; isTotalUsage = true"
