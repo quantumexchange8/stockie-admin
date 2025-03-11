@@ -1923,7 +1923,7 @@ class OrderController extends Controller
                                     'order.orderItems' => fn($query) => $query->whereIn('status', ['Served', 'Pending Serve']),
                                     'order.orderItems.subItems.productItem.inventoryItem',
                                     'order.orderItems.subItems.keepItems.keepHistories' => fn($query) => $query->where('status', 'Keep'),
-                                    'order.orderItems.subItems.keepItems'
+                                    'order.orderItems.subItems.keepItems.waiter'
                                 ])
                                 ->where('table_id', $request->id)
                                 ->whereIn('status', ['Pending Clearance', 'All Order Served', 'Order Placed'])
@@ -1946,8 +1946,11 @@ class OrderController extends Controller
                                         'sub_item_id' => $keepItem->sub_item_id,
                                         'product_item_id' => $subItem->productItem->id,
                                         'inventory_item_name' => $subItem->productItem->inventoryItem->item_name,
+                                        'expired_from' => $keepItem->expired_from,
+                                        'expired_to' => $keepItem->expired_to,
                                         'created_at' => $keepItem->created_at,
                                         'updated_at' => $keepItem->updated_at,
+                                        'waiter' => $keepItem->waiter
                                     ]
                                 ]);
                             })
