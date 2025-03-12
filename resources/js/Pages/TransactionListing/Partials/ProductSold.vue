@@ -18,7 +18,7 @@ const { formatAmount } = transactionFormat();
             <div class="max-w-[102px] w-full text-right">Price</div>
         </div>
         <div v-if="props.selectedVal.order" class="flex flex-col p-3 gap-4 max-h-64 overflow-y-scroll">
-            <div v-for="item in props.selectedVal.order.order_items" :key="item.id" >
+            <div v-for="item in props.selectedVal.order.filter_order_items" :key="item.id" >
                 <div class="flex flex-col gap-2 w-full">
                     <div class="flex items-center gap-3">
                         <div class="max-w-[324px] w-full">{{ item.product.product_name }}</div>

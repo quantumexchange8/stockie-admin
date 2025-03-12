@@ -62,6 +62,12 @@ class Order extends Model
         return $this->hasMany(OrderItem::class, 'order_id', 'id');
     }
 
+    // Filtered not keep
+    public function FilterOrderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'order_id', 'id')->where('type', 'Normal')->where('status', 'Served');
+    }
+
     
     // public function pointHistories(): HasMany
     // {

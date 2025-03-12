@@ -31,6 +31,7 @@ class OrderItem extends Model
         // 'point_earned',
         // 'point_redeemed',
         'status',
+        'refund_qty',
     ];
 
     public function getActivitylogOptions(): LogOptions

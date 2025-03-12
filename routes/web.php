@@ -371,9 +371,12 @@ Route::middleware('auth')->group(function () {
     Route::prefix('transactions')->middleware([CheckPermission::class . ':transaction-listing'])->group(function(){
         Route::get('/transaction-listing', [TransactionController::class, 'transactionListing'])->name('transactions.transaction-listing');
         Route::get('/getSalesTransaction', [TransactionController::class, 'getSalesTransaction'])->name('transactions.getSalesTransaction');
+        Route::get('/getRefundTransaction', [TransactionController::class, 'getRefundTransaction'])->name('transactions.getRefundTransaction');
         
         Route::post('/void-transaction', [TransactionController::class, 'voidTransaction'])->name('transactions.void-transaction');
-
+        Route::post('/refund-transaction', [TransactionController::class, 'refundTransaction'])->name('transactions.refund-transaction');
+        Route::post('/voidrefund-transaction', [TransactionController::class, 'voidRefundTransaction'])->name('transactions.voidrefund-transaction');
+        
     });
 
 });

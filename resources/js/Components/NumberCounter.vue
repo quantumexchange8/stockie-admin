@@ -45,7 +45,7 @@ onMounted(() => {
 
 // Watch the prop to update local state when parent changes it
 watch(() => props.modelValue, (newVal) => {
-    inputValue.value = parseInt(newVal);
+    inputValue.value = Number(newVal) || props.minValue; // Fallback to minValue if NaN
 });
 
 const increment = () => {
@@ -69,28 +69,20 @@ const decrement = () => {
 }
 
 const updateValue = (event) => {
-    const value = parseInt(event.target.value) || 0;
+    let value = Number(event.target.value); // Ensure numeric conversion
 
-    // isOverMin = value < -(props.minValue);
-    // isOverMax = inputValue.value > props.maxValue && props.maxValue;
+    if (isNaN(value)) value = props.minValue; // Prevent NaN values
 
     inputValue.value = value < props.minValue 
                             ? props.minValue 
-                            : (value >= props.maxValue && props.maxValue !== undefined)
+                            : (props.maxValue !== undefined && value >= props.maxValue)
                                 ? props.maxValue 
                                 : value;
-
-    // inputValue.value = value < -(props.minValue) 
-    //                         ? -(props.minValue) 
-    //                         : (inputValue.value > props.maxValue && props.maxValue)
-    //                             ? props.maxValue 
-    //                             : value;
 
     event.target.value = inputValue.value;
     emit('update:modelValue', inputValue.value);
     emit("onChange", inputValue.value);
-
-}
+};
 
 const updateState = () => {
     if (inputValue.value === initialInputvalue.value) {
