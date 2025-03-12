@@ -1967,4 +1967,304 @@ class OrderController extends Controller
     
         return response()->json($uniqueOrders);
     }
+
+    /**
+     * Redeem entry reward and add to current order.
+     */
+    public function redeemEntryRewardToOrder(Request $request)
+    {
+        try {
+            $validatedData = $request->validate(
+                [
+                    'table_id' => 'required|integer',
+                    'order_id' => 'required|integer',
+                    'customer_reward_id' => 'required|integer',
+                ], 
+                [
+                    'required' => 'This field is required.',
+                    'integer' => 'This field must be an integer.',
+                ]
+            );
+
+            $currentOrder = Order::select('id', 'pax', 'amount', 'customer_id', 'user_id', 'status')
+                                    ->with([
+                                        'orderTable:id,table_id,status,order_id',
+                                        'customer:id,full_name,point'
+                                    ])
+                                    ->find($validatedData['order_id']);
+                                    
+            $addNewOrder = $currentOrder->status === 'Order Completed' && $currentOrder->orderTable->every(fn ($table) => $table->status === 'Pending Clearance');
+            $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id)->toArray();
+
+            $tableString = $this->getTableName($tablesArray);
+
+            $waiter = $this->authUser;
+            $waiter->image = $waiter->getFirstMediaUrl('user');
+
+            $customer = $currentOrder->customer;
+
+            if ($validatedData) {
+                $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
+                                                ->with([
+                                                    'rankingReward:id,reward_type,discount,free_item,item_qty',
+                                                    'rankingReward.product:id,product_name',
+                                                    'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
+                                                    'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+                                                ])
+                                                ->find($validatedData['customer_reward_id']);
+
+                $tierReward = $selectedReward->rankingReward;
+                $freeProduct = $tierReward->product;
+
+                if ($tierReward->reward_type === 'Free Item') {
+                    if ($addNewOrder) {
+                        $newOrder = Order::create([
+                            'order_no' => RunningNumberService::getID('order'),
+                            'pax' => $currentOrder->pax,
+                            'user_id' => $waiter->id,
+                            'customer_id' => $customer->id,
+                            'amount' => 0.00,
+                            'total_amount' => 0.00,
+                            'status' => 'Pending Serve',
+                        ]);
+                
+                        foreach ($tablesArray as $selectedTable) {
+                            $table = Table::find($selectedTable);
+                            $table->update([
+                                'status' => 'Pending Order',
+                                'order_id' => $newOrder->id
+                            ]);
+                    
+                            OrderTable::create([
+                                'table_id' => $selectedTable,
+                                'pax' => $currentOrder->pax,
+                                'user_id' => $waiter->id,
+                                'status' => 'Pending Order',
+                                'order_id' => $newOrder->id
+                            ]);
+                        }
+                        $newOrder->refresh();
+                    }
+
+                    $newOrderItem = OrderItem::create([
+                        'order_id' => $addNewOrder ? $newOrder->id : $validatedData['order_id'],
+                        'user_id' => $waiter->id,
+                        'type' => 'Redemption',
+                        'product_id' => $freeProduct->id,
+                        'item_qty' => $tierReward->item_qty,
+                        'amount_before_discount' => 0.00,
+                        'discount_id' => null,
+                        'discount_amount' => 0.00,
+                        'amount' => 0,
+                        'status' => 'Pending Serve',
+                    ]);
+
+                    activity()->useLog('Order')
+                                    ->performedOn($newOrderItem)
+                                    ->event('place to order')
+                                    ->withProperties([
+                                        'waiter_name' => $waiter->full_name, 
+                                        'table_name' => $tableString,
+                                        'waiter_image' => $waiter->image,
+                                    ])
+                                    ->log("placed an order for :properties.table_name.");
+
+                    activity()->useLog('redeem-tier-reward')
+                                ->performedOn($newOrderItem)
+                                ->event('cancelled')
+                                ->withProperties([
+                                    'edited_by' => auth()->user()->full_name,
+                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                    'customer_name' => $customer->full_name,
+                                    'item_name' => $freeProduct->product_name
+                                ])
+                                ->log("$customer->full_name has redeemed $freeProduct->product_name.");
+                    
+                    $freeProduct->productItems->each(function ($item) use ($newOrderItem) {
+                        $inventoryItem = $item->inventoryItem;
+
+                        // Deduct stock
+                        $stockToBeSold = $newOrderItem->item_qty * $item->qty;
+                        $oldStockQty = $inventoryItem->stock_qty;
+                        $newStockQty = $oldStockQty - $stockToBeSold;
+
+                        $newStatus = match(true) {
+                            $newStockQty == 0 => 'Out of stock',
+                            $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
+                            default => 'In stock'
+                        };
+
+                        $inventoryItem->update([
+                            'stock_qty' => $newStockQty,
+                            'status' => $newStatus
+                        ]);
+                        $inventoryItem->refresh();
+
+                        StockHistory::create([
+                            'inventory_id' => $inventoryItem->inventory_id,
+                            'inventory_item' => $inventoryItem->item_name,
+                            'old_stock' => $oldStockQty,
+                            'in' => 0,
+                            'out' => $stockToBeSold,
+                            'current_stock' => $inventoryItem->stock_qty,
+                            'kept_balance' => $inventoryItem->current_kept_amt,
+                        ]);
+
+                        OrderItemSubitem::create([
+                            'order_item_id' => $newOrderItem->id,
+                            'product_item_id' => $item->id,
+                            'item_qty' => $item->qty,
+                            'serve_qty' => 0,
+                        ]);
+                    });
+
+                    $order = Order::with(['orderTable.table'])->find($addNewOrder ? $newOrder->id : $validatedData['order_id']);
+                    
+                    if ($order) {
+                        $statusArr = collect($order->orderItems->pluck('status')->unique());
+                        $orderStatus = 'Pending Serve';
+                        $orderTableStatus = 'Pending Order';
+                    
+                        if ($statusArr->contains('Pending Serve')) {
+                            $orderStatus = 'Pending Serve';
+                            $orderTableStatus = 'Order Placed';
+                        } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+                            $orderStatus = 'Order Served';
+                            $orderTableStatus = 'All Order Served';
+                        } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+                            $orderStatus = 'Order Served';
+                            $orderTableStatus = 'All Order Served';
+                        }
+
+                        $order->update(['status' => $orderStatus]);
+                        $selectedReward->update(['status' => 'Redeemed']);
+
+                        
+                        // Update all tables associated with this order
+                        $order->orderTable->each(function ($tab) use ($orderTableStatus) {
+                            $tab->table->update(['status' => $orderTableStatus]);
+                            $tab->update(['status' => $orderTableStatus]);
+                        });
+                    };
+
+                    $data = [
+                        'status' => 'success',
+                        'title' => "Reward has been successfully used and added to the order of the customer.",
+                        'pendingServeItems' => $this->getUpdatedPendingServeItems($request->table_id),
+                        'order' => $order,
+                        'earned_commission' => round($this->getUpdatedEarnedCommission($waiter->id, $order->id), 2)
+                    ];
+                };
+
+                if (in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
+                    $order = Order::find($validatedData['order_id']);
+                    $order->update(['voucher_id' => $tierReward->id]);
+                    $selectedReward->update(['status' => 'Redeemed']);
+
+                    $data = [
+                        'status' => 'success',
+                        'title' => "Reward has been successfully used and added to the order of the customer.",
+                    ];
+                };
+
+                return response()->json($data, 201);
+            }
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'title' => 'The given data was invalid.',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception  $e) {
+            Log::info($e);
+            return response()->json([
+                'title' => 'Error redeeming reward.',
+                'errors' => $e
+            ], 422);
+        };
+    }
+
+    public function removeEntryRewardFromOrder(Request $request)
+    {
+        $order = Order::select('id', 'customer_id', 'voucher_id')
+                            ->with([
+                                'customer:id',
+                                'customer.rewards:id,customer_id,ranking_reward_id,status',
+                            ])
+                            ->find($request->id);
+
+        if (!$order || !$order->customer) {
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Order or customer not found.',
+            ], 404);
+        }
+                            
+        $customer = $order->customer;
+        $removalTarget = $customer->rewards->where('ranking_reward_id', $order->voucher_id)->first();
+        
+        if (!$removalTarget) {
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Reward not found.',
+            ], 404);
+        }
+
+        $order->update(['voucher_id' => null]);
+        $removalTarget->update(['status' => 'Active']);
+
+        return response()->json([
+            'status' => 'success',
+            'title' => 'Reward vouhcer removed.',
+        ], 201);
+    }
+
+    private function getUpdatedPendingServeItems(string $tableId) 
+    {
+        $currentTable = $this->getPendingServeItemsQuery($tableId)->get();
+    
+        $pendingServeItems = collect();
+
+        $currentTable->each(function ($table) use (&$pendingServeItems) {
+            if ($table->order) {
+                if ($table->order->customer_id) {
+                    $table->order->customer->image = $table->order->customer->getFirstMediaUrl('customer');
+                }
+
+                foreach ($table->order->orderItems as $orderItem) {
+                    $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+                    $pendingServeItems->push($orderItem);
+                }
+            }
+        });
+
+        return $pendingServeItems;
+    }
+
+    private function getUpdatedEarnedCommission(string $waiterId, string $orderId) 
+    {
+        return $earnedCommission = OrderItem::join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->join('config_employee_comm_items as comm_items', 'products.id', '=', 'comm_items.item')
+                ->join('config_employee_comms as comms', 'comm_items.comm_id', '=', 'comms.id')
+                ->where([
+                    ['order_items.type', 'Normal'],
+                    ['order_items.user_id', $waiterId],
+                    ['orders.id', $orderId]
+                ])
+                ->whereColumn('comm_items.created_at', '<=', 'order_items.created_at')
+                ->whereNull('comm_items.deleted_at')
+                ->whereNull('comms.deleted_at')
+                ->selectRaw("
+                    SUM(
+                        CASE
+                            WHEN comms.comm_type = 'Fixed amount per sold product'
+                            THEN comms.rate * order_items.item_qty
+                            ELSE products.price * order_items.item_qty * (comms.rate / 100)
+                        END
+                    ) as total_commission
+                ")
+                ->value('total_commission');
+    }
 }

@@ -81,6 +81,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/order/keep', 'addItemToKeep');
         Route::post('/order/customer', 'createCustomerFromOrder');
         Route::post('/order/redeem_item', 'redeemItemToOrder');
+        Route::post('/order/remove_voucher', 'removeEntryRewardFromOrder');
+        Route::post('/order/redeem_reward', 'redeemEntryRewardToOrder');
         Route::put('/order/serve_item', 'serveOrderItem');
     });
 

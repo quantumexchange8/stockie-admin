@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('keep_item_id')->nullable()->default(NULL);
             $table->unsignedBigInteger('product_id');
             $table->double('item_qty');
+            $table->double('refund_qty')->nullable()->default(NULL);
             $table->double('amount_before_discount');
             $table->unsignedBigInteger('discount_id')->nullable()->default(NULL);
             $table->double('discount_amount');

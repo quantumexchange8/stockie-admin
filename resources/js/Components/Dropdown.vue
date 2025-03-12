@@ -71,9 +71,8 @@ const emits = defineEmits(["update:modelValue", "onChange"]);
 
 const open = ref(false);
 const localValue = ref(props.dataValue);
-
-// Reactive options based on props
-const options = ref(props.inputArray);
+const dropdownRef = ref(null); // Reference to the Dropdown component
+const options = ref(props.inputArray); // Reactive options based on props
 
 watch(
   () => props.inputArray,
@@ -96,25 +95,33 @@ const updateSelectedOption = (option) => {
     emits("onChange", option.value);
 }
 
-// Close dropdown when clicking outside
-const handleClickOutside = (event) => {
-  if (!event.target.closest('.p-dropdown')) {
-    open.value = false;
-  }
+// Close dropdown when it loses focus
+const handleBlur = () => {
+    if (dropdownRef.value) {
+        if (open.value) {
+            dropdownRef.value.hide(); // Programmatically close the dropdown panel
+        }
+    }
 };
 
-// Only if the option array thats been passed has image provided
-const getOptionData = (value) => {
-    return props.inputArray.find((item) => item.value === value);
-}
-
 onMounted(() => {
-    // localValue.value = props.modelValue;
-    document.addEventListener('click', handleClickOutside);
+    const dropdownInput = document.querySelector('.modal-component');
+
+    if (dropdownInput) {
+        dropdownInput.addEventListener('click', handleBlur);
+    } else {
+        document.addEventListener('click', handleBlur);
+    }
 });
 
 onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
+    const dropdownInput = document.querySelector('.modal-component');
+
+    if (dropdownInput) {
+        dropdownInput.removeEventListener('click', handleBlur);
+    } else {
+        document.addEventListener('click', handleBlur);
+    }
 });
 </script>
 
@@ -135,6 +142,7 @@ onUnmounted(() => {
         >
         </Label>
         <Dropdown 
+            ref="dropdownRef"
             v-model="localValue" 
             :options="options" 
             :filter="props.filter"
@@ -148,84 +156,70 @@ onUnmounted(() => {
             optionLabel="text"
             optionValue='value'
             @change="updateSelectedOption"
+            @show="open = true"
+            @hide="open = false"
             :pt="{
-                root: ({ props, state, parent }) => {
-                    open = state.overlayVisible ? true : false;
-                    if (!filter) state.overlayVisible = !open || !state.focused || !state.clicked ? false : true;
-                    else state.overlayVisible = !open ? false : true;
-                    return {
-                        class: [
-                            'inline-flex relative w-full mb-1 max-h-[44px] cursor-pointer select-none',
-                            { 
-                                'bg-white border border-grey-300': !plainStyle && !props.disabled,
-                                'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !plainStyle,
-                                'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !plainStyle,
-                                'rounded-md': parent.instance.$name !== 'InputGroup',
-                                'first:rounded-l-md rounded-none last:rounded-r-md': parent.instance.$name == 'InputGroup',
-                                'border-0 border-y border-l last:border-r': parent.instance.$name == 'InputGroup',
-                                'first:ml-0 ml-[-1px]': parent.instance.$name == 'InputGroup' && !props.showButtons,
-                                'border-grey-300': !props.invalid,
-                                'border-primary-500': props.invalid,
-                                'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !state.focused && !plainStyle,
-                                'outline-none border-primary-300 shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': state.focused && !plainStyle,
-                                'border-primary-500 focus:border-primary-500 hover:border-primary-500': props.errorMessage,
-                                'border-grey-100 opacity-60 pointer-events-none cursor-default': props.disabled 
-                            }
-                            // Transitions
-                            // 'transition-all',
-                            // 'duration-200',
-                        ]
-                    }
-                },
-                input: ({ props, parent, state }) => {
-                    var _a;
-                    return {
-                        class: [
-                            'block relative flex items-center w-full rounded-none',
-                            'text-base',
-                            {
-                                'bg-transparent border-0': !props.disabled,
-                                'bg-grey-50 border border-solid border-grey-100 border-r-0': props.disabled
-                            },
-                            'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
-                            'transition duration-200 focus:ring-0',
-                            'focus:outline-none focus:shadow-none',
-                            { 
-                                // '!min-h-[44px]': props.modelValue === '',
-                                'placeholder-grey-300 text-grey-300 font-medium !min-h-[24px]': plainStyle,
-                                'px-4 py-3 placeholder-grey-200 text-grey-200 font-normal !min-h-[44px]': !plainStyle,
-                                'hover:text-grey-900': !state.focused && plainStyle,
-                                'text-grey-700 ': props.modelValue != null && props.modelValue !== '', 
-                                'text-grey-200': props.modelValue == null || props.modelValue !== '',
-                                'pr-7': props.showClear,
-                                // Filled State *for FloatLabel
-                                filled: ((_a = parent.instance) == null ? void 0 : _a.$name) == 'FloatLabel' && props.modelValue !== null 
-                            },
-                        ]
-                    };
-                },
-                item: ({ context }) => {
-                    return {
-                        class: [
-                            'relative rounded-none m-0 py-3 px-5',
-                            'font-normal leading-none border-0',
-                            'overflow-hidden whitespace-nowrap',
-                            'transition-shadow duration-200',
-                            'focus-visible:outline-none focus-visible:outline-offset-0 focus-visible:ring focus-visible:ring-inset focus-visible:ring-primary-400/50',
-                            {
-                                'text-grey-700': !context.focused && !context.selected,
-                                'bg-grey-50': context.focused && !context.selected,
-                                'text-grey-800': context.focused && !context.selected,
-                                'text-primary-900 [&>div>div>div>span]:text-primary-900': context.selected,
-                                'bg-primary-50': context.selected ,
-                                'hover:bg-grey-100': !context.focused && !context.selected,
-                                'hover:bg-primary-highlight-hover': context.selected,
-                                'pointer-events-none cursor-default': context.disabled,
-                                'cursor-pointer': !context.disabled 
-                            },
-                        ]
-                    }
-                },
+                root: ({ props, parent }) => ({
+                    class: [
+                        'inline-flex relative w-full mb-1 max-h-[44px] cursor-pointer select-none',
+                        { 
+                            'bg-white border border-grey-300': !plainStyle && !props.disabled,
+                            'focus:border-primary-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !plainStyle,
+                            'active:border-primary-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !plainStyle,
+                            'rounded-md': parent.instance.$name !== 'InputGroup',
+                            'first:rounded-l-md rounded-none last:rounded-r-md': parent.instance.$name == 'InputGroup',
+                            'border-0 border-y border-l last:border-r': parent.instance.$name == 'InputGroup',
+                            'first:ml-0 ml-[-1px]': parent.instance.$name == 'InputGroup' && !props.showButtons,
+                            'border-grey-300': !props.invalid,
+                            'border-primary-500': props.invalid,
+                            'hover:border-primary-100 hover:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': !props.focused && !plainStyle,
+                            'outline-none border-primary-300 shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]': props.focused && !plainStyle,
+                            'border-primary-500 focus:border-primary-500 hover:border-primary-500': props.errorMessage,
+                            'border-grey-100 opacity-60 pointer-events-none cursor-default': props.disabled 
+                        }
+                    ]
+                }),
+                input: ({ props, parent }) => ({
+                    class: [
+                        'block relative flex items-center w-full rounded-none',
+                        'text-base',
+                        {
+                            'bg-transparent border-0': !props.disabled,
+                            'bg-grey-50 border border-solid border-grey-100 border-r-0': props.disabled
+                        },
+                        'cursor-pointer overflow-hidden overflow-ellipsis whitespace-nowrap appearance-none',
+                        'transition duration-200 focus:ring-0',
+                        'focus:outline-none focus:shadow-none',
+                        { 
+                            'placeholder-grey-300 text-grey-300 font-medium !min-h-[24px]': plainStyle,
+                            'px-4 py-3 placeholder-grey-200 text-grey-200 font-normal !min-h-[44px]': !plainStyle,
+                            'hover:text-grey-900': !props.focused && plainStyle,
+                            'text-grey-700': props.modelValue != null && props.modelValue !== '', 
+                            'text-grey-200': props.modelValue == null || props.modelValue !== '',
+                            'pr-7': props.showClear,
+                        },
+                    ]
+                }),
+                item: ({ context }) => ({
+                    class: [
+                        'relative rounded-none m-0 py-3 px-5',
+                        'font-normal leading-none border-0',
+                        'overflow-hidden whitespace-nowrap',
+                        'transition-shadow duration-200',
+                        'focus-visible:outline-none focus-visible:outline-offset-0 focus-visible:ring focus-visible:ring-inset focus-visible:ring-primary-400/50',
+                        {
+                            'text-grey-700': !context.focused && !context.selected,
+                            'bg-grey-50': context.focused && !context.selected,
+                            'text-grey-800': context.focused && !context.selected,
+                            'text-primary-900 [&>div>div>div>span]:text-primary-900': context.selected,
+                            'bg-primary-50': context.selected,
+                            'hover:bg-grey-100': !context.focused && !context.selected,
+                            'hover:bg-primary-highlight-hover': context.selected,
+                            'pointer-events-none cursor-default': context.disabled,
+                            'cursor-pointer': !context.disabled 
+                        },
+                    ]
+                }),
                 panel: {
                     class: [
                         'absolute top-0 left-0 !z-[1110]', 
@@ -258,12 +252,12 @@ onUnmounted(() => {
                         {
                             'border-grey-100': props.disabled === true,
                             'border-grey-300': props.disabled === false,
-                            'border-primary-500 focus:border-primary-500 hover:border-primary-500': errorMessage,
+                            'border-primary-500 focus:border-primary-500 hover:border-primary-500': props.errorMessage,
                         },
                     ],
                 },
                 filterContainer: {
-                    class: 'flex items-center gap-[10px] flex-[1_0_0] ',
+                    class: 'flex items-center gap-[10px] flex-[1_0_0]',
                 },
                 filterIcon: {
                     class: 'hidden'
