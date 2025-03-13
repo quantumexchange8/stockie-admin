@@ -16,15 +16,31 @@ class ShiftPayHistory extends Model
     protected $table = "shift_pay_histories";
 
     protected $fillable = [
+        'shift_transaction_id',
+        'user_id',
         'type',
         'amount',
-        'reason',
-        'user_id',
-        'shift_transaction_id'
+        'reason'
     ];
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logAll();
+    }
+
+    /**
+     * Get the shift transaction.
+     */
+    public function shiftTransaction(): BelongsTo
+    {
+        return $this->belongsTo(ShiftTransaction::class, 'shift_transaction_id');
+    }
+
+    /**
+     * Get the employee that closed the shift.
+     */
+    public function handledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

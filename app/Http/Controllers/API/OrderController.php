@@ -20,6 +20,7 @@ use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\Ranking;
+use App\Models\ShiftTransaction;
 use App\Models\StockHistory;
 use App\Models\Table;
 use App\Models\User;
@@ -117,7 +118,10 @@ class OrderController extends Controller
             ];
         })->filter(fn ($zone) => $zone['tables'] != null);
     
-        return response()->json($zones);
+        return response()->json([
+            'zones' => $zones,
+            'hasOpenedShift' => ShiftTransaction::hasOpenedShift(),
+        ]);
     }
 
     /**

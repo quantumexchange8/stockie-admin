@@ -28,6 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/check_in_time', 'getCheckInTime');
         Route::get('/today_attendance', 'getTodayAttendance');
         Route::get('/attendance_histories', 'getAllAttendances');
+        Route::get('/weekly_shifts', 'getWeeklyShifts');
+        Route::get('/all_shifts', 'getAllShifts');
         Route::post('/check_in', 'checkIn');
         Route::post('/authenticate_old_passcode', 'authenticateOldPasscode');
         Route::put('/change_new_passcode', 'changeNewPasscode');

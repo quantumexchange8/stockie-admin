@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -22,6 +23,7 @@ class ShiftTransaction extends Model
         'starting_cash',
         'paid_in',
         'paid_out',
+        'cash_refund',
         'expected_cash',
         'cash_sales',
         'card_sales',
@@ -46,6 +48,22 @@ class ShiftTransaction extends Model
     }
 
     /**
+     * Get the currently opened shift.
+     */
+    public function openedShift()
+    {
+        return $this->hasOne(ShiftTransaction::class)->where('status', 'opened')->latest()->limit(1);
+    }
+    
+    /**
+     * Check if there is an opened shift.
+     */
+    public static function hasOpenedShift()
+    {
+        return self::where('status', 'opened')->exists();
+    }
+
+    /**
      * Get the employee that opened the shift.
      */
     public function openedBy(): BelongsTo
@@ -59,5 +77,13 @@ class ShiftTransaction extends Model
     public function closedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'closed_by');
+    }
+
+    /**
+     * Get the shift transaction closed by the user.
+     */
+    public function shiftPayHistories(): HasMany
+    {
+        return $this->hasMany(ShiftPayHistory::class, 'shift_transaction_id');
     }
 }

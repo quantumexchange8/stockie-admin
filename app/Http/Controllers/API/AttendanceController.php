@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\WaiterAttendance;
+use App\Models\WaiterShift;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -415,5 +416,71 @@ class AttendanceController extends Controller
             'status' => 'error',
             'message' => "You are currently not clocked in.",
         ], 422);
+    }
+
+    
+
+    /**
+     * Redeem entry reward and add to current order.
+     */
+    public function getWeeklyShifts()
+    {
+        try {
+            $waiterShifts = WaiterShift::query()
+                                    ->where('waiter_id', $this->authUser->id)
+                                    ->where('weeks', now()->weekOfYear)
+                                    ->with(['users:id,name,full_name', 'shifts'])
+                                    ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'waiter_shifts' => $waiterShifts,
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'title' => 'The given data was invalid.',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception  $e) {
+            return response()->json([
+                'title' => 'Error getting weekly shifts.',
+                'errors' => $e
+            ], 422);
+        };
+    }
+
+    /**
+     * Redeem entry reward and add to current order.
+     */
+    public function getAllShifts()
+    {
+        try {
+            $waiterShifts = WaiterShift::with(['users:id,name,full_name', 'shifts'])->get();
+
+            $waiterShifts->each(function ($shift) {
+                if ($shift->users) {
+                    $shift->users->image = $shift->users->getFirstMediaUrl('user');
+                }
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'waiter_shifts' => $waiterShifts,
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'title' => 'The given data was invalidW.',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception  $e) {
+            return response()->json([
+                'title' => 'Error getting all waiter shifts.',
+                'errors' => $e
+            ], 422);
+        };
     }
 }

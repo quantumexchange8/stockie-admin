@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('starting_cash', 13, 2)->default(0.00);
             $table->decimal('paid_in', 13, 2)->default(0.00);
             $table->decimal('paid_out', 13, 2)->default(0.00);
+            $table->decimal('cash_refund', 13, 2)->default(0.00);
             $table->decimal('expected_cash', 13, 2)->default(0.00);
             $table->decimal('cash_sales', 13, 2)->default(0.00);
             $table->decimal('card_sales', 13, 2)->default(0.00);

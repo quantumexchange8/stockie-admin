@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('shift_pay_histories', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('shift_transaction_id');
+            $table->unsignedBigInteger('user_id');
             $table->string('type');
             $table->decimal('amount', 13, 2);
             $table->string('reason');
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('shift_transaction_id');
             $table->softDeletes();
             $table->timestamps();
         });

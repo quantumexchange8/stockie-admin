@@ -178,6 +178,14 @@ class User extends Authenticatable implements HasMedia
     }
 
      /**
+     * Get the shift pay in and pay out histories of the transaction closed by the user.
+     */
+    public function shiftPayHistories(): HasMany
+    {
+        return $this->hasMany(ShiftPayHistory::class, 'user_id');
+    }
+
+     /**
      * Get the shift transaction closed by the user.
      */
     public function closedShiftTransactions(): HasMany
