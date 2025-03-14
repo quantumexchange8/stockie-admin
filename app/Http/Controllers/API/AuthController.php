@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
@@ -69,15 +70,43 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle logout request.
+     * Change waiter profile image.
      */
-    public function logout(Request $request)
+    public function updateProfilePicture(Request $request)
     {
-        // Revoke the current token
-        $request->user()->currentAccessToken()->delete();
+        $waiter = User::find(Auth::user()->id);
+
+        if ($request->hasFile('image')){
+            $waiter->clearMediaCollection('user');
+            $waiter->addMedia($request->image)->toMediaCollection('user');
+        }
 
         return response()->json([
-            'status' => 'Logged out successfully'
+            'status' => 'success',
+            'title' => 'You have sucessfully changed your profile picture.',
         ]);
+    }
+
+    /**
+     * Handle logout request.
+     */
+    public function logout()
+    {
+        try {
+            // Revoke the current token
+            Auth::user()->currentAccessToken()->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'title' => 'You have logged out successfully',
+            ], 201);
+
+        } catch (\Exception  $e) {
+            Log::error('Error logging user out: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'title' => 'Error logging user out.',
+                'errors' => $e
+            ], 422);
+        };
     }
 }

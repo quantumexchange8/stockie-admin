@@ -11,14 +11,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-/********* Login & Logout **********/
+/********* Login **********/
 Route::controller(AuthController::class)->group(function(){
     Route::post('login', 'login');
-    Route::post('logout', 'logout');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-user', fn () => Auth::user());
+
+    Route::controller(AuthController::class)->group(function(){
+        Route::post('logout', 'logout');
+        Route::post('user/profile_picture', 'updateProfilePicture');
+    });
 
     // Route::controller(DashboardController::class)->prefix('menu-management')->group(function(){
     // });
