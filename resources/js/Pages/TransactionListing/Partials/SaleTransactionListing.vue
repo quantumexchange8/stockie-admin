@@ -34,10 +34,10 @@ const clearFilters = (close) => {
 
 const salesColumn = ref([
     {field: 'receipt_end_date', header: 'Date & Time', width: '20', sortable: true},
-    {field: 'receipt_no', header: 'Transaction No. ', width: '21.5', sortable: true},
-    {field: 'grand_total', header: 'Total', width: '16', sortable: true},
+    {field: 'receipt_no', header: 'Transaction No. ', width: '22', sortable: true},
+    {field: 'grand_total', header: 'Total', width: '18', sortable: true},
     {field: 'customer.full_name', header: 'Customer', width: '20', sortable: true},
-    {field: 'status', header: 'Status', width: '16', sortable: true},
+    {field: 'status', header: 'Status', width: '15', sortable: true},
     {field: 'action', header: '', width: '5', sortable: false},
 ]);
 
@@ -83,7 +83,7 @@ const rowType = {
 const saleRowsPerPage = ref(6);
 
 const saleTotalPages = computed(() => {
-    return Math.ceil(saleTransaction.length / saleRowsPerPage.value);
+    return Math.ceil(saleTransaction.value.length / saleRowsPerPage.value);
 })
 
 const action = (event, item) => {

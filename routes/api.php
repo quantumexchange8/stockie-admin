@@ -11,14 +11,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-/********* Login & Logout **********/
+/********* Login **********/
 Route::controller(AuthController::class)->group(function(){
     Route::post('login', 'login');
-    Route::post('logout', 'logout');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-user', fn () => Auth::user());
+
+    Route::controller(AuthController::class)->group(function(){
+        Route::post('logout', 'logout');
+        Route::post('user/profile_picture', 'updateProfilePicture');
+    });
 
     // Route::controller(DashboardController::class)->prefix('menu-management')->group(function(){
     // });
@@ -28,6 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/check_in_time', 'getCheckInTime');
         Route::get('/today_attendance', 'getTodayAttendance');
         Route::get('/attendance_histories', 'getAllAttendances');
+        Route::get('/weekly_shifts', 'getWeeklyShifts');
+        Route::get('/all_shifts', 'getAllShifts');
         Route::post('/check_in', 'checkIn');
         Route::post('/authenticate_old_passcode', 'authenticateOldPasscode');
         Route::put('/change_new_passcode', 'changeNewPasscode');
@@ -81,6 +87,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/order/keep', 'addItemToKeep');
         Route::post('/order/customer', 'createCustomerFromOrder');
         Route::post('/order/redeem_item', 'redeemItemToOrder');
+        Route::post('/order/remove_voucher', 'removeEntryRewardFromOrder');
+        Route::post('/order/redeem_reward', 'redeemEntryRewardToOrder');
         Route::put('/order/serve_item', 'serveOrderItem');
     });
 

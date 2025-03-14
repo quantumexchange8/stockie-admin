@@ -2,7 +2,7 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { computed, ref, onUnmounted } from 'vue';
+import { computed, ref, onUnmounted, watch } from 'vue';
 import Card from 'primevue/card';
 import Button from '@/Components/Button.vue';
 import Accordion from '@/Components/Accordion.vue';
@@ -13,7 +13,7 @@ import Modal from "@/Components/Modal.vue";
 import ReservationListTable from './ReservationListTable.vue';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import OrderInfo from './OrderInfo.vue';
-import { MergedIcon } from '@/Components/Icons/solid';
+import { MergedIcon, ShiftWorkerIcon } from '@/Components/Icons/solid';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -21,6 +21,7 @@ dayjs.extend(relativeTime);
 const props = defineProps({
     zones: Array,
     occupiedTables: Array,
+    hasOpenedShift: Boolean,
     customers: Array,
     activeTab: Number,
     zoneName: String,
@@ -39,6 +40,7 @@ const selectedTable = ref(null);
 // const reservationListIsOpen = ref(false);
 // const reservationsRowsPerPage = ref(6);
 const drawerIsVisible = ref(false);
+const shiftIsOpened = ref(props.hasOpenedShift);
 
 // const reservationsColumns = ref([
 //     { field: "reservation_at", header: "Date", width: "25", sortable: true },
@@ -236,6 +238,9 @@ const isMerged = (targetTable) => {
         )
     );
 };
+watch(() => props.hasOpenedShift, (newValue) => {
+    shiftIsOpened.value = newValue;
+});
 
 // const showReservationList = (event, table) => {
 //     event.preventDefault();
@@ -309,71 +314,16 @@ const isMerged = (targetTable) => {
             </div>
         </div>
         
-        <!-- Display all zones along with their table(s) -->
-        <template v-if="isMainTab"> 
-            <div class="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-3 items-start gap-6 self-stretch" v-if="props.isFullScreen === true" >
-                <template v-for="zone in filteredZones" class="flex">
-                    <div 
-                        class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap relative" 
-                        v-for="table in zone.tables"
-                    >
-                        <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative"
-                            :class="getTableClasses(table).state.value"
-                            @click="openOverlay($event, table)"
+        <template v-if="shiftIsOpened">
+            <!-- Display all zones along with their table(s) -->
+            <template v-if="isMainTab"> 
+                <div class="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-3 items-start gap-6 self-stretch" v-if="props.isFullScreen === true" >
+                    <template v-for="zone in filteredZones" class="flex">
+                        <div 
+                            class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap relative" 
+                            v-for="table in zone.tables"
                         >
-                            <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
-                            <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
-                            <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
-                                {{ getCurrentOrderTableDuration(table) }}
-                            </div>
-                            <template v-else>
-                                <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                    <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
-                                </div>
-                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
-                            </template>
-                            <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
-                                v-if="table.pending_count > 0"
-                            >
-                                <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-
-            <Accordion v-for="zone in filteredZones" :key="zone.value" accordionClasses="gap-[24px]" v-else>
-                <template #head>
-                    <span class="text-sm text-grey-900 font-medium">{{ zone.text }}</span>
-                </template>
-                <template #body>
-                    <div class="grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 gap-6">
-                        <div class="relative" v-for="table in zone.tables" :key="table.id">
-                            <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
-                                <template #title>
-                                    <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
-                                        <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
-                                        <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
-                                            {{ getCurrentOrderTableDuration(table) }}
-                                        </div>
-                                        <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
-                                    </div>
-                                </template>
-                                <template #footer>
-                                    <div :class="getTableClasses(table).state.value">
-                                        <p :class="getTableClasses(table).text.value">{{ table.status }}</p>
-                                    </div>
-                                </template>
-                            </Card> -->
-                            <!-- <div 
-                                v-if="table.reservations && table.reservations.length > 0"
-                                v-tooltip.top="{ value: getTooltipMessage(table) }"
-                                class="absolute top-[5px] left-0 size-6 bg-primary-200 rounded-r-[5px] flex justify-center items-center gap-2.5 py-1 px-2 w-fit cursor-pointer" 
-                                @click="showReservationList($event, table)"
-                            >
-                                <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
-                            </div> -->
-                            <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px]"
+                            <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative"
                                 :class="getTableClasses(table).state.value"
                                 @click="openOverlay($event, table)"
                             >
@@ -395,93 +345,169 @@ const isMerged = (targetTable) => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </template>
-            </Accordion>
-        </template>
-        
-        <!-- Display specified zone along with its table(s) -->
-        <template v-else>
-            <div v-if="filteredZones.tables.length > 0" class="gap-6" :class="props.isFullScreen === true ? 'grid xl:grid-cols-6 lg:grid-cols-4 md:grid-cols-3 ' : 'grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2'">
-                <div class="relative" v-for="table in filteredZones.tables" :key="table.id">
-                    <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
-                        <template #title>
-                            <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
-                                <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
-                                <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
-                                    {{ getCurrentOrderTableDuration(table) }}
+                    </template>
+                </div>
+
+                <Accordion v-for="zone in filteredZones" :key="zone.value" accordionClasses="gap-[24px]" v-else>
+                    <template #head>
+                        <span class="text-sm text-grey-900 font-medium">{{ zone.text }}</span>
+                    </template>
+                    <template #body>
+                        <div class="grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 gap-6">
+                            <div class="relative" v-for="table in zone.tables" :key="table.id">
+                                <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
+                                    <template #title>
+                                        <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
+                                            <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
+                                            <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
+                                                {{ getCurrentOrderTableDuration(table) }}
+                                            </div>
+                                            <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
+                                        </div>
+                                    </template>
+                                    <template #footer>
+                                        <div :class="getTableClasses(table).state.value">
+                                            <p :class="getTableClasses(table).text.value">{{ table.status }}</p>
+                                        </div>
+                                    </template>
+                                </Card> -->
+                                <!-- <div 
+                                    v-if="table.reservations && table.reservations.length > 0"
+                                    v-tooltip.top="{ value: getTooltipMessage(table) }"
+                                    class="absolute top-[5px] left-0 size-6 bg-primary-200 rounded-r-[5px] flex justify-center items-center gap-2.5 py-1 px-2 w-fit cursor-pointer" 
+                                    @click="showReservationList($event, table)"
+                                >
+                                    <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
+                                </div> -->
+                                <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px]"
+                                    :class="getTableClasses(table).state.value"
+                                    @click="openOverlay($event, table)"
+                                >
+                                    <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
+                                    <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                    <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
+                                        {{ getCurrentOrderTableDuration(table) }}
+                                    </div>
+                                    <template v-else>
+                                        <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                            <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                        </div>
+                                        <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                    </template>
+                                    <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
+                                        v-if="table.pending_count > 0"
+                                    >
+                                        <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
+                                    </div>
                                 </div>
-                                <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
                             </div>
-                        </template>
-                        <template #footer>
-                            <div :class="getTableClasses(table).state.value">
-                                <p :class="getTableClasses(table).text.value">{{ table.status }}</p>
-                            </div>
-                        </template>
-                    </Card> -->
-                    <!-- <div 
-                        v-if="table.reservations && table.reservations.length > 0"
-                        v-tooltip.top="{ value: getTooltipMessage(table) }"
-                        class="absolute top-[5px] left-0 size-6 bg-primary-200 rounded-r-[5px] flex justify-center items-center gap-2.5 py-1 px-2 w-fit cursor-pointer" 
-                        @click="showReservationList($event, table)"
-                    >
-                        <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
-                    </div> -->
-                    <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px]"
-                        :class="getTableClasses(table).state.value"
-                        @click="openOverlay($event, table)"
-                    >
-                        <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
-                        <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
-                            {{ getCurrentOrderTableDuration(table) }}
                         </div>
-                        <template v-else>
-                            <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
-                            </div>
-                            <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
-                        </template>
-                        <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
-                            v-if="table.pending_count > 0"
+                    </template>
+                </Accordion>
+            </template>
+            
+            <!-- Display specified zone along with its table(s) -->
+            <template v-else>
+                <div v-if="filteredZones.tables.length > 0" class="gap-6" :class="props.isFullScreen === true ? 'grid xl:grid-cols-6 lg:grid-cols-4 md:grid-cols-3 ' : 'grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2'">
+                    <div class="relative" v-for="table in filteredZones.tables" :key="table.id">
+                        <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
+                            <template #title>
+                                <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
+                                    <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
+                                    <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
+                                        {{ getCurrentOrderTableDuration(table) }}
+                                    </div>
+                                    <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
+                                </div>
+                            </template>
+                            <template #footer>
+                                <div :class="getTableClasses(table).state.value">
+                                    <p :class="getTableClasses(table).text.value">{{ table.status }}</p>
+                                </div>
+                            </template>
+                        </Card> -->
+                        <!-- <div 
+                            v-if="table.reservations && table.reservations.length > 0"
+                            v-tooltip.top="{ value: getTooltipMessage(table) }"
+                            class="absolute top-[5px] left-0 size-6 bg-primary-200 rounded-r-[5px] flex justify-center items-center gap-2.5 py-1 px-2 w-fit cursor-pointer" 
+                            @click="showReservationList($event, table)"
                         >
-                            <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
+                            <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
+                        </div> -->
+                        <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px]"
+                            :class="getTableClasses(table).state.value"
+                            @click="openOverlay($event, table)"
+                        >
+                            <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                            <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
+                                {{ getCurrentOrderTableDuration(table) }}
+                            </div>
+                            <template v-else>
+                                <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                    <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                </div>
+                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                            </template>
+                            <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
+                                v-if="table.pending_count > 0"
+                            >
+                                <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="flex flex-col items-center text-center gap-5" v-else>
-                <EmptyTableIllus />
-                <span class="text-primary-900 text-sm font-medium">
-                    You've to add a table/room before you can manage your order
-                </span>
+                <div class="flex flex-col items-center text-center gap-5" v-else>
+                    <EmptyTableIllus />
+                    <span class="text-primary-900 text-sm font-medium">
+                        You've to add a table/room before you can manage your order
+                    </span>
+                    <Button
+                        :href="route('table-room')"
+                        type="button"
+                        size="lg"
+                        class="!w-fit"
+                    >
+                        Go to add
+                    </Button>
+                </div>
+            </template>
+            <!-- <Modal 
+                :title="'Reservation List'"
+                :show="reservationListIsOpen" 
+                :maxWidth="'sm'" 
+                @close="hideReservationList"
+            >
+                <template v-if="selectedTable">
+                    <ReservationListTable
+                        :table="selectedTable"
+                        :columns="reservationsColumns"
+                        :rows="selectedTable.reservations"
+                        :rowType="rowType"
+                        :actions="actions"
+                        :rowsPerPage="reservationsRowsPerPage"
+                    />
+                </template>
+            </Modal> -->
+        </template>
+
+        <template v-else>
+            <div class="flex w-full flex-col items-center justify-center gap-5">
+                <ShiftWorkerIcon />
+                <div class="flex flex-col gap-y-1 items-center">
+                    <span class="text-grey-950 text-md font-semibold">No shift has been opened yet</span>
+                    <span class="text-grey-950 text-sm font-normal">You’ll need to open a shift before you can place order.</span>
+                </div>
                 <Button
-                    :href="route('table-room')"
-                    type="button"
-                    size="lg"
+                    :href="route('shift-management.control')"
+                    :type="'button'"
+                    :size="'lg'"
                     class="!w-fit"
                 >
-                    Go to add
+                    Open shift
                 </Button>
             </div>
         </template>
-        <!-- <Modal 
-            :title="'Reservation List'"
-            :show="reservationListIsOpen" 
-            :maxWidth="'sm'" 
-            @close="hideReservationList"
-        >
-            <template v-if="selectedTable">
-                <ReservationListTable
-                    :table="selectedTable"
-                    :columns="reservationsColumns"
-                    :rows="selectedTable.reservations"
-                    :rowType="rowType"
-                    :actions="actions"
-                    :rowsPerPage="reservationsRowsPerPage"
-                />
-            </template>
-        </Modal> -->
+
     </div> 
 
     <!-- Assign Seat -->

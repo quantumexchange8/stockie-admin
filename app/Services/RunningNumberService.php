@@ -14,7 +14,7 @@ class RunningNumberService
         $format->increment('last_number');
         $format->save();
 
-        return $format['prefix'] . Str::padLeft($lastID, $format['digits'], "0");
+        return $format['prefix'] . Str::padLeft($lastID, $format['digits'] ?? 0, "0");
     }
 
 }

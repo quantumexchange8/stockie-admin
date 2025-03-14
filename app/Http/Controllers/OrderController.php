@@ -29,6 +29,7 @@ use App\Models\ProductItem;
 use App\Models\Ranking;
 use App\Models\Reservation;
 use App\Models\SaleHistory;
+use App\Models\ShiftTransaction;
 use App\Models\StockHistory;
 use App\Models\Table;
 use App\Models\Setting;
@@ -148,6 +149,7 @@ class OrderController extends Controller
         return Inertia::render('Order/Order', [
             // 'message' => $message ?? [],
             'zones' => $zones,
+            'hasOpenedShift' => ShiftTransaction::hasOpenedShift(),
             'users' => $users,
             // 'orders' => $orders,
             'occupiedTables' => Table::where('status', '!=', 'Empty Seat')->get(),

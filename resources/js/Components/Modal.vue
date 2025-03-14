@@ -154,7 +154,7 @@ const deleteRecord = () => {
                         leave-to="opacity-0 scale-95"
                     >
                         <DialogPanel
-                            class="transform w-full max-h-[95%] fixed rounded-[5px] bg-white text-left align-middle shadow-xl transition-all"
+                            class="modal-component transform w-full max-h-[95%] fixed rounded-[5px] bg-white text-left align-middle shadow-xl transition-all"
                             :class="[
                                 maxWidthClass,
                                 !props.deleteConfirmation && !props.unsaved ? 'p-6' : 'flex flex-col gap-9',

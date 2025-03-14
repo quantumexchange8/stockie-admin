@@ -169,6 +169,31 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(EmployeeIncentive::class, 'user_id');
     }
 
+     /**
+     * Get the shift transaction opened by the user.
+     */
+    public function openedShiftTransactions(): HasMany
+    {
+        return $this->hasMany(ShiftTransaction::class, 'opened_by');
+    }
+
+     /**
+     * Get the shift pay in and pay out histories of the transaction closed by the user.
+     */
+    public function shiftPayHistories(): HasMany
+    {
+        return $this->hasMany(ShiftPayHistory::class, 'user_id');
+    }
+
+     /**
+     * Get the shift transaction closed by the user.
+     */
+    public function closedShiftTransactions(): HasMany
+    {
+        return $this->hasMany(ShiftTransaction::class, 'closed_by');
+    }
+
+
     // /**
     //  * Reservation Model
     //  * Get the reservations handled by the user.

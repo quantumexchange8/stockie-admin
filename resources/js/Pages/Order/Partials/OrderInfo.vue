@@ -420,7 +420,7 @@ watch(
     async (newCustomerId) => {
         if (newCustomerId) {
             await fetchCustomerDetails();
-            tabs.value[2].disabled = !newCustomerId;
+            tabs.value[2].disabled = !newCustomerId && currentOrderTable.status === 'Pending Clearance';
         }
     },
     { immediate: true } // Run the watcher immediately on mount
@@ -697,7 +697,7 @@ watch(order.value, () => {
                         Cancel Order
                     </div>
                     <div class="text-gray-900 text-base font-medium text-center leading-tight" >
-                        Are you sure you want to cancel all the existing and pending order in this table / room? The action cannot be undone.
+                        Are you sure you want to cancel this order? All items will return to inventory and won't affect sales.
                     </div>
                 </div>
                 <div class="flex item-center gap-3">

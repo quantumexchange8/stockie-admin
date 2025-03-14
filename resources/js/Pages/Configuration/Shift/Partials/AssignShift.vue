@@ -91,7 +91,8 @@ const sortedSelectedDays = computed(() => {
 const waitersArr = computed(() => {
     return waiters.value.map(waiter => ({
         text: waiter.full_name,
-        value: waiter.id
+        value: waiter.id,
+        image: waiter.image,
     }));
 });
 
