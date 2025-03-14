@@ -23,6 +23,7 @@ use App\Http\Controllers\ConfigShiftSettingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\TableRoomController;
 use App\Http\Controllers\TransactionController;
@@ -379,6 +380,8 @@ Route::middleware('auth')->group(function () {
         
     });
 
+    /********* All Report **********/
+    Route::get('/all-report', [ReportController::class, 'allReport'])->name('all-report');
 });
 
 require __DIR__.'/auth.php';
