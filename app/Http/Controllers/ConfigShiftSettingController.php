@@ -53,6 +53,10 @@ class ConfigShiftSettingController extends Controller
 
         $waiters = User::where('position', 'waiter')->get();
 
+        $waiters->each(function ($waiter) {
+            $waiter->image = $waiter->getFirstMediaUrl('user');
+        });
+
         return response()->json($waiters);
     }
 

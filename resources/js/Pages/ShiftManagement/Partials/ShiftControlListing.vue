@@ -1,11 +1,8 @@
 <script setup>
-import Breadcrumb from '@/Components/Breadcrumb.vue';
 import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
 import Tag from '@/Components/Tag.vue';
 import TextInput from '@/Components/TextInput.vue';
-import Toast from '@/Components/Toast.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { useInputValidator, useCustomToast } from '@/Composables';
@@ -13,26 +10,30 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
     shiftTransactions: Array,
+    currentSelectedShift: {
+        type: Object,
+        default: () => {}
+    },
 });
 
-const emit = defineEmits(['update:shift-listing']);
+const emit = defineEmits(['update:shift-listing', 'update:selected-shift']);
 
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
 const shiftTransactionsList = ref(props.shiftTransactions);
 const openShiftFormIsOpen = ref(false);
-const isLoading = ref(false);
+const selectedShift = ref(props.currentSelectedShift);
 
 const form = useForm({
     starting_cash : ''
 });
 
 const submit = async () => { 
-    isLoading.value = true;
+    form.processing = true;
 
     try {
-        const response = await axios.post(`/shift-management/shift-control`, form);
+        const response = await axios.post(`/shift-management/shift-control/open`, form);
         
         shiftTransactionsList.value = response.data; 
         emit('update:shift-listing', response.data);
@@ -44,22 +45,27 @@ const submit = async () => {
                 summary: "Shift successfully opened. You're all set to start the day!", 
             }); 
         }, 200); 
-        
-        // showMessage({ 
-        //     severity: 'error', 
-        //     summary: "You can't open more than one shift at the same time.", 
-        //     detail: "To proceed, please close the current shift first.", 
-        // }); 
 
     } catch (error) {
         form.setError(error.response.data.errors);
     } finally {
-        isLoading.value = false;
+        form.processing = false;
     }
 };
 
 const openModal = () => {
-    openShiftFormIsOpen.value = true;
+    const currentOpenedShift = shiftTransactionsList.value.find((shift) => shift.status === 'opened');
+
+    if (currentOpenedShift) {
+        showMessage({ 
+            severity: 'error', 
+            summary: "You can't open more than one shift at the same time.", 
+            detail: "To proceed, please close the current shift first.", 
+        }); 
+
+    } else {
+        openShiftFormIsOpen.value = true;
+    }
 }
 
 const closeModal = () => {
@@ -70,8 +76,21 @@ const closeModal = () => {
     }, 200);
 }
 
+const updateSelected = (shift) => {
+    if (selectedShift.value === shift) {
+        selectedShift.value = shiftTransactionsList.value.find((shift) => shift.status === 'opened') ?? null;
+    } else {
+        selectedShift.value = shift;
+    }
+    emit('update:selected-shift', selectedShift.value);
+}
+
 watch(() => props.shiftTransactions, (newValue) => {
     shiftTransactionsList.value = newValue;
+});
+
+watch(() => props.currentSelectedShift, (newValue) => {
+    selectedShift.value = newValue;
 });
 </script>
 
@@ -83,7 +102,11 @@ watch(() => props.shiftTransactions, (newValue) => {
     >
         <template v-if="shiftTransactionsList.length > 0">
             <template v-for="(shift, index) in shiftTransactionsList" :key="index">
-                <div class="flex flex-col w-full items-start self-stretch gap-y-5 p-4 rounded-[5px] bg-white border border-grey-100 shadow-sm">
+                <div 
+                    class="flex flex-col w-full items-start self-stretch gap-y-5 p-4 rounded-[5px] border border-grey-100 shadow-sm cursor-pointer"
+                    :class="shift.id === selectedShift?.id ? 'bg-primary-25' : 'bg-white'"
+                    @click="updateSelected(shift)"
+                >
                     <div class="flex w-full flex-col gap-y-3 items-start">
                         <div class="flex w-full items-center justify-between gap-x-3 self-stretch">
                             <p class="truncate text-sm font-bold text-grey-950">{{ `Shift #${shift.shift_no}` }}</p>
@@ -99,7 +122,7 @@ watch(() => props.shiftTransactions, (newValue) => {
                         <div class="flex gap-x-1 items-center">
                             <p class="truncate font-bold text-xs text-grey-950">{{ shift.opened_by.full_name }}</p>
                             <img 
-                                :src="shift.image ? shift.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                :src="shift.opened_by.image ? shift.opened_by.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                 alt="ProductImage" 
                                 class="size-4 object-fit rounded-full border borer-grey-100"
                             />
@@ -107,7 +130,16 @@ watch(() => props.shiftTransactions, (newValue) => {
                     </div>
                 </div>
             </template>
+            
+            <Button
+                :variant="'tertiary'"
+                :size="'lg'"
+                @click="openModal"
+            >
+                Open new shift
+            </Button>
         </template>
+
         <template v-else>
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
@@ -115,16 +147,17 @@ watch(() => props.shiftTransactions, (newValue) => {
                     <span class="text-grey-950 text-md font-semibold">No data yet</span>
                     <span class="text-grey-950 text-sm font-normal">Your shift record will show up here.</span>
                 </div>
+
+                <Button
+                    :variant="'primary'"
+                    :size="'lg'"
+                    class="!w-fit"
+                    @click="openModal"
+                >
+                    Open Shift
+                </Button>
             </div>
         </template>
-        
-        <Button
-            :variant="'tertiary'"
-            :size="'lg'"
-            @click="openModal"
-        >
-            Open new shift
-        </Button>
     </div>     
 
     <Modal 
@@ -169,7 +202,7 @@ watch(() => props.shiftTransactions, (newValue) => {
                     </Button>
                     <Button
                         size="lg"
-                        :disabled="form.processing"
+                        :disabled="form.processing || form.starting_cash == ''"
                     >
                         Open
                     </Button>

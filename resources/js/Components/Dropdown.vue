@@ -104,6 +104,11 @@ const handleBlur = () => {
     }
 };
 
+// Only if the option array thats been passed has image provided
+const getOptionData = (value) => {
+    return props.inputArray.find((item) => item.value === value);
+}
+
 onMounted(() => {
     const dropdownInput = document.querySelector('.modal-component');
 

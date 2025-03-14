@@ -1,11 +1,9 @@
 <script setup>
 import Breadcrumb from '@/Components/Breadcrumb.vue';
-import Button from '@/Components/Button.vue';
-import Tag from '@/Components/Tag.vue';
 import Toast from '@/Components/Toast.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import OpenedShift from './Partials/OpenedShift.vue';
 import ShiftControlListing from './Partials/ShiftControlListing.vue';
 
@@ -18,10 +16,11 @@ const home = ref({
 })
 
 const shiftTransactionsList = ref(props.shiftTransactions);
+const selectedShift = ref(null);
 
-const openedShift = computed(() => {
-    return shiftTransactionsList.value.find((shift) => shift.status === 'opened');
-});
+watch(shiftTransactionsList, (newValue) => {
+    selectedShift.value = newValue.find((shift) => shift.status === 'opened') ?? null;
+}, { immediate: true })
 
 </script>
 
@@ -38,10 +37,12 @@ const openedShift = computed(() => {
         <div class="grid grid-cols-1 md:grid-cols-12 items-center gap-5 h-full">
             <ShiftControlListing
                 :shiftTransactions="shiftTransactionsList"
+                :currentSelectedShift="selectedShift"
                 @update:shift-listing="shiftTransactionsList = $event"
+                @update:selected-shift="selectedShift = $event"
              />
             <OpenedShift
-                :currentOpenedShift="openedShift"
+                :currentSelectedShift="selectedShift"
                 @update:shift-listing="shiftTransactionsList = $event" 
             />
         </div>

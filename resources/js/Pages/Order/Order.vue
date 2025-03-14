@@ -22,6 +22,7 @@ const home = ref({
 const props = defineProps({
     zones: Array,
     users: Array,
+    hasOpenedShift: Boolean,
     // orders: Array,
     occupiedTables: Array,
     customers: Array,
@@ -32,6 +33,7 @@ const zones = ref(props.zones);
 const tabs = ref([]);
 const orderHistoryIsOpen = ref(false);
 const isFullScreen = ref(false);
+const shiftIsOpened = ref(props.hasOpenedShift);
 
 const showOrderHistory = () => {
     orderHistoryIsOpen.value = true;
@@ -153,6 +155,7 @@ const filteredZones = computed(() => {
                         isMainTab 
                         :zones="filteredZones" 
                         :users="users"
+                        :hasOpenedShift="shiftIsOpened"
                         :customers="customers"
                         :occupiedTables="occupiedTables"
                         :isFullScreen="isFullScreen"
@@ -169,6 +172,7 @@ const filteredZones = computed(() => {
                         :activeTab="zone.value" 
                         :zoneName="zone.text"
                         :users="users"
+                        :hasOpenedShift="shiftIsOpened"
                         :customers="customers"
                         :occupiedTables="occupiedTables"
                         :isFullScreen="isFullScreen"
@@ -231,6 +235,7 @@ const filteredZones = computed(() => {
                             <OrderTables 
                                 isMainTab 
                                 :zones="filteredZones" 
+                                :hasOpenedShift="shiftIsOpened"
                                 :users="users"
                                 :customers="customers"
                                 :occupiedTables="occupiedTables"
@@ -247,6 +252,7 @@ const filteredZones = computed(() => {
                                 :zones="filteredZones" 
                                 :activeTab="zone.value" 
                                 :zoneName="zone.text"
+                                :hasOpenedShift="shiftIsOpened"
                                 :users="users"
                                 :isFullScreen="isFullScreen"
                                 :customers="customers"

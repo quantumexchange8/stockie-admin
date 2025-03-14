@@ -37,7 +37,7 @@ class ShiftPayHistory extends Model
     }
 
     /**
-     * Get the employee that closed the shift.
+     * Get the employee that made the pay transaction.
      */
     public function handledBy(): BelongsTo
     {

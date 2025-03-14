@@ -364,9 +364,12 @@ Route::middleware('auth')->group(function () {
     /********* Shift Management **********/
     Route::prefix('shift-management')->middleware([CheckPermission::class . ':shift-management'])->group(function(){
         Route::get('/shift-control', [ShiftController::class, 'viewShiftControl'])->name('shift-management.control');
-        Route::get('/shift-record', [ShiftController::class, 'viewShiftRecord'])->name('shift-management.record');
         Route::post('/shift-control/open', [ShiftController::class, 'openShift'])->name('shift-management.control.open-shift');
         Route::post('/shift-control/close/{id}', [ShiftController::class, 'closeShift'])->name('shift-management.control.close-shift');
+        Route::post('/shift-control/pay/{id}', [ShiftController::class, 'shiftPayTransaction'])->name('shift-management.control.shift-pay');
+        
+        Route::get('/shift-record', [ShiftController::class, 'viewShiftRecord'])->name('shift-management.record');
+        Route::get('/shift-record/getFilteredShiftTransactions', [ShiftController::class, 'getFilteredShiftTransactions'])->name('shift-management.record.getFilteredShiftTransactions');
     });
 
     /********* Transaction Listing **********/
