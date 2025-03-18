@@ -27,6 +27,7 @@ class UpdateTier implements ShouldQueue
         $this->customerId = $customerId;
         $this->points = $points;
         $this->spending = $spending;
+        $this->queue = 'update-tier';
     }
 
     /**

@@ -22,6 +22,7 @@ use App\Models\OrderItem;
 use App\Models\OrderItemSubitem;
 use App\Models\OrderTable;
 use App\Models\Payment;
+use App\Models\PaymentDetail;
 use App\Models\Point;
 use App\Models\PointHistory;
 use App\Models\Product;
@@ -828,6 +829,7 @@ class OrderController extends Controller
         $zones = Zone::with([
                             'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']),
                             'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty',
+                            'tables.order:id,order_no,amount',
                         ])
                         ->select('id', 'name')
                         ->get()
@@ -906,64 +908,68 @@ class OrderController extends Controller
 
         if (!$order) return redirect()->back();
 
-        if ($request->action_type === 'complete') {
+        // if ($request->action_type === 'complete') {
             // if ($order->status === 'Order Served' || $order->status === 'Pending Serve') {
-                $order->update(['status' => 'Order Completed']);
+                // $order->update(['status' => 'Order Completed']);
                 // $order->refresh();
             // }
 
-            $statusArr = collect($order->orderTable->pluck('status')->unique());
-            if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && ($statusArr->first() === 'All Order Served' || $statusArr->first() === 'Order Placed' || $statusArr->first() === 'Pending Order'))) {
-                $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
-                $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
-                $pointConversion = $settings->filter(fn($setting) => $setting['type'] === 'point')->first();
+            // $statusArr = collect($order->orderTable->pluck('status')->unique());
+        //     if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && ($statusArr->first() === 'All Order Served' || $statusArr->first() === 'Order Placed' || $statusArr->first() === 'Pending Order'))) {getOrderHistories
+        //         $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
+        //         $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
+        //         $pointConversion = $settings->filter(fn($setting) => $setting['type'] === 'point')->first();
 
-                $subTotal = $order->amount;
-                $sstAmount = round($subTotal * ($taxes['SST'] / 100), 2);
-                $serviceTaxAmount = round($subTotal * ($taxes['Service Tax'] / 100), 2);
+        //         $subTotal = $order->amount;
+        //         $sstAmount = round($subTotal * ($taxes['SST'] / 100), 2);
+        //         $serviceTaxAmount = round($subTotal * ($taxes['Service Tax'] / 100), 2);
 
-                if ($order->voucher) {
-                    $voucherDiscountedAmount = $order->voucher->reward_type === 'Discount (Percentage)' 
-                            ? $subTotal * ($order->voucher->discount / 100)
-                            : $order->voucher->discount;
-                } else {
-                    $voucherDiscountedAmount = 0.00;
-                }
+        //         if ($order->voucher) {
+        //             $voucherDiscountedAmount = $order->voucher->reward_type === 'Discount (Percentage)' 
+        //                     ? $subTotal * ($order->voucher->discount / 100)
+        //                     : $order->voucher->discount;
+        //         } else {
+        //             $voucherDiscountedAmount = 0.00;
+        //         }
                 
-                $grandTotal = $this->priceRounding($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
-                $roundingDiff = $grandTotal - ($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
-                $totalPoints = ($grandTotal / $pointConversion['value']) * $pointConversion['point'];
+        //         $grandTotal = $this->priceRounding($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
+        //         $roundingDiff = $grandTotal - ($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
+        //         $totalPoints = ($grandTotal / $pointConversion['value']) * $pointConversion['point'];
                 
-                $paymentData = [
-                    'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
-                    'total_amount' => $subTotal,
-                    'grand_total' => $grandTotal,
-                    'rounding' => $roundingDiff,
-                    'sst_amount' => $sstAmount,
-                    'service_tax_amount' => $serviceTaxAmount,
-                    'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
-                    'customer_id' => $request->customer_id,
-                    'handled_by' => $request->user_id,
-                    'discount_id' => $order->voucher_id,
-                    'discount_amount' => $voucherDiscountedAmount
-                ];
+        //         $paymentData = [
+        //             'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+        //             'total_amount' => $subTotal,
+        //             'rounding' => $roundingDiff,
+        //             'sst_amount' => $sstAmount,
+        //             'service_tax_amount' => $serviceTaxAmount,
+        //             'discount_id' => $order->voucher_id,
+        //             'discount_amount' => $voucherDiscountedAmount,
+        //             // 'bill_discounts' => $, // array of bill discount selected
+        //             // 'bill_discount_total' => $, // total amount of bill discount
+        //             'grand_total' => $grandTotal,
+        //             // 'amount_paid' => $, // amount paid by customer
+        //             // 'change' => $, // change left after deducting customer paid amount from grand total
+        //             'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
+        //             'customer_id' => $request->customer_id,
+        //             'handled_by' => $request->user_id,
+        //         ];
 
-                $order->payment
-                    ? $order->payment->update($paymentData)
-                    : Payment::create($paymentData + [
-                        'transaction_id' => null,
-                        'order_id' => $order->id,
-                        'table_id' => $order->orderTable->pluck('table.id'),
-                        'receipt_no' => RunningNumberService::getID('payment'),
-                        'receipt_start_date' => $order->created_at,
-                        'pax' => $order->pax,
-                        'status' => 'Pending'
-                    ]);
+        //         $order->payment
+        //             ? $order->payment->update($paymentData)
+        //             : Payment::create($paymentData + [
+        //                 'transaction_id' => null,
+        //                 'order_id' => $order->id,
+        //                 'table_id' => $order->orderTable->pluck('table.id'),
+        //                 'receipt_no' => RunningNumberService::getID('payment'),
+        //                 'receipt_start_date' => $order->created_at,
+        //                 'pax' => $order->pax,
+        //                 'status' => 'Pending'
+        //             ]);
 
-                // Update the calculated total amount of the order
-                // $order->update(['total_amount' => $grandTotal]);
-            }
-        }
+        //         // Update the calculated total amount of the order
+        //         // $order->update(['total_amount' => $grandTotal]);
+        //     }
+        // }
         
         if ($request->action_type === 'clear') {
             $toBeClearedOrderTables = OrderTable::with([
@@ -1838,200 +1844,272 @@ class OrderController extends Controller
         return redirect()->back();
     }
 
+    // /**
+    //  * Get the payment details of the order.
+    //  */
+    // public function getOrderPaymentDetails(string $id) 
+    // {
+    //     $order = Order::with('payment')->find($id);
+    //     $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('value', 'name');
+
+    //     $data = [
+    //         'payment_details' => $order->payment,
+    //         'taxes' => $taxes
+    //     ];
+
+    //     return response()->json($data);
+    // }
+
     /**
-     * Get the payment details of the order.
+     * Get all taxes.
      */
-    public function getOrderPaymentDetails(string $id) 
+    public function getAllTaxes() 
     {
-        $order = Order::with('payment')->find($id);
-        $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('value', 'name');
+        $taxes = Setting::where('type', 'tax')->pluck('value', 'name');
 
-        $data = [
-            'payment_details' => $order->payment,
-            'taxes' => $taxes
-        ];
-
-        return response()->json($data);
+        return response()->json($taxes);
     }
 
     /**
      * Update order's payment status.
      */
-    public function updateOrderPayment(Request $request, string $id) 
+    public function updateOrderPayment(Request $request) 
     {
-        $payment = Payment::find($id);
         $order = Order::with([
                             'orderTable.table', 
                             'customer:id,point,total_spending,ranking', 
                             'orderItems' => fn($query) => $query->with('product.commItem.configComms')->where('status', 'Served')
                         ])->findOrFail($request->order_id);
 
-        // Handle sale history for "Normal" order items
-        $order->orderItems->where('type', 'Normal')->each(function ($item) {
-            $configCommItem = $item->product->commItem;
+        $order->update(['status' => 'Order Completed']);
 
-            if ($configCommItem) {
-                $commissionType = $configCommItem->configComms->comm_type;
-                $commissionRate = $configCommItem->configComms->rate;
-                $commissionAmount = $commissionType === 'Fixed amount per sold product' 
-                        ? $commissionRate * $item->item_qty
-                        : $item->product->price * $item->item_qty * ($commissionRate / 100);
+        $statusArr = collect($order->orderTable->pluck('status')->unique());
+        if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && ($statusArr->first() === 'All Order Served' || $statusArr->first() === 'Order Placed' || $statusArr->first() === 'Pending Order'))) {
+            $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
+            $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
+            $pointConversion = $settings->filter(fn($setting) => $setting['type'] === 'point')->first();
 
-                EmployeeCommission::create([
-                    'user_id' => $item->user_id,
-                    'type' => $commissionType,
-                    'rate' => $commissionRate,
-                    'order_item_id' => $item->id,
-                    'comm_item_id' => $configCommItem->id,
-                    'amount' => $commissionAmount,
-                ]);
+            $subTotal = $order->amount;
+            $sstAmount = round($subTotal * ($taxes['SST'] / 100), 2);
+            $serviceTaxAmount = round($subTotal * ($taxes['Service Tax'] / 100), 2);
+
+            if ($order->voucher) {
+                $voucherDiscountedAmount = $order->voucher->reward_type === 'Discount (Percentage)' 
+                        ? $subTotal * ($order->voucher->discount / 100)
+                        : $order->voucher->discount;
+            } else {
+                $voucherDiscountedAmount = 0.00;
+            }
+            
+            $grandTotal = $this->priceRounding($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
+            $roundingDiff = $grandTotal - ($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
+            $totalPoints = ($grandTotal / $pointConversion['value']) * $pointConversion['point'];
+ 
+            $amountPaid = 0.00;
+            foreach ($request->payment_methods as $key => $method) {
+                $amountPaid += $method['amount'];
             }
 
-            SaleHistory::create([
-                'order_id' => $item->order_id,
-                'product_id' => $item->product_id,
-                'total_price' => $item->amount,
-                'qty' => (int) $item->item_qty,
+            $payment = Payment::create([
+                'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+                'total_amount' => $subTotal,
+                'rounding' => $roundingDiff,
+                'sst_amount' => $sstAmount,
+                'service_tax_amount' => $serviceTaxAmount,
+                'discount_id' => $order->voucher_id,
+                'discount_amount' => $voucherDiscountedAmount,
+                // 'bill_discounts' => $, // array of bill discount selected
+                // 'bill_discount_total' => $, // total amount of bill discount
+                'grand_total' => $grandTotal,
+                'amount_paid' => $amountPaid,
+                'change' => $request->change,
+                'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
+                'customer_id' => $request->customer_id,
+                'handled_by' => $request->user_id,
+                'transaction_id' => null,
+                'order_id' => $order->id,
+                'table_id' => $order->orderTable->pluck('table.id'),
+                'receipt_no' => RunningNumberService::getID('payment'),
+                'receipt_start_date' => $order->created_at,
+                'pax' => $order->pax,
+                'status' => 'Pending'
             ]);
-        });
 
-        $pointConversion = Setting::where('type', 'point')->first(['value', 'point']);
-        $totalPoints = (int) round(($payment->grand_total / $pointConversion->value) * $pointConversion->point);
+            $order->refresh();
 
-        $customer = $order->customer;
+            // Handle sale history for "Normal" order items
+            $order->orderItems->where('type', 'Normal')->each(function ($item) {
+                $configCommItem = $item->product->commItem;
 
-        // Add the accumulated points earned from the order to the customer
-        if ($customer) {
-            $oldPointBalance = $customer->point;
-            $newPointBalance = $oldPointBalance + $totalPoints;
-            $oldTotalSpending = $customer->total_spending;
-            $newTotalSpending = $oldTotalSpending + $payment->grand_total;
-            $oldRanking = $customer->ranking;
+                if ($configCommItem) {
+                    $commissionType = $configCommItem->configComms->comm_type;
+                    $commissionRate = $configCommItem->configComms->rate;
+                    $commissionAmount = $commissionType === 'Fixed amount per sold product' 
+                            ? $commissionRate * $item->item_qty
+                            : $item->product->price * $item->item_qty * ($commissionRate / 100);
 
-            Bus::chain([
-                new UpdateTier($customer->id, $newPointBalance, $newTotalSpending),
-                new GiveEntryReward($oldRanking, $customer->id, $oldTotalSpending),
-                new GiveBonusPoint($id, $totalPoints, $oldPointBalance, $customer->id, $request->user_id)
-            ])->dispatch();
-            
-            /* START PUTTING INTO UPDATE TIER JOB */
-            // Determine the new rank based on the new total spending 
-            $newRankingDetails = Ranking::where('min_amount', '<=', $newTotalSpending)
-                                ->select('id', 'name')
-                                ->orderBy('min_amount', 'desc')
-                                ->first();
-            
-            $newRankingDetails->image = $newRankingDetails->getFirstMediaUrl('ranking');
+                    EmployeeCommission::create([
+                        'user_id' => $item->user_id,
+                        'type' => $commissionType,
+                        'rate' => $commissionRate,
+                        'order_item_id' => $item->id,
+                        'comm_item_id' => $configCommItem->id,
+                        'amount' => $commissionAmount,
+                    ]);
+                }
 
-            // $newRanking = $newRankingDetails->value('id');
+                SaleHistory::create([
+                    'order_id' => $item->order_id,
+                    'product_id' => $item->product_id,
+                    'total_price' => $item->amount,
+                    'qty' => (int) $item->item_qty,
+                ]);
+            });
 
-            // // Update customer points and total spending
-            // $customer->update([
-            //     'point' => $newPointBalance,
-            //     'total_spending' => $newTotalSpending,
-            //     'ranking' => $newRanking
-            // ]);
-            // $customer->refresh();
-            /* STOP PUTTING INTO UPDATE TIER JOB */
+            $customer = $order->customer;
 
+            // Add the accumulated points earned from the order to the customer
+            if ($customer) {
+                $oldPointBalance = $customer->point;
+                $newPointBalance = $oldPointBalance + $totalPoints;
+                $oldTotalSpending = $customer->total_spending;
+                $newTotalSpending = $oldTotalSpending + $grandTotal;
+                $oldRanking = $customer->ranking;
 
-            // GIVE ENTRY REWARD JOB
-
-            // $bonusPointRewards = [];
-            // // Grant rewards for rank up 
-            // if ($newRanking && $newRanking != $oldRanking) { 
-            //     $ranks = Ranking::select('id')
-            //                     ->with(['rankingRewards' => function ($query) {
-            //                         $query->where('status', 'Active')
-            //                                 ->select('id', 'ranking_id', 'reward_type', 'bonus_point');
-            //                     }])
-            //                     ->where([
-            //                         ['reward', 'active'],
-            //                         ['min_amount', '<=', $newTotalSpending],
-            //                         ['min_amount', '>', $oldTotalSpending]
-            //                     ]) 
-            //                     ->orderBy('min_amount', 'asc') 
-            //                     ->get(); 
-
-            //     foreach ($ranks as $rank) { 
-            //         $rank->rankingRewards->each(function ($reward) use ($customer, $bonusPointRewards) {
-            //             CustomerReward::create([ 
-            //                 'customer_id' => $customer->id, 
-            //                 'ranking_reward_id' => $reward->id, 
-            //                 'status' => 'Active' 
-            //             ]);
-
-            //             if ($reward->reward_type === 'Bonus Point') {
-            //                 array_push($bonusPointRewards, $reward);
-            //             }
-            //         }); 
-            //     };
-            // };
-
-            // END GIVE ENTRY REWARD JOB 
-
-
-            // START GIVE BONUS POINT JOB 
-        //     // Log point history for earned points from completed order
-        //     PointHistory::create([ 
-        //         'product_id' => null, 
-        //         'payment_id' => $id, 
-        //         'type' => 'Earned', 
-        //         'point_type' => 'Order', 
-        //         'qty' => 0, 
-        //         'amount' => $totalPoints, 
-        //         'old_balance' => $oldPointBalance, 
-        //         'new_balance' => $newPointBalance, 
-        //         'customer_id' => $customer->id, 
-        //         'handled_by' => $request->user_id, 
-        //         'redemption_date' => now() 
-        //     ]);
-
-        //     // Log point history for earned bonus point entry reward
-        //     foreach ($bonusPointRewards as $key => $reward) {
-        //         $currentPoint = $customer->point;
-        //         $pointAfterBonus = $currentPoint + $reward['bonus_point'];
+                Bus::chain([
+                    new UpdateTier($customer->id, $newPointBalance, $newTotalSpending),
+                    new GiveEntryReward($oldRanking, $customer->id, $oldTotalSpending),
+                    new GiveBonusPoint($payment->id, $totalPoints, $oldPointBalance, $customer->id, $request->user_id)
+                ])->dispatch();
                 
-        //         PointHistory::create([ 
-        //             'product_id' => null, 
-        //             'payment_id' => null, 
-        //             'type' => 'Earned', 
-        //             'point_type' => 'Entry Reward', 
-        //             'qty' => 0, 
-        //             'amount' => $reward['bonus_point'], 
-        //             'old_balance' => $currentPoint, 
-        //             'new_balance' => $pointAfterBonus, 
-        //             'customer_id' => $customer->id, 
-        //             'handled_by' => $request->user_id, 
-        //             'redemption_date' => now() 
-        //         ]);
+                /* START PUTTING INTO UPDATE TIER JOB */
+                // Determine the new rank based on the new total spending 
+                $newRankingDetails = Ranking::where('min_amount', '<=', $newTotalSpending)
+                                    ->select('id', 'name')
+                                    ->orderBy('min_amount', 'desc')
+                                    ->first();
                 
-        //         // Update customer points and total spending
-        //         $customer->update(['point' => $pointAfterBonus]);
-        //         $customer->refresh();
+                $newRankingDetails->image = $newRankingDetails->getFirstMediaUrl('ranking');
 
-        //         $customerReward = CustomerReward::find($reward['id']);
-        //         $customerReward->update(['status' => 'Redeemed']);
-        //     }
-        };
+                /*// $newRanking = $newRankingDetails->value('id');
+
+                // // Update customer points and total spending
+                // $customer->update([
+                //     'point' => $newPointBalance,
+                //     'total_spending' => $newTotalSpending,
+                //     'ranking' => $newRanking
+                // ]);
+                // $customer->refresh();
+                // STOP PUTTING INTO UPDATE TIER JOB
+
+
+                // GIVE ENTRY REWARD JOB
+
+                // $bonusPointRewards = [];
+                // // Grant rewards for rank up 
+                // if ($newRanking && $newRanking != $oldRanking) { 
+                //     $ranks = Ranking::select('id')
+                //                     ->with(['rankingRewards' => function ($query) {
+                //                         $query->where('status', 'Active')
+                //                                 ->select('id', 'ranking_id', 'reward_type', 'bonus_point');
+                //                     }])
+                //                     ->where([
+                //                         ['reward', 'active'],
+                //                         ['min_amount', '<=', $newTotalSpending],
+                //                         ['min_amount', '>', $oldTotalSpending]
+                //                     ]) 
+                //                     ->orderBy('min_amount', 'asc') 
+                //                     ->get(); 
+
+                //     foreach ($ranks as $rank) { 
+                //         $rank->rankingRewards->each(function ($reward) use ($customer, $bonusPointRewards) {
+                //             CustomerReward::create([ 
+                //                 'customer_id' => $customer->id, 
+                //                 'ranking_reward_id' => $reward->id, 
+                //                 'status' => 'Active' 
+                //             ]);
+
+                //             if ($reward->reward_type === 'Bonus Point') {
+                //                 array_push($bonusPointRewards, $reward);
+                //             }
+                //         }); 
+                //     };
+                // };
+
+                // END GIVE ENTRY REWARD JOB 
+
+
+                // START GIVE BONUS POINT JOB 
+            //     // Log point history for earned points from completed order
+            //     PointHistory::create([ 
+            //         'product_id' => null, 
+            //         'payment_id' => $id, 
+            //         'type' => 'Earned', 
+            //         'point_type' => 'Order', 
+            //         'qty' => 0, 
+            //         'amount' => $totalPoints, 
+            //         'old_balance' => $oldPointBalance, 
+            //         'new_balance' => $newPointBalance, 
+            //         'customer_id' => $customer->id, 
+            //         'handled_by' => $request->user_id, 
+            //         'redemption_date' => now() 
+            //     ]);
+
+            //     // Log point history for earned bonus point entry reward
+            //     foreach ($bonusPointRewards as $key => $reward) {
+            //         $currentPoint = $customer->point;
+            //         $pointAfterBonus = $currentPoint + $reward['bonus_point'];
+                    
+            //         PointHistory::create([ 
+            //             'product_id' => null, 
+            //             'payment_id' => null, 
+            //             'type' => 'Earned', 
+            //             'point_type' => 'Entry Reward', 
+            //             'qty' => 0, 
+            //             'amount' => $reward['bonus_point'], 
+            //             'old_balance' => $currentPoint, 
+            //             'new_balance' => $pointAfterBonus, 
+            //             'customer_id' => $customer->id, 
+            //             'handled_by' => $request->user_id, 
+            //             'redemption_date' => now() 
+            //         ]);
+                    
+            //         // Update customer points and total spending
+            //         $customer->update(['point' => $pointAfterBonus]);
+            //         $customer->refresh();
+
+            //         $customerReward = CustomerReward::find($reward['id']);
+            //         $customerReward->update(['status' => 'Redeemed']);
+            //     }*/
+            };
+
+            // Update payment status
+            $payment->update([
+                'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+                'status' => 'Successful'
+            ]);
+
+            foreach ($request->payment_methods as $key => $payMethod) {
+                PaymentDetail::create([
+                    'payment_id' => $payment->id,
+                    'payment_method' => $payMethod['method'],
+                    'amount' => $payMethod['amount'],
+                ]);
+            };
+    
+            // Update the total amount of the order based on the payment's grandtotal
+            $order->update(['total_amount' => $grandTotal]);
+    
+            $order->orderTable->each(function ($tab) {
+                $tab->table->update(['status' => 'Pending Clearance']);
+                $tab->update(['status' => 'Pending Clearance']);
+            });
+        }
+
         /* END GIVE BONUS POINT JOB */
 
         // Record waiter earned commissions
         
-
-        // Update payment status
-        $payment->update([
-            'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
-            'status' => 'Successful'
-        ]);
-
-        // Update the total amount of the order based on the payment's grandtotal
-        $order->update(['total_amount' => $payment->grand_total]);
-
-        $order->orderTable->each(function ($tab) {
-            $tab->table->update(['status' => 'Pending Clearance']);
-            $tab->update(['status' => 'Pending Clearance']);
-        });
 
         // return response()->json($customer ? $newPointBalance : 'guest');
         return response()->json($customer ? ([
@@ -2946,7 +3024,8 @@ class OrderController extends Controller
                                     'orderItemSubitem.productItem:id,inventory_item_id',
                                     'orderItemSubitem.productItem.inventoryItem:id,item_name'
                                 ])
-                                ->find($validatedData['id']);
+                                ->where('id', $validatedData['id'])
+                                ->first();
 
         $targetItem->update([
             'qty' => $request->input('keptIn') === 'qty' ? round($validatedData['kept_amount'], 2) : 0.00,
@@ -3002,59 +3081,317 @@ class OrderController extends Controller
     }
 
     public function mergeTable(Request $request) {
-        // dd($request->all());
-        $request->validate([
-            'customer_id' => ['required'],
-            'id' => ['required', 'integer'],
-            'tables' => ['required', 'array'],
+        $validatedData = $request->validate([
+            'customer_id' => 'nullable',
+            'id' => 'required|integer',
+            'tables' => 'required|array',
         ]);
 
-        // dd($request->all());
+        $tables = collect();
 
-        // calculate total pax for all the merged tables
-        $totalPax = collect($request['tables'])
-                    ->flatMap(fn($table) => $table['order_tables'] ?? [])
-                    ->sum(fn($orderTable) => (int)($orderTable['pax'] ?? 0));
-
-        // calculate total sum for all the merged tables
-        $totalAmount = collect($request['tables'])
-                    ->flatMap(fn($table) => $table['order_tables'] ?? [])
-                    ->sum(fn($orderTable) => (float)($orderTable['order']['total_amount'] ?? 0));
+        foreach ($validatedData['tables'] as $key => $table) {
+            $tables->push($table);
+        }
         
-        //step 1: create new order
-        $newOrder = Order::create([
-            'order_no' => RunningNumberService::getID('order'),
-            'pax' => $totalPax, //combined pax
-            'user_id' => auth()->user()->id,
-            'amount' => $totalAmount,
-            'total_amount' => $totalAmount,
-            'status' => 'Order Completed',
-        ]);
+        $filteredTables = $tables->filter(fn ($table) => $table['order_id']);
+        $hasMultipleOrderId = $filteredTables->unique('order_id')->count() > 1;
 
-        //step 2: update listed tables to order merged & create new order table
-        foreach($request['tables'] as $tables){
-            foreach($tables['order_tables'] as $orderTable){
-                $mergingTable = OrderTable::find($orderTable['id']);
-                $mergingTable->update(['status' => 'Order Merged']);
-                $mergingTable->save();
-
-                
-            }
-
-            OrderTable::create([
-                'table_id' => $tables['id'],
-                'pax' => $totalPax,
-                'user_id' => auth()->user()->id,
-                'status' => 'All Order Served',
-                'order_id' => $newOrder->id,                
-            ]);
+        if ($filteredTables->unique('order_id')->count() == 1) {
+            $currentTableFiltered = $filteredTables->first(fn ($table) => $table['order_id']);
+            $currentOrderId = $currentTableFiltered['order_id'];
         }
 
-        //step 3: transfer all the order item to this new order (update order_id)
+        // Get the latest order tables and calculate totals in a single pass
+        $totalPax = 0;
+        $totalAmount = 0;
+        $statusArr = collect();
 
+        foreach ($request['tables'] as $table) {
+            if (empty($table['order_tables'])) {
+                continue;
+            }
 
-        //step 4: update all tables' status
+            // Find the latest order_table without creating intermediate collections
+            $latestOrderTable = null;
+            $latestTimestamp = null;
+            
+            foreach ($table['order_tables'] as $orderTable) {
+                $timestamp = $orderTable['created_at'] ?? 0;
+                if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
+                    $latestTimestamp = $timestamp;
+                    $latestOrderTable = $orderTable;
+                }
+            }
+            
+            if ($latestOrderTable) {
+                $totalPax += (int)($latestOrderTable['pax'] ?? 0);
+                $totalAmount += (float)($latestOrderTable['order']['total_amount'] ?? 0);
 
+                $statusArr->push(collect($latestOrderTable['order']['order_items'])->pluck('status')->unique());
+            }
+        }
+
+        $orderStatus = 'Pending Serve';
+        $orderTableStatus = 'Pending Order';
+    
+        if ($statusArr->contains('Pending Serve')) {
+            $orderStatus = 'Pending Serve';
+            $orderTableStatus = 'Order Placed';
+        } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+            $orderStatus = 'Order Served';
+            $orderTableStatus = 'All Order Served';
+        } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+            $orderStatus = 'Order Served';
+            $orderTableStatus = 'All Order Served';
+        }
+
+        //step 1: create new order
+        if ($hasMultipleOrderId) {
+            $newOrder = Order::create([
+                'order_no' => RunningNumberService::getID('order'),
+                'pax' => $totalPax,
+                'user_id' => auth()->user()->id,
+                'amount' => $totalAmount,
+                'total_amount' => $totalAmount,
+                'status' => $orderStatus,
+            ]);
+
+            $uniqueOrderIdArray = $filteredTables->unique('order_id')->pluck('order_id');
+
+            $uniqueOrderIdArray->each(function ($uniqueOrder) use ($newOrder) {
+                $tempOrder = Order::with(['orderTable' => fn ($query) => $query->where('status' , 'Pending Clearance')])
+                                    ->find($uniqueOrder);
+
+                $tempOrder->update(['status' => 'Order Merged']);
+                // $tempOrder->orderTable->update(['order_id', $newOrder->id]);
+            });
+        }
+
+        $designatedOrderId = isset($currentOrderId) ? $currentOrderId : $newOrder->id;
+
+        //step 2: update listed tables to order merged & create new order table
+        foreach($request['tables'] as $table){
+            $currentTable = Table::find($table['id']);
+            $currentTable->update([
+                'order_id' => $designatedOrderId,
+                'status' => $orderTableStatus
+            ]);
+
+            // Find the latest order_table without creating intermediate collections
+            $newestOrderTable = null;
+            $newestTimestamp = null;
+            
+            foreach ($table['order_tables'] as $orderTable) {
+                $timestamp = $orderTable['created_at'] ?? 0;
+                if ($newestTimestamp === null || $timestamp > $newestTimestamp) {
+                    $newestTimestamp = $timestamp;
+                    $newestOrderTable = $orderTable;
+                }
+            }
+
+            if (empty($table['order_tables']) || $newestOrderTable['status'] === 'Pending Clearance') {
+                OrderTable::create([
+                    'table_id' => $table['id'],
+                    'pax' => $totalPax,
+                    'user_id' => auth()->user()->id,
+                    'status' => $orderTableStatus,
+                    'order_id' => $designatedOrderId,                
+                ]);
+                
+            } else {
+                $mergingTable = OrderTable::find($newestOrderTable['id']);
+                $mergingTable->update([
+                    'status' => $orderTableStatus,
+                    'order_id' => $designatedOrderId
+                ]);
+                $mergingTable->save();
+
+                $orderItems = collect($newestOrderTable['order']['order_items']);
+
+                $orderItems->each(function ($item) use ($designatedOrderId) {
+                    $orderItem = OrderItem::find($item['id']);
+                    $orderItem->update(['order_id' => $designatedOrderId]);
+                    $orderItem->refresh();
+                });
+            }
+        }
+
+        // Passing back updated/new order details
+        $designatedOrder = Order::with([
+                    'orderItems.product.discount:id,name',
+                    'orderItems.product.productItems.inventoryItem',
+                    'orderItems.productDiscount:id,discount_id,price_before,price_after',
+                    'orderItems.productDiscount.discount:id,name',
+                    'orderItems.handledBy:id,full_name',
+                    'orderItems.subItems.keepItems.keepHistories' => function ($query) {
+                        $query->where('status', 'Keep')->latest()->offset(1)->limit(100);
+                    },
+                    'orderItems.subItems.keepItems.oldestKeepHistory' => function ($query) {
+                        $query->where('status', 'Keep');
+                    },
+                    'orderItems.keepItem:id,qty,cm,remark,expired_from,expired_to', 
+                    'orderItems.keepItem.oldestKeepHistory:id,keep_item_id,qty,cm,status',
+                    'orderItems.keepItem.keepHistories' => function ($query) {
+                        $query->where('status', 'Keep')->oldest()->offset(1)->limit(100);
+                    },
+                    'waiter:id,full_name',
+                    'customer:id,full_name,email,phone,point',
+                    'orderTable:id,order_id,table_id,status',
+                    'orderTable.table:id,table_no',
+                    'payment:id,order_id',
+                    'voucher:id,reward_type,discount'
+                ])
+                ->find($designatedOrderId);
+
+        if ($designatedOrder->orderItems) {
+            foreach ($designatedOrder->orderItems as $orderItem) {
+                $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
+                $orderItem->handledBy->image = $orderItem->handledBy->getFirstMediaUrl('user');
+                $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+                unset($orderItem->product->discountItems);
+            }
+        }
+
+        if ($designatedOrder->customer) {
+            $designatedOrder->customer->image = $designatedOrder->customer->getFirstMediaUrl('customer');
+        }
+
+        return response()->json($designatedOrder);
+    }
+
+    public function splitTable(Request $request) {
+        $validatedData = $request->validate([
+            'customer_id' => 'nullable',
+            'id' => 'required|integer',
+            'tables' => 'required|array',
+        ]);
+
+        $tables = collect();
+
+        foreach ($validatedData['tables'] as $key => $table) {
+            $tables->push($table);
+        }
+        
+        $filteredTables = $tables->filter(fn ($table) => $table['order_id']);
+        $hasMultipleOrderId = $filteredTables->unique('order_id')->count() > 1;
+
+        if ($filteredTables->unique('order_id')->count() == 1) {
+            $currentTableFiltered = $filteredTables->first(fn ($table) => $table['order_id']);
+            $currentOrderId = $currentTableFiltered['order_id'];
+        }
+
+        // Get the latest order tables and calculate totals in a single pass
+        $totalPax = 0;
+        $totalAmount = 0;
+        $statusArr = collect();
+
+        foreach ($request['tables'] as $table) {
+            if (empty($table['order_tables'])) {
+                continue;
+            }
+
+            // Find the latest order_table without creating intermediate collections
+            $latestOrderTable = null;
+            $latestTimestamp = null;
+            
+            foreach ($table['order_tables'] as $orderTable) {
+                $timestamp = $orderTable['created_at'] ?? 0;
+                if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
+                    $latestTimestamp = $timestamp;
+                    $latestOrderTable = $orderTable;
+                }
+            }
+            
+            if ($latestOrderTable) {
+                $totalPax += (int)($latestOrderTable['pax'] ?? 0);
+                $totalAmount += (float)($latestOrderTable['order']['total_amount'] ?? 0);
+
+                $statusArr->push(collect($latestOrderTable['order']['order_items'])->pluck('status')->unique());
+            }
+        }
+
+        $orderStatus = 'Pending Serve';
+        $orderTableStatus = 'Pending Order';
+    
+        if ($statusArr->contains('Pending Serve')) {
+            $orderStatus = 'Pending Serve';
+            $orderTableStatus = 'Order Placed';
+        } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+            $orderStatus = 'Order Served';
+            $orderTableStatus = 'All Order Served';
+        } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+            $orderStatus = 'Order Served';
+            $orderTableStatus = 'All Order Served';
+        }
+
+        //step 1: create new order
+        if ($hasMultipleOrderId) {
+            $newOrder = Order::create([
+                'order_no' => RunningNumberService::getID('order'),
+                'pax' => $totalPax,
+                'user_id' => auth()->user()->id,
+                'amount' => $totalAmount,
+                'total_amount' => $totalAmount,
+                'status' => $orderStatus,
+            ]);
+
+            $uniqueOrderIdArray = $filteredTables->unique('order_id')->pluck('order_id');
+
+            $uniqueOrderIdArray->each(function ($uniqueOrder) {
+                $tempOrder = Order::find($uniqueOrder);
+                $tempOrder->update(['status' => 'Order Merged']);
+            });
+        }
+
+        $designatedOrderId = isset($currentOrderId) ? $currentOrderId : $newOrder;
+
+        //step 2: update listed tables to order merged & create new order table
+        foreach($request['tables'] as $table){
+            $currentTable = Table::find($table['id']);
+            $currentTable->update([
+                'order_id' => $designatedOrderId,
+                'status' => $orderTableStatus
+            ]);
+
+            // Find the latest order_table without creating intermediate collections
+            $newestOrderTable = null;
+            $newestTimestamp = null;
+            
+            foreach ($table['order_tables'] as $orderTable) {
+                $timestamp = $orderTable['created_at'] ?? 0;
+                if ($newestTimestamp === null || $timestamp > $newestTimestamp) {
+                    $newestTimestamp = $timestamp;
+                    $newestOrderTable = $orderTable;
+                }
+            }
+
+            if (empty($table['order_tables']) || $newestOrderTable['status'] === 'Pending Clearance') {
+                OrderTable::create([
+                    'table_id' => $table['id'],
+                    'pax' => $totalPax,
+                    'user_id' => auth()->user()->id,
+                    'status' => $orderTableStatus,
+                    'order_id' => $designatedOrderId,                
+                ]);
+                
+            } else {
+                $mergingTable = OrderTable::find($newestOrderTable['id']);
+                $mergingTable->update(['status' => $orderTableStatus]);
+                $mergingTable->save();
+
+                $orderItems = collect($newestOrderTable['order']['order_items']);
+
+                $orderItems->each(function ($item) use ($designatedOrderId) {
+                    $orderItem = OrderItem::find($item['id']);
+                    $orderItem->update(['order_id' => $designatedOrderId]);
+                    $orderItem->refresh();
+                });
+            }
+        }
+
+        $designatedOrder = Order::with(['orderTable.table', 'orderItems'])->find($designatedOrderId);
+
+        return response()->json($designatedOrder);
     }
 
     private function getAllCustomers() {

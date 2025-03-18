@@ -508,13 +508,13 @@ onMounted(() => {
                         <UndetectableIllus class="size-44" />
                         <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                     </template>
-                    <template #name="taxes">
+                    <!-- <template #name="taxes">
                         <TextInput 
                             :inputName="'name_' + taxes.id"
                             :errorMessage="taxForm.errors ? taxForm.errors['name.'+taxes.id] : null"
                             v-model="taxForm.taxes.find((tax) => tax.id === taxes.id).name"
                         />
-                        </template>
+                    </template> -->
                     <template #value="taxes">
                         <TextInput 
                             :inputName="'percentage_' + taxes.id"

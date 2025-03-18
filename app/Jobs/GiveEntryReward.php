@@ -28,6 +28,7 @@ class GiveEntryReward implements ShouldQueue
         $this->oldRanking = $oldRanking;
         $this->customerId = $customerId;
         $this->oldSpending = $oldSpending;
+        $this->queue = 'give-entry-reward';
     }
 
     /**

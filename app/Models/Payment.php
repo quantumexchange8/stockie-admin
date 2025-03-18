@@ -24,12 +24,16 @@ class Payment extends Model
         'receipt_start_date',
         'receipt_end_date',
         'total_amount',
-        'grand_total',
         'rounding',
         'sst_amount',
         'service_tax_amount',
         'discount_id',
         'discount_amount',
+        'bill_discounts',
+        'bill_discount_total',
+        'grand_total',
+        'amount_paid',
+        'change',
         'point_earned',
         'pax',
         'status',
@@ -37,7 +41,10 @@ class Payment extends Model
         'handled_by',
     ];
 
-    protected $casts = ['table_id' => 'json'];
+    protected $casts = [
+        'table_id' => 'json',
+        'bill_discounts' => 'json'
+    ];
 
     public function getActivitylogOptions(): LogOptions
     {

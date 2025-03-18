@@ -18,7 +18,7 @@ class PaymentDetail extends Model
     protected $fillable = [
         'payment_id',
         'payment_method',
-        'shift_amount'
+        'amount'
     ];
 
     public function getActivitylogOptions(): LogOptions

@@ -20,12 +20,16 @@ return new class extends Migration
             $table->dateTime('receipt_start_date');
             $table->dateTime('receipt_end_date');
             $table->decimal('total_amount', 13, 2);
-            $table->decimal('grand_total', 13, 2);
             $table->decimal('rounding', 5, 2);
             $table->decimal('sst_amount', 13, 2);
             $table->decimal('service_tax_amount', 13, 2);
             $table->unsignedBigInteger('discount_id')->nullable()->default(NULL);
             $table->decimal('discount_amount', 13, 2);
+            $table->json('bill_discounts')->nullable()->default(NULL);
+            $table->decimal('bill_discount_total', 13, 2)->default(0.00);
+            $table->decimal('grand_total', 13, 2);
+            $table->decimal('amount_paid', 13, 2);
+            $table->decimal('change', 13, 2); 
             $table->integer('point_earned');
             $table->string('pax');
             $table->string('status');

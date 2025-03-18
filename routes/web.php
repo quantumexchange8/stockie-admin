@@ -255,12 +255,12 @@ Route::middleware('auth')->group(function () {
     /******** Order Management **********/
     Route::prefix('order-management')->middleware([CheckPermission::class . ':order-management'])->group(function(){
         Route::get('/orders', [OrderController::class, 'index'])->name('orders');
-        Route::get('/orders/getOrderPaymentDetails{id}', [OrderController::class, 'getOrderPaymentDetails'])->name('orders.getOrderPaymentDetails');
+        // Route::get('/orders/getOrderPaymentDetails{id}', [OrderController::class, 'getOrderPaymentDetails'])->name('orders.getOrderPaymentDetails');
         Route::get('/orders/getOccupiedTablePayments{id}', [OrderController::class, 'getOccupiedTablePayments'])->name('orders.getOccupiedTablePayments');
         Route::put('/orders/cancelOrder/{id}', [OrderController::class, 'cancelOrder'])->name('orders.cancel');
         Route::put('/orders/updateOrderStatus/{id}', [OrderController::class, 'updateOrderStatus'])->name('orders.complete');
         Route::put('/orders/updateOrderCustomer/{data}', [OrderController::class, 'updateOrderCustomer'])->name('orders.updateOrderCustomer');
-        Route::put('/orders/updateOrderPayment/{id}', [OrderController::class, 'updateOrderPayment'])->name('orders.updateOrderPayment');
+        Route::post('/orders/updateOrderPayment', [OrderController::class, 'updateOrderPayment'])->name('orders.updateOrderPayment');
         Route::put('/orders/removeOrderVoucher/{id}', [OrderController::class, 'removeOrderVoucher'])->name('orders.removeOrderVoucher');
         Route::get('/orders/getTableKeepItem/{id}', [OrderController::class, 'getTableKeepItem'])->name('orders.getTableKeepItem');
 
@@ -295,6 +295,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/getCurrentTableOrder/{id}', [OrderController::class, 'getCurrentTableOrder'])->name('orders.getCurrentTableOrder');
         Route::get('/getOrderHistories', [OrderController::class, 'getOrderHistories'])->name('orders.getOrderHistories');
         Route::get('/getAllCategories', [OrderController::class, 'getAllCategories'])->name('orders.getAllCategories');
+        Route::get('/getAllTaxes', [OrderController::class, 'getAllTaxes'])->name('orders.getAllTaxes');
 
         //Order's keep item
         Route::put('/editKeptItemDetail', [OrderController:: class, 'editKeptItemDetail'])->name('editKeptItemDetail');

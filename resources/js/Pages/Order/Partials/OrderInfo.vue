@@ -19,6 +19,7 @@ import KeepItem from './KeepItem.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import MergeTableForm from './MergeTableForm.vue';
 import TransferTableForm from './TransferTableForm.vue';
+import SplitTablesForm from './SplitTablesForm.vue';
 
 const props = defineProps({
     errors: Object,
@@ -58,6 +59,7 @@ const pendingServeItems = ref([]);
 const actionType = ref();
 const op = ref(null);
 const transferType = ref('');
+const splitTablesMode = ref(false);
 
 const computedOrder = computed(() => {
     if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') return [];
@@ -415,6 +417,14 @@ const cancelOrderIsDisabled = computed(() => {
    return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || props.selectedTable.status === 'Pending Clearance';
 });
 
+const tableIsMerged = computed(() => {
+    return order.value
+        ? [...new Set(
+                order.value.order_table?.flatMap((table) => table.table_id) ?? null
+            )].length > 1
+        : false;
+})
+
 watch(
     () => order.value.customer_id,
     async (newCustomerId) => {
@@ -466,9 +476,10 @@ watch(order.value, () => {
         </template>
         <template v-else>
             <MakePaymentForm 
-                :order="order" 
+                :currentOrder="order" 
                 :selectedTable="selectedTable"
                 @fetchZones="$emit('fetchZones')"
+                @fetchOrderDetails="fetchOrderDetails"
                 @fetchPendingServe="fetchPendingServe"
                 @update:customer-point="customer.point = $event"
                 @update:customer-rank="customer.rank = $event"
@@ -509,9 +520,9 @@ watch(order.value, () => {
                 <KeepItemIcon class="text-primary-950 size-6" />
             </div>
             
-            <div class="relative flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="">
+            <div class="relative flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="showMergeTableForm">
                 <MergedIcon class="size-6" :class="props.selectedTable.order_tables.length > 1 ? 'text-primary-800' : 'text-primary-950'" />
-                <Checkbox :checked="true" class="absolute size-4 top-1.5 right-1.5" v-if="props.selectedTable.order_tables.length > 1" />
+                <Checkbox v-model:checked="splitTablesMode" @click="$event.stopPropagation()" class="absolute size-4 top-1.5 right-1.5" v-if="tableIsMerged" />
             </div>
 
             <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="showTransferOptionForm()" >
@@ -620,10 +631,11 @@ watch(order.value, () => {
                         </Button>
                     </div>
                     <Button
+                        type="button"
                         size="lg"
                         :disabled="!isOrderCompleted"
                         class="w-full"
-                        @click="form.action_type = 'complete'"
+                        @click="openPaymentDrawer"
                     >
                         Make Payment
                     </Button>
@@ -775,18 +787,29 @@ watch(order.value, () => {
     </Modal> -->
 
     <Modal
-        :title="'Merge with'"
+        :title="splitTablesMode ? 'Merged table' : 'Merge with'"
         :maxWidth="'xl'" 
         :closeable="true"
         :show="mergeTableIsOpen"
         @close="hideMergeTableForm"
     >
-        <MergeTableForm 
+        <SplitTablesForm 
+            v-if="splitTablesMode"
             :currentOrderTable="currentOrderTable"
             :currentOrderCustomer="order.customer"
+            :currentOrder="order"
             @close="hideMergeTableForm"
             @closeDrawer="$emit('close')"
-            @fetchZones="$emit('fetchZones')"
+            @closeOrderDetails="closeOrderDetails"
+        />
+        <MergeTableForm 
+            v-else
+            :currentOrderTable="currentOrderTable"
+            :currentOrderCustomer="order.customer"
+            :currentOrder="order"
+            @close="hideMergeTableForm"
+            @closeDrawer="$emit('close')"
+            @closeOrderDetails="closeOrderDetails"
         />
     </Modal>
 

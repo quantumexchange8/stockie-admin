@@ -31,6 +31,7 @@ class GiveBonusPoint implements ShouldQueue
         $this->oldPoint = $oldPoint;
         $this->customerId = $customerId;
         $this->handledBy = $handledBy;
+        $this->queue = 'give-bonus-point';
     }
 
     /**

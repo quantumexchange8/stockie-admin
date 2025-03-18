@@ -20,9 +20,14 @@ const props = defineProps({
     currentOrderCustomer: {
         type: Object,
         default: () => {},
+    },
+    currentOrder: {
+        type: Object,
+        default: () => {},
     }
 })
 
+const order = ref(props.currentOrder);
 const zones = ref('');
 const tabs = ref([]);
 const isLoading = ref(false);
@@ -35,7 +40,7 @@ const checkedIn = ref([]);
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
 
-const emit = defineEmits(['close', 'closeDrawer', 'fetchZones']);
+const emit = defineEmits(['close', 'closeDrawer', 'closeOrderDetails']);
 
 const form = useForm({
     id: props.currentOrderTable.id,
@@ -93,6 +98,7 @@ const getAllZones = async() => {
     try {
         const response = await axios.get(route('orders.getAllZones'));
         zones.value = response.data;
+
     } catch(error) {
         console.error(error)
     } finally {
@@ -196,25 +202,42 @@ const isMerged = (targetTable) => {
     );
 };
 
-const mergeTable = () => {
-    // form.customer_id = isSelectedCustomer.value.id;
-    // const currentTable = zones.value.flatMap((zone) => zone.tables).find((table) => table.id === props.currentOrderTable.id);
-    // form.tables.push(currentTable);
+const mergeTable = async () => {
+    form.customer_id = isSelectedCustomer.value?.id;
+    
+    const tables = zones.value.flatMap((zone) => zone.tables);
+
+    tables.forEach((table) => {
+        if (order.value.order_table.some((orderTable) => orderTable.table_id === table.id)) {
+            if (!form.tables.find((formTable) => formTable.id === table.id)) {
+                form.tables.push(table);
+            }
+        }
+    })
+    
+    try {
+        const response = await axios.post('/order-management/orders/mergeTable', form);
+
+        setTimeout(() => {
+            showMessage({
+                severity: 'success',
+                summary: `Selected table has been successfully merged with '${props.currentOrderTable.table_no}'.`
+            })
+        }, 200);
+
+        form.reset();
+        emit('closeOrderDetails');
+        closeConfirm();
+        emit('close');
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
     // form.post(route('orders.mergeTable'), {
     //     preserveScroll: true,
     //     preserveState: true,
     //     onSuccess: () => {
-    //         setTimeout(() => {
-    //             showMessage({
-    //                 severity: 'success',
-    //                 summary: `Selected table has been successfully merged with '${props.currentOrderTable.table_no}'.`
-    //             })
-    //         }, 200);
-    //         form.reset();
-    //         emit('fetchZones');
-    //         closeConfirm();
-    //         emit('close');
-    //         emit('closeDrawer');
     //     }
     // })
 }
@@ -230,7 +253,8 @@ const openConfirm = () => {
     );
 
     isSelectedCustomer.value = checkedIn.value.length > 0 ? checkedIn.value[0] : null;
-    if (checkedIn.value.length > 0) {
+    // console.log(isSelectedCustomer.value);
+    if (checkedIn.value.length > 1) {
         isConfirmShow.value = true;
     } else {
         mergeTable();
@@ -243,6 +267,8 @@ const closeConfirm = () => {
 }
 
 watch(() => zones.value, populateTabs, { immediate: true });
+
+watch(() => props.currentOrder, (newValue) => (order.value = newValue));
 
 onMounted(() => {
     getAllZones();
@@ -270,13 +296,13 @@ onMounted(() => {
             </div>
             <TabView :tabs="tabs" v-if="zones.length">
                 <template #all>
-                    <div class="flex flex-col px-6 items-start gap-6 self-stretch">
+                    <div class="flex flex-col px-6 items-start gap-6 self-stretch max-h-[calc(100dvh-28.4rem)] overflow-auto scrollbar-webkit scrollbar-thin">
                         <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap">
                         <template v-for="zone in zones">
                             <template v-for="table in zone.tables">
                                 <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative" 
                                     :class="getTableClasses(table).state.value"
-                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) ? '' : addToMerged(table)"
+                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) ? '' : addToMerged(table)"
                                 >
                                     <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                     <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
@@ -285,7 +311,7 @@ onMounted(() => {
                                     <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
                                     <Checkbox 
                                         :checked="!!form.tables.find((formTable) => formTable.id === table.id)"
-                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table)"
+                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id)"
                                         class="absolute top-[11px] right-[12px]"
                                     />
                                     <MergedIcon class="text-white size-5 absolute left-2 top-2" v-if="isMerged(table)" />
@@ -300,13 +326,13 @@ onMounted(() => {
                     :key="tab"
                     v-slot:[tab]
                 >
-                    <div class="flex flex-col px-6 items-start gap-6 self-stretch">
+                    <div class="flex flex-col px-6 items-start gap-6 self-stretch max-h-[calc(100dvh-28.4rem)] overflow-auto scrollbar-webkit scrollbar-thin">
                         <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap">
                         <template v-for="zone in zones.filter(zone => zone.text.toLowerCase().replace(/[/\s_]+/g, '-') === tab)">
                             <template v-for="table in zone.tables">
                                 <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative" 
                                     :class="getTableClasses(table).state.value"
-                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) ? '' : addToMerged(table)"
+                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) ? '' : addToMerged(table)"
                                 >
                                     <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                     <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
@@ -315,7 +341,7 @@ onMounted(() => {
                                     <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
                                     <Checkbox 
                                         :checked="!!form.tables.find((formTable) => formTable.id === table.id)"
-                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table)"
+                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id)"
                                         class="absolute top-[11px] right-[12px]"
                                     />
                                     <MergedIcon class="text-white size-5 absolute left-2 top-2" v-if="isMerged(table)" />

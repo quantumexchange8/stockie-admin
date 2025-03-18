@@ -14,13 +14,17 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
     orderId: Number,
+    origin: {
+        type: String,
+        default: 'detail'
+    },
     customers: {
         type: Array,
         default: () => {},
     }
     
 })
-const emit = defineEmits(['closeModal', 'isDirty', 'closeOrderDetails']);
+const emit = defineEmits(['closeModal', 'isDirty', 'closeOrderDetails', 'update:order-customer']);
 const { formatPhone } = usePhoneUtils();
 
 const initialCustomerList = ref([]);
@@ -54,6 +58,11 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
+            if (props.origin === 'pay-bill') {
+                const updatedCustomer = initialCustomerList.value.find((customer) => customer.id === selectedCustomer.value);
+                emit('update:order-customer', updatedCustomer);
+            }
+
             form.reset();
             emit('closeOrderDetails');
             emit('closeModal', 'leave');
@@ -178,6 +187,7 @@ watch(
                     </Button>
 
                     <Button
+                        v-if="props.origin === 'detail'"
                         :type="'button'"
                         :variant="'secondary'"
                         :size="'lg'"
@@ -185,9 +195,19 @@ watch(
                     >
                         Create New
                     </Button>
+
+                    <Button
+                        v-if="props.origin === 'pay-bill'"
+                        :variant="'primary'"
+                        :size="'lg'"
+                        :disabled="!selectedCustomer || form.processing"
+                    >
+                        Confirm
+                    </Button>
                 </div>
 
                 <Button
+                    v-if="props.origin === 'detail'"
                     :variant="'primary'"
                     :size="'lg'"
                     :disabled="!selectedCustomer || form.processing"

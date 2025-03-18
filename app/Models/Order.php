@@ -115,4 +115,12 @@ class Order extends Model
     {
         return $this->hasMany(SaleHistory::class, 'order_id');
     }
+
+    /**
+     * Get the table of the order.
+     */
+    public function table(): HasMany
+    {
+        return $this->hasMany(Table::class, 'order_id');
+    }
 }

@@ -41,4 +41,13 @@ class Table extends Model
     {
         return $this->hasMany(OrderTable::class, 'table_id');
     }
+
+    /**
+     * Order Model
+     * Get the order of the table.
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
 }

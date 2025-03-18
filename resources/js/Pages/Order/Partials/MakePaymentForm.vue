@@ -5,10 +5,12 @@ import { onMounted, ref, computed, watch } from 'vue';
 import Button from '@/Components/Button.vue';
 import { useCustomToast } from '@/Composables/index.js';
 import { EmptyProfilePic } from '@/Components/Icons/solid';
+import PayBillForm from './PayBillForm.vue';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     selectedTable: Object,
-    order: Object
+    currentOrder: Object
 })
 
 const page = usePage();
@@ -16,22 +18,24 @@ const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones', 'update:customer-point', 'update:customer-rank', 'fetchPendingServe']);
+const emit = defineEmits(['close', 'fetchZones', 'update:customer-point', 'update:customer-rank', 'fetchPendingServe', 'fetchOrderDetails']);
 
-const order = ref(props.order);
-const paymentDetails = ref({});
+const order = ref(props.currentOrder);
+// const paymentDetails = ref({});
 const taxes = ref([]);
+const payBillFormIsOpen = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const form = useForm({
     user_id: userId.value,
-    order_id: props.order.id,
+    order_id: props.currentOrder.id,
 });
 
-const fetchOrderDetails = async () => {
+const fetchTaxes = async () => {
     try {
-        const response = await axios.get(route('orders.getOrderPaymentDetails', props.order.id));
-        paymentDetails.value = response.data.payment_details;
-        taxes.value = response.data.taxes;
+        const response = await axios.get(route('orders.getAllTaxes'));
+        taxes.value = response.data;
     } catch (error) {
         console.error(error);
     } finally {
@@ -39,7 +43,35 @@ const fetchOrderDetails = async () => {
     }
 };
 
-onMounted(() => fetchOrderDetails());
+onMounted(() => fetchTaxes());
+
+const openModal = () => {
+    isDirty.value = false;
+    payBillFormIsOpen.value = true;
+}
+
+const closeModal = (status) => {
+    switch(status) {
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                payBillFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            payBillFormIsOpen.value = false;
+
+            break;
+        }
+    }
+}
 
 const formSubmit = async () => { 
     // form.put(route('orders.updateOrderPayment', paymentDetails.value.id), {
@@ -66,47 +98,101 @@ const formSubmit = async () => {
     //     }
     // })
 
-    try {
-        const response = await axios.put(`/order-management/orders/updateOrderPayment/${paymentDetails.value.id}`, form);
-        let customerPointBalance = response.data.newPointBalance;
-        let customerRanking = response.data.newRanking;
+    // MOVE TO PAY BILL FORM CONFIRM ACTION BUTTON
+    // try {
+    //     const response = await axios.put(`/order-management/orders/updateOrderPayment/${paymentDetails.value.id}`, form);
+    //     let customerPointBalance = response.data.newPointBalance;
+    //     let customerRanking = response.data.newRanking;
         
-        setTimeout(() => {
-            showMessage({ 
-                severity: 'success',
-                summary: 'Payment Completed.',
-            });
-        }, 200);
-        form.reset();
-        emit('close', true);
-        emit('fetchZones');
-        emit('fetchPendingServe');
-        if (customerPointBalance !== undefined) emit('update:customer-point', customerPointBalance);
-        if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
-    } catch (error) {
-        console.error(error);
-        setTimeout(() => {
-                showMessage({ 
-                    severity: 'error',
-                    summary: 'Payment Unsuccessful.',
-                });
-            }, 200);
-    } finally {
+    //     setTimeout(() => {
+    //         showMessage({ 
+    //             severity: 'success',
+    //             summary: 'Payment Completed.',
+    //         });
+    //     }, 200);
+    //     form.reset();
+    //     emit('close', true);
+    //     emit('fetchZones');
+    //     emit('fetchPendingServe');
+    //     if (customerPointBalance !== undefined) emit('update:customer-point', customerPointBalance);
+    //     if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
+    // } catch (error) {
+    //     console.error(error);
+    //     setTimeout(() => {
+    //             showMessage({ 
+    //                 severity: 'error',
+    //                 summary: 'Payment Unsuccessful.',
+    //             });
+    //         }, 200);
+    // } finally {
 
-    }
+    // }
 };
 
-// const sstAmount = computed(() => {
-//     return (parseFloat(order.value.amount ?? 0) * (6 / 100));
-// });
+const sstAmount = computed(() => {
+    const sstTax = Object.keys(taxes.value).length > 0 ? taxes.value['SST'] : 0;
+    const result = (parseFloat(order.value.amount ?? 0) * (sstTax / 100)) ?? 0;
 
-// const serviceChargeAmount = computed(() => {
-//     return (parseFloat(order.value.amount ?? 0) * (10 / 100)) ?? 0.00;
-// });
+    return result.toFixed(2);
+});
 
-// const totalEarnedPoints = computed(() => {
-//     return order.value.order_items.filter((item) => item.status === 'Served').reduce((total, item) => total + item.point_earned, 0) ?? 0.00;
-// });
+const serviceTaxAmount = computed(() => {
+    const serviceTax = Object.keys(taxes.value).length > 0 ? taxes.value['Service Tax'] : 0;
+    const result = (parseFloat(order.value.amount ?? 0) * (serviceTax / 100)) ?? 0;
+
+    return result.toFixed(2);
+});
+
+const voucherDiscountedAmount = computed(() => {
+    if (!order.value.voucher) return 0.00;
+
+    const discount = order.value.voucher.discount;
+    const discountedAmount = order.value.voucher.reward_type === 'Discount (Percentage)'
+            ? order.value.amount * discount
+            : discount;
+
+    return parseFloat(discountedAmount).toFixed(2);
+
+});
+
+// Rounds off the amount based on the Malaysia Bank Negara rounding mechanism.
+const priceRounding = (amount) => {
+    // Get the decimal part in cents
+    let cents = Math.round((amount - Math.floor(amount)) * 100);
+
+    // Determine rounding based on the last digit of cents
+    let lastDigit = cents % 10;
+
+    if ([1, 2, 6, 7].includes(lastDigit)) {
+        // Round down to the nearest multiple of 5
+        cents = (cents - lastDigit) + (lastDigit < 5 ? 0 : 5);
+    } else if ([3, 4, 8, 9].includes(lastDigit)) {
+        // Round up to the nearest multiple of 5
+        cents = (cents + 5) - (lastDigit % 5);
+    }
+
+    // Calculate the final rounded amount
+    let roundedAmount = Math.floor(amount) + cents / 100;
+
+    return roundedAmount;
+};
+
+const grandTotalAmount = computed(() => {
+    const totalTaxableAmount = (Number(sstAmount.value) + Number(serviceTaxAmount.value)) ?? 0;
+    const voucherDiscountAmount = order.value.voucher ? voucherDiscountedAmount.value : 0.00;
+    const grandTotal = priceRounding(Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount);
+
+    return grandTotal.toFixed(2);
+});
+
+const roundingAmount = computed(() => {
+    const totalTaxableAmount = (Number(sstAmount.value) + Number(serviceTaxAmount.value)) ?? 0;
+    const voucherDiscountAmount = order.value.voucher ? voucherDiscountedAmount.value : 0.00;
+    const totalAmount = Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount;
+    const rounding = totalAmount - priceRounding(totalAmount);
+
+    return rounding.toFixed(2);
+});
 
 const getItemTypeName = (type) => {
     switch (type) {
@@ -124,7 +210,7 @@ const getItemTypeName = (type) => {
                 <div class="flex flex-col gap-y-4 items-start self-stretch">
                     <div class="flex flex-col py-2 gap-y-1 items-center self-stretch">
                         <p class="text-primary-900 text-md font-normal">Total Due</p>
-                        <p class="text-primary-900 text-[40px] font-bold">RM {{ parseFloat(paymentDetails.grand_total ?? 0).toFixed(2) }}</p>
+                        <p class="text-primary-900 text-[40px] font-bold">RM {{ grandTotalAmount }}</p>
                     </div>
 
                     <div class="flex flex-col gap-x-2 items-start self-stretch">
@@ -150,7 +236,7 @@ const getItemTypeName = (type) => {
                     </div>
                 </div>
                 <div class="w-full flex flex-col gap-y-3">
-                    <p class="text-grey-950 text-md font-bold">Bill #{{ paymentDetails.receipt_no }}</p>
+                    <p class="text-grey-950 text-md font-bold">Bill </p>
                     <div class="flex flex-col gap-y-3 items-start self-stretch">
                         <div class="flex flex-row items-center self-stretch gap-x-3">
                             <p class="w-8/12 text-grey-950 text-sm font-normal">Product Name & Quantity </p>
@@ -180,23 +266,23 @@ const getItemTypeName = (type) => {
                             <div class="flex flex-col gap-y-1 items-start self-stretch">
                                 <div class="flex flex-row justify-between items-start self-stretch">
                                     <p class="text-grey-900 text-base font-normal">Sub-total</p>
-                                    <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.total_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(order.amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="order.voucher">
                                     <p class="text-grey-900 text-base font-normal">Voucher Discount {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
-                                    <p class="text-grey-900 text-base font-bold">- RM {{ parseFloat(paymentDetails.discount_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-bold">- RM {{ voucherDiscountedAmount }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="taxes['SST'] && taxes['SST'] > 0">
                                     <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST']) }}%)</p>
-                                    <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.sst_amount).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-bold">RM {{ sstAmount }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="taxes['Service Tax']  && taxes['Service Tax'] > 0">
                                     <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax']) }}%)</p>
-                                    <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(paymentDetails.service_tax_amount).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-bold">RM {{ serviceTaxAmount }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch">
                                     <p class="text-grey-900 text-base font-normal">Rounding</p>
-                                    <p class="text-grey-900 text-base font-bold">{{ Math.sign(paymentDetails.rounding) === -1 ? '-' : '' }} RM {{ parseFloat(Math.abs(paymentDetails.rounding ?? 0)).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-bold">{{ Math.sign(roundingAmount) === -1 ? '-' : '' }} RM {{ Math.abs(roundingAmount).toFixed(2) }}</p>
                                 </div>
                             </div>
                         </div>
@@ -206,13 +292,45 @@ const getItemTypeName = (type) => {
 
             <div class="fixed bottom-0 w-full flex px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
                 <Button
+                    type="button"
                     size="lg"
-                    :disabled="form.processing || !paymentDetails.id"
+                    @click="openModal"
                 >
                     Pay this Bill
                 </Button>
             </div>
         </div>
     </form>
+
+    <Modal
+        :title="'Pay Bill'"
+        :maxWidth="'xl'" 
+        :closeable="true"
+        :show="payBillFormIsOpen"
+        @close="closeModal('close')"
+    >
+        <PayBillForm
+            :currentOrder="order"
+            :currentTable="selectedTable"
+            @update:order="order = $event"
+            @update:order-customer="order.customer = $event"
+            @close="closeModal"
+            @fetchZones="$emit('fetchZones')"
+            @fetchOrderDetails="$emit('fetchOrderDetails')"
+            @closeDrawer="$emit('close', true)"
+            @update:customer-point="$emit('update:customer-point', $event)"
+            @update:customer-rank="$emit('update:customer-rank', $event)"
+            @fetchPendingServe="$emit('fetchPendingServe')"
+            @isDirty="isDirty = $event"
+        />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal>
 </template>
     
