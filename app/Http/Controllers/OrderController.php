@@ -1885,6 +1885,8 @@ class OrderController extends Controller
 
         $statusArr = collect($order->orderTable->pluck('status')->unique());
         if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && ($statusArr->first() === 'All Order Served' || $statusArr->first() === 'Order Placed' || $statusArr->first() === 'Pending Order'))) {
+            $currentShiftTransaction = ShiftTransaction::openedShift();
+            
             $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
             $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
             $pointConversion = $settings->filter(fn($setting) => $setting['type'] === 'point')->first();
@@ -1911,6 +1913,11 @@ class OrderController extends Controller
             }
 
             $payment = Payment::create([
+                'transaction_id' => $currentShiftTransaction->id,
+                'order_id' => $order->id,
+                'table_id' => $order->orderTable->pluck('table.id'),
+                'receipt_no' => RunningNumberService::getID('payment'),
+                'receipt_start_date' => $order->created_at,
                 'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
                 'total_amount' => $subTotal,
                 'rounding' => $roundingDiff,
@@ -1924,15 +1931,10 @@ class OrderController extends Controller
                 'amount_paid' => $amountPaid,
                 'change' => $request->change,
                 'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
-                'customer_id' => $request->customer_id,
-                'handled_by' => $request->user_id,
-                'transaction_id' => null,
-                'order_id' => $order->id,
-                'table_id' => $order->orderTable->pluck('table.id'),
-                'receipt_no' => RunningNumberService::getID('payment'),
-                'receipt_start_date' => $order->created_at,
                 'pax' => $order->pax,
-                'status' => 'Pending'
+                'status' => 'Pending',
+                'customer_id' => $request->customer_id,
+                'handled_by' => $request->user_id
             ]);
 
             $order->refresh();
@@ -3151,6 +3153,7 @@ class OrderController extends Controller
                 'order_no' => RunningNumberService::getID('order'),
                 'pax' => $totalPax,
                 'user_id' => auth()->user()->id,
+                'customer_id' => $validatedData['customer_id'],
                 'amount' => $totalAmount,
                 'total_amount' => $totalAmount,
                 'status' => $orderStatus,
@@ -3159,11 +3162,27 @@ class OrderController extends Controller
             $uniqueOrderIdArray = $filteredTables->unique('order_id')->pluck('order_id');
 
             $uniqueOrderIdArray->each(function ($uniqueOrder) use ($newOrder) {
-                $tempOrder = Order::with(['orderTable' => fn ($query) => $query->where('status' , 'Pending Clearance')])
+                $tempOrder = Order::with([
+                                        'orderTable' => fn ($query) => $query->where('status' , 'Pending Clearance'),
+                                        'customer:id',
+                                        'customer.rewards:id,customer_id,ranking_reward_id,status',
+                                    ])
                                     ->find($uniqueOrder);
 
-                $tempOrder->update(['status' => 'Order Merged']);
-                // $tempOrder->orderTable->update(['order_id', $newOrder->id]);
+                if ($tempOrder) {
+                    $tempOrder->update(['status' => 'Order Merged']);
+                    // $tempOrder->orderTable->update(['order_id', $newOrder->id]);
+    
+                    if ($tempOrder->customer && $tempOrder->voucher) {
+                        $customer = $tempOrder->customer;
+                        $removalTarget = $customer->rewards->where('ranking_reward_id', $tempOrder->voucher_id)->first();
+                        
+                        if ($removalTarget) {
+                            $tempOrder->update(['voucher_id' => null]);
+                            $removalTarget->update(['status' => 'Active']);
+                        }
+                    }
+                }
             });
         }
 

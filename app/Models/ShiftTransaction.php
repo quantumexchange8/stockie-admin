@@ -52,7 +52,8 @@ class ShiftTransaction extends Model
      */
     public function openedShift()
     {
-        return $this->hasOne(ShiftTransaction::class)->where('status', 'opened')->latest()->limit(1);
+        // return $this->hasOne(ShiftTransaction::class)->where('status', 'opened')->latest()->limit(1);
+        return self::where('status', 'opened')->first();
     }
     
     /**

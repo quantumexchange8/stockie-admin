@@ -44,7 +44,7 @@ const emit = defineEmits(['close', 'closeDrawer', 'closeOrderDetails']);
 
 const form = useForm({
     id: props.currentOrderTable.id,
-    customer_id: '',
+    customer_id: props.currentOrderCustomer?.id,
     tables: [],
 })
 
@@ -203,7 +203,8 @@ const isMerged = (targetTable) => {
 };
 
 const mergeTable = async () => {
-    form.customer_id = isSelectedCustomer.value?.id;
+    const selectedCustomer = isSelectedCustomer.value?.id ?? form.customer_id;
+    form.customer_id = selectedCustomer;
     
     const tables = zones.value.flatMap((zone) => zone.tables);
 
@@ -214,6 +215,8 @@ const mergeTable = async () => {
             }
         }
     })
+
+    // console.log(form.data());
     
     try {
         const response = await axios.post('/order-management/orders/mergeTable', form);
@@ -234,12 +237,6 @@ const mergeTable = async () => {
     } finally {
 
     }
-    // form.post(route('orders.mergeTable'), {
-    //     preserveScroll: true,
-    //     preserveState: true,
-    //     onSuccess: () => {
-    //     }
-    // })
 }
 
 const openConfirm = () => {

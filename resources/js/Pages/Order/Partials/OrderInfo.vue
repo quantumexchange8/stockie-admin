@@ -407,10 +407,14 @@ const currentViewedTab = computed(() => tabs.value[selectedTab.value]);
 
 const getVoucherDiscountedPrice = (subtotal, voucher) => {
     if (['Discount (Amount)', 'Discount (Percentage)'].includes(voucher.reward_type)) {
-        return (voucher.reward_type === 'Discount (Amount)'
-            ? subtotal - voucher.discount
-            : subtotal - (subtotal * (voucher.discount / 100))).toFixed(2);
+        const discountedAmount = (voucher.reward_type === 'Discount (Amount)'
+                ? subtotal - voucher.discount
+                : subtotal - (subtotal * (voucher.discount / 100)));
+
+        return discountedAmount <= 0 ? '0.00' : discountedAmount.toFixed(2);
     }
+
+    return subtotal.toFixed(2);
 }
 
 const cancelOrderIsDisabled = computed(() => {
@@ -423,7 +427,7 @@ const tableIsMerged = computed(() => {
                 order.value.order_table?.flatMap((table) => table.table_id) ?? null
             )].length > 1
         : false;
-})
+});
 
 watch(
     () => order.value.customer_id,
@@ -596,9 +600,10 @@ watch(order.value, () => {
             <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
                 <div class="flex justify-end px-3 gap-x-2.5 self-stretch">
                     <p class="self-stretch text-grey-900 text-md font-medium">
-                        Total (excl. tax): RM 
+                        <!-- Total (excl. tax): RM  -->
+                        Total: RM 
                         {{ currentOrderTable.status === 'Pending Clearance' ?  '0.00' : order.amount }}
-                        <!-- <span class="text-primary-800">{{ currentOrderTable.status !== 'Pending Clearance' && order.voucher ? ` > RM ${getVoucherDiscountedPrice(order.amount, order.voucher)}` : '' }}</span> -->
+                        <span class="text-primary-800">{{ currentOrderTable.status !== 'Pending Clearance' && order.voucher ? ` > RM ${getVoucherDiscountedPrice(order.amount, order.voucher)}` : '' }}</span>
                     </p>
                     <div class="flex items-center gap-1.5 px-3 py-0.5 rounded-[5px] border border-dashed border-primary-300 bg-primary-50" v-if="currentOrderTable.status !== 'Pending Clearance' && order.voucher">
                         <svg width="20" height="21" viewBox="0 0 20 21" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -98,11 +98,11 @@ const submit = async () => {
     } catch (error) {
         console.error(error);
         setTimeout(() => {
-                showMessage({ 
-                    severity: 'error',
-                    summary: 'Payment Unsuccessful.',
-                });
-            }, 200);
+            showMessage({ 
+                severity: 'error',
+                summary: 'Payment Unsuccessful.',
+            });
+        }, 200);
     } finally {
 
     }
@@ -212,6 +212,10 @@ const roundingAmount = computed(() => {
     return rounding.toFixed(2);
 });
 
+const totalAmountPaid = computed(() => {
+    return paymentTransactions.value.reduce((total, transaction) => total + transaction.amount, 0);
+});
+
 // Function to handle number pad input
 const handleNumberInput = (value) => {
     // Check if the billAmountKeyed already has a decimal point
@@ -279,61 +283,148 @@ const handlePaymentMethod = (method) => {
 
         if (existingTransaction) {
             if (selectedMethod.value === existingTransaction.method) {
-                existingTransaction.amount = Number(billAmountKeyed.value);
-                billAmountKeyed.value = '0';
+                let updatedPaidAmount;
+                let formattedKeyedAmount = Number(billAmountKeyed.value);
+
+                if (hasCashMethod.value || method === 'Cash') {
+                    updatedPaidAmount = formattedKeyedAmount;
+                } else {
+                    const otherMethodsTotalPaid = paymentTransactions.value.reduce((total, transaction) => {
+                        return transaction.method !== method 
+                            ? total + transaction.amount
+                            : total + 0;
+                    }, 0);
+
+                    console.log('others: ' + otherMethodsTotalPaid);
+
+                    if (formattedKeyedAmount + otherMethodsTotalPaid <= grandTotalAmount.value) {
+                        updatedPaidAmount = formattedKeyedAmount;
+                        
+                    } else {
+                        updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + otherMethodsTotalPaid) - grandTotalAmount.value);
+                        console.log('over: ' + updatedPaidAmount);
+                        setTimeout(() => {
+                            showMessage({ 
+                                severity: 'warn',
+                                summary: 'Entered amount exceeded total payable amount.',
+                            });
+                        }, 200);
+                    }
+                }
+
+                existingTransaction.amount = updatedPaidAmount;
+                billAmountKeyed.value = remainingBalanceDue.value;
                 selectedMethod.value = '';
 
             } else {
+                let updatedPaidAmount;
+                let formattedKeyedAmount = Number(billAmountKeyed.value);
+
+                if (hasCashMethod.value || method === 'Cash') {
+                    updatedPaidAmount = formattedKeyedAmount;
+
+                } else {
+                    if (formattedKeyedAmount + totalAmountPaid.value <= grandTotalAmount.value) {
+                        updatedPaidAmount = formattedKeyedAmount;
+                        
+                    } else {
+                        updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + totalAmountPaid.value) - grandTotalAmount.value);
+                        setTimeout(() => {
+                            showMessage({ 
+                                severity: 'warn',
+                                summary: 'Entered amount exceeded total payable amount.',
+                            });
+                        }, 200);
+                    }
+                }
+
                 // Update the amount for the existing payment method
-                existingTransaction.amount += amount;
+                existingTransaction.amount += updatedPaidAmount;
+                billAmountKeyed.value = remainingBalanceDue.value >= 0 ? remainingBalanceDue.value : '0.00';
             }
             
         } else {
-            // Add a new payment transaction
-            paymentTransactions.value.push({
-                method,
-                amount,
-            });
-    
-            const totalPaid = paymentTransactions.value.reduce((total, transaction) => total + transaction.amount, 0);
-    
+            let paidAmount;
+
+            if (hasCashMethod.value || method === 'Cash') {
+                paidAmount = amount;
+            
+            } else {
+                if (amount + totalAmountPaid.value <= grandTotalAmount.value) {
+                    paidAmount = amount;
+
+                } else {
+                    paidAmount = amount - ((amount + totalAmountPaid.value) - grandTotalAmount.value);
+                    setTimeout(() => {
+                        showMessage({ 
+                            severity: 'warn',
+                            summary: 'Entered amount exceeded total payable amount.',
+                        });
+                    }, 200);
+                }
+            }
+
+            if (paidAmount > 0) {
+                // Add a new payment transaction
+                paymentTransactions.value.push({
+                    method,
+                    amount: paidAmount,
+                });
+            }
+
+            const balance = (Number(grandTotalAmount.value) - totalAmountPaid.value).toFixed(2);
             // Deduct the amount from the balance due
-            billAmountKeyed.value = (Number(grandTotalAmount.value) - totalPaid).toFixed(2);
+            billAmountKeyed.value = balance >= 0 ? balance : '0.00';
         }
     }
 };
 
 // Computed property to calculate the remaining balance due
 const remainingBalanceDue = computed(() => {
-    const totalPaid = paymentTransactions.value.reduce((total, transaction) => total + transaction.amount, 0);
-
-    return (Number(grandTotalAmount.value) - totalPaid).toFixed(2);
+    return (Number(grandTotalAmount.value) - totalAmountPaid.value).toFixed(2);
 });
 
 const exactBillAmount = () => {
-    billAmountKeyed.value = remainingBalanceDue.value;
+    billAmountKeyed.value = remainingBalanceDue.value >= 0 ? remainingBalanceDue.value : '0.00';
 };
 
 const selectMethod = (transaction) => {
     let selectedPaymentTransaction = paymentTransactions.value.find((pay) => pay.method === transaction.method);
 
     if (selectedMethod.value === transaction.method) {
-        selectedPaymentTransaction.amount = Number(billAmountKeyed.value);
-        billAmountKeyed.value = '0';
+        let updatedPaidAmount;
+        let formattedKeyedAmount = Number(billAmountKeyed.value);
+
+        if (hasCashMethod.value || transaction.method === 'Cash') {
+            updatedPaidAmount = formattedKeyedAmount;
+        } else {
+            const otherMethodsTotalPaid = paymentTransactions.value.reduce((total, paidTransaction) => {
+                return paidTransaction.method !== transaction.method 
+                    ? total + paidTransaction.amount
+                    : total + 0;
+            }, 0);
+
+            if (formattedKeyedAmount + otherMethodsTotalPaid <= grandTotalAmount.value) {
+                updatedPaidAmount = formattedKeyedAmount;
+                
+            } else {
+                updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + otherMethodsTotalPaid) - grandTotalAmount.value);
+                setTimeout(() => {
+                    showMessage({ 
+                        severity: 'warn',
+                        summary: 'Entered amount exceeded total payable amount.',
+                    });
+                }, 200);
+            }
+        }
+        selectedPaymentTransaction.amount = updatedPaidAmount;
+        billAmountKeyed.value = remainingBalanceDue.value;
         selectedMethod.value = '';
 
     } else {
         billAmountKeyed.value = transaction.amount.toFixed(2);
         selectedMethod.value = transaction.method;
     }
-};
-
-const removeMethod = (index) => {
-    if (paymentTransactions.value[index].method === selectedMethod.value) {
-        selectedMethod.value = '';
-    }
-    
-    paymentTransactions.value.splice(index, 1);
 };
 
 const getActionContainerClass = (action) => {
@@ -380,18 +471,39 @@ const isValidated = computed(() => {
     return !form.processing && remainingBalanceDue.value <= 0;
 });
 
-// const = computed(() => {
-//     return !form.processing && remainingBalanceDue.value <= 0;
-// });
+const updateOrder = (updatedOrder) => {
+    order.value = $event;
+    emit('update:order', updatedOrder);
+};
+
+const sortedTransactionMethods = computed(() => {
+    return paymentTransactions.value.toSorted((a, b) => {
+        // Get the indices of the objects
+        const indexA = paymentTransactions.value.indexOf(a);
+        const indexB = paymentTransactions.value.indexOf(b);
+
+        // Sort in descending order
+        return indexB - indexA;
+    });
+});
+
+const removeMethod = (transaction) => {
+    const indexOfTransaction = paymentTransactions.value.indexOf(transaction);
+    
+    if (paymentTransactions.value[indexOfTransaction].method === selectedMethod.value) {
+        selectedMethod.value = '';
+    }
+
+    paymentTransactions.value.splice(indexOfTransaction, 1);
+    
+};
 
 watch(grandTotalAmount, (newValue) => {
     billAmountKeyed.value = newValue;
 })
 
 watch(remainingBalanceDue, (newValue) => {
-    if (newValue < 0) {
-        change.value = Math.abs(newValue);
-    }
+    change.value = newValue < 0 ? Math.abs(newValue) : '0.00';
 })
 </script>
 
@@ -461,7 +573,7 @@ watch(remainingBalanceDue, (newValue) => {
 
                     <!-- Looped entered payment method and amount -->
                     <div class="flex flex-col items-start gap-4 self-stretch max-h-[calc(100dvh-36.6rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
-                        <template v-for="(transaction, index) in paymentTransactions" :key="index">
+                        <template v-for="(transaction, index) in sortedTransactionMethods" :key="index">
                             <div 
                                 class="flex p-4 flex-col self-stretch gap-2 items-start rounded-[5px] border border-grey-100 shadow-sm cursor-pointer"
                                 :class="selectedMethod === transaction.method ? 'bg-primary-25' : 'bg-white'"
@@ -474,7 +586,7 @@ watch(remainingBalanceDue, (newValue) => {
                                         <EWalletIcon v-if="transaction.method === 'E-Wallet'" />
                                         <p class="text-grey-500 text-sm font-normal">{{ transaction.method }}</p>
                                     </div>
-                                    <TimesIcon @click.stop="removeMethod(index)" class="text-primary-900 hover:text-primary-800 hover:cursor-pointer" />
+                                    <TimesIcon @click.stop="removeMethod(transaction)" class="text-primary-900 hover:text-primary-800 hover:cursor-pointer" />
                                 </div>
                                 <p class="text-grey-950 text-lg font-semibold self-stretch cursor-pointer">RM {{ transaction.amount.toFixed(2) }}</p>
                             </div>
@@ -489,7 +601,7 @@ watch(remainingBalanceDue, (newValue) => {
                     <div class="flex flex-col items-end h-full gap-y-5 self-stretch">
                         <!-- Payment Amount -->
                         <div class="flex justify-center items-center gap-x-4 flex-shrink-0 self-stretch rounded-[5px] bg-grey-25">
-                            <p class="text-grey-950 text-[64px] font-normal">{{ billAmountKeyed >= 0 ? billAmountKeyed : '0' }}</p>
+                            <p class="text-grey-950 text-[64px] font-normal">{{ billAmountKeyed >= 0 ? billAmountKeyed : '0.00' }}</p>
                             <Button
                                 type="button"
                                 size="lg"
@@ -668,7 +780,7 @@ watch(remainingBalanceDue, (newValue) => {
         <MergeBill
             :currentOrder="order"
             :currentTable="currentTable"
-            @update:order="order = $event"
+            @update:order="updateOrder($event)"
             @closeOrderDetails="closeOrderDetails"
             @closeModal="closeModal"
             @isDirty="isDirty = $event"
@@ -698,18 +810,12 @@ watch(remainingBalanceDue, (newValue) => {
                 </p>
                 <div class="flex items-center justify-center gap-x-3 self-stretch">
                     <div class="flex items-center gap-x-3 self-stretch">
-                        <CashIcon v-if="(hasCashMethod || hasEwalletMethod) && !hasCardMethod && change > 0.00" />
+                        <CashIcon v-if="hasCashMethod" />
                         <ToastSuccessIcon class="flex-shrink-0 size-8" v-else />
-                        <p class="text-grey-950 text-xl font-normal" v-if="(hasCashMethod || hasEwalletMethod) && !hasCardMethod && change > 0.00" >
-                           Change:
-                        </p>
+                        <p class="text-grey-950 text-xl font-normal" v-if="hasCashMethod" >Change: </p>
                     </div>
-                    <p v-if="(hasCashMethod || hasEwalletMethod) && !hasCardMethod" class="text-grey-950 text-xl font-semibold">
-                        {{ change > 0.00 ? `RM ${change.toFixed(2)}` : 'Payment Successful' }}
-                    </p>
-                    <p v-else class="text-grey-950 text-xl font-semibold">
-                        {{ 'Payment Successful' }}
-                    </p>
+                    <p v-if="hasCashMethod" class="text-grey-950 text-xl font-semibold">{{ `RM ${change > 0 ? change.toFixed(2) : change}` }}</p>
+                    <p v-else class="text-grey-950 text-xl font-semibold">{{ 'Payment Successful' }}</p>
                 </div>
             </div>
 
