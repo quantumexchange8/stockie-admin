@@ -94,8 +94,8 @@ const fetchOrderDetails = async () => {
             matchingOrderDetails.value.amount = order.value.amount;
             matchingOrderDetails.value.customer_id = order.value.customer_id;
             matchingOrderDetails.value.assigned_waiter = order.value.user_id; 
-            matchingOrderDetails.value.current_order_completed = order.value.status === 'Order Completed' && order.value.order_table.every((table) => table.status === 'Pending Clearance');
-
+            matchingOrderDetails.value.current_order_completed = ['Order Completed', 'Order Cancelled', 'Order Voided'].includes(order.value.status) && order.value.order_table.every((table) => ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided'].includes(table.status));
+            
             // if (order.value.customer_id && !tabs.value.includes('Customer Detail')) tabs.value.splice(1, 0, 'Customer Detail');
             // if (order.value.customer_id) tabs.value[1].disabled = false;
         }
@@ -219,7 +219,9 @@ const hideMergeTableForm = () => {
 }
 
 const showTransferOptionForm = () => {
-    transferOptionIsOpen.value = true;
+    if (props.selectedTable.status !== 'Pending Clearance') {
+        transferOptionIsOpen.value = true;
+    }
 };
 
 const hideTransferOptionForm = () => {
@@ -529,8 +531,12 @@ watch(order.value, () => {
                 <Checkbox v-model:checked="splitTablesMode" @click="$event.stopPropagation()" class="absolute size-4 top-1.5 right-1.5" v-if="tableIsMerged" />
             </div>
 
-            <div class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="showTransferOptionForm()" >
-                <TransferIcon class="text-primary-950 size-6" />
+            <div 
+                class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100" 
+                :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(selectedTable.status) ? 'bg-grey-100 cursor-not-allowed' : 'bg-grey-50 cursor-pointer'"
+                @click="showTransferOptionForm()" 
+            >
+                <TransferIcon class="size-6" :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(selectedTable.status) ? 'text-grey-200' : 'text-primary-950'" />
             </div>
 
         </div>
@@ -829,10 +835,16 @@ watch(order.value, () => {
             <p class="text-center text-primary-950 text-xl font-normal">How would you like to transfer this table's order?</p>
             <div class="flex flex-col gap-y-4 items-start h-[338px] w-[526px]">
                 <!-- showTransferTableForm('all') -->
-                <div @click="" class="size-full max-h-[161px] max-w-[526px] flex justify-center items-center self-stretch gap-2.5 py-3 px-4 rounded-[5px] border border-grey-200 bg-grey-50">
-                    <p class="text-center text-primary-950/60 text-md font-medium">Transfer all order</p>
+                <div 
+                    @click="showTransferTableForm('all')" 
+                    class="size-full max-h-[161px] max-w-[526px] flex justify-center items-center self-stretch gap-2.5 py-3 px-4 rounded-[5px] border border-grey-200 cursor-pointer"
+                >
+                    <p class="text-center text-primary-950 text-md font-medium">Transfer all order</p>
                 </div>
-                <div @click="showTransferTableForm('item')" class="size-full max-h-[161px] max-w-[526px] flex justify-center items-center self-stretch gap-2.5 py-3 px-4 rounded-[5px] border border-grey-200 cursor-pointer">
+                <div 
+                    @click="showTransferTableForm('item')" 
+                    class="size-full max-h-[161px] max-w-[526px] flex justify-center items-center self-stretch gap-2.5 py-3 px-4 rounded-[5px] border border-grey-200 cursor-pointer"
+                >
                     <p class="text-center text-primary-950 text-md font-medium">Transfer item only</p>
                 </div>
             </div>
@@ -849,6 +861,7 @@ watch(order.value, () => {
         <TransferTableForm
             :currentOrderTable="currentOrderTable"
             :currentOrderCustomer="order.customer"
+            :currentOrder="order"
             :transferType="transferType"
             @close="hideTransferTableForm"
             @closeDrawer="$emit('close')"

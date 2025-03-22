@@ -210,11 +210,12 @@ const filteredZones = computed(() => {
 onUnmounted(() => intervals.value.forEach(clearInterval));
 
 const getCurrentOrderTableDuration = (table) => {
-    let currentOrderTable = table.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1 
-            ? table.order_tables.filter((table) => table.status !== 'Pending Clearance')[0].created_at
-            : table.order_tables[0].created_at;
+    let currentOrderTable = table.order_tables?.toSorted((a, b) => dayjs(b.created_at).diff(dayjs(a.created_at)));
+    // let currentOrderTable = table.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1 
+    //         ? table.order_tables.filter((table) => table.status !== 'Pending Clearance')[0].created_at
+    //         : table.order_tables[0].created_at;
 
-    return setupDuration(currentOrderTable);
+    return table.order_tables.length > 0 ? setupDuration(currentOrderTable[0].created_at) : '';
 };
 
 const getStatusCount = (status) => {

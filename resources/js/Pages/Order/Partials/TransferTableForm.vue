@@ -23,6 +23,10 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
+    currentOrder: {
+        type: Object,
+        default: () => {},
+    },
     transferType: String
 })
 
@@ -31,6 +35,7 @@ const { formatPhone } = usePhoneUtils();
 
 const zones = ref('');
 const tabs = ref([]);
+const order = ref(props.currentOrder);
 const isLoading = ref(false);
 const tableNames = ref('--');
 const tables = ref([]);
@@ -47,56 +52,58 @@ const isDirty = ref(false);
 const emit = defineEmits(['close', 'closeDrawer', 'fetchZones']);
 
 const form = useForm({
-    customer_id: '',
+    customer_id: props.currentOrderCustomer?.id ?? null,
     current_table: '',
+    current_matched_tables: [],
     target_table: '',
+    target_matched_tables: [],
     transfer_type: props.transferType
 })
 
-const addToMerged = (targetTable) => {
-    const index = form.tables.indexOf(targetTable);
-    if (index > -1) {
-        form.tables.splice(index, 1); 
-    } else {
-        form.tables.push(targetTable); 
-    }
+// const addToMerged = (targetTable) => {
+//     const index = form.tables.indexOf(targetTable);
+//     if (index > -1) {
+//         form.tables.splice(index, 1); 
+//     } else {
+//         form.tables.push(targetTable); 
+//     }
     
-    // Find if there is any table already merged with the target table.
-    const matchingTables = zones.value
-        .flatMap((zone) => zone.tables)
-        .filter(
-            (table) =>
-                table.order_id &&
-                table.order_id === targetTable.order_id &&
-                table.id !== targetTable.id
-        );
+//     // Find if there is any table already merged with the target table.
+//     const matchingTables = zones.value
+//         .flatMap((zone) => zone.tables)
+//         .filter(
+//             (table) =>
+//                 table.order_id &&
+//                 table.order_id === targetTable.order_id &&
+//                 table.id !== targetTable.id
+//         );
     
-    matchingTables.forEach((matchingTable) => {
-        // If exists then push into mergedTables to show disabled state on layout
-        const existingIndex = mergedTables.value.findIndex(
-            (table) => table.id === matchingTable.id
-        );
-        if (existingIndex > -1) {
-            mergedTables.value.splice(existingIndex, 1); 
-        } else {
-            mergedTables.value.push(matchingTable); 
-        }
+//     matchingTables.forEach((matchingTable) => {
+//         // If exists then push into mergedTables to show disabled state on layout
+//         const existingIndex = mergedTables.value.findIndex(
+//             (table) => table.id === matchingTable.id
+//         );
+//         if (existingIndex > -1) {
+//             mergedTables.value.splice(existingIndex, 1); 
+//         } else {
+//             mergedTables.value.push(matchingTable); 
+//         }
 
-        // At the same time push into form.tables since it will be merged together
-        const formIndex = form.tables.findIndex(
-            (table) => table.id === matchingTable.id
-        );
-        if (formIndex > -1) {
-            form.tables.splice(formIndex, 1);
-        } else {
-            form.tables.push(matchingTable);
-        }
-    });
+//         // At the same time push into form.tables since it will be merged together
+//         const formIndex = form.tables.findIndex(
+//             (table) => table.id === matchingTable.id
+//         );
+//         if (formIndex > -1) {
+//             form.tables.splice(formIndex, 1);
+//         } else {
+//             form.tables.push(matchingTable);
+//         }
+//     });
     
-    // Finally update the tableNames string
-    tableNames.value = form.tables.map((table) => table.table_no).join(", ");
-    if (form.tables.length === 0) tableNames.value = "--";
-};
+//     // Finally update the tableNames string
+//     tableNames.value = form.tables.map((table) => table.table_no).join(", ");
+//     if (form.tables.length === 0) tableNames.value = "--";
+// };
 
 const getAllZones = async() => {
     isLoading.value = true;
@@ -156,11 +163,9 @@ const filterZones = () => {
 }
 
 const getCurrentOrderTableDuration = (table) => {
-    let currentOrderTable = table.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1 
-            ? table.order_tables.filter((table) => table.status !== 'Pending Clearance')[0].created_at
-            : table.order_tables[0].created_at;
-
-    return setupDuration(currentOrderTable);
+    let currentOrderTable = table.order_tables.toSorted((a, b) => dayjs(b.created_at).diff(dayjs(a.created_at)));
+    
+    return setupDuration(currentOrderTable[0].created_at);
 };
 
 const getTableClasses = (table) => ({
@@ -238,27 +243,37 @@ const closeAll = () => {
     emit('closeDrawer');
 };
 const submit = () => {
-    form.customer_id = isSelectedCustomer.value.id;
+    const selectedCustomer = isSelectedCustomer.value?.id ?? form.customer_id;
+    form.customer_id = selectedCustomer;
+    form.current_matched_tables = [];
 
-    // const currentTable = zones.value.flatMap((zone) => zone.tables).find((table) => table.id === props.currentOrderTable.id);
-    // form.tables.push(currentTable);
-    // form.post(route('orders.mergeTable'), {
-    //     preserveScroll: true,
-    //     preserveState: true,
-    //     onSuccess: () => {
-    //         setTimeout(() => {
-    //             showMessage({
-    //                 severity: 'success',
-    //                 summary: `Selected table has been successfully merged with '${props.currentOrderTable.table_no}'.`
-    //             })
-    //         }, 200);
-    //         form.reset();
-    //         emit('fetchZones');
-    //         closeConfirm();
-    //         emit('close');
-    //         emit('closeDrawer');
-    //     }
-    // })
+    const tablesArray = zones.value.flatMap((zone) => zone.tables);
+
+    tablesArray.forEach((table) => {
+        if (order.value.order_table.some((orderTable) => orderTable.table_id === table.id)) {
+            if (!form.current_matched_tables.find((formTable) => formTable.id === table.id)) {
+                form.current_matched_tables.push(table);
+            }
+        }
+    })
+
+    form.post(route('orders.transferTableOrder'), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                showMessage({
+                    severity: 'success',
+                    summary: `This table's order has been successfully transferred to '${tableNames.value}'.`
+                })
+            }, 200);
+            form.reset();
+            emit('fetchZones');
+            closeConfirm();
+            emit('close');
+            emit('closeDrawer');
+        }
+    })
 }
 
 const selectTable = (targetTable) => {
@@ -274,8 +289,16 @@ const selectTable = (targetTable) => {
             }
         });
 
-    tables.value = matchingTables;
+    let matchedTables = [];
+
+    matchingTables.forEach((matchingTable) => {
+        matchedTables.push(matchingTable); 
+    });
     
+    // If exists then push into tables to show disabled state on layout
+    tables.value = matchedTables;
+    form.target_matched_tables = matchedTables;
+
     // Finally update the tableNames string
     tableNames.value = matchingTables.map((table) => table.table_no).join(", ");
     if (matchingTables.length === 0) tableNames.value = "--";
@@ -311,6 +334,8 @@ watch(zones, (newValue) => {
                 .find((table) => table.id === props.currentOrderTable.id);
     }
 }, { immediate: true });
+
+watch(() => props.currentOrder, (newValue) => (order.value = newValue));
 
 onMounted(() => {
     getAllZones();
@@ -361,25 +386,20 @@ const hasTables = computed(() => {
                                     <template v-for="table in zone.tables">
                                         <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative cursor-pointer" 
                                             :class="getTableClasses(table).state.value"
-                                            @click="table.id === props.currentOrderTable.id ? '' : selectTable(table)"
+                                            @click="table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) ? '' : selectTable(table)"
                                         >
                                             <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                                 {{ getCurrentOrderTableDuration(table) }}
                                             </div>
                                             <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
-                                            <!-- <Checkbox 
-                                                :checked="!!form.tables.find((formTable) => formTable.id === table.id)"
-                                                :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table)"
-                                                class="absolute top-[11px] right-[12px]"
-                                            /> -->
                                             <RadioButton 
                                                 :name="'table'"
                                                 :dynamic="false"
                                                 :value="table.id"
                                                 class="!w-fit absolute top-[11px] right-[12px]"
                                                 :errorMessage="''"
-                                                :disabled="table.id === props.currentOrderTable.id"
+                                                :disabled="form.target_table !== table && (table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id))"
                                                 v-model:checked="selectedTable"
                                                 @onChange="form.target_table = table"
                                             />
@@ -410,29 +430,23 @@ const hasTables = computed(() => {
                                     <template v-for="table in zone.tables">
                                         <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative" 
                                             :class="getTableClasses(table).state.value"
-                                            @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) ? '' : addToMerged(table)"
+                                            @click="table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) ? '' : selectTable(table)"
                                         >
                                             <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                                 {{ getCurrentOrderTableDuration(table) }}
                                             </div>
                                             <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
-                                            <!-- <Checkbox 
-                                                :checked="!!form.tables.find((formTable) => formTable.id === table.id)"
-                                                :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table)"
-                                                class="absolute top-[11px] right-[12px]"
-                                            /> -->
-                                            <div class="absolute top-[11px] right-[12px]">
-                                                <RadioButton 
-                                                    :name="'table'"
-                                                    :dynamic="false"
-                                                    :value="table.id"
-                                                    class="!w-fit"
-                                                    :errorMessage="''"
-                                                    v-model:checked="selectedTable"
-                                                    @onChange="form.customer_id = $event"
-                                                />  
-                                            </div>
+                                            <RadioButton 
+                                                :name="'table'"
+                                                :dynamic="false"
+                                                :value="table.id"
+                                                class="!w-fit absolute top-[11px] right-[12px]"
+                                                :errorMessage="''"
+                                                :disabled="form.target_table !== table && (table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id))"
+                                                v-model:checked="selectedTable"
+                                                @onChange="form.target_table = table"
+                                            />  
                                             <MergedIcon class="text-white size-5 absolute left-2 top-2" v-if="isMerged(table)" />
                                         </div>
                                     </template>

@@ -47,7 +47,8 @@ const processOrderItems = (orderTables) => {
         .sort((a, b) => b.id - a.id)
         .find(orderTable => 
             orderTable.status !== 'Order Cancelled' && 
-            orderTable.status !== 'Pending Clearance'
+            orderTable.status !== 'Pending Clearance' &&
+            orderTable.status !== 'Order Voided'
         )?.order;
 
     if (!latestOrder) return [];

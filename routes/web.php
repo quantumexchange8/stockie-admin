@@ -271,6 +271,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/mergeTable', [OrderController::class, 'mergeTable'])->name('orders.mergeTable');
         Route::post('/orders/createCustomerFromOrder', [OrderController::class,'createCustomerFromOrder'])->name('orders.createCustomerFromOrder');
         Route::post('/orders/transferTable', [OrderController::class,'transferTable'])->name('orders.transferTable');
+        Route::post('/orders/transferTableOrder', [OrderController::class,'transferTableOrder'])->name('orders.transferTableOrder');
         
         // Order items
         Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');

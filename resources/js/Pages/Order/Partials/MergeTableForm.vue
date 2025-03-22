@@ -44,7 +44,7 @@ const emit = defineEmits(['close', 'closeDrawer', 'closeOrderDetails']);
 
 const form = useForm({
     id: props.currentOrderTable.id,
-    customer_id: props.currentOrderCustomer?.id,
+    customer_id: props.currentOrderCustomer?.id ?? null,
     tables: [],
 })
 
@@ -216,8 +216,6 @@ const mergeTable = async () => {
         }
     })
 
-    // console.log(form.data());
-    
     try {
         const response = await axios.post('/order-management/orders/mergeTable', form);
 
@@ -250,7 +248,6 @@ const openConfirm = () => {
     );
 
     isSelectedCustomer.value = checkedIn.value.length > 0 ? checkedIn.value[0] : null;
-    // console.log(isSelectedCustomer.value);
     if (checkedIn.value.length > 1) {
         isConfirmShow.value = true;
     } else {

@@ -58,7 +58,7 @@ class OrderController extends Controller
         $reservedTablesId = $this->getReservedTablesId();
 
         $zones = Zone::with([
-                            'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']),
+                            'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged']),
                             'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty'
                         ])
                         ->select('id', 'name')
@@ -584,7 +584,7 @@ class OrderController extends Controller
                                     ->get();
 
         // Find the first non-pending clearance table
-        $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled'])
+        $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
                                             ->firstWhere('status', '!=', 'Pending Clearance') 
                             ?? $orderTables->first();
 
@@ -609,7 +609,10 @@ class OrderController extends Controller
                 },
                 'order.waiter:id,full_name',
                 'order.customer:id,full_name,email,phone,point',
-                'order.orderTable:id,order_id,table_id,status',
+                'order.orderTable' => function ($query) {
+                    $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                            ->select('id', 'order_id', 'table_id', 'status');
+                },
                 'order.orderTable.table:id,table_no',
                 'order.payment:id,order_id',
                 'order.voucher:id,reward_type,discount'
@@ -706,10 +709,10 @@ class OrderController extends Controller
             // Update all tables associated with this order
             $existingOrder->orderTable->each(function ($tab) use ($isAllKeepType) {
                 $tab->table->update([
-                    'status' => 'Empty Seat',
-                    'order_id' => null
+                    'status' => 'Pending Clearance',
+                    // 'order_id' => null
                 ]);
-                $tab->update(['status' => $isAllKeepType ? 'Order Voided' : 'Order Cancelled']);
+                $tab->update(['status' => 'Pending Clearance']);
             });
         }
 
@@ -800,7 +803,7 @@ class OrderController extends Controller
                 }
 
                 $allClearance = $order->orderTable->every(function($table){
-                    return $table->status === 'Pending Clearance';
+                    return in_array($table->status, ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']);
                 });
 
                 if(($request->input('current_order_id') === $request->input('order_id')) && !$allClearance){
@@ -988,14 +991,17 @@ class OrderController extends Controller
 
             // Update all tables associated with this order
             $uniqueOrders->each(function ($order) {
-                $order->orderTable->each(function ($tab) {
+                $order->orderTable->each(function ($tab) use ($order) {
                     if ($tab->table['status'] !== 'Empty Seat' && $tab->table['order_id'] !== null) {
                         $tab->table->update([
                             'status' => 'Empty Seat',
                             'order_id' => null
                         ]);
                     }
-                    $tab->update(['status' => 'Order Completed']);
+
+                    if (!in_array($tab->status, ['Order Cancelled', 'Order Voided'])) { 
+                        $tab->update(['status' => $order->status]);
+                    }
                 });
 
                 $order->reservation?->update(['status' => 'Completed']);
@@ -1412,7 +1418,7 @@ class OrderController extends Controller
 
             $currentOrderLatestTable = $currentOrder->orderTable->sortByDesc('id')->first();
 
-            if ($currentOrder && !in_array($currentOrderLatestTable->status, ['Pending Clearance', 'Order Cancelled'])) {
+            if ($currentOrder && !in_array($currentOrderLatestTable->status, ['Pending Clearance', 'Order Cancelled', 'Order Voided'])) {
                 $statusArr = collect($currentOrder->orderItems->pluck('status')->unique());
             
                 $orderStatus = 'Pending Serve';
@@ -1876,6 +1882,9 @@ class OrderController extends Controller
     public function updateOrderPayment(Request $request) 
     {
         $order = Order::with([
+                            'orderTable' => function ($query) {
+                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']);
+                            },
                             'orderTable.table', 
                             'customer:id,point,total_spending,ranking', 
                             'orderItems' => fn($query) => $query->with('product.commItem.configComms')->where('status', 'Served')
@@ -1883,9 +1892,12 @@ class OrderController extends Controller
 
         $order->update(['status' => 'Order Completed']);
 
+        $customer = '';
+
         $statusArr = collect($order->orderTable->pluck('status')->unique());
+        // dd($order, $statusArr);
         if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && ($statusArr->first() === 'All Order Served' || $statusArr->first() === 'Order Placed' || $statusArr->first() === 'Pending Order'))) {
-            $currentShiftTransaction = ShiftTransaction::openedShift();
+            $currentShiftTransaction = ShiftTransaction::where('status', 'opened')->first();
             
             $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
             $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
@@ -2103,8 +2115,10 @@ class OrderController extends Controller
             $order->update(['total_amount' => $grandTotal]);
     
             $order->orderTable->each(function ($tab) {
-                $tab->table->update(['status' => 'Pending Clearance']);
-                $tab->update(['status' => 'Pending Clearance']);
+                if (!in_array($tab->status, ['Order Cancelled', 'Order Voided'])) {
+                    $tab->table->update(['status' => 'Pending Clearance']);
+                    $tab->update(['status' => 'Pending Clearance']);
+                }
             });
         }
 
@@ -2967,7 +2981,7 @@ class OrderController extends Controller
     public function pendingServeItems(String $id)
     {
         $currentTable = OrderTable::where('table_id', $id)
-                                    ->whereNotIn('status', ['Order Completed', 'Order Cancelled'])
+                                    ->whereNotIn('status', ['Order Completed', 'Order Cancelled', 'Order Voided'])
                                     ->whereHas('order.orderItems', function ($query) {
                                         $query->where('status', 'Pending Serve');
                                     })
@@ -3107,8 +3121,9 @@ class OrderController extends Controller
         $totalPax = 0;
         $totalAmount = 0;
         $statusArr = collect();
+        // $temp = collect();
 
-        foreach ($request['tables'] as $table) {
+        foreach ($filteredTables->unique('order_id') as $table) {
             if (empty($table['order_tables'])) {
                 continue;
             }
@@ -3125,11 +3140,16 @@ class OrderController extends Controller
                 }
             }
             
-            if ($latestOrderTable) {
+            // need to add condition to not include adding the total amount for order that have already been paid 
+            // and order table/ table is completed, cancelled, voided, or pending clearance
+            if ($latestOrderTable && !in_array($latestOrderTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided'])) {
+                // $temp->push($latestOrderTable);
                 $totalPax += (int)($latestOrderTable['pax'] ?? 0);
                 $totalAmount += (float)($latestOrderTable['order']['total_amount'] ?? 0);
 
-                $statusArr->push(collect($latestOrderTable['order']['order_items'])->pluck('status')->unique());
+                if (count($latestOrderTable['order']['order_items']) > 0) {
+                    $statusArr->push(...collect($latestOrderTable['order']['order_items'])->pluck('status')->unique());
+                }
             }
         }
 
@@ -3161,7 +3181,7 @@ class OrderController extends Controller
 
             $uniqueOrderIdArray = $filteredTables->unique('order_id')->pluck('order_id');
 
-            $uniqueOrderIdArray->each(function ($uniqueOrder) use ($newOrder) {
+            $uniqueOrderIdArray->each(function ($uniqueOrder) {
                 $tempOrder = Order::with([
                                         'orderTable' => fn ($query) => $query->where('status' , 'Pending Clearance'),
                                         'customer:id',
@@ -3169,11 +3189,11 @@ class OrderController extends Controller
                                     ])
                                     ->find($uniqueOrder);
 
-                if ($tempOrder) {
+                if ($tempOrder && !in_array($tempOrder->status, ['Order Completed', 'Order Cancelled', 'Order Voided'])) {
                     $tempOrder->update(['status' => 'Order Merged']);
                     // $tempOrder->orderTable->update(['order_id', $newOrder->id]);
     
-                    if ($tempOrder->customer && $tempOrder->voucher) {
+                    if ($tempOrder->customer && $tempOrder->voucher) { // need to add removal flow for all scenario when merging
                         $customer = $tempOrder->customer;
                         $removalTarget = $customer->rewards->where('ranking_reward_id', $tempOrder->voucher_id)->first();
                         
@@ -3208,7 +3228,7 @@ class OrderController extends Controller
                 }
             }
 
-            if (empty($table['order_tables']) || $newestOrderTable['status'] === 'Pending Clearance') {
+            if (empty($table['order_tables']) || in_array($newestOrderTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided'])) {
                 OrderTable::create([
                     'table_id' => $table['id'],
                     'pax' => $totalPax,
@@ -3384,7 +3404,7 @@ class OrderController extends Controller
                 }
             }
 
-            if (empty($table['order_tables']) || $newestOrderTable['status'] === 'Pending Clearance') {
+            if (empty($table['order_tables']) || in_array($newestOrderTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided'])) {
                 OrderTable::create([
                     'table_id' => $table['id'],
                     'pax' => $totalPax,
@@ -3464,6 +3484,7 @@ class OrderController extends Controller
         return response()->json($customers);
     }
 
+    // Transfer selected order items between tables
     public function transferTable(Request $request)
     {
         $currentTable = $request->currentTable;
@@ -3491,7 +3512,7 @@ class OrderController extends Controller
             $transferPercentage = round($balanceQty / $originalQty, 2);
             $balancePercentage = round(($originalQty - $balanceQty) / $originalQty, 2);
 
-            if ($currentTable['status'] === 'Pending Clearance' || $currentTable['status'] === 'Empty Seat') {
+            if (in_array($currentTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']) || $currentTable['status'] === 'Empty Seat') {
                 $newOrder = Order::create([
                     'order_no' => RunningNumberService::getID('order'),
                     'pax' => $currentTable['pax'],
@@ -3610,7 +3631,7 @@ class OrderController extends Controller
             $transferPercentage = round($balanceQty / $originalQty, 2);
             $balancePercentage = round(($originalQty - $balanceQty) / $originalQty, 2);
 
-            if ($targetTable['status'] === 'Pending Clearance' || $targetTable['status'] === 'Empty Seat') {
+            if (in_array($targetTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']) || $targetTable['status'] === 'Empty Seat') {
                 $newOrder = Order::create([
                     'order_no' => RunningNumberService::getID('order'),
                     'pax' => $targetTable['pax'],
@@ -3781,5 +3802,167 @@ class OrderController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    // Direct transfer all items of the order to the target table and void order
+    public function transferTableOrder(Request $request)
+    {
+        $currentTable = $request->current_table;
+        $currentMatchedTables = $request->current_matched_tables;
+        $targetTable = $request->target_table;
+        $targetMatchedTables = $request->target_matched_tables;
+        $targetTableHasOrder = !!$targetTable['order_id'];
+        $tables = collect([$currentTable, $targetTable]);
+
+        $filteredTables = $tables->filter(fn ($table) => $table['order_id']);
+        // $hasMultipleOrderId = $filteredTables->unique('order_id')->count() > 1;
+
+        if ($filteredTables->unique('order_id')->count() == 1) {
+            $currentTableFiltered = $filteredTables->first(fn ($table) => $table['order_id']);
+            $currentOrderId = $currentTableFiltered['order_id'];
+        }
+
+        // Get the latest order tables and calculate totals in a single pass
+        $totalPax = 0;
+        $totalAmount = 0;
+        $statusArr = collect();
+        $temp = collect();
+
+        foreach ($filteredTables->unique('order_id') as $table) {
+            if (empty($table['order_tables'])) {
+                continue;
+            }
+
+            // Find the latest order_table without creating intermediate collections
+            $latestOrderTable = null;
+            $latestTimestamp = null;
+            
+            foreach ($table['order_tables'] as $orderTable) {
+                $timestamp = $orderTable['created_at'] ?? 0;
+                if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
+                    $latestTimestamp = $timestamp;
+                    $latestOrderTable = $orderTable;
+                }
+            }
+            
+            if ($latestOrderTable && !in_array($latestOrderTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided'])) {
+                $temp->push($latestOrderTable);
+                $totalPax += (int)($latestOrderTable['pax'] ?? 0);
+                $totalAmount += (float)($latestOrderTable['order']['total_amount'] ?? 0);
+
+                $statusArr->push(...collect($latestOrderTable['order']['order_items'])->pluck('status')->unique());
+            }
+        }
+
+        $orderStatus = 'Pending Serve';
+        $orderTableStatus = 'Pending Order';
+    
+        if ($statusArr->contains('Pending Serve')) {
+            $orderStatus = 'Pending Serve';
+            $orderTableStatus = 'Order Placed';
+        } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+            $orderStatus = 'Order Served';
+            $orderTableStatus = 'All Order Served';
+        } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+            $orderStatus = 'Order Served';
+            $orderTableStatus = 'All Order Served';
+        }
+
+        // dd($temp, $statusArr, $orderStatus, $orderTableStatus);
+
+        //step 1: create new order
+        if ($targetTableHasOrder && !in_array($targetTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided'])) {
+            $targetOrder = Order::find($targetTable['order_id']);
+            $targetOrder->update([
+                'amount' => $totalAmount,
+                'total_amount' => $totalAmount,
+                'status' => $orderStatus,
+            ]);
+        
+            $currentOrder = Order::with([
+                                    'orderItems',
+                                    'orderTable' => fn ($query) => $query->where('status' , 'Pending Clearance'),
+                                    'customer:id',
+                                    'customer.rewards:id,customer_id,ranking_reward_id,status',
+                                ])
+                                ->find($currentTable['order_id']);
+
+            if ($currentOrder) {
+                $currentOrder->update(['status' => 'Order Cancelled']);
+                $currentOrder->orderItems->each(function ($item) use ($targetTable) {
+                    $orderItem = OrderItem::find($item['id']);
+                    $orderItem->update(['order_id' => $targetTable['order_id']]);
+                    $orderItem->refresh();
+                });
+
+                if ($currentOrder->customer && $currentOrder->voucher) {
+                    $customer = $currentOrder->customer;
+                    $removalTarget = $customer->rewards->where('ranking_reward_id', $currentOrder->voucher_id)->first();
+                    
+                    if ($removalTarget) {
+                        $currentOrder->update(['voucher_id' => null]);
+                        $removalTarget->update(['status' => 'Active']);
+                    }
+                }
+            };
+
+            foreach ($currentMatchedTables as $key => $table) {
+                $currentMatchedTable = Table::find($table['id']);
+                $currentMatchedTable->update([
+                    'order_id' => null,
+                    'status' => 'Empty Seat'
+                ]);
+                
+                foreach ($table['order_tables'] as $orderTable) {
+                    $currentMatchedOrderTable = OrderTable::find($orderTable['id']);
+                    
+                    $matchedOrderTableStatus = $currentMatchedOrderTable->status === 'Pending Clearance'
+                            ? $currentMatchedOrderTable['order']['status']
+                            : 'Order Cancelled';
+                    
+                    $currentMatchedOrderTable->update(['status' => $matchedOrderTableStatus]);
+                    $currentMatchedOrderTable->save();
+                }
+            }
+
+
+        } else {
+            foreach ($targetMatchedTables as $key => $table) {
+                $targetMatchedTable = Table::find($table['id']);
+                $targetMatchedTable->update([
+                    'order_id' => $currentTable['order_id'],
+                    'status' => $orderTableStatus
+                ]);
+                
+                OrderTable::create([
+                    'table_id' => $table['id'],
+                    'pax' => $totalPax,
+                    'user_id' => auth()->user()->id,
+                    'status' => $orderTableStatus,
+                    'order_id' => $currentTable['order_id'],            
+                ]);
+            }
+
+            foreach ($currentMatchedTables as $key => $table) {
+                $currentMatchedTable = Table::find($table['id']);
+                $currentMatchedTable->update([
+                    'order_id' => null,
+                    'status' => 'Empty Seat'
+                ]);
+                
+                foreach ($table['order_tables'] as $orderTable) {
+                    $currentMatchedOrderTable = OrderTable::find($orderTable['id']);
+                    
+                    $matchedOrderTableStatus = $currentMatchedOrderTable->status === 'Pending Clearance'
+                            ? $currentMatchedOrderTable['order']['status']
+                            : 'Order Cancelled';
+                    
+                    $currentMatchedOrderTable->update([
+                        'status' => $matchedOrderTableStatus,
+                    ]);
+                    $currentMatchedOrderTable->save();
+                }
+            }
+        }
     }
 }

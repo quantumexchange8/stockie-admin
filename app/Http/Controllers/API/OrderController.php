@@ -58,7 +58,7 @@ class OrderController extends Controller
         $zones = Zone::with([
                             'tables:id,table_no,seat,zone_id,status,order_id',
                             'tables.orderTables' => function ($query) {
-                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled'])
+                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
                                     ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at');
                             },
                             'tables.orderTables.order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
@@ -394,7 +394,7 @@ class OrderController extends Controller
     private function getPendingServeItemsQuery($tableId)
     {
         return OrderTable::where('table_id', $tableId)
-            ->whereNotIn('status', ['Order Completed', 'Order Cancelled'])
+            ->whereNotIn('status', ['Order Completed', 'Order Cancelled', 'Order Voided'])
             ->whereHas('order.orderItems', function ($query) {
                 $query->where('status', 'Pending Serve');
             })
@@ -540,7 +540,7 @@ class OrderController extends Controller
             }
 
             $allClearance = $order->orderTable->every(function($table){
-                return $table->status === 'Pending Clearance';
+                return in_array($table->status, ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']);
             });
 
             if(($request->input('current_order_id') === $request->input('order_id')) && !$allClearance){
@@ -588,7 +588,7 @@ class OrderController extends Controller
                                     ->with('orderTable:id,table_id,status,order_id')
                                     ->find($request->order_id);
 
-        $addNewOrder = $currentOrder->status === 'Order Completed' && $currentOrder->orderTable->every(fn ($table) => $table->status === 'Pending Clearance');
+        $addNewOrder = in_array($currentOrder->status, ['Order Completed', 'Order Cancelled', 'Order Voided']) && $currentOrder->orderTable->every(fn ($table) => in_array($table->status, ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']));
         $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id)->toArray();
 
         $tableString = $this->getTableName($tablesArray);
@@ -1322,7 +1322,7 @@ class OrderController extends Controller
     
                 $currentOrderLatestTable = $currentOrder->orderTable->sortByDesc('id')->first();
     
-                if ($currentOrder && !in_array($currentOrderLatestTable->status, ['Pending Clearance', 'Order Cancelled'])) {
+                if ($currentOrder && !in_array($currentOrderLatestTable->status, ['Pending Clearance', 'Order Cancelled', 'Order Voided'])) {
                     $statusArr = collect($currentOrder->orderItems->pluck('status')->unique());
                 
                     $orderStatus = 'Pending Serve';
@@ -1690,7 +1690,7 @@ class OrderController extends Controller
                                     ])
                                     ->find($validatedData['order_id']);
 
-            $addNewOrder = $currentOrder->status === 'Order Completed' && $currentOrder->orderTable->every(fn ($table) => $table->status === 'Pending Clearance');
+            $addNewOrder = in_array($currentOrder->status, ['Order Completed', 'Order Cancelled', 'Order Voided']) && $currentOrder->orderTable->every(fn ($table) => in_array($table->status, ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']));
             $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id)->toArray();
     
             $tableString = $this->getTableName($tablesArray);
@@ -1997,7 +1997,7 @@ class OrderController extends Controller
                                     ])
                                     ->find($validatedData['order_id']);
                                     
-            $addNewOrder = $currentOrder->status === 'Order Completed' && $currentOrder->orderTable->every(fn ($table) => $table->status === 'Pending Clearance');
+            $addNewOrder = in_array($currentOrder->status, ['Order Completed', 'Order Cancelled', 'Order Voided']) && $currentOrder->orderTable->every(fn ($table) => in_array($table->status, ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']));
             $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id)->toArray();
 
             $tableString = $this->getTableName($tablesArray);
