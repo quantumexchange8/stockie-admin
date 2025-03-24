@@ -3096,7 +3096,8 @@ class OrderController extends Controller
         return response()->json($customer->keepItems);
     }
 
-    public function mergeTable(Request $request) {
+    public function mergeTable(Request $request) 
+    {
         $validatedData = $request->validate([
             'customer_id' => 'nullable',
             'id' => 'required|integer',
@@ -3298,139 +3299,222 @@ class OrderController extends Controller
         return response()->json($designatedOrder);
     }
 
-    public function splitTable(Request $request) {
-        $validatedData = $request->validate([
-            'customer_id' => 'nullable',
-            'id' => 'required|integer',
-            'tables' => 'required|array',
-        ]);
+    public function splitTable(Request $request) 
+    {
+        $currentTable = $request->currentTable;
+        $currentTableItems = collect($currentTable['order_items']);
+        $totalCurrentOrderAmount = 0.00;
+        $totalCurrentOrderDiscountedAmount = 0.00;
 
-        $tables = collect();
+        // Current table
+        $currentTableItems->each(function ($item) use (&$totalCurrentOrderAmount, &$totalCurrentOrderDiscountedAmount) {
+            $balanceQty = $item['balance_qty'];
+            $originalQty = $item['original_qty'];
+            $transferPercentage = round(($originalQty - $balanceQty) / $originalQty * 100, 2);
+            $balancePercentage = round($balanceQty / $originalQty * 100, 2);
 
-        foreach ($validatedData['tables'] as $key => $table) {
-            $tables->push($table);
-        }
-        
-        $filteredTables = $tables->filter(fn ($table) => $table['order_id']);
-        $hasMultipleOrderId = $filteredTables->unique('order_id')->count() > 1;
-
-        if ($filteredTables->unique('order_id')->count() == 1) {
-            $currentTableFiltered = $filteredTables->first(fn ($table) => $table['order_id']);
-            $currentOrderId = $currentTableFiltered['order_id'];
-        }
-
-        // Get the latest order tables and calculate totals in a single pass
-        $totalPax = 0;
-        $totalAmount = 0;
-        $statusArr = collect();
-
-        foreach ($request['tables'] as $table) {
-            if (empty($table['order_tables'])) {
-                continue;
-            }
-
-            // Find the latest order_table without creating intermediate collections
-            $latestOrderTable = null;
-            $latestTimestamp = null;
+            $orderItem = OrderItem::find($item['id']);
             
-            foreach ($table['order_tables'] as $orderTable) {
-                $timestamp = $orderTable['created_at'] ?? 0;
-                if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
-                    $latestTimestamp = $timestamp;
-                    $latestOrderTable = $orderTable;
+            if ($balanceQty == 0) {
+                $totalCurrentOrderAmount -= $item['amount'];
+                $totalCurrentOrderDiscountedAmount -= $item['discount_amount'];
+
+            } elseif ($balanceQty < $originalQty) {
+                $totalCurrentOrderAmount -= round($item['amount'] * $transferPercentage / 100, 2);
+                $totalCurrentOrderDiscountedAmount -= round($item['discount_amount'] * $transferPercentage / 100, 2);
+
+                $newStatusArr = collect();
+                $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem, &$newStatusArr) {
+                    $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
+                    $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
+                    if ($balanceQty == 0) {
+                        $newStatusArr->push('Cancelled');
+                    } else {
+                        $newStatusArr->push($newQtyServed < $newSubItemServeQty ? 'Pending Serve' : 'Served');
+                    }
+
+                    $subItem->update(['serve_qty' => $newQtyServed]);
+                });
+
+                if ($newStatusArr->contains('Cancelled')) {
+                    $newStatus = 'Cancelled';
+                } elseif ($newStatusArr->count() === 1 && in_array($newStatusArr->first(), ['Pending Serve', 'Served'])) {
+                    $newStatus = $newStatusArr->first();
+                } elseif ($newStatusArr->count() === 2 && $newStatusArr->contains('Pending Serve') && $newStatusArr->contains('Served')) {
+                    $newStatus = 'Pending Serve';
                 }
-            }
             
-            if ($latestOrderTable) {
-                $totalPax += (int)($latestOrderTable['pax'] ?? 0);
-                $totalAmount += (float)($latestOrderTable['order']['total_amount'] ?? 0);
-
-                $statusArr->push(collect($latestOrderTable['order']['order_items'])->pluck('status')->unique());
+                $orderItem->update([
+                    'item_qty' => $balanceQty,
+                    'amount_before_discount' => round($item['amount_before_discount'] * $balancePercentage / 100, 2),
+                    'discount_id' => $item['discount_id'],
+                    'discount_amount' => round($item['discount_amount'] * $balancePercentage / 100, 2),
+                    'amount' => round($item['amount'] * $balancePercentage / 100, 2),
+                    'status' => $newStatus,
+                ]);
             }
-        }
-
-        $orderStatus = 'Pending Serve';
-        $orderTableStatus = 'Pending Order';
+        });
     
-        if ($statusArr->contains('Pending Serve')) {
-            $orderStatus = 'Pending Serve';
-            $orderTableStatus = 'Order Placed';
-        } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
-            $orderStatus = 'Order Served';
-            $orderTableStatus = 'All Order Served';
-        } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
-            $orderStatus = 'Order Served';
-            $orderTableStatus = 'All Order Served';
-        }
+        $targetTables = $request->targetTables;
+        
+        // Target tables
+        foreach ($targetTables as $key => $targetTable) {
+            $totalTargetOrderAmount = 0.00;
+            $totalTargetOrderDiscountedAmount = 0.00;
 
-        //step 1: create new order
-        if ($hasMultipleOrderId) {
+            $filteredTargetTableItems = collect($targetTable['order_items'])->filter(fn ($item) => $item['balance_qty'] > 0);
+
             $newOrder = Order::create([
                 'order_no' => RunningNumberService::getID('order'),
-                'pax' => $totalPax,
-                'user_id' => auth()->user()->id,
-                'amount' => $totalAmount,
-                'total_amount' => $totalAmount,
-                'status' => $orderStatus,
+                'pax' => $currentTable['pax'],
+                'user_id' => $request->user()->id,
+                'customer_id' => $targetTable['new_customer'] ? $targetTable['new_customer']['id'] : null,
+                'amount' => 0.00,
+                'total_amount' => 0.00,
+                'status' => 'Pending Serve',
             ]);
 
-            $uniqueOrderIdArray = $filteredTables->unique('order_id')->pluck('order_id');
+            foreach ($targetTable['order_tables'] as $targetOrderTables) {
+                $existingOrderTable = OrderTable::find($targetOrderTables['id']);
+                if ($targetOrderTables['status'] === 'Pending Clearance') {
+                    $existingOrderTable->update(['status' => 'Order Completed']);
+                } else {
+                    $existingOrderTable->update(['order_id' => $newOrder->id]);
+                }
+            }
 
-            $uniqueOrderIdArray->each(function ($uniqueOrder) {
-                $tempOrder = Order::find($uniqueOrder);
-                $tempOrder->update(['status' => 'Order Merged']);
+            $filteredTargetTableItems->each(function ($item) use (&$totalCurrentOrderAmount, 
+                &$totalCurrentOrderDiscountedAmount, 
+                &$totalTargetOrderAmount, 
+                &$totalTargetOrderDiscountedAmount, 
+                &$newOrder) 
+            {
+                $balanceQty = $item['balance_qty'];
+                $originalQty = $item['original_qty'];
+                $balancePercentage = round($balanceQty / $originalQty * 100, 2);
+
+                $orderItem = OrderItem::find($item['id']);
+
+                if ($balanceQty === $originalQty) {
+                    $orderItem->update(['order_id' => $newOrder->id]);
+                    
+                    $totalTargetOrderAmount += $orderItem->amount;
+                    $totalTargetOrderDiscountedAmount += $orderItem->discount_amount;
+
+                } else {
+                    $newOrderItem = OrderItem::create([
+                        'order_id' => $newOrder->id,
+                        'user_id' => $item['user_id'],
+                        'type' => $item['type'],
+                        'product_id' => $item['product_id'],
+                        'item_qty' => $balanceQty,
+                        'amount_before_discount' => round($item['amount_before_discount'] * $balancePercentage / 100, 2),
+                        'discount_id' => $item['discount_id'],
+                        'discount_amount' => round($item['discount_amount'] * $balancePercentage / 100, 2),
+                        'amount' => round($item['amount'] * $balancePercentage / 100, 2),
+                        'status' => $item['status']
+                    ]);
+                    
+                    $totalTargetOrderAmount += round($item['amount'] * $balancePercentage / 100, 2);
+                    $totalTargetOrderDiscountedAmount += round($item['discount_amount'] * $balancePercentage / 100, 2);
+
+                    $newStatusArr = collect();
+                    $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem, &$newStatusArr) {
+                        $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
+                        $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
+
+                        if ($balanceQty > 0) {
+                            $newStatusArr->push($newQtyServed < $newSubItemServeQty ? 'Pending Serve' : 'Served');
+                        }
+
+                        OrderItemSubitem::create([
+                            'order_item_id' => $newOrderItem->id,
+                            'product_item_id' => $subItem['product_item_id'],
+                            'item_qty' => $subItem['item_qty'],
+                            'serve_qty' => $newQtyServed,
+                        ]);
+
+                        $subItem->decrement('serve_qty', $newQtyServed);
+                    });
+
+                    if ($newStatusArr->contains('Pending Serve')) {
+                        $newStatus = 'Pending Serve';
+                    } elseif ($newStatusArr->count() === 1 && in_array($newStatusArr->first(), ['Pending Serve', 'Served'])) {
+                        $newStatus = $newStatusArr->first();
+                    } elseif ($newStatusArr->count() === 2 && $newStatusArr->contains('Pending Serve') && $newStatusArr->contains('Served')) {
+                        $newStatus = 'Pending Serve';
+                    }
+                
+                    $newOrderItem->update(['status' => $newStatus]);
+                }
+            });
+        
+            if ($newOrder) {
+                $statusArr = collect($newOrder->orderItems->pluck('status')->unique());
+                $orderStatus = 'Pending Serve';
+                $orderTableStatus = 'Pending Order';
+            
+                if ($statusArr->contains('Pending Serve')) {
+                    $orderStatus = 'Pending Serve';
+                    $orderTableStatus = 'Order Placed';
+                } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+                    $orderStatus = 'Order Served';
+                    $orderTableStatus = 'All Order Served';
+                } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+                    $orderStatus = 'Order Served';
+                    $orderTableStatus = 'All Order Served';
+                }
+                
+                $newOrder->update([
+                    'amount' => $newOrder->amount + $totalTargetOrderAmount,
+                    'total_amount' => $newOrder->amount + $totalTargetOrderAmount,
+                    'discount_amount' => $newOrder->discount_amount + $totalTargetOrderDiscountedAmount,
+                    'status' => $orderStatus
+                ]);
+                
+                // Update all tables associated with this order
+                $newOrder->orderTable->each(function ($tab) use ($orderTableStatus) {
+                    $tab->table->update([
+                        'status' => $orderTableStatus,
+                        'order_id' => $tab->order_id
+                    ]);
+                    $tab->update(['status' => $orderTableStatus]);
+                });
+            }
+        };
+        
+        $currentOrder = Order::with('orderTable.table')->find($currentTable['order_id']);
+        if ($currentOrder) {
+            $currentStatusArr = collect($currentOrder->orderItems->pluck('status')->unique());
+            $currentOrderStatus = 'Pending Serve';
+            $currentOrderTableStatus = 'Pending Order';
+        
+            if ($currentStatusArr->contains('Pending Serve')) {
+                $currentOrderStatus = 'Pending Serve';
+                $currentOrderTableStatus = 'Order Placed';
+            } elseif ($currentStatusArr->count() === 1 && in_array($currentStatusArr->first(), ['Served', 'Cancelled'])) {
+                $currentOrderStatus = 'Order Served';
+                $currentOrderTableStatus = 'All Order Served';
+            } elseif ($currentStatusArr->count() === 2 && $currentStatusArr->contains('Served') && $currentStatusArr->contains('Cancelled')) {
+                $currentOrderStatus = 'Order Served';
+                $currentOrderTableStatus = 'All Order Served';
+            }
+            
+            $currentOrder->update([
+                'amount' => $currentOrder->amount + $totalCurrentOrderAmount,
+                'total_amount' => $currentOrder->amount + $totalCurrentOrderAmount,
+                'discount_amount' => $currentOrder->discount_amount + $totalCurrentOrderDiscountedAmount,
+                'status' => $currentOrderStatus
+            ]);
+            
+            // Update all tables associated with this order
+            $currentOrder->orderTable->each(function ($tab) use ($currentOrderTableStatus) {
+                $tab->table->update(['status' => $currentOrderTableStatus]);
+                $tab->update(['status' => $currentOrderTableStatus]);
             });
         }
 
-        $designatedOrderId = isset($currentOrderId) ? $currentOrderId : $newOrder;
-
-        //step 2: update listed tables to order merged & create new order table
-        foreach($request['tables'] as $table){
-            $currentTable = Table::find($table['id']);
-            $currentTable->update([
-                'order_id' => $designatedOrderId,
-                'status' => $orderTableStatus
-            ]);
-
-            // Find the latest order_table without creating intermediate collections
-            $newestOrderTable = null;
-            $newestTimestamp = null;
-            
-            foreach ($table['order_tables'] as $orderTable) {
-                $timestamp = $orderTable['created_at'] ?? 0;
-                if ($newestTimestamp === null || $timestamp > $newestTimestamp) {
-                    $newestTimestamp = $timestamp;
-                    $newestOrderTable = $orderTable;
-                }
-            }
-
-            if (empty($table['order_tables']) || in_array($newestOrderTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided'])) {
-                OrderTable::create([
-                    'table_id' => $table['id'],
-                    'pax' => $totalPax,
-                    'user_id' => auth()->user()->id,
-                    'status' => $orderTableStatus,
-                    'order_id' => $designatedOrderId,                
-                ]);
-                
-            } else {
-                $mergingTable = OrderTable::find($newestOrderTable['id']);
-                $mergingTable->update(['status' => $orderTableStatus]);
-                $mergingTable->save();
-
-                $orderItems = collect($newestOrderTable['order']['order_items']);
-
-                $orderItems->each(function ($item) use ($designatedOrderId) {
-                    $orderItem = OrderItem::find($item['id']);
-                    $orderItem->update(['order_id' => $designatedOrderId]);
-                    $orderItem->refresh();
-                });
-            }
-        }
-
-        $designatedOrder = Order::with(['orderTable.table', 'orderItems'])->find($designatedOrderId);
-
-        return response()->json($designatedOrder);
+        return redirect()->back();
     }
 
     private function getAllCustomers() {

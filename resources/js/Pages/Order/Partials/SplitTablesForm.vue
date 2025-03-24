@@ -36,6 +36,8 @@ const isLoading = ref(false);
 const isConfirmShow = ref(false);
 const isSelectedCustomer = ref();
 const isReassignOrderModalOpen = ref(false);
+const isUnsavedChangesOpen = ref(false);
+const isDirty = ref(false);
 const customers = ref([]);
 const checkedIn = ref([]);
 const { showMessage } = useCustomToast();
@@ -153,7 +155,23 @@ const populateTabs = () => {
     }
 };
 
+const openConfirm = () => {
+    order.value.order_table.sort((a, b) => b.id - a.id)[0];
+
+    if (order.value.order_table) {
+        isConfirmShow.value = true;
+    }
+
+};
+
+
+const closeConfirm = () => {
+    isConfirmShow.value = false;
+}
+
+
 const openReassignOrderModal = () => {
+    closeConfirm();
     isReassignOrderModalOpen.value = true;
 }
 
@@ -198,25 +216,25 @@ const mergeTable = async () => {
     })
     
     
-    try {
-        const response = await axios.post('/order-management/orders/mergeTable', form);
+    // try {
+    //     const response = await axios.post('/order-management/orders/mergeTable', form);
 
-        setTimeout(() => {
-            showMessage({
-                severity: 'success',
-                summary: `Selected table has been successfully merged with '${props.currentOrderTable.table_no}'.`
-            })
-        }, 200);
+    //     setTimeout(() => {
+    //         showMessage({
+    //             severity: 'success',
+    //             summary: `Selected table has been successfully merged with '${props.currentOrderTable.table_no}'.`
+    //         })
+    //     }, 200);
 
-        form.reset();
-        emit('closeOrderDetails');
-        closeConfirm();
-        emit('close');
-    } catch (error) {
-        console.error(error);
-    } finally {
+    //     form.reset();
+    //     emit('closeOrderDetails');
+    //     closeConfirm();
+    //     emit('close');
+    // } catch (error) {
+    //     console.error(error);
+    // } finally {
 
-    }
+    // }
     // form.post(route('orders.mergeTable'), {
     //     preserveScroll: true,
     //     preserveState: true,
@@ -224,34 +242,6 @@ const mergeTable = async () => {
     //     }
     // })
 }
-
-const openConfirm = () => {
-    // const isCheckedIn = form.tables.flatMap((table) => table.order_tables)
-    //                                 .filter((order_table) => !!order_table.order.customer_id)
-    //                                 .map((order_table) => order_table.order.customer_id);
-
-    // isCheckedIn.push(props.currentOrderCustomer?.id);
-    // checkedIn.value = customers.value.filter((customer) =>
-    //     isCheckedIn.includes(customer.id)
-    // );
-
-    // isSelectedCustomer.value = checkedIn.value.length > 0 ? checkedIn.value[0] : null;
-    // // console.log(isSelectedCustomer.value);
-    // if (checkedIn.value.length > 1) {
-    // } else {
-    //     mergeTable();
-    // }
-    if (order.value.order_items.length > 0) {
-        isConfirmShow.value = true;
-    }
-
-};
-
-
-const closeConfirm = () => {
-    isConfirmShow.value = false;
-}
-
 const toRemainTableNames = computed(() => {
     return form.tables.tables_to_remain.length === 1
         ?  "--"
@@ -261,14 +251,14 @@ const toRemainTableNames = computed(() => {
             .join(", ");
 })
 
-const toReassignTableNames = computed(() => {
-    return form.tables.tables_to_split.length === 1
-        ?  "--"
-        : form.tables.tables_to_split
-            .filter((table) => table.id !== props.currentOrderTable.id)
-            .map((table) => table.table_no)
-            .join(", ");
-})
+// const toReassignTableNames = computed(() => {
+//     return form.tables.tables_to_split.length === 1
+//         ?  "--"
+//         : form.tables.tables_to_split
+//             .filter((table) => table.id !== props.currentOrderTable.id)
+//             .map((table) => table.table_no)
+//             .join(", ");
+// })
 
 watch(() => zones.value, populateTabs, { immediate: true });
 watch(() => props.currentOrder, (newValue) => (order.value = newValue));
@@ -305,7 +295,7 @@ onMounted(() => {
         <div class="flex flex-col px-6 pt-6 pb-2 items-center gap-4 self-stretch rounded-b-[5px] bg-white shadow-[0_-8px_16.6px_0_rgba(0,0,0,0.04)] mx-[-20px]">
             <div class="flex h-[25px] items-end gap-2.5 self-stretch">
                 <span class="flex-[1_0_0] self-stretch text-grey-950 text-base font-normal">
-                    Table merged with :
+                    Table merged with:
                 </span>
                 <span>
                     {{ toRemainTableNames }}
@@ -324,6 +314,7 @@ onMounted(() => {
                     :variant="'primary'"
                     :type="'button'"
                     :size="'lg'"
+                    :disabled="form.tables.tables_to_split.length == 0"
                     @click="openConfirm()"
                 >
                     Confirm
@@ -445,9 +436,7 @@ onMounted(() => {
         <ReassignOrder
             :currentTable="form.tables.tables_to_remain.find((table) => table.id === props.currentOrderTable.id)"
             :currentTableName="toRemainTableNames"
-            :currentTables="form.tables.tables_to_remain.find((table) => table.id === props.currentOrderTable.id)"
-            :targetTable="form.tables.tables_to_split[0] ?? {}"
-            :targetTableName="toReassignTableNames"
+            :currentTables="form.tables.tables_to_remain"
             :targetTables="form.tables.tables_to_split"
             :customers="customers"
             @closeAll="closeAll"

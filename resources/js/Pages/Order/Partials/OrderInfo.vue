@@ -219,7 +219,7 @@ const hideMergeTableForm = () => {
 }
 
 const showTransferOptionForm = () => {
-    if (props.selectedTable.status !== 'Pending Clearance') {
+    if (currentOrderTable.value.status !== 'Pending Clearance') {
         transferOptionIsOpen.value = true;
     }
 };
@@ -533,10 +533,10 @@ watch(order.value, () => {
 
             <div 
                 class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100" 
-                :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(selectedTable.status) ? 'bg-grey-100 cursor-not-allowed' : 'bg-grey-50 cursor-pointer'"
+                :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(currentOrderTable.status) ? 'bg-grey-100 cursor-not-allowed' : 'bg-grey-50 cursor-pointer'"
                 @click="showTransferOptionForm()" 
             >
-                <TransferIcon class="size-6" :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(selectedTable.status) ? 'text-grey-200' : 'text-primary-950'" />
+                <TransferIcon class="size-6" :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(currentOrderTable.status) ? 'text-grey-200' : 'text-primary-950'" />
             </div>
 
         </div>
