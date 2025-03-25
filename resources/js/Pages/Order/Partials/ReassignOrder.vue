@@ -57,7 +57,7 @@ const processOrderItems = (orderTables) => {
 };
 
 const form = useForm({
-    reassignOrder: true,
+    splitType: 'reassign',
     currentTable: {
         table_id: props.currentTable.id,
         order_id: props.currentTable.order_id,

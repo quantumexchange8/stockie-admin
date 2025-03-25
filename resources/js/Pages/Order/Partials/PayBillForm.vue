@@ -14,6 +14,7 @@ import { onMounted } from 'vue';
 import { CardIcon, CashIcon, EWalletIcon } from '../../../Components/Icons/solid';
 import SelectCustomer from './SelectCustomer.vue';
 import MergeBill from './MergeBill.vue';
+import SplitBill from './SplitBill.vue';
 
 const props = defineProps({
     currentOrder: Object,
@@ -34,6 +35,7 @@ const change = ref('0.00');
 const selectedMethod = ref('');
 const isCustomerModalOpen = ref(false);
 const isMergeBillModalOpen = ref(false);
+const isSplitBillModalOpen = ref(false);
 const isSuccessPaymentShow = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
@@ -113,6 +115,11 @@ const showCustomerModal = () => {
     isDirty.value = false;
 }
 
+const showSplitBillModal = () => {
+    isSplitBillModalOpen.value = true;
+    isDirty.value = false;
+}
+
 const showMergeBillModal = () => {
     isMergeBillModalOpen.value = true;
     isDirty.value = false;
@@ -126,6 +133,7 @@ const closeModal = (status) => {
             } else {
                 isCustomerModalOpen.value = false;
                 isMergeBillModalOpen.value = false;
+                isSplitBillModalOpen.value = false;
             }
             break;
         }
@@ -137,6 +145,7 @@ const closeModal = (status) => {
             isUnsavedChangesOpen.value = false;
             isCustomerModalOpen.value = false;
             isMergeBillModalOpen.value = false;
+            isSplitBillModalOpen.value = false;
             break;
         }
     }
@@ -524,7 +533,10 @@ watch(remainingBalanceDue, (newValue) => {
                     <DiscountIcon />
                     <p class="text-grey-950 text-base font-medium">Add Discount</p>
                 </div>
-                <div class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border cursor-pointer border-grey-100 bg-grey-50">
+                <div 
+                    class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border cursor-pointer border-grey-100 bg-grey-50"
+                    @click="showSplitBillModal"
+                >
                     <SplitBillIcon />
                     <p class="text-grey-950 text-base font-medium">Split Bill</p>
                 </div>
@@ -782,6 +794,30 @@ watch(remainingBalanceDue, (newValue) => {
             :currentTable="currentTable"
             @update:order="updateOrder($event)"
             @closeOrderDetails="closeOrderDetails"
+            @closeModal="closeModal"
+            @isDirty="isDirty = $event"
+        />
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal>
+   
+    <Modal
+        :title="'Split bill'"
+        :maxWidth="'xl'"
+        :closeable="true"
+        :show="isSplitBillModalOpen"
+        @close="closeModal('close')"
+    >
+        <SplitBill
+            :currentOrder="order"
+            :currentTable="currentTable"
             @closeModal="closeModal"
             @isDirty="isDirty = $event"
         />
