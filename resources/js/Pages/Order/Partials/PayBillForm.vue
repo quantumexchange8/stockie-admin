@@ -9,12 +9,13 @@ import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast } from '@/Composables';
 import { useForm, usePage} from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { CheckCircleIcon, CustomerIcon, CustomerIcon2, DeleteIcon2, DiscountIcon, MergedIcon, SplitBillIcon, TimesIcon, ToastSuccessIcon } from '@/Components/Icons/solid';
+import { CheckCircleIcon, CheckIcon, CustomerIcon, CustomerIcon2, DeleteIcon2, DiscountIcon, MergedIcon, SplitBillIcon, TimesIcon, ToastSuccessIcon } from '@/Components/Icons/solid';
 import { onMounted } from 'vue';
 import { CardIcon, CashIcon, EWalletIcon } from '../../../Components/Icons/solid';
 import SelectCustomer from './SelectCustomer.vue';
 import MergeBill from './MergeBill.vue';
 import SplitBill from './SplitBill.vue';
+import ApplyDIscountForm from './ApplyDIscountForm.vue';
 
 const props = defineProps({
     currentOrder: Object,
@@ -40,6 +41,7 @@ const selectedMethod = ref('');
 const isCustomerModalOpen = ref(false);
 const isMergeBillModalOpen = ref(false);
 const isSplitBillModalOpen = ref(false);
+const isAddDiscountModalOpen = ref(false);
 const isSuccessPaymentShow = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
@@ -79,12 +81,6 @@ const splitBillsState = ref({
 
 // Update the paySplitBill function
 const paySplitBill = (bill) => {
-// Store the current split bills state
-//   splitBillsState.value = {
-//     currentBill: form.currentBill,
-//     splitBills: form.splitBills
-//   };
-  
     splitBillDetails.value = bill;
     selectedCustomer.value = splitBillDetails.value.customer;
     order.value = splitBillDetails.value;
@@ -92,23 +88,9 @@ const paySplitBill = (bill) => {
     closeModal('leave');
 };
 
-// // Modify the handlePaymentSuccess function
-// const handlePaymentSuccess = () => {
-//   if (splitBillDetails.value) {
-//     // For split bills, return to split bill form with updated state
-//     isSuccessPaymentShow.value = false;
-//     isSplitBillModalOpen.value = true;
-//   } else {
-//     // For normal bills, close everything
-//     isSuccessPaymentShow.value = false;
-//     emit('close', 'leave');
-//     emit('closeDrawer');
-//   }
-// };
-
 const openSuccessPaymentModal = () => {
     isSuccessPaymentShow.value = true;
-}
+};
 
 const closeSuccessPaymentModal = () => {
     isSuccessPaymentShow.value = false;
@@ -135,7 +117,7 @@ const closeSuccessPaymentModal = () => {
         }, 200)
     }
 
-}
+};
 
 const submit = async () => {
     form.payment_methods = paymentTransactions.value;
@@ -147,7 +129,6 @@ const submit = async () => {
     }
 
     try {
-        console.log(form.data());
         const response = await axios.post(`/order-management/orders/updateOrderPayment`, form);
 
         if (splitBillDetails.value && response.data.updatedCurrentBill) {
@@ -193,17 +174,24 @@ const submit = async () => {
 const showCustomerModal = () => {
     isCustomerModalOpen.value = true;
     isDirty.value = false;
-}
+};
 
 const showSplitBillModal = () => {
-    isSplitBillModalOpen.value = true;
-    isDirty.value = false;
-}
+    if (!isSplitBillMode.value) {
+        isSplitBillModalOpen.value = true;
+        isDirty.value = false;
+    }
+};
 
 const showMergeBillModal = () => {
     isMergeBillModalOpen.value = true;
     isDirty.value = false;
-}
+};
+
+const showAddDiscountModal = () => {
+    isAddDiscountModalOpen.value = true;
+    isDirty.value = false;
+};
 
 const closeModal = (status) => {
     switch(status){
@@ -214,6 +202,7 @@ const closeModal = (status) => {
                 isCustomerModalOpen.value = false;
                 isMergeBillModalOpen.value = false;
                 isSplitBillModalOpen.value = false;
+                isAddDiscountModalOpen.value = false;
             }
             break;
         }
@@ -226,10 +215,11 @@ const closeModal = (status) => {
             isCustomerModalOpen.value = false;
             isMergeBillModalOpen.value = false;
             isSplitBillModalOpen.value = false;
+            isAddDiscountModalOpen.value = false;
             break;
         }
     }
-}
+};
 
 const closeOrderDetails = () => {
     setTimeout(() => emit('fetchZones'), 200);
@@ -583,6 +573,13 @@ const removeMethod = (transaction) => {
     
 };
 
+const tableNames = computed(() => {
+    return order.value.order_table
+            ?.map((orderTable) => orderTable.table.table_no)
+            .sort((a, b) => a.localeCompare(b))
+            .join(', ') ?? '';
+});
+
 watch(grandTotalAmount, (newValue) => {
     billAmountKeyed.value = newValue;
 });
@@ -612,7 +609,10 @@ watch(remainingBalanceDue, (newValue) => {
                     <CustomerIcon2 />
                     <p class="text-base font-medium">{{ selectedCustomer?.full_name ?? 'Customer' }}</p>
                 </div>
-                <div class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border cursor-pointer border-grey-100 text-grey-950">
+                <div 
+                    class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] text-grey-300 bg-grey-25 border-grey-50 cursor-not-allowed"
+                    @click=""
+                >
                     <DiscountIcon />
                     <p class="text-base font-medium">Add Discount</p>
                 </div>
@@ -626,11 +626,21 @@ watch(remainingBalanceDue, (newValue) => {
                 </div>
                 <div 
                     class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border"
-                    :class="isSplitBillMode ? 'text-grey-300 bg-grey-25 border-grey-50 cursor-not-allowed' : 'text-grey-950 border-grey-100 bg-grey-50 cursor-pointer'"
+                    :class="isSplitBillMode 
+                            ? 'text-grey-300 bg-grey-25 border-grey-50 cursor-not-allowed' 
+                            : props.currentOrder.order_table.filter(table => ['Pending Order', 'Order Placed', 'All Order Served'].includes(table.status)).length > 1
+                                ? 'border-green-200 bg-green-50 text-green-900'
+                                : 'text-grey-950 border-grey-100 bg-grey-50 cursor-pointer'"
                     @click="showMergeBillModal"
                 >
-                    <MergedIcon />
-                    <p class="text-base font-medium">Merge Bill</p>
+                    <template v-if="props.currentOrder.order_table.filter(table => ['Pending Order', 'Order Placed', 'All Order Served'].includes(table.status)).length > 1">
+                        <CheckIcon class="text-green-500" />
+                        <p class="text-base font-medium">{{ tableNames }}</p>
+                    </template>
+                    <template v-else>
+                        <MergedIcon />
+                        <p class="text-base font-medium">Merge Bill</p>
+                    </template>
                 </div>
             </div>
 
@@ -909,6 +919,30 @@ watch(remainingBalanceDue, (newValue) => {
             @isDirty="isDirty = $event"
             @payBill="paySplitBill"
             @updateState="(newState) => splitBillsState = newState"
+        />
+
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal>
+   
+    <Modal
+        :title="'Discount'"
+        :maxWidth="'md'"
+        :closeable="true"
+        :show="isAddDiscountModalOpen"
+        @close="closeModal('close')"
+    >
+        <ApplyDIscountForm
+            :currentOrder="order"
+            :currentTable="currentTable"
+            @closeModal="closeModal"
+            @isDirty="isDirty = $event"
         />
 
         <Modal

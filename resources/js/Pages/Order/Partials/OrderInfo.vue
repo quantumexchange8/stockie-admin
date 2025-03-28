@@ -422,7 +422,8 @@ const getVoucherDiscountedPrice = (subtotal, voucher) => {
 }
 
 const cancelOrderIsDisabled = computed(() => {
-   return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || currentTable.value.status === 'Pending Clearance';
+//    return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || currentTable.value.status === 'Pending Clearance';
+   return currentTable.value.status === 'Pending Clearance';
 });
 
 const tableIsMerged = computed(() => {

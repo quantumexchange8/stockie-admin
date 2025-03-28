@@ -46,6 +46,7 @@ const orderCustomer = ref(order.value.customer);
 const isCustomerModalOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
+const deleteItemType = ref('');
 
 watch(order, (newValue) => orderCustomer.value = newValue.customer);
 
@@ -105,7 +106,8 @@ const closeOrderDetails = () => {
     setTimeout(() => emit('fetchPendingServe'), 400);
 };
 
-const showDeleteOrderItemOverlay = (event) => {
+const showDeleteOrderItemOverlay = (event, type) => {
+    deleteItemType.value = type;
     op2.value.show(event);
 };
 
@@ -362,7 +364,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                 <div class="flex flex-col gap-2 justify-start self-stretch">
                     <div class="flex items-center justify-between">
                         <p class="text-primary-950 text-md font-medium">Pending Serve</p>
-                        <button @click="showDeleteOrderItemOverlay">
+                        <button @click="showDeleteOrderItemOverlay($event, 'pending')">
                             <DeleteIcon class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"/>
                         </button>
                     </div>
@@ -413,6 +415,9 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                 <div class="flex flex-col gap-2 justify-start self-stretch">
                     <div class="flex items-center justify-between">
                         <p class="text-primary-950 text-md font-medium">Served</p>
+                        <button @click="showDeleteOrderItemOverlay($event, 'served')">
+                            <DeleteIcon class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"/>
+                        </button>
                     </div>
                     <template v-if="servedItems.length > 0">
                         <div class="flex flex-col divide-y-[0.5px] divide-grey-200">
@@ -489,10 +494,18 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
 
     <!-- Remove order item -->
     <OverlayPanel ref="op2" @close="hideDeleteOrderItemOverlay">
-        <template v-if="pendingServeItems">
+        <template v-if="pendingServeItems && deleteItemType ===  'pending'">
             <RemoveOrderItem 
                 :order="order" 
                 :orderItems="pendingServeItems" 
+                @close="hideDeleteOrderItemOverlay" 
+                @closeDrawer="closeOrderDetails"
+            />
+        </template>
+        <template v-if="servedItems && deleteItemType ===  'served'">
+            <RemoveOrderItem 
+                :order="order" 
+                :orderItems="servedItems" 
                 @close="hideDeleteOrderItemOverlay" 
                 @closeDrawer="closeOrderDetails"
             />

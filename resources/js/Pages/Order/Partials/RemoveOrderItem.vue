@@ -86,7 +86,8 @@ const addItemToList = (item) => {
 const getLeftoverQuantity = (item) => {
     if (!item.sub_items || item.sub_items.length === 0) return item.item_qty;
     
-    const untouchedQty = item.item_qty - getTotalServedQty(item);
+    // const untouchedQty = item.item_qty - getTotalServedQty(item);
+    const untouchedQty = item.item_qty;
 
     return untouchedQty > 0 ? untouchedQty : 0;
 };

@@ -37,6 +37,7 @@ class Payment extends Model
         'point_earned',
         'pax',
         'status',
+        'invoice_status',
         'customer_id',
         'handled_by',
     ];
@@ -90,5 +91,14 @@ class Payment extends Model
     public function voucher(): BelongsTo
     {
         return $this->belongsTo(RankingReward::class,'discount_id');
+    }
+
+    /**
+     * ShiftTransaction Model
+     * Get the shift transaction of this order.
+     */
+    public function shiftTransaction(): BelongsTo
+    {
+        return $this->belongsTo(ShiftTransaction::class,'transaction_id');
     }
 }

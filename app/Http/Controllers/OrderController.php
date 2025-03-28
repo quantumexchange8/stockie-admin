@@ -682,69 +682,110 @@ class OrderController extends Controller
      */
     public function cancelOrder(string $id)
     {
-        $existingOrder = Order::with([
-                                    'orderItems.subItems.productItem.inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id,current_kept_amt', 
-                                    'orderTable.table',
-                                ])->find($id);
+        return DB::transaction(function () use ($id) {
+            $existingOrder = Order::with([
+                                        'orderItems.subItems.productItem.inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id,current_kept_amt', 
+                                        'orderTable.table',
+                                    ])->find($id);
 
-        if ($existingOrder) {
-            $isAllKeepType = $existingOrder->orderItems->every(function ($orderItem, int $key) {
-                return $orderItem->type === 'Keep';
-            });
+            if ($existingOrder) {
+                $isAllKeepType = $existingOrder->orderItems->every(function ($orderItem, int $key) {
+                    return $orderItem->type === 'Keep';
+                });
 
-            foreach ($existingOrder->orderItems as $item) {
-                if ($item['status'] === 'Pending Serve') {
-                    foreach ($item->subItems as $subItem) {
-                        $inventoryItem = $subItem->productItem->inventoryItem;
-                        
-                        $qtySold = $subItem['serve_qty'];
-                        $restoredQty = $item['item_qty'] * $subItem['item_qty'] - $qtySold;
-                        $oldStockQty = $inventoryItem->stock_qty;
-                        $newStockQty = $oldStockQty + $restoredQty;
-    
-                        // Update inventory with restored stock
-                        $newStatus = match(true) {
-                            $newStockQty === 0 => 'Out of stock',
-                            $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
-                            default => 'In stock'
-                        };
+                foreach ($existingOrder->orderItems as $item) {
+                    // if ($item['status'] === 'Pending Serve') {
+                    if ($item['type'] === 'Normal') {
+                        foreach ($item->subItems as $subItem) {
+                            $inventoryItem = $subItem->productItem->inventoryItem;
+                            
+                            // $qtySold = $subItem['serve_qty'];
+                            // $restoredQty = $item['item_qty'] * $subItem['item_qty'] - $qtySold;
+                            $restoredQty = $item['item_qty'] * $subItem['item_qty'];
+                            $oldStockQty = $inventoryItem->stock_qty;
+                            $newStockQty = $oldStockQty + $restoredQty;
+        
+                            // Update inventory with restored stock
+                            $newStatus = match(true) {
+                                $newStockQty === 0 => 'Out of stock',
+                                $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
+                                default => 'In stock'
+                            };
 
-                        $inventoryItem->update([
-                            'stock_qty' => $newStockQty,
-                            'status' => $newStatus
-                        ]);
-                        $inventoryItem->refresh();
-    
-                        if ($restoredQty > 0) {
-                            StockHistory::create([
-                                'inventory_id' => $inventoryItem->inventory_id,
-                                'inventory_item' => $inventoryItem->item_name,
-                                'old_stock' => $oldStockQty,
-                                'in' => $restoredQty,
-                                'out' => 0,
-                                'current_stock' => $inventoryItem->stock_qty,
-                                'kept_balance' => $inventoryItem->current_kept_amt,
+                            $inventoryItem->update([
+                                'stock_qty' => $newStockQty,
+                                'status' => $newStatus
                             ]);
+                            $inventoryItem->refresh();
+        
+                            if ($restoredQty > 0) {
+                                StockHistory::create([
+                                    'inventory_id' => $inventoryItem->inventory_id,
+                                    'inventory_item' => $inventoryItem->item_name,
+                                    'old_stock' => $oldStockQty,
+                                    'in' => $restoredQty,
+                                    'out' => 0,
+                                    'current_stock' => $inventoryItem->stock_qty,
+                                    'kept_balance' => $inventoryItem->current_kept_amt,
+                                ]);
+                            }
                         }
                     }
+                    
+                    if ($item['type'] === 'Keep') {
+                        $keepItem = KeepItem::with('oldestKeepHistory')->find($item['keep_id']);
+                        $keepType = $keepItem->oldestKeepHistory->qty > $keepItem->oldestKeepHistory->cm ? 'qty' : 'cm';
+
+                        if ($keepType === 'qty') {
+                            $keepItem->update([
+                                'qty' => $keepItem->qty + $item['item_qty'],
+                                'status' => 'Keep',
+                            ]);
+        
+                            $keepItem->save();
+                            $keepItem->refresh();
+        
+                            $associatedSubItem = OrderItemSubitem::where('id', $keepItem['order_item_subitem_id'])
+                                                                    ->with(['productItem:id,inventory_item_id'])
+                                                                    ->first();
+                            $tempInventoryItem = $associatedSubItem->productItem->inventory_item_id;
+                            $tempOrderItem = IventoryItem::find($tempInventoryItem);
+                            
+                            KeepHistory::create([
+                                'keep_item_id' => $item['keep_id'],
+                                'order_item_id' => $item['order_item_id'],
+                                'qty' => round($item['item_qty'], 2),
+                                'cm' => '0.00',
+                                'keep_date' => $keepItem->updated_at,
+                                'kept_balance' => $tempOrderItem->current_kept_amt + $item['item_qty'],
+                                'status' => 'Keep',
+                            ]);
+                            
+                            $tempOrderItem->increment('total_kept', $item['item_qty']);
+                            $tempOrderItem->increment('current_kept_amt', $item['item_qty']);
+                        }
+                    }
+                    // }
+
+                    // $item->update(['status' => $isAllKeepType ? 'Voided' : 'Cancelled']);
+                    $item->update(['status' => 'Cancelled']);
                 }
+                
+                // $existingOrder->update(['status' => $isAllKeepType ? 'Order Voided' : 'Order Cancelled']);
+                $existingOrder->update(['status' => 'Order Cancelled']);
 
-                $item->update(['status' => $isAllKeepType ? 'Voided' : 'Cancelled']);
+                // Update all tables associated with this order
+                $existingOrder->orderTable->each(function ($tab) use ($isAllKeepType) {
+                    $tab->table->update([
+                        'status' => 'Pending Clearance',
+                        // 'order_id' => null
+                    ]);
+                    $tab->update(['status' => 'Pending Clearance']);
+                });
             }
-            
-            $existingOrder->update(['status' => $isAllKeepType ? 'Order Voided' : 'Order Cancelled']);
 
-            // Update all tables associated with this order
-            $existingOrder->orderTable->each(function ($tab) use ($isAllKeepType) {
-                $tab->table->update([
-                    'status' => 'Pending Clearance',
-                    // 'order_id' => null
-                ]);
-                $tab->update(['status' => 'Pending Clearance']);
-            });
-        }
-
-        return redirect()->back();
+            return redirect()->back();
+        });
     }
 
     /**
@@ -1169,6 +1210,10 @@ class OrderController extends Controller
                                 ]);
                                 $inventoryItem->refresh();
 
+                                $subItem->update([
+                                    'serve_qty' => ($subItem['serve_qty'] - $restoredQty) < 0 ? 0 : $subItem['serve_qty'] - $restoredQty
+                                ]);
+
                                 StockHistory::create([
                                     'inventory_id' => $inventoryItem->inventory_id,
                                     'inventory_item' => $inventoryItem->item_name,
@@ -1402,9 +1447,11 @@ class OrderController extends Controller
                                             'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
                                             'status' => 'Keep',
                                         ]);
-
-                                        $tempOrderItem->increment('total_kept', $item['amount']);
-                                        $tempOrderItem->increment('current_kept_amt', $item['amount']);
+                                        
+                                        if ($reqItem['type'] === 'qty') {
+                                            $tempOrderItem->increment('total_kept', $item['amount']);
+                                            $tempOrderItem->increment('current_kept_amt', $item['amount']);
+                                        }
 
                                         if ($orderItem->status === 'Pending Serve') {
                                             $toBeServed = ($reqItem['totalKept'] + $item['amount']) - $subItem['serve_qty'];
@@ -2075,6 +2122,7 @@ class OrderController extends Controller
         
         if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && ($statusArr->first() === 'All Order Served' || $statusArr->first() === 'Order Placed' || $statusArr->first() === 'Pending Order'))) {
             $currentShiftTransaction = ShiftTransaction::where('status', 'opened')->first();
+            $paymentMethodSales = [];
             
             $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
             $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
@@ -2129,6 +2177,8 @@ class OrderController extends Controller
                     'payment_method' => $payMethod['method'],
                     'amount' => $payMethod['amount'],
                 ]);
+
+                $paymentMethodSales[$payMethod['method']] = $payMethod['amount'];
             }
         
             // Handle sale history and commissions for "Normal" order items
@@ -2179,8 +2229,6 @@ class OrderController extends Controller
                     new GiveBonusPoint($payment->id, $totalPoints, $oldPointBalance, $customer->id, $request->user_id)
                 ])->dispatch();
 
-                
-                /* START PUTTING INTO UPDATE TIER JOB */
                 // Determine the new rank based on the new total spending 
                 $newRankingDetails = Ranking::where('min_amount', '<=', $newTotalSpending)
                                     ->select('id', 'name')
@@ -2188,97 +2236,6 @@ class OrderController extends Controller
                                     ->first();
                 
                 $newRankingDetails->image = $newRankingDetails->getFirstMediaUrl('ranking');
-        
-                /*// $newRanking = $newRankingDetails->value('id');
-
-                // // Update customer points and total spending
-                // $customer->update([
-                //     'point' => $newPointBalance,
-                //     'total_spending' => $newTotalSpending,
-                //     'ranking' => $newRanking
-                // ]);
-                // $customer->refresh();
-                // STOP PUTTING INTO UPDATE TIER JOB
-
-
-                // GIVE ENTRY REWARD JOB
-
-                // $bonusPointRewards = [];
-                // // Grant rewards for rank up 
-                // if ($newRanking && $newRanking != $oldRanking) { 
-                //     $ranks = Ranking::select('id')
-                //                     ->with(['rankingRewards' => function ($query) {
-                //                         $query->where('status', 'Active')
-                //                                 ->select('id', 'ranking_id', 'reward_type', 'bonus_point');
-                //                     }])
-                //                     ->where([
-                //                         ['reward', 'active'],
-                //                         ['min_amount', '<=', $newTotalSpending],
-                //                         ['min_amount', '>', $oldTotalSpending]
-                //                     ]) 
-                //                     ->orderBy('min_amount', 'asc') 
-                //                     ->get(); 
-
-                //     foreach ($ranks as $rank) { 
-                //         $rank->rankingRewards->each(function ($reward) use ($customer, $bonusPointRewards) {
-                //             CustomerReward::create([ 
-                //                 'customer_id' => $customer->id, 
-                //                 'ranking_reward_id' => $reward->id, 
-                //                 'status' => 'Active' 
-                //             ]);
-
-                //             if ($reward->reward_type === 'Bonus Point') {
-                //                 array_push($bonusPointRewards, $reward);
-                //             }
-                //         }); 
-                //     };
-                // };
-
-                // END GIVE ENTRY REWARD JOB 
-
-
-                // START GIVE BONUS POINT JOB 
-                //     // Log point history for earned points from completed order
-                //     PointHistory::create([ 
-                //         'product_id' => null, 
-                //         'payment_id' => $id, 
-                //         'type' => 'Earned', 
-                //         'point_type' => 'Order', 
-                //         'qty' => 0, 
-                //         'amount' => $totalPoints, 
-                //         'old_balance' => $oldPointBalance, 
-                //         'new_balance' => $newPointBalance, 
-                //         'customer_id' => $customer->id, 
-                //         'handled_by' => $request->user_id, 
-                //         'redemption_date' => now() 
-                //     ]);
-
-                //     // Log point history for earned bonus point entry reward
-                //     foreach ($bonusPointRewards as $key => $reward) {
-                //         $currentPoint = $customer->point;
-                //         $pointAfterBonus = $currentPoint + $reward['bonus_point'];
-                        
-                //         PointHistory::create([ 
-                //             'product_id' => null, 
-                //             'payment_id' => null, 
-                //             'type' => 'Earned', 
-                //             'point_type' => 'Entry Reward', 
-                //             'qty' => 0, 
-                //             'amount' => $reward['bonus_point'], 
-                //             'old_balance' => $currentPoint, 
-                //             'new_balance' => $pointAfterBonus, 
-                //             'customer_id' => $customer->id, 
-                //             'handled_by' => $request->user_id, 
-                //             'redemption_date' => now() 
-                //         ]);
-                        
-                //         // Update customer points and total spending
-                //         $customer->update(['point' => $pointAfterBonus]);
-                //         $customer->refresh();
-
-                //         $customerReward = CustomerReward::find($reward['id']);
-                //         $customerReward->update(['status' => 'Redeemed']);
-                //     }*/
 
                 $response = [
                     'newPointBalance' => $newPointBalance,
@@ -2290,6 +2247,27 @@ class OrderController extends Controller
             $payment->update([
                 'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
                 'status' => 'Successful'
+            ]);
+
+            $cashSales = $currentShiftTransaction->cash_sales + ($paymentMethodSales['Cash'] ?? 0.00);
+            $cardSales = $currentShiftTransaction->card_sales + ($paymentMethodSales['Card'] ?? 0.00);
+            $ewalletSales = $currentShiftTransaction->ewallet_sales + ($paymentMethodSales['E-Wallet'] ?? 0.00);
+            $grossSales = $currentShiftTransaction->gross_sales + array_sum($paymentMethodSales);
+
+            $sstAmount = $currentShiftTransaction->sst_amount + $payment->sst_amount;
+            $serviceTaxAmount = $currentShiftTransaction->service_tax_amount + $payment->service_tax_amount;
+            $totalDiscount = $currentShiftTransaction->total_discount + $payment->discount_amount;
+            $netSales = $grossSales - $sstAmount - $serviceTaxAmount - $currentShiftTransaction->total_refund - $currentShiftTransaction->total_void - $totalDiscount;
+
+            $currentShiftTransaction->update([
+                'cash_sales' => $cashSales,
+                'card_sales'=> $cardSales,
+                'ewallet_sales'=> $ewalletSales,
+                'gross_sales'=> $grossSales,
+                'sst_amount'=> $sstAmount,
+                'service_tax_amount'=> $serviceTaxAmount,
+                'total_discount'=> $totalDiscount,
+                'net_sales'=> $netSales,
             ]);
         
             // Update the total amount of the order based on the payment's grandtotal
@@ -2316,7 +2294,7 @@ class OrderController extends Controller
             });
 
             // POST CT Einvoice
-            $this->storeAtCtInvoice($payment);
+            // $this->storeAtCtInvoice($payment);
         }
 
         /* END GIVE BONUS POINT JOB */

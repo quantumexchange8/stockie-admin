@@ -299,6 +299,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/getOrderHistories', [OrderController::class, 'getOrderHistories'])->name('orders.getOrderHistories');
         Route::get('/getAllCategories', [OrderController::class, 'getAllCategories'])->name('orders.getAllCategories');
         Route::get('/getAllTaxes', [OrderController::class, 'getAllTaxes'])->name('orders.getAllTaxes');
+        Route::get('/getBillDiscount', [OrderController::class, 'getBillDiscount'])->name('orders.getBillDiscount');
 
         //Order's keep item
         Route::put('/editKeptItemDetail', [OrderController:: class, 'editKeptItemDetail'])->name('editKeptItemDetail');

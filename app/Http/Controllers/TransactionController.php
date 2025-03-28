@@ -92,19 +92,23 @@ class TransactionController extends Controller
     public function voidTransaction(Request $request)
     {
 
-        $transaction = Payment::find($request->id);
+        $transaction = Payment::with('shiftTransaction')->find($request->id);
+
+        $shift = $transaction->shiftTransaction;
 
         $transaction->status = 'Voided';
         $transaction->save();
+
+        $shift->update([
+            'total_void' => $shift['total_void'] + $transaction->grand_total,
+            'net_sales' => $shift['net_sales'] - $transaction->grand_total
+        ]);
 
         return redirect()->back();
     }
 
     public function refundTransaction(Request $request)
     {
-
-        dd($request->all());
-
 
         $calPoint = Setting::where('name', 'Point')->first(['point', 'value']);
         $refund_point = (int) round(($request->params['refund_subtotal'] / $calPoint->value) * $calPoint->point);
@@ -150,6 +154,14 @@ class TransactionController extends Controller
                 'product_id' => $refund_item['product_id'],
             ]);
         }
+        
+        $transaction = Payment::with('shiftTransaction')->find($request->params['id']);
+        $shift = $transaction->shiftTransaction;
+
+        $shift->update([
+            'total_refund' => $shift['total_refund'] + $paymentRefund['total_refund_amount'],
+            'net_sales' => $shift['net_sales'] - $paymentRefund['total_refund_amount']
+        ]);
 
         return redirect()->back();
     }

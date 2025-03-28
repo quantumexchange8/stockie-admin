@@ -86,4 +86,12 @@ class ShiftTransaction extends Model
     {
         return $this->hasMany(ShiftPayHistory::class, 'shift_transaction_id');
     }
+
+    /**
+     * Get the payments made under this shift transaction.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'transaction_id');
+    }
 }

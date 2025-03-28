@@ -28,7 +28,7 @@ const fetchPaymentHistories = async () => {
             });
 
             if (tableOrders.value.length > 0) {
-                tableOrders.value.filter((order) => order.payment);
+                tableOrders.value = tableOrders.value.filter((order) => order.payment);
             }
         }
     } catch (error) {

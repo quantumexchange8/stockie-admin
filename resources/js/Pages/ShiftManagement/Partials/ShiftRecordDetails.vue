@@ -63,11 +63,11 @@ watch(() => props.currentSelectedShift, (newValue) => {
                                     <p class="text-grey-950 font-semibold text-base text-right">RM {{ Number(selectedShift.gross_sales).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex justify-between items-start self-stretch">
-                                    <p class="text-grey-700 font-normal text-base">SST ({{ selectedShift.gross_sales > 0 ? ((selectedShift.sst_amount / selectedShift.gross_sales) * 100): 0 }}%)</p>
+                                    <p class="text-grey-700 font-normal text-base">SST <!-- ({{ selectedShift.gross_sales > 0 ? ((selectedShift.sst_amount / selectedShift.gross_sales) * 100): 0 }}%) --></p>
                                     <p class="text-grey-950 font-semibold text-base text-right">RM {{ Number(selectedShift.sst_amount).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex justify-between items-start self-stretch">
-                                    <p class="text-grey-700 font-normal text-base">Service tax ({{ selectedShift.gross_sales > 0 ? ((selectedShift.service_tax_amount / selectedShift.gross_sales) * 100) : 0 }}%)</p>
+                                    <p class="text-grey-700 font-normal text-base">Service tax <!-- ({{ selectedShift.gross_sales > 0 ? ((selectedShift.service_tax_amount / selectedShift.gross_sales) * 100) : 0 }}%) --></p>
                                     <p class="text-grey-950 font-semibold text-base text-right">RM {{ Number(selectedShift.service_tax_amount).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex justify-between items-start self-stretch">

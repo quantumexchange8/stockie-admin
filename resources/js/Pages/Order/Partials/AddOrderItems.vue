@@ -300,8 +300,14 @@ const closeStockDetailItemModal = () => {
                                         <NumberCounter
                                             :inputName="`item_${product.id}_item_qty`"
                                             :errorMessage="(form.errors) ? form.errors[`item_${product.id}.item_qty`] : ''"
-                                            :maxValue="getCurrentProductKeptAmount(product) <= 0 ? product.stock_left : product.bucket === 'set' ? getAvailableForSaleQty(product) : getCurrentProductKeptAmount(product) + product.stock_left"
-                                            :disabled="getCurrentProductKeptAmount(product) > 0 ? (getCurrentProductKeptAmount(product) + product.stock_left) === 0 : product.stock_left === 0"
+                                            :maxValue="getCurrentProductKeptAmount(product) <= 0 
+                                                    ? product.stock_left 
+                                                    : product.bucket === 'set' 
+                                                        ? getAvailableForSaleQty(product) 
+                                                        : getCurrentProductKeptAmount(product) + product.stock_left"
+                                            :disabled="getCurrentProductKeptAmount(product) > 0 
+                                                    ? (getCurrentProductKeptAmount(product) + product.stock_left) === 0 
+                                                    : product.stock_left === 0"
                                             v-model="quantityComputed(product.id).value"
                                             @onChange="updateProductQuantity(product.id, $event)"
                                             class="col-span-full sm:col-span-4"
@@ -370,8 +376,14 @@ const closeStockDetailItemModal = () => {
                                         <NumberCounter
                                             :inputName="`item_${product.id}_item_qty`"
                                             :errorMessage="(form.errors) ? form.errors[`item_${product.id}.item_qty`] : ''"
-                                            :maxValue="getCurrentProductKeptAmount(product) <= 0 ? product.stock_left : product.bucket === 'set' ? getAvailableForSaleQty(product) : getCurrentProductKeptAmount(product) + product.stock_left"
-                                            :disabled="getCurrentProductKeptAmount(product) > 0 ? (getCurrentProductKeptAmount(product) + product.stock_left) === 0 : product.stock_left === 0"
+                                            :maxValue="getCurrentProductKeptAmount(product) <= 0 
+                                                    ? product.stock_left 
+                                                    : product.bucket === 'set' 
+                                                        ? getAvailableForSaleQty(product) 
+                                                        : getCurrentProductKeptAmount(product) + product.stock_left"
+                                            :disabled="getCurrentProductKeptAmount(product) > 0 
+                                                    ? (getCurrentProductKeptAmount(product) + product.stock_left) === 0 
+                                                    : product.stock_left === 0"
                                             v-model="quantityComputed(product.id).value"
                                             @onChange="updateProductQuantity(product.id, $event)"
                                             class="col-span-full sm:col-span-4"

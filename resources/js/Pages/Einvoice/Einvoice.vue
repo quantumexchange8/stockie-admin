@@ -4,6 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from "@inertiajs/vue3";
 import { ref } from 'vue';
 import TabView from "@/Components/TabView.vue";
+import Toast from "@/Components/Toast.vue";
 import SalesTransaction from './Partials/SalesTransaction.vue';
 import RefundTransaction from './Partials/RefundTransaction.vue';
 
