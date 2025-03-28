@@ -2331,15 +2331,17 @@ class OrderController extends Controller
 
         $payout = PayoutConfig::first();
 
-        $response = Http::withHeaders([
-            'CT-API-KEY' => $payout->api_key,
-            'MERCHANT-ID' => $payout->merchant_id,
-        ])->post($payout->url . '/api/store-invoice' , [
+        $params = [
             'invoice_no' => $payment->receipt_no,
             'amount' => $payment->total_amount,
             'date_time' => Carbon::now(),
             'status' => 'pending',
-        ]);
+        ];
+
+        $response = Http::withHeaders([
+            'CT-API-KEY' => $payout->api_key,
+            'MERCHANT-ID' => $payout->merchant_id,
+        ])->post($payout->url . 'api/store-invoice', $params);
         
         Log::debug('response', ['response' => $response->status()]);
     }
