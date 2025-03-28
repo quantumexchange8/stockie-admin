@@ -24,6 +24,7 @@ use App\Models\OrderItemSubitem;
 use App\Models\OrderTable;
 use App\Models\Payment;
 use App\Models\PaymentDetail;
+use App\Models\PayoutConfig;
 use App\Models\Point;
 use App\Models\PointHistory;
 use App\Models\Product;
@@ -54,7 +55,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-
+use Illuminate\Support\Facades\Log;
 class OrderController extends Controller
 {
     public function index(Request $request)
@@ -2314,10 +2315,8 @@ class OrderController extends Controller
                 }
             });
 
-            // 2. Call 3rd party API
-            $apiResponse = $this->callThirdPartyApi($payment);
-
-            $response['api_response'] = $apiResponse;
+            // POST CT Einvoice
+            $this->storeAtCtInvoice($payment);
         }
 
         /* END GIVE BONUS POINT JOB */
@@ -2327,35 +2326,22 @@ class OrderController extends Controller
         return $response ?? 'Payment Unsuccessfull.';
     }    
 
-    protected function callThirdPartyApi(Payment $payment)
+    protected function storeAtCtInvoice(Payment $payment)
     {
-        $client = new \GuzzleHttp\Client();
-        $maxRetries = 3;
-        $retryDelay = 1000; // milliseconds
+
+        $payout = PayoutConfig::first();
+
+        $response = Http::withHeader([
+            'CT-API-KEY' => $payout->api_key,
+            'MERCHANT-ID' => $payout->merchant_id,
+        ])->post($payout->url . '/api/store-invoice' , [
+            'invoice_no' => $payment->receipt_no,
+            'amount' => $payment->total_amount,
+            'date_time' => Carbon::now(),
+            'status' => 'pending',
+        ]);
         
-        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-            try {
-                $response = Http::withHeaders($this->getApiHeaders())
-                                ->post('https://ct-einvoice.currenttech.pro/', $this->getApiPayload($payment));
-                
-                $statusCode = $response->getStatusCode();
-                $body = json_decode($response->getBody(), true);
-                
-                if ($statusCode >= 200 && $statusCode < 300) {
-                    return $body;
-                }
-                
-                throw new \Exception("API returned status: {$statusCode}");
-                
-            } catch (\Exception $e) {
-                if ($attempt === $maxRetries) {
-                    throw new \Exception("API call failed after {$maxRetries} attempts: ".$e->getMessage());
-                }
-                
-                usleep($retryDelay * 1000);
-                $retryDelay *= 2; // Exponential backoff
-            }
-        }
+        Log::debug('response', ['response' => $response->status()]);
     }
 
     protected function getApiHeaders()

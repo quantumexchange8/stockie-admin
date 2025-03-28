@@ -20,6 +20,7 @@ import {
     ActivityLogsIcon,
     ShiftManagementIcon,
     TransactionListingIcon,
+    EInvoiceIcon,
 } from "@/Components/Icons/solid";
 import { usePage } from "@inertiajs/vue3";
 import SidebarTree from "./SidebarTree.vue";
@@ -199,6 +200,18 @@ const toggleNode = (node) => {
                 >
                     <template #icon>
                         <TransactionListingIcon aria-hidden="true" />
+                    </template>
+                </SidebarLink>
+            </div>
+            <div class="flex flex-col">
+                <SidebarLink
+                    title="e-Invoice Submission"
+                    :href="route('e-invoice.einvoice-listing')"
+                    :active="route().current('e-invoice.einvoice-listing')"
+                    v-if="existingPermissions?.includes('einvoice-submission')" 
+                >
+                    <template #icon>
+                        <EInvoiceIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
             </div>

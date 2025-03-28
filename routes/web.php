@@ -21,6 +21,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\ConfigPromotionController;
 use App\Http\Controllers\ConfigShiftSettingController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\EInvoiceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
@@ -385,6 +386,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/void-transaction', [TransactionController::class, 'voidTransaction'])->name('transactions.void-transaction');
         Route::post('/refund-transaction', [TransactionController::class, 'refundTransaction'])->name('transactions.refund-transaction');
         Route::post('/voidrefund-transaction', [TransactionController::class, 'voidRefundTransaction'])->name('transactions.voidrefund-transaction');
+        
+    });
+
+    /********* E-Invoice Listing **********/
+    Route::prefix('e-invoice')->middleware([CheckPermission::class . ':einvoice-submission'])->group(function(){
+        Route::get('/einvoice-listing', [EInvoiceController::class, 'einvoice'])->name('e-invoice.einvoice-listing');
         
     });
 

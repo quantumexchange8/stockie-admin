@@ -22,6 +22,7 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm } from '@inertiajs/vue3';
 import RadioButton from '@/Components/RadioButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import dayjs from 'dayjs'
 
 const clearFilters = (close) => {
     checkedFilters.value = resetFilters();
@@ -43,10 +44,12 @@ const salesColumn = ref([
 
 const saleTransaction = ref([]);
 const date_filter = ref(''); 
+const lastMonthDate = ref('');
 const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
 const detailIsOpen = ref(false);
 const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
+const consolidateIsOpen = ref(false);
 const selectedVal = ref(null);
 const { formatAmount } = transactionFormat();
 const tabs = ref(["Sales Detail", "Product Sold", "Payment Method"]);
@@ -71,6 +74,13 @@ const fetchTransaction = async (filters = {}) => {
 };
 
 onMounted(() => fetchTransaction());
+onMounted(() => {
+    const today = dayjs()
+    const startOfLastMonth = today.subtract(1, 'month').startOf('month')
+    const endOfLastMonth = today.subtract(1, 'month').endOf('month')
+
+    lastMonthDate.value = `${startOfLastMonth.format('DD/MM/YYYY')} - ${endOfLastMonth.format('DD/MM/YYYY')}`
+})
 
 watch(date_filter, (newValue) => fetchTransaction(newValue));
 
@@ -145,6 +155,13 @@ const refundMethod = [
     { text: 'Cash', value: 'Cash'},
     { text: 'Others', value: 'Others'},
 ]
+
+const openConsolidate = () => {
+    consolidateIsOpen.value = true;
+}
+const closeConsolidate = () => {
+    consolidateIsOpen.value = false;
+}
 
 const form = useForm({
     refund_method: '',
@@ -308,6 +325,7 @@ const cancelRefund = () => {
                         variant="primary"
                         :size="'lg'"
                         iconPosition="left"
+                        @click="openConsolidate"
                     >
                         <template #icon>
                             <PlusIcon />
@@ -352,6 +370,46 @@ const cancelRefund = () => {
             </Table>
         </div>
     </div>
+
+    <Modal
+        :show="consolidateIsOpen"
+        @close="closeConsolidate"
+        :title="'Submit consolidated invoice'"
+        :maxWidth="'lg'"
+    >
+        <div class="flex flex-col gap-8">
+            <!-- Date -->
+            <div class="w-full flex gap-6">
+                <div class="flex flex-col gap-4 w-full">
+                    <div class="flex flex-col gap-1">
+                        <div class="text-grey-950 text-base font-bold">Date Period</div>
+                        <div class="text-grey-950 text-sm">Transaction which has not yet been validated from last month.</div>
+                    </div>
+                    <div>
+                        <DateInput
+                            :inputName="'date_filter'"
+                            :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                            :range="true"
+                            class="w-2/3 sm:w-auto sm:!max-w-[309px]"
+                            v-model="lastMonthDate"
+                            disabled
+                        />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4 w-full">
+                    <div class="flex flex-col gap-1">
+                        <div class="text-grey-950 text-base font-bold">Document Type</div>
+                        <div class="text-grey-950 text-sm">Document type you’ll consolidate.</div>
+                    </div>
+                    <div>
+                        
+                    </div>
+                </div>
+            </div>
+            <!-- Submittable transaction -->
+            <div></div>
+        </div>
+    </Modal>
 
     <Modal
         :show="detailIsOpen"
