@@ -2333,7 +2333,7 @@ class OrderController extends Controller
 
         $params = [
             'invoice_no' => $payment->receipt_no,
-            'amount' => $payment->total_amount,
+            'total_amount' => $payment->total_amount,
             'date_time' => Carbon::now(),
             'status' => 'pending',
         ];
