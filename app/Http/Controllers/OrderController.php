@@ -7,6 +7,7 @@ use App\Http\Requests\OrderTableRequest;
 use App\Jobs\GiveBonusPoint;
 use App\Jobs\GiveEntryReward;
 use App\Jobs\UpdateTier;
+use App\Models\BillDiscount;
 use App\Models\Category;
 use App\Models\ConfigIncentive;
 use App\Models\ConfigIncentiveEmployee;
@@ -51,6 +52,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class OrderController extends Controller
 {
@@ -1912,151 +1915,155 @@ class OrderController extends Controller
 
     private function processNormalPayment(Request $request)
     {
-        $order = Order::with([
-                            'orderTable' => function ($query) {
-                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']);
-                            },
-                            'orderTable.table', 
-                            'customer:id,point,total_spending,ranking', 
-                            'orderItems' => fn($query) => $query->with('product.commItem.configComms')->where('status', 'Served')
-                        ])
-                        ->where('id', $request->order_id)
-                        ->first();
+        return DB::transaction(function () use ($request) {
+            $order = Order::with([
+                                'orderTable' => function ($query) {
+                                    $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']);
+                                },
+                                'orderTable.table', 
+                                'customer:id,point,total_spending,ranking', 
+                                'orderItems' => fn($query) => $query->with('product.commItem.configComms')->where('status', 'Served')
+                            ])
+                            ->where('id', $request->order_id)
+                            ->first();
 
-        // Process payment
-        $paymentResponse = $this->processPayment($request, $order);
+            // Process payment
+            $paymentResponse = $this->processPayment($request, $order);
+            
+            return response()->json($paymentResponse);
         
-        return response()->json($paymentResponse);
+        });
     }
 
     private function processSplitBillPayment(Request $request)
     {
-        
-        $originalOrder = Order::with([
-                                    'orderTable' => function ($query) {
-                                        $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']);
-                                    },
-                                    'orderTable.table',
-                                    'customer:id,point,total_spending,ranking', 
-                                    'orderItems' => fn($query) => $query->where('status', 'Served')
-                                ])
-                                ->find($request->order_id);
+        return DB::transaction(function () use ($request) {
+            $originalOrder = Order::with([
+                                        'orderTable' => function ($query) {
+                                            $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']);
+                                        },
+                                        'orderTable.table',
+                                        'customer:id,point,total_spending,ranking', 
+                                        'orderItems' => fn($query) => $query->where('status', 'Served')
+                                    ])
+                                    ->find($request->order_id);
 
-        $splitBill = $request->split_bill;
-        $totalSplitOrderAmount = 0.00;
-        $totalSplitOrderDiscountedAmount = 0.00;
+            $splitBill = $request->split_bill;
+            $totalSplitOrderAmount = 0.00;
+            $totalSplitOrderDiscountedAmount = 0.00;
 
-        // Create new order for the split bill
-        $newOrder = Order::create([
-            'order_no' => RunningNumberService::getID('order'),
-            'pax' => $splitBill['pax'] ?? $originalOrder->pax,
-            'user_id' => $request->user_id,
-            'customer_id' => $splitBill['customer_id'] ?? $originalOrder->customer_id,
-            'amount' => 0.00,
-            'total_amount' => 0.00,
-            'status' => 'Order Completed',
-            'voucher_id' => $originalOrder->voucher_id,
-        ]);
-
-        foreach ($request->tables as $orderTable) {
-            OrderTable::create([
-                'table_id' => $orderTable['table_id'],
+            // Create new order for the split bill
+            $newOrder = Order::create([
+                'order_no' => RunningNumberService::getID('order'),
                 'pax' => $splitBill['pax'] ?? $originalOrder->pax,
                 'user_id' => $request->user_id,
-                'status' => $orderTable['status'],
-                'order_id' => $newOrder->id,                
+                'customer_id' => $splitBill['customer_id'] ?? $originalOrder->customer_id,
+                'amount' => 0.00,
+                'total_amount' => 0.00,
+                'status' => 'Order Completed',
+                'voucher_id' => $originalOrder->voucher_id,
             ]);
-        }
 
-        // Process each item in the split bill
-        foreach ($splitBill['order_items'] as $item) {
-            $balanceQty = $item['balance_qty'];
-            $originalQty = $item['original_qty'];
-            $balancePercentage = round($balanceQty / $originalQty * 100, 2);
-
-            $originalItem = OrderItem::find($item['id']);
-
-            if ($balanceQty === $originalQty) {
-                $originalItem->update(['order_id' => $newOrder->id]);
-                
-                $totalSplitOrderAmount += $originalItem->amount;
-                $totalSplitOrderDiscountedAmount += $originalItem->discount_amount;
-
-            } else {
-                // Create new order item for the split order
-                $newOrderItem = OrderItem::create([
-                    'order_id' => $newOrder->id,
-                    'user_id' => $originalItem->user_id,
-                    'type' => $originalItem->type,
-                    'product_id' => $originalItem->product_id,
-                    'product_name' => $originalItem->product_name,
-                    'item_qty' => $balanceQty,
-                    'price' => $originalItem->price,
-                    'amount_before_discount' => round($originalItem->amount_before_discount * $balancePercentage / 100, 2),
-                    'discount_id' => $originalItem->discount_id,
-                    'discount_amount' => round($originalItem->discount_amount * $balancePercentage / 100, 2),
-                    'amount' => round($originalItem->amount * $balancePercentage / 100, 2),
-                    'status' => $originalItem->status,
-                    'bucket' => $originalItem->bucket,
-                ]);
-
-                $totalSplitOrderAmount += round($originalItem->amount * $balancePercentage / 100, 2);
-                $totalSplitOrderDiscountedAmount += round($originalItem->discount_amount * $balancePercentage / 100, 2);
-
-                $newStatusArr = collect();
-                
-                $originalItem->subItems->each(function ($subItem) use ($balanceQty, $newOrderItem, &$newStatusArr) {
-                    $newSubItemServeQty = $balanceQty * $subItem->item_qty;
-                    $newQtyServed = min($newSubItemServeQty, $subItem->serve_qty);
-                    
-                    OrderItemSubitem::create([
-                        'order_item_id' => $newOrderItem->id,
-                        'product_item_id' => $subItem->product_item_id,
-                        'item_qty' => $subItem->item_qty,
-                        'serve_qty' => $newQtyServed,
-                    ]);
-
-                    // Update original subitem
-                    $subItem->decrement('serve_qty', $newQtyServed);
-                    
-                    if ($newQtyServed > 0) {
-                        $newStatusArr->push($newQtyServed < ($balanceQty * $subItem->item_qty) ? 'Pending Serve' : 'Served');
-                    }
-                });
-
-                // Update original item status based on subitems
-                $originalItemStatus = $this->determineItemStatus($newStatusArr);
-                $originalItem->update([
-                    'item_qty' => $originalItem->item_qty - $balanceQty,
-                    'amount_before_discount' => round($originalItem->amount_before_discount * (100 - $balancePercentage) / 100, 2),
-                    'discount_amount' => round($originalItem->discount_amount * (100 - $balancePercentage) / 100, 2),
-                    'amount' => round($originalItem->amount * (100 - $balancePercentage) / 100, 2),
-                    'status' => $originalItemStatus,
+            foreach ($request->tables as $orderTable) {
+                OrderTable::create([
+                    'table_id' => $orderTable['table_id'],
+                    'pax' => $splitBill['pax'] ?? $originalOrder->pax,
+                    'user_id' => $request->user_id,
+                    'status' => $orderTable['status'],
+                    'order_id' => $newOrder->id,                
                 ]);
             }
-        }
 
-        // Update the new order totals
-        $newOrder->update([
-            'amount' => $totalSplitOrderAmount,
-            'total_amount' => $totalSplitOrderAmount,
-            'discount_amount' => $totalSplitOrderDiscountedAmount,
-        ]);
+            // Process each item in the split bill
+            foreach ($splitBill['order_items'] as $item) {
+                $balanceQty = $item['balance_qty'];
+                $originalQty = $item['original_qty'];
+                $balancePercentage = round($balanceQty / $originalQty * 100, 2);
 
-        // Update the original order
-        $originalOrder->refresh();
-        $originalOrder->update([
-            'amount' => $originalOrder->orderItems->sum('amount'),
-            'total_amount' => $originalOrder->orderItems->sum('amount'),
-            'discount_amount' => $originalOrder->orderItems->sum('discount_amount'),
-        ]);
+                $originalItem = OrderItem::find($item['id']);
 
-        // Process payment for the split order
-        $paymentResponse = $this->processPayment($request, $newOrder);
+                if ($balanceQty === $originalQty) {
+                    $originalItem->update(['order_id' => $newOrder->id]);
+                    
+                    $totalSplitOrderAmount += $originalItem->amount;
+                    $totalSplitOrderDiscountedAmount += $originalItem->discount_amount;
 
-        return response()->json(array_merge($paymentResponse, [
-            'updatedCurrentBill' => $this->getUpdatedCurrentBill($originalOrder)
-        ]));
+                } else {
+                    // Create new order item for the split order
+                    $newOrderItem = OrderItem::create([
+                        'order_id' => $newOrder->id,
+                        'user_id' => $originalItem->user_id,
+                        'type' => $originalItem->type,
+                        'product_id' => $originalItem->product_id,
+                        'product_name' => $originalItem->product_name,
+                        'item_qty' => $balanceQty,
+                        'price' => $originalItem->price,
+                        'amount_before_discount' => round($originalItem->amount_before_discount * $balancePercentage / 100, 2),
+                        'discount_id' => $originalItem->discount_id,
+                        'discount_amount' => round($originalItem->discount_amount * $balancePercentage / 100, 2),
+                        'amount' => round($originalItem->amount * $balancePercentage / 100, 2),
+                        'status' => $originalItem->status,
+                        'bucket' => $originalItem->bucket,
+                    ]);
+
+                    $totalSplitOrderAmount += round($originalItem->amount * $balancePercentage / 100, 2);
+                    $totalSplitOrderDiscountedAmount += round($originalItem->discount_amount * $balancePercentage / 100, 2);
+
+                    $newStatusArr = collect();
+                    
+                    $originalItem->subItems->each(function ($subItem) use ($balanceQty, $newOrderItem, &$newStatusArr) {
+                        $newSubItemServeQty = $balanceQty * $subItem->item_qty;
+                        $newQtyServed = min($newSubItemServeQty, $subItem->serve_qty);
+                        
+                        OrderItemSubitem::create([
+                            'order_item_id' => $newOrderItem->id,
+                            'product_item_id' => $subItem->product_item_id,
+                            'item_qty' => $subItem->item_qty,
+                            'serve_qty' => $newQtyServed,
+                        ]);
+
+                        // Update original subitem
+                        $subItem->decrement('serve_qty', $newQtyServed);
+                        
+                        if ($newQtyServed > 0) {
+                            $newStatusArr->push($newQtyServed < ($balanceQty * $subItem->item_qty) ? 'Pending Serve' : 'Served');
+                        }
+                    });
+
+                    // Update original item status based on subitems
+                    $originalItemStatus = $this->determineItemStatus($newStatusArr);
+                    $originalItem->update([
+                        'item_qty' => $originalItem->item_qty - $balanceQty,
+                        'amount_before_discount' => round($originalItem->amount_before_discount * (100 - $balancePercentage) / 100, 2),
+                        'discount_amount' => round($originalItem->discount_amount * (100 - $balancePercentage) / 100, 2),
+                        'amount' => round($originalItem->amount * (100 - $balancePercentage) / 100, 2),
+                        'status' => $originalItemStatus,
+                    ]);
+                }
+            }
+
+            // Update the new order totals
+            $newOrder->update([
+                'amount' => $totalSplitOrderAmount,
+                'total_amount' => $totalSplitOrderAmount,
+                'discount_amount' => $totalSplitOrderDiscountedAmount,
+            ]);
+
+            // Update the original order
+            $originalOrder->refresh();
+            $originalOrder->update([
+                'amount' => $originalOrder->orderItems->sum('amount'),
+                'total_amount' => $originalOrder->orderItems->sum('amount'),
+                'discount_amount' => $originalOrder->orderItems->sum('discount_amount'),
+            ]);
+
+            // Process payment for the split order
+            $paymentResponse = $this->processPayment($request, $newOrder);
+
+            return response()->json(array_merge($paymentResponse, [
+                'updatedCurrentBill' => $this->getUpdatedCurrentBill($originalOrder)
+            ]));
+        });
     }
 
     private function processPayment(Request $request, Order $order)
@@ -2306,6 +2313,11 @@ class OrderController extends Controller
                     $tab->update(['status' => 'Pending Clearance']);
                 }
             });
+
+            // 2. Call 3rd party API
+            $apiResponse = $this->callThirdPartyApi($payment);
+
+            $response['api_response'] = $apiResponse;
         }
 
         /* END GIVE BONUS POINT JOB */
@@ -2314,6 +2326,55 @@ class OrderController extends Controller
     
         return $response ?? 'Payment Unsuccessfull.';
     }    
+
+    protected function callThirdPartyApi(Payment $payment)
+    {
+        $client = new \GuzzleHttp\Client();
+        $maxRetries = 3;
+        $retryDelay = 1000; // milliseconds
+        
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                $response = Http::withHeaders($this->getApiHeaders())
+                                ->post('https://ct-einvoice.currenttech.pro/', $this->getApiPayload($payment));
+                
+                $statusCode = $response->getStatusCode();
+                $body = json_decode($response->getBody(), true);
+                
+                if ($statusCode >= 200 && $statusCode < 300) {
+                    return $body;
+                }
+                
+                throw new \Exception("API returned status: {$statusCode}");
+                
+            } catch (\Exception $e) {
+                if ($attempt === $maxRetries) {
+                    throw new \Exception("API call failed after {$maxRetries} attempts: ".$e->getMessage());
+                }
+                
+                usleep($retryDelay * 1000);
+                $retryDelay *= 2; // Exponential backoff
+            }
+        }
+    }
+
+    protected function getApiHeaders()
+    {
+        return [
+            'CT-API-KEY' => 'bia5B0thBOUTHtfgz9lMEu9wMzoVPnRzCNQCPkFw',
+            'MERCHANT-ID' => 1,
+        ];
+    }
+
+    protected function getApiPayload(Payment $payment)
+    {
+        return [
+            'invoice_no' => $payment->receipt_no,
+            'amount' => $payment->amount,
+            'date' => $payment->receipt_end_date,
+            'status' => 'pending',
+        ];
+    }
 
     private function getUpdatedCurrentBill($originalOrder)
     {
@@ -4282,5 +4343,14 @@ class OrderController extends Controller
                 }
             }
         }
+    }
+
+    public function getBillDiscount()
+    {
+        $billDiscounts = BillDiscount::whereNotIn('status', ['inactive', 'deleted'])
+                                        ->orderByDesc('id')
+                                        ->get();
+
+        return response()->json($billDiscounts);
     }
 }
