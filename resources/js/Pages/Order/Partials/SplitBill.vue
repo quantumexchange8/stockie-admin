@@ -8,17 +8,20 @@ import SearchBar from '@/Components/SearchBar.vue';
 import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import PayBillForm from './PayBillForm.vue';
 
 const props = defineProps({
-    currentTable: [String, Object],
     currentOrder: Object,
+    currentTable: Object,
+    splitBillsState: Object
 });
 
 const { showMessage } = useCustomToast();
-const emit = defineEmits(['closeModal', 'isDirty', 'closeAll']);
+const emit = defineEmits(['closeModal', 'isDirty', 'closeAll', 'payBill', 'updateState']);
 
+const initialState = ref(props.splitBillsState);
 const selectedItems = ref([]);
 const isCustomerModalOpen = ref(false);
 const searchQuery = ref('');
@@ -28,6 +31,9 @@ const sourceTableId = ref(null);
 const selectedTargetBillId = ref(null);
 const initialCustomerList = ref([]);
 const customerList = ref([]);
+const payBillFormIsOpen = ref(false);
+const isDirty = ref(false);
+const isUnsavedChangesOpen = ref(false);
 
 const getAllCustomers = async () => {
     try {
@@ -39,6 +45,12 @@ const getAllCustomers = async () => {
     } finally {
         
     }
+};
+
+const calculateBillTotal = (bill) => {
+  return bill.order_items.reduce((total, item) => {
+    return total + (item.amount * (item.balance_qty / item.original_qty));
+  }, 0);
 };
 
 // Process and initialize order items with transfer properties
@@ -67,19 +79,27 @@ const processOrderItems = (orderTables) => {
         }));
 };
 
+const initialCurrentBill = ref({
+    id: 'current',
+    table_id: props.currentTable.id,
+    order_id: props.currentTable.order_id,
+    status: props.currentTable.status,
+    pax: props.currentTable.order_tables[0].pax,
+    tables: props.currentTable.order_tables.map(ot => ot.table),
+    customer: props.currentOrder.customer,
+    order_items: processOrderItems(props.currentTable.order_tables),
+});
+
 const form = useForm({
     splitType: 'split-bill',
     currentBill: {
-        table_id: props.currentTable.id,
-        order_id: props.currentTable.order_id,
-        status: props.currentTable.status,
-        pax: props.currentTable.order_tables[0].pax,
-        tables: props.currentTable.order_tables.map(ot => ot.table),
-        customer_id: props.currentTable.order_tables.sort((a, b) => b.id - a.id)[0].order.customer_id,
-        new_customer: null,
-        order_items: processOrderItems(props.currentTable.order_tables),
+        ...(initialState.value?.currentBill || initialCurrentBill.value),
+        amount: calculateBillTotal(initialState.value?.currentBill || initialCurrentBill.value) // Initialize totalAmount
     },
-    splitBills: [],
+    splitBills: initialState.value?.splitBills?.map(bill => ({
+        ...bill,
+        amount: calculateBillTotal(bill)
+    })) || [],
 });
 
 // Add a new bill
@@ -88,9 +108,10 @@ const addBill = () => {
         id: Date.now(), // Temporary ID for tracking
         status: props.currentTable.status,
         tables: props.currentTable.order_tables.map(ot => ot.table),
-        customer_id: props.currentTable.order_tables.sort((a, b) => b.id - a.id)[0].order.customer_id,
-        new_customer: null,
+        customer: props.currentOrder.customer,
+        // new_customer: null,
         order_items: [],
+        amount: 0
     });
 };
 
@@ -108,26 +129,42 @@ const removeBill = (index) => {
                 balance_qty: item.balance_qty,
                 transfer_qty: item.balance_qty,
                 selected: false,
+                amount: 0
             });
         }
     });
     
     form.splitBills.splice(index, 1);
-    emit('isDirty', true);
+    // emit('isDirty', true);
 };
 
-const selectItem = (item, billId) => {
+const selectItem = (item, billId, sourceChange = 'check') => {
     sourceTable.value = billId !== 'current' ? 'target' : 'current';
     sourceTableId.value = billId !== 'current' ? billId : null;
 
-    item.selected = !item.selected;
-    if (item.selected) {
-        selectedItems.value.push(item);
+    if (sourceChange === 'check'){
+        item.selected = !item.selected;
+        if (item.selected) {
+            selectedItems.value.push(item);
+        } else {
+            selectedItems.value = selectedItems.value.filter(selected => selected.id !== item.id);
+            sourceTable.value = '';
+            sourceTableId.value = null;
+        };
+
     } else {
-        selectedItems.value = selectedItems.value.filter(selected => selected.id !== item.id);
-        sourceTable.value = '';
-        sourceTableId.value = null;
-    }
+        if (!item.selected) {
+            if (item.transfer_qty !== item.balance_qty) {
+                selectedItems.value.push(item);
+                item.selected = true;
+            } else {
+                item.selected = false;
+                selectedItems.value = selectedItems.value.filter(selected => selected.id !== item.id);
+                sourceTable.value = '';
+                sourceTableId.value = null;
+            };
+        };
+    };
 };
 
 const moveItems = (billId = null) => {
@@ -174,8 +211,36 @@ const moveItems = (billId = null) => {
     sourceTable.value = '';
     sourceTableId.value = null;
 
-    emit('isDirty', true);
+    // emit('isDirty', true);
 };
+
+const openModal = () => {
+    isDirty.value = false;
+    payBillFormIsOpen.value = true;
+}
+
+const closeModal = (status) => {
+    switch(status) {
+        case 'close':{
+            if(isDirty.value){
+                isUnsavedChangesOpen.value = true;
+            } else {
+                payBillFormIsOpen.value = false;
+            }
+            break;
+        }
+        case 'stay': {
+            isUnsavedChangesOpen.value = false;
+            break;
+        }
+        case 'leave': {
+            isUnsavedChangesOpen.value = false;
+            payBillFormIsOpen.value = false;
+
+            break;
+        }
+    }
+}
 
 const reset = () => {
     form.currentBill.order_items = processOrderItems(props.currentTable.order_tables);
@@ -183,7 +248,7 @@ const reset = () => {
     selectedItems.value = [];
     sourceTable.value = '';
     sourceTableId.value = null;
-    emit('isDirty', false);
+    // emit('isDirty', false);
 };
 
 const submit = () => {
@@ -194,7 +259,7 @@ const submit = () => {
                 severity: 'success',
                 summary: `You've successfully split the order into multiple bills.`
             });
-            emit('isDirty', false);
+            // emit('isDirty', false);
             emit('closeModal', 'leave');
             // emit('closeAll');
         }
@@ -208,16 +273,21 @@ const showCustomerModal = (billId) => {
 };
 
 const closeCustomerModal = () => {
+    selectedCustomer.value = '';
+    isCustomerModalOpen.value = false;
+};
+
+const selectCustomer = () => {
     if (selectedTargetBillId.value === 'current') {
-        form.currentBill.new_customer = initialCustomerList.value.find(cust => cust.id === selectedCustomer.value);
+        form.currentBill.customer = initialCustomerList.value.find(cust => cust.id === selectedCustomer.value);
     } else {
         let targetBill = form.splitBills.find(bill => bill.id === selectedTargetBillId.value);
         if (targetBill) {
-            targetBill.new_customer = initialCustomerList.value.find(cust => cust.id === selectedCustomer.value);
+            targetBill.customer = initialCustomerList.value.find(cust => cust.id === selectedCustomer.value);
         }
     }
-    selectedCustomer.value = '';
-    isCustomerModalOpen.value = false;
+
+    closeCustomerModal();
 };
 
 const filterCustomerList = computed(() => {
@@ -242,6 +312,41 @@ const isValidated = computed(() => {
            form.splitBills.every(bill => bill.order_items.length > 0);
 });
 
+watch(() => props.splitBillsState, (newValue) => initialState.value = newValue)
+
+// Add this to emit state updates
+watch(() => form.data(), (newValue) => {
+    let currentBill = JSON.parse(JSON.stringify(newValue.currentBill));
+    currentBill.order_items.forEach(item => {
+        item.transfer_qty = item.balance_qty;
+        item.selected = false;
+    });
+    
+    let splitBills = JSON.parse(JSON.stringify(newValue.splitBills));
+    splitBills.forEach(bill => {
+        bill.order_items.forEach(item => {
+            item.transfer_qty = item.balance_qty;
+            item.selected = false;
+        });
+    });
+
+    emit('updateState', {
+        currentBill: currentBill,
+        splitBills: splitBills,
+    });
+}, { deep: true });
+
+// Watch for changes in order items and update totals
+watch(() => [...form.currentBill.order_items, ...form.splitBills.flatMap(b => b.order_items)], () => {
+    // Update current bill total
+    form.currentBill.amount = calculateBillTotal(form.currentBill);
+    // console.log(form.currentBill);
+    // Update split bills totals
+    form.splitBills.forEach(bill => {
+        bill.amount = calculateBillTotal(bill);
+    });
+}, { deep: true });
+
 </script>
 
 <template>
@@ -261,13 +366,13 @@ const isValidated = computed(() => {
                         >
                             <div class="flex gap-x-2 !w-fit">
                                 <img 
-                                    :src="form.currentBill.new_customer ? form.currentBill.new_customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    :src="form.currentBill.customer ? form.currentBill.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
                                     alt="CustomerImage"
                                     class="size-5 rounded-full"
-                                    v-if="form.currentBill.new_customer"
+                                    v-if="form.currentBill.customer"
                                 >
-                                <p :class="['text-base font-normal cursor-pointer', form.currentBill.new_customer ? 'text-grey-700' : 'text-grey-300']">
-                                    {{ form.currentBill.new_customer?.full_name ?? 'Select' }}
+                                <p :class="['text-base font-normal cursor-pointer', form.currentBill.customer ? 'text-grey-700' : 'text-grey-300']">
+                                    {{ form.currentBill.customer?.full_name ?? 'Select' }}
                                 </p>
                             </div>
                             <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -304,6 +409,7 @@ const isValidated = computed(() => {
                                     :maxValue="item.balance_qty"
                                     class="col-span-full sm:col-span-5"
                                     :disabled="item.balance_qty === 1"
+                                    @onChange="selectItem(item, 'current', 'counter')"
                                 />
                             </div>
                         </template>
@@ -314,7 +420,8 @@ const isValidated = computed(() => {
                     <Button
                         type="button"
                         size="lg"
-                        :disabled="form.currentBill.order_items.length === 0 || selectedItems.length > 0"
+                        :disabled="form.currentBill.order_items.length === 0 || selectedItems.length > 0 || form.splitBills.length > 0"
+                        @click="$emit('payBill', form.currentBill)"
                     >
                         Pay this bill
                     </Button>
@@ -352,13 +459,13 @@ const isValidated = computed(() => {
                             >
                                 <div class="flex gap-x-2 !w-fit">
                                     <img 
-                                        :src="bill.new_customer ? bill.new_customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                        :src="bill.customer ? bill.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
                                         alt="CustomerImage"
                                         class="size-5 rounded-full"
-                                        v-if="bill.new_customer"
+                                        v-if="bill.customer"
                                     >
-                                    <p :class="['text-base font-normal cursor-pointer', bill.new_customer ? 'text-grey-700' : 'text-grey-300']">
-                                        {{ bill.new_customer?.full_name ?? 'Select' }}
+                                    <p :class="['text-base font-normal cursor-pointer', bill.customer ? 'text-grey-700' : 'text-grey-300']">
+                                        {{ bill.customer?.full_name ?? 'Select' }}
                                     </p>
                                 </div>
                                 <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -395,6 +502,7 @@ const isValidated = computed(() => {
                                         :maxValue="item.balance_qty"
                                         class="col-span-full sm:col-span-5"
                                         :disabled="item.balance_qty === 1"
+                                        @onChange="selectItem(item, bill.id, 'counter')"
                                     />
                                 </div>
                             </template>
@@ -415,6 +523,7 @@ const isValidated = computed(() => {
                             type="button"
                             size="lg"
                             :disabled="bill.order_items.length === 0 || selectedItems.length > 0"
+                            @click="$emit('payBill', bill)"
                         >
                             Pay this bill
                         </Button>
@@ -548,7 +657,7 @@ const isValidated = computed(() => {
                         :variant="'primary'"
                         :size="'lg'"
                         :disabled="!selectedCustomer || form.processing"
-                        @click="closeCustomerModal"
+                        @click="selectCustomer"
                     >
                         Confirm
                     </Button>
@@ -556,4 +665,35 @@ const isValidated = computed(() => {
             </div>
         </div>
     </Modal>
+
+    <!-- <Modal
+        :title="'Pay Bill'"
+        :maxWidth="'xl'" 
+        :closeable="true"
+        :show="payBillFormIsOpen"
+        @close="closeModal('close')"
+    >
+        <PayBillForm
+            :currentOrder="order"
+            :currentTable="selectedTable"
+            @update:order="order = $event"
+            @update:order-customer="order.customer = $event"
+            @close="closeModal"
+            @fetchZones="$emit('fetchZones')"
+            @fetchOrderDetails="$emit('fetchOrderDetails')"
+            @closeDrawer="$emit('close', true)"
+            @update:customer-point="$emit('update:customer-point', $event)"
+            @update:customer-rank="$emit('update:customer-rank', $event)"
+            @fetchPendingServe="$emit('fetchPendingServe')"
+            @isDirty="isDirty = $event"
+        />
+        <Modal
+            :unsaved="true"
+            :maxWidth="'2xs'"
+            :withHeader="false"
+            :show="isUnsavedChangesOpen"
+            @close="closeModal('stay')"
+            @leave="closeModal('leave')"
+        />
+    </Modal> -->
 </template>

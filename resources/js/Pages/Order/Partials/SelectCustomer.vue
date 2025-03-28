@@ -21,8 +21,11 @@ const props = defineProps({
     customers: {
         type: Array,
         default: () => {},
+    },
+    isSplitBillMode: {
+        type: Boolean,
+        default: false
     }
-    
 })
 const emit = defineEmits(['closeModal', 'isDirty', 'closeOrderDetails', 'update:order-customer']);
 const { formatPhone } = usePhoneUtils();
@@ -54,20 +57,28 @@ const getAllCustomers = async () => {
 onMounted(() => getAllCustomers());
 
 const submit = () => {
-    form.put(route('orders.updateOrderCustomer', props.orderId), {
-        preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            if (props.origin === 'pay-bill') {
-                const updatedCustomer = initialCustomerList.value.find((customer) => customer.id === selectedCustomer.value);
-                emit('update:order-customer', updatedCustomer);
-            }
-
-            form.reset();
-            emit('closeOrderDetails');
-            emit('closeModal', 'leave');
-        },
-    })
+    if (props.origin === 'pay-bill' && props.isSplitBillMode) {
+        const updatedCustomer = initialCustomerList.value.find((customer) => customer.id === selectedCustomer.value);
+        emit('update:order-customer', updatedCustomer);
+        emit('closeModal', 'leave');
+        form.reset();
+        
+    } else {
+        form.put(route('orders.updateOrderCustomer', props.orderId), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                if (props.origin === 'pay-bill') {
+                    const updatedCustomer = initialCustomerList.value.find((customer) => customer.id === selectedCustomer.value);
+                    emit('update:order-customer', updatedCustomer);
+                }
+    
+                form.reset();
+                emit('closeOrderDetails');
+                emit('closeModal', 'leave');
+            },
+        })
+    }
 }
 
 const unsaved = (status) => {

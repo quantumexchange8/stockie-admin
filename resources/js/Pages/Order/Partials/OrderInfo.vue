@@ -43,6 +43,7 @@ const tabs = ref([
     { title: 'Customer Detail', disabled: true }, 
     { title: 'Payment History', disabled: false }
 ]);
+const currentTable = ref(props.selectedTable);
 const order = ref({});
 const pending = ref(0);
 const customer = ref({});
@@ -82,8 +83,9 @@ const computedOrder = computed(() => {
 
 const fetchOrderDetails = async () => {
     try {
-        const currentOrderTableResponse = await axios.get(route('orders.getCurrentTableOrder', props.selectedTable.id));
+        const currentOrderTableResponse = await axios.get(route('orders.getCurrentTableOrder', currentTable.value.id));
         currentOrderTable.value = currentOrderTableResponse.data.currentOrderTable;
+        currentTable.value = currentOrderTableResponse.data.currentTable;
         order.value = currentOrderTableResponse.data.order;
         
         if (order.value) {
@@ -376,13 +378,13 @@ const isOrderCompleted = computed(() => {
 
 // const formattedOrder = computed(() => {
 //     order.value['order_table'] = {
-//         id: props.selectedTable.order_table.filter((table) => table.status !== 'Pending Clearance')[0].id,
-//         order_id: props.selectedTable.order_table.filter((table) => table.status !== 'Pending Clearance')[0].order_id,
+//         id: currentTable.value.order_table.filter((table) => table.status !== 'Pending Clearance')[0].id,
+//         order_id: currentTable.value.order_table.filter((table) => table.status !== 'Pending Clearance')[0].order_id,
 //         table: {
-//             id: props.selectedTable.id,
-//             table_no: props.selectedTable.table_no
+//             id: currentTable.value.id,
+//             table_no: currentTable.value.table_no
 //         },
-//         table_id: props.selectedTable.order_table.filter((table) => table.status !== 'Pending Clearance')[0].table_id
+//         table_id: currentTable.value.order_table.filter((table) => table.status !== 'Pending Clearance')[0].table_id
 //     };
 
 //     return order.value;
@@ -395,7 +397,7 @@ const hasServedItem = computed(() => {
 });
 
 const hasPreviousPending = computed(() => {
-    return pendingServeItems.value.some((item) => item.order.id === props.selectedTable.order_id)
+    return pendingServeItems.value.some((item) => item.order.id === currentTable.value.order_id)
 });
 
 const orderTableNames = computed(() => {
@@ -420,7 +422,7 @@ const getVoucherDiscountedPrice = (subtotal, voucher) => {
 }
 
 const cancelOrderIsDisabled = computed(() => {
-   return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || props.selectedTable.status === 'Pending Clearance';
+   return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || currentTable.value.status === 'Pending Clearance';
 });
 
 const tableIsMerged = computed(() => {
@@ -451,6 +453,11 @@ watch(selectedTab, (newValue) => {
 watch(order.value, () => {
     fetchPendingServe();
 });
+
+watch(() => props.selectedTable, (newValue) => {
+    currentTable.value = newValue;
+});
+
 </script>
 
 <template>
@@ -464,7 +471,7 @@ watch(order.value, () => {
         <template v-if="actionType === 'keep'">
             <KeepItem
                 :order="order" 
-                :selectedTable="selectedTable"
+                :selectedTable="currentTable"
                 @update:customerKeepItems="customer.keep_items = $event"
                 @close="closeDrawer();closeOrderDetails()"
             />
@@ -472,7 +479,7 @@ watch(order.value, () => {
         <template v-else-if="actionType === 'add'">
             <AddOrderItems
                 :order="computedOrder" 
-                :selectedTable="selectedTable"
+                :selectedTable="currentTable"
                 :matchingOrderDetails="matchingOrderDetails"
                 @fetchZones="$emit('fetchZones')"
                 @fetchOrderDetails="fetchOrderDetails"
@@ -483,7 +490,7 @@ watch(order.value, () => {
         <template v-else>
             <MakePaymentForm 
                 :currentOrder="order" 
-                :selectedTable="selectedTable"
+                :selectedTable="currentTable"
                 @fetchZones="$emit('fetchZones')"
                 @fetchOrderDetails="fetchOrderDetails"
                 @fetchPendingServe="fetchPendingServe"
@@ -502,7 +509,7 @@ watch(order.value, () => {
     >
         <MakePaymentForm 
             :order="order" 
-            :selectedTable="selectedTable"
+            :selectedTable="currentTable"
             @fetchZones="$emit('fetchZones')"
             @fetchPendingServe="fetchPendingServe"
             @update:customer-point="customer.point = $event"
@@ -527,7 +534,7 @@ watch(order.value, () => {
             </div>
             
             <div class="relative flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100 bg-grey-50 cursor-pointer" @click="showMergeTableForm">
-                <MergedIcon class="size-6" :class="props.selectedTable.order_tables.length > 1 ? 'text-primary-800' : 'text-primary-950'" />
+                <MergedIcon class="size-6" :class="currentTable.value?.order_tables.length > 1 ? 'text-primary-800' : 'text-primary-950'" />
                 <Checkbox v-model:checked="splitTablesMode" @click="$event.stopPropagation()" class="absolute size-4 top-1.5 right-1.5" v-if="tableIsMerged" />
             </div>
 
@@ -562,7 +569,7 @@ watch(order.value, () => {
                 </template>
                 <template #order-detail>
                     <OrderDetail 
-                        :selectedTable="selectedTable" 
+                        :selectedTable="currentTable" 
                         :order="order" 
                         :customers="customers" 
                         :users="users"
@@ -597,7 +604,7 @@ watch(order.value, () => {
                     />
                 </template>
                 <template #payment-history>
-                    <PaymentHistory :selectedTable="selectedTable" />
+                    <PaymentHistory :selectedTable="currentTable" />
                 </template>
             </TabView>
         </div>
@@ -656,7 +663,7 @@ watch(order.value, () => {
                         :disabled="!(order.order_items && order.order_items.length)"
                         @click="console.log(props)"
                     >
-                        {{ props.selectedTable.status }}
+                        {{ currentTable.value.status }}
                     </Button> -->
                 </div>
             </div>
@@ -792,7 +799,7 @@ watch(order.value, () => {
         :show="orderInvoiceModalIsOpen"
         @close="hideOrderInvoiceModal"
     >
-        <template v-if="selectedTable">
+        <template v-if="currentTable">
             <OrderInvoice :order="formattedOrder" />
         </template>
     </Modal> -->

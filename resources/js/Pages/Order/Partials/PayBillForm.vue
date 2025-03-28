@@ -19,6 +19,10 @@ import SplitBill from './SplitBill.vue';
 const props = defineProps({
     currentOrder: Object,
     currentTable: Object,
+    isSplitBillMode: {
+        type: Boolean,
+        default: false
+    },
 });
 
 const page = usePage();
@@ -40,6 +44,8 @@ const isSuccessPaymentShow = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
 const paymentTransactions = ref([]); // Array to store payment transactions
+const isSplitBillMode = ref(false);
+const splitBillDetails = ref(null);
 const selectedItems = ref([]);
 const searchQuery = ref('');
 
@@ -47,7 +53,10 @@ const form = useForm({
     user_id: userId.value,
     order_id: props.currentOrder.id,
     change: 0,
-    payment_methods: []
+    payment_methods: [],
+    tables: props.currentOrder.order_table.filter(table => ['Pending Order', 'Order Placed', 'All Order Served'].includes(table.status)),
+    split_bill_id: '',
+    split_bill: {},
 });
 
 const fetchTaxes = async () => {
@@ -63,25 +72,98 @@ const fetchTaxes = async () => {
 
 onMounted(() => fetchTaxes());
 
+const splitBillsState = ref({
+  currentBill: null,
+  splitBills: []
+});
+
+// Update the paySplitBill function
+const paySplitBill = (bill) => {
+// Store the current split bills state
+//   splitBillsState.value = {
+//     currentBill: form.currentBill,
+//     splitBills: form.splitBills
+//   };
+  
+    splitBillDetails.value = bill;
+    selectedCustomer.value = splitBillDetails.value.customer;
+    order.value = splitBillDetails.value;
+    isSplitBillMode.value = true;
+    closeModal('leave');
+};
+
+// // Modify the handlePaymentSuccess function
+// const handlePaymentSuccess = () => {
+//   if (splitBillDetails.value) {
+//     // For split bills, return to split bill form with updated state
+//     isSuccessPaymentShow.value = false;
+//     isSplitBillModalOpen.value = true;
+//   } else {
+//     // For normal bills, close everything
+//     isSuccessPaymentShow.value = false;
+//     emit('close', 'leave');
+//     emit('closeDrawer');
+//   }
+// };
+
 const openSuccessPaymentModal = () => {
     isSuccessPaymentShow.value = true;
 }
 
 const closeSuccessPaymentModal = () => {
     isSuccessPaymentShow.value = false;
-    setTimeout(() => {
-        emit('close', 'leave');
-        emit('closeDrawer');
-    }, 200)
+
+    if (splitBillDetails.value && splitBillDetails.value.id !== 'current') {
+        paymentTransactions.value = [];
+        clearInput();
+        closeOrderDetails();
+
+        // Handle split bill payment
+        splitBillsState.value.splitBills = splitBillsState.value.splitBills.filter(
+            bill => bill.id !== splitBillDetails.value.id
+        );
+
+        order.value.amount = 0.00;
+
+        showSplitBillModal();
+
+    } else {
+        // For normal bills, close everything
+        setTimeout(() => {
+            emit('close', 'leave');
+            emit('closeDrawer');
+        }, 200)
+    }
+
 }
 
 const submit = async () => {
     form.payment_methods = paymentTransactions.value;
     form.change = change.value;
+
+    if (splitBillDetails.value && isSplitBillMode.value) {
+        form.split_bill_id = splitBillDetails.value.id;
+        form.split_bill = splitBillDetails.value;
+    }
+
     try {
+        console.log(form.data());
         const response = await axios.post(`/order-management/orders/updateOrderPayment`, form);
-        let customerPointBalance = response.data.newPointBalance;
-        let customerRanking = response.data.newRanking;
+
+        if (splitBillDetails.value && response.data.updatedCurrentBill) {
+            // Update the local state with the backend's response
+            splitBillsState.value.order_items = response.data.updatedCurrentBill.order_items;
+            splitBillsState.value.amount = response.data.updatedCurrentBill.amount;
+            exactBillAmount();
+        }
+        
+        if ((splitBillDetails.value?.id === 'current' && splitBillDetails.value?.order_id === props.currentOrder.id) || !splitBillDetails.value) {
+            let customerPointBalance = response.data.newPointBalance;
+            let customerRanking = response.data.newRanking;
+    
+            if (customerPointBalance !== undefined) emit('update:customer-point', customerPointBalance);
+            if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
+        }
         
         setTimeout(() => {
             showMessage({ 
@@ -92,8 +174,6 @@ const submit = async () => {
         form.reset();
         emit('fetchZones');
         emit('fetchPendingServe');
-        if (customerPointBalance !== undefined) emit('update:customer-point', customerPointBalance);
-        if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
 
         openSuccessPaymentModal();
 
@@ -216,7 +296,7 @@ const roundingAmount = computed(() => {
     const totalTaxableAmount = (Number(sstAmount.value) + Number(serviceTaxAmount.value)) ?? 0;
     const voucherDiscountAmount = order.value.voucher ? voucherDiscountedAmount.value : 0.00;
     const totalAmount = Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount;
-    const rounding = totalAmount - priceRounding(totalAmount);
+    const rounding = priceRounding(totalAmount) - totalAmount;
 
     return rounding.toFixed(2);
 });
@@ -436,29 +516,30 @@ const selectMethod = (transaction) => {
     }
 };
 
-const getActionContainerClass = (action) => {
-    switch (action) {
-        case 'customer': 
-
-            return 'Keep item';
-
-        case 'discount': 
-
-            return 'Redeemed product';
-
-        case 'split-bill': 
-        
-            return 'Entry reward';
-
-        case 'merge-bill': 
-        
-            return 'Entry reward';
-    };
-};
-
 const updateOrderCustomer = (customer) => {
     selectedCustomer.value = customer;
-    emit('update:order-customer', customer);
+
+    if (isSplitBillMode.value) {
+        order.value.customer === customer;
+        splitBillDetails.value.customer === customer;
+        
+        // Remove the paid bill from the state
+        if (splitBillDetails.value.id === 'current') {
+            // Handle current bill payment
+            splitBillsState.value.currentBill.customer = customer;
+
+        } else {
+            // Handle split bill payment
+            let splitBill = splitBillsState.value.splitBills.find(
+                bill => bill.id === splitBillDetails.value.id
+            );
+
+            splitBill.customer = customer;
+        }
+
+    } else {
+        emit('update:order-customer', customer);
+    }
 };
 
 // Check if there's a cash payment
@@ -466,18 +547,13 @@ const hasCashMethod = computed(() => {
     return paymentTransactions.value.some(transaction => transaction.method === 'Cash');
 });
 
-// Check if there's an card payment
-const hasCardMethod = computed(() => {
-    return paymentTransactions.value.some(transaction => transaction.method === 'Card');
-});
-
-// Check if there's an ewallet payment
-const hasEwalletMethod = computed(() => {
-    return paymentTransactions.value.some(transaction => transaction.method === 'E-Wallet');
-});
-
 const isValidated = computed(() => {
-    return !form.processing && remainingBalanceDue.value <= 0;
+    if (isSplitBillMode.value) {
+        return !form.processing && remainingBalanceDue.value <= 0 && (splitBillsState.value.splitBills.find(bill => bill.id === splitBillDetails.value.id) || splitBillDetails.value.id === splitBillsState.value.currentBill?.id);
+
+    } else {
+        return !form.processing && remainingBalanceDue.value <= 0;
+    }
 });
 
 const updateOrder = (updatedOrder) => {
@@ -509,11 +585,18 @@ const removeMethod = (transaction) => {
 
 watch(grandTotalAmount, (newValue) => {
     billAmountKeyed.value = newValue;
-})
+});
 
 watch(remainingBalanceDue, (newValue) => {
     change.value = newValue < 0 ? Math.abs(newValue) : '0.00';
-})
+});
+
+// watch(isSplitBillMode, (newValue) => {
+//     if (newValue) {
+//         order.value = splitBillDetails.value;
+//     }
+// });
+
 </script>
 
 <template>
@@ -523,29 +606,31 @@ watch(remainingBalanceDue, (newValue) => {
             <div class="flex w-full items-start gap-4 self-stretch">
                 <div 
                     class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border cursor-pointer"
-                    :class="selectedCustomer ? 'border-green-200 bg-green-50' : 'border-grey-100 bg-grey-50'"
+                    :class="selectedCustomer ? 'border-green-200 bg-green-50 text-green-900' : 'border-grey-100 bg-grey-50 text-grey-950'"
                     @click="showCustomerModal"
                 >
-                    <CustomerIcon2 :class="{ 'text-green-900': selectedCustomer }" />
-                    <p class="text-grey-950 text-base font-medium">{{ selectedCustomer?.full_name ?? 'Customer' }}</p>
+                    <CustomerIcon2 />
+                    <p class="text-base font-medium">{{ selectedCustomer?.full_name ?? 'Customer' }}</p>
                 </div>
-                <div class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border cursor-pointer border-grey-100">
+                <div class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border cursor-pointer border-grey-100 text-grey-950">
                     <DiscountIcon />
-                    <p class="text-grey-950 text-base font-medium">Add Discount</p>
+                    <p class="text-base font-medium">Add Discount</p>
                 </div>
                 <div 
-                    class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border cursor-pointer border-grey-100 bg-grey-50"
+                    class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border"
+                    :class="isSplitBillMode ? 'text-grey-300 bg-grey-25 border-grey-50 cursor-not-allowed' : 'text-grey-950 border-grey-100 bg-grey-50 cursor-pointer'"
                     @click="showSplitBillModal"
                 >
                     <SplitBillIcon />
-                    <p class="text-grey-950 text-base font-medium">Split Bill</p>
+                    <p class="text-base font-medium">Split Bill</p>
                 </div>
                 <div 
-                    class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border cursor-pointer border-grey-100 bg-grey-50"
+                    class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border"
+                    :class="isSplitBillMode ? 'text-grey-300 bg-grey-25 border-grey-50 cursor-not-allowed' : 'text-grey-950 border-grey-100 bg-grey-50 cursor-pointer'"
                     @click="showMergeBillModal"
                 >
                     <MergedIcon />
-                    <p class="text-grey-950 text-base font-medium">Merge Bill</p>
+                    <p class="text-base font-medium">Merge Bill</p>
                 </div>
             </div>
 
@@ -766,6 +851,7 @@ watch(remainingBalanceDue, (newValue) => {
         <SelectCustomer
             :orderId="order.id"
             :origin="'pay-bill'"
+            :isSplitBillMode="isSplitBillMode"
             @update:order-customer="updateOrderCustomer"
             @closeOrderDetails="closeOrderDetails"
             @closeModal="closeModal"
@@ -818,8 +904,11 @@ watch(remainingBalanceDue, (newValue) => {
         <SplitBill
             :currentOrder="order"
             :currentTable="currentTable"
+            :splitBillsState="splitBillsState"
             @closeModal="closeModal"
             @isDirty="isDirty = $event"
+            @payBill="paySplitBill"
+            @updateState="(newState) => splitBillsState = newState"
         />
 
         <Modal

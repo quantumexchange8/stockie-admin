@@ -189,7 +189,7 @@ const roundingAmount = computed(() => {
     const totalTaxableAmount = (Number(sstAmount.value) + Number(serviceTaxAmount.value)) ?? 0;
     const voucherDiscountAmount = order.value.voucher ? voucherDiscountedAmount.value : 0.00;
     const totalAmount = Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount;
-    const rounding = totalAmount - priceRounding(totalAmount);
+    const rounding = priceRounding(totalAmount) - totalAmount;
 
     return rounding.toFixed(2);
 });

@@ -40,6 +40,7 @@ use App\Notifications\InventoryRunningOutOfStock;
 use App\Notifications\OrderAssignedWaiter;
 use App\Notifications\OrderCheckInCustomer;
 use App\Notifications\OrderPlaced;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Http\Request;
 use App\Models\Zone;
@@ -587,8 +588,8 @@ class OrderController extends Controller
         $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
                                             ->firstWhere('status', '!=', 'Pending Clearance') 
                             ?? $orderTables->first();
-
-        if (!!$currentOrderTable) {
+                            
+        if ($currentOrderTable) {
             // Lazy load relationships only for the selected table
             $currentOrderTable->load([
                 'order.orderItems.product.discount:id,name',
@@ -631,14 +632,37 @@ class OrderController extends Controller
                 $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
             }
 
-            // $currentOrderTable->order->map(function ($order) {
-            //     $pendingItemsCount = $order->orderItems->where('status', 'Pending Serve')->count();
-            //     $order->pending_count = $pendingItemsCount;
-            //     return $order;
-            // });
+            $reservedTablesId = $this->getReservedTablesId();
 
-            // dd($currentOrderTable->order->orderItems->where('status', 'Pending Serve')->count());
+            $currentTable = Table::with([
+                            'orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged']),
+                            'orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty'
+                        ])
+                        ->find($id);
+            
+            $pendingCount = $currentTable->orderTables->reduce(function ($pendingCount, $orderTable) {
+                $orderPendingCount = $orderTable->order->orderItems->where('status', 'Pending Serve')->reduce(function ($itemCount, $orderItem) {
+                    $itemTotalQty = collect($orderItem->subItems)->reduce(function ($subTotal, $subItem) use ($orderItem) {
+                        return $subTotal + ($subItem['item_qty'] * $orderItem['item_qty'] - $subItem['serve_qty']);
+                    }, 0);
+                    return $itemCount + $itemTotalQty;
+                }, 0);
+                return $pendingCount + $orderPendingCount;
+            }, 0);
+
+            $currentTable->orderTables->each(function ($orderTab) {
+                $orderTab->order->orderItems->each(function ($item) {
+                    $item->product_name = $item->product->product_name;
+                    $item->bucket = $item->product->bucket;
+                    unset($item->product);
+                });
+            });
+
+            $currentTable->is_reserved = in_array($currentTable->id, $reservedTablesId);
+            $currentTable->pending_count = $pendingCount;
+            
             $data = [
+                'currentTable' => $currentTable,
                 'currentOrderTable' => $currentOrderTable->table,
                 'order' => $currentOrderTable->order
             ];
@@ -1881,6 +1905,13 @@ class OrderController extends Controller
      */
     public function updateOrderPayment(Request $request) 
     {
+        return $request->split_bill_id && $request->split_bill_id !== 'current'
+            ? $this->processSplitBillPayment($request)
+            : $this->processNormalPayment($request);
+    }
+
+    private function processNormalPayment(Request $request)
+    {
         $order = Order::with([
                             'orderTable' => function ($query) {
                                 $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']);
@@ -1888,25 +1919,163 @@ class OrderController extends Controller
                             'orderTable.table', 
                             'customer:id,point,total_spending,ranking', 
                             'orderItems' => fn($query) => $query->with('product.commItem.configComms')->where('status', 'Served')
-                        ])->findOrFail($request->order_id);
+                        ])
+                        ->where('id', $request->order_id)
+                        ->first();
 
+        // Process payment
+        $paymentResponse = $this->processPayment($request, $order);
+        
+        return response()->json($paymentResponse);
+    }
+
+    private function processSplitBillPayment(Request $request)
+    {
+        
+        $originalOrder = Order::with([
+                                    'orderTable' => function ($query) {
+                                        $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']);
+                                    },
+                                    'orderTable.table',
+                                    'customer:id,point,total_spending,ranking', 
+                                    'orderItems' => fn($query) => $query->where('status', 'Served')
+                                ])
+                                ->find($request->order_id);
+
+        $splitBill = $request->split_bill;
+        $totalSplitOrderAmount = 0.00;
+        $totalSplitOrderDiscountedAmount = 0.00;
+
+        // Create new order for the split bill
+        $newOrder = Order::create([
+            'order_no' => RunningNumberService::getID('order'),
+            'pax' => $splitBill['pax'] ?? $originalOrder->pax,
+            'user_id' => $request->user_id,
+            'customer_id' => $splitBill['customer_id'] ?? $originalOrder->customer_id,
+            'amount' => 0.00,
+            'total_amount' => 0.00,
+            'status' => 'Order Completed',
+            'voucher_id' => $originalOrder->voucher_id,
+        ]);
+
+        foreach ($request->tables as $orderTable) {
+            OrderTable::create([
+                'table_id' => $orderTable['table_id'],
+                'pax' => $splitBill['pax'] ?? $originalOrder->pax,
+                'user_id' => $request->user_id,
+                'status' => $orderTable['status'],
+                'order_id' => $newOrder->id,                
+            ]);
+        }
+
+        // Process each item in the split bill
+        foreach ($splitBill['order_items'] as $item) {
+            $balanceQty = $item['balance_qty'];
+            $originalQty = $item['original_qty'];
+            $balancePercentage = round($balanceQty / $originalQty * 100, 2);
+
+            $originalItem = OrderItem::find($item['id']);
+
+            if ($balanceQty === $originalQty) {
+                $originalItem->update(['order_id' => $newOrder->id]);
+                
+                $totalSplitOrderAmount += $originalItem->amount;
+                $totalSplitOrderDiscountedAmount += $originalItem->discount_amount;
+
+            } else {
+                // Create new order item for the split order
+                $newOrderItem = OrderItem::create([
+                    'order_id' => $newOrder->id,
+                    'user_id' => $originalItem->user_id,
+                    'type' => $originalItem->type,
+                    'product_id' => $originalItem->product_id,
+                    'product_name' => $originalItem->product_name,
+                    'item_qty' => $balanceQty,
+                    'price' => $originalItem->price,
+                    'amount_before_discount' => round($originalItem->amount_before_discount * $balancePercentage / 100, 2),
+                    'discount_id' => $originalItem->discount_id,
+                    'discount_amount' => round($originalItem->discount_amount * $balancePercentage / 100, 2),
+                    'amount' => round($originalItem->amount * $balancePercentage / 100, 2),
+                    'status' => $originalItem->status,
+                    'bucket' => $originalItem->bucket,
+                ]);
+
+                $totalSplitOrderAmount += round($originalItem->amount * $balancePercentage / 100, 2);
+                $totalSplitOrderDiscountedAmount += round($originalItem->discount_amount * $balancePercentage / 100, 2);
+
+                $newStatusArr = collect();
+                
+                $originalItem->subItems->each(function ($subItem) use ($balanceQty, $newOrderItem, &$newStatusArr) {
+                    $newSubItemServeQty = $balanceQty * $subItem->item_qty;
+                    $newQtyServed = min($newSubItemServeQty, $subItem->serve_qty);
+                    
+                    OrderItemSubitem::create([
+                        'order_item_id' => $newOrderItem->id,
+                        'product_item_id' => $subItem->product_item_id,
+                        'item_qty' => $subItem->item_qty,
+                        'serve_qty' => $newQtyServed,
+                    ]);
+
+                    // Update original subitem
+                    $subItem->decrement('serve_qty', $newQtyServed);
+                    
+                    if ($newQtyServed > 0) {
+                        $newStatusArr->push($newQtyServed < ($balanceQty * $subItem->item_qty) ? 'Pending Serve' : 'Served');
+                    }
+                });
+
+                // Update original item status based on subitems
+                $originalItemStatus = $this->determineItemStatus($newStatusArr);
+                $originalItem->update([
+                    'item_qty' => $originalItem->item_qty - $balanceQty,
+                    'amount_before_discount' => round($originalItem->amount_before_discount * (100 - $balancePercentage) / 100, 2),
+                    'discount_amount' => round($originalItem->discount_amount * (100 - $balancePercentage) / 100, 2),
+                    'amount' => round($originalItem->amount * (100 - $balancePercentage) / 100, 2),
+                    'status' => $originalItemStatus,
+                ]);
+            }
+        }
+
+        // Update the new order totals
+        $newOrder->update([
+            'amount' => $totalSplitOrderAmount,
+            'total_amount' => $totalSplitOrderAmount,
+            'discount_amount' => $totalSplitOrderDiscountedAmount,
+        ]);
+
+        // Update the original order
+        $originalOrder->refresh();
+        $originalOrder->update([
+            'amount' => $originalOrder->orderItems->sum('amount'),
+            'total_amount' => $originalOrder->orderItems->sum('amount'),
+            'discount_amount' => $originalOrder->orderItems->sum('discount_amount'),
+        ]);
+
+        // Process payment for the split order
+        $paymentResponse = $this->processPayment($request, $newOrder);
+
+        return response()->json(array_merge($paymentResponse, [
+            'updatedCurrentBill' => $this->getUpdatedCurrentBill($originalOrder)
+        ]));
+    }
+
+    private function processPayment(Request $request, Order $order)
+    {
         $order->update(['status' => 'Order Completed']);
 
-        $customer = '';
-
         $statusArr = collect($order->orderTable->pluck('status')->unique());
-        // dd($order, $statusArr);
+        
         if ($order->status === 'Order Completed' && ($statusArr->count() === 1 && ($statusArr->first() === 'All Order Served' || $statusArr->first() === 'Order Placed' || $statusArr->first() === 'Pending Order'))) {
             $currentShiftTransaction = ShiftTransaction::where('status', 'opened')->first();
             
             $settings = Setting::select(['name', 'type', 'value', 'point'])->whereIn('type', ['tax', 'point'])->get();
             $taxes = $settings->filter(fn($setting) => $setting['type'] === 'tax')->pluck('value', 'name');
             $pointConversion = $settings->filter(fn($setting) => $setting['type'] === 'point')->first();
-
+        
             $subTotal = $order->amount;
             $sstAmount = round($subTotal * ($taxes['SST'] / 100), 2);
             $serviceTaxAmount = round($subTotal * ($taxes['Service Tax'] / 100), 2);
-
+        
             if ($order->voucher) {
                 $voucherDiscountedAmount = $order->voucher->reward_type === 'Discount (Percentage)' 
                         ? $subTotal * ($order->voucher->discount / 100)
@@ -1915,15 +2084,12 @@ class OrderController extends Controller
                 $voucherDiscountedAmount = 0.00;
             }
             
-            $grandTotal = $this->priceRounding($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
-            $roundingDiff = $grandTotal - ($subTotal + $sstAmount + $serviceTaxAmount - ($order->voucher_id ? $voucherDiscountedAmount : 0));
+            $grandTotal = $this->priceRounding($subTotal + $sstAmount + $serviceTaxAmount - $voucherDiscountedAmount);
+            $roundingDiff = $grandTotal - ($subTotal + $sstAmount + $serviceTaxAmount - $voucherDiscountedAmount);
             $totalPoints = ($grandTotal / $pointConversion['value']) * $pointConversion['point'];
- 
-            $amountPaid = 0.00;
-            foreach ($request->payment_methods as $key => $method) {
-                $amountPaid += $method['amount'];
-            }
-
+        
+            $amountPaid = collect($request->payment_methods)->sum('amount');
+        
             $payment = Payment::create([
                 'transaction_id' => $currentShiftTransaction->id,
                 'order_id' => $order->id,
@@ -1944,24 +2110,30 @@ class OrderController extends Controller
                 'change' => $request->change,
                 'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
                 'pax' => $order->pax,
-                'status' => 'Pending',
-                'customer_id' => $request->customer_id,
-                'handled_by' => $request->user_id
+                'status' => 'Successful',
+                'customer_id' => $order->customer_id,
+                'handled_by' => $request->user_id,
             ]);
-
-            $order->refresh();
-
-            // Handle sale history for "Normal" order items
+        
+            foreach ($request->payment_methods as $payMethod) {
+                PaymentDetail::create([
+                    'payment_id' => $payment->id,
+                    'payment_method' => $payMethod['method'],
+                    'amount' => $payMethod['amount'],
+                ]);
+            }
+        
+            // Handle sale history and commissions for "Normal" order items
             $order->orderItems->where('type', 'Normal')->each(function ($item) {
                 $configCommItem = $item->product->commItem;
-
+        
                 if ($configCommItem) {
                     $commissionType = $configCommItem->configComms->comm_type;
                     $commissionRate = $configCommItem->configComms->rate;
                     $commissionAmount = $commissionType === 'Fixed amount per sold product' 
                             ? $commissionRate * $item->item_qty
                             : $item->product->price * $item->item_qty * ($commissionRate / 100);
-
+        
                     EmployeeCommission::create([
                         'user_id' => $item->user_id,
                         'type' => $commissionType,
@@ -1971,7 +2143,7 @@ class OrderController extends Controller
                         'amount' => $commissionAmount,
                     ]);
                 }
-
+        
                 SaleHistory::create([
                     'order_id' => $item->order_id,
                     'product_id' => $item->product_id,
@@ -1979,9 +2151,11 @@ class OrderController extends Controller
                     'qty' => (int) $item->item_qty,
                 ]);
             });
-
+        
+            // Handle customer points if applicable
             $customer = $order->customer;
-
+            $response = [];
+            
             // Add the accumulated points earned from the order to the customer
             if ($customer) {
                 $oldPointBalance = $customer->point;
@@ -1989,12 +2163,14 @@ class OrderController extends Controller
                 $oldTotalSpending = $customer->total_spending;
                 $newTotalSpending = $oldTotalSpending + $grandTotal;
                 $oldRanking = $customer->ranking;
-
+        
+                // Dispatch jobs for additional rewards
                 Bus::chain([
                     new UpdateTier($customer->id, $newPointBalance, $newTotalSpending),
                     new GiveEntryReward($oldRanking, $customer->id, $oldTotalSpending),
                     new GiveBonusPoint($payment->id, $totalPoints, $oldPointBalance, $customer->id, $request->user_id)
                 ])->dispatch();
+
                 
                 /* START PUTTING INTO UPDATE TIER JOB */
                 // Determine the new rank based on the new total spending 
@@ -2004,7 +2180,7 @@ class OrderController extends Controller
                                     ->first();
                 
                 $newRankingDetails->image = $newRankingDetails->getFirstMediaUrl('ranking');
-
+        
                 /*// $newRanking = $newRankingDetails->value('id');
 
                 // // Update customer points and total spending
@@ -2054,69 +2230,79 @@ class OrderController extends Controller
 
 
                 // START GIVE BONUS POINT JOB 
-            //     // Log point history for earned points from completed order
-            //     PointHistory::create([ 
-            //         'product_id' => null, 
-            //         'payment_id' => $id, 
-            //         'type' => 'Earned', 
-            //         'point_type' => 'Order', 
-            //         'qty' => 0, 
-            //         'amount' => $totalPoints, 
-            //         'old_balance' => $oldPointBalance, 
-            //         'new_balance' => $newPointBalance, 
-            //         'customer_id' => $customer->id, 
-            //         'handled_by' => $request->user_id, 
-            //         'redemption_date' => now() 
-            //     ]);
+                //     // Log point history for earned points from completed order
+                //     PointHistory::create([ 
+                //         'product_id' => null, 
+                //         'payment_id' => $id, 
+                //         'type' => 'Earned', 
+                //         'point_type' => 'Order', 
+                //         'qty' => 0, 
+                //         'amount' => $totalPoints, 
+                //         'old_balance' => $oldPointBalance, 
+                //         'new_balance' => $newPointBalance, 
+                //         'customer_id' => $customer->id, 
+                //         'handled_by' => $request->user_id, 
+                //         'redemption_date' => now() 
+                //     ]);
 
-            //     // Log point history for earned bonus point entry reward
-            //     foreach ($bonusPointRewards as $key => $reward) {
-            //         $currentPoint = $customer->point;
-            //         $pointAfterBonus = $currentPoint + $reward['bonus_point'];
-                    
-            //         PointHistory::create([ 
-            //             'product_id' => null, 
-            //             'payment_id' => null, 
-            //             'type' => 'Earned', 
-            //             'point_type' => 'Entry Reward', 
-            //             'qty' => 0, 
-            //             'amount' => $reward['bonus_point'], 
-            //             'old_balance' => $currentPoint, 
-            //             'new_balance' => $pointAfterBonus, 
-            //             'customer_id' => $customer->id, 
-            //             'handled_by' => $request->user_id, 
-            //             'redemption_date' => now() 
-            //         ]);
-                    
-            //         // Update customer points and total spending
-            //         $customer->update(['point' => $pointAfterBonus]);
-            //         $customer->refresh();
+                //     // Log point history for earned bonus point entry reward
+                //     foreach ($bonusPointRewards as $key => $reward) {
+                //         $currentPoint = $customer->point;
+                //         $pointAfterBonus = $currentPoint + $reward['bonus_point'];
+                        
+                //         PointHistory::create([ 
+                //             'product_id' => null, 
+                //             'payment_id' => null, 
+                //             'type' => 'Earned', 
+                //             'point_type' => 'Entry Reward', 
+                //             'qty' => 0, 
+                //             'amount' => $reward['bonus_point'], 
+                //             'old_balance' => $currentPoint, 
+                //             'new_balance' => $pointAfterBonus, 
+                //             'customer_id' => $customer->id, 
+                //             'handled_by' => $request->user_id, 
+                //             'redemption_date' => now() 
+                //         ]);
+                        
+                //         // Update customer points and total spending
+                //         $customer->update(['point' => $pointAfterBonus]);
+                //         $customer->refresh();
 
-            //         $customerReward = CustomerReward::find($reward['id']);
-            //         $customerReward->update(['status' => 'Redeemed']);
-            //     }*/
-            };
+                //         $customerReward = CustomerReward::find($reward['id']);
+                //         $customerReward->update(['status' => 'Redeemed']);
+                //     }*/
+
+                $response = [
+                    'newPointBalance' => $newPointBalance,
+                    'newRanking' => $newRankingDetails
+                ];
+            }
 
             // Update payment status
             $payment->update([
                 'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
                 'status' => 'Successful'
             ]);
-
-            foreach ($request->payment_methods as $key => $payMethod) {
-                PaymentDetail::create([
-                    'payment_id' => $payment->id,
-                    'payment_method' => $payMethod['method'],
-                    'amount' => $payMethod['amount'],
-                ]);
-            };
-    
+        
             // Update the total amount of the order based on the payment's grandtotal
             $order->update(['total_amount' => $grandTotal]);
-    
-            $order->orderTable->each(function ($tab) {
+        
+            // Update order tables
+            $order->orderTable->each(function ($tab) use ($request) {
                 if (!in_array($tab->status, ['Order Cancelled', 'Order Voided'])) {
-                    $tab->table->update(['status' => 'Pending Clearance']);
+                    if ($request->split_bill_id && $request->split_bill_id !== 'current') {
+                        $orderTableStatusArr = collect($tab->table->orderTables->whereNotIn('status', ['Order Cancelled', 'Order Voided', 'Order Completed'])->pluck('status')->unique());
+
+                        $newTableStatus = $orderTableStatusArr->count() === 1 && $orderTableStatusArr->contains('Pending Clearance')
+                                ? 'Pending Clearance'
+                                : $orderTableStatusArr->filter(fn ($status) => $status !== 'Pending Clearance')->first();
+                        
+                        $tab->table->update(['status' => $newTableStatus]);
+
+                    } else {
+                        $tab->table->update(['status' => 'Pending Clearance']);
+                    }
+
                     $tab->update(['status' => 'Pending Clearance']);
                 }
             });
@@ -2125,13 +2311,37 @@ class OrderController extends Controller
         /* END GIVE BONUS POINT JOB */
 
         // Record waiter earned commissions
-        
+    
+        return $response ?? 'Payment Unsuccessfull.';
+    }    
 
-        // return response()->json($customer ? $newPointBalance : 'guest');
-        return response()->json($customer ? ([
-            'newPointBalance' => $newPointBalance,
-            'newRanking' => $newRankingDetails,
-        ]) : []);
+    private function getUpdatedCurrentBill($originalOrder)
+    {
+        return [
+            'order_items' => $originalOrder->orderItems->map(function ($item) {
+                return [
+                    ...$item->toArray(),
+                    'transfer_qty' => $item->item_qty,
+                    'balance_qty' => $item->item_qty,
+                    'original_qty' => $item->item_qty,
+                    'transfer_status' => '',
+                    'selected' => false,
+                ];
+            })->toArray(),
+            'amount' => $originalOrder->amount,
+        ];
+    }
+
+    private function determineItemStatus(Collection $statusArr)
+    {
+        if ($statusArr->contains('Pending Serve')) {
+            return 'Pending Serve';
+        } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served'])) {
+            return 'Served';
+        } elseif ($statusArr->count() === 2 && $statusArr->contains('Pending Serve') && $statusArr->contains('Served')) {
+            return 'Pending Serve';
+        }
+        return 'Cancelled';
     }
 
     /**
@@ -2491,7 +2701,7 @@ class OrderController extends Controller
                                                 'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
                                                 'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
                                             ])
-                                            ->findOrFail($validatedData['customer_reward_id']);
+                                            ->find($validatedData['customer_reward_id']);
 
             $tierReward = $selectedReward->rankingReward;
             $freeProduct = $tierReward->product;

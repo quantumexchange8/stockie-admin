@@ -258,16 +258,16 @@ const isValidated = computed(() => {
     <form @submit.prevent="submit">
         <div class="flex items-start w-full gap-x-5 self-stretch py-6 bg-grey-50">
             <!-- Current Table -->
-            <div class="w-1/3 flex flex-col px-6 items-start gap-6 self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
+            <div class="w-1/3 flex flex-col items-start gap-6 self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
                 <div class="flex p-4 gap-x-2 justify-start items-center self-stretch border-b border-grey-100">
                     <span class="w-1.5 h-[22px] bg-primary-800"></span>
                     <p class="text-grey-950 text-md font-semibold">{{ currentTableName }} (Current)</p>
                 </div>
-                <div class="flex flex-col p-3 items-start self-stretch divide-y divide-grey-100 max-h-[calc(100dvh-28.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-28.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <div
                         v-for="item in form.currentTable.order_items"
                         :key="item.id"
-                        class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3 gap-x-3"
+                        class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3 gap-x-3 border-b border-grey-100"
                     >
                         <Checkbox 
                             class="col-span-full sm:col-span-1"
@@ -304,9 +304,9 @@ const isValidated = computed(() => {
             </div>
 
             <!-- Target Table -->
-            <div class="w-1/3 flex flex-col px-6 items-start gap-6 self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
-                <div class="flex justify-between items-center w-full">
-                    <div class="flex p-4 gap-x-2 justify-start items-center self-stretch border-b border-grey-100">
+            <div class="w-1/3 flex flex-col items-start gap-6 self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
+                <div class="flex justify-between items-center w-full p-4">
+                    <div class="flex gap-x-2 justify-start items-center self-stretch border-b border-grey-100">
                         <span class="w-1.5 h-[22px] bg-primary-800"></span>
                         <p class="text-grey-950 text-md font-semibold">{{ targetTableName }}</p>
                     </div>
@@ -337,11 +337,11 @@ const isValidated = computed(() => {
                     </div>
                 </div>
 
-                <div class="flex flex-col p-3 items-start self-stretch divide-y divide-grey-100 max-h-[calc(100dvh-28.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-28.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <div
                         v-for="item in form.targetTable.order_items"
                         :key="item.id"
-                        class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3 gap-x-3"
+                        class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3 gap-x-3 border-b border-grey-100"
                     >
                         <Checkbox 
                             class="col-span-full sm:col-span-1"

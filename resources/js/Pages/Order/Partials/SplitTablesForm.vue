@@ -184,16 +184,15 @@ const openConfirm = () => {
 
 };
 
-
-const closeConfirm = () => {
+const closeConfirm = (withMerge = false) => {
     isConfirmShow.value = false;
 
-    unmergeTables();
+    if (withMerge) unmergeTables();
 }
 
 
 const openReassignOrderModal = () => {
-    closeConfirm();
+    closeConfirm(props.currentOrderTable.status === 'Pending Clearance' || (props.currentOrderTable.status === 'Pending Order' && order.value.order_items.length == 0)); // ADD CONDITION TO ONLY EXECUTE UNMERGE BASED ON STATUS OR NO ITEM
     isReassignOrderModalOpen.value = true;
 }
 
@@ -431,7 +430,7 @@ onMounted(() => {
                     variant="tertiary"
                     size="lg"
                     type="button"
-                    @click="closeConfirm"
+                    @click="closeConfirm(true)"
                 >
                     No
                 </Button>
