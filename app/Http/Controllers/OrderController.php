@@ -2331,7 +2331,7 @@ class OrderController extends Controller
 
         $payout = PayoutConfig::first();
 
-        $response = Http::withHeader([
+        $response = Http::withHeaders([
             'CT-API-KEY' => $payout->api_key,
             'MERCHANT-ID' => $payout->merchant_id,
         ])->post($payout->url . '/api/store-invoice' , [
