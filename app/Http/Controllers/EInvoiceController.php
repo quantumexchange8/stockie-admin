@@ -517,7 +517,7 @@ class EInvoiceController extends Controller
         ];
 
         if ($this->env === 'production') {
-            $docsSubmitApi = 'https://preapi.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
+            $docsSubmitApi = 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
         } else {
             $docsSubmitApi = 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
         }
@@ -538,7 +538,7 @@ class EInvoiceController extends Controller
     private function fetchToken($merchantDetail)
     {
         $access_token_api = $this->env === 'production' 
-                ? 'https://api.myinvois.hasil.gov.my/connect/token' 
+                ? 'https://preprod-api.myinvois.hasil.gov.my/connect/token' 
                 : 'https://preprod-api.myinvois.hasil.gov.my/connect/token';
 
         $response = Http::asForm()->post($access_token_api, [
