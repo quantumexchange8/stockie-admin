@@ -1,126 +1,92 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Jobs;
 
-use App\Jobs\SubmitConsolidatedInvoiceJob;
 use App\Models\ConfigMerchant;
-use App\Models\ConsidateInvoice;
 use App\Models\ConsolidatedInvoice;
 use App\Models\MSICCodes;
-use App\Models\Payment;
 use App\Models\State;
 use App\Models\Token;
-use App\Services\RunningNumberService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Inertia\Inertia;
 
-class EInvoiceController extends Controller
+class SubmitConsolidatedInvoiceJob implements ShouldQueue
 {
+    use Dispatchable,InteractsWithQueue, Queueable, SerializesModels;
+
+    protected $invoiceId;
     protected $env;
 
-    public function __construct()
+    /**
+     * Create a new job instance.
+     */
+    public function __construct($invoiceId)
     {
+        $this->invoiceId = $invoiceId;
         $this->env = env('APP_ENV');
-    }
-    //
-    public function einvoice()
-    {
-
-
-        return Inertia::render('Einvoice/Einvoice');
+        $this->queue = 'submit-consolidate-invoice';
     }
 
-    public function getLastMonthSales()
+    /**
+     * Execute the job.
+     */
+    public function handle(): void
     {
-
-        $startOfLastMonth = Carbon::now()->subMonth()->startOfMonth(); // e.g. 2025-02-01
-        $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();     // e.g. 2025-02-29
-
-        $transactions = Payment::query()
-            ->where('invoice_status', 'pending')
-            ->whereBetween('receipt_end_date', [$startOfLastMonth, $endOfLastMonth])
-            ->get();
-
-        return response()->json($transactions);
-    }
-
-    public function getConsolidateInvoice()
-    {
-
-        $consolidateInvoice = ConsolidatedInvoice::with(['invoice_child'])->first();
-
-        return response()->json($consolidateInvoice);
-    }
-
-    public function submitConsolidate(Request $request)
-    {
-        // dd($request->all());
-        $period = $request->input('period');
-        list($startDate, $endDate) = explode(' - ', $period);
-
-        $c_period_start = Carbon::createFromFormat('d/m/Y', trim($startDate))->startOfDay();
-        $c_period_end = Carbon::createFromFormat('d/m/Y', trim($endDate))->endOfDay();
-
-        // 1. create consolidate parent id
-        $consoParent = ConsolidatedInvoice::create([
-            'c_invoice_no' => RunningNumberService::getID('consolidate'),
-            'c_datetime' => Carbon::now(),
-            'docs_type' => 'sales_transaction',
-            'c_period_start' => $c_period_start, // "2025-03-01 00:00:00"
-            'c_period_end' => $c_period_end, // "2025-03-31 23:59:59"
-            'cancel_expired_at' => Carbon::now()->addDays(3),
-        ]);
-
-        $payment_amount = 0;
-        $payment_total_amount = 0;
-        
-        // 2. update all invoice status
-        foreach ($request->consolidateInvoice as $consolidate) {
-
-            $consolidateId = Payment::find($consolidate['id']);
-
-            // dd($consolidateId);
-            $consolidateId->update([
-                'invoice_status' => 'consolidated',
-                'consolidated_parent_id' => $consoParent->id,
-            ]);
-
-            $payment_amount += $consolidateId->total_amount;
-            $payment_total_amount += $consolidateId->grand_total;
-        }
-
-        $consoParent->c_amount = $payment_amount;
-        $consoParent->c_total_amount = $payment_total_amount;
-        $consoParent->save();
-
-        // queue job here
-        // SubmitConsolidatedInvoiceJob::dispatch($consoParent->id)->onQueue('consolidate_invoice');
-
-        $invoice = ConsolidatedInvoice::where('id', $consoParent->id)->with(['invoice_child'])->first();
-        $payments = $invoice->invoice_child;
+        $invoice = ConsolidatedInvoice::find($this->invoiceId)->with(['invoice_child']);
         $merchantDetail = ConfigMerchant::first();
         $msic = MSICCodes::find($merchantDetail->msic_id);
         $state = State::where('State', $merchantDetail->state)->first();
+        $payments = $invoice->invoice_child;
         $checkToken = Token::first();
-        $now = Carbon::now();
 
         if (!$invoice) {
-            Log::error("Invoice ID {$consoParent->id} not found.");
+            Log::error("Invoice ID {$this->invoiceId} not found.");
             return;
         }
 
-        if ($checkToken && $now->lessThan($checkToken->expired_at)) {
-            return $checkToken->token;
-        } else {
-            return $this->fetchToken($merchantDetail);
+        if (!$checkToken) {
+
+            if ($this->env === 'production') {
+                $access_token_api = 'https://api.myinvois.hasil.gov.my/connect/token';
+            } else {
+                $access_token_api = 'https://preprod-api.myinvois.hasil.gov.my/connect/token';
+            }
+
+            $response = Http::asForm()->post($access_token_api, [
+                'client_id' => $merchantDetail->irbm_client_id, 
+                'client_secret' => $merchantDetail->irbm_client_key,
+                'grant_type' => 'client_credentials',
+                'scope' => 'InvoicingAPI',
+            ]);
+
+            if ($response->successful()) {
+                $getToken = Token::create([
+                    'merchant_id' => 1,
+                    'token' => $response['access_token'],
+                    'expired_at' => Carbon::now()->addHour(),
+                ]);
+            } else {
+                $status = $response->status();
+                $error = $response->body();
+
+                Log::debug('response error', [
+                    'status' => $status, 
+                    'error' => $error
+                ]);
+            }
         }
 
         $totalPayments = $payments->count();
         $chunkSize = 50;
         $chunks = ceil($totalPayments / $chunkSize); // Calculate how many groups
+
 
         $taxTotal[] = [
             "TaxAmount" => [["_"=> 0, "currencyID" => "MYR"]],
@@ -150,7 +116,7 @@ class EInvoiceController extends Controller
                 ]
             ]
         ];
-        
+
         $invoiceLines = [];
         for ($i = 0; $i < $chunks; $i++) {
             $start = $i * $chunkSize + 1;
@@ -511,7 +477,7 @@ class EInvoiceController extends Controller
                     'format' => 'JSON',
                     'document' => $base64Document,
                     'documentHash' => $documentHash,
-                    'codeNumber' => $consoParent->c_invoice_no,
+                    'codeNumber' => $invoice->c_invoice_no,
                 ]
             ]
         ];
@@ -521,7 +487,7 @@ class EInvoiceController extends Controller
         } else {
             $docsSubmitApi = 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
         }
-        
+
         $submiturl = Http::withToken($checkToken->token)->post($docsSubmitApi, $document);
         if ($submiturl->successful()) {
             Log::debug('submission ', $submiturl);
@@ -530,42 +496,6 @@ class EInvoiceController extends Controller
             $invoice->submitted_uuid = $uuid;
             $invoice->status = 'submitted';
             $invoice->save();
-        }
-
-        return redirect()->back();
-    }
-
-    private function fetchToken($merchantDetail)
-    {
-        $access_token_api = $this->env === 'production' 
-                ? 'https://api.myinvois.hasil.gov.my/connect/token' 
-                : 'https://preprod-api.myinvois.hasil.gov.my/connect/token';
-
-        $response = Http::asForm()->post($access_token_api, [
-            'client_id' => $merchantDetail->irbm_client_id, 
-            'client_secret' => $merchantDetail->irbm_client_key,
-            'grant_type' => 'client_credentials',
-            'scope' => 'InvoicingAPI',
-        ]);
-
-        if ($response->successful()) {
-            $token = $response['access_token'];
-            $expiresAt = Carbon::now()->addHour();
-    
-            // Store or update token
-            Token::updateOrCreate(
-                ['merchant_id' => 1], // Unique constraint
-                ['token' => $token, 'expired_at' => $expiresAt]
-            );
-    
-            return $token;
-        } else {
-            Log::debug('Token Fetch Error', [
-                'status' => $response->status(),
-                'error' => $response->body()
-            ]);
-            
-            return null;
         }
     }
 }

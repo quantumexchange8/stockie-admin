@@ -33,6 +33,8 @@ return new class extends Migration
             $table->integer('point_earned');
             $table->string('pax');
             $table->string('status');
+            $table->string('invoice_status')->default('pending');
+            $table->unsignedBigInteger('consolidated_parent_id')->nullable();
             $table->unsignedBigInteger('customer_id')->nullable()->default(NULL);
             $table->unsignedBigInteger('handled_by');
             $table->softDeletes();

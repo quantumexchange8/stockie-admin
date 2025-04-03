@@ -23,6 +23,7 @@ import { useForm } from '@inertiajs/vue3';
 import RadioButton from '@/Components/RadioButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import dayjs from 'dayjs'
+import Dropdown from '@/Components/Dropdown.vue';
 
 const clearFilters = (close) => {
     checkedFilters.value = resetFilters();
@@ -43,6 +44,7 @@ const salesColumn = ref([
 ]);
 
 const saleTransaction = ref([]);
+const lastMonthSalesTransaction = ref([]);
 const date_filter = ref(''); 
 const lastMonthDate = ref('');
 const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
@@ -51,9 +53,11 @@ const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
 const consolidateIsOpen = ref(false);
 const selectedVal = ref(null);
-const { formatAmount } = transactionFormat();
+const { formatAmount, formatDate } = transactionFormat();
 const tabs = ref(["Sales Detail", "Product Sold", "Payment Method"]);
 const op = ref(null);
+const docs_type = ref('sales_tranaction');
+const rowsPerPage = ref(5);
 
 const props = defineProps({
     selectedTab: Number,
@@ -73,7 +77,20 @@ const fetchTransaction = async (filters = {}) => {
     }
 };
 
+const fetchLastMonthTransaction = async (filters = {}) => {
+
+try {
+    const response = await axios.get('/e-invoice/getLastMonthSales');
+
+    lastMonthSalesTransaction.value = response.data;
+
+} catch (error) {
+    console.error(error);
+}
+};
+
 onMounted(() => fetchTransaction());
+onMounted(() => fetchLastMonthTransaction());
 onMounted(() => {
     const today = dayjs()
     const startOfLastMonth = today.subtract(1, 'month').startOf('month')
@@ -292,6 +309,30 @@ const cancelRefund = () => {
     refundIsOpen.value = false;
 }
 
+const docsType = [
+    { text: 'Sales Tranaction', value: 'sales_tranaction'},
+]
+
+const transactionColumn = ref([
+    {field: 'receipt_end_date', header: 'Date', width: '20', sortable: true},
+    {field: 'receipt_no', header: 'Transaction No.', width: '100%', sortable: true},
+    {field: 'total_amount', header: 'Total', width: '10', sortable: true},
+])
+
+const submitConsolidate = async () => {
+
+    try {
+        
+        $response = await axios.post('/e-invoice/submit-consolidate', {
+            consolidateInvoice: lastMonthSalesTransaction.value,
+            period: lastMonthDate.value,
+        })
+
+    } catch (error) {
+        console.error('error', error);
+    }
+
+}
 
 </script>
 
@@ -402,12 +443,45 @@ const cancelRefund = () => {
                         <div class="text-grey-950 text-sm">Document type you’ll consolidate.</div>
                     </div>
                     <div>
-                        
+                        <Dropdown
+                            :inputName="'sale_type'"
+                            :labelText="''"
+                            :inputArray="docsType"
+                            v-model="docs_type"
+                            :dataValue="docs_type"
+                            class="w-full"
+                            disabled
+                        />
                     </div>
                 </div>
             </div>
             <!-- Submittable transaction -->
-            <div></div>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-1">
+                    <div class="text-grey-950 text-base font-bold">Submittable Transaction</div>
+                    <div class="text-grey-950 text-sm">Transaction which has not yet been submitted to LHDN’s MyInvois for validation.</div>
+                </div>
+                <div class="max-h-[50vh] overflow-y-auto">
+                    <Table
+                        :columns="transactionColumn"
+                        :variant="'list'"
+                        :rows="lastMonthSalesTransaction"
+                        :rowType="rowType"
+                        :rowsPerPage="rowsPerPage"
+                    >
+                        <template #receipt_end_date="row">
+                            <span class="text-grey-900 text-sm font-medium">{{ row.receipt_end_date }}</span>
+                        </template>
+                        <template #total_amount="row">
+                            <span class="text-grey-900 text-sm font-medium">RM {{ row.total_amount }}</span>
+                        </template>
+                    </Table>
+                </div>
+                <div class="w-full flex gap-4">
+                    <Button variant="tertiary">Cancel</Button>
+                    <Button @click="submitConsolidate">Submit</Button>
+                </div>
+            </div>
         </div>
     </Modal>
 

@@ -25,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
             resolve(\Illuminate\Routing\UrlGenerator::class)->forceScheme('https');
             $this->app['request']->server->set('HTTPS', true);
         }
+        if (App::environment('staging')) {
+            resolve(\Illuminate\Routing\UrlGenerator::class)->forceScheme('https');
+            $this->app['request']->server->set('HTTPS', true);
+        }
 
         Gate::before(function ($user, $ability) {
             return $user->hasRole('Super Admin') ? true : null;

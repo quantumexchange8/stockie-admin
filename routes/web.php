@@ -393,6 +393,9 @@ Route::middleware('auth')->group(function () {
     /********* E-Invoice Listing **********/
     Route::prefix('e-invoice')->middleware([CheckPermission::class . ':einvoice-submission'])->group(function(){
         Route::get('/einvoice-listing', [EInvoiceController::class, 'einvoice'])->name('e-invoice.einvoice-listing');
+        Route::get('/getLastMonthSales', [EInvoiceController::class, 'getLastMonthSales'])->name('e-invoice.getLastMonthSales');
+        Route::get('/getConsolidateInvoice', [EInvoiceController::class, 'getConsolidateInvoice'])->name('e-invoice.getConsolidateInvoice');
+        Route::post('/submit-consolidate', [EInvoiceController::class, 'submitConsolidate'])->name('e-invoice.submit-consolidate');
         
     });
 

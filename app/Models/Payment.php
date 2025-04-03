@@ -40,6 +40,7 @@ class Payment extends Model
         'invoice_status',
         'customer_id',
         'handled_by',
+        'consolidated_parent_id'
     ];
 
     protected $casts = [
