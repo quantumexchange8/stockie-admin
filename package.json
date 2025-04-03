@@ -22,7 +22,9 @@
     "dependencies": {
         "@headlessui/vue": "^1.7.22",
         "chart.js": "^4.4.3",
+        "crypto-js": "^4.2.0",
         "dayjs": "^1.11.12",
-        "primevue": "^3.52.0"
+        "primevue": "^3.52.0",
+        "qrcode-vue3": "^1.7.1"
     }
 }

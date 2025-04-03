@@ -1,11 +1,13 @@
 <script setup>
 import dayjs from 'dayjs';
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Table from '@/Components/Table.vue';
 import { WineBackgroundIllus1 } from '@/Components/Icons/illus';
 import StockieLogo from "../../../../../public/favicon.ico";
 import QRCodeImage from "../../../../assets/images/stockie-admin-qr.png";
 import { usePhoneUtils } from '@/Composables/index.js';
+import QRCodeVue3 from "qrcode-vue3";
+import md5 from 'crypto-js/md5';
 
 const props = defineProps({
     order: Object,
@@ -16,6 +18,22 @@ const props = defineProps({
 const { formatPhone } = usePhoneUtils();
 
 const order = ref(props.order);
+const payout = ref();
+
+const getPayoutDetails = async () => {
+    try {
+        const response = await axios.get('/getPayoutDetails');
+
+        payout.value = response.data;
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+}
+
+onMounted(() => getPayoutDetails());
 
 const invoiceOrderItemsColumns = ref([
     {field: 'item_qty', header: 'Qty', width: '15', sortable: false},
@@ -54,6 +72,11 @@ const appliedVoucher = computed(() => (props.order.payment.voucher ? [props.orde
 // })
 
 const orderTableNames = computed(() => order.value.order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '');
+
+const generateECode = (receipt_no, merchant, secret) => {
+    return md5(`${receipt_no}${merchant}${secret}`).toString();
+}
+
 </script>
 
 <template>
@@ -194,8 +217,24 @@ const orderTableNames = computed(() => order.value.order_table?.map((orderTable)
                 </template>
     
                 <div class="border-y-2 border-dashed border-primary-100 h-2"></div>
-                <div class="flex items-center justify-center">
-                    <img :src="QRCodeImage" alt="QRCodeImage" width="200" height="200"/>
+                <div v-if="payout" class="flex items-center justify-center">
+                    <!-- <img :src="QRCodeImage" alt="QRCodeImage" width="200" height="200"/> -->
+                    <!-- generate qr -->
+                    <QRCodeVue3 
+                        :width="200"
+                        :height="200"
+                        :value="`${payout?.url}invoice?invoice_no=${order.payment.receipt_no}&merchant_id=${payout?.merchant_id}&amount=${order.payment.grand_total}&eCode=${generateECode(
+                            order.payment.receipt_no,
+                            payout?.merchant_id,
+                            payout?.api_key,
+                        )}`"
+                        :dotsOptions="{
+                            type: 'square',
+                            color: '#7e171b',
+                        }"
+                        :cornersSquareOptions="{ type: 'square', color: '#7e171b' }"
+                        :cornersDotOptions="{ type: undefined, color: '#7e171b' }"
+                    />
                 </div>
     
                 <div class="flex flex-col items-center">

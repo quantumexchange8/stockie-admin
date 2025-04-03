@@ -23,6 +23,7 @@ use App\Http\Controllers\ConfigPromotionController;
 use App\Http\Controllers\ConfigShiftSettingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EInvoiceController;
+use App\Http\Controllers\GlobalController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
@@ -399,6 +400,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/submit-consolidate', [EInvoiceController::class, 'submitConsolidate'])->name('e-invoice.submit-consolidate');
         
     });
+
+    /********* Global use **********/
+    Route::get('/getPayoutDetails', [GlobalController::class, 'getPayoutDetails'])->name('getPayoutDetails');
+    
 
     /********* All Report **********/
     Route::get('/all-report', [ReportController::class, 'allReport'])->name('all-report');
