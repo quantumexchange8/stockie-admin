@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\CallbackEinvoiceController;
 use App\Http\Controllers\ConfigCommissionController;
 use App\Http\Controllers\ConfigDiscountController;
 use App\Http\Controllers\ConfigEmployeeIncProgController;
@@ -402,5 +403,8 @@ Route::middleware('auth')->group(function () {
     /********* All Report **********/
     Route::get('/all-report', [ReportController::class, 'allReport'])->name('all-report');
 });
+
+// Receive callback for client request einvoice
+Route::post('/client-submitted-einvoice', [CallbackEinvoiceController::class, 'updateClientEinvoice'])->name('updateClientEinvoice');
 
 require __DIR__.'/auth.php';

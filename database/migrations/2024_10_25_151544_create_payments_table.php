@@ -34,6 +34,8 @@ return new class extends Migration
             $table->string('pax');
             $table->string('status');
             $table->string('invoice_status')->default('pending');
+            $table->string('submitted_uuid')->nullable();
+            $table->string('submission_date')->nullable();
             $table->unsignedBigInteger('consolidated_parent_id')->nullable();
             $table->unsignedBigInteger('customer_id')->nullable()->default(NULL);
             $table->unsignedBigInteger('handled_by');
