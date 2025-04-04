@@ -2332,12 +2332,30 @@ class OrderController extends Controller
             'items' => $items,
         ];
 
+        Log::debug('params', ['params' => $params]);
+
         $response = Http::withHeaders([
             'CT-API-KEY' => $payout->api_key,
             'MERCHANT-ID' => $payout->merchant_id,
         ])->post($payout->url . 'api/store-invoice', $params);
         
-        Log::debug('response', ['response' => $response->status()]);
+        Log::debug('response status', ['status' => $response->status()]);
+
+        if ($response->failed()) {
+            // Log detailed error information
+            Log::error('Request failed', [
+                'status' => $response->status(),
+                'error' => $response->body(),
+                'headers' => $response->headers(),
+                'params' => $params
+            ]);
+        } else {
+            // Log the successful response (optional)
+            Log::info('Request succeeded', [
+                'status' => $response->status(),
+                'data' => $response->json() // or you can use $response->body() if it's not JSON
+            ]);
+        }
     }
 
     protected function getApiHeaders()
