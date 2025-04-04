@@ -350,7 +350,7 @@ const submitConsolidate = async () => {
                     />
                 </div>
             </div>
-            <div class="flex items-center lg:justify-between xl:justify-center gap-5 lg:w-full xl:max-w-[500px]">
+            <div class="flex items-center lg:justify-between xl:justify-end gap-5 lg:w-full xl:max-w-[500px]">
                 <div class="">
                     <DateInput
                         :inputName="'date_filter'"

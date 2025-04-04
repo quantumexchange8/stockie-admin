@@ -2209,6 +2209,8 @@ class OrderController extends Controller
                     'qty' => (int) $item->item_qty,
                 ]);
             });
+
+            Log::debug('order item', ['order item' => $order->orderItems]);
         
             // Handle customer points if applicable
             $customer = $order->customer;
@@ -2294,7 +2296,7 @@ class OrderController extends Controller
             });
 
             // POST CT Einvoice
-            // $this->storeAtCtInvoice($payment);
+            $this->storeAtCtInvoice($payment, $order->orderItems);
         }
 
         /* END GIVE BONUS POINT JOB */
@@ -2304,16 +2306,30 @@ class OrderController extends Controller
         return $response ?? 'Payment Unsuccessfull.';
     }    
 
-    protected function storeAtCtInvoice(Payment $payment)
+    protected function storeAtCtInvoice(Payment $payment, Collection $order_items)
     {
 
         $payout = PayoutConfig::first();
+
+        // in json
+        $items = [];
+        foreach ($order_items as $item) {
+            $items[] = [
+                'id' => $item->id,
+                'item_name' => $item->item_name,
+                'qty' => $item->qty,
+                'price' => $item->price,
+                'subtotal' => $item->qty * $item->price, // Optional
+                'classification_id' => 22 // default classification ID (022 - Others)
+            ];
+        }
 
         $params = [
             'invoice_no' => $payment->receipt_no,
             'total_amount' => $payment->grand_total,
             'date_time' => Carbon::now(),
             'status' => 'pending',
+            'items' => $items,
         ];
 
         $response = Http::withHeaders([

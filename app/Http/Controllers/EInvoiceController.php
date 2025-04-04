@@ -173,7 +173,7 @@ class EInvoiceController extends Controller
                 "Item" => [[
                     "CommodityClassification" => [[
                         "ItemClassificationCode" => [[
-                            "_" => '004',
+                            "_" => '004', // consolidate
                             "listID" => "CLASS"
                         ]]
                     ]],
