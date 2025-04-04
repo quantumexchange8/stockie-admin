@@ -2316,10 +2316,10 @@ class OrderController extends Controller
         foreach ($order_items as $item) {
             $items[] = [
                 'id' => $item->id,
-                'item_name' => $item->item_name,
-                'qty' => $item->qty,
-                'price' => $item->price,
-                'subtotal' => $item->qty * $item->price, // Optional
+                'item_name' => $item->product->product_name,
+                'qty' => $item->item_qty,
+                'price' => $item->product->price,
+                'subtotal' => $item->item_qty * $item->product->price, // Optional
                 'classification_id' => 22 // default classification ID (022 - Others)
             ];
         }
