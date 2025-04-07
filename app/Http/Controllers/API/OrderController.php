@@ -20,6 +20,7 @@ use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\Ranking;
+use App\Models\Reservation;
 use App\Models\ShiftTransaction;
 use App\Models\StockHistory;
 use App\Models\Table;
@@ -49,12 +50,29 @@ class OrderController extends Controller
         $this->authUser = User::find(Auth::id());
         $this->authUser->image = $this->authUser->getFirstMediaUrl('user');
     }
+
+    private function getReservedTablesId()
+    {
+        $reservedTableIds = Reservation::whereNotIn('status', ['Cancelled', 'Completed', 'No show']) // Adjust status if needed
+                                        ->pluck('table_no') // Get JSON arrays of table_no
+                                        ->flatMap(function ($tableNos) {
+                                            return array_map(function ($table) {
+                                                return $table['id'];
+                                            }, $tableNos); // Decode JSON only if it's a string
+                                        })
+                                        ->unique()
+                                        ->toArray();
+                    
+        return $reservedTableIds;
+    }
     
     /**
      * Get all the zones and its tables.
      */
     public function getAllTables()
     {
+        $reservedTablesId = $this->getReservedTablesId();
+
         $zones = Zone::with([
                             'tables:id,table_no,seat,zone_id,status,order_id',
                             'tables.orderTables' => function ($query) {
@@ -74,8 +92,8 @@ class OrderController extends Controller
             return response()->json([]);
         }
     
-        $zones = $zones->map(function ($zone) use ($zones){
-            $tablesArray = $zone->tables?->map(function ($table) use ($zones) {
+        $zones = $zones->map(function ($zone) use ($zones, $reservedTablesId){
+            $tablesArray = $zone->tables?->map(function ($table) use ($zones, $reservedTablesId) {
                 $table->pending_count = $table->orderTables->sum(function ($orderTable) {
                     return $orderTable->order
                             ->orderItems
@@ -105,6 +123,8 @@ class OrderController extends Controller
                         && $t->status !== 'Empty Seat'
                     )
                 );
+
+                $table->is_reserved = in_array($table->id, $reservedTablesId);
 
                 // Unset the orderTables property to clean up the response
                 $table->unsetRelation('orderTables');
