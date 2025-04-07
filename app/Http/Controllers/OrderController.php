@@ -2335,24 +2335,22 @@ class OrderController extends Controller
             'items' => $items,
         ];
 
+        
+        Log::debug('data', [
+            '$payout->api_key' => $payout->api_key,
+            '$payout->merchant_id' => $payout->merchant_id,
+            '$payout->url' => $payout->url,
+            'url' => $payout->url . 'api/store-invoice',
+        ]);
         Log::debug('params', $params);
+
 
         $response = Http::withHeaders([
             'CT-API-KEY' => $payout->api_key,
             'MERCHANT-ID' => $payout->merchant_id,
-        ])->post($payout->url . 'api/store-invoice', $params);
+        ])->withBody(json_encode($params), 'application/json')->post($payout->url . 'api/store-invoice');
         
         Log::debug('response', ['response' => $response->status()]);
-    }
-
-    protected function getApiPayload(Payment $payment)
-    {
-        return [
-            'invoice_no' => $payment->receipt_no,
-            'amount' => $payment->amount,
-            'date' => $payment->receipt_end_date,
-            'status' => 'pending',
-        ];
     }
 
     private function getUpdatedCurrentBill($originalOrder)
