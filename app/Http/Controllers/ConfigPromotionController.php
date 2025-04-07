@@ -258,6 +258,8 @@ class ConfigPromotionController extends Controller
             'description' => ['required', 'string'],
             'classification_code' => ['required', 'integer'],
             'merchant_image' => ['required', 'max:8000'],
+            'irbm_client_id' => ['required'],
+            'irbm_client_key' => ['required'],
         ], [
             'required' => 'This field is required.',
             'string' => 'Invalid input. Please try another.',
@@ -279,6 +281,8 @@ class ConfigPromotionController extends Controller
             'sst_registration_no' => $request->sst_registration_no,
             'description' => $request->description,
             'classification_code' => $request->classification_code,
+            'irbm_client_id' => $request->irbm_client_id,
+            'irbm_client_key' => $request->irbm_client_key,
         ]);
 
         if($request->hasFile('merchant_image')){

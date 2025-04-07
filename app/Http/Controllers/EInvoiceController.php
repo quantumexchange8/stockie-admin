@@ -8,6 +8,7 @@ use App\Models\ConsidateInvoice;
 use App\Models\ConsolidatedInvoice;
 use App\Models\MSICCodes;
 use App\Models\Payment;
+use App\Models\PayoutConfig;
 use App\Models\State;
 use App\Models\Token;
 use App\Services\RunningNumberService;
@@ -64,6 +65,8 @@ class EInvoiceController extends Controller
         $c_period_start = Carbon::createFromFormat('d/m/Y', trim($startDate))->startOfDay();
         $c_period_end = Carbon::createFromFormat('d/m/Y', trim($endDate))->endOfDay();
 
+        $payout = PayoutConfig::first();
+
         // 1. create consolidate parent id
         $consoParent = ConsolidatedInvoice::create([
             'c_invoice_no' => RunningNumberService::getID('consolidate'),
@@ -76,6 +79,9 @@ class EInvoiceController extends Controller
 
         $payment_amount = 0;
         $payment_total_amount = 0;
+
+        // store all receipt no
+        $receiptNo = [];
         
         // 2. update all invoice status
         foreach ($request->consolidateInvoice as $consolidate) {
@@ -90,7 +96,17 @@ class EInvoiceController extends Controller
 
             $payment_amount += $consolidateId->total_amount;
             $payment_total_amount += $consolidateId->grand_total;
+
+            $receiptNo[] = $consolidateId->receipt_no;
         }
+
+        $updateConsoCt = Http::withHeaders([
+            'CT-API-KEY' => $payout->api_key,
+            'MERCHANT-ID' => $payout->merchant_id,
+        ])->post($payout->url . 'api/update-consolidate-invoice', $receiptNo);
+        Log::info('updateConsoCt', [
+            'status' => $updateConsoCt->status()
+        ]);
 
         $consoParent->c_amount = $payment_amount;
         $consoParent->c_total_amount = $payment_total_amount;

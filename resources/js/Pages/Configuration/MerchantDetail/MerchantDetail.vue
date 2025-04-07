@@ -99,6 +99,8 @@ const merchantForm = useForm({
     sst_registration_no: merchant_detail.value?.sst_registration_no ?? '',
     description: merchant_detail.value?.description ?? '',
     classification_code: merchant_detail.value?.classification_code ?? '',
+    irbm_client_id: merchant_detail.value?.irbm_client_id ?? '',
+    irbm_client_key: merchant_detail.value?.irbm_client_key ?? '',
 })
 
 const addressForm = useForm({
@@ -382,6 +384,25 @@ onMounted(() => {
                                 :errorMessage="merchantForm.errors.description ? merchantForm.errors.description[0] : ''"
                                 :required="true"
                                 v-model="merchantForm.description"
+                            />
+                        </div>
+
+                        <div class="flex items-start gap-4 self-stretch">
+                            <TextInput 
+                                :inputName="'irbm_client_id'"
+                                :labelText="'IRBM Client ID'"
+                                :errorMessage="merchantForm.errors.irbm_client_id ? merchantForm.errors.irbm_client_id[0] : ''"
+                                :required="true"
+                                v-model="merchantForm.irbm_client_id"
+                            />
+
+                            <TextInput 
+                                :inputName="'irbm_client_key'"
+                                :labelText="'IRBM Client Key'"
+                                :errorMessage="merchantForm.errors.irbm_client_key ? merchantForm.errors.irbm_client_key[0] : ''"
+                                :required="true"
+                                v-model="merchantForm.irbm_client_key"
+                                :inputType="'password'"
                             />
                         </div>
 

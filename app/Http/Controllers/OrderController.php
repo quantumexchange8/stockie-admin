@@ -2326,44 +2326,23 @@ class OrderController extends Controller
 
         $params = [
             'invoice_no' => $payment->receipt_no,
-            'total_amount' => $payment->grand_total,
+            'amount' => $payment->total_amount,
+            'sst_amount' => $payment->sst_amount,
+            'service_tax_amount' => $payment->service_tax_amount,
+            'total_amount' => $payment->total_amount + $payment->sst_amount + $payment->service_tax_amount,
             'date_time' => Carbon::now(),
             'status' => 'pending',
             'items' => $items,
         ];
 
-        Log::debug('params', ['params' => $params]);
+        Log::debug('params', $params);
 
         $response = Http::withHeaders([
             'CT-API-KEY' => $payout->api_key,
             'MERCHANT-ID' => $payout->merchant_id,
         ])->post($payout->url . 'api/store-invoice', $params);
         
-        Log::debug('response status', ['status' => $response->status()]);
-
-        if ($response->failed()) {
-            // Log detailed error information
-            Log::error('Request failed', [
-                'status' => $response->status(),
-                'error' => $response->body(),
-                'headers' => $response->headers(),
-                'params' => $params
-            ]);
-        } else {
-            // Log the successful response (optional)
-            Log::info('Request succeeded', [
-                'status' => $response->status(),
-                'data' => $response->json() // or you can use $response->body() if it's not JSON
-            ]);
-        }
-    }
-
-    protected function getApiHeaders()
-    {
-        return [
-            'CT-API-KEY' => 'bia5B0thBOUTHtfgz9lMEu9wMzoVPnRzCNQCPkFw',
-            'MERCHANT-ID' => 1,
-        ];
+        Log::debug('response', ['response' => $response->status()]);
     }
 
     protected function getApiPayload(Payment $payment)

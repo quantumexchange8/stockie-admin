@@ -18,7 +18,7 @@ class CallbackEinvoiceController extends Controller
         $result = [
             "token" => $data['eCode'],
             "transaction_number" => $data['invoice_no'],
-            "uuid" => $data['uuid'],
+            "uuid" => $data['invoice_uuid'],
             "status" => $data["status"],
             "submission_date" => $data["submission_date"],
         ];

@@ -15,14 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('merchant_name');
+            $table->string('merchant_contact');
+            $table->string('email_address');
             $table->string('tin_no');
             $table->string('registration_no');
             $table->string('msic_code');
-            $table->string('merchant_contact');
-            $table->string('email_address');
             $table->string('sst_registration_no');
             $table->string('description');
             $table->unsignedBigInteger('classification_code');
+            $table->string('irbm_client_id');
+            $table->string('irbm_client_key');
             $table->string('merchant_address_line1');
             $table->string('merchant_address_line2');
             $table->string('postal_code');

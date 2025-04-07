@@ -29,7 +29,9 @@ class ConfigMerchant extends Model implements HasMedia
         'postal_code',
         'area',
         'state',
-        'merchant_image'
+        'merchant_image',
+        'irbm_client_id',
+        'irbm_client_key',
     ];
 
     public function getActivitylogOptions(): LogOptions
