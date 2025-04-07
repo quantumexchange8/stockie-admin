@@ -2326,29 +2326,27 @@ class OrderController extends Controller
 
         $params = [
             'invoice_no' => $payment->receipt_no,
-            'amount' => $payment->total_amount,
+            'amount' => (float)$payment->total_amount,
             'sst_amount' => $payment->sst_amount,
             'service_tax_amount' => $payment->service_tax_amount,
             'total_amount' => $payment->total_amount + $payment->sst_amount + $payment->service_tax_amount,
-            'date_time' => Carbon::now(),
+            'date_time' => Carbon::now()->format('Y-m-d H:i:s'),
             'status' => 'pending',
             'items' => $items,
         ];
-
         
         Log::debug('data', [
-            '$payout->api_key' => $payout->api_key,
-            '$payout->merchant_id' => $payout->merchant_id,
-            '$payout->url' => $payout->url,
             'url' => $payout->url . 'api/store-invoice',
+            'params' => $params
         ]);
-        Log::debug('params', $params);
 
 
         $response = Http::withHeaders([
             'CT-API-KEY' => $payout->api_key,
             'MERCHANT-ID' => $payout->merchant_id,
-        ])->withBody(json_encode($params), 'application/json')->post($payout->url . 'api/store-invoice');
+            'Content-Type' => 'application/json',  // 明确指定 JSON
+            'Accept' => 'application/json',
+        ])->post($payout->url . 'api/store-invoice', $params);
         
         Log::debug('response', ['response' => $response->status()]);
     }

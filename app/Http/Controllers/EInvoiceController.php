@@ -104,6 +104,7 @@ class EInvoiceController extends Controller
             'CT-API-KEY' => $payout->api_key,
             'MERCHANT-ID' => $payout->merchant_id,
         ])->post($payout->url . 'api/update-consolidate-invoice', $receiptNo);
+        
         Log::info('updateConsoCt', [
             'status' => $updateConsoCt->status()
         ]);
