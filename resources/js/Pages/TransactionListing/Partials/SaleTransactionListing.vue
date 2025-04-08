@@ -326,7 +326,12 @@ const submitConsolidate = async () => {
         $response = await axios.post('/e-invoice/submit-consolidate', {
             consolidateInvoice: lastMonthSalesTransaction.value,
             period: lastMonthDate.value,
-        })
+        });
+
+        if ($response.status === 200) {
+            closeConsolidate();
+            fetchTransaction();
+        }
 
     } catch (error) {
         console.error('error', error);

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('tokens', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('merchant_id');
-            $table->string('token');
+            $table->longText('token');
             $table->dateTime('expired_at');
             $table->timestamps();
         });

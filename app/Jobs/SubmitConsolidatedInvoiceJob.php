@@ -46,11 +46,41 @@ class SubmitConsolidatedInvoiceJob implements ShouldQueue
         $msic = MSICCodes::find($merchantDetail->msic_id);
         $state = State::where('State', $merchantDetail->state)->first();
         $payments = $invoice->invoice_child;
-        $checkToken = Token::first();
+        $checkToken = Token::latest()->first();
+        $now = Carbon::now();
 
         if (!$invoice) {
             Log::error("Invoice ID {$this->invoiceId} not found.");
             return;
+        }
+
+        if ($checkToken && $now >= $checkToken->expired_at) {
+            $access_token_api = $this->env === 'production'
+                ? 'https://preprod-api.myinvois.hasil.gov.my/connect/token' 
+                : 'https://preprod-api.myinvois.hasil.gov.my/connect/token';
+
+            $response = Http::asForm()->post($access_token_api, [
+                'client_id' => $merchantDetail->irbm_client_id, 
+                'client_secret' => $merchantDetail->irbm_client_key,
+                'grant_type' => 'client_credentials',
+                'scope' => 'InvoicingAPI',
+            ]);
+
+            if ($response->successful()) {
+                Token::where('merchant_id', $merchantDetail->id)->delete();
+
+                $this->token = Token::create([
+                    'merchant_id' => $merchantDetail->id,
+                    'token' => $response['access_token'],
+                    'expired_at' => Carbon::now()->addHour(),
+                ])->token;
+            } else {
+                Log::error('Failed to get access token', [
+                    'status' => $response->status(),
+                    'error' => $response->body()
+                ]);
+                return;
+            }
         }
 
         $totalPayments = $payments->count();
