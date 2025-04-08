@@ -546,14 +546,14 @@ class EInvoiceController extends Controller
         $submiturl = Http::withToken($token)->post($docsSubmitApi, $document);
 
         if ($submiturl->successful()) {
-            Log::debug('submission ', $submiturl);
+            Log::debug('submission ', ['submission' => $submiturl]);
 
             $uuid = $submiturl['acceptedDocuments']['uuid'];
             $invoice->submitted_uuid = $uuid;
             $invoice->status = 'submitted';
             $invoice->save();
         }
-        
+
         return redirect()->back();
     }
 
