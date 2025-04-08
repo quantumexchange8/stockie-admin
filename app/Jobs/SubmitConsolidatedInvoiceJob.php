@@ -22,14 +22,16 @@ class SubmitConsolidatedInvoiceJob implements ShouldQueue
     use Dispatchable,InteractsWithQueue, Queueable, SerializesModels;
 
     protected $invoiceId;
+    protected $token;
     protected $env;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($invoiceId)
+    public function __construct($invoiceId, $token)
     {
         $this->invoiceId = $invoiceId;
+        $this->token = $token;
         $this->env = env('APP_ENV');
         $this->queue = 'submit-consolidate-invoice';
     }
@@ -49,38 +51,6 @@ class SubmitConsolidatedInvoiceJob implements ShouldQueue
         if (!$invoice) {
             Log::error("Invoice ID {$this->invoiceId} not found.");
             return;
-        }
-
-        if (!$checkToken) {
-
-            if ($this->env === 'production') {
-                $access_token_api = 'https://api.myinvois.hasil.gov.my/connect/token';
-            } else {
-                $access_token_api = 'https://preprod-api.myinvois.hasil.gov.my/connect/token';
-            }
-
-            $response = Http::asForm()->post($access_token_api, [
-                'client_id' => $merchantDetail->irbm_client_id, 
-                'client_secret' => $merchantDetail->irbm_client_key,
-                'grant_type' => 'client_credentials',
-                'scope' => 'InvoicingAPI',
-            ]);
-
-            if ($response->successful()) {
-                $getToken = Token::create([
-                    'merchant_id' => 1,
-                    'token' => $response['access_token'],
-                    'expired_at' => Carbon::now()->addHour(),
-                ]);
-            } else {
-                $status = $response->status();
-                $error = $response->body();
-
-                Log::debug('response error', [
-                    'status' => $status, 
-                    'error' => $error
-                ]);
-            }
         }
 
         $totalPayments = $payments->count();
@@ -139,7 +109,7 @@ class SubmitConsolidatedInvoiceJob implements ShouldQueue
                 "Item" => [[
                     "CommodityClassification" => [[
                         "ItemClassificationCode" => [[
-                            "_" => '004',
+                            "_" => '004', // consolidate
                             "listID" => "CLASS"
                         ]]
                     ]],
@@ -488,7 +458,7 @@ class SubmitConsolidatedInvoiceJob implements ShouldQueue
             $docsSubmitApi = 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
         }
 
-        $submiturl = Http::withToken($checkToken->token)->post($docsSubmitApi, $document);
+        $submiturl = Http::withToken($this->token)->post($docsSubmitApi, $document);
         if ($submiturl->successful()) {
             Log::debug('submission ', $submiturl);
 
