@@ -21,6 +21,8 @@ return new class extends Migration
             $table->dateTime('c_period_end')->nullable();
             $table->string('status')->nullable();
             $table->string('submitted_uuid')->nullable();
+            $table->string('uuid')->nullable();
+            $table->longText('remark')->nullable();
             $table->dateTime('cancel_expired_at')->nullable();
             $table->timestamps();
         });

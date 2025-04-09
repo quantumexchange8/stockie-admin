@@ -16,6 +16,8 @@ class ConsolidatedInvoice extends Model
         'c_period_end',
         'cancel_expired_at',
         'submitted_uuid',
+        'uuid',
+        'remark',
     ];
 
     public function invoice_child(): HasMany

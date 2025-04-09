@@ -538,7 +538,7 @@ class EInvoiceController extends Controller
         ];
 
         if ($this->env === 'production') {
-            $docsSubmitApi = 'https://preapi.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
+            $docsSubmitApi = 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
         } else {
             $docsSubmitApi = 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
         }
@@ -548,9 +548,26 @@ class EInvoiceController extends Controller
         if ($submiturl->successful()) {
             Log::debug('submission ', ['submission' => $submiturl]);
 
-            $uuid = $submiturl['acceptedDocuments']['uuid'];
-            $invoice->submitted_uuid = $uuid;
-            $invoice->status = 'submitted';
+            // Check if the response contains 'acceptedDocuments'
+            if (!empty($submiturl['acceptedDocuments'])) {
+                $submission_uuid = $submiturl['submissionUid'] ?? null;
+                $uuid = $submiturl['acceptedDocuments'][0]['uuid'] ?? null;
+                $status = 'submitted';
+                $remark = null;
+            }
+
+            // Check if the response contains 'rejectedDocuments'
+            if (!empty($submiturl['rejectedDocuments'])) {
+                $submission_uuid = $submiturl['submissionUid'] ?? null;
+                $uuid = $submiturl['rejectedDocuments'][0]['uuid'] ?? null;
+                $status = 'rejected';
+                $remark = $submiturl['rejectedDocuments'][0]['reason'] ?? null;
+            }
+            
+            $invoice->submitted_uuid = $submission_uuid;
+            $invoice->uuid = $uuid;
+            $invoice->status = $status;
+            $invoice->remark = $remark;
             $invoice->save();
         }
 
