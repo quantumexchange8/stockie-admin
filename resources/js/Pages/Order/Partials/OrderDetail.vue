@@ -588,7 +588,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
         @close="closeModal('close')"
     >
         <SelectCustomer
-            :orderId="order.id"
+            :currentOrder="order"
             :customers="customers"
             @closeOrderDetails="closeOrderDetails"
             @closeModal="closeModal"

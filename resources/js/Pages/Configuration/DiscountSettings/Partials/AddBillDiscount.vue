@@ -64,7 +64,7 @@ const form = useForm({
     time_period_from: '',
     time_period_to: '',
     discount_criteria: criteria.value[0].value,
-    discount_requirement: '',
+    discount_requirement: '0',
     is_stackable: false,
     conflict: 'keep',
     customer_usage: '0',
@@ -136,8 +136,8 @@ watch(() => form.isDirty, (newValue) => {
                 </div>
                 <div class="col-span-9 flex flex-col items-start gap-6 flex-[1_0_0]">
                     <!-- Basic detail - form section 1 -->
-                    <div class="flex items-start gap-6 self-stretch">
-                        <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
+                    <div class="grid grid-cols-1 md:grid-cols-2 items-start gap-6 self-stretch">
+                        <div class="flex flex-col col-span-1 items-start gap-4 flex-[1_0_0]">
                             <div class="flex flex-col items-start gap-1 self-stretch">
                                 <span class="self-stretch text-grey-950 text-base font-bold">Discount Name</span>
                                 <span class="self-stretch text-grey-950 text-sm font-normal">Give this discount a catchy name.</span>
@@ -149,7 +149,7 @@ watch(() => form.isDirty, (newValue) => {
                                 v-model="form.discount_name"
                             />
                         </div>
-                        <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
+                        <div class="flex flex-col col-span-1 items-start gap-4 flex-[1_0_0]">
                             <div class="flex flex-col items-start gap-1 self-stretch">
                                 <span class="self-stretch text-grey-950 text-base font-bold">Discount Rate</span>
                                 <span class="self-stretch text-grey-950 text-sm font-normal">Enter the percentage/amount of this discount.</span>
@@ -205,8 +205,8 @@ watch(() => form.isDirty, (newValue) => {
                     </div>
 
                     <!-- Basic detail - form section 3 -->
-                    <div class="grid grid-cols-2 items-start gap-6 self-stretch">
-                        <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
+                    <div class="grid grid-cols-1 md:grid-cols-2 items-start gap-6 self-stretch">
+                        <div class="flex flex-col col-span-1 items-start gap-4 flex-[1_0_0]">
                             <div class="flex items-start gap-4 self-stretch">
                                 <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                     <span class="self-stretch text-grey-950 text-base font-bold">Available on</span>
@@ -220,7 +220,7 @@ watch(() => form.isDirty, (newValue) => {
                                 v-model="form.available_on"
                             />
                         </div>
-                        <div class="col-span-1 flex flex-col items-start gap-4 flex-[1_0_0]">
+                        <div class="flex flex-col col-span-1 items-start gap-4 flex-[1_0_0]">
                             <div class="flex items-start gap-1 self-stretch">
                                 <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                     <span class="self-stretch text-grey-950 text-base font-bold">Time Period</span>
@@ -231,13 +231,13 @@ watch(() => form.isDirty, (newValue) => {
                                     @update:checked="toggleTimePeriod"
                                 />
                             </div>
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-start gap-4">
                                 <DateInput 
                                     :timeOnly="true"
                                     :errorMessage="form.errors?.time_period_from"
                                     :disabled="!isTimePeriod"
                                     v-model="form.time_period_from"
-                                    class="[&>span>input]:min-w-0 [&>span>input]:max-w-[100px]"
+                                    class="[&>span>input]:min-w-0 [&>span>input]:max-w-[135px] md:[&>span>input]:max-w-[100px]"
                                 />
                                 <span :class="['text-base font-normal', isTimePeriod ? 'text-grey-950' : 'text-grey-300']">to</span>
                                 <DateInput 
@@ -245,7 +245,7 @@ watch(() => form.isDirty, (newValue) => {
                                     :errorMessage="form.errors?.time_period_to"
                                     :disabled="!isTimePeriod"
                                     v-model="form.time_period_to"
-                                    class="[&>span>input]:min-w-0 [&>span>input]:max-w-[100px]"
+                                    class="[&>span>input]:min-w-0 [&>span>input]:max-w-[135px] md:[&>span>input]:max-w-[100px]"
                                 />
                             </div>
                         </div>

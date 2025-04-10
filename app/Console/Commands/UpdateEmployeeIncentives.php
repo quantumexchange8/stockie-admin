@@ -32,7 +32,7 @@ class UpdateEmployeeIncentives extends Command
     public function handle()
     {
         // Log the starting time of the command
-        Log::debug('Start time: ' . now()->toDateTimeString());
+        // Log::debug('Start time: ' . now()->toDateTimeString());
 
         // Get the recurring day setting
         $recurringDay = (int) Setting::where('name', 'Recurring Day')->first()->value;
@@ -75,7 +75,7 @@ class UpdateEmployeeIncentives extends Command
         }
 
         // Log the ending time of the command
-        Log::debug('End time: ' . now()->toDateTimeString());
+        // Log::debug('End time: ' . now()->toDateTimeString());
     }
     
     private function calculateDateRange($recurringDay)

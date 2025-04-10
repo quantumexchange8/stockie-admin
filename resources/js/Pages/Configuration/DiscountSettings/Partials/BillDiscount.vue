@@ -7,18 +7,21 @@ import { computed, onMounted, ref, watch } from 'vue';
 import AddBillDiscount from './AddBillDiscount.vue';
 import axios from 'axios';
 import Toggle from '@/Components/Toggle.vue';
-import dayjs from 'dayjs';
 import BillDiscountDetail from './BillDiscountDetail.vue';
 import EditBillDiscount from './EditBillDiscount.vue';
 import { useForm } from '@inertiajs/vue3';
 import { useCustomToast } from '@/Composables';
+import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 const bill_discounts = ref([]);
 const tabs = ref(['Active', 'Inactive'])
 const isAddBillOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
-const isEdited = ref(false);
 const isLoading = ref(false);
 const isEditBillOpen = ref(false);
 const isBillDetailOpen = ref(false);
@@ -74,11 +77,13 @@ const openAddBill = () => {
 const closeAddBill = (status) => {
     switch(status) {
         case 'close': {
-            if(isDirty.value) isUnsavedChangesOpen.value = true;
-            else isAddBillOpen.value = false;
-
-            if(isEdited.value) isUnsavedChangesOpen.value = true;
-            else isEditBillOpen.value = false;
+            if(isDirty.value) {
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isAddBillOpen.value = false;
+                isEditBillOpen.value = false;
+                isBillDetailOpen.value = false; 
+            }
             break;
         }
         case 'stay': {
@@ -114,6 +119,17 @@ const deleteBill = (id) => {
     isDeleteBillOpen.value = true;
     selectedBill.value = id;
 }
+
+const isDiscountDisabled = (discount) => {
+    const now = dayjs();
+    
+    // Check date range validity
+    if (!now.isSameOrAfter(discount.discount_from) || !now.isSameOrBefore(discount.discount_to)) {
+        return false;
+    }
+    
+    return true;
+};
 
 onMounted(() => {
     getBillDiscounts();
@@ -170,6 +186,7 @@ onMounted(() => {
                                         </div>
                                         <Toggle 
                                             :checked="discount.status === 'active'"
+                                            :disabled="!isDiscountDisabled(discount)"
                                             @update:checked="updateStatus(discount)"
                                             @click.stop
                                         />
@@ -272,7 +289,7 @@ onMounted(() => {
         @close="closeAddBill('close')"
     >
         <EditBillDiscount 
-            @isEdited="isEdited=$event"
+            @isDirty="isDirty=$event"
             @close="closeAddBill"
             @getBillDiscounts="getBillDiscounts"
             :discount="selectedBill" 

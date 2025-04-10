@@ -148,7 +148,7 @@ const voucherDiscountedAmount = computed(() => {
 
     const discount = order.value.voucher.discount;
     const discountedAmount = order.value.voucher.reward_type === 'Discount (Percentage)'
-            ? order.value.amount * discount
+            ? order.value.amount * (discount / 100)
             : discount;
 
     return parseFloat(discountedAmount).toFixed(2);
@@ -182,7 +182,7 @@ const grandTotalAmount = computed(() => {
     const voucherDiscountAmount = order.value.voucher ? voucherDiscountedAmount.value : 0.00;
     const grandTotal = priceRounding(Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount);
 
-    return grandTotal.toFixed(2);
+    return (grandTotal < 0 ? 0 : grandTotal).toFixed(2);
 });
 
 const roundingAmount = computed(() => {
@@ -201,6 +201,12 @@ const getItemTypeName = (type) => {
         case 'Reward': return 'Entry reward'
     };
 };
+
+const updateOrderCustomer = (event) => {
+    order.value.customer = event;
+    order.value.customer_id = event.id;
+};
+
 </script>
 
 <template>
@@ -313,7 +319,7 @@ const getItemTypeName = (type) => {
             :currentOrder="order"
             :currentTable="selectedTable"
             @update:order="order = $event"
-            @update:order-customer="order.customer = $event"
+            @update:order-customer="updateOrderCustomer($event)"
             @close="closeModal"
             @fetchZones="$emit('fetchZones')"
             @fetchOrderDetails="$emit('fetchOrderDetails')"

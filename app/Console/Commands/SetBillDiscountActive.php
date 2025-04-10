@@ -28,27 +28,17 @@ class SetBillDiscountActive extends Command
     public function handle()
     {
         $today = Carbon::today('Asia/Kuala_Lumpur');
-    
-        BillDiscount::where(function($query) use ($today) {
-            $query->whereDate('discount_from', '<=', $today)
-                ->whereDate('discount_to', '>=', $today);
-        })->get()
-            ->each(function($discount) use ($today) {
-            switch ($discount->available_on) {
-                case 'everyday':
-                    $discount->status = 'active';
-                    break;
-                case 'weekday':
-                    $discount->status = $today->isWeekday() ? 'active' : 'inactive';
-                    break;
-                case 'weekend':
-                    $discount->status = $today->isWeekend() ? 'active' : 'inactive';
-                    break;
-            }
+        $billDiscounts = BillDiscount::where('status', 'active')->get();
+                    
+        $billDiscounts->each(function($discount) use ($today) {
+            $discount->status = match ($discount->available_on) {
+                'everyday' => 'active',
+                'weekday' => $today->isWeekday() ? 'active' : 'inactive',
+                'weekend' => $today->isWeekend() ? 'active' : 'inactive',
+            };
             $discount->save();
         });
 
         $this->info("Set bill discount successfully.");
-
     }
 }

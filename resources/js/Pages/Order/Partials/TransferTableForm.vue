@@ -380,7 +380,7 @@ const hasTables = computed(() => {
             <TabView :tabs="tabs" v-if="zones.length">
                 <template #all>
                     <div class="flex flex-col px-6 items-start gap-6 self-stretch">
-                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap">
+                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
                             <template v-if="hasTables">
                                 <template v-for="zone in zones">
                                     <template v-for="table in zone.tables">
@@ -424,7 +424,7 @@ const hasTables = computed(() => {
                     v-slot:[tab]
                 >
                     <div class="flex flex-col px-6 items-start gap-6 self-stretch">
-                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap">
+                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
                             <template v-for="zone in zones.filter(zone => zone.text.toLowerCase().replace(/[/\s_]+/g, '-') === tab)">
                                 <template v-if="zone.tables.length > 0">
                                     <template v-for="table in zone.tables">

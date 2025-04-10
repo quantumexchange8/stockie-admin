@@ -1,70 +1,55 @@
 <script setup>
 import Button from '@/Components/Button.vue';
 import Checkbox from '@/Components/Checkbox.vue';
-import Modal from '@/Components/Modal.vue';
-import NumberCounter from '@/Components/NumberCounter.vue';
-import Tag from '@/Components/Tag.vue';
-import SearchBar from '@/Components/SearchBar.vue';
 import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast } from '@/Composables';
 import { useForm, usePage} from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import { CheckCircleIcon, CustomerIcon, CustomerIcon2, DeleteIcon2, DiscountIcon, MergedIcon, SplitBillIcon, TimesIcon, ToastSuccessIcon } from '@/Components/Icons/solid';
 import { onMounted } from 'vue';
-import { CardIcon, CashIcon, EWalletIcon } from '../../../Components/Icons/solid';
-import SelectCustomer from './SelectCustomer.vue';
-import MergeBill from './MergeBill.vue';
-import SplitBill from './SplitBill.vue';
 import TabView from '@/Components/TabView.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import Order from '../Order.vue';
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+dayjs.extend(isBetween);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 const props = defineProps({
     currentOrder: Object,
     currentTable: Object,
-    // isSplitBillMode: {
-    //     type: Boolean,
-    //     default: false
-    // },
+    paymentTransactions: Array,
+    billAppliedDiscounts: Array,
 });
 
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
-const emit = defineEmits(['close', 'isDirty', 'fetchZones', 'fetchOrderDetails', 'update:order-customer', 'closeDrawer','update:customer-point','update:customer-rank','fetchPendingServe', 'update:order']);
+const emit = defineEmits(['close', 'isDirty', 'update:discounts']);
 
-// const order = ref(props.currentOrder);
-// const selectedCustomer = ref(order.value.customer);
 const billDiscounts = ref([]);
+const customerTierRewards = ref([]);
+const selectedVoucherDiscount = ref(props.billAppliedDiscounts.find((discount) => discount.type === 'voucher') ?? null);
 const billAmountKeyed = ref('0.00');
-// const change = ref('0.00');
-// const selectedMethod = ref('');
-// const isCustomerModalOpen = ref(false);
-// const isMergeBillModalOpen = ref(false);
-// const isSplitBillModalOpen = ref(false);
-// const isAddDiscountModalOpen = ref(false);
-// const isSuccessPaymentShow = ref(false);
-// const isUnsavedChangesOpen = ref(false);
-// const isDirty = ref(false);
-// const paymentTransactions = ref([]); // Array to store payment transactions
-// const isSplitBillMode = ref(false);
-// const splitBillDetails = ref(null);
+const paymentMethodsUsed = ref(props.paymentTransactions);
+const appliedDiscounts = ref(props.billAppliedDiscounts);
+const hoveredDiscount = ref('');
 const tabs = ref(['Bill Discount', 'Tier Rewards']);
-
-// const form = useForm({
-//     user_id: userId.value,
-//     order_id: props.currentOrder.id,
-//     change: 0,
-//     payment_methods: [],
-//     tables: props.currentOrder.order_table.filter(table => ['Pending Order', 'Order Placed', 'All Order Served'].includes(table.status)),
-//     split_bill_id: '',
-//     split_bill: {},
-// });
 
 const fetchBillDiscounts = async () => {
     try {
-        const response = await axios.get(route('orders.getBillDiscount'));
+        const response = await axios.get('/order-management/getBillDiscount', {
+            params: { 
+                current_customer_id: props.currentOrder.customer_id,
+            }, 
+        });
         billDiscounts.value = response.data;
+
+        billDiscounts.value.forEach((discount) => discount['type'] = 'bill');
     } catch (error) {
         console.error(error);
     } finally {
@@ -72,179 +57,89 @@ const fetchBillDiscounts = async () => {
     }
 };
 
-onMounted(() => fetchBillDiscounts());
+const fetchCustomerRewards = async () => {
+    try {
+        const rewardsResponse = await axios.get(route('orders.customer.tier.getCustomerTierRewards', props.currentOrder.customer_id));
+        customerTierRewards.value = rewardsResponse.data
+                .filter((reward) => {
+                    return ['Discount (Amount)', 'Discount (Percentage)'].includes(reward.ranking_reward.reward_type) 
+                            && (reward.status === 'Active' || (reward.status === 'Redeemed' && reward.ranking_reward_id === props.currentOrder.voucher_id));
+                })
+                .map((reward) => {
+                    reward.ranking_reward['type'] = 'voucher';
+                    reward.ranking_reward['customer_reward_id'] = reward.id;
+                    return reward.ranking_reward;
+                });
 
-// const splitBillsState = ref({
-//   currentBill: null,
-//   splitBills: []
-// });
+    } catch(error) {
+        console.error(error);
+    } finally {
 
-// // Update the paySplitBill function
-// const paySplitBill = (bill) => {
-//     splitBillDetails.value = bill;
-//     selectedCustomer.value = splitBillDetails.value.customer;
-//     order.value = splitBillDetails.value;
-//     isSplitBillMode.value = true;
-//     closeModal('leave');
-// };
+    }
+}
 
-// const openSuccessPaymentModal = () => {
-//     isSuccessPaymentShow.value = true;
-// };
+onMounted(() => {
+    fetchBillDiscounts();
+    if (props.currentOrder.customer_id) fetchCustomerRewards();
+});
 
-// const closeSuccessPaymentModal = () => {
-//     isSuccessPaymentShow.value = false;
+// Selects discount and update pay bill form's form discounts
+const selectDiscount = (discount, type) => {
+    if (type === 'bill') {
+        const index = appliedDiscounts.value.findIndex(d => 
+            d.id === discount.id && d.type === discount.type
+        );
 
-//     if (splitBillDetails.value && splitBillDetails.value.id !== 'current') {
-//         paymentTransactions.value = [];
-//         clearInput();
-//         closeOrderDetails();
+        if (index > -1) {
+            appliedDiscounts.value.splice(index, 1);
+        } else {
+            appliedDiscounts.value.push(discount); 
+        };
 
-//         // Handle split bill payment
-//         splitBillsState.value.splitBills = splitBillsState.value.splitBills.filter(
-//             bill => bill.id !== splitBillDetails.value.id
-//         );
+    } else if (type === 'voucher') {
+        const index = appliedDiscounts.value.findIndex(d => d.type === 'voucher');
 
-//         order.value.amount = 0.00;
+        if (index > -1) {
+            appliedDiscounts.value.splice(index, 1);
+        }
+        appliedDiscounts.value.push(discount); 
+        selectedVoucherDiscount.value = discount;
+    }
 
-//         showSplitBillModal();
+    emit('update:discounts', appliedDiscounts.value);
+};
 
-//     } else {
-//         // For normal bills, close everything
-//         setTimeout(() => {
-//             emit('close', 'leave');
-//             emit('closeDrawer');
-//         }, 200)
-//     }
+const removeAppliedDIscount = (discount) => {
+    if (discount.type === 'voucher') {
+        const index = appliedDiscounts.value.findIndex(d => d.type === 'voucher');
 
-// };
+        if (index > -1) {
+            appliedDiscounts.value.splice(index, 1);
+        }
 
-// const submit = async () => {
-//     form.payment_methods = paymentTransactions.value;
-//     form.change = change.value;
+        selectedVoucherDiscount.value = '';
 
-//     if (splitBillDetails.value && isSplitBillMode.value) {
-//         form.split_bill_id = splitBillDetails.value.id;
-//         form.split_bill = splitBillDetails.value;
-//     }
+    } else {
+        const index = appliedDiscounts.value.findIndex(d => 
+            d.id === discount.id && d.type === discount.type
+        );
 
-//     try {
-//         console.log(form.data());
-//         const response = await axios.post(`/order-management/orders/updateOrderPayment`, form);
+        if (index > -1) {
+            appliedDiscounts.value.splice(index, 1);
+        }
+    }
 
-//         if (splitBillDetails.value && response.data.updatedCurrentBill) {
-//             // Update the local state with the backend's response
-//             splitBillsState.value.order_items = response.data.updatedCurrentBill.order_items;
-//             splitBillsState.value.amount = response.data.updatedCurrentBill.amount;
-//             exactBillAmount();
-//         }
-        
-//         if ((splitBillDetails.value?.id === 'current' && splitBillDetails.value?.order_id === props.currentOrder.id) || !splitBillDetails.value) {
-//             let customerPointBalance = response.data.newPointBalance;
-//             let customerRanking = response.data.newRanking;
-    
-//             if (customerPointBalance !== undefined) emit('update:customer-point', customerPointBalance);
-//             if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
-//         }
-        
-//         setTimeout(() => {
-//             showMessage({ 
-//                 severity: 'success',
-//                 summary: 'Payment Completed.',
-//             });
-//         }, 200);
-//         form.reset();
-//         emit('fetchZones');
-//         emit('fetchPendingServe');
+    hoveredDiscount.value = '';
+};
 
-//         openSuccessPaymentModal();
+const applyManualDiscount = () => {
+    appliedDiscounts.value.push({
+        type: 'manual',
+        rate: billAmountKeyed.value,
+    }); 
 
-//     } catch (error) {
-//         console.error(error);
-//         setTimeout(() => {
-//             showMessage({ 
-//                 severity: 'error',
-//                 summary: 'Payment Unsuccessful.',
-//             });
-//         }, 200);
-//     } finally {
-
-//     }
-// };
-
-// const closeOrderDetails = () => {
-//     setTimeout(() => emit('fetchZones'), 200);
-//     setTimeout(() => emit('fetchOrderDetails'), 300);
-// };
-
-// const sstAmount = computed(() => {
-//     const sstTax = Object.keys(taxes.value).length > 0 ? taxes.value['SST'] : 0;
-//     const result = (Number(order.value.amount ?? 0) * (sstTax / 100)) ?? 0;
-
-//     return result.toFixed(2);
-// });
-
-// const serviceTaxAmount = computed(() => {
-//     const serviceTax = Object.keys(taxes.value).length > 0 ? taxes.value['Service Tax'] : 0;
-//     const result = (Number(order.value.amount ?? 0) * (serviceTax / 100)) ?? 0;
-
-//     return result.toFixed(2);
-// });
-
-// const voucherDiscountedAmount = computed(() => {
-//     if (!order.value.voucher) return 0.00;
-
-//     const discount = order.value.voucher.discount;
-//     const discountedAmount = order.value.voucher.reward_type === 'Discount (Percentage)'
-//             ? order.value.amount * discount
-//             : discount;
-
-//     return Number(discountedAmount).toFixed(2);
-
-// });
-
-// // Rounds off the amount based on the Malaysia Bank Negara rounding mechanism.
-// const priceRounding = (amount) => {
-//     // Get the decimal part in cents
-//     let cents = Math.round((amount - Math.floor(amount)) * 100);
-
-//     // Determine rounding based on the last digit of cents
-//     let lastDigit = cents % 10;
-
-//     if ([1, 2, 6, 7].includes(lastDigit)) {
-//         // Round down to the nearest multiple of 5
-//         cents = (cents - lastDigit) + (lastDigit < 5 ? 0 : 5);
-//     } else if ([3, 4, 8, 9].includes(lastDigit)) {
-//         // Round up to the nearest multiple of 5
-//         cents = (cents + 5) - (lastDigit % 5);
-//     }
-
-//     // Calculate the final rounded amount
-//     let roundedAmount = Math.floor(amount) + cents / 100;
-
-//     return roundedAmount;
-// };
-
-// const grandTotalAmount = computed(() => {
-//     const totalTaxableAmount = (Number(sstAmount.value) + Number(serviceTaxAmount.value)) ?? 0;
-//     const voucherDiscountAmount = order.value.voucher ? voucherDiscountedAmount.value : 0.00;
-//     const grandTotal = priceRounding(Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount);
-
-//     return grandTotal.toFixed(2);
-// });
-
-// const roundingAmount = computed(() => {
-//     const totalTaxableAmount = (Number(sstAmount.value) + Number(serviceTaxAmount.value)) ?? 0;
-//     const voucherDiscountAmount = order.value.voucher ? voucherDiscountedAmount.value : 0.00;
-//     const totalAmount = Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount;
-//     const rounding = priceRounding(totalAmount) - totalAmount;
-
-//     return rounding.toFixed(2);
-// });
-
-// const totalAmountPaid = computed(() => {
-//     return paymentTransactions.value.reduce((total, transaction) => total + transaction.amount, 0);
-// });
+    billAmountKeyed.value = '0.00';
+};
 
 // // Function to handle number pad input
 const handleNumberInput = (value) => {
@@ -301,401 +196,394 @@ const addPredefinedAmount = (amount) => {
     billAmountKeyed.value = newAmount.toFixed(2);
 };
 
-// // Function to handle payment method clicks
-// const handlePaymentMethod = (method) => {
-//     const amount = Number(billAmountKeyed.value);
+const totalItemQuantityOrdered = computed(() => {
+    return props.currentOrder.order_items.reduce((total, item) => {
+        return total + item.item_qty;
+    }, 0);
+})
 
-//     if (amount > 0) {
-//         // Check if the payment method already exists
-//         const existingTransaction = paymentTransactions.value.find(
-//             (transaction) => transaction.method === method
-//         );
+const isBillDiscountApplicable = (discount) => {
+    // Early exit for inactive discounts
+    if (discount.status === 'inactive') return false;
 
-//         if (existingTransaction) {
-//             if (selectedMethod.value === existingTransaction.method) {
-//                 let updatedPaidAmount;
-//                 let formattedKeyedAmount = Number(billAmountKeyed.value);
+    const now = dayjs();
+    const currentOrderTotal = Number(props.currentOrder.total_amount);
+    const discountRequirement = Number(discount.requirement);
+    const currentCustomerRanking = Number(props.currentOrder.customer?.ranking);
+    
+    // 1. Date Range Check
+    if (!now.isSameOrAfter(discount.discount_from) || !now.isSameOrBefore(discount.discount_to)) {
+        return false;
+    }
 
-//                 if (hasCashMethod.value || method === 'Cash') {
-//                     updatedPaidAmount = formattedKeyedAmount;
-//                 } else {
-//                     const otherMethodsTotalPaid = paymentTransactions.value.reduce((total, transaction) => {
-//                         return transaction.method !== method 
-//                             ? total + transaction.amount
-//                             : total + 0;
-//                     }, 0);
+    // 2. Day of Week Check
+    const dayOfWeek = now.get('day');
+    if (discount.available_on === 'weekday' && ![1,2,3,4,5].includes(dayOfWeek)) return false;
+    if (discount.available_on === 'weekend' && ![0,6].includes(dayOfWeek)) return false;
 
-//                     console.log('others: ' + otherMethodsTotalPaid);
+    // 3. Time Window Check
+    if (discount.start_time && discount.end_time) {
+        if (now.isBefore(discount.start_time) || now.isSameOrAfter(discount.end_time)) {
+            return false;   
+        }
+    }
 
-//                     if (formattedKeyedAmount + otherMethodsTotalPaid <= grandTotalAmount.value) {
-//                         updatedPaidAmount = formattedKeyedAmount;
-                        
-//                     } else {
-//                         updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + otherMethodsTotalPaid) - grandTotalAmount.value);
-//                         console.log('over: ' + updatedPaidAmount);
-//                         setTimeout(() => {
-//                             showMessage({ 
-//                                 severity: 'warn',
-//                                 summary: 'Entered amount exceeded total payable amount.',
-//                             });
-//                         }, 200);
-//                     }
-//                 }
-
-//                 existingTransaction.amount = updatedPaidAmount;
-//                 billAmountKeyed.value = remainingBalanceDue.value;
-//                 selectedMethod.value = '';
-
-//             } else {
-//                 let updatedPaidAmount;
-//                 let formattedKeyedAmount = Number(billAmountKeyed.value);
-
-//                 if (hasCashMethod.value || method === 'Cash') {
-//                     updatedPaidAmount = formattedKeyedAmount;
-
-//                 } else {
-//                     if (formattedKeyedAmount + totalAmountPaid.value <= grandTotalAmount.value) {
-//                         updatedPaidAmount = formattedKeyedAmount;
-                        
-//                     } else {
-//                         updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + totalAmountPaid.value) - grandTotalAmount.value);
-//                         setTimeout(() => {
-//                             showMessage({ 
-//                                 severity: 'warn',
-//                                 summary: 'Entered amount exceeded total payable amount.',
-//                             });
-//                         }, 200);
-//                     }
-//                 }
-
-//                 // Update the amount for the existing payment method
-//                 existingTransaction.amount += updatedPaidAmount;
-//                 billAmountKeyed.value = remainingBalanceDue.value >= 0 ? remainingBalanceDue.value : '0.00';
-//             }
+    // 4. Stackability Check
+    if (!discount.is_stackable) {
+        // If there are any applied discounts
+        if (appliedDiscounts.value.length > 0) {
+            // Check if this discount is the currently selected one
+            const isCurrentlySelected = appliedDiscounts.value.some(
+                d => d.id === discount.id && d.type === 'bill'
+            );
             
-//         } else {
-//             let paidAmount;
+            // If it's not the currently selected one, disable it
+            if (!isCurrentlySelected) {
+                return false;
+            }
+        }
+    }
 
-//             if (hasCashMethod.value || method === 'Cash') {
-//                 paidAmount = amount;
-            
-//             } else {
-//                 if (amount + totalAmountPaid.value <= grandTotalAmount.value) {
-//                     paidAmount = amount;
+    // 5. Criteria Check
+    if (
+        (discount.criteria === 'min_spend' && currentOrderTotal < discountRequirement) || 
+        (discount.criteria === 'min_quantity' && totalItemQuantityOrdered.value < discountRequirement)
+    ) {
+        return false;
+    }
+    
+    // 6. Tier Check
+    if (discount.tier?.length > 0 && !discount.tier.includes(currentCustomerRanking)) {
+        return false;
+    }
+    
+    if (discount.payment_method?.length > 0) {
+        const requiredMethods = discount.payment_method.map(method => {
+            switch (method) {
+                case 'cash': return 'Cash';
+                case 'card': return 'Card';
+                case 'e-wallets': return 'E-Wallet';
+                default: return method;
+            }
+        });
 
-//                 } else {
-//                     paidAmount = amount - ((amount + totalAmountPaid.value) - grandTotalAmount.value);
-//                     setTimeout(() => {
-//                         showMessage({ 
-//                             severity: 'warn',
-//                             summary: 'Entered amount exceeded total payable amount.',
-//                         });
-//                     }, 200);
-//                 }
-//             }
+        if (!paymentMethodsUsed.value.some(pmu => requiredMethods.includes(pmu.method))) {
+            return false;
+        }
+    }
 
-//             if (paidAmount > 0) {
-//                 // Add a new payment transaction
-//                 paymentTransactions.value.push({
-//                     method,
-//                     amount: paidAmount,
-//                 });
-//             }
-
-//             const balance = (Number(grandTotalAmount.value) - totalAmountPaid.value).toFixed(2);
-//             // Deduct the amount from the balance due
-//             billAmountKeyed.value = balance >= 0 ? balance : '0.00';
-//         }
-//     }
-// };
-
-// // Computed property to calculate the remaining balance due
-// const remainingBalanceDue = computed(() => {
-//     return (Number(grandTotalAmount.value) - totalAmountPaid.value).toFixed(2);
-// });
-
-// const exactBillAmount = () => {
-//     billAmountKeyed.value = remainingBalanceDue.value >= 0 ? remainingBalanceDue.value : '0.00';
-// };
-
-// const selectMethod = (transaction) => {
-//     let selectedPaymentTransaction = paymentTransactions.value.find((pay) => pay.method === transaction.method);
-
-//     if (selectedMethod.value === transaction.method) {
-//         let updatedPaidAmount;
-//         let formattedKeyedAmount = Number(billAmountKeyed.value);
-
-//         if (hasCashMethod.value || transaction.method === 'Cash') {
-//             updatedPaidAmount = formattedKeyedAmount;
-//         } else {
-//             const otherMethodsTotalPaid = paymentTransactions.value.reduce((total, paidTransaction) => {
-//                 return paidTransaction.method !== transaction.method 
-//                     ? total + paidTransaction.amount
-//                     : total + 0;
-//             }, 0);
-
-//             if (formattedKeyedAmount + otherMethodsTotalPaid <= grandTotalAmount.value) {
-//                 updatedPaidAmount = formattedKeyedAmount;
-                
-//             } else {
-//                 updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + otherMethodsTotalPaid) - grandTotalAmount.value);
-//                 setTimeout(() => {
-//                     showMessage({ 
-//                         severity: 'warn',
-//                         summary: 'Entered amount exceeded total payable amount.',
-//                     });
-//                 }, 200);
-//             }
-//         }
-//         selectedPaymentTransaction.amount = updatedPaidAmount;
-//         billAmountKeyed.value = remainingBalanceDue.value;
-//         selectedMethod.value = '';
-
-//     } else {
-//         billAmountKeyed.value = transaction.amount.toFixed(2);
-//         selectedMethod.value = transaction.method;
-//     }
-// };
-
-// const updateOrderCustomer = (customer) => {
-//     selectedCustomer.value = customer;
-
-//     if (isSplitBillMode.value) {
-//         order.value.customer === customer;
-//         splitBillDetails.value.customer === customer;
+    if (discount.current_customer_usage) {
+        if (discount.customer_usage > 0 && discount.total_usage > 0) {
+            if (discount.current_total_usage_count >= discount.total_usage) return false;
+            if (discount.current_customer_usage.customer_usage >= discount.customer_usage) return false;
+        };
         
-//         // Remove the paid bill from the state
-//         if (splitBillDetails.value.id === 'current') {
-//             // Handle current bill payment
-//             splitBillsState.value.currentBill.customer = customer;
+        if (discount.total_usage > 0) {
+            if (discount.current_total_usage_count >= discount.total_usage) return false;
+        };
 
-//         } else {
-//             // Handle split bill payment
-//             let splitBill = splitBillsState.value.splitBills.find(
-//                 bill => bill.id === splitBillDetails.value.id
-//             );
+        if (discount.customer_usage > 0) {
+            if (discount.current_customer_usage.customer_usage >= discount.customer_usage) return false;
+        };
+    }
 
-//             splitBill.customer = customer;
-//         }
+    return true;
+};
 
-//     } else {
-//         emit('update:order-customer', customer);
-//     }
-// };
-
-// // Check if there's a cash payment
-// const hasCashMethod = computed(() => {
-//     return paymentTransactions.value.some(transaction => transaction.method === 'Cash');
-// });
-
-// const isValidated = computed(() => {
-//     if (isSplitBillMode.value) {
-//         return !form.processing && remainingBalanceDue.value <= 0 && (splitBillsState.value.splitBills.find(bill => bill.id === splitBillDetails.value.id) || splitBillDetails.value.id === splitBillsState.value.currentBill?.id);
-
-//     } else {
-//         return !form.processing && remainingBalanceDue.value <= 0;
-//     }
-// });
-
-// const updateOrder = (updatedOrder) => {
-//     order.value = $event;
-//     emit('update:order', updatedOrder);
-// };
-
-// const sortedTransactionMethods = computed(() => {
-//     return paymentTransactions.value.toSorted((a, b) => {
-//         // Get the indices of the objects
-//         const indexA = paymentTransactions.value.indexOf(a);
-//         const indexB = paymentTransactions.value.indexOf(b);
-
-//         // Sort in descending order
-//         return indexB - indexA;
-//     });
-// });
-
-// const removeMethod = (transaction) => {
-//     const indexOfTransaction = paymentTransactions.value.indexOf(transaction);
+const isVoucherApplicable = (discount) => {
+    // If min purchase is not active, it's always applicable
+    if (discount.min_purchase !== 'active') return true;
     
-//     if (paymentTransactions.value[indexOfTransaction].method === selectedMethod.value) {
-//         selectedMethod.value = '';
-//     }
-
-//     paymentTransactions.value.splice(indexOfTransaction, 1);
+    // If min purchase is active but amount is missing/zero, treat as applicable
+    if (!discount.min_purchase_amount || discount.min_purchase_amount <= 0) return true;
     
-// };
+    // Compare with order total (ensure both are numbers)
+    const orderTotal = Number(props.currentOrder.total_amount) || 0;
+    const minAmount = Number(discount.min_purchase_amount) || 0;
+    
+    return orderTotal >= minAmount;
+};
 
-// watch(grandTotalAmount, (newValue) => {
-//     billAmountKeyed.value = newValue;
-// });
+const handleVoucherChange = (voucher) => {
+    if (isVoucherApplicable(voucher)) {
+        selectedVoucherDiscount.value = voucher;
+    }
+};
 
-// watch(remainingBalanceDue, (newValue) => {
-//     change.value = newValue < 0 ? Math.abs(newValue) : '0.00';
-// });
+watch(() => props.billAppliedDiscounts, (newValue) => {
+    appliedDiscounts.value = newValue; 
+}, { immediate: true });
 
 </script>
 
 <template>
-    <div class="flex flex-col gap-y-6 justify-between h-[calc(100dvh-24rem)]">
-        <div class="flex flex-col items-start gap-y-6 h-full">
-            <!-- Actions -->
-            <div class="flex w-full items-start gap-4 self-stretch">
-                <p>Applied:</p>
-            </div>
-
-            <!-- Main -->
-            <div class="flex items-start size-full max-h-[calc(100dvh-19rem)] gap-4 self-stretch">
-                <!-- Bill Overview -->
-                <div class="flex w-1/2  flex-col items-start gap-y-8 self-stretch">
-                    <!-- Looped entered payment method and amount -->
-                    <!-- <div class="flex flex-col items-start gap-4 self-stretch max-h-[calc(100dvh-36.6rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
-                        <template v-for="(transaction, index) in sortedTransactionMethods" :key="index">
-                            <div 
-                                class="flex p-4 flex-col self-stretch gap-2 items-start rounded-[5px] border border-grey-100 shadow-sm cursor-pointer"
-                                :class="selectedMethod === transaction.method ? 'bg-primary-25' : 'bg-white'"
-                                @click="selectMethod(transaction)"
-                            >
-                                <div class="flex justify-between items-center self-stretch">
-                                    <div class="flex items-center gap-x-2">
-                                        <CashIcon v-if="transaction.method === 'Cash'" />
-                                        <CardIcon v-if="transaction.method === 'Card'" />
-                                        <EWalletIcon v-if="transaction.method === 'E-Wallet'" />
-                                        <p class="text-grey-500 text-sm font-normal">{{ transaction.method }}</p>
-                                    </div>
-                                    <TimesIcon @click.stop="removeMethod(transaction)" class="text-primary-900 hover:text-primary-800 hover:cursor-pointer" />
-                                </div>
-                                <p class="text-grey-950 text-lg font-semibold self-stretch cursor-pointer">RM {{ transaction.amount.toFixed(2) }}</p>
-                            </div>
-                        </template>
-                    </div> -->
-                    <TabView :tabs="tabs">
-                        <template #tabFooter>
-                            <div class="flex flex-col size-4 items-center justify-center rounded-full bg-primary-600" v-if="tabs[1] && pending > 0">
-                                <span class="text-white text-center text-[8px] font-bold">{{ pending }}</span>
-                            </div>
-                        </template>
-                        <template #bill-discount>
-                            <div class="flex flex-col items-center self-stretch">
-                                <div class="flex flex-col items-center gap-4 self-stretch max-h-[calc(100dvh-36.6rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
-                                    <template v-if="billDiscounts.length > 0">
-                                        <template v-for="(discount, index) in billDiscounts" :key="index">
-                                            <div 
-                                                class="flex p-4 flex-col self-stretch gap-2 items-start rounded-[5px] border border-grey-100 shadow-sm cursor-pointer bg-white"
-                                            >
-                                                <div class="flex justify-between items-center self-stretch">
-                                                    <div class="flex items-center gap-x-2">
-                                                        <!-- <CashIcon v-if="transaction.method === 'Cash'" />
-                                                        <CardIcon v-if="transaction.method === 'Card'" />
-                                                        <EWalletIcon v-if="transaction.method === 'E-Wallet'" /> -->
-                                                        <p class="text-grey-500 text-sm font-normal">Title</p>
-                                                    </div>
-                                                    <!-- <TimesIcon @click.stop="removeMethod(transaction)" class="text-primary-900 hover:text-primary-800 hover:cursor-pointer" /> -->
-                                                </div>
-                                                <p class="text-grey-950 text-lg font-semibold self-stretch cursor-pointer">Description</p>
-                                            </div>
-                                        </template>
-                                    </template>
-                                    
-                                    <div class="flex flex-col items-center justify-center" v-else>
-                                        <UndetectableIllus />
-                                        <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                        <template #tier-rewards>
-                        </template>
-                    </TabView>
-                </div>
-
-                <!-- Inputs -->
-                <div class="flex flex-col h-full justify-between w-1/2 items-start gap-y-5 p-5 shadow-md rounded-[5px] border border-grey-100 bg-white">
-                    <!-- Payment Inputs -->
-                    <div class="flex flex-col items-end h-full gap-y-5 self-stretch">
-                        <!-- Payment Amount -->
-                        <div class="flex justify-center items-center gap-x-4 flex-shrink-0 self-stretch rounded-[5px] bg-grey-25">
-                            <p class="text-grey-950 text-[64px] font-normal">{{ billAmountKeyed >= 0 ? billAmountKeyed : '0.00' }} %</p>
-                        </div>
-
-                        <!-- Number Pad -->
-                        <div class="flex flex-col items-start h-full gap-3 self-stretch">
-                            <!-- Row 1 -->
-                            <div class="flex w-full h-1/4 items-start gap-3 self-stretch">
-                                <div @click="handleNumberInput('1')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">1</p>
-                                </div>
-                                <div @click="handleNumberInput('2')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">2</p>
-                                </div>
-                                <div @click="handleNumberInput('3')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">3</p>
-                                </div>
-                                <div @click="addPredefinedAmount(5)" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">5%</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Row 2 -->
-                            <div class="flex w-full h-1/4 items-start gap-3 self-stretch">
-                                <div @click="handleNumberInput('4')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">4</p>
-                                </div>
-                                <div @click="handleNumberInput('5')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">5</p>
-                                </div>
-                                <div @click="handleNumberInput('6')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">6</p>
-                                </div>
-                                <div @click="addPredefinedAmount(10)" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">10%</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Row 3 -->
-                            <div class="flex w-full h-1/4 items-start gap-3 self-stretch">
-                                <div @click="handleNumberInput('7')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">7</p>
-                                </div>
-                                <div @click="handleNumberInput('8')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">8</p>
-                                </div>
-                                <div @click="handleNumberInput('9')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">9</p>
-                                </div>
-                                <div @click="addPredefinedAmount(20)" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">20%</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Row 4 -->
-                            <div class="flex w-full h-1/4 items-start gap-3 self-stretch">
-                                <div @click="clearInput" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">C</p>
-                                </div>
-                                <div @click="handleNumberInput('0')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">0</p>
-                                </div>
-                                <div @click="handleDecimal" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <p class="text-grey-950 font-medium text-lg">.</p>
-                                </div>
-                                <div @click="deleteLastCharacter" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
-                                    <DeleteIcon2 class="text-grey-950" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <Button
-                        type="button"
-                        variant="primary"
-                        size="lg"
+    <div class="flex flex-col h-[calc(100dvh-10rem)] items-start gap-y-6 self-stretch">
+        <!-- Actions -->
+        <div class="flex w-full items-center gap-4 py-3 self-stretch">
+            <p>Applied:</p>
+            <div class="flex w-full items-center self-stretch py-1 gap-x-3 overflow-x-auto scrollbar-thin scrollbar-webkit">
+                <template v-for="(discount, index) in appliedDiscounts" :key="index">
+                    <div 
+                        class="flex items-center rounded-[2px] py-1 px-3 gap-x-2 border border-dashed border-grey-300 bg-grey-50"
+                        @mouseover="hoveredDiscount = discount"
+                        @mouseleave="hoveredDiscount = ''"
                     >
-                        Confirm
-                    </Button>
-                </div>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.42 9.72098L9.72 3.42098C9.965 3.14098 10.315 3.00098 10.7 3.00098H15.6C16.37 3.00098 17 3.63098 17 4.40098V9.30098C17 9.68598 16.86 10.036 16.58 10.281L10.28 16.581C10.035 16.826 9.685 17.001 9.3 17.001C8.915 17.001 8.565 16.826 8.32 16.581L3.42 11.681C3.175 11.436 3 11.086 3 10.701C3 10.316 3.175 9.96598 3.42 9.72098ZM14.55 6.50098C15.145 6.50098 15.6 6.04598 15.6 5.45098C15.6 4.85598 15.145 4.40098 14.55 4.40098C13.955 4.40098 13.5 4.85598 13.5 5.45098C13.5 6.04598 13.955 6.50098 14.55 6.50098Z" fill="#45535F"/>
+                        </svg>
+                        <p class="text-grey-950 text-sm font-medium text-nowrap	">
+                            <template v-if="discount.type === 'bill'">
+                                {{ discount.discount_type === 'percentage' ? `${discount.discount_rate}%` : `RM ${discount.discount_rate}` }} {{ `(${discount.name})` }}
+                            </template>
+
+                            <template v-else-if="discount.type === 'voucher'">
+                                <template v-if="discount.reward_type === 'Discount (Amount)'">
+                                        {{ `RM ${discount.discount}` }}
+                                </template>
+                                <template v-if="discount.reward_type === 'Discount (Percentage)'">
+                                        {{ `${discount.discount}%` }}
+                                </template>
+                                {{ `(${discount.ranking.name} ENTRY REWARD)` }}
+                            </template>
+
+                            <template v-else>
+                                {{ `${discount.rate}%` }}
+                            </template>
+                        </p>
+                        <TimesIcon 
+                            v-if="hoveredDiscount === discount"
+                            class="size-4 text-primary-500 hover:text-primary-600 cursor-pointer shrink-0" 
+                            @click="removeAppliedDIscount(discount)"
+                        />
+                    </div>
+                </template>
             </div>
         </div>
 
-        <!-- <div class="flex px-6 pt-3 items-center justify-end gap-4 self-stretch rounded-b-[5px] mx-[-20px]">
-        </div> -->
+        <!-- Main -->
+        <div class="flex size-full gap-4 self-stretch">
+            <!-- Bill Overview -->
+            <div class="flex w-1/2 h-full flex-col items-start gap-y-8 self-stretch">
+                <TabView :tabs="tabs">
+                    <template #tabFooter>
+                        <div class="flex flex-col size-4 items-center justify-center rounded-full bg-primary-600" v-if="tabs[1] && pending > 0">
+                            <span class="text-white text-center text-[8px] font-bold">{{ pending }}</span>
+                        </div>
+                    </template>
+
+                    <template #bill-discount>
+                        <div class="flex flex-col items-center self-stretch">
+                            <div class="flex flex-col items-center gap-4 self-stretch max-h-[calc(100dvh-22rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+                                <template v-if="billDiscounts.length > 0">
+                                    <template v-for="(discount, index) in billDiscounts" :key="index">
+                                        <div 
+                                            class="flex p-3 flex-col self-stretch gap-2 items-start rounded-[5px] shadow-sm"
+                                            :class="[{
+                                                'border border-primary-900 bg-primary-25 cursor-pointer': !!appliedDiscounts.find((selectedDiscount) => selectedDiscount.id === discount.id && selectedDiscount.type === 'bill') && isBillDiscountApplicable(discount),
+                                                'border border-grey-100 bg-white cursor-pointer': !!!appliedDiscounts.find((selectedDiscount) => selectedDiscount.id === discount.id && selectedDiscount.type === 'bill') && isBillDiscountApplicable(discount),
+                                                'bg-grey-25 cursor-not-allowed': !isBillDiscountApplicable(discount),
+                                            }]"
+                                            @click="isBillDiscountApplicable(discount) ? selectDiscount(discount, 'bill') : ''"
+                                        >
+                                            <div class="flex gap-x-5 justify-between items-start self-stretch">
+                                                <div class="flex flex-col items-start gap-y-1">
+                                                    <p class="text-base font-bold self-stretch" :class="isBillDiscountApplicable(discount) ? 'text-grey-950' : 'text-grey-500'">
+                                                        {{ discount.name }}
+                                                    </p>
+                                                    <p class="text-sm font-normal self-stretch" :class="isBillDiscountApplicable(discount) ? 'text-grey-900' : 'text-grey-400'">
+                                                        {{ discount.discount_type === 'percentage' ? `${discount.discount_rate}%` : `RM ${discount.discount_rate}` }} off
+                                                    </p>
+                                                </div>
+
+                                                <Checkbox 
+                                                    :checked="!!appliedDiscounts.find((selectedDiscount) => selectedDiscount.id === discount.id && selectedDiscount.type === 'bill')"
+                                                    :disabled="!isBillDiscountApplicable(discount)"
+                                                />
+                                            </div>
+
+                                            <hr class="w-full text-grey-100">
+
+                                            <div class="flex items-center gap-x-2 self-stretch">
+                                                <span class="text-2xs font-normal" :class="isBillDiscountApplicable(discount) ? 'text-grey-800' : 'text-grey-300'">
+                                                    Min. {{ discount.criteria === 'min_spend' ? `spend RM ${discount.requirement}` : `${discount.requirement} item purchased` }}
+                                                </span>
+                                                <span :class="isBillDiscountApplicable(discount) ? 'text-grey-200' : 'text-grey-100'">&#x2022;</span>
+                                                <span class="text-2xs font-normal" :class="isBillDiscountApplicable(discount) ? 'text-grey-800' : 'text-grey-300'">
+                                                    {{ discount.is_stackable ? 'Stackable' : 'Not Stackable' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                
+                                <div class="flex flex-col items-center justify-center" v-else>
+                                    <UndetectableIllus />
+                                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template #tier-rewards>
+                        <div class="flex flex-col items-center self-stretch">
+                            <div class="flex flex-col items-center gap-4 self-stretch max-h-[calc(100dvh-22rem)] pr-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
+                                <template v-if="customerTierRewards.length > 0">
+                                    <template v-for="(voucher, index) in customerTierRewards" :key="index">
+                                        <div 
+                                            class="flex p-3 flex-col self-stretch gap-2 items-start rounded-[5px] shadow-sm"
+                                            :class="[{
+                                                'border border-primary-900 bg-primary-25 cursor-pointer': selectedVoucherDiscount?.id === voucher.id && isVoucherApplicable(voucher),
+                                                'border border-grey-100 bg-white cursor-pointer': selectedVoucherDiscount?.id !== voucher.id && isVoucherApplicable(voucher),
+                                                'bg-grey-25 cursor-not-allowed': !isVoucherApplicable(voucher),
+                                            }]"
+                                            @click="isVoucherApplicable(voucher) ? selectDiscount(voucher, 'voucher') : ''"
+                                        >
+                                            <div class="flex gap-x-5 justify-between items-start self-stretch">
+                                                <div class="flex flex-col items-start gap-y-1">
+                                                    <p class="text-base font-bold self-stretch" :class="isVoucherApplicable(voucher) ? 'text-grey-950' : 'text-grey-500'">
+                                                        {{ voucher.ranking.name }} Entry Rewards
+                                                    </p>
+                                                    <p class="text-sm font-normal self-stretch" :class="isVoucherApplicable(voucher) ? 'text-grey-900' : 'text-grey-400'">
+                                                        <!-- {{ voucher.discount_type === 'percentage' ? `${voucher.discount_rate}%` : `RM ${voucher.discount_rate}` }} off -->
+                                                        
+                                                        <template v-if="voucher.reward_type === 'Discount (Amount)'">
+                                                            {{ `RM ${voucher.discount}` }}
+                                                        </template>
+                                                        <template v-if="voucher.reward_type === 'Discount (Percentage)'">
+                                                            {{ `${voucher.discount}%` }}
+                                                        </template>
+                                                            off
+                                                    </p>
+                                                </div>
+
+                                                <RadioButton
+                                                    :name="'voucher'"
+                                                    :dynamic="false"
+                                                    :value="voucher"
+                                                    class="!w-fit"
+                                                    :errorMessage="''"
+                                                    :disabled="!isVoucherApplicable(voucher)"
+                                                    v-model:checked="selectedVoucherDiscount"
+                                                    @onChange="handleVoucherChange(voucher)"
+                                                />  
+                                            </div>
+
+                                            <hr class="w-full text-grey-100">
+
+                                            <div class="flex items-center gap-x-2 self-stretch">
+                                                <span class="text-2xs font-normal" :class="isVoucherApplicable(voucher) ? 'text-grey-800' : 'text-grey-300'">
+                                                    <template v-if="voucher.min_purchase === 'active' && (voucher.reward_type === 'Discount (Amount)' || voucher.reward_type === 'Discount (Percentage)')">
+                                                        Min spend: RM {{ voucher.min_purchase_amount }}
+                                                    </template>
+                                                    <template v-if="voucher.min_purchase !== 'active' && (voucher.reward_type === 'Discount (Amount)'|| voucher.reward_type === 'Discount (Percentage)')">
+                                                        No min. spend
+                                                    </template>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                
+                                <div class="flex flex-col items-center justify-center" v-else>
+                                    <UndetectableIllus />
+                                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </TabView>
+            </div>
+
+            <!-- Inputs -->
+            <div class="flex flex-col h-full justify-between w-1/2 items-start gap-y-5 p-5 shadow-md rounded-[5px] border border-grey-100 bg-white">
+                <!-- Payment Inputs -->
+                <div class="flex flex-col items-end h-full gap-y-5 self-stretch">
+                    <!-- Payment Amount -->
+                    <div class="flex justify-center items-center gap-x-4 flex-shrink-0 self-stretch rounded-[5px] bg-grey-25">
+                        <p class="text-[48px] font-normal" :class="billAmountKeyed == 0 || billAmountKeyed < 0 ? 'text-grey-200' : 'text-grey-950'">
+                            {{ billAmountKeyed >= 0 ? billAmountKeyed : '0.00' }} 
+                            <span class="text-grey-950"> %</span>
+                        </p>
+                    </div>
+
+                    <!-- Number Pad -->
+                    <div class="flex flex-col items-start h-full gap-3 self-stretch">
+                        <!-- Row 1 -->
+                        <div class="flex w-full h-1/4 items-start gap-3 self-stretch">
+                            <div @click="handleNumberInput('1')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">1</p>
+                            </div>
+                            <div @click="handleNumberInput('2')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">2</p>
+                            </div>
+                            <div @click="handleNumberInput('3')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">3</p>
+                            </div>
+                            <div @click="addPredefinedAmount(5)" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">5%</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Row 2 -->
+                        <div class="flex w-full h-1/4 items-start gap-3 self-stretch">
+                            <div @click="handleNumberInput('4')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">4</p>
+                            </div>
+                            <div @click="handleNumberInput('5')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">5</p>
+                            </div>
+                            <div @click="handleNumberInput('6')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">6</p>
+                            </div>
+                            <div @click="addPredefinedAmount(10)" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">10%</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Row 3 -->
+                        <div class="flex w-full h-1/4 items-start gap-3 self-stretch">
+                            <div @click="handleNumberInput('7')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">7</p>
+                            </div>
+                            <div @click="handleNumberInput('8')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">8</p>
+                            </div>
+                            <div @click="handleNumberInput('9')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">9</p>
+                            </div>
+                            <div @click="addPredefinedAmount(20)" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">20%</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Row 4 -->
+                        <div class="flex w-full h-1/4 items-start gap-3 self-stretch">
+                            <div @click="clearInput" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">C</p>
+                            </div>
+                            <div @click="handleNumberInput('0')" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">0</p>
+                            </div>
+                            <div @click="handleDecimal" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <p class="text-grey-950 font-medium text-md">.</p>
+                            </div>
+                            <div @click="deleteLastCharacter" class="flex w-1/4 h-full flex-col justify-center items-center gap-2.5 rounded-[5px] border border-grey-100 bg-grey-25 cursor-pointer">
+                                <DeleteIcon2 class="text-grey-950" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <Button
+                    type="button"
+                    variant="primary"
+                    size="lg"
+                    :disabled="billAmountKeyed == 0"
+                    @click="applyManualDiscount"
+                >
+                    Apply discount
+                </Button>
+            </div>
+        </div>
     </div>
 </template>

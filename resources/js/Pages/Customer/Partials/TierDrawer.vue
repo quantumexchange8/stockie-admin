@@ -84,7 +84,7 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
                                         <ProductQualityIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
                                     </div>
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ customer.rank.name }}</span>
+                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ reward.ranking_reward.ranking.name }}</span>
                                         <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
                                         <div class="flex items-center gap-1 self-stretch">
                                             <template v-if="reward.ranking_reward.min_purchase === 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)')">
@@ -118,7 +118,7 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
                                         <ProductQualityIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
                                     </div>
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ customer.rank.name }}</span>
+                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ reward.ranking_reward.ranking.name }}</span>
                                         <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
                                         <span class="text-grey-600 text-2xs font-normal">Redeemed on {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>
                                     </div>

@@ -10,10 +10,10 @@ import { useForm } from '@inertiajs/vue3';
 import { FilterMatchMode } from 'primevue/api';
 import { computed, onMounted, ref, watch } from 'vue';
 import { usePhoneUtils } from '@/Composables/index.js';
-import { UndetectableIllus } from '@/Components/Icons/illus';
+import { MovingIllus, UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
-    orderId: Number,
+    currentOrder: Object,
     origin: {
         type: String,
         default: 'detail'
@@ -33,13 +33,14 @@ const { formatPhone } = usePhoneUtils();
 const initialCustomerList = ref([]);
 const customerList = ref([]);
 const isUnsavedChangesOpen = ref(false);
+const removeRewardFormIsOpen = ref(false);
 const isDirty = ref(false);
 const isCreateCustomerOpen = ref(false);
 const searchQuery = ref('');
-const selectedCustomer = ref('');
+const selectedCustomer = ref(props.currentOrder.customer_id ?? '');
 
 const form = useForm({
-    customer_id: ''
+    customer_id: props.currentOrder.customer_id ?? ''
 });
 
 const getAllCustomers = async () => {
@@ -64,7 +65,7 @@ const submit = () => {
         form.reset();
         
     } else {
-        form.put(route('orders.updateOrderCustomer', props.orderId), {
+        form.put(route('orders.updateOrderCustomer', props.currentOrder.id), {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
@@ -114,18 +115,35 @@ const closeModal = (status) => {
 
 }
 
+const showRemoveRewardForm = () => {
+    removeRewardFormIsOpen.value = true;
+};
+
+const hideRemoveRewardForm = () => {
+    removeRewardFormIsOpen.value = false;
+};
+
+const checkOrderVoucher = () => {
+    if (props.currentOrder.voucher && !props.isSplitBillMode) {
+        showRemoveRewardForm();
+    } else {
+        submit();
+    }
+};
+
 const filterCustomerList = computed(() => {
+    const listToFilter = searchQuery.value === '' ? customerList.value : initialCustomerList.value;
+
     if (!searchQuery.value) {
-        return initialCustomerList.value;
+        return listToFilter;
     }
 
     const search = searchQuery.value.toLowerCase();
 
-    return customerList.value
-            .filter(customer => {
-                return customer.full_name.toLowerCase().includes(search)
-                        || customer.phone.toLowerCase().includes(search);
-            });
+    return listToFilter.filter(customer => {
+        return customer.full_name.toLowerCase().includes(search) || 
+                customer.phone.toLowerCase().includes(search);
+    });
 });
 
 const clearSelection = () => {
@@ -209,9 +227,11 @@ watch(
 
                     <Button
                         v-if="props.origin === 'pay-bill'"
+                        :type="'button'"
                         :variant="'primary'"
                         :size="'lg'"
                         :disabled="!selectedCustomer || form.processing"
+                        @click="checkOrderVoucher"
                     >
                         Confirm
                     </Button>
@@ -219,9 +239,11 @@ watch(
 
                 <Button
                     v-if="props.origin === 'detail'"
+                    :type="'button'"
                     :variant="'primary'"
                     :size="'lg'"
                     :disabled="!selectedCustomer || form.processing"
+                    @click="checkOrderVoucher"
                 >
                     Confirm
                 </Button>
@@ -259,6 +281,41 @@ watch(
             @close="closeModal('stay')"
             @leave="closeModal('leave')"
         />
+    </Modal>
+
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="removeRewardFormIsOpen"
+        :withHeader="false"
+        class="[&>div>div>div]:!p-0"
+        @close="hideRemoveRewardForm"
+    >
+        <div class="flex flex-col gap-9">
+            <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                <MovingIllus />
+            </div>
+            <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Proceed with changing customer?</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >Switching the checked-in customer will remove the tier reward you've applied. Are you sure you want to proceed?</div>
+            </div>
+            <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="hideRemoveRewardForm"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    size="lg"
+                    @click="submit"
+                >
+                    Proceed
+                </Button>
+            </div>
+        </div>
     </Modal>
 
 </template>

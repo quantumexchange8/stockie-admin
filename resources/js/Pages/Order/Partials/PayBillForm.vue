@@ -16,6 +16,14 @@ import SelectCustomer from './SelectCustomer.vue';
 import MergeBill from './MergeBill.vue';
 import SplitBill from './SplitBill.vue';
 import ApplyDIscountForm from './ApplyDIscountForm.vue';
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { MovingIllus } from '@/Components/Icons/illus';
+dayjs.extend(isBetween);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 const props = defineProps({
     currentOrder: Object,
@@ -55,6 +63,7 @@ const form = useForm({
     user_id: userId.value,
     order_id: props.currentOrder.id,
     change: 0,
+    discounts: [],
     payment_methods: [],
     tables: props.currentOrder.order_table.filter(table => ['Pending Order', 'Order Placed', 'All Order Served'].includes(table.status)),
     split_bill_id: '',
@@ -72,15 +81,240 @@ const fetchTaxes = async () => {
     }
 };
 
-onMounted(() => fetchTaxes());
+const getDiscountAmount = (discount, type) => {
+    if (type === 'bill') {
+        return discount.discount_type === 'percentage'
+            ? order.value.amount * (discount.discount_rate / 100)
+            : discount.discount_rate;
+    }
+
+    if (type === 'voucher') {
+        return discount.reward_type === 'Discount (Percentage)'
+            ? order.value.amount * (discount.discount / 100)
+            : discount.discount
+    }
+};
+
+const totalItemQuantityOrdered = computed(() => {
+    return order.value.order_items.reduce((total, item) => {
+        return total + item.item_qty;
+    }, 0);
+})
+
+const isBillDiscountApplicable = (discount) => {
+    // Early exit for inactive discounts
+    if (discount.status === 'inactive') return false;
+
+    const now = dayjs();
+    const currentOrderTotal = Number(order.value.total_amount);
+    const discountRequirement = Number(discount.requirement);
+    const currentCustomerRanking = Number(order.value.customer?.ranking);
+    
+    // 1. Date Range Check
+    if (!now.isSameOrAfter(discount.discount_from) || !now.isSameOrBefore(discount.discount_to)) {
+        return false;
+    }
+
+    // 2. Day of Week Check
+    const dayOfWeek = now.get('day');
+    if (discount.available_on === 'weekday' && ![1,2,3,4,5].includes(dayOfWeek)) return false;
+    if (discount.available_on === 'weekend' && ![0,6].includes(dayOfWeek)) return false;
+
+    // 3. Time Window Check
+    if (discount.start_time && discount.end_time) {
+        if (now.isBefore(discount.start_time) || now.isSameOrAfter(discount.end_time)) {
+            return false;   
+        }
+    }
+
+    // // 4. Stackability Check
+    // if (!discount.is_stackable) {
+    //     // If there are any applied discounts
+    //     if (form.discounts.length > 0) {
+    //         // Check if this discount is the currently selected one
+    //         const isCurrentlySelected = form.discounts.some(
+    //             d => d.id === discount.id && d.type === 'bill'
+    //         );
+            
+    //         // If it's not the currently selected one, disable it
+    //         if (!isCurrentlySelected) {
+    //             return false;
+    //         }
+    //     }
+    // }
+
+    // 5. Criteria Check
+    if (
+        (discount.criteria === 'min_spend' && currentOrderTotal < discountRequirement) || 
+        (discount.criteria === 'min_quantity' && totalItemQuantityOrdered.value < discountRequirement)
+    ) {
+        return false;
+    }
+    
+    // 6. Tier Check
+    if (discount.tier?.length > 0 && !discount.tier.includes(currentCustomerRanking)) {
+        return false;
+    }
+    
+    // 7. Payment Method Check
+    if (discount.payment_method?.length > 0) {
+        const requiredMethods = discount.payment_method.map(method => {
+            switch (method) {
+                case 'cash': return 'Cash';
+                case 'card': return 'Card';
+                case 'e-wallets': return 'E-Wallet';
+                default: return method;
+            }
+        });
+
+        if (!paymentTransactions.value.some(pmu => requiredMethods.includes(pmu.method))) {
+            return false;
+        }
+    }
+
+    // 8. Usage Limits Check
+    if (discount.current_customer_usage) {
+        if (discount.customer_usage > 0 && discount.total_usage > 0) {
+            if (discount.current_total_usage_count >= discount.total_usage) return false;
+            if (discount.current_customer_usage.customer_usage >= discount.customer_usage) return false;
+        };
+        
+        if (discount.total_usage > 0) {
+            if (discount.current_total_usage_count >= discount.total_usage) return false;
+        };
+
+        if (discount.customer_usage > 0) {
+            if (discount.current_customer_usage.customer_usage >= discount.customer_usage) return false;
+        };
+    }
+
+    return true;
+};
+
+const fetchAutoAppliedDiscounts = async () => {
+    try {
+        const response = await axios.get('/order-management/getBillDiscount', {
+            params: { current_customer_id: order.value.customer_id }
+        });
+
+        // Filter and process auto-applied discounts
+        const autoAppliedDiscounts = response.data
+                .filter(discount => discount.is_auto_applied)
+                .map(discount => ({ ...discount, type: 'bill' }));
+
+        if (!autoAppliedDiscounts.length) return;
+
+        // Handle stackable discounts
+        const stackableDiscounts = autoAppliedDiscounts.filter(d => d.is_stackable);
+        if (stackableDiscounts.length > 0) {
+            // Apply all stackable discounts that pass conditions
+            const applicableStackableDiscounts = stackableDiscounts.filter(d => isBillDiscountApplicable(d));
+            const nonApplicableStackableDiscounts = stackableDiscounts.filter(d => !isBillDiscountApplicable(d));
+            
+            if (applicableStackableDiscounts.length > 0) {
+                // Add all stackable discounts (they can coexist with vouchers)
+                form.discounts.push(...applicableStackableDiscounts);
+                
+                nonApplicableStackableDiscounts.forEach(discount => {
+                    const criteriaName = discount.criteria === 'min_spend' ? 'min. spend of RM' : 'min. quantity of';
+    
+                    showMessage({ 
+                        severity: 'warn',
+                        summary: `'${discount.name}' cannot be applied.`,
+                        detail: `To be eligible to this discount, a ${criteriaName} ${discount.requirement} is required.`,
+                    });
+                    return;
+                });
+
+                return;
+            }
+        }
+        
+        // Handle non-stackable discounts
+        const nonStackableDiscounts = autoAppliedDiscounts.filter(d => !d.is_stackable);
+        if (!nonStackableDiscounts.length) return;
+        
+        let selectedBillDiscount = nonStackableDiscounts[0];
+
+        if (nonStackableDiscounts.length > 1) {
+            selectedBillDiscount = nonStackableDiscounts.reduce((highest, current) => {
+                const currentAmount = getDiscountAmount(current, 'bill');
+                const highestAmount = getDiscountAmount(highest, 'bill');
+                
+                return currentAmount > highestAmount ? current : highest;
+            });
+        }
+
+        const { conflict, name, criteria, requirement } = selectedBillDiscount;
+
+        if (conflict === 'keep') {
+            showMessage({ 
+                severity: 'warn',
+                summary: `'${name}' cannot be applied.`,
+                detail: `Discount '${name}' cannot be applied since it is not stackable with other discount.`,
+            });
+            return;
+        }
+
+        if (!isBillDiscountApplicable(selectedBillDiscount)) {
+            const criteriaName = criteria === 'min_spend' ? 'min. spend of RM' : 'min. quantity of';
+
+            showMessage({ 
+                severity: 'warn',
+                summary: `'${name}' cannot be applied.`,
+                detail: `To be eligible to this discount, a ${criteriaName} ${requirement} is required.`,
+            });
+            return;
+        }
+
+        if (conflict === 'maximum_value') {
+            const existingVoucher = form.discounts.find((discount) => discount.type === 'voucher');
+
+            if (!existingVoucher) {
+                form.discounts = [selectedBillDiscount];
+            };
+            
+            const voucherAmount = getDiscountAmount(existingVoucher, 'voucher');
+            const billAmount = getDiscountAmount(selectedBillDiscount, 'bill');
+            
+            if (billAmount > voucherAmount) {
+                form.discounts = [selectedBillDiscount];
+            
+                showMessage({ 
+                    severity: 'warn',
+                    summary: `'${existingVoucher.ranking?.name || 'Voucher'} Entry reward' is replaced with '${name}' `,
+                    detail: `As one of the discounts is not stackable, we've applied the discount with the highest value to maximise customer savings.`,
+                });
+            }
+        }
+    } catch (error) {
+        console.error(error);
+    } finally {
+
+    }
+};
+
+onMounted(() => {
+    fetchTaxes();
+    fetchAutoAppliedDiscounts();
+});
 
 const splitBillsState = ref({
   currentBill: null,
   splitBills: []
 });
 
+const resetAppliedDiscounts = () => {
+    form.discounts = [];
+    fetchAutoAppliedDiscounts();
+};
+
 // Update the paySplitBill function
 const paySplitBill = (bill) => {
+    if (!isSplitBillMode.value) {
+        resetAppliedDiscounts();
+    }
+
     splitBillDetails.value = bill;
     selectedCustomer.value = splitBillDetails.value.customer;
     order.value = splitBillDetails.value;
@@ -120,8 +354,13 @@ const closeSuccessPaymentModal = () => {
 };
 
 const submit = async () => {
-    form.payment_methods = paymentTransactions.value;
+    form.payment_methods = paymentTransactions.value.filter((transaction => transaction.amount > 0));
     form.change = change.value;
+
+    let cashMethod = form.payment_methods.find(pm => pm.method === 'Cash');
+    if (cashMethod && form.change > 0) {
+        cashMethod.amount = cashMethod.amount - form.change;
+    };
 
     if (splitBillDetails.value && isSplitBillMode.value) {
         form.split_bill_id = splitBillDetails.value.id;
@@ -226,6 +465,16 @@ const closeOrderDetails = () => {
     setTimeout(() => emit('fetchOrderDetails'), 300);
 };
 
+// const formDiscountsCount = computed(() => {
+//     let count = 0;
+
+//     if (form.discounts.voucher) count++;
+
+//     count += form.discounts.bill.length;
+
+//     return count;
+// });
+
 const sstAmount = computed(() => {
     const sstTax = Object.keys(taxes.value).length > 0 ? taxes.value['SST'] : 0;
     const result = (Number(order.value.amount ?? 0) * (sstTax / 100)) ?? 0;
@@ -241,14 +490,33 @@ const serviceTaxAmount = computed(() => {
 });
 
 const voucherDiscountedAmount = computed(() => {
-    if (!order.value.voucher) return 0.00;
+    const selectedVoucher = form.discounts.find((discount) => discount.type === 'voucher');
+    if (!selectedVoucher) return 0.00;
 
-    const discount = order.value.voucher.discount;
-    const discountedAmount = order.value.voucher.reward_type === 'Discount (Percentage)'
-            ? order.value.amount * discount
+    const discount = selectedVoucher.discount;
+    const discountedAmount = selectedVoucher.reward_type === 'Discount (Percentage)'
+            ? order.value.amount * (discount / 100)
             : discount;
 
     return Number(discountedAmount).toFixed(2);
+
+});
+
+const billDiscountedAmount = computed(() => {
+    const billDiscounts = form.discounts.filter((discount) => ['bill', 'manual'].includes(discount.type));
+    if (billDiscounts.length === 0) return 0.00;
+
+    const totalBillDiscountAmount = billDiscounts.reduce((total, discount) => {
+        const discountRate = discount.discount_rate;
+        const discountedAmount = discount.discount_type === 'percentage'
+                ? order.value.amount * (discountRate / 100)
+                : discountRate;
+
+        return total + discountedAmount;
+    }, 0);
+
+
+    return Number(totalBillDiscountAmount).toFixed(2);
 
 });
 
@@ -276,8 +544,9 @@ const priceRounding = (amount) => {
 
 const grandTotalAmount = computed(() => {
     const totalTaxableAmount = (Number(sstAmount.value) + Number(serviceTaxAmount.value)) ?? 0;
-    const voucherDiscountAmount = order.value.voucher ? voucherDiscountedAmount.value : 0.00;
-    const grandTotal = priceRounding(Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount);
+    const voucherDiscountAmount = voucherDiscountedAmount.value > 0 ? voucherDiscountedAmount.value : 0.00;
+    const billDiscountAmount = billDiscountedAmount.value > 0 ? billDiscountedAmount.value : 0.00;
+    const grandTotal = priceRounding(Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount - billDiscountAmount);
 
     return grandTotal.toFixed(2);
 });
@@ -354,7 +623,7 @@ const addPredefinedAmount = (amount) => {
 const handlePaymentMethod = (method) => {
     const amount = Number(billAmountKeyed.value);
 
-    if (amount > 0) {
+    if (amount >= 0) {
         // Check if the payment method already exists
         const existingTransaction = paymentTransactions.value.find(
             (transaction) => transaction.method === method
@@ -363,10 +632,9 @@ const handlePaymentMethod = (method) => {
         if (existingTransaction) {
             if (selectedMethod.value === existingTransaction.method) {
                 let updatedPaidAmount;
-                let formattedKeyedAmount = Number(billAmountKeyed.value);
 
                 if (hasCashMethod.value || method === 'Cash') {
-                    updatedPaidAmount = formattedKeyedAmount;
+                    updatedPaidAmount = amount;
                 } else {
                     const otherMethodsTotalPaid = paymentTransactions.value.reduce((total, transaction) => {
                         return transaction.method !== method 
@@ -374,18 +642,15 @@ const handlePaymentMethod = (method) => {
                             : total + 0;
                     }, 0);
 
-                    console.log('others: ' + otherMethodsTotalPaid);
-
-                    if (formattedKeyedAmount + otherMethodsTotalPaid <= grandTotalAmount.value) {
-                        updatedPaidAmount = formattedKeyedAmount;
+                    if (amount + otherMethodsTotalPaid <= grandTotalAmount.value) {
+                        updatedPaidAmount = amount;
                         
                     } else {
-                        updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + otherMethodsTotalPaid) - grandTotalAmount.value);
-                        console.log('over: ' + updatedPaidAmount);
+                        updatedPaidAmount = Number((amount - ((amount + otherMethodsTotalPaid) - grandTotalAmount.value)).toFixed(2));
                         setTimeout(() => {
                             showMessage({ 
                                 severity: 'warn',
-                                summary: 'Entered amount exceeded total payable amount.',
+                                summary: 'Entered amount exceeded grand total amount.',
                             });
                         }, 200);
                     }
@@ -397,21 +662,20 @@ const handlePaymentMethod = (method) => {
 
             } else {
                 let updatedPaidAmount;
-                let formattedKeyedAmount = Number(billAmountKeyed.value);
 
                 if (hasCashMethod.value || method === 'Cash') {
-                    updatedPaidAmount = formattedKeyedAmount;
+                    updatedPaidAmount = amount;
 
                 } else {
-                    if (formattedKeyedAmount + totalAmountPaid.value <= grandTotalAmount.value) {
-                        updatedPaidAmount = formattedKeyedAmount;
+                    if (amount + totalAmountPaid.value <= grandTotalAmount.value) {
+                        updatedPaidAmount = amount;
                         
                     } else {
-                        updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + totalAmountPaid.value) - grandTotalAmount.value);
+                        updatedPaidAmount = Number((amount - ((amount + totalAmountPaid.value) - grandTotalAmount.value)).toFixed(2));
                         setTimeout(() => {
                             showMessage({ 
                                 severity: 'warn',
-                                summary: 'Entered amount exceeded total payable amount.',
+                                summary: 'Entered amount exceeded grand total amount.',
                             });
                         }, 200);
                     }
@@ -433,11 +697,11 @@ const handlePaymentMethod = (method) => {
                     paidAmount = amount;
 
                 } else {
-                    paidAmount = amount - ((amount + totalAmountPaid.value) - grandTotalAmount.value);
+                    paidAmount = Number((amount - ((amount + totalAmountPaid.value) - grandTotalAmount.value)).toFixed(2));
                     setTimeout(() => {
                         showMessage({ 
                             severity: 'warn',
-                            summary: 'Entered amount exceeded total payable amount.',
+                            summary: 'Entered amount exceeded grand total amount.',
                         });
                     }, 200);
                 }
@@ -463,8 +727,13 @@ const remainingBalanceDue = computed(() => {
     return (Number(grandTotalAmount.value) - totalAmountPaid.value).toFixed(2);
 });
 
-const exactBillAmount = () => {
-    billAmountKeyed.value = remainingBalanceDue.value >= 0 ? remainingBalanceDue.value : '0.00';
+const exactBillAmount = () => {    
+    let selectedPaymentTransaction = paymentTransactions.value.find((transaction) => transaction.method === selectedMethod.value);
+    let remainingAmount = remainingBalanceDue.value >= 0 ? remainingBalanceDue.value : '0.00';
+
+    billAmountKeyed.value = selectedMethod.value
+            ? (selectedPaymentTransaction.amount + Number(remainingAmount)).toFixed(2)
+            : remainingAmount;
 };
 
 const selectMethod = (transaction) => {
@@ -487,11 +756,11 @@ const selectMethod = (transaction) => {
                 updatedPaidAmount = formattedKeyedAmount;
                 
             } else {
-                updatedPaidAmount = formattedKeyedAmount - ((formattedKeyedAmount + otherMethodsTotalPaid) - grandTotalAmount.value);
+                updatedPaidAmount = Number((formattedKeyedAmount - ((formattedKeyedAmount + otherMethodsTotalPaid) - grandTotalAmount.value)).toFixed(2));
                 setTimeout(() => {
                     showMessage({ 
                         severity: 'warn',
-                        summary: 'Entered amount exceeded total payable amount.',
+                        summary: 'Entered amount exceeded grand total amount.',
                     });
                 }, 200);
             }
@@ -538,16 +807,44 @@ const hasCashMethod = computed(() => {
 });
 
 const isValidated = computed(() => {
-    if (isSplitBillMode.value) {
-        return !form.processing && remainingBalanceDue.value <= 0 && (splitBillsState.value.splitBills.find(bill => bill.id === splitBillDetails.value.id) || splitBillDetails.value.id === splitBillsState.value.currentBill?.id);
+    const grandTotal = Number(grandTotalAmount.value);
+    const cardMethod = paymentTransactions.value.find(transaction => transaction.method === 'Card');
+    const eWalletMethod = paymentTransactions.value.find(transaction => transaction.method === 'E-Wallet');
+    
+    const withCashCondition = ((cardMethod?.amount ?? 0.00) + (eWalletMethod?.amount ?? 0.00)) <= grandTotal;
+    const withoutCashCondition = totalAmountPaid.value == grandTotal;
 
-    } else {
-        return !form.processing && remainingBalanceDue.value <= 0;
-    }
+    return isSplitBillMode.value
+            ? !form.processing 
+                && remainingBalanceDue.value <= 0 
+                && (!hasCashMethod.value ? withoutCashCondition : withCashCondition) 
+                && (splitBillsState.value.splitBills.find(bill => bill.id === splitBillDetails.value.id) 
+                    || splitBillDetails.value.id === splitBillsState.value.currentBill?.id)
+            : !form.processing 
+                && remainingBalanceDue.value <= 0 
+                && (!hasCashMethod.value ? withoutCashCondition : withCashCondition);
 });
 
+const displayExceedBalanceToast = () => {
+    const grandTotal = Number(grandTotalAmount.value);
+    const cardMethod = paymentTransactions.value.find(transaction => transaction.method === 'Card');
+    const eWalletMethod = paymentTransactions.value.find(transaction => transaction.method === 'E-Wallet');
+    
+    const withCashCondition = hasCashMethod.value && ((cardMethod?.amount ?? 0.00) + (eWalletMethod?.amount ?? 0.00)) > grandTotal;
+    const withoutCashCondition = !hasCashMethod.value && totalAmountPaid.value > grandTotal;
+
+    if (withoutCashCondition || withCashCondition) {
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'warn',
+                summary: `Entered amount exceeded grand total amount.`,
+            });
+        }, 200);
+    }
+};
+
 const updateOrder = (updatedOrder) => {
-    order.value = $event;
+    order.value = updatedOrder;
     emit('update:order', updatedOrder);
 };
 
@@ -571,6 +868,7 @@ const removeMethod = (transaction) => {
 
     paymentTransactions.value.splice(indexOfTransaction, 1);
     
+    exactBillAmount();
 };
 
 const tableNames = computed(() => {
@@ -580,16 +878,44 @@ const tableNames = computed(() => {
             .join(', ') ?? '';
 });
 
+// watch(voucherDiscountedAmount, (newValue) => {
+//     billAmountKeyed.value = newValue;
+// });
+
 watch(grandTotalAmount, (newValue) => {
-    billAmountKeyed.value = newValue;
+    billAmountKeyed.value = newValue > 0 ? newValue : '0.00';
 });
 
 watch(remainingBalanceDue, (newValue) => {
     change.value = newValue < 0 ? Math.abs(newValue) : '0.00';
 });
 
+watch(() => props.currentOrder, (newValue) => {
+    let currentOrderVoucher = newValue.voucher ?? null;
+
+    if (currentOrderVoucher) {
+        currentOrderVoucher['type'] = 'voucher'
+        form.discounts.push(currentOrderVoucher);
+    };
+}, { immediate: true });
+
+watch(() => order.value.customer_id, (newValue, oldValue) => {
+    // Only proceed if the customer_id actually changed
+    if (newValue !== oldValue && !isSplitBillMode.value) {
+        // Find index of voucher discount (if any)
+        const voucherIndex = form.discounts.findIndex(d => d.type === 'voucher');
+        
+        // If voucher exists, remove it
+        if (voucherIndex !== -1) {
+            // Create a new array without the voucher for better reactivity
+            form.discounts = form.discounts.filter((_, index) => index !== voucherIndex);
+        }
+    }
+});
+
 // watch(isSplitBillMode, (newValue) => {
 //     if (newValue) {
+//         form.discounts = form.discounts.filter((_, index) => index !== voucherIndex);
 //         order.value = splitBillDetails.value;
 //     }
 // });
@@ -610,11 +936,12 @@ watch(remainingBalanceDue, (newValue) => {
                     <p class="text-base font-medium">{{ selectedCustomer?.full_name ?? 'Customer' }}</p>
                 </div>
                 <div 
-                    class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] text-grey-300 bg-grey-25 border-grey-50 cursor-not-allowed"
-                    @click=""
+                    class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] cursor-pointer border"
+                    :class="form.discounts.length > 0 ? 'border-green-200 bg-green-50 text-green-900' : 'border-grey-100 bg-grey-50 text-grey-950'"
+                    @click="showAddDiscountModal"
                 >
                     <DiscountIcon />
-                    <p class="text-base font-medium">Add Discount</p>
+                    <p class="text-base font-medium">{{ form.discounts.length > 0 ? `${form.discounts.length} discount(s)` : 'Add Discount'}}</p>
                 </div>
                 <div 
                     class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border"
@@ -659,9 +986,13 @@ watch(remainingBalanceDue, (newValue) => {
                                 <p class="text-grey-900 text-base font-normal">Sub-total</p>
                                 <p class="text-grey-900 text-base font-bold">RM {{ Number(order.amount ?? 0).toFixed(2) }}</p>
                             </div>
-                            <div class="flex flex-row justify-between items-start self-stretch" v-if="order.voucher">
-                                <p class="text-grey-900 text-base font-normal">Voucher Discount {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
+                            <div class="flex flex-row justify-between items-start self-stretch" v-if="voucherDiscountedAmount > 0">
+                                <p class="text-grey-900 text-base font-normal">Voucher Discount {{ form.discounts.find((discount) => discount.type === 'voucher').reward_type === 'Discount (Percentage)' ? `(${form.discounts.find((discount) => discount.type === 'voucher').discount}%)` : `` }}</p>
                                 <p class="text-grey-900 text-base font-bold">- RM {{ voucherDiscountedAmount }}</p>
+                            </div>
+                            <div class="flex flex-row justify-between items-start self-stretch" v-if="billDiscountedAmount > 0">
+                                <p class="text-grey-900 text-base font-normal">Bill Discount</p>
+                                <p class="text-grey-900 text-base font-bold">- RM {{ billDiscountedAmount }}</p>
                             </div>
                             <div class="flex flex-row justify-between items-start self-stretch" v-if="taxes['SST'] && taxes['SST'] > 0">
                                 <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST']) }}%)</p>
@@ -839,7 +1170,7 @@ watch(remainingBalanceDue, (newValue) => {
             </div>
         </div>
 
-        <div class="flex px-6 pt-3 items-center justify-end gap-4 self-stretch rounded-b-[5px] mx-[-20px]">
+        <div class="relative flex px-6 pt-3 items-center justify-end gap-4 self-stretch rounded-b-[5px] mx-[-20px]">
             <Button
                 variant="primary"
                 type="submit"
@@ -848,6 +1179,9 @@ watch(remainingBalanceDue, (newValue) => {
             >
                 Confirm
             </Button>
+            <div v-if="!isValidated" class="absolute inset-0 px-11 pt-3 mx-[-20px]">
+                <div class="h-full cursor-not-allowed" @click="displayExceedBalanceToast"></div>
+            </div>
         </div>
     </form>
    
@@ -859,7 +1193,7 @@ watch(remainingBalanceDue, (newValue) => {
         @close="closeModal('close')"
     >
         <SelectCustomer
-            :orderId="order.id"
+            :currentOrder="order"
             :origin="'pay-bill'"
             :isSplitBillMode="isSplitBillMode"
             @update:order-customer="updateOrderCustomer"
@@ -888,10 +1222,12 @@ watch(remainingBalanceDue, (newValue) => {
         <MergeBill
             :currentOrder="order"
             :currentTable="currentTable"
+            :currentHasVoucher="form.discounts.some((discount) => discount.type === 'voucher')"
             @update:order="updateOrder($event)"
             @closeOrderDetails="closeOrderDetails"
             @closeModal="closeModal"
             @isDirty="isDirty = $event"
+            @update:reset-applied-discounts="resetAppliedDiscounts"
         />
 
         <Modal
@@ -915,6 +1251,8 @@ watch(remainingBalanceDue, (newValue) => {
             :currentOrder="order"
             :currentTable="currentTable"
             :splitBillsState="splitBillsState"
+            :currentSplitBillMode="isSplitBillMode"
+            :currentHasVoucher="form.discounts.some((discount) => discount.type === 'voucher')"
             @closeModal="closeModal"
             @isDirty="isDirty = $event"
             @payBill="paySplitBill"
@@ -941,6 +1279,9 @@ watch(remainingBalanceDue, (newValue) => {
         <ApplyDIscountForm
             :currentOrder="order"
             :currentTable="currentTable"
+            :paymentTransactions="paymentTransactions"
+            :billAppliedDiscounts="form.discounts"
+            @update:discounts="form.discounts = $event"
             @closeModal="closeModal"
             @isDirty="isDirty = $event"
         />

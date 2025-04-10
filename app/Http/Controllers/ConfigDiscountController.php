@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Log;
+use Illuminate\Validation\Rule;
 
 class ConfigDiscountController extends Controller
 {
@@ -177,7 +178,7 @@ class ConfigDiscountController extends Controller
 
     public function editDiscount(DiscountRequest $request, String $id) {
 
-        $discount = ConfigDiscount::findOrFail($id);
+        $discount = ConfigDiscount::find($id);
         
         //update main discount details
         $discount->update([
@@ -272,7 +273,7 @@ class ConfigDiscountController extends Controller
     }
 
     private function getBillDiscounts() {
-        $bill_discounts = BillDiscount::all();
+        $bill_discounts = BillDiscount::where('status', '!=', 'unavailable')->get();
     
         foreach ($bill_discounts as $bill_discount) {
             $tiers = $bill_discount->tier;
@@ -314,7 +315,7 @@ class ConfigDiscountController extends Controller
             'discount_period' => ['required'],
             'available_on' => ['required', 'string'],
             'time_period_from' => ['nullable'],
-            'time_period_to' => ['nullable'],
+            'time_period_to' => ['nullable', "required_if:time_period_from,!=,''"],
             'discount_criteria' => ['required', 'string'],
             'discount_requirement' => ['required', 'numeric'],
             'is_stackable' => ['present', 'boolean'],
@@ -336,10 +337,13 @@ class ConfigDiscountController extends Controller
 
         $today = Carbon::today('Asia/Kuala_Lumpur');
 
-        $startDate = Carbon::parse($request['discount_period'][0])->tz('Asia/Kuala_Lumpur')->startOfDay(); // Start of the discount period
+        $startDate = Carbon::parse(time: $request['discount_period'][0])->tz('Asia/Kuala_Lumpur')->startOfDay(); // Start of the discount period
         $endDate = isset($request['discount_period'][1]) 
             ? Carbon::parse($request['discount_period'][1])->tz('Asia/Kuala_Lumpur')->startOfDay() 
             : $startDate;
+
+        $startTime = $request['time_period_from'] ? Carbon::parse($request['time_period_from'])->tz('Asia/Kuala_Lumpur')->format('H:i') : null;
+        $endTime = $request['time_period_to'] ? Carbon::parse($request['time_period_to'])->tz('Asia/Kuala_Lumpur')->format('H:i') : null;
 
         $availableOn = $request['available_on'];
 
@@ -352,18 +356,16 @@ class ConfigDiscountController extends Controller
                 ($availableOn === 'weekend' && $today->isWeekend())   // Check if today is a weekend
             );
 
-        // dd($request['time_period_from']);
+        // dd($startTime);
         BillDiscount::create([
             'name' => $request['discount_name'],
             'discount_type' => $request['discount_isRate'] === true ? 'percentage' : 'amount',
             'discount_rate' => $request['discount_rate'],
-            'discount_from' => Carbon::parse($request['discount_period'][0])->tz('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
-            'discount_to' => $request['discount_period'][1] !== null
-                                ? Carbon::parse($request['discount_period'][1])->tz('Asia/Kuala_Lumpur')->endOfDay()->format('Y-m-d H:i:s') 
-                                :  Carbon::parse($request['discount_period'][0])->tz('Asia/Kuala_Lumpur')->endOfDay()->format('Y-m-d H:i:s'),
-            'available_on' => $request['available_on'],
-            'start_time' => $request['time_period_from'] !== '' ? $request['time_period_from'] : null,
-            'end_time' => $request['time_period_to'] !== '' ? $request['time_period_to'] : null,
+            'discount_from' => $startDate->format('Y-m-d H:i:s'),
+            'discount_to' => $endDate->format('Y-m-d H:i:s'),
+            'available_on' => $availableOn,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
             'criteria' => $request['discount_criteria'],
             'requirement' => $request['discount_requirement'],
             'is_stackable' => $request['is_stackable'],
@@ -388,7 +390,10 @@ class ConfigDiscountController extends Controller
             'discount_period' => ['required', 'array', 'size:2'],
             'available_on' => ['required', 'string'],
             'time_period_from' => ['nullable', 'string'],
-            'time_period_to' => ['nullable', 'string'],
+            'time_period_to' => [
+                'nullable',
+                Rule::requiredIf(fn () => !is_null($request->time_period_from)),
+            ],
             'discount_criteria' => ['required', 'string'],
             'discount_requirement' => ['required', 'numeric'],
             'is_stackable' => ['present', 'boolean'],
@@ -407,7 +412,6 @@ class ConfigDiscountController extends Controller
             'boolean' => 'Invalid input. Please try again.',
             'string' => 'Invalid input. Please try again.',
         ]);
-    
         $today = Carbon::today('Asia/Kuala_Lumpur');
     
         // Parse start and end dates
@@ -415,6 +419,9 @@ class ConfigDiscountController extends Controller
         $endDate = isset($request['discount_period'][1]) 
             ? Carbon::parse($request['discount_period'][1])->tz('Asia/Kuala_Lumpur')->endOfDay() 
             : $startDate;
+
+        $startTime = $request['time_period_from'] ? Carbon::parse($request['time_period_from'])->tz('Asia/Kuala_Lumpur')->format('H:i') : null;
+        $endTime = $request['time_period_to'] ? Carbon::parse($request['time_period_to'])->tz('Asia/Kuala_Lumpur')->format('H:i') : null;
     
         // Determine validity based on available_on
         $availableOn = $request['available_on'];
@@ -427,8 +434,8 @@ class ConfigDiscountController extends Controller
                    );
     
         // Retrieve the specific BillDiscount record
-        $billDiscount = BillDiscount::findOrFail($id);
-    
+        $billDiscount = BillDiscount::find($id);
+
         // Update the record
         $billDiscount->update([
             'name' => $request['discount_name'],
@@ -437,12 +444,12 @@ class ConfigDiscountController extends Controller
             'discount_from' => $startDate->format('Y-m-d H:i:s'),
             'discount_to' => $endDate->format('Y-m-d H:i:s'),
             'available_on' => $availableOn,
-            'start_time' => $request['time_period_from'] ?: null,
-            'end_time' => $request['time_period_to'] ?: null,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
             'criteria' => $request['discount_criteria'],
             'requirement' => $request['discount_requirement'],
             'is_stackable' => $request['is_stackable'],
-            'conflict' => $request['is_stackable'] === false ? $request['conflict'] : null,
+            'conflict' => $request['is_stackable'] === false ? $request['conflict'] : '',
             'customer_usage' => $request['customer_usage'],
             'customer_usage_renew' => $request['customer_usage_renew'],
             'total_usage' => $request['total_usage'],
@@ -450,21 +457,21 @@ class ConfigDiscountController extends Controller
             'tier' => $request['tier'],
             'payment_method' => $request['payment_method'],
             'is_auto_applied' => $request['is_auto_applied'],
-            'status' => $isValid ? 'active' : 'inactive',
+            'status' => $isValid === true ? 'active' : 'inactive'
         ]);
     
         return redirect()->back();
     }
     
     public function deleteBillDiscount(String $id){
-        $targetDiscount = BillDiscount::findOrFail($id);
-        $targetDiscount->delete();
+        $targetDiscount = BillDiscount::find($id);
+        $targetDiscount->update(['status' => 'unavailable']);
 
         return redirect()->back();
     }
 
     public function updateBillStatus(Request $request, string $id){
-        $targetDiscount = BillDiscount::findOrFail($id);
+        $targetDiscount = BillDiscount::find($id);
 
         $targetDiscount->update([
             'status' => $request->status,

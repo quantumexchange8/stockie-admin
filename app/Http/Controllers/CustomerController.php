@@ -586,7 +586,8 @@ class CustomerController extends Controller
                             ->with([
                                 'rewards:id,customer_id,ranking_reward_id,status,updated_at',
                                 'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
-                                'rewards.rankingReward.product:id,product_name'
+                                'rewards.rankingReward.product:id,product_name',
+                                'rewards.rankingReward.ranking:id,name',
                             ])
                             ->find($id);
 
@@ -647,7 +648,7 @@ class CustomerController extends Controller
     // used by order customer listing
     public function getAllCustomers(){
         $customerList = $this->getCustomers()
-                        ->get(['id', 'full_name', 'phone'])
+                        ->get(['id', 'full_name', 'phone', 'ranking'])
                         ->map(function ($customer) {
                             $customer->image = $customer->getFirstMediaUrl('customer');
 

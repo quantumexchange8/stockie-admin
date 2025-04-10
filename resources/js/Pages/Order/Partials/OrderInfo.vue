@@ -302,9 +302,11 @@ const submit = (action) => {
                     form.reset();
                 },
             })
-        } else if (action === 'remove-voucher') {
-            removeReward();
-        } else {
+        } 
+        // else if (action === 'remove-voucher') {
+        //     removeReward();
+        // } 
+        else {
             form.put(route('orders.cancel', order.value.id), {
                 preserveScroll: true,
                 preserveState: true,
@@ -326,38 +328,38 @@ const submit = (action) => {
     }
 };
 
-const removeReward = async () => { 
-    form.processing = true;
+// const removeReward = async () => { 
+//     form.processing = true;
 
-    try {
-        const removalResponse = await axios.put(`/order-management/orders/removeOrderVoucher/${order.value.id}`);
+//     try {
+//         const removalResponse = await axios.put(`/order-management/orders/removeOrderVoucher/${order.value.id}`);
 
-        if (removalResponse.status === 200) { 
-            setTimeout(() => { 
-                showMessage({ 
-                    severity: 'success', 
-                    summary: 'Reward removed', 
-                    detail: "Reward has been removed from customer's order.", 
-                }); 
-            }, 200); 
+//         if (removalResponse.status === 200) { 
+//             setTimeout(() => { 
+//                 showMessage({ 
+//                     severity: 'success', 
+//                     summary: 'Reward removed', 
+//                     detail: "Reward has been removed from customer's order.", 
+//                 }); 
+//             }, 200); 
             
-            order.value.voucher_id = null; 
-            order.value.voucher = null; 
-        } else { 
-            // Handle unexpected response status 
-            showMessage({ 
-                severity: 'error', 
-                summary: 'Error', 
-                detail: "Failed to remove the reward. Please try again.", 
-            }); 
-        }
-    } catch (error) {
-        console.error(error);
-    } finally {
-        form.processing = false;
-        hideRemoveRewardForm()
-    }
-};
+//             order.value.voucher_id = null; 
+//             order.value.voucher = null; 
+//         } else { 
+//             // Handle unexpected response status 
+//             showMessage({ 
+//                 severity: 'error', 
+//                 summary: 'Error', 
+//                 detail: "Failed to remove the reward. Please try again.", 
+//             }); 
+//         }
+//     } catch (error) {
+//         console.error(error);
+//     } finally {
+//         form.processing = false;
+//         hideRemoveRewardForm()
+//     }
+// };
 
 const isOrderCompleted = computed(() => {
     if (!order.value || !order.value.order_items || order.value.order_items.length === 0) return false;
@@ -615,17 +617,17 @@ watch(() => props.selectedTable, (newValue) => {
                 <div class="flex justify-end px-3 gap-x-2.5 self-stretch">
                     <p class="self-stretch text-grey-900 text-md font-medium">
                         <!-- Total (excl. tax): RM  -->
-                        Total: RM 
+                        Total (excl. tax): RM 
                         {{ currentOrderTable.status === 'Pending Clearance' ?  '0.00' : order.amount }}
-                        <span class="text-primary-800">{{ currentOrderTable.status !== 'Pending Clearance' && order.voucher ? ` > RM ${getVoucherDiscountedPrice(order.amount, order.voucher)}` : '' }}</span>
+                        <!-- <span class="text-primary-800">{{ currentOrderTable.status !== 'Pending Clearance' && order.voucher ? ` > RM ${getVoucherDiscountedPrice(order.amount, order.voucher)}` : '' }}</span> -->
                     </p>
-                    <div class="flex items-center gap-1.5 px-3 py-0.5 rounded-[5px] border border-dashed border-primary-300 bg-primary-50" v-if="currentOrderTable.status !== 'Pending Clearance' && order.voucher">
+                    <!-- <div class="flex items-center gap-1.5 px-3 py-0.5 rounded-[5px] border border-dashed border-primary-300 bg-primary-50" v-if="currentOrderTable.status !== 'Pending Clearance' && order.voucher">
                         <svg width="20" height="21" viewBox="0 0 20 21" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M18.125 8.625C18.47 8.625 18.75 8.345 18.75 8V6.125C18.75 5.09125 17.9088 4.25 16.875 4.25H13.125V6.125C13.125 6.47 12.845 6.75 12.5 6.75C12.155 6.75 11.875 6.47 11.875 6.125V4.25H3.125C2.09125 4.25 1.25 5.09125 1.25 6.125V8C1.25 8.345 1.53 8.625 1.875 8.625C2.90875 8.625 3.75 9.46625 3.75 10.5C3.75 11.5338 2.90875 12.375 1.875 12.375C1.53 12.375 1.25 12.655 1.25 13V14.875C1.25 15.9087 2.09125 16.75 3.125 16.75H11.875V14.875C11.875 14.53 12.155 14.25 12.5 14.25C12.845 14.25 13.125 14.53 13.125 14.875V16.75H16.875C17.9088 16.75 18.75 15.9087 18.75 14.875V13C18.75 12.655 18.47 12.375 18.125 12.375C17.0913 12.375 16.25 11.5338 16.25 10.5C16.25 9.46625 17.0913 8.625 18.125 8.625ZM13.125 12.375C13.125 12.72 12.845 13 12.5 13C12.155 13 11.875 12.72 11.875 12.375V11.75C11.875 11.405 12.155 11.125 12.5 11.125C12.845 11.125 13.125 11.405 13.125 11.75V12.375ZM13.125 9.25C13.125 9.595 12.845 9.875 12.5 9.875C12.155 9.875 11.875 9.595 11.875 9.25V8.625C11.875 8.28 12.155 8 12.5 8C12.845 8 13.125 8.28 13.125 8.625V9.25Z" fill="#7E171B"/>
                         </svg>
                         <p class="text-primary-900 text-right text-base font-medium">-{{ order.voucher.reward_type === 'Discount (Amount)' ? `RM ${order.voucher.discount}` : `${order.voucher.discount}%` }}</p>
                         <TimesIcon class="size-4 text-primary-500 hover:text-primary-600 cursor-pointer" @click="showRemoveRewardForm"/>
-                    </div>
+                    </div> -->
                 </div>
                 <div class="flex flex-col items-center self-stretch gap-3 w-full">
                     <div class="grid grid-cols-1 sm:grid-cols-2 items-start self-stretch gap-3">
@@ -752,7 +754,7 @@ watch(() => props.selectedTable, (newValue) => {
         </form>
     </Modal>
 
-    <Modal 
+    <!-- <Modal 
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="removeRewardFormIsOpen"
@@ -760,7 +762,7 @@ watch(() => props.selectedTable, (newValue) => {
         class="[&>div>div>div]:!p-0"
         @close="hideRemoveRewardForm"
     >
-        <!-- <template v-if="order && order.voucher"> -->
+        <-- <template v-if="order && order.voucher"> ->
             <form @submit.prevent="submit('remove-voucher')">
                 <div class="flex flex-col gap-9">
                     <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
@@ -789,8 +791,8 @@ watch(() => props.selectedTable, (newValue) => {
                     </div>
                 </div>
             </form>
-        <!-- </template> -->
-    </Modal>
+        <-- </template> ->
+    </Modal> -->
     
     <!-- <Modal
         maxWidth="sm" 

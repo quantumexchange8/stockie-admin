@@ -9,14 +9,15 @@ import { useForm } from '@inertiajs/vue3';
 import { FilterMatchMode } from 'primevue/api';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
-import { UndetectableIllus } from '@/Components/Icons/illus';
+import { MovingIllus, UndetectableIllus } from '@/Components/Icons/illus';
 import { CheckedIcon, DefaultIcon } from '@/Components/Icons/solid';
 
 const props = defineProps({
     currentOrder: Object,
     currentTable: Object,
+    currentHasVoucher: Boolean,
 })
-const emit = defineEmits(['update:order', 'closeModal', 'isDirty', 'closeOrderDetails']);
+const emit = defineEmits(['update:order', 'closeModal', 'isDirty', 'closeOrderDetails', 'update:reset-applied-discounts']);
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
 
@@ -31,6 +32,8 @@ const checkedIn = ref([]);
 const searchQuery = ref('');
 const zones = ref([]);
 const mergedTables = ref([]);
+const removeRewardFormIsOpen = ref(false);
+const hasVoucher = ref(props.currentHasVoucher);
 
 const form = useForm({
     id: props.currentTable.id,
@@ -66,8 +69,16 @@ onMounted(() => {
     getAllCustomers();
 });
 
+const showRemoveRewardForm = () => {
+    removeRewardFormIsOpen.value = true;
+};
+
+const hideRemoveRewardForm = () => {
+    removeRewardFormIsOpen.value = false;
+};
+
 const closeConfirm = () => {
-    isConfirmShow.value = false;
+    if (!removeRewardFormIsOpen.value) isConfirmShow.value = false;
 }
 
 const mergeTable = async () => {
@@ -95,6 +106,7 @@ const mergeTable = async () => {
 
         form.reset();
         emit('update:order', response.data);
+        hideRemoveRewardForm();
         closeConfirm();
         emit('closeModal', 'leave');
         emit('closeOrderDetails');
@@ -152,6 +164,11 @@ const addToMerged = (targetTable) => {
     });
 };
 
+const removeOrderRewards = () => {
+    emit('update:reset-applied-discounts');
+    mergeTable();
+};
+
 const openConfirm = () => {
     const isCheckedIn = form.tables.flatMap((table) => table.order_tables)
                                     .filter((order_table) => !!order_table.order.customer_id)
@@ -163,11 +180,14 @@ const openConfirm = () => {
     );
 
     isSelectedCustomer.value = checkedIn.value.length > 0 ? checkedIn.value[0] : null;
-    // console.log(isSelectedCustomer.value);
     if (checkedIn.value.length > 1) {
         isConfirmShow.value = true;
     } else {
-        mergeTable();
+        if (hasVoucher.value) {
+            showRemoveRewardForm();
+        } else {
+            removeOrderRewards();
+        }
     }
 };
 
@@ -195,6 +215,10 @@ const tablesArray = computed(() => {
 })
 
 watch(() => props.currentOrder, (newValue) => (order.value = newValue));
+
+watch(() => props.currentHasVoucher, (newValue) => {
+    hasVoucher.value = newValue;
+});
 
 </script>
 
@@ -330,9 +354,44 @@ watch(() => props.currentOrder, (newValue) => (order.value = newValue));
                     :type="'button'"
                     :variant="'primary'"
                     :size="'lg'"
-                    @click="mergeTable"
+                    @click="hasVoucher ? showRemoveRewardForm() : removeOrderRewards()"
                 >
                     Confirm
+                </Button>
+            </div>
+        </div>
+    </Modal>
+
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="removeRewardFormIsOpen"
+        :withHeader="false"
+        class="[&>div>div>div]:!p-0"
+        @close="hideRemoveRewardForm"
+    >
+        <div class="flex flex-col gap-9">
+            <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                <MovingIllus />
+            </div>
+            <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Remove Reward</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >The applied reward for both orders will be removed, but you can always reapply it during payment.</div>
+            </div>
+            <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="hideRemoveRewardForm"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    size="lg"
+                    @click="removeOrderRewards"
+                >
+                    Remove
                 </Button>
             </div>
         </div>

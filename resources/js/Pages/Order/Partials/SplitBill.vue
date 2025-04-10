@@ -9,13 +9,15 @@ import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { UndetectableIllus } from '@/Components/Icons/illus';
+import { MovingIllus, UndetectableIllus } from '@/Components/Icons/illus';
 import PayBillForm from './PayBillForm.vue';
 
 const props = defineProps({
     currentOrder: Object,
     currentTable: Object,
-    splitBillsState: Object
+    splitBillsState: Object,
+    currentSplitBillMode: Boolean,
+    currentHasVoucher: Boolean,
 });
 
 const { showMessage } = useCustomToast();
@@ -34,6 +36,10 @@ const customerList = ref([]);
 const payBillFormIsOpen = ref(false);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
+const isSplitBillMode = ref(props.currentSplitBillMode);
+const hasVoucher = ref(props.currentHasVoucher);
+const removeRewardFormIsOpen = ref(false);
+const selectedBill = ref('');
 
 const getAllCustomers = async () => {
     try {
@@ -87,6 +93,7 @@ const initialCurrentBill = ref({
     pax: props.currentTable.order_tables[0].pax,
     tables: props.currentTable.order_tables.map(ot => ot.table),
     customer: props.currentOrder.customer,
+    customer_id: props.currentOrder.customer_id,
     order_items: processOrderItems(props.currentTable.order_tables),
 });
 
@@ -94,11 +101,13 @@ const form = useForm({
     splitType: 'split-bill',
     currentBill: {
         ...(initialState.value?.currentBill || initialCurrentBill.value),
-        amount: calculateBillTotal(initialState.value?.currentBill || initialCurrentBill.value) // Initialize totalAmount
+        amount: calculateBillTotal(initialState.value?.currentBill || initialCurrentBill.value), // Initialize totalAmount
+        total_amount: calculateBillTotal(initialState.value?.currentBill || initialCurrentBill.value) // PayBillForm purposes
     },
     splitBills: initialState.value?.splitBills?.map(bill => ({
         ...bill,
-        amount: calculateBillTotal(bill)
+        amount: calculateBillTotal(bill),
+        total_amount: calculateBillTotal(bill) // PayBillForm purposes
     })) || [],
 });
 
@@ -109,9 +118,11 @@ const addBill = () => {
         status: props.currentTable.status,
         tables: props.currentTable.order_tables.map(ot => ot.table),
         customer: props.currentOrder.customer,
+        customer_id: props.currentOrder.customer_id,
         // new_customer: null,
         order_items: [],
-        amount: 0
+        amount: 0,
+        total_amount: 0 // PayBillForm purposes
     });
 };
 
@@ -280,10 +291,12 @@ const closeCustomerModal = () => {
 const selectCustomer = () => {
     if (selectedTargetBillId.value === 'current') {
         form.currentBill.customer = initialCustomerList.value.find(cust => cust.id === selectedCustomer.value);
+        form.currentBill.customer_id = initialCustomerList.value.find(cust => cust.id === selectedCustomer.value).id;
     } else {
         let targetBill = form.splitBills.find(bill => bill.id === selectedTargetBillId.value);
         if (targetBill) {
             targetBill.customer = initialCustomerList.value.find(cust => cust.id === selectedCustomer.value);
+            targetBill.customer_id = initialCustomerList.value.find(cust => cust.id === selectedCustomer.value).id;
         }
     }
 
@@ -311,6 +324,21 @@ const isValidated = computed(() => {
            form.splitBills.length > 0 &&
            form.splitBills.every(bill => bill.order_items.length > 0);
 });
+
+const showRemoveRewardForm = (bill) => {
+    selectedBill.value = bill;
+    removeRewardFormIsOpen.value = true;
+};
+
+const hideRemoveRewardForm = () => {
+    selectedBill.value = '';
+    removeRewardFormIsOpen.value = false;
+};
+
+const payThisBill = (bill) => {
+    hideRemoveRewardForm();
+    emit('payBill', bill);
+};
 
 watch(() => props.splitBillsState, (newValue) => initialState.value = newValue)
 
@@ -340,12 +368,22 @@ watch(() => form.data(), (newValue) => {
 watch(() => [...form.currentBill.order_items, ...form.splitBills.flatMap(b => b.order_items)], () => {
     // Update current bill total
     form.currentBill.amount = calculateBillTotal(form.currentBill);
+    form.currentBill.total_amount = calculateBillTotal(form.currentBill);
     // console.log(form.currentBill);
     // Update split bills totals
     form.splitBills.forEach(bill => {
         bill.amount = calculateBillTotal(bill);
+        bill.total_amount = calculateBillTotal(bill);
     });
 }, { deep: true });
+
+watch(() => props.currentSplitBillMode, (newValue) => {
+    isSplitBillMode.value = newValue;
+});
+
+watch(() => props.currentHasVoucher, (newValue) => {
+    hasVoucher.value = newValue;
+});
 
 </script>
 
@@ -421,7 +459,7 @@ watch(() => [...form.currentBill.order_items, ...form.splitBills.flatMap(b => b.
                         type="button"
                         size="lg"
                         :disabled="form.currentBill.order_items.length === 0 || selectedItems.length > 0 || form.splitBills.length > 0"
-                        @click="$emit('payBill', form.currentBill)"
+                        @click="!isSplitBillMode && hasVoucher ? showRemoveRewardForm(form.currentBill) : payThisBill(form.currentBill)"
                     >
                         Pay this bill
                     </Button>
@@ -523,7 +561,7 @@ watch(() => [...form.currentBill.order_items, ...form.splitBills.flatMap(b => b.
                             type="button"
                             size="lg"
                             :disabled="bill.order_items.length === 0 || selectedItems.length > 0"
-                            @click="$emit('payBill', bill)"
+                            @click="!isSplitBillMode && hasVoucher ? showRemoveRewardForm(bill) : payThisBill(bill)"
                         >
                             Pay this bill
                         </Button>
@@ -662,6 +700,41 @@ watch(() => [...form.currentBill.order_items, ...form.splitBills.flatMap(b => b.
                         Confirm
                     </Button>
                 </div>
+            </div>
+        </div>
+    </Modal>
+
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="removeRewardFormIsOpen"
+        :withHeader="false"
+        class="[&>div>div>div]:!p-0"
+        @close="hideRemoveRewardForm"
+    >
+        <div class="flex flex-col gap-9">
+            <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                <MovingIllus />
+            </div>
+            <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Remove Reward</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >Please note that splitting the bill will void any applied rewards, as rewards cannot be used with split bills.</div>
+            </div>
+            <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="hideRemoveRewardForm"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    size="lg"
+                    @click="payThisBill(selectedBill)"
+                >
+                    Remove
+                </Button>
             </div>
         </div>
     </Modal>
