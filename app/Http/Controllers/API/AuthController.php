@@ -109,4 +109,15 @@ class AuthController extends Controller
             ], 422);
         };
     }
+
+    /**
+     * Handle logout request.
+     */
+    public function getAuthUser()
+    {
+        $waiter = Auth::user();
+        $waiter->image = $waiter->getFirstMediaUrl('user');
+
+        return $waiter;
+    }
 }

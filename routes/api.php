@@ -17,14 +17,9 @@ Route::controller(AuthController::class)->group(function(){
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/get-user', function () { 
-        $waiter = Auth::user();
-        $waiter->image = $waiter->getFirstMediaUrl('user');
-
-        return $waiter;
-    });
-
+    
     Route::controller(AuthController::class)->group(function(){
+        Route::get('/get-user', 'getAuthUser');
         Route::post('logout', 'logout');
         Route::post('user/profile_picture', 'updateProfilePicture');
     });
