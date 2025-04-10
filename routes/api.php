@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\ActivityController;
 use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\CallbackEinvoiceController;
 use App\Http\Controllers\API\DashboardController;
 use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\PromotionController;
@@ -97,3 +98,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/activities', 'getAllActivityLogs');
     });
 });
+
+// callback update from ct-einvoice
+Route::post('/client-submitted-einvoice', [CallbackEinvoiceController::class, 'updateClientEinvoice'])->name('updateClientEinvoice');

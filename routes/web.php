@@ -409,7 +409,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/all-report', [ReportController::class, 'allReport'])->name('all-report');
 });
 
-// Receive callback for client request einvoice
-Route::post('/client-submitted-einvoice', [CallbackEinvoiceController::class, 'updateClientEinvoice'])->name('updateClientEinvoice');
 
 require __DIR__.'/auth.php';
