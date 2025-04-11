@@ -607,4 +607,33 @@ class EInvoiceController extends Controller
 
         return $checkToken->token;
     }
+
+    public function getAllSaleInvoice()
+    {
+
+        // Get all payments excluding 'pending'
+        // $payments = Payment::where('invoice_status', '!=', 'pending')->get();
+
+        // Prepare grouped structure
+        // $grouped = [];
+
+        // foreach ($payments as $payment) {
+        //     if ($payment->consolidated_parent_id) {
+                
+        //         $grouped[$payment->consolidated_parent_id]['consolidated_parent_id'] = ConsolidatedInvoice::where('id', $payment->consolidated_parent_id)
+        //                 ->with(['invoice_child'])
+        //                 ->first();
+                
+        //     } else {
+        //         $grouped['standalone'] = $payment;
+        //     }
+        // }
+
+        // Reindex the array to return a clean structure
+        // $transactions = array_values($grouped);
+
+        $transactions = ConsolidatedInvoice::with(['invoice_child'])->get();
+
+        return response()->json($transactions);
+    }
 }

@@ -104,4 +104,9 @@ class Payment extends Model
     {
         return $this->belongsTo(ShiftTransaction::class,'transaction_id');
     }
+
+    public function consolidated_invoice(): BelongsTo
+    {
+        return $this->belongsTo(ConsolidatedInvoice::class,'consolidated_parent_id');
+    }
 }

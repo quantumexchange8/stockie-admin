@@ -21,10 +21,10 @@ import RadioButton from '@/Components/RadioButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
 const salesColumn = ref([
-    {field: 'receipt_end_date', header: 'Date & Time', width: '20', sortable: true},
-    {field: 'receipt_no', header: 'Transaction No. ', width: '22', sortable: true},
-    {field: 'grand_total', header: 'Total', width: '18', sortable: true},
-    {field: 'customer.full_name', header: 'Customer', width: '20', sortable: true},
+    {field: 'c_datetime', header: 'Date & Time', width: '30', sortable: true},
+    {field: 'c_invoice_no', header: 'Transaction No. ', width: '30', sortable: true},
+    {field: 'c_total_amount', header: 'Total', width: '18', sortable: true},
+    {field: 'docs_type', header: 'Type', width: '20', sortable: true},
     {field: 'status', header: 'Status', width: '15', sortable: true},
     {field: 'action', header: '', width: '5', sortable: false},
 ]);
@@ -47,9 +47,7 @@ const props = defineProps({
 const fetchTransaction = async (filters = {}) => {
 
 try {
-    const response = await axios.get('/transactions/getSalesTransaction', {
-        params: { dateFilter: filters }
-    });
+    const response = await axios.get('/e-invoice/getAllSaleInvoice');
 
     saleTransaction.value = response.data;
 
@@ -320,16 +318,18 @@ const cancelRefund = () => {
                 <template #grand_total="row">
                     <span class="text-grey-900 text-sm font-medium">RM {{ row.grand_total }}</span>
                 </template>
-                <template #customer.full_name="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.customer ? row.customer.full_name : 'Guest' }}</span>
+                <template #docs_type="row">
+                    <span class="text-grey-900 text-sm font-medium">{{ row.docs_type === 'sales_transaction' ? 'Consolidated' : 'Single Submission' }}</span>
                 </template>
                 <template #status="row">
                     <Tag
-                        :variant="row.status === 'Successful' 
-                                ? 'green' 
-                                : row.status === 'Voided' 
-                                    ? 'red'
-                                    : 'grey'"
+                        :variant="row.status === 'Submitted' 
+                                    ? 'green' 
+                                : row.status === 'Cancelled' 
+                                    ? 'grey'
+                                : row.status === 'Pending'
+                                    ? 'red' 
+                                : 'red'"
                         :value="row.status"
                     />
                 </template>
@@ -341,7 +341,5 @@ const cancelRefund = () => {
             </Table>
         </div>
     </div>
-
-
 
 </template>

@@ -18,6 +18,9 @@ class ConsolidatedInvoice extends Model
         'submitted_uuid',
         'uuid',
         'remark',
+        'c_amount',
+        'c_total_amount',
+        'status',
     ];
 
     public function invoice_child(): HasMany
