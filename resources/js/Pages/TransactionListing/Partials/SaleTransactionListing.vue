@@ -280,7 +280,7 @@ const confirmRefund = async () => {
 
     try {
 
-        response = await axios.post('/transactions/refund-transaction', {
+        const response = await axios.post('/transactions/refund-transaction', {
             params: {
                 id: selectedVal.value.id,
                 customer_id: selectedVal.value.customer ? selectedVal.value.customer.id : 'Guest',

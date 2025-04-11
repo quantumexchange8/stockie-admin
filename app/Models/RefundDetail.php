@@ -15,9 +15,9 @@ class RefundDetail extends Model
         'refund_amount',
     ];
 
-    public function FilterOrderItems(): HasMany
+    public function FilterOrderItems(): BelongsTo
     {
-        return $this->hasMany(OrderItem::class, 'order_id', 'id')->where('type', 'Normal')->where('status', 'Served');
+        return $this->belongsTo(OrderItem::class, 'order_item_id', 'id')->where('type', 'Normal')->where('status', 'Served');
     }
 
     public function product(): BelongsTo

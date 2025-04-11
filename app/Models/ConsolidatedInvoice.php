@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ConsolidatedInvoice extends Model
@@ -26,5 +27,10 @@ class ConsolidatedInvoice extends Model
     public function invoice_child(): HasMany
     {
         return $this->hasMany(Payment::class, 'consolidated_parent_id', 'id');
+    }
+
+    public function invoice_no(): BelongsTo
+    {
+        return $this->belongsTo(Payment::class, 'c_invoice_no', 'receipt_no');
     }
 }

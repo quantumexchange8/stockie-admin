@@ -41,4 +41,9 @@ class PaymentRefund extends Model
     {
         return $this->hasMany(RefundDetail::class, 'payment_refund_id');
     }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 }

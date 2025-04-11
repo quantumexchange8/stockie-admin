@@ -15,6 +15,10 @@ import RefundDetail from "./RefundDetail.vue";
 import RefundProduct from "./RefundProduct.vue";
 import RefundMethod from "./RefundMethod.vue";
 import { DeleteIllus } from '@/Components/Icons/illus';
+import NumberCounter from "@/Components/NumberCounter.vue";
+import RadioButton from "@/Components/RadioButton.vue";
+import TextInput from "@/Components/TextInput.vue";
+import Checkbox from "@/Components/Checkbox.vue";
 
 const salesColumn = ref([
     {field: 'created_at', header: 'Date & Time', width: '20', sortable: true},
@@ -38,6 +42,7 @@ const selectedVal = ref(null);
 const tabs = ref(["Refund Detail", "Refund Product", "Refund Method"]);
 const op = ref(null);
 const voideIsOpen = ref(false);
+const refundIsOpen = ref(false);
 
 const fetchRefundTransaction = async (filters = {}) => {
 
@@ -265,13 +270,6 @@ const voidAction = async () => {
                 >
                     <span class="text-grey-700 font-normal">Void</span>
                 </Button>
-                <!-- <Button
-                    type="button"
-                    variant="tertiary"
-                    class="w-fit border-0 hover:bg-primary-50 !justify-start"
-                >
-                    <span class="text-grey-700 font-normal">Refund</span>
-                </Button> -->
                 <Button
                     type="button"
                     variant="tertiary"
@@ -322,144 +320,6 @@ const voidAction = async () => {
             </div>
         </Modal>
 
-        <!-- Refund -->
-        <!-- <Modal
-            :maxWidth="'sm'"
-            :closeable="true"
-            :show="refundIsOpen"
-            @close="closeRefundModal"
-            :title="'Select refund item'"
-        >
-            <div class="flex flex-col gap-6 max-h-[80vh] overflow-y-scroll">
-                <div class="p-4 flex items-center gap-10">
-                    <div class="flex gap-3">
-                        <div>
-                            <ToastInfoIcon />
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <div class="text-blue-500 text-base font-medium">Refunds are limited to cost items only.</div>
-                            <div class="text-sm text-gray-700">Kept item, redeemed product, and entry reward item will not show in this list.</div>
-                        </div>
-                    </div>
-                    <div>
-                        <Button
-                            
-                        >
-                            OK
-                        </Button>
-                    </div>
-                </div>
-                <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px] min-h-40 max-h-80 overflow-y-scroll">
-                    <div class="text-gray-950 text-md font-semibold">Select refund item</div>
-                    <div class="flex flex-col gap-4">
-                        <div v-for="item in selectedVal.order.filter_order_items" :key="item.id" class="flex items-center gap-6"  >
-                            <div class="text-gray-900 text-base font-normal">{{ item.item_qty }}x</div>
-                            <div class="flex flex-col gap-1 w-full">
-                                <div class="text-gray-900 text-base font-semibold max-w-[284px] truncate">{{ item.product.product_name }}</div>
-                                <div class="flex items-center">
-                                    <div v-if="item.discount_amount > 0" class="flex items-center gap-2">
-                                        <span class="text-gray-900 text-base">RM{{ item.product_discount.price_after }} </span> 
-                                        <span class="line-through text-gray-500 text-base ">RM{{ item.product_discount.price_before }} </span>
-                                    </div>
-                                    <span v-else>RM{{ item.amount }}</span>
-                                </div>
-                            </div>
-                            <div>
-                                <template v-if="item.item_qty - item.refund_qty > 0">
-                                    <NumberCounter
-                                        :labelText="''"
-                                        :inputName="'qty_' + item.id"
-                                        :minValue="0"
-                                        :maxValue="item.item_qty - item.refund_qty"
-                                        v-model="item.refund_quantities"
-                                        @update:modelValue="(qty) => updateRefundQty(item.id, qty)"
-                                        class="!w-fit whitespace-nowrap max-w-[139px]"
-                                    />
-                                </template>
-                                <span v-else class="text-red-500 text-sm font-medium">Fully Refunded</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                </div>
-                <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px]">
-                    <div class="text-gray-950 text-md font-semibold">Refund Method</div>
-                    <div>
-                        <RadioButton
-                            :optionArr="refundMethod"
-                            :checked="form.refund_method"
-                            v-model:checked="form.refund_method"
-                        />
-                    </div>
-                    <div v-if="form.refund_method === 'Others'">
-                        <TextInput
-                            label-text=""
-                            :inputType="'text'"
-                            :placeholder="'Enter others details'"
-                            v-model="form.refund_others"
-                            autofocus
-                            autocomplete="refund_others"
-                        />
-                    </div>
-                </div>
-                <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px]">
-                    <div class="text-gray-950 text-md font-semibold">Refund Reason</div>
-                    <div>
-                        <TextInput
-                            label-text=""
-                            :inputType="'text'"
-                            :placeholder="'Enter refund reason'"
-                            v-model="form.refund_reason"
-                            autofocus
-                            autocomplete="refund_reason"
-                        />
-                    </div>
-                </div>
-                <div class=" py-4 px-3 flex flex-col gap-5 bg-[#FCFCFC]">
-                    <div class="flex items-center justify-between">
-                        <div>Total Refund</div>
-                        <div>RM {{ totalRefundAmount }}</div>
-                    </div>
-                    <div v-if="form.refund_tax === true" class="flex flex-col gap-1">
-                        <div class="flex items-center w-full">
-                            <div class="text-gray-900 text-base w-full">Sub-total</div>
-                            <div class="text-gray-900 font-bold text-base text-right w-full">{{ subTotalRefundAmount }}</div>
-                        </div>
-                        <div class="flex items-center w-full">
-                            <div class="text-gray-900 text-base w-full">SST(6%)</div>
-                            <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalSstRefund }}</div>
-                        </div>
-                        <div class="flex items-center w-full">
-                            <div class="text-gray-900 text-base w-full">Service Tax</div>
-                            <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalServiceTaxRefund }}</div>
-                        </div>
-                        <div class="flex items-center w-full">
-                            <div class="text-gray-900 text-base w-full">Rouding</div>
-                            <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalRoundingRefund }}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <Checkbox 
-                            v-model:checked="form.refund_tax"
-                            :value="'refund_with_tax'"
-                        />
-                        <span>Refund with taxes</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div class="w-full">
-                        <Button size="lg" variant="tertiary" class="w-full" @click="cancelRefund">
-                            Cancel
-                        </Button>
-                    </div>
-                    <div class="w-full">
-                        <Button size="lg" variant="primary" class="w-full" @click="confirmRefund">
-                            Confirm
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        </Modal> -->
     </Modal>
 
 </template>

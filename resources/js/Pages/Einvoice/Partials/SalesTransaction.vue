@@ -19,6 +19,8 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm } from '@inertiajs/vue3';
 import RadioButton from '@/Components/RadioButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import TransactionList from './TransactionList.vue';
+import Myinvois from './Myinvois.vue';
 
 const salesColumn = ref([
     {field: 'c_datetime', header: 'Date & Time', width: '30', sortable: true},
@@ -36,8 +38,8 @@ const detailIsOpen = ref(false);
 const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
 const selectedVal = ref(null);
-const { formatAmount } = transactionFormat();
-const tabs = ref(["Sales Detail", "Product Sold", "Payment Method"]);
+const { formatAmount, formatDate } = transactionFormat();
+const tabs = ref(["Transaction List", "MyInvois"]);
 const op = ref(null);
 
 const props = defineProps({
@@ -261,7 +263,6 @@ const cancelRefund = () => {
     refundIsOpen.value = false;
 }
 
-
 </script>
 
 
@@ -288,19 +289,6 @@ const cancelRefund = () => {
                         class="w-2/3 sm:w-auto sm:!max-w-[309px]"
                         v-model="date_filter"
                     />
-                </div>
-                <div class="">
-                    <Button
-                        type="button"
-                        variant="primary"
-                        :size="'lg'"
-                        iconPosition="left"
-                    >
-                        <template #icon>
-                            <PlusIcon />
-                        </template>
-                        Consolidate
-                    </Button>
                 </div>
             </div>
         </div>
@@ -341,5 +329,65 @@ const cancelRefund = () => {
             </Table>
         </div>
     </div>
+
+    <Modal 
+        :show="detailIsOpen"
+        @close="closeAction"
+        :title="'Submission detail'"
+        :maxWidth="'sm'"
+    >
+        <div class="flex flex-col gap-6 ">
+            <div class="flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <Tag 
+                            :variant="selectedVal.status === 'Submitted' ? 'green' : selectedVal.status === 'Valid' ? 'green' : selectedVal.status === 'Valid' ? 'red' : 'grey' "  
+                            :value="selectedVal.status" 
+                        />
+                    </div>
+                    <div @click="actionOption($event, row)"><DotVerticleIcon /></div>
+                </div>
+                <div class="grid grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1">
+                        <div class="text-gray-900 text-base">Submmission Date & Time</div>
+                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.c_datetime }}</div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div class="text-gray-900 text-base">Transaction No.</div>
+                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.c_invoice_no }}</div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-1">
+                        <div class="text-gray-900 text-base">Total</div>
+                        <div class="text-gray-900 text-base font-bold">RM {{ formatAmount(selectedVal.c_total_amount) }}</div>
+                    </div>
+                    <div v-if="selectedVal.invoice_child.length > 0" class="flex flex-col gap-1">
+                        <div class="text-gray-900 text-base">Customer</div>
+                        <div class="text-gray-900 text-base font-bold flex items-center gap-2">
+                            <div>{{ selectedVal.user ?  selectedVal.user : 'General Public'}}</div>
+                        </div>
+                    </div>
+                    <div v-if="selectedVal.docs_type === 'sales_transaction'" class="flex flex-col gap-1">
+                        <div class="text-gray-900 text-base">Date Period</div>
+                        <div class="text-gray-900 text-base font-bold">{{ formatDate(selectedVal.c_period_start) }} - {{ formatDate(selectedVal.c_period_end) }}</div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div class="text-gray-900 text-base">Document Type</div>
+                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.docs_type === 'sales_transaction' ? 'Consolidated' : 'Single Submission' }}</div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <TabView :tabs="tabs" :selectedTab="props.selectedTab ? props.selectedTab : 0">
+                    <template #transaction-list>
+                        <TransactionList :selectedVal="selectedVal" />
+                    </template>
+                    <template #myinvois>
+                        <Myinvois :selectedVal="selectedVal" />
+                    </template>
+                </TabView>
+            </div>
+        </div>
+    </Modal>
 
 </template>

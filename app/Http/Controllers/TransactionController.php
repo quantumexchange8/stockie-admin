@@ -64,7 +64,8 @@ class TransactionController extends Controller
                 'customer', 
                 'refund_details',
                 'refund_details.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount',
-                'refund_details.product:id,product_name,price',
+                'refund_details.FilterOrderItems.product:id,product_name,price',
+                'product:id,product_name,price',
                 // 'order:id,amount,total_amount', 
                 // 'order.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount,discount_id',
                 // 'order.FilterOrderItems.product:id,product_name,price',
@@ -111,7 +112,7 @@ class TransactionController extends Controller
     {
 
         $calPoint = Setting::where('name', 'Point')->first(['point', 'value']);
-        $refund_point = (int) round(($request->params['refund_subtotal'] / $calPoint->value) * $calPoint->point);
+        $refund_point = (int) round(((float) $request->params['refund_subtotal'] / (float) $calPoint->value) * (int) $calPoint->point);
 
         if ($request->params['customer_id'] !== 'Guest') {
             $customer = Customer::find($request->params['customer_id']);
