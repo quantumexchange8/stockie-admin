@@ -343,8 +343,8 @@ class EInvoiceController extends Controller
                                     "Line" => [["_" => ""]]
                                 ],
                             ],
-                            "CityName" => [["_" => "Kuala Lumpur"]],
-                            "CountrySubentityCode" => [["_" => "="]],
+                            "CityName" => [["_" => $merchantDetail->area]],
+                            "CountrySubentityCode" => [["_" => $state->Code]],
                             "Country" => [[
                                 "IdentificationCode" => [[
                                     "_" => "MYS",
