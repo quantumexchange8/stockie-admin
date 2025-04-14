@@ -249,12 +249,12 @@ class EInvoiceController extends Controller
                         "PartyIdentification" => [
                             [
                                 "ID" => [[
-                                    "_" => 'C29802509040',
+                                    "_" => $merchantDetail->tin_no,
                                     "schemeID" => "TIN"
                                 ]]
                             ], [
                                 "ID" => [[
-                                    "_" => '202201017212',
+                                    "_" => $merchantDetail->registration_no,
                                     "schemeID" => "BRN"
                                 ]]
                             ], [
@@ -648,7 +648,7 @@ class EInvoiceController extends Controller
     }
 
     public function cancelSubmission(Request $request)
-    {
+    {+
 
         
 
