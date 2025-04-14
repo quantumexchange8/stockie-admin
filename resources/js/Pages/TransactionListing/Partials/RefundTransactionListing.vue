@@ -134,8 +134,17 @@ const voidAction = async () => {
                         class="sm:max-w-[309px]"
                     />
                 </div>
+                <div class="">
+                    <DateInput
+                        :inputName="'date_filter'"
+                        :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                        :range="true"
+                        class="w-2/3 sm:w-auto sm:!max-w-[309px]"
+                        v-model="date_filter"
+                    />
+                </div>
             </div>
-            <div class="flex items-center lg:justify-between xl:justify-center gap-5 lg:w-full xl:max-w-[500px]">
+            <!-- <div class="flex items-center lg:justify-between xl:justify-center gap-5 lg:w-full xl:max-w-[500px]">
                 <div class="">
                     <DateInput
                         :inputName="'date_filter'"
@@ -158,7 +167,7 @@ const voidAction = async () => {
                         Consolidate
                     </Button>
                 </div>
-            </div>
+            </div> -->
         </div>
         <div class="">
             <Table

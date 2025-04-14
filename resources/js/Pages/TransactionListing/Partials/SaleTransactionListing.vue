@@ -351,7 +351,7 @@ const submitConsolidate = async () => {
                         placeholder="Search"
                         :showFilter="false"
                         v-model="filters['global'].value"
-                        class="sm:max-w-[309px]"
+                        class="xl:max-w-[309px]"
                     />
                 </div>
             </div>
@@ -433,7 +433,7 @@ const submitConsolidate = async () => {
                     </div>
                     <div>
                         <DateInput
-                            :inputName="'date_filter'"
+                            :inputName="'date'"
                             :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                             :range="true"
                             class="w-2/3 sm:w-auto sm:!max-w-[309px]"
@@ -475,7 +475,7 @@ const submitConsolidate = async () => {
                         :rowsPerPage="rowsPerPage"
                     >
                         <template #receipt_end_date="row">
-                            <span class="text-grey-900 text-sm font-medium">{{ row.receipt_end_date }}</span>
+                            <span class="text-grey-900 text-sm font-medium">{{ formatDate(row.receipt_end_date) }}</span>
                         </template>
                         <template #total_amount="row">
                             <span class="text-grey-900 text-sm font-medium">RM {{ row.total_amount }}</span>

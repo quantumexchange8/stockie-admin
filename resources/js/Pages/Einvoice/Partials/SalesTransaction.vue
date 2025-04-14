@@ -14,13 +14,14 @@ import { transactionFormat } from '@/Composables';
 import TabView from "@/Components/TabView.vue";
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import axios from 'axios';
-import { DeleteIllus } from '@/Components/Icons/illus';
+import { CancelIllus, DeleteIllus } from '@/Components/Icons/illus';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm } from '@inertiajs/vue3';
 import RadioButton from '@/Components/RadioButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import TransactionList from './TransactionList.vue';
 import Myinvois from './Myinvois.vue';
+import { useCustomToast, useInputValidator } from '@/Composables/index.js';
 
 const salesColumn = ref([
     {field: 'c_datetime', header: 'Date & Time', width: '30', sortable: true},
@@ -41,6 +42,10 @@ const selectedVal = ref(null);
 const { formatAmount, formatDate } = transactionFormat();
 const tabs = ref(["Transaction List", "MyInvois"]);
 const op = ref(null);
+const cancelSubmitFormIsOpen = ref(false);
+const reason = ref('');
+const reasonError = ref('');
+const { showMessage } = useCustomToast();
 
 const props = defineProps({
     selectedTab: Number,
@@ -92,48 +97,6 @@ const closeOverlay = () => {
     if (op.value)  op.value.hide();
 };
 
-const ConfirmVoid = () => {
-    voideIsOpen.value = true;
-    op.value.hide();
-}
-
-const closeConfirmmVoid = () => {
-    voideIsOpen.value = false;
-    op.value.hide();
-}
-
-const voidAction = async () => {
-    if (selectedVal) {
-
-        try {
-            
-            response = await axios.post('/transactions/void-transaction', {
-                params: {
-                    id: selectedVal.value.id
-                }
-            })
-
-        } catch (error) {
-            console.error(error);
-        }
-
-    }
-}
-
-const refundModal = () => {
-    refundIsOpen.value = true;
-    op.value.hide();
-}
-
-const closeRefundModal = () => {
-    refundIsOpen.value = false;
-}
-
-const refundMethod = [
-    { text: 'Cash', value: 'Cash'},
-    { text: 'Others', value: 'Others'},
-]
-
 const form = useForm({
     refund_method: '',
     refund_others: '',
@@ -141,22 +104,15 @@ const form = useForm({
     refund_tax: false,
 });
 
-const updateRefundQty = (itemId, qty, productId) => {
-    const orderItem = selectedVal.value.order?.filter_order_items.find(o => o.id === itemId);
-    if (!orderItem || orderItem.item_qty === 0) return; // Prevent division by zero
+const ConfirmCancel = async () => {
+    cancelSubmitFormIsOpen.value = true;
+    op.value.hide();
+}
 
-    const unitPrice = parseFloat(orderItem.amount) / orderItem.item_qty; // Calculate per-unit price
-    const refundAmount = qty * unitPrice; // Refund amount based on qty
+const hideConfirmCancel = () => {
+    cancelSubmitFormIsOpen.value = false;
+}
 
-    const existingItem = form.refund_item.find(item => item.id === itemId);
-    if (existingItem) {
-        existingItem.refund_quantities = qty;
-        existingItem.refund_amount = refundAmount; // Update refund amount
-        existingItem.product_id = productId; // Update refund amount
-    } else {
-        form.refund_item.push({ id: itemId, refund_quantities: qty, refund_amount: refundAmount, product_id: productId});
-    }
-};
 
 
 const subTotalRefundAmount = computed(() => {
@@ -230,37 +186,41 @@ const totalRefundAmount = computed(() => {
     return total.toFixed(2);
 })
 
-const confirmRefund = async () => {
+const submit = async () => {
+    reasonError.value = ''; // Reset error message
 
-    try {
-
-        response = await axios.post('/transactions/refund-transaction', {
-            params: {
-                id: selectedVal.value.id,
-                customer_id: selectedVal.value.customer ? selectedVal.value.customer.id : 'Guest',
-                form: form,
-                refund_subtotal: subTotalRefundAmount.value,
-                refund_sst: totalSstRefund.value,
-                refund_service_tax: totalServiceTaxRefund.value,
-                refund_rounding: totalRoundingRefund.value,
-                refund_total: totalRefundAmount.value,
-            }
-        })
-
-        if (response.status === 200) {
-            closeConfirmmVoid();
-            closeAction();
-            fetchTransaction();
-        }
-        
-    } catch (error) {
-        console.error(error)
+    if (!reason.value.trim()) {
+        reasonError.value = 'Reason is required.';
+        return;
     }
 
-}
+    try {
+        
+        const response = await axios.post('/e-invoice/cancel-submission', {
+            invoice_id: selectedVal.value.id,
+            reason: reason.value,
+        });
 
-const cancelRefund = () => {
-    refundIsOpen.value = false;
+        if (response.data.status === 'success') {
+            showMessage({
+                severity: 'success',
+                summary: 'Consolidated Invoice Cancelled'
+            });
+            fetchTransaction();
+        } else {
+            showMessage({
+                severity: 'error',
+                summary: 'Invoice cannot be cancelled after 72 hours'
+            });
+        } 
+
+    } catch (error) {
+        console.error('error ', error);
+        showMessage({
+            severity: 'error',
+            summary: 'Something went wrong, please try again later.'
+        });
+    }
 }
 
 </script>
@@ -388,6 +348,76 @@ const cancelRefund = () => {
                 </TabView>
             </div>
         </div>
+
+        <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">
+            <div class="flex flex-col items-center border-2 border-primary-50 rounded-md">
+                <Button
+                    type="button"
+                    variant="tertiary"
+                    class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                    @click="ConfirmCancel"
+                >
+                    <span class="text-grey-700 font-normal">Cancel Submission</span>
+                </Button>
+                <Button
+                    type="button"
+                    variant="tertiary"
+                    class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                >
+                    <span class="text-grey-700 font-normal">Print Receipt</span>
+                </Button>
+            </div>
+        </OverlayPanel>
+
+        <Modal
+            :maxWidth="'2xs'" 
+            :closeable="true"
+            :show="cancelSubmitFormIsOpen"
+            @close="hideConfirmCancel"
+            :withHeader="false"
+        >
+            
+            <div class="flex flex-col gap-9 pt-36">
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] fixed top-0 w-full left-0">
+                    <CancelIllus class="mt-2.5"/>
+                </div>
+                <div class="flex flex-col gap-1" >
+                    <div class="text-primary-900 text-2xl font-medium text-center">
+                        Cancel Submission
+                    </div>
+                    <div class="text-gray-900 text-base font-medium text-center leading-tight" >
+                        Are you sure you want to cancel this Consolidated Invoice submission?
+                    </div>
+                    <div>
+                        <TextInput 
+                            :inputName="'name'"
+                            :labelText="'Reason'"
+                            :placeholder="'e.g. Wrong details'"
+                            :errorMessage="reasonError"
+                            v-model="reason"
+                        />
+                    </div>
+                </div>
+                <div class="flex item-center gap-3">
+                    <Button
+                        variant="tertiary"
+                        size="lg"
+                        type="button"
+                        @click="hideConfirmCancel"
+                    >
+                        Keep
+                    </Button>
+                    <Button
+                        variant="red"
+                        size="lg"
+                        :disabled="form.processing"
+                        @click="submit"
+                    >
+                        Cancel
+                    </Button>
+                </div>
+            </div>
+        </Modal>
     </Modal>
 
 </template>

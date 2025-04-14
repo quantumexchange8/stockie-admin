@@ -16,7 +16,10 @@ const props = defineProps({
     selectedTab: Number,
 })
 
-const tabs = ref(["Sales Transaction", "Refund Transaction"]);
+const tabs = ref([
+    "Sales Transaction", 
+    // "Refund Transaction"
+]);
 
 
 
@@ -36,9 +39,9 @@ const tabs = ref(["Sales Transaction", "Refund Transaction"]);
             <template #sales-transaction>
                 <SalesTransaction />
             </template>
-            <template #refund-transaction>
+            <!-- <template #refund-transaction>
                 <RefundTransaction />
-            </template>
+            </template> -->
         </TabView>
         <div>
         

@@ -34,11 +34,21 @@ class EInvoiceController extends Controller
         return Inertia::render('Einvoice/Einvoice');
     }
 
-    public function getLastMonthSales()
+    public function getLastMonthSales(Request $request)
     {
-
+        
         $startOfLastMonth = Carbon::now()->subMonth()->startOfMonth(); // e.g. 2025-02-01
         $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();     // e.g. 2025-02-29
+
+        $dateFilter = $request->input('dateFilter');
+
+        if ($dateFilter && ($dateFilter >= $startOfLastMonth && $dateFilter <= $endOfLastMonth)) {
+            $startOfLastMonth = Carbon::createFromFormat('Y-m-d', $dateFilter)->startOfDay();
+            $endOfLastMonth = Carbon::createFromFormat('Y-m-d', $dateFilter)->endOfDay();
+        } else {
+            $startOfLastMonth = Carbon::now()->subMonth()->startOfMonth();
+            $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();
+        }
 
         $transactions = Payment::query()
             ->where('invoice_status', 'pending')
@@ -635,5 +645,39 @@ class EInvoiceController extends Controller
         $transactions = ConsolidatedInvoice::with(['invoice_child', 'invoice_no'])->get();
 
         return response()->json($transactions);
+    }
+
+    public function cancelSubmission(Request $request)
+    {
+
+        
+
+        $consolidateInvoice = ConsolidatedInvoice::find($request->invoice_id);
+        $now = Carbon::now();
+        
+        if ($consolidateInvoice->docs_type === 'sales_transaction') {
+
+            // check invoice is expired
+            if ($now >= $consolidateInvoice->cancel_expired_at) {
+                return redirect()->back()->withErrors('Invoice has expired and cannot be cancelled.');
+            }
+
+            $submitUrl = Http::put('https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documents/state/' . $consolidateInvoice->uuid . '/state', [
+                'status' => 'cancelled',
+                'reason' => $request->reason,
+            ]);
+
+            if ($submitUrl->successful()) {
+                $consolidateInvoice->status = 'cancelled';
+                $consolidateInvoice->save();
+            } else {
+                Log::error('Failed to cancel submission', [
+                    'status' => $submitUrl->status(),
+                    'error' => $submitUrl->body()
+                ]);
+            }
+        }
+
+        return redirect()->back();
     }
 }

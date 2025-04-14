@@ -400,6 +400,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/getConsolidateInvoice', [EInvoiceController::class, 'getConsolidateInvoice'])->name('e-invoice.getConsolidateInvoice');
         Route::get('/getAllSaleInvoice', [EInvoiceController::class, 'getAllSaleInvoice'])->name('e-invoice.getAllSaleInvoice');
         Route::post('/submit-consolidate', [EInvoiceController::class, 'submitConsolidate'])->name('e-invoice.submit-consolidate');
+        Route::post('/cancel-submission', [EInvoiceController::class, 'cancelSubmission'])->name('e-invoice.cancel-submission');
         
     });
 
