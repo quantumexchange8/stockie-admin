@@ -648,9 +648,7 @@ class EInvoiceController extends Controller
     }
 
     public function cancelSubmission(Request $request)
-    {+
-
-        
+    {
 
         $consolidateInvoice = ConsolidatedInvoice::find($request->invoice_id);
         $now = Carbon::now();
