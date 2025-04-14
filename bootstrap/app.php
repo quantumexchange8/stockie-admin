@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('configuration:update-employee-incentives')->dailyAt('00:00');
         $schedule->command('activitylog:clean')->daily();
         $schedule->command('configurations:set-bill-discount-active')->everyTwoMinutes();
+        // $schedule->command('fetch:latest-status-submission')->everyFifteenMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {

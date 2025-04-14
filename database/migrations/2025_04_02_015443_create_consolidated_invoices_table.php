@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('status')->nullable();
             $table->string('submitted_uuid')->nullable();
             $table->string('uuid')->nullable();
+            $table->string('longId')->nullable();
             $table->longText('remark')->nullable();
             $table->dateTime('cancel_expired_at')->nullable();
             $table->timestamps();
