@@ -207,30 +207,40 @@ class ConfigShiftSettingController extends Controller
             'assign_shift' => ['required', 'array'], // Ensure assign_shift is an array
             'assign_shift.*' => ['required', 'integer', 'exists:shifts,id'], // Ensure shift IDs are valid
             'days' => ['required', 'array', 'min:1'], // Ensure at least one day is selected
+            'week' => ['required'],
         ]);
 
         $waiter_id = $validatedData['waiter_id'];
+        $selectedDays = $validatedData['days'];
+        $weekType = $validatedData['week']; // 'this_week' or 'next_week'
 
         $allDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-        $now = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeek();
 
-        $nextMonday = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeek();
-        $nextSunday = $nextMonday->copy()->endOfWeek(Carbon::SUNDAY);
-        $weekRange = $nextMonday->format('Y-m-d') . ' to ' . $nextSunday->format('Y-m-d');
+        if ($weekType === 'this_week') {
+            $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        } else if ($weekType === 'next_week') {
+            $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeek();
+        } else {
+            $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeeks(2);
+        }
 
-        $week = Carbon::now()->addWeek()->week;
+        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $weekRange = $weekStart->format('Y-m-d') . ' to ' . $weekEnd->format('Y-m-d');
+        $weekNumber = $weekStart->week;
 
-        foreach ($allDays as $index => $day) {
-            $shift_id = $validatedData['assign_shift'][$day] ?? 'off'; // If not selected, set as "off"
-            $dayDate = $now->copy()->addDays($index)->toDateString(); // Calculate date for each weekday
+        foreach ($allDays as $index => $dayName) {
+            $dayDate = $weekStart->copy()->addDays($index)->toDateString();
+            $shiftId = in_array($dayName, $selectedDays)
+                ? ($validatedData['assign_shift'][$dayName] ?? 'off')
+                : 'off';
     
             WaiterShift::create([
                 'waiter_id' => $waiter_id,
-                'shift_id' => $shift_id,
-                'week_range' => $weekRange, // Week range
-                'weeks' => $week, // Week 
-                'days' => $day,
-                'date' => $dayDate, // Assign correct date for each day
+                'shift_id' => $shiftId,
+                'week_range' => $weekRange,
+                'weeks' => $weekNumber,
+                'days' => $dayName,
+                'date' => $dayDate,
             ]);
         }
 

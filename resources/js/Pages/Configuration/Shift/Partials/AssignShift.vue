@@ -22,6 +22,14 @@ const days = [
     { name: 'Saturday'},
     { name: 'Sunday'},
 ]
+
+const weeks = ref([
+    { text: 'This Week', value: 'this_week' },
+    { text: 'Next Week', value: 'next_week' },
+    { text: 'Next 2 Week', value: 'next_2_week' },
+]);
+
+
 const today = dayjs().startOf('week').add(1, 'day');
 const thisWeek = ref(today);
 const weekDays = computed(() => {
@@ -30,8 +38,6 @@ const weekDays = computed(() => {
         date: thisWeek.value.add(i, 'day').format('DD MMM YYYY') // 23 Feb 2025, etc.
     }));
 });
-
-console.log(weekDays.value)
 
 const emit = defineEmits(['close']);
 const selectDays = ref([]);
@@ -96,10 +102,33 @@ const waitersArr = computed(() => {
     }));
 });
 
+const allowedDaysThisWeek = computed(() => {
+    if (form.week !== 'this_week') return days.map(d => d.name); // All days allowed
+
+    const todayName = dayjs().format('dddd'); // e.g. "Wednesday"
+    const todayIndex = days.findIndex(d => d.name === todayName);
+
+    // Only allow days after today
+    return days.slice(todayIndex + 1).map(d => d.name);
+});
+
 const form = useForm({
     waiter_id: '',
     days: [], // Holds selected days e.g., ["Monday", "Tuesday"]
-    assign_shift: {} // Object to store selected shift per day { "Monday": shift_id, "Tuesday": shift_id }
+    assign_shift: {}, // Object to store selected shift per day { "Monday": shift_id, "Tuesday": shift_id }
+    week: '', // store weeks
+});
+
+watch(() => form.week, (newWeek) => {
+    form.days.splice(0);
+    form.assign_shift = {};
+
+    if (newWeek === 'this_week') {
+        form.days = form.days.filter(day => allowedDaysThisWeek.value.includes(day));
+    } else {
+        // Optional: Reset days when switching to other weeks
+        form.days = [];
+    }
 });
 
 const submit = () => {
@@ -133,6 +162,24 @@ const submit = () => {
                 />
             </div>
         </div>
+
+        <div class="flex flex-col gap-4 w-full">
+            <div class="flex flex-col gap-1">
+                <div class="text-gray-950 text-base font-bold">Select Week</div>
+                <div class="text-gray-950 text-sm font-normal">Assign shift to selected week.</div>
+            </div>
+            <div>
+                <Dropdown 
+                    :inputName="'week'" 
+                    :labelText="'Assign Week'"
+                    :inputArray="weeks"
+                    :errorMessage="form.errors?.weeks || ''"
+                    :dataValue="form.week"
+                    v-model="form.week"
+                />
+            </div>
+        </div>
+
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-1">
                 <div class="text-gray-950 text-base font-bold">Select Day(s)</div>
@@ -143,8 +190,14 @@ const submit = () => {
                     <Checkbox 
                         v-model:checked="form.days"
                         :value="day.dayName"
+                        :disabled="!allowedDaysThisWeek.includes(day.dayName)"
                     />
-                    <span>{{ day.dayName }}</span>
+                    <span :class="{
+                        'text-gray-400': !allowedDaysThisWeek.includes(day.dayName),
+                        'text-black': allowedDaysThisWeek.includes(day.dayName)
+                    }">
+                        {{ day.dayName }}
+                    </span>
                 </div>
             </div>
         </div>

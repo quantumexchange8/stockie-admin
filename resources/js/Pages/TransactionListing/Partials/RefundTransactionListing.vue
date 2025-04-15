@@ -101,6 +101,21 @@ const closeConfirmmVoid = () => {
     op.value.hide();
 }
 
+const consolidateRefund = async () => {
+
+    try {
+
+        const response = await axios.post('/refund-consolidate', {
+            consolidateRefund: saleTransaction.value,
+        });
+        
+
+    } catch (error) {
+        console.error('error', error);
+    }
+
+}
+
 const voidAction = async () => {
     if (selectedVal) {
 
@@ -134,7 +149,7 @@ const voidAction = async () => {
                         class="sm:max-w-[309px]"
                     />
                 </div>
-                <div class="">
+                <!-- <div class="">
                     <DateInput
                         :inputName="'date_filter'"
                         :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
@@ -142,9 +157,9 @@ const voidAction = async () => {
                         class="w-2/3 sm:w-auto sm:!max-w-[309px]"
                         v-model="date_filter"
                     />
-                </div>
+                </div> -->
             </div>
-            <!-- <div class="flex items-center lg:justify-between xl:justify-center gap-5 lg:w-full xl:max-w-[500px]">
+            <div class="flex items-center lg:justify-between xl:justify-center gap-5 lg:w-full xl:max-w-[500px]">
                 <div class="">
                     <DateInput
                         :inputName="'date_filter'"
@@ -160,6 +175,7 @@ const voidAction = async () => {
                         variant="primary"
                         :size="'lg'"
                         iconPosition="left"
+                        @click="consolidateRefund"
                     >
                         <template #icon>
                             <PlusIcon />
@@ -167,7 +183,7 @@ const voidAction = async () => {
                         Consolidate
                     </Button>
                 </div>
-            </div> -->
+            </div>
         </div>
         <div class="">
             <Table
