@@ -777,7 +777,7 @@ class EInvoiceController extends Controller
                 "IssueTime" => [["_" => Carbon::now('UTC')->format('H:i:s')."Z"]],
                 "InvoiceTypeCode" => [
                     [
-                        "_" => "01",
+                        "_" => "04",
                         "listVersionID" => "1.1"
                     ]
                 ],

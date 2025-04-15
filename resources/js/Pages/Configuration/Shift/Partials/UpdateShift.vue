@@ -48,8 +48,6 @@ const fetchGetShift = async () => {
     }
 };
 
-console.log('this ', form.value)
-
 const fetchShift = async () => {
 
     try {

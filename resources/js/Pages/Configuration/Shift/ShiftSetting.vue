@@ -112,7 +112,6 @@ const closeAssignShift = () => {
 }
 
 const handleCellClick = (day, shift) => {
-    console.log("Clicked Cell for:", day, shift);
     selectedShift.value = shift;
     selectedDay.value = day;
     editShiftIsOpen.value = true;

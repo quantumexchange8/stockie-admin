@@ -17,8 +17,6 @@ const props = defineProps({
     shift: Object,
 });
 
-console.log(props.shift)
-
 const colorCode = [
     { color: '#7E171B'},
     { color: '#E46A2B'},
@@ -57,7 +55,6 @@ const form = useForm({
 
 const initializeForm = () => {
     if (props.shift) {
-        console.log("Shift Data:", props.shift.shift_start);
         form.shift_name = props.shift.shift_name || '';
         form.shift_code = props.shift.shift_code || '';
         form.time_start = props.shift.shift_start.slice(0,5) || '10:00';
