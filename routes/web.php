@@ -387,6 +387,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/getSalesTransaction', [TransactionController::class, 'getSalesTransaction'])->name('transactions.getSalesTransaction');
         Route::get('/getRefundTransaction', [TransactionController::class, 'getRefundTransaction'])->name('transactions.getRefundTransaction');
         
+        
         Route::post('/void-transaction', [TransactionController::class, 'voidTransaction'])->name('transactions.void-transaction');
         Route::post('/refund-transaction', [TransactionController::class, 'refundTransaction'])->name('transactions.refund-transaction');
         Route::post('/voidrefund-transaction', [TransactionController::class, 'voidRefundTransaction'])->name('transactions.voidrefund-transaction');
@@ -397,10 +398,12 @@ Route::middleware('auth')->group(function () {
     Route::prefix('e-invoice')->middleware([CheckPermission::class . ':einvoice-submission'])->group(function(){
         Route::get('/einvoice-listing', [EInvoiceController::class, 'einvoice'])->name('e-invoice.einvoice-listing');
         Route::get('/getLastMonthSales', [EInvoiceController::class, 'getLastMonthSales'])->name('e-invoice.getLastMonthSales');
+        Route::get('/getLastMonthRefundSales', [EInvoiceController::class, 'getLastMonthRefundSales'])->name('transactions.getLastMonthRefundSales');
         Route::get('/getConsolidateInvoice', [EInvoiceController::class, 'getConsolidateInvoice'])->name('e-invoice.getConsolidateInvoice');
         Route::get('/getAllSaleInvoice', [EInvoiceController::class, 'getAllSaleInvoice'])->name('e-invoice.getAllSaleInvoice');
         Route::post('/submit-consolidate', [EInvoiceController::class, 'submitConsolidate'])->name('e-invoice.submit-consolidate');
         Route::post('/cancel-submission', [EInvoiceController::class, 'cancelSubmission'])->name('e-invoice.cancel-submission');
+        Route::post('/refund-consolidate', [EInvoiceController::class, 'refundConsolidate'])->name('e-invoice.refund-consolidate');
         
     });
 

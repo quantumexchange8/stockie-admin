@@ -66,10 +66,6 @@ class TransactionController extends Controller
                 'refund_details.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount',
                 'refund_details.FilterOrderItems.product:id,product_name,price',
                 'product:id,product_name,price',
-                // 'order:id,amount,total_amount', 
-                // 'order.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount,discount_id',
-                // 'order.FilterOrderItems.product:id,product_name,price',
-                // 'order.FilterOrderItems.productDiscount:id,discount_id,price_before,price_after',
             ]);
 
         if ($request->dateFilter) {

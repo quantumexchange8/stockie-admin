@@ -19,6 +19,8 @@ import NumberCounter from "@/Components/NumberCounter.vue";
 import RadioButton from "@/Components/RadioButton.vue";
 import TextInput from "@/Components/TextInput.vue";
 import Checkbox from "@/Components/Checkbox.vue";
+import Dropdown from "@/Components/Dropdown.vue";
+import dayjs from 'dayjs'
 
 const salesColumn = ref([
     {field: 'created_at', header: 'Date & Time', width: '20', sortable: true},
@@ -28,6 +30,16 @@ const salesColumn = ref([
     {field: 'status', header: 'Status', width: '16', sortable: true},
     {field: 'action', header: '', width: '5', sortable: false},
 ]);
+
+const docsType = [
+    { text: 'Refund Tranaction', value: 'refund_tranaction'},
+]
+
+const transactionColumn = ref([
+    {field: 'created_at', header: 'Date', width: '20', sortable: true},
+    {field: 'refund_no', header: 'Refund No.', width: '100%', sortable: true},
+    {field: 'total_refund_amount', header: 'Total', width: '10', sortable: true},
+])
 
 const props = defineProps({
     selectedTab: Number,
@@ -43,22 +55,47 @@ const tabs = ref(["Refund Detail", "Refund Product", "Refund Method"]);
 const op = ref(null);
 const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
+const consolidateIsOpen = ref(false);
+const rowsPerPage = ref(5);
+const lastMonthRefundTransaction = ref([]);
+const lastMonthDate = ref('');
+const docs_type = ref('refund_tranaction');
 
 const fetchRefundTransaction = async (filters = {}) => {
 
-try {
-    const response = await axios.get('/transactions/getRefundTransaction', {
-        params: { dateFilter: filters }
-    });
+    try {
+        const response = await axios.get('/transactions/getRefundTransaction', {
+            params: { dateFilter: filters }
+        });
 
-    saleTransaction.value = response.data;
+        saleTransaction.value = response.data;
 
-} catch (error) {
-    console.error(error);
-}
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const fetchLastMonthTransaction = async (filters = {}) => {
+
+    try {
+        const response = await axios.get('/e-invoice/getLastMonthRefundSales');
+
+        lastMonthRefundTransaction.value = response.data;
+
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 onMounted(() => fetchRefundTransaction());
+onMounted(() => fetchLastMonthTransaction());
+onMounted(() => {
+    const today = dayjs()
+    const startOfLastMonth = today.subtract(1, 'month').startOf('month')
+    const endOfLastMonth = today.subtract(1, 'month').endOf('month')
+
+    lastMonthDate.value = `${startOfLastMonth.format('DD/MM/YYYY')} - ${endOfLastMonth.format('DD/MM/YYYY')}`
+})
 
 watch(date_filter, (newValue) => fetchRefundTransaction(newValue));
 
@@ -101,19 +138,31 @@ const closeConfirmmVoid = () => {
     op.value.hide();
 }
 
-const consolidateRefund = async () => {
+const openConsolidateRefund = () => {
+    consolidateIsOpen.value = true;
+}
 
+const closeConsolidate = () => {
+    consolidateIsOpen.value = false;
+}
+
+const submitConsolidate = async () => {
     try {
 
-        const response = await axios.post('/refund-consolidate', {
+        const response = await axios.post('/e-invoice/refund-consolidate', {
             consolidateRefund: saleTransaction.value,
+            period: lastMonthDate.value,
         });
+
+        if (response.status === 200) {
+            closeConsolidate();
+            fetchRefundTransaction();
+        }
         
 
     } catch (error) {
         console.error('error', error);
     }
-
 }
 
 const voidAction = async () => {
@@ -175,7 +224,7 @@ const voidAction = async () => {
                         variant="primary"
                         :size="'lg'"
                         iconPosition="left"
-                        @click="consolidateRefund"
+                        @click="openConsolidateRefund"
                     >
                         <template #icon>
                             <PlusIcon />
@@ -345,6 +394,79 @@ const voidAction = async () => {
             </div>
         </Modal>
 
+    </Modal>
+
+    <Modal
+        :show="consolidateIsOpen"
+        @close="closeConsolidate"
+        :title="'Submit consolidated invoice'"
+        :maxWidth="'lg'"
+    >
+        <div class="flex flex-col gap-8">
+            <!-- Date -->
+            <div class="w-full flex gap-6">
+                <div class="flex flex-col gap-4 w-full">
+                    <div class="flex flex-col gap-1">
+                        <div class="text-grey-950 text-base font-bold">Date Period</div>
+                        <div class="text-grey-950 text-sm">Transaction which has not yet been validated from last month.</div>
+                    </div>
+                    <div>
+                        <DateInput
+                            :inputName="'date'"
+                            :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
+                            :range="true"
+                            class="w-2/3 sm:w-auto sm:!max-w-[309px]"
+                            v-model="lastMonthDate"
+                            disabled
+                        />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4 w-full">
+                    <div class="flex flex-col gap-1">
+                        <div class="text-grey-950 text-base font-bold">Document Type</div>
+                        <div class="text-grey-950 text-sm">Document type you’ll consolidate.</div>
+                    </div>
+                    <div>
+                        <Dropdown
+                            :inputName="'sale_type'"
+                            :labelText="''"
+                            :inputArray="docsType"
+                            v-model="docs_type"
+                            :dataValue="docs_type"
+                            class="w-full"
+                            disabled
+                        />
+                    </div>
+                </div>
+            </div>
+            <!-- Submittable transaction -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-1">
+                    <div class="text-grey-950 text-base font-bold">Submittable Transaction</div>
+                    <div class="text-grey-950 text-sm">Transaction which has not yet been submitted to LHDN’s MyInvois for validation.</div>
+                </div>
+                <div class="max-h-[50vh] overflow-y-auto">
+                    <Table
+                        :columns="transactionColumn"
+                        :variant="'list'"
+                        :rows="lastMonthRefundTransaction"
+                        :rowType="rowType"
+                        :rowsPerPage="rowsPerPage"
+                    >
+                        <template #created_at="row">
+                            <span class="text-grey-900 text-sm font-medium">{{ formatDate(row.created_at) }}</span>
+                        </template>
+                        <template #total_refund_amount="row">
+                            <span class="text-grey-900 text-sm font-medium">RM {{ row.total_refund_amount }}</span>
+                        </template>
+                    </Table>
+                </div>
+                <div class="w-full flex gap-4">
+                    <Button variant="tertiary">Cancel</Button>
+                    <Button @click="submitConsolidate">Submit</Button>
+                </div>
+            </div>
+        </div>
     </Modal>
 
 </template>

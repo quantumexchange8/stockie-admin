@@ -79,14 +79,14 @@ const fetchTransaction = async (filters = {}) => {
 
 const fetchLastMonthTransaction = async (filters = {}) => {
 
-try {
-    const response = await axios.get('/e-invoice/getLastMonthSales');
+    try {
+        const response = await axios.get('/e-invoice/getLastMonthSales');
 
-    lastMonthSalesTransaction.value = response.data;
+        lastMonthSalesTransaction.value = response.data;
 
-} catch (error) {
-    console.error(error);
-}
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 onMounted(() => fetchTransaction());
