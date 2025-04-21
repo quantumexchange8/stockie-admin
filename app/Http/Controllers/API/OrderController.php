@@ -2392,7 +2392,12 @@ class OrderController extends Controller
                 'handled_by' => $waiter->id,
             ]);
 
-            return response()->json(, 201);
+            $tableString = $this->getTableName($selectedTables);
+
+            return response()->json([
+                'status' => 'success',
+                'title' => "Customer has been checked-in to $tableString.",
+            ], 201);
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -2401,9 +2406,8 @@ class OrderController extends Controller
             ], 422);
             
         } catch (\Exception  $e) {
-            Log::info($e);
             return response()->json([
-                'title' => 'Error redeeming reward.',
+                'title' => 'Error checking in.',
                 'errors' => $e
             ], 422);
         };
