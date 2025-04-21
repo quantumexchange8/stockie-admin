@@ -126,6 +126,10 @@ class OrderController extends Controller
 
                 $table->is_reserved = in_array($table->id, $reservedTablesId);
 
+                $table->reservation = Reservation::whereJsonContains('table_no', ['id' => $table->id])
+                                                    ->whereIn('status', ['Pending', 'Checked in'])
+                                                    ->first();
+
                 // Unset the orderTables property to clean up the response
                 $table->unsetRelation('orderTables');
     
@@ -2290,5 +2294,118 @@ class OrderController extends Controller
                     ) as total_commission
                 ")
                 ->value('total_commission');
+    }
+    
+    /**
+     * Check in guest to table based on reservation.
+     */
+    public function checkInReservedTable(Request $request, string $id)
+    {
+        try {
+            // Validate form request
+            $validatedData = $request->validate(
+                [
+                    'assigned_waiter' => 'required|integer',
+                    'pax' => 'required|string',
+                    'reservation_id' => 'required|integer',
+                ], 
+                ['required' => 'This field is required.']
+            );
+
+            $reservation = Reservation::find($validatedData['reservation_id']);
+            $selectedTables = $reservation->tables->map(fn ($rt) => $rt['id']);
+            
+            $waiter = $this->authUser;
+            $waiter->image = $waiter->getFirstMediaUrl('user');
+
+            // Create new order
+            $newOrder = Order::create([
+                'order_no' => RunningNumberService::getID('order'),
+                'pax' => $validatedData['pax'],
+                'user_id' => $validatedData['assigned_waiter'],
+                'customer_id' => $reservation->customer_id ?? null,
+                'amount' => 0.00,
+                'total_amount' => 0.00,
+                'status' => 'Pending Serve',
+            ]);
+            
+            // Update selected tables and create order table records in a loop
+            foreach ($selectedTables as $table) {
+                $table = Table::find($table['id']);
+        
+                // Update table status and related order
+                $table->update([
+                    'status' => 'Pending Order',
+                    'order_id' => $newOrder->id
+                ]);
+
+                // Create new order table
+                OrderTable::create([
+                    'table_id' => $table['id'],
+                    'pax' => $validatedData['pax'],
+                    'user_id' => $waiter->id,
+                    'status' => 'Pending Order',
+                    'order_id' => $newOrder->id
+                ]);
+            }
+
+            //Check in activity log and notification
+            $assignedWaiter = User::select('full_name', 'id')->find($validatedData['assigned_waiter']);
+            $assignedWaiter->image = $assignedWaiter->getFirstMediaUrl('user');
+
+            $orderTables = implode(', ', array_map(function ($table) {
+                return Table::where('id', $table)->pluck('table_no')->first();
+            }, $selectedTables));
+
+            activity()->useLog('Order')
+                    ->performedOn($newOrder)
+                    ->event('check in')
+                    ->withProperties([
+                        'waiter_name' => $assignedWaiter->full_name,
+                        'table_name' => $orderTables, 
+                        'waiter_image' => $assignedWaiter->image
+                    ])
+                    ->log("New customer check-in by :properties.waiter_name.");
+            
+            Notification::send(User::all(), new OrderCheckInCustomer($orderTables, $assignedWaiter->full_name, $assignedWaiter->id));
+
+            //Assigned activity log and notification
+            activity()->useLog('Order')
+                        ->performedOn($newOrder)
+                        ->event('assign to serve')
+                        ->withProperties([
+                            'waiter_name' => $assignedWaiter->full_name,
+                            'waiter_image' => $assignedWaiter->image,
+                            'table_name' => $orderTables, 
+                            'assigned_by' => $waiter->full_name,
+                            'assigner_image' => $waiter->image,
+                        ])
+                        ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
+
+            Notification::send(User::all(), new OrderAssignedWaiter($orderTables, $waiter->id, $assignedWaiter->id));
+
+            // Update reservation details
+            $reservation->update([
+                'status' => 'Checked in',
+                'action_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+                'order_id' => $newOrder->id,
+                'handled_by' => $waiter->id,
+            ]);
+
+            return response()->json(, 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'title' => 'The given data was invalid.',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception  $e) {
+            Log::info($e);
+            return response()->json([
+                'title' => 'Error redeeming reward.',
+                'errors' => $e
+            ], 422);
+        };
     }
 }

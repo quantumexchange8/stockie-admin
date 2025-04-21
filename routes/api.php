@@ -72,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/customers', 'getAllCustomers');
         Route::post('/check_in_table', 'checkInTable');
         Route::post('/check_in_customer', 'checkInCustomer');
+        Route::post('/check_in_reserved_table', 'checkInReservedTable');
 
         // Order
         // Route::get('/order/order_summary', 'getOrderSummary');
