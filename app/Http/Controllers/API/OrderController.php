@@ -35,6 +35,7 @@ use App\Services\RunningNumberService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
@@ -2299,7 +2300,7 @@ class OrderController extends Controller
     /**
      * Check in guest to table based on reservation.
      */
-    public function checkInReservedTable(Request $request, string $id)
+    public function checkInReservedTable(Request $request)
     {
         try {
             // Validate form request
@@ -2313,7 +2314,7 @@ class OrderController extends Controller
             );
 
             $reservation = Reservation::find($validatedData['reservation_id']);
-            $selectedTables = $reservation->tables->map(fn ($rt) => $rt['id']);
+            $selectedTables = array_column($reservation->table_no, 'id');
             
             $waiter = $this->authUser;
             $waiter->image = $waiter->getFirstMediaUrl('user');
@@ -2330,8 +2331,8 @@ class OrderController extends Controller
             ]);
             
             // Update selected tables and create order table records in a loop
-            foreach ($selectedTables as $table) {
-                $table = Table::find($table['id']);
+            foreach ($selectedTables as $tableId) {
+                $table = Table::find($tableId);
         
                 // Update table status and related order
                 $table->update([
@@ -2341,7 +2342,7 @@ class OrderController extends Controller
 
                 // Create new order table
                 OrderTable::create([
-                    'table_id' => $table['id'],
+                    'table_id' => $tableId,
                     'pax' => $validatedData['pax'],
                     'user_id' => $waiter->id,
                     'status' => 'Pending Order',
