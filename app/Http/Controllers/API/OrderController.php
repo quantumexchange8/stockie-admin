@@ -255,6 +255,20 @@ class OrderController extends Controller
             ], 422);
         };
     }
+
+    /**
+     * Remove the voucher applied to the order and reinstate back to customer's reward list.
+     */
+    private function removeOrderVoucher($order)
+    {
+        $customer = $order->customer;
+        $removalTarget = $customer->rewards->where('ranking_reward_id', $order->voucher_id)->first();
+            
+        if ($removalTarget) {
+            $order->update(['voucher_id' => null]);
+            $removalTarget->update(['status' => 'Active']);
+        }
+    }
     
     /**
      * Check in customer to table.
@@ -272,7 +286,11 @@ class OrderController extends Controller
                 ['required' => 'This field is required.']
             );
 
-            $order = Order::find($validatedData['order_id']);
+            $order = Order::with([
+                                'customer:id',
+                                'customer.rewards:id,customer_id,ranking_reward_id,status',
+                            ])
+                            ->find($validatedData['order_id']);
 
             $tableString = $this->getTableName($validatedData['tables']);
             
@@ -288,6 +306,10 @@ class OrderController extends Controller
             }
 
             $customer = Customer::where('uuid', $validatedData['customer_uuid'])->first();
+
+            if ($order->customer && $customer->id !== $order->customer_id && $order->voucher) {
+                $this->removeOrderVoucher($order);
+            }
 
             $order->update(['customer_id' => $customer->id]);
 
@@ -2398,6 +2420,53 @@ class OrderController extends Controller
             return response()->json([
                 'status' => 'success',
                 'title' => "Customer has been checked-in to $tableString.",
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'title' => 'The given data was invalid.',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception  $e) {
+            return response()->json([
+                'title' => 'Error checking in.',
+                'errors' => $e
+            ], 422);
+        };
+    }
+    
+    /**
+     * Check customer out of table.
+     */
+    public function checkOutCustomer(Request $request)
+    {
+        try {
+            $validatedData = $request->validate(
+                [
+                    'order_id' => 'required|integer',
+                    'tables' => 'required|array',
+                ], 
+                ['required' => 'This field is required.']
+            );
+
+            $order = Order::with([
+                                'customer:id',
+                                'customer.rewards:id,customer_id,ranking_reward_id,status',
+                            ])
+                            ->find($validatedData['order_id']);
+
+            $tableString = $this->getTableName($validatedData['tables']);
+
+            if ($order->customer_id && $order->voucher) {
+                $this->removeOrderVoucher($order);
+            }
+
+            $order->update(['customer_id' => null]);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => "The checked-in customer from $tableString has been checked-out."
             ], 201);
 
         } catch (ValidationException $e) {

@@ -91,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/order/redeem_item', 'redeemItemToOrder');
         Route::post('/order/remove_voucher', 'removeEntryRewardFromOrder');
         Route::post('/order/redeem_reward', 'redeemEntryRewardToOrder');
+        Route::post('/order/check_out_customer', 'checkOutCustomer');
         Route::put('/order/serve_item', 'serveOrderItem');
     });
 
