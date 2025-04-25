@@ -84,7 +84,7 @@ const getKeepItemName = (item) => {
                                 </div>
                             </div>
                             <div class="flex flex-col justify-center items-end gap-y-1">
-                                <p class="text-grey-950 text-md font-bold truncate">RM {{ parseFloat(order.payment.grand_total ?? 0).toFixed(2) }}</p>
+                                <p class="text-grey-950 text-md font-bold truncate">RM {{ Number(order.payment.grand_total ?? 0).toFixed(2) }}</p>
                                 <p class="text-primary-800 text-base font-normal truncate">(+{{ order.payment.point_earned }} pts)</p>
                             </div>
                         </div>
@@ -107,10 +107,10 @@ const getKeepItemName = (item) => {
                                 </div>
 
                                 <div v-if="item.discount_id" class="col-span-3 flex flex-col items-center">
-                                    <span class="line-clamp-1 text-ellipsis text-grey-900 text-base font-normal leading-normal text-right self-stretch">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
-                                    <span class="line-clamp-1 text-ellipsis text-grey-500 text-xs font-normal leading-normal text-right self-stretch line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
+                                    <span class="line-clamp-1 text-ellipsis text-grey-900 text-base font-normal leading-normal text-right self-stretch">RM {{ Number(item.amount).toFixed(2) }}</span>
+                                    <span class="line-clamp-1 text-ellipsis text-grey-500 text-xs font-normal leading-normal text-right self-stretch line-through">RM {{ Number(item.amount_before_discount).toFixed(2) }}</span>
                                 </div>
-                                <span class="col-span-3 text-grey-900 text-base font-normal leading-normal text-right" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                <span class="col-span-3 text-grey-900 text-base font-normal leading-normal text-right" v-else>RM {{ Number(item.amount).toFixed(2) }}</span>
                             </div>
                         </div>
 
@@ -125,25 +125,29 @@ const getKeepItemName = (item) => {
                             <div class="flex flex-col gap-y-1 items-start self-stretch" v-show="!collapsedSections[order.order_no]">
                                 <div class="flex flex-row justify-between items-start self-stretch">
                                     <p class="text-grey-900 text-base font-normal">Sub-total</p>
-                                    <p class="text-grey-900 text-base font-medium">RM {{ parseFloat(order.payment.total_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment.total_amount ?? 0).toFixed(2) }}</p>
+                                </div>
+                                <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.bill_discounts && order.payment.bill_discount_total > 0">
+                                    <p class="text-grey-900 text-base font-normal">Bill Discount</p>
+                                    <p class="text-grey-900 text-base font-medium">- RM {{ Number(order.payment.bill_discount_total ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="order.voucher">
                                     <p class="text-grey-900 text-base font-normal">Voucher Discount {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
-                                    <p class="text-grey-900 text-base font-medium">- RM {{ parseFloat(order.payment.discount_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">- RM {{ Number(order.payment.discount_amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.sst_amount > 0">
                                     <!-- <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST'] ?? 0) }}%)</p> -->
                                     <p class="text-grey-900 text-base font-normal">SST ({{ Math.round((order.payment.sst_amount / order.payment.total_amount) * 100) }}%)</p>
-                                    <p class="text-grey-900 text-base font-medium">RM {{ parseFloat(order.payment.sst_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment.sst_amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.service_tax_amount > 0">
                                     <!-- <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p> -->
                                     <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round((order.payment.service_tax_amount / order.payment.total_amount) * 100) }}%)</p>
-                                    <p class="text-grey-900 text-base font-medium">RM {{ parseFloat(order.payment.service_tax_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment.service_tax_amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch">
                                     <p class="text-grey-900 text-base font-normal">Rounding</p>
-                                    <p class="text-grey-900 text-base font-medium">{{ Math.sign(order.payment.rounding) === -1 ? '-' : '' }} RM {{ parseFloat(Math.abs(order.payment.rounding ?? 0)).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">{{ Math.sign(order.payment.rounding) === -1 ? '-' : '' }} RM {{ Number(Math.abs(order.payment.rounding ?? 0)).toFixed(2) }}</p>
                                 </div>
                             </div>
                         </transition>

@@ -104,6 +104,7 @@ const maxWidthClass = computed(() => {
         'md': 'sm:max-w-[746px]',
         'lg': 'sm:max-w-[1080px]',
         'xl': 'sm:max-w-[1280px]',
+        'full': '',
     }[props.maxWidth];
 });
 
@@ -141,8 +142,9 @@ const deleteRecord = () => {
             </TransitionChild>
 
             <div class="fixed inset-0 overflow-y-auto">
-                <div
-                    class="flex min-h-dvh items-center justify-center p-4 text-center"
+                <div 
+                    class="flex h-full items-center justify-center text-center"
+                    :class="{ 'p-4': maxWidth !== 'full' }"
                 >
                     <TransitionChild
                         as="template"
@@ -154,10 +156,11 @@ const deleteRecord = () => {
                         leave-to="opacity-0 scale-95"
                     >
                         <DialogPanel
-                            class="modal-component transform w-full max-h-[95%] fixed rounded-[5px] bg-white text-left align-middle shadow-xl transition-all"
+                            class="modal-component transform w-full fixed rounded-[5px] bg-white text-left align-middle shadow-xl transition-all"
                             :class="[
                                 maxWidthClass,
                                 !props.deleteConfirmation && !props.unsaved ? 'p-6' : 'flex flex-col gap-9',
+                                maxWidth === 'full' ? 'flex flex-col h-full' : 'max-h-[95%]',
                             ]"
                         >
                             <template v-if="!props.deleteConfirmation">
@@ -170,10 +173,8 @@ const deleteRecord = () => {
                                     <button
                                         :type="'button'"
                                         @click="close"
-                                        >
-                                        <TimesIcon
-                                            class="text-primary-900 hover:text-primary-800 hover:cursor-pointer"
-                                        />
+                                    >
+                                        <TimesIcon class="text-primary-900 hover:text-primary-800 hover:cursor-pointer"/>
                                     </button>
                                 </DialogTitle>
                                 <slot></slot>

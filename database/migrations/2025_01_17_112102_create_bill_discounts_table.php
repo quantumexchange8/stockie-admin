@@ -28,6 +28,7 @@ return new class extends Migration
             $table->integer('customer_usage')->nullable();
             $table->string('customer_usage_renew')->nullable();
             $table->integer('total_usage')->nullable();
+            $table->integer('remaining_usage')->nullable();
             $table->string('total_usage_renew')->nullable();
             $table->json('tier')->nullable();
             $table->json('payment_method')->nullable();

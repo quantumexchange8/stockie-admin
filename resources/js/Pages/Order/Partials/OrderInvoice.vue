@@ -42,7 +42,7 @@ const invoiceOrderItemsColumns = ref([
 ]);
 
 const discountSummaryColumns = ref([
-    {field: 'summary', header: 'Discount Summary', width: '70', sortable: false},
+    {field: 'discount_summary', header: 'Discount Summary', width: '70', sortable: false},
     {field: 'discount_amount', header: 'Amt (RM)', width: '30', sortable: false},
 ]);
 
@@ -57,7 +57,29 @@ const hasVoucherApplied = computed(() => {
     return props.order.payment.discount_id && props.order.payment.voucher;
 })
 
-const appliedVoucher = computed(() => (props.order.payment.voucher ? [props.order] : []));
+const appliedDiscounts = computed(() => {
+    // const appliedVoucher = props.order.payment.voucher ? [props.order] : null;
+    const voucherRate = props.order.payment.voucher.reward_type === 'Discount (Percentage)' ? `${props.order.payment.voucher.discount}%` : `RM ${props.order.payment.voucher.discount}`;
+    const appliedVoucher = {
+        discount_summary: `${voucherRate} Discount (Entry Reward for ${props.order.customer.rank.name})`,
+        discount_amount: Number(props.order.payment.discount_amount ?? 0).toFixed(2)
+    };
+
+    const appliedBillDiscounts = [];
+
+    props.order.payment.applied_discounts.forEach((d) => {
+        let discountedAmount = d.discount_type === 'amount'
+            ? d.discount_rate
+            : props.order.payment.total_amount * (d.discount_rate / 100);
+
+        appliedBillDiscounts.push({
+            discount_summary: d.name,
+            discount_amount: Number(discountedAmount ?? 0).toFixed(2)
+        })
+    });
+
+    return [appliedVoucher, ...appliedBillDiscounts];
+});
 
 // const sstAmount = computed(() => {
 //     return (parseFloat(order.value.amount ?? 0) * (6 / 100));
@@ -163,6 +185,10 @@ const generateECode = (receipt_no, merchant, secret) => {
                         <p class="text-primary-950 text-md font-light">Subtotal</p>
                         <p class="text-primary-950 text-md font-normal">{{ parseFloat(order.payment.total_amount ?? 0).toFixed(2) }}</p>
                     </div>
+                    <div class="flex items-start justify-between self-stretch" v-if="order.payment.bill_discounts && order.payment.bill_discount_total > 0">
+                        <p class="text-primary-950 text-md font-light">Bill Discount</p>
+                        <p class="text-primary-950 text-md font-normal">- {{ parseFloat(order.payment.bill_discount_total ?? 0).toFixed(2) }}</p>
+                    </div>
                     <div class="flex items-start justify-between self-stretch" v-if="order.payment.voucher">
                         <p class="text-primary-950 text-md font-light">Voucher Discount {{ order.payment.voucher.reward_type === 'Discount (Percentage)' ? `(${order.payment.voucher.discount}%)` : `` }}</p>
                         <p class="text-primary-950 text-md font-normal">- {{ parseFloat(order.payment.discount_amount ?? 0).toFixed(2) }}</p>
@@ -199,19 +225,18 @@ const generateECode = (receipt_no, merchant, secret) => {
                     <div class="border-y-2 border-dashed border-primary-100 h-2"></div>
                     <Table 
                         :variant="'list'"
-                        :rows="appliedVoucher"
+                        :rows="appliedDiscounts"
                         :columns="discountSummaryColumns"
                         :rowType="rowType"
                         :paginator="false"
                     >
-                        <template #summary="row">
+                        <template #discount_summary="row">
                             <p class="text-grey-900 text-sm font-medium">
-                                {{ row.payment.voucher.reward_type === 'Discount (Percentage)' ? `${row.payment.voucher.discount}%` : `RM ${row.payment.voucher.discount}` }}
-                                {{ ` Discount (Entry Reward for ${row.customer.rank.name})` }}
+                                {{ row.discount_summary }}
                             </p>
                         </template>
                         <template #discount_amount="row">
-                            <div class="flex items-start h-full text-grey-900 text-sm font-medium">- RM {{ parseFloat(row.payment.discount_amount ?? 0).toFixed(2) }}</div>
+                            <div class="flex items-start h-full text-grey-900 text-sm font-medium">- RM {{ row.discount_amount }}</div>
                         </template>
                     </Table>
                 </template>

@@ -211,8 +211,8 @@ class ReservationController extends Controller
         ]);
         
         // Update selected tables and create order table records in a loop
-        foreach ($validatedData['tables'] as $table_id) {
-            $table = Table::find($table_id);
+        foreach ($validatedData['tables'] as $table) {
+            $table = Table::find($table['id']);
     
             // Update table status and related order
             $table->update([
@@ -222,7 +222,7 @@ class ReservationController extends Controller
 
             // Create new order table
             OrderTable::create([
-                'table_id' => $table_id,
+                'table_id' => $table['id'],
                 'pax' => $validatedData['pax'],
                 'user_id' => $validatedData['handled_by'],
                 'status' => 'Pending Order',

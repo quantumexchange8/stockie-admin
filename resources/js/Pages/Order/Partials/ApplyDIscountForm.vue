@@ -31,6 +31,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 const { showMessage } = useCustomToast();
 const emit = defineEmits(['close', 'isDirty', 'update:discounts']);
 
+const order = ref(props.currentOrder);
 const billDiscounts = ref([]);
 const customerTierRewards = ref([]);
 const selectedVoucherDiscount = ref(props.billAppliedDiscounts.find((discount) => discount.type === 'voucher') ?? null);
@@ -139,6 +140,7 @@ const applyManualDiscount = () => {
     }); 
 
     billAmountKeyed.value = '0.00';
+    emit('update:discounts', appliedDiscounts.value);
 };
 
 // // Function to handle number pad input
@@ -207,9 +209,9 @@ const isBillDiscountApplicable = (discount) => {
     if (discount.status === 'inactive') return false;
 
     const now = dayjs();
-    const currentOrderTotal = Number(props.currentOrder.total_amount);
+    const currentOrderTotal = Number(order.value.total_amount);
     const discountRequirement = Number(discount.requirement);
-    const currentCustomerRanking = Number(props.currentOrder.customer?.ranking);
+    const currentCustomerRanking = Number(order.value.customer?.ranking);
     
     // 1. Date Range Check
     if (!now.isSameOrAfter(discount.discount_from) || !now.isSameOrBefore(discount.discount_to)) {
@@ -238,54 +240,59 @@ const isBillDiscountApplicable = (discount) => {
             );
             
             // If it's not the currently selected one, disable it
-            if (!isCurrentlySelected) {
-                return false;
-            }
+            return isCurrentlySelected;
+        }
+    } else {
+        // If there are any applied discounts
+        if (appliedDiscounts.value.length > 0) {
+            // Check if this discount is the currently selected one
+            const currentlySelected = appliedDiscounts.value.some(
+                d => d.type === 'bill' && !d.is_stackable
+            );
+            
+            // If it's not the currently selected one, disable it
+            if (currentlySelected) return false;
         }
     }
 
     // 5. Criteria Check
-    if (
-        (discount.criteria === 'min_spend' && currentOrderTotal < discountRequirement) || 
-        (discount.criteria === 'min_quantity' && totalItemQuantityOrdered.value < discountRequirement)
-    ) {
-        return false;
-    }
+    const discountCriteriaReq = discount.criteria === 'min_spend'
+            ? discount.criteria === 'min_spend' && currentOrderTotal < discountRequirement
+            : discount.criteria === 'min_quantity' && totalItemQuantityOrdered.value < discountRequirement;
+
+    // console.log(discountCriteriaReq);
+    if (discountCriteriaReq) return false;
     
     // 6. Tier Check
     if (discount.tier?.length > 0 && !discount.tier.includes(currentCustomerRanking)) {
         return false;
     }
     
-    if (discount.payment_method?.length > 0) {
-        const requiredMethods = discount.payment_method.map(method => {
-            switch (method) {
-                case 'cash': return 'Cash';
-                case 'card': return 'Card';
-                case 'e-wallets': return 'E-Wallet';
-                default: return method;
-            }
-        });
+    // if (discount.payment_method?.length > 0) {
+    //     const requiredMethods = discount.payment_method.map(method => {
+    //         switch (method) {
+    //             case 'cash': return 'Cash';
+    //             case 'card': return 'Card';
+    //             case 'e-wallets': return 'E-Wallet';
+    //             default: return method;
+    //         }
+    //     });
 
-        if (!paymentMethodsUsed.value.some(pmu => requiredMethods.includes(pmu.method))) {
-            return false;
-        }
-    }
+    //     if (!paymentMethodsUsed.value.some(pmu => requiredMethods.includes(pmu.method))) {
+    //         return false;
+    //     }
+    // }
 
-    if (discount.current_customer_usage) {
-        if (discount.customer_usage > 0 && discount.total_usage > 0) {
-            if (discount.current_total_usage_count >= discount.total_usage) return false;
-            if (discount.current_customer_usage.customer_usage >= discount.customer_usage) return false;
-        };
-        
-        if (discount.total_usage > 0) {
-            if (discount.current_total_usage_count >= discount.total_usage) return false;
-        };
+    const matchingDiscountUsage = order.value.customer?.bill_discount_usages?.find((d) => d.bill_discount_id === discount.id);
 
-        if (discount.customer_usage > 0) {
-            if (discount.current_customer_usage.customer_usage >= discount.customer_usage) return false;
-        };
-    }
+    if (discount.total_usage > 0 && discount.remaining_usage <= 0) return false;
+    
+    if (
+        discount.customer_usage > 0 &&
+        order.value.customer && 
+        matchingDiscountUsage &&
+        matchingDiscountUsage.customer_usage >= discount.customer_usage
+    ) return false;
 
     return true;
 };
@@ -310,8 +317,39 @@ const handleVoucherChange = (voucher) => {
     }
 };
 
+const formatPaymentMethodReq = (methods) => {
+    if (methods) {
+        let paymentMethods = Object.values(methods);
+
+        if (paymentMethods.length > 0) {
+            const formattedMethods = paymentMethods.map(method => {
+                switch (method) {
+                    case 'cash': return 'Cash';
+                    case 'card': return 'Card';
+                    case 'e-wallets': return 'E-Wallet';
+                }
+            });
+            // console.log(formattedMethods);
+    
+            if (formattedMethods.length === 1) {
+                return `${formattedMethods[0]} only`;
+            } else if (formattedMethods.length === 2) {
+                return `${formattedMethods.join('/')} only`;
+            } else {
+                return 'All methods';
+            }
+        }
+    }
+
+    return '';
+}
+
 watch(() => props.billAppliedDiscounts, (newValue) => {
     appliedDiscounts.value = newValue; 
+}, { immediate: true });
+
+watch(() => props.currentOrder, (newValue) => {
+    order.value = newValue; 
 }, { immediate: true });
 
 </script>
@@ -321,7 +359,7 @@ watch(() => props.billAppliedDiscounts, (newValue) => {
         <!-- Actions -->
         <div class="flex w-full items-center gap-4 py-3 self-stretch">
             <p>Applied:</p>
-            <div class="flex w-full items-center self-stretch py-1 gap-x-3 overflow-x-auto scrollbar-thin scrollbar-webkit">
+            <div class="flex w-full items-center self-stretch py-1 gap-x-3 overflow-x-auto scrollbar-thin scrollbar-webkit min-h-10">
                 <template v-for="(discount, index) in appliedDiscounts" :key="index">
                     <div 
                         class="flex items-center rounded-[2px] py-1 px-3 gap-x-2 border border-dashed border-grey-300 bg-grey-50"
@@ -403,13 +441,17 @@ watch(() => props.billAppliedDiscounts, (newValue) => {
 
                                             <hr class="w-full text-grey-100">
 
-                                            <div class="flex items-center gap-x-2 self-stretch">
+                                            <div class="flex items-center gap-x-1 self-stretch">
                                                 <span class="text-2xs font-normal" :class="isBillDiscountApplicable(discount) ? 'text-grey-800' : 'text-grey-300'">
                                                     Min. {{ discount.criteria === 'min_spend' ? `spend RM ${discount.requirement}` : `${discount.requirement} item purchased` }}
                                                 </span>
                                                 <span :class="isBillDiscountApplicable(discount) ? 'text-grey-200' : 'text-grey-100'">&#x2022;</span>
                                                 <span class="text-2xs font-normal" :class="isBillDiscountApplicable(discount) ? 'text-grey-800' : 'text-grey-300'">
                                                     {{ discount.is_stackable ? 'Stackable' : 'Not Stackable' }}
+                                                </span>
+                                                <span v-if="formatPaymentMethodReq(discount.payment_method) !== ''" :class="isBillDiscountApplicable(discount) ? 'text-grey-200' : 'text-grey-100'">&#x2022;</span>
+                                                <span class="text-2xs font-normal" :class="isBillDiscountApplicable(discount) ? 'text-grey-800' : 'text-grey-300'">
+                                                    {{ formatPaymentMethodReq(discount.payment_method) }}
                                                 </span>
                                             </div>
                                         </div>

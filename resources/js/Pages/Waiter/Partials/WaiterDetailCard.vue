@@ -103,19 +103,21 @@ watch( () => props.waiter, (newValue) => {
         <div class="flex flex-col justify-between">
             <div class="p-3 flex flex-row gap-6">
                 <!-- <div class="w-[95px] h-[95px] rounded-[1.734px] bg-red-300"></div> -->
-                <img :src="waiterDetail.image ? waiterDetail.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                <img 
+                    :src="waiterDetail.image ? waiterDetail.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                     alt=""
-                    class="w-[95px] h-[95px] rounded-[1.734px] bg-red-300">
-                <div 
-                    class="flex flex-col bg-white gap-1"
+                    class="w-[95px] h-[95px] rounded-[1.734px] bg-red-300"
                 >
-                <div>
-                    <Tag
-                        :variant="'default'"
-                        :value="waiterDetail.role_id"
-                        class="px-[10px] py-2 w-auto"
-                    /></div>
-                    <span class="font-md text-grey-900">{{ waiterDetail.full_name }}</span>
+                <div class="flex flex-col bg-white gap-1">
+                    <div>
+                        <Tag
+                            :variant="'default'"
+                            :value="waiterDetail.role_id"
+                            class="px-[10px] py-2 w-auto"
+                        />
+                    </div>
+                    <span class="text-base font-semibold text-grey-900">{{ waiterDetail.full_name }}</span>
+                    <span class="text-sm font-normal text-grey-500">{{ waiterDetail.employment_type }}</span>
                 </div>
             </div>
             <div class="w-full grid grid-rows-3 divide-y divide-primary-50">
@@ -123,19 +125,19 @@ watch( () => props.waiter, (newValue) => {
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">
                         <PhoneIcon class="text-primary-900"></PhoneIcon>
                     </div>
-                    <span class="font-md text-grey-900 py-[14px]">{{ formatPhone(waiterDetail.phone) }}</span>
+                    <span class="text-base font-medium text-grey-900 py-[14px]">{{ formatPhone(waiterDetail.phone) }}</span>
                 </div>
                 <div class="w-full flex flex-row row-span-1 gap-4 items-center">
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">
                         <MailIcon class="text-primary-900"/>
                     </div>
-                    <span class="font-md text-grey-900 py-[14px] truncate">{{ waiterDetail.worker_email }}</span>
+                    <span class="text-base font-medium text-grey-900 py-[14px] truncate">{{ waiterDetail.worker_email }}</span>
                 </div>
                 <div class="w-full flex flex-row row-span-1 gap-4 items-center">
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">
                         <SalaryIcon class="text-primary-900"/>
                     </div>
-                    <span class="font-md text-grey-900 py-[14px]">RM {{ formatAmount(waiterDetail.salary) }}</span>
+                    <span class="text-base font-medium text-grey-900 py-[14px]">RM {{ formatAmount(waiterDetail.salary) }}/{{ waiterDetail.employment_type === 'Full-time' ? 'month' : 'hour' }}</span>
                 </div>
             </div>
         </div>

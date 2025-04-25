@@ -214,48 +214,48 @@ const formatPaymentMethod = (payment_method) => {
             </div>
             <div class="col-span-9 flex flex-col items-start gap-7 flex-[1_0_0]">
                 <div class="flex flex-col items-start gap-6 self-stretch">
-                    <div class="grid grid-cols-2 items-start gap-6 self-stretch" v-if="props.discount.customer_usage > 0">
-                        <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
+                    <div class="flex flex-col items-start w-full gap-4 flex-[1_0_0]" v-if="props.discount.customer_usage > 0">
+                        <div class="grid grid-cols-2 items-start gap-6 self-stretch">
                             <div class="flex items-start gap-4 self-stretch">
                                 <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                     <span class="self-stretch text-grey-950 text-base font-bold">Customer Usage</span>
                                     <span class="self-stretch text-grey-950 text-sm font-normal">Limit the discount to number of uses per customer.</span>
                                 </div>
                             </div>
-                            <div class="flex py-1 justify-center items-center gap-2.5 self-stretch">
-                                <span class="flex-[1_0_0] text-grey-950 text-md font-medium">{{ props.discount.customer_usage }} use per customer</span>
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
                             <div class="flex items-start gap-4 self-stretch">
                                 <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                     <span class="self-stretch text-grey-950 text-base font-bold">Customer Usage Renew Every</span>
                                     <span class="self-stretch text-grey-950 text-sm font-normal">Frequency for customer usage renewal.</span>
                                 </div>
                             </div>
+                        </div>
+                        <div class="grid grid-cols-2 items-start gap-6 self-stretch">
+                            <div class="flex py-1 justify-center items-center gap-2.5 self-stretch">
+                                <span class="flex-[1_0_0] text-grey-950 text-md font-medium">{{ props.discount.customer_usage }} use per customer</span>
+                            </div>
                             <div class="flex py-1 justify-center items-center gap-2.5 self-stretch">
                                 <span class="flex-[1_0_0] text-grey-950 text-md font-medium">{{ props.discount.customer_usage_renew ? (props.discount.customer_usage_renew).charAt(0).toUpperCase() + props.discount.customer_usage_renew.slice(1) : 'Never' }}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 items-start gap-6 self-stretch" v-if="props.discount.total_usage > 0">
-                        <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
+                    <div class="flex flex-col items-start w-full gap-4 flex-[1_0_0]" v-if="props.discount.total_usage > 0">
+                        <div class="grid grid-cols-2 items-start gap-6 self-stretch">
                             <div class="flex items-start gap-4 self-stretch">
                                 <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                     <span class="self-stretch text-grey-950 text-base font-bold">Total Usage</span>
                                     <span class="self-stretch text-grey-950 text-sm font-normal">Limit the discount to a specific number of total uses.</span>
                                 </div>
                             </div>
-                            <div class="flex py-1 justify-center items-center gap-2.5 self-stretch">
-                                <span class="flex-[1_0_0] text-grey-950 text-md font-medium">{{ props.discount.total_usage }} bills</span>
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
                             <div class="flex items-start gap-4 self-stretch">
                                 <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                     <span class="self-stretch text-grey-950 text-base font-bold">Total Usage Renew Every</span>
                                     <span class="self-stretch text-grey-950 text-sm font-normal">Frequency for total usage renewal.</span>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 items-start gap-6 self-stretch">
+                            <div class="flex py-1 justify-center items-center gap-2.5 self-stretch">
+                                <span class="flex-[1_0_0] text-grey-950 text-md font-medium">{{ props.discount.total_usage }} bills</span>
                             </div>
                             <div class="flex py-1 justify-center items-center gap-2.5 self-stretch">
                                 <span class="flex-[1_0_0] text-grey-950 text-md font-medium">{{ props.discount.total_usage_renew ? (props.discount.total_usage_renew).charAt(0).toUpperCase() + props.discount.total_usage_renew.slice(1) : 'Never' }}</span>
@@ -292,7 +292,7 @@ const formatPaymentMethod = (payment_method) => {
         <div class="grid grid-cols-12 p-6 items-start gap-7 self-stretch rounded-[5px] border border-solid border-grey-100 bg-white shadow-[0_1px_12px_0_rgba(0,0,0,0.06)]">
             <div class="col-span-3 flex justify-between items-start">
                 <div class="flex items-start gap-3 flex-[1_0_0] self-stretch">
-                    <span class="pl-3 flex-[1_0_0] text-grey-950 text-md font-semibold border-l-[5px] border-primary-800">Member Exclusive Only</span>
+                    <span class="pl-3 flex-[1_0_0] text-grey-950 text-md font-semibold border-l-[5px] border-primary-800">Eligible Payment Method</span>
                 </div>
             </div>
             <div class="col-span-9 w-1/2 flex items-start gap-6 flex-[1_0_0]">

@@ -29,6 +29,7 @@ class BillDiscount extends Model
         'customer_usage',
         'customer_usage_renew',
         'total_usage',
+        'remaining_usage',
         'total_usage_renew',
         'tier',
         'payment_method',
@@ -45,6 +46,7 @@ class BillDiscount extends Model
         'discount_to' => 'datetime:Y-m-d H:i:s',
         'customer_usage' => 'integer', 
         'total_usage' => 'integer',
+        'remaining_usage' => 'integer',
         'start_time' => 'string',
         'end_time' => 'string',
     ];

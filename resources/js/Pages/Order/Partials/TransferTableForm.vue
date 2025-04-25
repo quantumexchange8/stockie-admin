@@ -1,7 +1,7 @@
 <script setup>
 import Button from '@/Components/Button.vue';
 import Checkbox from '@/Components/Checkbox.vue';
-import { UndetectableIllus, MergeTableIllust } from '@/Components/Icons/illus';
+import { UndetectableIllus, MergeTableIllust, MovingIllus } from '@/Components/Icons/illus';
 import { CheckedIcon, DefaultIcon, MergedIcon, WarningIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import TabView from '@/Components/TabView.vue';
@@ -48,6 +48,9 @@ const checkedIn = ref([]);
 const isTransferItemModalOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
+const removeRewardFormIsOpen = ref(false);
+const currentHasVoucher = ref(false);
+const targetHasVoucher = ref(false);
 
 const emit = defineEmits(['close', 'closeDrawer', 'fetchZones']);
 
@@ -158,10 +161,6 @@ const setupDuration = (created_at) => {
 
 onUnmounted(() => intervals.value.forEach(clearInterval));
 
-const filterZones = () => {
-
-}
-
 const getCurrentOrderTableDuration = (table) => {
     let currentOrderTable = table.order_tables.toSorted((a, b) => dayjs(b.created_at).diff(dayjs(a.created_at)));
     
@@ -170,19 +169,22 @@ const getCurrentOrderTableDuration = (table) => {
 
 const getTableClasses = (table) => ({
     state: computed(() => [
-        'border border-solid rounded-[5px]',
+        table.is_reserved ? 'cursor-not-allowed' : 'cursor-pointer',
         {
-            'bg-white border-grey-100': table.status === 'Empty Seat',
-            'bg-green-600 border-green-400': table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order',
-            'bg-orange-500 border-orange-400': table.status === 'Pending Clearance',
+            'bg-grey-50': table.status === 'Empty Seat' && table.is_reserved,
+            'bg-white': table.status === 'Empty Seat' && !table.is_reserved,
+            'bg-green-600': (table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order') && !table.is_reserved,
+            'bg-orange-500': table.status === 'Pending Clearance' && !table.is_reserved,
         }
     ]),
     text: computed(() => [
         'text-xl font-bold self-stretch text-center',
         {
-            'text-primary-900': table.status === 'Empty Seat',
-            'text-green-50': table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order',
-            'text-orange-25': table.status === 'Pending Clearance',
+            'text-primary-900': table.status === 'Empty Seat' && !table.is_reserved,
+            // 'text-primary-25': table.status === 'Pending Order',
+            'text-green-50': (table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order') && !table.is_reserved,
+            'text-orange-25': table.status === 'Pending Clearance'  && !table.is_reserved,
+            'text-grey-400': table.is_reserved,
         }
     ]),
     duration: computed(() => [
@@ -304,11 +306,26 @@ const selectTable = (targetTable) => {
     if (matchingTables.length === 0) tableNames.value = "--";
 };
 
+const showRemoveRewardForm = () => {
+    removeRewardFormIsOpen.value = true;
+};
+
+const hideRemoveRewardForm = () => {
+    removeRewardFormIsOpen.value = false;
+};
+
 const closeConfirm = () => {
-    isConfirmShow.value = false;
+    if (!removeRewardFormIsOpen.value) isConfirmShow.value = false;
+    currentHasVoucher.value = false;
+    targetHasVoucher.value = false;
 }
 
 const openConfirm = () => {
+    currentHasVoucher.value = !!form.current_table.order && !!form.current_table.order.voucher_id;
+    targetHasVoucher.value = !!form.target_table.order && 
+            !!form.target_table.order.voucher_id && 
+            !['Empty Seat', 'Pending Clearance'].includes(form.target_table.status);
+
     const isCheckedIn = form.target_table.order_tables
             .filter((order_table) => !!order_table.order.customer_id)
             .map((order_table) => order_table.order.customer_id);
@@ -322,7 +339,11 @@ const openConfirm = () => {
     if (checkedIn.value.length > 1) {
         isConfirmShow.value = true;
     } else {
-        submit();
+        if (currentHasVoucher.value || targetHasVoucher.value) {
+            showRemoveRewardForm();
+        } else {
+            submit();
+        }
     }
 };
 
@@ -375,31 +396,36 @@ const hasTables = computed(() => {
 </script>
 
 <template>
-    <form @submit.prevent="submit">
-        <div class="flex flex-col items-start gap-6 self-stretch pb-6">
+    <form class="h-full flex flex-col justify-between" @submit.prevent="submit">
+        <div class="flex flex-col h-full items-start gap-6 self-stretch pb-6">
             <TabView :tabs="tabs" v-if="zones.length">
                 <template #all>
                     <div class="flex flex-col px-6 items-start gap-6 self-stretch">
-                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
+                        <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch max-h-[calc(100dvh-20rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
                             <template v-if="hasTables">
                                 <template v-for="zone in zones">
                                     <template v-for="table in zone.tables">
-                                        <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative cursor-pointer" 
+                                        <div class="col-span-1 flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative" 
                                             :class="getTableClasses(table).state.value"
-                                            @click="table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) ? '' : selectTable(table)"
+                                            @click="table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) || table.is_reserved ? '' : selectTable(table)"
                                         >
                                             <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                                 {{ getCurrentOrderTableDuration(table) }}
                                             </div>
-                                            <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                                            <template v-else>
+                                                <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                                    <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                                </div>
+                                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                            </template>
                                             <RadioButton 
                                                 :name="'table'"
                                                 :dynamic="false"
                                                 :value="table.id"
                                                 class="!w-fit absolute top-[11px] right-[12px]"
                                                 :errorMessage="''"
-                                                :disabled="form.target_table !== table && (table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id))"
+                                                :disabled="form.target_table !== table && (table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id)) || table.is_reserved"
                                                 v-model:checked="selectedTable"
                                                 @onChange="form.target_table = table"
                                             />
@@ -424,26 +450,31 @@ const hasTables = computed(() => {
                     v-slot:[tab]
                 >
                     <div class="flex flex-col px-6 items-start gap-6 self-stretch">
-                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
+                        <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch max-h-[calc(100dvh-20rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
                             <template v-for="zone in zones.filter(zone => zone.text.toLowerCase().replace(/[/\s_]+/g, '-') === tab)">
                                 <template v-if="zone.tables.length > 0">
                                     <template v-for="table in zone.tables">
-                                        <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative" 
+                                        <div class="col-span-1 flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative" 
                                             :class="getTableClasses(table).state.value"
-                                            @click="table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) ? '' : selectTable(table)"
+                                            @click="table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) || table.is_reserved ? '' : selectTable(table)"
                                         >
                                             <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                                 {{ getCurrentOrderTableDuration(table) }}
                                             </div>
-                                            <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                                            <template v-else>
+                                                <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                                    <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                                </div>
+                                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                            </template>
                                             <RadioButton 
                                                 :name="'table'"
                                                 :dynamic="false"
                                                 :value="table.id"
                                                 class="!w-fit absolute top-[11px] right-[12px]"
                                                 :errorMessage="''"
-                                                :disabled="form.target_table !== table && (table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id))"
+                                                :disabled="form.target_table !== table && (table.id === props.currentOrderTable.id || !!tables.find((selectedTable) => selectedTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id)) || table.is_reserved"
                                                 v-model:checked="selectedTable"
                                                 @onChange="form.target_table = table"
                                             />  
@@ -551,7 +582,7 @@ const hasTables = computed(() => {
                     :type="'button'"
                     :variant="'primary'"
                     :size="'lg'"
-                    @click="submit"
+                    @click="currentHasVoucher || targetHasVoucher ? showRemoveRewardForm() : submit()"
                 >
                     Confirm
                 </Button>
@@ -561,7 +592,7 @@ const hasTables = computed(() => {
     
     <Modal
         :title="'Transfer item to new table'"
-        :maxWidth="'xl'"
+        :maxWidth="'full'"
         :closeable="true"
         :show="isTransferItemModalOpen"
         @close="closeModal('close')"
@@ -587,6 +618,41 @@ const hasTables = computed(() => {
             @close="closeModal('stay')"
             @leave="closeModal('leave')"
         />
+    </Modal>
+
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="removeRewardFormIsOpen"
+        :withHeader="false"
+        class="[&>div>div>div]:!p-0"
+        @close="hideRemoveRewardForm"
+    >
+        <div class="flex flex-col gap-9">
+            <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                <MovingIllus />
+            </div>
+            <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Remove Reward</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >The applied reward for both orders will be removed, but you can always reapply it during payment.</div>
+            </div>
+            <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="hideRemoveRewardForm"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    size="lg"
+                    @click="submit"
+                >
+                    Remove
+                </Button>
+            </div>
+        </div>
     </Modal>
 
 </template>

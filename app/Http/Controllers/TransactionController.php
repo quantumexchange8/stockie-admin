@@ -36,6 +36,7 @@ class TransactionController extends Controller
                 'order.FilterOrderItems.product:id,product_name,price',
                 'order.FilterOrderItems.productDiscount:id,discount_id,price_before,price_after',
                 'voucher:id,reward_type,discount',
+                'paymentMethods:id,payment_id,payment_method,amount,created_at'
             ]);
 
         if ($request->dateFilter) {
@@ -133,8 +134,6 @@ class TransactionController extends Controller
             'status' => 'Completed'
         ]);
 
-        
-
         foreach($request->params['form']['refund_item'] as $refund_item) {
             
             $orderItem = OrderItem::find($refund_item['id']);
@@ -166,7 +165,7 @@ class TransactionController extends Controller
     public function voidRefundTransaction(Request $request)
     {
 
-        $transaction = PaymentRefund::find($request->id);
+        $transaction = PaymentRefund::find($request['params']['id']);
 
         $transaction->status = 'Voided';
         $transaction->save();

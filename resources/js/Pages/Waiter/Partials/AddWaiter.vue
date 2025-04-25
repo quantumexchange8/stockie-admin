@@ -7,6 +7,9 @@ import DragDropImage from "@/Components/DragDropImage.vue";
 import { computed, ref, watch } from "vue";
 import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
 import Modal from "@/Components/Modal.vue";
+import RadioButton from "@/Components/RadioButton.vue";
+import { employementTypeOptions } from "@/Composables/constants";
+import Label from "@/Components/Label.vue";
 
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
@@ -25,6 +28,7 @@ const form = useForm({
     phone_temp: "",
     email: "",
     role_id: "",
+    employment_type: "",
     salary: "",
     stockie_email: "",
     password: "",
@@ -52,7 +56,7 @@ const submit = () => {
     });
 };
 
-const requiredFields = ['full_name', 'phone_temp', 'email', 'role_id', 'salary', 'stockie_email', 'password'];
+const requiredFields = ['full_name', 'phone_temp', 'email', 'role_id', 'employment_type', 'salary', 'stockie_email', 'password'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
@@ -62,7 +66,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 </script>
 <template>
-    <div class="w-full flex flex-col overflow-y-auto scrollbar-thin scrollbar-webkit pl-1 pt-1">
+    <div class="w-full flex flex-col overflow-y-auto scrollbar-thin scrollbar-webkit px-1 pt-1">
         <form @submit.prevent="submit" autocomplete="off">
             <div class="w-full flex flex-col max-h-[calc(100dvh-18rem)] md:gap-9">
                 <div class="w-full flex md:gap-6">
@@ -95,6 +99,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :placeholder="'eg: John Doe'"
                                     inputId="full_name"
                                     type="'text'"
+                                    required
                                     :errorMessage="form.errors.full_name"
                                     v-model="form.full_name"
                                 />
@@ -107,6 +112,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                         :iconPosition="'left'"
                                         :errorMessage="form.errors?.phone || ''"
                                         class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
+                                        required
                                         v-model="form.phone_temp"
                                         @keypress="isValidNumberKey($event, false)"
                                         @input="formatPhoneInput"
@@ -119,13 +125,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                         :placeholder="'eg: johndoe@gmail.com'"
                                         inputId="email"
                                         type="'email'"
+                                        required
                                         :errorMessage="form.errors?.email || ''"
                                         v-model="form.email"
                                     />
                                 </div>
                             </div>
                         </div>
-                        <div class="flex flex-col md:gap-6">
+                        <div class="flex flex-col md:gap-6 w-full">
                             <div class="md:text-[20px] text-[#48070A]">
                                 Work Detail
                             </div>
@@ -135,26 +142,40 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :placeholder="'eg: J8192'"
                                     inputId="role_id"
                                     type="'text'"
+                                    required
                                     :errorMessage="form.errors?.role_id || ''"
                                     v-model="form.role_id"
                                 />
-                                <TextInput
-                                    label-text="Basic salary (per month)"
-                                    inputId="salary"
-                                    type="'text'"
-                                    :errorMessage="form.errors?.salary || ''"
-                                    v-model="form.salary"
-                                    :iconPosition="'left'"
-                                    @keypress="isValidNumberKey($event, true)"
-                                >
-                                    <template #prefix>
-                                        <span class="text-grey-900"
-                                            >RM</span
-                                        >
-                                    </template>
-                                </TextInput>
+                                <div class="w-full flex flex-col gap-y-1 items-start self-stretch">
+                                    <Label required class="mb-1 text-xs !font-medium text-grey-900">
+                                        Employment type
+                                    </Label>
+                                    <RadioButton
+                                        :optionArr="employementTypeOptions"
+                                        :checked="form.employment_type"
+                                        :errorMessage="form.errors?.employment_type || ''"
+                                        v-model:checked="form.employment_type"
+                                    />
+                                </div>
                             </div>
+
+                            <TextInput
+                                label-text="Salary per month (basic)"
+                                inputId="salary"
+                                type="'text'"
+                                required
+                                :iconPosition="'left'"
+                                class="!w-1/2"
+                                :errorMessage="form.errors?.salary || ''"
+                                v-model="form.salary"
+                                @keypress="isValidNumberKey($event, true)"
+                            >
+                                <template #prefix>
+                                    <span class="text-grey-900">RM</span>
+                                </template>
+                            </TextInput>
                         </div>
+
                         <div class="flex flex-col md:gap-6 w-full">
                             <div class="md:text-[20px] text-[#48070A]">
                                 Account Detail
@@ -165,6 +186,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :placeholder="'for Stockie account log-in'"
                                     inputId="stockie_email"
                                     type="'email'"
+                                    required
                                     :errorMessage="form.errors?.stockie_email || ''"
                                     v-model="form.stockie_email"
                                 />
@@ -173,6 +195,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :placeholder="'for Stockie account log-in'"
                                     inputId="password"
                                     :inputType="'password'"
+                                    required
                                     :errorMessage="form.errors?.password || ''"
                                     v-model="form.password"
                                 />
@@ -180,10 +203,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             
                             <TextInput
                                 inputId="passcode"
-                                labelText="Passcode"
+                                labelText="Clock in passcode"
                                 placeholder="eg: 123456"
                                 class="!w-1/2"
                                 :maxlength="6"
+                                required
                                 :errorMessage="form.errors?.passcode || ''"
                                 v-model="form.passcode"
                                 @keypress="isValidNumberKey($event, false)"

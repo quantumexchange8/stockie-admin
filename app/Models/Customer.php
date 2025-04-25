@@ -118,4 +118,9 @@ class Customer extends Model implements HasMedia
     {
         return $this->hasMany(CustomerReward::class, 'customer_id');
     }
+
+    public function billDiscountUsages(): HasMany
+    {
+        return $this->hasMany(BillDiscountUsage::class, 'customer_id');
+    }
 }

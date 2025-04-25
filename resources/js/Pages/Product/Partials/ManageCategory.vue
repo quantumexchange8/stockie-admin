@@ -37,7 +37,7 @@ const isAfterAction = ref(false);
 const keepTypesArray = ref([
     { text: 'Keep in quantity or cm', value: 'all' },
     { text: 'Keep in quantity', value: 'qty' },
-    { text: 'Keep in cm', value: 'cm' }
+    // { text: 'Keep in cm', value: 'cm' }
 ]);
 
 const form = useForm({

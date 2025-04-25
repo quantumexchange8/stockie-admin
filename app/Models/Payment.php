@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
@@ -108,5 +109,14 @@ class Payment extends Model
     public function consolidated_invoice(): BelongsTo
     {
         return $this->belongsTo(ConsolidatedInvoice::class,'consolidated_parent_id');
+    }
+
+    /**
+     * PaymentDetail Model
+     * Get the payment methods of this payment.
+     */
+    public function paymentMethods(): HasMany
+    {
+        return $this->hasMany(PaymentDetail::class, 'payment_id');
     }
 }

@@ -253,7 +253,7 @@ class ConfigPromotionController extends Controller
             'registration_no' => ['required', 'string'],
             'msic_code' => ['required', 'integer'],
             'phone_no' => ['required', 'string'],
-            'email_address' => ['required', 'string', 'email'],
+            'email_address' => ['required', 'string', 'email:strict'],
             'sst_registration_no' => ['required', 'string'],
             'description' => ['required', 'string'],
             'classification_code' => ['required', 'integer'],
@@ -276,7 +276,7 @@ class ConfigPromotionController extends Controller
             'tin_no' => $request->tin_no,
             'registration_no' => $request->registration_no,
             'msic_code' => $request->msic_code,
-            'merchant_contact' => $request->prefix . $request->phone_no,
+            'merchant_contact' => $request->phone_no,
             'email_address' => $request->email_address,
             'sst_registration_no' => $request->sst_registration_no,
             'description' => $request->description,
@@ -487,7 +487,7 @@ class ConfigPromotionController extends Controller
         $request->validate([
             'id' => ['required'],
             'address_line1' => ['required', 'string', 'max:255'],
-            'address_line2' => ['required', 'string', 'max:255'],
+            'address_line2' => ['nullable', 'string', 'max:255'],
             'postal_code' => ['required', 'integer', 'digits:5'],
             'area' => ['required', 'string'],
             'state' => ['required', 'string'],
@@ -551,7 +551,7 @@ class ConfigPromotionController extends Controller
         }
 
         foreach($validatedTaxes as $items) {
-            $tax = Setting::find($items['id']);
+            $tax = Setting::where('id', $items['id'])->first();
 
             activity()->useLog('edit-tax-settings')
                         ->performedOn($tax)

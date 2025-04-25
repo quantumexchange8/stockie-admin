@@ -128,6 +128,7 @@ class WaiterController extends Controller
             'email'=>$validatedData['email'],
             'role_id' => $validatedData['role_id'],
             'position' => 'waiter',
+            'employment_type'=> $validatedData['employment_type'],
             'salary'=> $validatedData['salary'],
             'worker_email' => $validatedData['stockie_email'],
             'password' => Hash::make($validatedData['password']),
@@ -228,6 +229,7 @@ class WaiterController extends Controller
             'phone' => $validatedData['phone'],
             'email'=>$validatedData['email'],
             'role_id' => $validatedData['role_id'],
+            'employment_type'=> $validatedData['employment_type'],
             'salary'=> $validatedData['salary'],
             'worker_email' => $validatedData['stockie_email'],
             'profile_photo' => $validatedData['image'],
@@ -265,26 +267,26 @@ class WaiterController extends Controller
         $waiterDetail->image = $waiterDetail->getFirstMediaUrl('user');
         
         //attendance
-        $attendance = WaiterAttendance::where('user_id', $id)
-                                        ->get(['check_in', 'check_out'])
-                                        ->map(function ($record) {
-                                            $checkIn = Carbon::parse($record->check_in);
-                                            $checkOut = Carbon::parse($record->check_out);
+        // $attendance = WaiterAttendance::where('user_id', $id)
+        //                                 ->get(['check_in', 'check_out'])
+        //                                 ->map(function ($record) {
+        //                                     $checkIn = Carbon::parse($record->check_in);
+        //                                     $checkOut = Carbon::parse($record->check_out);
     
-                                            $durationInSeconds = $checkIn->diffInSeconds($checkOut);
+        //                                     $durationInSeconds = $checkIn->diffInSeconds($checkOut);
                                     
-                                            $hours = floor($durationInSeconds / 3600);
-                                            $minutes = floor(($durationInSeconds % 3600) / 60);
-                                            $seconds = $durationInSeconds % 60;
+        //                                     $hours = floor($durationInSeconds / 3600);
+        //                                     $minutes = floor(($durationInSeconds % 3600) / 60);
+        //                                     $seconds = $durationInSeconds % 60;
                                     
-                                            $formattedDuration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+        //                                     $formattedDuration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
                                     
-                                            return [
-                                                'check_in' => $checkIn->toDateTimeString(),
-                                                'check_out' => $record->check_out ? $checkOut->toDateTimeString() : null,
-                                                'duration' => $formattedDuration,
-                                            ];
-                                        });
+        //                                     return [
+        //                                         'check_in' => $checkIn->toDateTimeString(),
+        //                                         'check_out' => $record->check_out ? $checkOut->toDateTimeString() : null,
+        //                                         'work_duration' => $formattedDuration,
+        //                                     ];
+        //                                 });
 
         //existing incentive thresholds
         $configIncentive = ConfigIncentiveEmployee::where('user_id', $id)
@@ -412,7 +414,7 @@ class WaiterController extends Controller
             'order' => $groupedOrders,
             'waiter' => $waiterDetail,
             'total_sales' => round($totalSales, 2),
-            'attendance' => $attendance,
+            // 'attendance' => $attendance,
             'commissionData' => $commission,
             'incentiveData' => $incentiveData,
             'configIncentive' => $configIncentive,
@@ -525,35 +527,134 @@ class WaiterController extends Controller
         $dateFilter = array_map(function ($date) {
             return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
         }, $dateFilter);
+    
+        $startDate = Carbon::parse($dateFilter[0])->startOfDay()->format('Y-m-d H:i:s');
+        $secondaryDate = count($dateFilter) > 1 ? $dateFilter[1] : $dateFilter[0];
+        $endDate = Carbon::parse($secondaryDate)->endOfDay()->format('Y-m-d H:i:s');
+    
+        // Get all records sorted chronologically
+        $records = WaiterAttendance::whereDate('created_at', '>=', $startDate)
+                                    ->whereDate('created_at', '<=', $endDate)
+                                    ->where('user_id', $id)
+                                    ->orderByRaw("
+                                        CASE 
+                                            WHEN status IN ('Break end', 'Checked out') THEN check_out 
+                                            ELSE check_in 
+                                        END
+                                    ")
+                                    ->get();
+    
+        $waiter = User::find($id);
+        $salary = $waiter->salary ?? 0.00;
+        $totals = ['work' => 0, 'break' => 0, 'earnings' => 0];
+        $attendanceGroups = collect();
+        $currentGroup = null;
+    
+        // Group records into complete attendance periods
+        foreach ($records as $record) {
+            if ($record->status === 'Checked in') {
+                // Start new group
+                if ($currentGroup) {
+                    $attendanceGroups->push($currentGroup);
+                }
+                $currentGroup = [
+                    'check_in' => $record->check_in,
+                    'check_out' => null,
+                    'breaks' => [],
+                    'date' => Carbon::parse($record->check_in)->format('d/m/Y'),
+                    'status' => 'Ongoing'
+                ];
+            } 
+            elseif ($record->status === 'Checked out' && $currentGroup) {
+                // Complete the current group
+                $currentGroup['check_out'] = $record->check_out;
+                $currentGroup['status'] = 'Completed';
+                $attendanceGroups->push($currentGroup);
+                $currentGroup = null;
+            }
+            elseif (($record->status === 'Break start' || $record->status === 'Break end') && $currentGroup) {
+                // Add break records to current group
+                $currentGroup['breaks'][] = $record;
+            }
+        }
+    
+        // Add the last ongoing group if exists
+        if ($currentGroup) {
+            $attendanceGroups->push($currentGroup);
+        }
+    
+        // Calculate durations for each group
+        $groups = $attendanceGroups->map(function($group) use ($salary, &$totals, &$waiter) {
+            $workDuration = 0;
+            $breakDuration = 0;
+    
+            // Calculate work duration
+            $endTime = $group['check_out'] ?? now();
+            $workDuration = Carbon::parse($group['check_in'])->diffInSeconds($endTime);
+    
+            // Calculate break durations
+            $currentBreakStart = null;
+            $breakRecords = collect($group['breaks'])->sortBy('check_in');
+    
+            foreach ($breakRecords as $break) {
+                if ($break->status === 'Break start') {
+                    if ($currentBreakStart) {
+                        // Count the previous break until this new break starts
+                        $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($break->check_in);
+                    }
+                    $currentBreakStart = $break->check_in;
+                } 
+                elseif ($break->status === 'Break end' && $currentBreakStart) {
+                    $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($break->check_out);
+                    $currentBreakStart = null;
+                }
+            }
+    
+            // Handle any unfinished break
+            if ($currentBreakStart) {
+                $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($endTime);
+            }
+    
+            // Calculate earnings
+            $payableHours = max(0, ($workDuration - $breakDuration)) / 3600;
+            $earnings = $waiter->employment_type === 'Part-time' ? max(0, $payableHours * $salary) : 0.00;
+    
+            // Update totals
+            $totals['work'] += $workDuration;
+            $totals['break'] += $breakDuration;
+            $totals['earnings'] += $earnings;
+    
+            return [
+                'date' => $group['date'],
+                'check_in' => $group['check_in'],
+                'check_out' => $group['check_out'],
+                'status' => $group['status'],
+                'work_duration' => $this->formatHoursMinutes($workDuration),
+                'break_duration' => $this->formatHoursMinutes($breakDuration),
+                'earnings' => 'RM '.number_format($earnings, 2),
+                'break_count' => count($group['breaks'])
+            ];
+        })->sortByDesc('check_in')->values(); // Sort groups by check-in time descending
+    
+        $data = [
+            'attendances' => $groups,
+            'totals' => [
+                'work_duration' => $this->formatHoursMinutes($totals['work']),
+                'break_duration' => $this->formatHoursMinutes($totals['break']),
+                'earnings' => 'RM '.number_format($totals['earnings'], 2)
+            ]
+        ];
 
-        $attendance = WaiterAttendance::whereDate('created_at', count($dateFilter) === 1 ? '=' : '>=', $dateFilter[0] )
-                                        ->when(count($dateFilter) > 1, function($subQuery) use ($dateFilter) {
-                                            $subQuery->where('created_at','<=', $dateFilter[1]);
-                                        })
-                                        ->where('user_id', $id)
-                                        ->orderBy('created_at','desc')
-                                        ->get(['check_in','check_out'])
-                                        ->map(function ($record) {
-                                            $checkIn = Carbon::parse($record->check_in);
-                                            $checkOut = Carbon::parse($record->check_out);
-                                    
-                                            $durationInSeconds = $checkIn->diffInSeconds($checkOut);
-                                    
-                                            $hours = floor($durationInSeconds / 3600);
-                                            $minutes = floor(($durationInSeconds % 3600) / 60);
-                                            $seconds = $durationInSeconds % 60;
-                                    
-                                            $formattedDuration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
-                                    
-                                            if ($record->id === 3) dd($checkOut);
-                                            return [
-                                                'check_in' => $checkIn->toDateTimeString(),
-                                                'check_out' => $checkOut->toDateTimeString(),
-                                                'duration' => $formattedDuration,
-                                            ];
-                                        });
+        return response()->json($data);
+    }
 
-        return response()->json($attendance);
+    // New helper function to format as "Xh Ym"
+    protected function formatHoursMinutes($seconds)
+    {
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        
+        return sprintf('%dh %02dm', $hours, $minutes);
     }
 
     public function filterSalesPerformance (Request $request)

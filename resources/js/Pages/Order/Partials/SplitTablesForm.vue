@@ -292,53 +292,55 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col px-6 items-start gap-6 self-stretch max-h-[calc(100dvh-28.4rem)] overflow-auto scrollbar-webkit scrollbar-thin">
-        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap">
-            <template v-for="table in mergedTables">
-                <!-- <template v-if=""></template> -->
-                <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative border border-solid bg-white border-grey-100" 
-                    :class="table.id === props.currentOrderTable.id ? 'cursor-not-allowed' : 'cursor-pointer'"
-                    @click="table.id === props.currentOrderTable.id ? '' : updateTable(table)"
-                >
-                    <span class="text-xl font-bold self-stretch text-center text-primary-900">{{ table.table_no }}</span>
-                    <div class="text-base text-primary-900 font-normal text-center">{{ table.id === props.currentOrderTable.id ? 'Main table' : 'Merged' }}</div>
-                    <Checkbox 
-                        :checked="!!form.tables.tables_to_remain.find((formTable) => formTable.id === table.id)"
-                        :disabled="table.id === props.currentOrderTable.id"
-                        class="absolute top-[11px] right-[12px]"
-                    />
-                </div>
-            </template>
+    <div class="h-full flex flex-col justify-between">
+        <div class="flex flex-col h-full px-6 pb-6 items-start gap-6 self-stretch max-h-[calc(100dvh-15.5rem)] overflow-auto scrollbar-webkit scrollbar-thin">
+            <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch">
+                <template v-for="table in mergedTables">
+                    <!-- <template v-if=""></template> -->
+                    <div class="col-span-1 flex flex-col p-6 justify-center items-center gap-1 rounded-[5px] relative border border-solid bg-white border-grey-100" 
+                        :class="table.id === props.currentOrderTable.id ? 'cursor-not-allowed' : 'cursor-pointer'"
+                        @click="table.id === props.currentOrderTable.id ? '' : updateTable(table)"
+                    >
+                        <span class="text-xl font-bold self-stretch text-center text-primary-900">{{ table.table_no }}</span>
+                        <div class="text-base text-primary-900 font-normal text-center">{{ table.id === props.currentOrderTable.id ? 'Main table' : 'Merged' }}</div>
+                        <Checkbox 
+                            :checked="!!form.tables.tables_to_remain.find((formTable) => formTable.id === table.id)"
+                            :disabled="table.id === props.currentOrderTable.id"
+                            class="absolute top-[11px] right-[12px]"
+                        />
+                    </div>
+                </template>
+            </div>
         </div>
-    </div>
 
-    <div class="flex flex-col px-6 pt-6 pb-2 items-center gap-4 self-stretch rounded-b-[5px] bg-white shadow-[0_-8px_16.6px_0_rgba(0,0,0,0.04)] mx-[-20px]">
-        <div class="flex h-[25px] items-end gap-2.5 self-stretch">
-            <span class="flex-[1_0_0] self-stretch text-grey-950 text-base font-normal">
-                Table merged with:
-            </span>
-            <span>
-                {{ toRemainTableNames }}
-            </span>
-        </div>
-        <div class="flex justify-center items-end gap-4 self-stretch">
-            <Button
-                :variant="'tertiary'"
-                :type="'button'"
-                :size="'lg'"
-                @click="emit('close')"
-            >
-                Cancel
-            </Button>
-            <Button
-                :variant="'primary'"
-                :type="'button'"
-                :size="'lg'"
-                :disabled="form.tables.tables_to_split.length == 0"
-                @click="openConfirm()"
-            >
-                Confirm
-            </Button>
+        <div class="flex flex-col px-6 pt-6 pb-2 items-center gap-4 self-stretch rounded-b-[5px] bg-white shadow-[0_-8px_16.6px_0_rgba(0,0,0,0.04)] mx-[-20px]">
+            <div class="flex h-[25px] items-end gap-2.5 self-stretch">
+                <span class="flex-[1_0_0] self-stretch text-grey-950 text-base font-normal">
+                    Table merged with:
+                </span>
+                <span>
+                    {{ toRemainTableNames }}
+                </span>
+            </div>
+            <div class="flex justify-center items-end gap-4 self-stretch">
+                <Button
+                    :variant="'tertiary'"
+                    :type="'button'"
+                    :size="'lg'"
+                    @click="emit('close')"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    :variant="'primary'"
+                    :type="'button'"
+                    :size="'lg'"
+                    :disabled="form.tables.tables_to_split.length == 0"
+                    @click="openConfirm()"
+                >
+                    Confirm
+                </Button>
+            </div>
         </div>
     </div>
 
@@ -447,7 +449,7 @@ onMounted(() => {
     
     <Modal
         :title="'Reassign Order'"
-        :maxWidth="'xl'"
+        :maxWidth="'full'"
         :closeable="true"
         :show="isReassignOrderModalOpen"
         @close="closeModal('close')"

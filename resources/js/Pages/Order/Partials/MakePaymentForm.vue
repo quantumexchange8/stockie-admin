@@ -310,7 +310,7 @@ const updateOrderCustomer = (event) => {
 
     <Modal
         :title="'Pay Bill'"
-        :maxWidth="'xl'" 
+        :maxWidth="'full'" 
         :closeable="true"
         :show="payBillFormIsOpen"
         @close="closeModal('close')"

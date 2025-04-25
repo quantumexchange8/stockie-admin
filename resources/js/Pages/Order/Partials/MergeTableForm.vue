@@ -1,7 +1,7 @@
 <script setup>
 import Button from '@/Components/Button.vue';
 import Checkbox from '@/Components/Checkbox.vue';
-import { MergeTableIllust } from '@/Components/Icons/illus';
+import { MergeTableIllust, MovingIllus } from '@/Components/Icons/illus';
 import { CheckedIcon, DefaultIcon, MergedIcon, WarningIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import TabView from '@/Components/TabView.vue';
@@ -39,6 +39,9 @@ const customers = ref();
 const checkedIn = ref([]);
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
+const removeRewardFormIsOpen = ref(false);
+const currentHasVoucher = ref(false);
+const targetHasVoucher = ref(false);
 
 const emit = defineEmits(['close', 'closeDrawer', 'closeOrderDetails']);
 
@@ -161,19 +164,22 @@ const getCurrentOrderTableDuration = (table) => {
 
 const getTableClasses = (table) => ({
     state: computed(() => [
-        'border border-solid rounded-[5px]',
+        table.is_reserved ? 'cursor-not-allowed' : 'cursor-pointer',
         {
-            'bg-white border-grey-100': table.status === 'Empty Seat',
-            'bg-green-600 border-green-400': table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order',
-            'bg-orange-500 border-orange-400': table.status === 'Pending Clearance',
+            'bg-grey-50': table.status === 'Empty Seat' && table.is_reserved,
+            'bg-white': table.status === 'Empty Seat' && !table.is_reserved,
+            'bg-green-600': (table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order') && !table.is_reserved,
+            'bg-orange-500': table.status === 'Pending Clearance' && !table.is_reserved,
         }
     ]),
     text: computed(() => [
         'text-xl font-bold self-stretch text-center',
         {
-            'text-primary-900': table.status === 'Empty Seat',
-            'text-green-50': table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order',
-            'text-orange-25': table.status === 'Pending Clearance',
+            'text-primary-900': table.status === 'Empty Seat' && !table.is_reserved,
+            // 'text-primary-25': table.status === 'Pending Order',
+            'text-green-50': (table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order') && !table.is_reserved,
+            'text-orange-25': table.status === 'Pending Clearance'  && !table.is_reserved,
+            'text-grey-400': table.is_reserved,
         }
     ]),
     duration: computed(() => [
@@ -237,7 +243,22 @@ const mergeTable = async () => {
     }
 }
 
+const showRemoveRewardForm = () => {
+    removeRewardFormIsOpen.value = true;
+};
+
+const hideRemoveRewardForm = () => {
+    removeRewardFormIsOpen.value = false;
+};
+
 const openConfirm = () => {
+    currentHasVoucher.value = ['Empty Seat', 'Pending Clearance'].includes(props.currentOrderTable.status) && order.value.voucher;
+    targetHasVoucher.value = form.tables.some(table => {
+        return table.order && 
+                table.order.voucher_id && 
+                !['Empty Seat', 'Pending Clearance'].includes(table.status);
+    });
+
     const isCheckedIn = form.tables.flatMap((table) => table.order_tables)
                                     .filter((order_table) => !!order_table.order.customer_id)
                                     .map((order_table) => order_table.order.customer_id);
@@ -251,13 +272,19 @@ const openConfirm = () => {
     if (checkedIn.value.length > 1) {
         isConfirmShow.value = true;
     } else {
-        mergeTable();
+        if (currentHasVoucher.value || targetHasVoucher.value) {
+            showRemoveRewardForm();
+        } else {
+            mergeTable();
+        }
     }
 };
 
 
 const closeConfirm = () => {
-    isConfirmShow.value = false;
+    if (!removeRewardFormIsOpen.value) isConfirmShow.value = false;
+    currentHasVoucher.value = false;
+    targetHasVoucher.value = false;
 }
 
 watch(() => zones.value, populateTabs, { immediate: true });
@@ -271,8 +298,8 @@ onMounted(() => {
 </script>
 
 <template>
-    <form @submit.prevent="mergeTable">
-        <div class="flex flex-col items-start gap-6 self-stretch pb-6">
+    <form class="h-full flex flex-col justify-between" @submit.prevent="mergeTable">
+        <div class="flex flex-col h-full items-start gap-6 self-stretch pb-6">
             <div class="flex flex-col items-start gap-2.5 self-stretch">
                 <div class="flex flex-col p-3 justify-center items-start gap-3 self-stretch rounded-[5px] bg-[#FDFBED]">
                     <div class="flex items-start gap-3 self-stretch">
@@ -290,22 +317,27 @@ onMounted(() => {
             </div>
             <TabView :tabs="tabs" v-if="zones.length">
                 <template #all>
-                    <div class="flex flex-col px-6 items-start gap-6 self-stretch max-h-[calc(100dvh-28.4rem)] overflow-auto scrollbar-webkit scrollbar-thin">
-                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap">
+                    <div class="flex flex-col px-6 items-start gap-6 self-stretch max-h-[calc(100dvh-26rem)] overflow-auto scrollbar-webkit scrollbar-thin">
+                        <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch">
                         <template v-for="zone in zones">
                             <template v-for="table in zone.tables">
-                                <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative" 
+                                <div class="col-span-1 flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative" 
                                     :class="getTableClasses(table).state.value"
-                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) ? '' : addToMerged(table)"
+                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) || table.is_reserved ? '' : addToMerged(table)"
                                 >
                                     <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                     <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                         {{ getCurrentOrderTableDuration(table) }}
                                     </div>
-                                    <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                                    <template v-else>
+                                        <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                            <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                        </div>
+                                        <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                    </template>
                                     <Checkbox 
                                         :checked="!!form.tables.find((formTable) => formTable.id === table.id)"
-                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id)"
+                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) || table.is_reserved"
                                         class="absolute top-[11px] right-[12px]"
                                     />
                                     <MergedIcon class="text-white size-5 absolute left-2 top-2" v-if="isMerged(table)" />
@@ -321,21 +353,26 @@ onMounted(() => {
                     v-slot:[tab]
                 >
                     <div class="flex flex-col px-6 items-start gap-6 self-stretch max-h-[calc(100dvh-28.4rem)] overflow-auto scrollbar-webkit scrollbar-thin">
-                        <div class="grid grid-cols-6 items-start content-start gap-6 self-stretch flex-wrap">
+                        <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch">
                         <template v-for="zone in zones.filter(zone => zone.text.toLowerCase().replace(/[/\s_]+/g, '-') === tab)">
                             <template v-for="table in zone.tables">
-                                <div class="flex flex-col p-6 justify-center items-center gap-1 flex-[1_0_0] rounded-[5px] relative" 
+                                <div class="col-span-1 flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative" 
                                     :class="getTableClasses(table).state.value"
-                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) ? '' : addToMerged(table)"
+                                    @click="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) || table.is_reserved ? '' : addToMerged(table)"
                                 >
                                     <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                     <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                         {{ getCurrentOrderTableDuration(table) }}
                                     </div>
-                                    <div class="text-base text-primary-900 font-normal text-center" v-else>{{ table.seat }} seats</div>
+                                    <template v-else>
+                                        <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                            <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                        </div>
+                                        <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                    </template>
                                     <Checkbox 
                                         :checked="!!form.tables.find((formTable) => formTable.id === table.id)"
-                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id)"
+                                        :disabled="table.id === props.currentOrderTable.id || !!mergedTables.find((mergeTable) => mergeTable === table) || order.order_table.some((orderTable) => orderTable.table_id === table.id) || table.is_reserved"
                                         class="absolute top-[11px] right-[12px]"
                                     />
                                     <MergedIcon class="text-white size-5 absolute left-2 top-2" v-if="isMerged(table)" />
@@ -433,7 +470,7 @@ onMounted(() => {
                         :type="'button'"
                         :variant="'primary'"
                         :size="'lg'"
-                        @click="mergeTable"
+                        @click="currentHasVoucher || targetHasVoucher ? showRemoveRewardForm() : mergeTable()"
                     >
                         Confirm
                     </Button>
@@ -441,6 +478,41 @@ onMounted(() => {
             </div>
         </Modal>
     </form>
+
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="removeRewardFormIsOpen"
+        :withHeader="false"
+        class="[&>div>div>div]:!p-0"
+        @close="hideRemoveRewardForm"
+    >
+        <div class="flex flex-col gap-9">
+            <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                <MovingIllus />
+            </div>
+            <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Remove Reward</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >The applied reward for both orders will be removed, but you can always reapply it during payment.</div>
+            </div>
+            <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="hideRemoveRewardForm"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    size="lg"
+                    @click="mergeTable"
+                >
+                    Remove
+                </Button>
+            </div>
+        </div>
+    </Modal>
 
 </template>
 

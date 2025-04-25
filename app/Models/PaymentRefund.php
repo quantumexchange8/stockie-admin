@@ -22,6 +22,11 @@ class PaymentRefund extends Model
         'others_remark',
         'refund_remark',
         'status',
+        'invoice_status',
+        'consolidated_parent_id',
+        'submitted_uuid',
+        'uuid',
+        'submission_date',
     ];
 
     public function order(): BelongsTo

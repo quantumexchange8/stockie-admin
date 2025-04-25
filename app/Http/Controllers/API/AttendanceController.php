@@ -9,6 +9,7 @@ use App\Models\WaiterShift;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\RateLimiter;
@@ -19,7 +20,7 @@ class AttendanceController extends Controller
     
     public function __construct()
     {
-        $this->authUser = User::find(Auth::id());
+        $this->authUser = User::where('id', Auth::id())->first();
     }
 
     /**
@@ -178,11 +179,94 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Manage waiter's break start/end 
+     */
+    public function handleBreak(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:start,end'
+        ]);
+    
+        $waiter = $this->authUser;
+        $action = $request->input('action');
+    
+        if ($action === 'start') {
+            return $this->startBreak($waiter);
+        } else {
+            return $this->endBreak($waiter);
+        }
+    }
+
+    protected function startBreak($waiter)
+    {
+        // Verify waiter is checked in
+        $lastAttendance = WaiterAttendance::where('user_id', $waiter->id)
+                                            ->whereNotNull('check_in')
+                                            ->where(function($query) {
+                                                $query->whereNull('check_out')
+                                                    ->orWhere('status', 'Break end');
+                                            })
+                                            ->latest()
+                                            ->first();
+    
+        if (!$lastAttendance || $lastAttendance->status === 'Break start') {
+            return response()->json([
+                'message' => 'Cannot start break - invalid current status'
+            ], 400);
+        }
+        
+        $breakRecord = WaiterAttendance::create([
+            'user_id' => $waiter->id,
+            'check_in' => now(),
+            'status' => 'Break start'
+        ]);
+    
+        return response()->json([
+            'message' => 'Break started successfully',
+            'data' => $breakRecord
+        ], 201);
+    }
+    
+    protected function endBreak($waiter)
+    {
+        // Find the latest break start without end
+        $breakStartRecord = WaiterAttendance::where('user_id', $waiter->id)
+                                        ->whereNotNull('check_in')
+                                        ->where(function($query) {
+                                            $query->whereNotNull('check_out')
+                                                ->orWhere('status', 'Break start');
+                                        })
+                                        ->latest()
+                                        ->first();
+    
+        if (!$breakStartRecord || $breakStartRecord->status === 'Break end') {
+            return response()->json([
+                'message' => 'Cannot end break - invalid current status'
+            ], 400);
+        }
+
+        $breakRecord = WaiterAttendance::create([
+            'user_id' => $waiter->id,
+            'check_in' => $breakStartRecord->check_in,
+            'check_out' => now(),
+            'status' => 'Break end'
+        ]);
+    
+        return response()->json([
+            'message' => 'Break ended successfully',
+            'data' => $breakRecord
+        ], 201);
+    }
+
+    /**
      * Check for recent attendance if waiter has logged out recently within an hour then will return confirmation message
      */
     private function checkRecentAttendance(User $user)
     {
-        $latestAttendance = $user->attendances()->whereBetween('check_out', [now()->subMinutes(60), now()])->first();
+        $latestAttendance = $user->attendances()
+                                    ->where('status', 'Checked out')
+                                    ->whereBetween('check_out', [now()->subMinutes(60), now()])
+                                    ->first();
 
         if (!$latestAttendance) return;
 
@@ -200,12 +284,22 @@ class AttendanceController extends Controller
         return $checkInTime 
                 ? $user->attendances()
                         ->whereDate('check_in', $checkInTime->toDateString())
-                        ->whereNull('check_out')
+                        ->where(function($query) {
+                            $query->where('status', 'Checked in')
+                                ->orWhere(function($subQuery) {
+                                    $subQuery->where('status', 'Checked out')
+                                             ->where('check_out', '<=', now()->subHour());
+                                });
+                        })
+                        ->latest()
                         ->first(['id', 'check_in', 'check_out'])
                 : $user->attendances()
-                        ->whereNull('check_out')
-                        ->latest('check_in')
-                        ->first(['id', 'check_in', 'check_out']);
+                        ->where(function($query) {
+                            $query->where('status', 'Checked in')
+                                ->orWhere('status', 'Checked out');
+                        })
+                        ->latest()
+                        ->first(['id', 'check_in', 'status']);
     }
 
     /**
@@ -396,12 +490,19 @@ class AttendanceController extends Controller
      */
     public function checkOut(Request $request)
     {
-        $existingAttendance = $this->checkExistingAttendance($this->authUser);
-        if ($existingAttendance) {
-            $checkOutAt = now();
-            $existingAttendance->update(['check_out' => $checkOutAt]);
+        $waiter = $this->authUser;
+        $existingAttendance = $this->checkExistingAttendance($waiter);
 
-            $shiftDuration = date_diff(Carbon::parse($existingAttendance->check_in), $checkOutAt);
+        if ($existingAttendance && $existingAttendance->status === 'Checked in') {
+            $checkOutAt = now();
+            $attendance = WaiterAttendance::create([
+                'user_id' => $waiter->id,
+                'check_in' => $existingAttendance->check_in,
+                'check_out' => $checkOutAt,
+                'status' => 'Checked out'
+            ]);
+
+            $shiftDuration = date_diff(Carbon::parse($attendance->check_in), $checkOutAt);
             $hoursWorked = sprintf('%02d', $shiftDuration->h);
             $surplasMinsWorked = sprintf('%02d', $shiftDuration->i);
             

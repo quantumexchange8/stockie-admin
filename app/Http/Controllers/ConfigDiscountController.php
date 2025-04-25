@@ -273,7 +273,9 @@ class ConfigDiscountController extends Controller
     }
 
     private function getBillDiscounts() {
-        $bill_discounts = BillDiscount::where('status', '!=', 'unavailable')->get();
+        $bill_discounts = BillDiscount::with('billDiscountUsages')
+                                        ->where('status', '!=', 'unavailable')
+                                        ->get();
     
         foreach ($bill_discounts as $bill_discount) {
             $tiers = $bill_discount->tier;
@@ -303,6 +305,13 @@ class ConfigDiscountController extends Controller
 
     public function getAllBillDiscounts(){
         $bill_discounts = $this->getBillDiscounts();
+
+        $bill_discounts->each(function ($discount) {
+            $discount['highest_customer_used_count'] = $discount->billDiscountUsages->reduce(function ($highest, $usage) {
+                $highest = $highest > $usage['customer_usage'] ? $highest : $usage['customer_usage'];
+                return $highest;
+            }, 0);
+        });
 
         return response()->json($bill_discounts);
     }
@@ -373,6 +382,7 @@ class ConfigDiscountController extends Controller
             'customer_usage' => $request['customer_usage'],
             'customer_usage_renew' => $request['customer_usage_renew'],
             'total_usage' => $request['total_usage'],
+            'remaining_usage' => $request['total_usage'],
             'total_usage_renew' => $request['total_usage_renew'],
             'tier' => $request['tier'],
             'payment_method' => $request['payment_method'],

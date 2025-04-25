@@ -25,4 +25,12 @@ class PaymentDetail extends Model
     {
         return LogOptions::defaults()->logAll();
     }
+
+    /**
+     * Get the associated payment.
+     */
+    public function payment(): BelongsTo
+    {
+        return $this->belongsTo(Payment::class, 'payment_id');
+    }
 }

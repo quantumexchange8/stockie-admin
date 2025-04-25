@@ -25,7 +25,6 @@ class OrderTableRequest extends FormRequest
             'tables' => 'required|array',
             'pax' => 'required|string|max:255',
             'assigned_waiter' => 'required|integer',
-            'order_id' => 'nullable|integer',
         ];
     }
 

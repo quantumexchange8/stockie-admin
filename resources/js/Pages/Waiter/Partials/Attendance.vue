@@ -7,8 +7,10 @@ import Table from '@/Components/Table.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { computed, onMounted, ref, watch } from 'vue';
 import { FilterMatchMode } from 'primevue/api';
+import { transactionFormat, useFileExport } from '@/Composables';
+import duration from 'dayjs/plugin/duration';
 import dayjs from 'dayjs';
-import { useFileExport } from '@/Composables';
+dayjs.extend(duration)
 
 const props = defineProps({
     dateFilter: Array,
@@ -20,17 +22,19 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-    attendance: {
-        type: Array,
-        required: true,
-    },
+    // attendance: {
+    //     type: Array,
+    //     required: true,
+    // },
     rowType: Object,
 })
 
 const { exportToCSV } = useFileExport();
+const { formatAmount } = transactionFormat();
 
 const waiter = ref(props.waiter);
-const attendance = ref(props.attendance);
+const tableColumns = ref(props.columns);
+const attendance = ref([]);
 const attendanceRowsPerPage = ref(11);
 
 const filters = ref({
@@ -57,7 +61,7 @@ const viewAttendance = async (filters = {}, id) => {
                 dateFilter: filters,
             }
         });
-        attendance.value = attendanceResponse.data;
+        attendance.value = attendanceResponse.data.attendances;
     } catch (error) {
         console.error(error);
     } finally {
@@ -77,6 +81,19 @@ const csvExport = () => {
 const attendanceTotalPages = computed(() => {
     return Math.ceil(attendance.value.length / attendanceRowsPerPage.value);
 })
+
+onMounted(() => {
+    viewAttendance(date_filter.value, props.waiter.id);
+    if (waiter.value.employment_type === 'Part-time' && !tableColumns.value.find((c) => c.field === 'rate')) {
+        // tableColumns.value[0]
+        tableColumns.value.push({
+            field: 'earnings', 
+            header: 'Est. Rate (RM/hour)', 
+            width: '30', 
+            sortable: true
+        });
+    }
+});
 
 </script>
 
@@ -139,11 +156,11 @@ const attendanceTotalPages = computed(() => {
                 :range="true"
                 class="!w-max"
                 v-model="date_filter"
-        />
+            />
         </div>
         <div class="w-full" v-if="attendance">
             <Table
-                :columns="columns"
+                :columns="tableColumns"
                 :rows="attendance"
                 :variant="'list'"
                 :searchFilter="true"
@@ -156,14 +173,18 @@ const attendanceTotalPages = computed(() => {
                     <UndetectableIllus class="w-44 h-44"/>
                     <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                 </template>
-                <template #check_in="attendance">
-                    <span class="text-grey-900 text-sm font-medium">{{ attendance.check_in }}</span>
+                <template #date="attendance">
+                    <span class="text-grey-900 text-sm font-medium">{{ attendance.date }}</span>
                 </template>
-                <template #check_out="attendance">
-                    <span class="text-grey-900 text-sm font-medium">{{ attendance.check_out ?? '-' }}</span>
+                <template #work_duration="attendance">
+                    <span class="text-grey-900 text-sm font-medium">{{ attendance.work_duration }}</span>
+                    <!-- <span class="text-grey-900 text-sm font-medium">{{ dayjs.duration(2, 'minutes').humanize() }}</span> -->
                 </template>
-                <template #duration="attendance">
-                    <span class="text-grey-900 text-sm font-medium">{{ attendance.duration }}</span>
+                <template #break_duration="attendance">
+                    <span class="text-grey-900 text-sm font-medium">{{ attendance.break_duration ?? '-' }}</span>
+                </template>
+                <template #rate="attendance">
+                    <span class="text-grey-900 text-sm font-medium">RM {{ formatAmount(attendance.rate ?? 0) }}</span>
                 </template>
             </Table>
         </div>

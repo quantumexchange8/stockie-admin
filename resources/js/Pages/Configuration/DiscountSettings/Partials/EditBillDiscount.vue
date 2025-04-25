@@ -74,9 +74,10 @@ const form = useForm({
     discount_requirement: discount.value.criteria === 'min_spend' ? parseFloat(discount.value.requirement).toFixed(2) : discount.value.requirement.toString(),
     is_stackable: discount.value.is_stackable,
     conflict: discount.value.conflict ?? 'keep',
-    customer_usage: discount.value.customer_usage > 0 ? discount.value.customer_usage.toString() : 0,
+    customer_usage: discount.value.customer_usage > 0 ? discount.value.customer_usage.toString() : '0',
     customer_usage_renew: discount.value.customer_usage_renew ?? '',
-    total_usage: discount.value.total_usage > 0 ? discount.value.total_usage.toString() : 0,
+    total_usage: discount.value.total_usage > 0 ? discount.value.total_usage.toString() : '0',
+    remaining_usage: discount.value.remaining_usage > 0 ? discount.value.remaining_usage.toString() : '0',
     total_usage_renew: discount.value.total_usage_renew ?? '',
     tier: discount.value.tier,
     payment_method: discount.value.payment_method,
@@ -133,8 +134,30 @@ const editBillDiscount = () => {
 }
 
 const isFormValid = computed(() => {
-    return ['discount_name', 'discount_rate', 'discount_period', 'available_on', 'discount_requirement'].every(field => form[field]);
+    return ['discount_name', 'discount_rate', 'discount_period', 'available_on', 'discount_requirement'].every(field => form[field]) && 
+            form.total_usage >= (discount.value.total_usage - form.remaining_usage) &&
+            form.customer_usage >= discount.value.highest_customer_used_count;
 })
+
+const customerUsageErrorMsg = computed(() => {
+    if (!form.errors) return '';
+    if (form.errors && form.errors.customer_usage) return form.errors.customer_usage;
+
+    const usedCount = discount.value.highest_customer_used_count;
+    return form.customer_usage < usedCount
+            ? `New customer usage cannot be less than highest amount of redeemed count of the customers (${usedCount})`
+            : '';
+});
+
+const totalUsageErrorMsg = computed(() => {
+    if (!form.errors) return '';
+    if (form.errors && form.errors.total_usage) return form.errors.total_usage;
+
+    const usedCount = discount.value.total_usage - form.remaining_usage;
+    return form.total_usage < usedCount
+            ? `New total usage cannot be less than already redeemed count (${usedCount})`
+            : '';
+});
 
 onMounted(() => {
     getAllTiers();
@@ -437,28 +460,14 @@ watch(
                         </div>
                     </div>
                     <div class="flex flex-col items-start gap-6 self-stretch">
-                        <div class="grid grid-cols-2 items-start gap-6 self-stretch" v-if="isCustomerUsage">
-                            <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
+                        <div class="flex flex-col items-start w-full gap-4 flex-[1_0_0]" v-if="isCustomerUsage">
+                            <div class="grid grid-cols-2 items-start gap-6 self-stretch">
                                 <div class="flex items-start gap-4 self-stretch">
                                     <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                         <span class="self-stretch text-grey-950 text-base font-bold">Customer Usage</span>
                                         <span class="self-stretch text-grey-950 text-sm font-normal">Limit the discount to number of uses per customer.</span>
                                     </div>
                                 </div>
-                                <TextInput
-                                    :errorMessage="form.errors?.customer_usage"
-                                    :inputName="'customer_usage'"
-                                    :placeholder="'100'"
-                                    :iconPosition="'right'"
-                                    v-model="form.customer_usage"
-                                    class="[&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pl-4 [&>div:nth-child(1)>input]:mb-0"
-                                >
-                                    <template #prefix>
-                                        <span class="text-grey-900 text-base font-normal">use per customer</span>
-                                    </template>
-                                </TextInput>
-                            </div>
-                            <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
                                 <div class="flex items-start gap-4 self-stretch">
                                     <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                         <span class="self-stretch text-grey-950 text-base font-bold">Customer Usage Renew Every</span>
@@ -469,6 +478,20 @@ watch(
                                         @update:checked="isCustomerUsageRenew = !isCustomerUsageRenew; if(!isCustomerUsageRenew) form.reset('customer_usage_renew')"
                                     />
                                 </div>
+                            </div>
+                            <div class="grid grid-cols-2 items-start gap-6 self-stretch">
+                                <TextInput
+                                    :errorMessage="customerUsageErrorMsg"
+                                    :inputName="'customer_usage'"
+                                    :placeholder="'100'"
+                                    :iconPosition="'right'"
+                                    v-model="form.customer_usage"
+                                    class="[&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pl-4 [&>div:nth-child(1)>input]:mb-0"
+                                >
+                                    <template #prefix>
+                                        <span class="text-grey-900 text-base font-normal">use per customer</span>
+                                    </template>
+                                </TextInput>
                                 <Dropdown 
                                     :inputArray="usage_renew"
                                     :dataValue="form.customer_usage_renew ?? 'None'"
@@ -479,28 +502,14 @@ watch(
                                 />
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 items-start gap-6 self-stretch" v-if="isTotalUsage">
-                            <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
+                        <div class="flex flex-col items-start w-full gap-4 flex-[1_0_0]" v-if="isTotalUsage">
+                            <div class="grid grid-cols-2 items-start gap-6 self-stretch">
                                 <div class="flex items-start gap-4 self-stretch">
                                     <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                         <span class="self-stretch text-grey-950 text-base font-bold">Total Usage</span>
                                         <span class="self-stretch text-grey-950 text-sm font-normal">Limit the discount to a specific number of total uses.</span>
                                     </div>
                                 </div>
-                                <TextInput
-                                    :errorMessage="form.errors?.total_usage"
-                                    :inputName="'total_usage'"
-                                    :placeholder="'100'"
-                                    :iconPosition="'right'"
-                                    v-model="form.total_usage"
-                                    class="[&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pl-4 [&>div:nth-child(1)>input]:mb-0"
-                                >
-                                    <template #prefix>
-                                        <span class="text-grey-900 text-base font-normal">bills</span>
-                                    </template>
-                                </TextInput>
-                            </div>
-                            <div class="flex flex-col items-start gap-4 flex-[1_0_0]">
                                 <div class="flex items-start gap-4 self-stretch">
                                     <div class="flex flex-col items-start gap-1 flex-[1_0_0]">
                                         <span class="self-stretch text-grey-950 text-base font-bold">Total Usage Renew Every</span>
@@ -511,6 +520,20 @@ watch(
                                         @update:checked="isTotalUsageRenew = !isTotalUsageRenew; if(!isTotalUsageRenew) form.reset('total_usage_renew')"
                                     />
                                 </div>
+                            </div>
+                            <div class="grid grid-cols-2 items-start gap-6 self-stretch">
+                                <TextInput
+                                    :errorMessage="totalUsageErrorMsg"
+                                    :inputName="'total_usage'"
+                                    :placeholder="'100'"
+                                    :iconPosition="'right'"
+                                    v-model="form.total_usage"
+                                    class="[&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pl-4 [&>div:nth-child(1)>input]:mb-0"
+                                >
+                                    <template #prefix>
+                                        <span class="text-grey-900 text-base font-normal">bills</span>
+                                    </template>
+                                </TextInput>
                                 <Dropdown 
                                     :inputArray="usage_renew"
                                     :dataValue="form.total_usage_renew ?? 'None'"
@@ -562,7 +585,7 @@ watch(
             <div class="grid grid-cols-12 p-6 items-start gap-7 self-stretch rounded-[5px] border border-solid border-grey-100 bg-white shadow-[0_1px_12px_0_rgba(0,0,0,0.06)]">
                 <div class="col-span-3 flex justify-between items-start">
                     <div class="flex items-start gap-3 flex-[1_0_0] self-stretch">
-                        <span class="pl-3 flex-[1_0_0] text-grey-950 text-md font-semibold border-l-[5px] border-primary-800">Member Exclusive Only</span>
+                        <span class="pl-3 flex-[1_0_0] text-grey-950 text-md font-semibold border-l-[5px] border-primary-800">Eligible Payment Method</span>
                     </div>
                 </div>
                 <div class="col-span-9 w-1/2 flex items-start gap-6 flex-[1_0_0]">
@@ -574,7 +597,7 @@ watch(
                             </div>
                             <Toggle 
                                 :checked="isEligibleMethod"
-                                @update:checked="isEligibleMethod = !isEligibleMethod"
+                                @update:checked="isEligibleMethod = !isEligibleMethod; form.payment_method = []"
                             />
                         </div>
                         <MultiSelect 

@@ -220,15 +220,15 @@ const isValidated = computed(() => {
 </script>
 
 <template>
-    <form @submit.prevent="submit">
-        <div class="flex items-start w-full gap-x-5 self-stretch py-6 bg-grey-50 overflow-x-auto scrollbar-thin scrollbar-webkit">
+    <form class="h-full flex flex-col justify-between" @submit.prevent="submit">
+        <div class="flex items-start size-full gap-x-5 self-stretch py-6 bg-grey-50 overflow-x-auto scrollbar-thin scrollbar-webkit">
             <!-- Current Table -->
             <div class="min-w-[378px] max-w-[378px] flex flex-col items-start gap-6 self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
                 <div class="flex p-4 gap-x-2 justify-start items-center self-stretch border-b border-grey-100">
                     <span class="w-1.5 h-[22px] bg-primary-800"></span>
                     <p class="text-grey-950 text-md font-semibold">{{ currentTableNames }} (Current)</p>
                 </div>
-                <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-28.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-19.8rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <template v-for="item in form.currentTable.order_items" :key="item.id">
                         <div
                             v-if="item.balance_qty > 0"
@@ -304,7 +304,7 @@ const isValidated = computed(() => {
                         </div>
                     </div>
 
-                    <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-28.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                    <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-19.8rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                         <template v-for="item in target.order_items" :key="item.id">
                             <div
                                 v-if="item.balance_qty > 0"

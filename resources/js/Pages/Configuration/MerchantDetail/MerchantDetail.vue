@@ -3,6 +3,7 @@ import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { NoImageIcon, PercentageIcon } from '@/Components/Icons/solid';
+import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/Table.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast, useInputValidator, usePhoneUtils } from '@/Composables';
@@ -21,7 +22,7 @@ const emit = defineEmits(['refetchMerchant']);
 
 const { isValidNumberKey } = useInputValidator();
 const { showMessage } = useCustomToast();
-const { formatPhone } = usePhoneUtils();
+const { transformPhone, formatPhoneInput } = usePhoneUtils();
 
 const taxes = ref([]);
 const isLoading = ref(false);
@@ -30,9 +31,7 @@ const initialTaxes = ref([]);
 const codes = ref([]);
 const msic_codes = ref([]);
 const merchant_detail = ref(props.merchant);
-const phonePrefixes = ref([
-    { text: '+60', value: '+60'},
-]);
+const phonePrefixes = ref([{ text: '+60', value: '+60'}]);
 
 const getResults = async () => {
     isLoading.value = true
@@ -94,7 +93,8 @@ const merchantForm = useForm({
     prefix: phonePrefixes.value[0]?.value,
     registration_no: merchant_detail.value?.registration_no ?? '',
     msic_code: merchant_detail.value?.msic_code ?? '',
-    phone_no: merchant_detail.value?.merchant_contact ? formatPhone(merchant_detail.value?.merchant_contact, false, true) : '',
+    phone_temp: merchant_detail.value?.merchant_contact ? merchant_detail.value?.merchant_contact.slice(2) : '',
+    phone_no: merchant_detail.value?.merchant_contact,
     email_address: merchant_detail.value?.email_address ?? '',
     sst_registration_no: merchant_detail.value?.sst_registration_no ?? '',
     description: merchant_detail.value?.description ?? '',
@@ -142,6 +142,8 @@ const editThisTax = (tax) => {
 
 const editDetails = async () => {
     isLoading.value = true;
+    merchantForm.phone_no = merchantForm.phone_temp ? transformPhone(merchantForm.phone_temp, true) : '';
+
     try {
         const response = await axios.post(route('configurations.updateMerchant'), merchantForm);
         merchant_detail.value = response.data;
@@ -241,7 +243,7 @@ onMounted(() => {
                 <div class="flex flex-col items-start gap-6 self-stretch">
                     <!-- Change merchant logo -->
                     <div class="flex items-center gap-6">
-                        <div class="flex justify-center items-center rounded-[5px] bg-white">
+                        <div class="flex flex-col justify-center items-start rounded-[5px] bg-white">
                             <div class="size-[120px] shrink-0 rounded-[5px] bg-white relative group" v-if="merchantForm.merchant_image">
                                 <img
                                     :src="merchantForm.merchant_image"
@@ -263,6 +265,7 @@ onMounted(() => {
                             <div class="flex size-[120px] justify-center items-center shrink-0 rounded-[5px] bg-grey-100" v-else>
                                 <NoImageIcon />
                             </div>
+                            <InputError class="text-nowrap" :message="merchantForm.errors.merchant_image ? merchantForm.errors.merchant_image[0] : ''" />
                         </div>
                         <Button
                             :variant="'secondary'"
@@ -353,9 +356,11 @@ onMounted(() => {
 
                                     <TextInput 
                                         :inputName="'phone_no'"
+                                        placeholder="12 345 1234"
                                         :errorMessage="merchantForm.errors.phone_no ? merchantForm.errors.phone_no[0] : ''"
-                                        v-model="merchantForm.phone_no"
+                                        v-model="merchantForm.phone_temp"
                                         @keypress="isValidNumberKey($event, false)"
+                                        @input="formatPhoneInput($event, false)"
                                     />
                                 </div>
                             </div>

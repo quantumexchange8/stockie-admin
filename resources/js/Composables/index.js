@@ -230,11 +230,11 @@ export function usePhoneUtils() {
     };
 
     // Transform the phone number value for storing
-    function transformPhone(phone) {
+    function transformPhone(phone, prefix = false) {
         if (!phone) return phone; 
 
         // Remove whitespace and underscore
-        let formattedPhone = phone.replace(/[\s_|-]+/g, '')
+        let formattedPhone = phone.replace(/[\s_|-]+/g, '');
         // let formattedPhone = phone.startsWith('+60') 
         //     ? phone.replace(/[\s_]+/g, '') 
         //     : `+60${phone.replace(/[\s_]+/g, '')}`;
@@ -245,12 +245,14 @@ export function usePhoneUtils() {
             : formattedPhone.startsWith('1') || formattedPhone.startsWith('3') 
                 ? 9 // +60 1x-xxx xxxx (mobile) or +60 3-xxxx xxxx (landline)
                 : 8; // +60 8x-xxx xxx (landline) or default
+        
+        const prefixText = prefix ? '60' : '';
 
-        return formattedPhone.slice(0, maxLength);
+        return prefixText + formattedPhone.slice(0, maxLength);
     };
 
     // Format the phone number input and updates the form field value
-    function formatPhoneInput(event) {
+    function formatPhoneInput(event, whitespaces = true) {
         let input = event.target.value.replace(/\D/g, ''); // Remove non-digit characters
 
         // Handle backspace clearing without reapplying format
@@ -271,7 +273,9 @@ export function usePhoneUtils() {
 
         // Restrict the length and format the number based on the pattern
         const match = phone.match(matchFormat);
-        const formatted = `${match[1]}-${match[2]}${match[3] ? ' ' + match[3] : ''}`;
+        const formatted = whitespaces 
+            ? `${match[1]}-${match[2]}${match[3] ? ' ' + match[3] : ''}`
+            : `${match[1]}${match[2]}${match[3]}`;
 
         // Update the displayed value in the input field
         event.target.value = formatted;

@@ -90,7 +90,7 @@ const resetTableSelection = () => {
 watch(() => form.merge_table, (newValue) => {
     form.assigned_waiter = newValue ? form.assigned_waiter : '';
     resetTableSelection();
-    form.pax = validatePaxValue(form.pax).toString();
+    // form.pax = validatePaxValue(form.pax).toString();
 });
 
 const updateSelectedTables = (event) => {
@@ -103,7 +103,7 @@ const updateSelectedTables = (event) => {
                     .filter((table) => table !== null)
                     .join(', ');
 
-    form.pax = validatePaxValue(form.pax).toString();
+    // form.pax = validatePaxValue(form.pax).toString();
 
     // Reset selected table
     if (!selectedTableName.value) {
@@ -166,7 +166,6 @@ const paxInputValidation = (event) => {
                         :errorMessage="form.errors?.pax || ''"
                         v-model="form.pax"
                         @keypress="isValidNumberKey($event, false)"
-                        @input="paxInputValidation($event)"
                     />
                     <Dropdown
                         imageOption

@@ -47,6 +47,7 @@ onMounted(() => getOccupiedTables());
 const selectedTables = computed(() => {
     return props.reservation.table_no.map((table) => {
         return {
+            'id': table.id,
             'text': table.name,
             // 'disabled': occupiedTables.value.some((occupiedTable) => table.id === occupiedTable.id),
         }
@@ -69,7 +70,7 @@ const form = useForm({
 
 const submit = () => { 
     form.table_no = props.tables
-        .filter(table => form.tables.includes(table.id))  // Filter to only selected tables
+        .filter(table => form.tables.map(table => table.id).includes(table.id))  // Filter to only selected tables
         .map(table => ({ id: table.id, name: table.table_no }));  // Map to required format
         
     form.post(route('reservations.checkInGuest', props.reservation.id), {

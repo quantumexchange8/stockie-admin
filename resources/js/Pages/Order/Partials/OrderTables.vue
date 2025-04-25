@@ -318,7 +318,7 @@ watch(() => props.hasOpenedShift, (newValue) => {
         <template v-if="shiftIsOpened">
             <!-- Display all zones along with their table(s) -->
             <template v-if="isMainTab"> 
-                <div class="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-3 items-start gap-6 self-stretch" v-if="props.isFullScreen === true" >
+                <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start gap-6 self-stretch" v-if="props.isFullScreen === true" >
                     <template v-for="zone in filteredZones" class="flex">
                         <div 
                             class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap relative" 
@@ -354,8 +354,8 @@ watch(() => props.hasOpenedShift, (newValue) => {
                         <span class="text-sm text-grey-900 font-medium">{{ zone.text }}</span>
                     </template>
                     <template #body>
-                        <div class="grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 gap-6">
-                            <div class="relative" v-for="table in zone.tables" :key="table.id">
+                        <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch">
+                            <template v-for="table in zone.tables" :key="table.id">
                                 <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
                                     <template #title>
                                         <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
@@ -380,11 +380,11 @@ watch(() => props.hasOpenedShift, (newValue) => {
                                 >
                                     <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                                 </div> -->
-                                <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px]"
+                                <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] relative"
                                     :class="getTableClasses(table).state.value"
                                     @click="openOverlay($event, table)"
                                 >
-                                    <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
+                                    <MergedIcon class="absolute left-2 top-2 size-5 text-white" v-if="isMerged(table)"/>
                                     <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                                     <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                         {{ getCurrentOrderTableDuration(table) }}
@@ -401,7 +401,7 @@ watch(() => props.hasOpenedShift, (newValue) => {
                                         <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
                                     </div>
                                 </div>
-                            </div>
+                            </template>
                         </div>
                     </template>
                 </Accordion>
@@ -409,8 +409,8 @@ watch(() => props.hasOpenedShift, (newValue) => {
             
             <!-- Display specified zone along with its table(s) -->
             <template v-else>
-                <div v-if="filteredZones.tables.length > 0" class="gap-6" :class="props.isFullScreen === true ? 'grid xl:grid-cols-6 lg:grid-cols-4 md:grid-cols-3 ' : 'grid xl:grid-cols-4 md:grid-cols-3 sm:grid-cols-2'">
-                    <div class="relative" v-for="table in filteredZones.tables" :key="table.id">
+                <div v-if="filteredZones.tables.length > 0" class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch">
+                    <template v-for="table in filteredZones.tables" :key="table.id">
                         <!-- <Card :class="getTableClasses(table).card.value" @click="openOverlay($event, table)">
                             <template #title>
                                 <div class="flex flex-col text-center items-center px-6 pt-6 pb-4 gap-2">
@@ -435,10 +435,11 @@ watch(() => props.hasOpenedShift, (newValue) => {
                         >
                             <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                         </div> -->
-                        <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px]"
+                        <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] relative"
                             :class="getTableClasses(table).state.value"
                             @click="openOverlay($event, table)"
                         >
+                            <MergedIcon class="absolute left-2 top-2 size-5 text-white" v-if="isMerged(table)"/>
                             <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                 {{ getCurrentOrderTableDuration(table) }}
@@ -455,7 +456,7 @@ watch(() => props.hasOpenedShift, (newValue) => {
                                 <span class="text-primary-25 text-md font-medium">{{ table.pending_count }}</span>
                             </div>
                         </div>
-                    </div>
+                    </template>
                 </div>
                 <div class="flex flex-col items-center text-center gap-5" v-else>
                     <EmptyTableIllus />

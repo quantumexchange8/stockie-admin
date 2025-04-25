@@ -95,6 +95,7 @@ const fetchOrderDetails = async () => {
             matchingOrderDetails.value.pax = order.value.pax;
             matchingOrderDetails.value.amount = order.value.amount;
             matchingOrderDetails.value.customer_id = order.value.customer_id;
+            matchingOrderDetails.value.voucher_id = order.value.voucher_id;
             matchingOrderDetails.value.assigned_waiter = order.value.user_id; 
             matchingOrderDetails.value.current_order_completed = ['Order Completed', 'Order Cancelled', 'Order Voided'].includes(order.value.status) && order.value.order_table.every((table) => ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided'].includes(table.status));
             
@@ -221,7 +222,7 @@ const hideMergeTableForm = () => {
 }
 
 const showTransferOptionForm = () => {
-    if (currentOrderTable.value.status !== 'Pending Clearance') {
+    if (currentOrderTable.value.status !== 'Pending Clearance' && order.value.order_items && order.value.order_items.length > 0) {
         transferOptionIsOpen.value = true;
     }
 };
@@ -231,9 +232,11 @@ const hideTransferOptionForm = () => {
 }
 
 const showTransferTableForm = (type) => {
-    transferType.value = type;
-    transferTableIsOpen.value = true;
-    hideTransferOptionForm();
+    if (order.value.order_items && order.value.order_items.length > 0) {
+        transferType.value = type;
+        transferTableIsOpen.value = true;
+        hideTransferOptionForm();
+    }
 };
 
 const hideTransferTableForm = () => {
@@ -543,7 +546,7 @@ watch(() => props.selectedTable, (newValue) => {
 
             <div 
                 class="flex p-4 h-16 justify-center items-center gap-3 flex-[1_0_0] rounded-[5px] border border-solid border-primary-100" 
-                :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(currentOrderTable.status) ? 'bg-grey-100 cursor-not-allowed' : 'bg-grey-50 cursor-pointer'"
+                :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(currentOrderTable.status) || (order.order_items && order.order_items.length === 0) ? 'bg-grey-100 cursor-not-allowed' : 'bg-grey-50 cursor-pointer'"
                 @click="showTransferOptionForm()" 
             >
                 <TransferIcon class="size-6" :class="['Pending Clearance', 'Order Cancelled', 'Order Voided'].includes(currentOrderTable.status) ? 'text-grey-200' : 'text-primary-950'" />
@@ -726,7 +729,7 @@ watch(() => props.selectedTable, (newValue) => {
                     <CancelIllus class="mt-2.5"/>
                 </div>
                 <div class="flex flex-col gap-1" >
-                    <div class="text-primary-900 text-2xl font-medium text-center">
+                    <div class="text-primary-900 text-lg font-medium text-center">
                         Cancel Order
                     </div>
                     <div class="text-gray-900 text-base font-medium text-center leading-tight" >
@@ -809,7 +812,7 @@ watch(() => props.selectedTable, (newValue) => {
 
     <Modal
         :title="splitTablesMode ? 'Merged table' : 'Merge with'"
-        :maxWidth="'xl'" 
+        :maxWidth="'full'" 
         :closeable="true"
         :show="mergeTableIsOpen"
         @close="hideMergeTableForm"
@@ -863,7 +866,7 @@ watch(() => props.selectedTable, (newValue) => {
 
     <Modal
         :title="'Transfer to'"
-        :maxWidth="'xl'" 
+        :maxWidth="'full'" 
         :closeable="true"
         :show="transferTableIsOpen"
         @close="hideTransferTableForm"

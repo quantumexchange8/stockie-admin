@@ -321,8 +321,20 @@ const isNotRedeemable = (reward) => {
                         <GiftCardIllus/>
                     </div>
                     <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6">
-                        <p class="text-center text-primary-900 text-lg font-medium self-stretch">Redeem Reward</p>
-                        <p class="text-center text-grey-900 text-base font-medium self-stretch">Are you sure you want to redeem the selected reward [{{ getRewardTitle(selectedReward) }}] for this customer? </p>
+                        <p class="text-center text-primary-900 text-lg font-medium self-stretch">
+                            {{ 
+                                matchingOrderDetails.voucher_id && ['Discount (Percentage)', 'Discount (Amount)'].includes(selectedReward.ranking_reward.reward_type)
+                                    ? 'Existing Applied Reward Found' 
+                                    : 'Redeem Reward' 
+                            }}
+                        </p>
+                        <p class="text-center text-grey-900 text-base font-medium self-stretch">
+                            {{ 
+                                matchingOrderDetails.voucher_id && ['Discount (Percentage)', 'Discount (Amount)'].includes(selectedReward.ranking_reward.reward_type)
+                                    ? `Are you sure you want to redeem and replace the currently applied reward with the selected reward [${getRewardTitle(selectedReward)}] for this customer?`
+                                    : `Are you sure you want to redeem the selected reward [${getRewardTitle(selectedReward)}] for this customer?`
+                            }}
+                        </p>
                     </div>
                     <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                         <Button

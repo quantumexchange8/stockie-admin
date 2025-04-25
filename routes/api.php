@@ -37,8 +37,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/all_shifts', 'getAllShifts');
         Route::post('/check_in', 'checkIn');
         Route::post('/authenticate_old_passcode', 'authenticateOldPasscode');
+        Route::post('/handle_break', 'handleBreak');
+        Route::post('/check_out', 'checkOut');
         Route::put('/change_new_passcode', 'changeNewPasscode');
-        Route::put('/check_out', 'checkOut');
     });
 
     /********* Promotion **********/

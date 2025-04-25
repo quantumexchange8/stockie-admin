@@ -82,16 +82,20 @@ const fetchTaxes = async () => {
 };
 
 const getDiscountAmount = (discount, type) => {
-    if (type === 'bill') {
-        return discount.discount_type === 'percentage'
-            ? order.value.amount * (discount.discount_rate / 100)
-            : discount.discount_rate;
-    }
-
-    if (type === 'voucher') {
-        return discount.reward_type === 'Discount (Percentage)'
-            ? order.value.amount * (discount.discount / 100)
-            : discount.discount
+    if (discount) {
+        if (type === 'bill') {
+            return discount.discount_type === 'percentage'
+                ? order.value.amount * (discount.discount_rate / 100)
+                : discount.discount_rate;
+        }
+    
+        if (type === 'voucher') {
+            return discount.reward_type === 'Discount (Percentage)'
+                ? order.value.amount * (discount.discount / 100)
+                : discount.discount
+        }
+    } else {
+        return 0.00;
     }
 };
 
@@ -101,7 +105,7 @@ const totalItemQuantityOrdered = computed(() => {
     }, 0);
 })
 
-const isBillDiscountApplicable = (discount) => {
+const isBillDiscountApplicable = (discount, asToastMsg = false) => {
     // Early exit for inactive discounts
     if (discount.status === 'inactive') return false;
 
@@ -112,18 +116,23 @@ const isBillDiscountApplicable = (discount) => {
     
     // 1. Date Range Check
     if (!now.isSameOrAfter(discount.discount_from) || !now.isSameOrBefore(discount.discount_to)) {
-        return false;
+        return asToastMsg ? 'This discount cannot be applied as currently, it is not within the applicable period.' : false;
     }
 
     // 2. Day of Week Check
     const dayOfWeek = now.get('day');
-    if (discount.available_on === 'weekday' && ![1,2,3,4,5].includes(dayOfWeek)) return false;
-    if (discount.available_on === 'weekend' && ![0,6].includes(dayOfWeek)) return false;
+    if (discount.available_on === 'weekday' && ![1,2,3,4,5].includes(dayOfWeek)) {
+        return asToastMsg ? 'This discount cannot be applied as it is only available during weekdays.' : false;
+    }
+    
+    if (discount.available_on === 'weekend' && ![0,6].includes(dayOfWeek)) {
+        return asToastMsg ? 'This discount cannot be applied as it is only available during weekends.' : false;
+    }
 
     // 3. Time Window Check
     if (discount.start_time && discount.end_time) {
         if (now.isBefore(discount.start_time) || now.isSameOrAfter(discount.end_time)) {
-            return false;   
+            return asToastMsg ? 'This discount cannot be applied as currently, it is not within the applicable time period.' : false;
         }
     }
 
@@ -144,51 +153,178 @@ const isBillDiscountApplicable = (discount) => {
     // }
 
     // 5. Criteria Check
-    if (
-        (discount.criteria === 'min_spend' && currentOrderTotal < discountRequirement) || 
-        (discount.criteria === 'min_quantity' && totalItemQuantityOrdered.value < discountRequirement)
-    ) {
-        return false;
+    const discountCriteriaReq = discount.criteria === 'min_spend'
+            ? discount.criteria === 'min_spend' && currentOrderTotal < discountRequirement
+            : discount.criteria === 'min_quantity' && totalItemQuantityOrdered.value < discountRequirement;
+
+    if (discountCriteriaReq) {
+        const criteriaName = discount.criteria === 'min_spend' ? 'min. spend of RM' : 'min. quantity of';
+
+        return asToastMsg 
+                ? `To be eligible to this discount, a ${criteriaName} ${discountRequirement} is required.`
+                : false;
     }
     
     // 6. Tier Check
     if (discount.tier?.length > 0 && !discount.tier.includes(currentCustomerRanking)) {
-        return false;
+        return asToastMsg ? "This discount cannot be applied as the currently checked-in customer has not yet reached the required tier." : false;
     }
     
     // 7. Payment Method Check
     if (discount.payment_method?.length > 0) {
-        const requiredMethods = discount.payment_method.map(method => {
-            switch (method) {
-                case 'cash': return 'Cash';
-                case 'card': return 'Card';
-                case 'e-wallets': return 'E-Wallet';
-                default: return method;
-            }
-        });
+        return false;
+    //     const requiredMethods = discount.payment_method.map(method => {
+    //         switch (method) {
+    //             case 'cash': return 'Cash';
+    //             case 'card': return 'Card';
+    //             case 'e-wallets': return 'E-Wallet';
+    //             default: return method;
+    //         }
+    //     });
 
-        if (!paymentTransactions.value.some(pmu => requiredMethods.includes(pmu.method))) {
-            return false;
-        }
+    //     // NEED TO CHECK WHETHER THIS CHECKING WORKS
+    //     if (!paymentTransactions.value.some(pmu => requiredMethods.includes(pmu.method))) {
+    //         if (!asToastMsg) return false;
+    //     }
     }
 
     // 8. Usage Limits Check
-    if (discount.current_customer_usage) {
-        if (discount.customer_usage > 0 && discount.total_usage > 0) {
-            if (discount.current_total_usage_count >= discount.total_usage) return false;
-            if (discount.current_customer_usage.customer_usage >= discount.customer_usage) return false;
-        };
-        
-        if (discount.total_usage > 0) {
-            if (discount.current_total_usage_count >= discount.total_usage) return false;
-        };
+    const matchingDiscountUsage = props.currentOrder.customer?.bill_discount_usages?.find((d) => d.bill_discount_id === discount.id);
+    
+    if (discount.total_usage > 0 && discount.remaining_usage <= 0) {
+        return asToastMsg ? "This discount's maximum number of usage has been exhausted thus, is currently unable to be applied." : false;
+    };
+    
+    if (
+        discount.customer_usage > 0 &&
+        props.currentOrder.customer && 
+        matchingDiscountUsage &&
+        matchingDiscountUsage.customer_usage >= discount.customer_usage
+    ) {
+        return asToastMsg ? "This discount's maximum number of usage for this customer has been exhausted thus, is currently unable to be applied." : false;
+    };
 
-        if (discount.customer_usage > 0) {
-            if (discount.current_customer_usage.customer_usage >= discount.customer_usage) return false;
-        };
+    // if (discount.customer_usage > 0 && discount.total_usage > 0) {
+    //     if (discount.current_total_usage_count >= discount.total_usage) {
+    //         return asToastMsg ? "This discount's total accummulated number of usage has been exhausted thus, is currently unable to be applied." : false;
+    //     }
+        
+    //     if (discount.current_customer_usage.customer_usage >= discount.customer_usage) {
+    //         return asToastMsg ? "This discount's total number of usage for this customer has been exhausted thus, is currently unable to be applied." : false;
+    //     }
+    // };
+    
+    // if (discount.total_usage > 0) {
+    //     if (discount.current_total_usage_count >= discount.total_usage) {
+    //         return asToastMsg ? "This discount's total accummulated number of usage has been exhausted thus, is currently unable to be applied." : false;
+    //     }
+    // };
+
+    // if (discount.customer_usage > 0) {
+    //     if (discount.current_customer_usage.customer_usage >= discount.customer_usage) {
+    //         return asToastMsg ? "This discount's total number of usage for this customer has been exhausted thus, is currently unable to be applied." : false;
+    //     }
+    // };
+
+    return asToastMsg ? '' : true;
+};
+
+const processBillDiscounts = (billDiscounts) => {
+    form.discounts = form.discounts.filter((d) => d.type !== 'bill');
+
+    // Filter and process auto-applied discounts
+    const autoAppliedDiscounts = billDiscounts
+            .filter(discount => discount.is_auto_applied)
+            .map(discount => ({ ...discount, type: 'bill' }));
+
+    if (!autoAppliedDiscounts.length) return;
+
+    // Handle stackable discounts
+    const stackableDiscounts = autoAppliedDiscounts.filter(d => d.is_stackable);
+    if (stackableDiscounts.length > 0) {
+        // Apply all stackable discounts that pass conditions
+        const applicableStackableDiscounts = stackableDiscounts.filter(d => isBillDiscountApplicable(d));
+        const nonApplicableStackableDiscounts = stackableDiscounts.filter(d => !isBillDiscountApplicable(d));
+        
+        if (nonApplicableStackableDiscounts.length > 0) {
+            nonApplicableStackableDiscounts.forEach(discount => {
+                // Add the additional conditions and toast msg here (for not within date range, usage, etc)
+                const toastDetails = isBillDiscountApplicable(discount, true);
+                if (toastDetails) {
+                    showMessage({ 
+                        severity: 'warn',
+                        summary: `'${discount.name}' cannot be applied.`,
+                        detail: toastDetails,
+                    });
+                }
+            });
+        }
+
+        if (applicableStackableDiscounts.length > 0) {
+            // Add all stackable discounts (they can coexist with vouchers)
+            form.discounts.push(...applicableStackableDiscounts);
+            
+            return;
+        }
+    }
+    
+    // Handle non-stackable discounts
+    const nonStackableDiscounts = autoAppliedDiscounts.filter(d => !d.is_stackable);
+    if (!nonStackableDiscounts.length) return;
+    
+    let selectedBillDiscount = nonStackableDiscounts[0];
+
+    if (nonStackableDiscounts.length > 1) {
+        selectedBillDiscount = nonStackableDiscounts.reduce((highest, current) => {
+            const currentAmount = getDiscountAmount(current, 'bill');
+            const highestAmount = getDiscountAmount(highest, 'bill');
+            
+            return currentAmount > highestAmount ? current : highest;
+        });
     }
 
-    return true;
+    const { conflict, name, criteria, requirement } = selectedBillDiscount;
+    
+    // Add the additional conditions and toast msg here (for not within date range, usage, etc)
+
+    // if (!isBillDiscountApplicable(selectedBillDiscount)) {
+    //     showMessage({ 
+    //         severity: 'warn',
+    //         summary: `'${name}' cannot be applied.`,
+    //         detail: isBillDiscountApplicable(selectedBillDiscount, true),
+    //     });
+    //     return;
+    // }
+
+    if (conflict === 'keep') {
+        showMessage({ 
+            severity: 'warn',
+            summary: `'${name}' cannot be applied.`,
+            detail: `Discount '${name}' cannot be applied since it is not stackable with other discount.`,
+        });
+        return;
+    }
+
+    if (conflict === 'maximum_value') {
+        const existingVoucher = form.discounts.find((discount) => discount.type === 'voucher');
+
+        if (!existingVoucher) {
+            form.discounts = [selectedBillDiscount];
+            return;
+        };
+        
+        const voucherAmount = getDiscountAmount(existingVoucher, 'voucher');
+        const billAmount = getDiscountAmount(selectedBillDiscount, 'bill');
+        
+        if (billAmount > voucherAmount) {
+            form.discounts = [selectedBillDiscount];
+            showMessage({ 
+                severity: 'warn',
+                summary: `'${existingVoucher?.ranking?.name ?? 'Voucher'} Entry reward' is replaced with '${name}' `,
+                detail: `As one of the discounts is not stackable, we've applied the discount with the highest value to maximise customer savings.`,
+            });
+        }
+    }
 };
 
 const fetchAutoAppliedDiscounts = async () => {
@@ -197,96 +333,7 @@ const fetchAutoAppliedDiscounts = async () => {
             params: { current_customer_id: order.value.customer_id }
         });
 
-        // Filter and process auto-applied discounts
-        const autoAppliedDiscounts = response.data
-                .filter(discount => discount.is_auto_applied)
-                .map(discount => ({ ...discount, type: 'bill' }));
-
-        if (!autoAppliedDiscounts.length) return;
-
-        // Handle stackable discounts
-        const stackableDiscounts = autoAppliedDiscounts.filter(d => d.is_stackable);
-        if (stackableDiscounts.length > 0) {
-            // Apply all stackable discounts that pass conditions
-            const applicableStackableDiscounts = stackableDiscounts.filter(d => isBillDiscountApplicable(d));
-            const nonApplicableStackableDiscounts = stackableDiscounts.filter(d => !isBillDiscountApplicable(d));
-            
-            if (applicableStackableDiscounts.length > 0) {
-                // Add all stackable discounts (they can coexist with vouchers)
-                form.discounts.push(...applicableStackableDiscounts);
-                
-                nonApplicableStackableDiscounts.forEach(discount => {
-                    const criteriaName = discount.criteria === 'min_spend' ? 'min. spend of RM' : 'min. quantity of';
-    
-                    showMessage({ 
-                        severity: 'warn',
-                        summary: `'${discount.name}' cannot be applied.`,
-                        detail: `To be eligible to this discount, a ${criteriaName} ${discount.requirement} is required.`,
-                    });
-                    return;
-                });
-
-                return;
-            }
-        }
-        
-        // Handle non-stackable discounts
-        const nonStackableDiscounts = autoAppliedDiscounts.filter(d => !d.is_stackable);
-        if (!nonStackableDiscounts.length) return;
-        
-        let selectedBillDiscount = nonStackableDiscounts[0];
-
-        if (nonStackableDiscounts.length > 1) {
-            selectedBillDiscount = nonStackableDiscounts.reduce((highest, current) => {
-                const currentAmount = getDiscountAmount(current, 'bill');
-                const highestAmount = getDiscountAmount(highest, 'bill');
-                
-                return currentAmount > highestAmount ? current : highest;
-            });
-        }
-
-        const { conflict, name, criteria, requirement } = selectedBillDiscount;
-
-        if (conflict === 'keep') {
-            showMessage({ 
-                severity: 'warn',
-                summary: `'${name}' cannot be applied.`,
-                detail: `Discount '${name}' cannot be applied since it is not stackable with other discount.`,
-            });
-            return;
-        }
-
-        if (!isBillDiscountApplicable(selectedBillDiscount)) {
-            const criteriaName = criteria === 'min_spend' ? 'min. spend of RM' : 'min. quantity of';
-
-            showMessage({ 
-                severity: 'warn',
-                summary: `'${name}' cannot be applied.`,
-                detail: `To be eligible to this discount, a ${criteriaName} ${requirement} is required.`,
-            });
-            return;
-        }
-
-        if (conflict === 'maximum_value') {
-            const existingVoucher = form.discounts.find((discount) => discount.type === 'voucher');
-
-            if (!existingVoucher) {
-                form.discounts = [selectedBillDiscount];
-            };
-            
-            const voucherAmount = getDiscountAmount(existingVoucher, 'voucher');
-            const billAmount = getDiscountAmount(selectedBillDiscount, 'bill');
-            
-            if (billAmount > voucherAmount) {
-                form.discounts = [selectedBillDiscount];
-            
-                showMessage({ 
-                    severity: 'warn',
-                    summary: `'${existingVoucher.ranking?.name || 'Voucher'} Entry reward' is replaced with '${name}' `,
-                    detail: `As one of the discounts is not stackable, we've applied the discount with the highest value to maximise customer savings.`,
-                });
-            }
-        }
+        processBillDiscounts(response.data);
     } catch (error) {
         console.error(error);
     } finally {
@@ -354,7 +401,8 @@ const closeSuccessPaymentModal = () => {
 };
 
 const submit = async () => {
-    form.payment_methods = paymentTransactions.value.filter((transaction => transaction.amount > 0));
+    form.processing = true;
+    form.payment_methods = paymentTransactions.value.filter((transaction => transaction.amount >= 0));
     form.change = change.value;
 
     let cashMethod = form.payment_methods.find(pm => pm.method === 'Cash');
@@ -406,7 +454,7 @@ const submit = async () => {
             });
         }, 200);
     } finally {
-
+        form.processing = false;
     }
 };
 
@@ -507,10 +555,12 @@ const billDiscountedAmount = computed(() => {
     if (billDiscounts.length === 0) return 0.00;
 
     const totalBillDiscountAmount = billDiscounts.reduce((total, discount) => {
-        const discountRate = discount.discount_rate;
-        const discountedAmount = discount.discount_type === 'percentage'
-                ? order.value.amount * (discountRate / 100)
-                : discountRate;
+        const discountRate = discount.type === 'bill' ? discount.discount_rate : discount.rate;
+        const discountedAmount = discount.type === 'bill'
+                ? discount.discount_type === 'percentage'
+                        ? order.value.amount * (discountRate / 100)
+                        : discountRate
+                : order.value.amount * (discountRate / 100);
 
         return total + discountedAmount;
     }, 0);
@@ -548,7 +598,7 @@ const grandTotalAmount = computed(() => {
     const billDiscountAmount = billDiscountedAmount.value > 0 ? billDiscountedAmount.value : 0.00;
     const grandTotal = priceRounding(Number(order.value.amount) + totalTaxableAmount - voucherDiscountAmount - billDiscountAmount);
 
-    return grandTotal.toFixed(2);
+    return grandTotal >= 0 ? grandTotal.toFixed(2) : '0.00';
 });
 
 const roundingAmount = computed(() => {
@@ -621,6 +671,67 @@ const addPredefinedAmount = (amount) => {
 
 // Function to handle payment method clicks
 const handlePaymentMethod = (method) => {
+    // Get all bill-type discounts with payment method requirements
+    const discountsWithMethodsReq = form.discounts.filter(
+        d => d.type === 'bill' && d.payment_method?.length > 0
+    );
+
+    // If no payment method requirements, proceed normally
+    if (discountsWithMethodsReq.length === 0) {
+        proceedWithPayment(method);
+        return;
+    }
+
+    // Map all required methods to consistent format
+    const mapMethodFormat = (method) => {
+        switch (method.toLowerCase()) {
+            case 'cash': return 'Cash';
+            case 'card': return 'Card';
+            case 'e-wallets': return 'E-Wallet';
+        }
+    };
+
+    // Get all required methods in consistent format
+    const allRequiredMethods = discountsWithMethodsReq.flatMap(d => 
+        d.payment_method.map(mapMethodFormat)
+    );
+
+    // Check for conflicts (different required methods between discounts)
+    const hasConflictingMethods = !discountsWithMethodsReq.every(
+        d => {
+            const currentMethods = d.payment_method.map(mapMethodFormat).sort();
+            const firstMethods = discountsWithMethodsReq[0].payment_method.map(mapMethodFormat).sort();
+            return JSON.stringify(currentMethods) === JSON.stringify(firstMethods);
+        }
+    );
+
+    if (hasConflictingMethods) {
+        showMessage({ 
+            severity: 'warn',
+            summary: 'Conflicting payment method requirements',
+            detail: "The applied discounts' payment method requirements are conflicting with one another. Please resolve the conflict by choosing either one.",
+        });
+        return;
+    }
+
+    // Check if selected method is in the required methods (using mapped format)
+    const requiredMethods = discountsWithMethodsReq[0].payment_method.map(mapMethodFormat);
+    
+    if (!requiredMethods.includes(method)) {
+        const readableMethods = requiredMethods.join(', ');
+        showMessage({ 
+            severity: 'warn',
+            summary: 'Payment method requirements not met.',
+            detail: `Please use one of the required payment methods: ${readableMethods}`,
+        });
+        return;
+    }
+
+    // If we get here, method is valid
+    proceedWithPayment(method);
+};
+
+const proceedWithPayment = (method) => {
     const amount = Number(billAmountKeyed.value);
 
     if (amount >= 0) {
@@ -682,7 +793,7 @@ const handlePaymentMethod = (method) => {
                 }
 
                 // Update the amount for the existing payment method
-                existingTransaction.amount += updatedPaidAmount;
+                existingTransaction.amount = Number((existingTransaction.amount + updatedPaidAmount).toFixed(2));
                 billAmountKeyed.value = remainingBalanceDue.value >= 0 ? remainingBalanceDue.value : '0.00';
             }
             
@@ -707,7 +818,7 @@ const handlePaymentMethod = (method) => {
                 }
             }
 
-            if (paidAmount > 0) {
+            if (paidAmount >= 0) {
                 // Add a new payment transaction
                 paymentTransactions.value.push({
                     method,
@@ -815,14 +926,16 @@ const isValidated = computed(() => {
     const withoutCashCondition = totalAmountPaid.value == grandTotal;
 
     return isSplitBillMode.value
-            ? !form.processing 
-                && remainingBalanceDue.value <= 0 
-                && (!hasCashMethod.value ? withoutCashCondition : withCashCondition) 
-                && (splitBillsState.value.splitBills.find(bill => bill.id === splitBillDetails.value.id) 
+            ? !form.processing &&
+                remainingBalanceDue.value <= 0 &&
+                (!hasCashMethod.value ? withoutCashCondition : withCashCondition) &&
+                paymentTransactions.value.length > 0 &&
+                (splitBillsState.value.splitBills.find(bill => bill.id === splitBillDetails.value.id) 
                     || splitBillDetails.value.id === splitBillsState.value.currentBill?.id)
-            : !form.processing 
-                && remainingBalanceDue.value <= 0 
-                && (!hasCashMethod.value ? withoutCashCondition : withCashCondition);
+            : !form.processing &&
+                remainingBalanceDue.value <= 0 &&
+                (!hasCashMethod.value ? withoutCashCondition : withCashCondition) &&
+                paymentTransactions.value.length > 0;
 });
 
 const displayExceedBalanceToast = () => {
@@ -878,6 +991,13 @@ const tableNames = computed(() => {
             .join(', ') ?? '';
 });
 
+const isMethodDisabled = (method) => {
+    const paymentMethodRequirements = form.discounts
+            .filter((d) => d.type === 'bill')
+            .map((d) => d.payment_method);
+
+}
+
 // watch(voucherDiscountedAmount, (newValue) => {
 //     billAmountKeyed.value = newValue;
 // });
@@ -889,6 +1009,12 @@ watch(grandTotalAmount, (newValue) => {
 watch(remainingBalanceDue, (newValue) => {
     change.value = newValue < 0 ? Math.abs(newValue) : '0.00';
 });
+watch(() => form.discounts, (newValue) => {
+    paymentTransactions.value = [];
+    selectedMethod.value = '';
+    exactBillAmount();
+
+}, { deep: true });
 
 watch(() => props.currentOrder, (newValue) => {
     let currentOrderVoucher = newValue.voucher ?? null;
@@ -901,15 +1027,20 @@ watch(() => props.currentOrder, (newValue) => {
 
 watch(() => order.value.customer_id, (newValue, oldValue) => {
     // Only proceed if the customer_id actually changed
-    if (newValue !== oldValue && !isSplitBillMode.value) {
-        // Find index of voucher discount (if any)
-        const voucherIndex = form.discounts.findIndex(d => d.type === 'voucher');
-        
-        // If voucher exists, remove it
-        if (voucherIndex !== -1) {
-            // Create a new array without the voucher for better reactivity
-            form.discounts = form.discounts.filter((_, index) => index !== voucherIndex);
+    if (newValue !== oldValue) {
+        if (!isSplitBillMode.value) {
+            // Find index of voucher discount (if any)
+            const voucherIndex = form.discounts.findIndex(d => d.type === 'voucher');
+            
+            // If voucher exists, remove it
+            if (voucherIndex !== -1) {
+                // Create a new array without the voucher for better reactivity
+                form.discounts = form.discounts.filter((_, index) => index !== voucherIndex);
+            }
         }
+
+        // Recheck the applied bill disocunts if the customer_id actually changed
+        fetchAutoAppliedDiscounts();
     }
 });
 
@@ -923,7 +1054,7 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
 </script>
 
 <template>
-    <form @submit.prevent="submit" class="flex flex-col gap-y-6 justify-between h-[calc(100dvh-9rem)]">
+    <form @submit.prevent="submit" class="flex flex-col gap-y-6 justify-between h-full">
         <div class="flex flex-col items-start gap-y-6 h-full">
             <!-- Actions -->
             <div class="flex w-full items-start gap-4 self-stretch">
@@ -972,7 +1103,7 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
             </div>
 
             <!-- Main -->
-            <div class="flex items-start size-full max-h-[calc(100dvh-19rem)] gap-4 self-stretch">
+            <div class="flex items-start size-full gap-4 self-stretch">
                 <!-- Bill Overview -->
                 <div class="flex w-1/3 flex-col items-start gap-y-8 self-stretch">
                     <div class="flex flex-col items-start gap-y-8 self-stretch">
@@ -1122,8 +1253,14 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
                     <div class="flex w-full items-start gap-x-4 self-stretch">
                         <div
                             @click="handlePaymentMethod('Cash')"
-                            class="relative flex w-1/3 py-4 px-3 gap-x-3 items-center rounded-[5px] border cursor-pointer"
-                            :class="selectedMethod === 'Cash' ? 'border-primary-900 bg-primary-25' : 'border-grey-100'"
+                            :class="[
+                                'relative flex w-1/3 py-4 px-3 gap-x-3 items-center rounded-[5px] border cursor-pointer',
+                                {
+                                    'border-primary-900 bg-primary-25': selectedMethod === 'Cash' && !isMethodDisabled('Cash'),
+                                    'border-grey-100': selectedMethod !== 'Cash' && !isMethodDisabled('Cash'),
+                                    'bg-grey-200 ': isMethodDisabled('Cash'),
+                                }
+                            ]"
                         >
                             <CashIcon />
                             <p class="text-grey-950 font-medium text-base">Cash</p>
@@ -1131,8 +1268,14 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
                         </div>
                         <div
                             @click="handlePaymentMethod('Card')"
-                            class="relative flex w-1/3 py-4 px-3 gap-x-3 items-center rounded-[5px] border border-grey-100 cursor-pointer"
-                            :class="selectedMethod === 'Card' ? 'border-primary-900 bg-primary-25' : 'border-grey-100'"
+                            :class="[
+                                'relative flex w-1/3 py-4 px-3 gap-x-3 items-center rounded-[5px] border cursor-pointer',
+                                {
+                                    'border-primary-900 bg-primary-25': selectedMethod === 'Card' && !isMethodDisabled('Card'),
+                                    'border-grey-100': selectedMethod !== 'Card' && !isMethodDisabled('Card'),
+                                    'bg-grey-200 ': isMethodDisabled('Card'),
+                                }
+                            ]"
                         >
                             <CardIcon />
                             <p class="text-grey-950 font-medium text-base">Card</p>
@@ -1140,8 +1283,14 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
                         </div>
                         <div
                             @click="handlePaymentMethod('E-Wallet')"
-                            class="relative flex w-1/3 py-4 px-3 gap-x-3 items-center rounded-[5px] border border-grey-100 cursor-pointer"
-                            :class="selectedMethod === 'E-Wallet' ? 'border-primary-900 bg-primary-25' : 'border-grey-100'"
+                            :class="[
+                                'relative flex w-1/3 py-4 px-3 gap-x-3 items-center rounded-[5px] border cursor-pointer',
+                                {
+                                    'border-primary-900 bg-primary-25': selectedMethod === 'E-Wallet' && !isMethodDisabled('E-Wallet'),
+                                    'border-grey-100': selectedMethod !== 'E-Wallet' && !isMethodDisabled('E-Wallet'),
+                                    'bg-grey-200 ': isMethodDisabled('E-Wallet'),
+                                }
+                            ]"
                         >
                             <EWalletIcon />
                             <p class="text-grey-950 font-medium text-base">E-Wallet</p>
@@ -1242,7 +1391,7 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
    
     <Modal
         :title="'Split bill'"
-        :maxWidth="'xl'"
+        :maxWidth="'full'"
         :closeable="true"
         :show="isSplitBillModalOpen"
         @close="closeModal('close')"

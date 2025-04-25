@@ -388,10 +388,10 @@ watch(() => props.currentHasVoucher, (newValue) => {
 </script>
 
 <template>
-    <form @submit.prevent="submit">
-        <div class="flex items-start w-full gap-x-5 self-stretch pt-6 py-2 bg-grey-50 overflow-x-auto scrollbar-thin scrollbar-webkit">
+    <form class="h-full flex flex-col justify-between" @submit.prevent="submit">
+        <div class="flex items-start size-full gap-x-5 self-stretch pt-6 py-2 bg-grey-50 overflow-x-auto scrollbar-thin scrollbar-webkit">
             <!-- Current Bill -->
-            <div class="min-w-[378px] max-w-[378px] h-[531px] flex flex-col justify-between items-start self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
+            <div class="min-w-[378px] max-w-[378px] flex flex-col justify-between items-start self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
                 <div class="flex flex-col items-start self-stretch">
                     <div class="flex justify-between items-center w-full p-4 border-b border-grey-100">
                         <div class="w-full flex gap-x-2 justify-start items-center self-stretch">
@@ -427,7 +427,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         </div>
                     </div>
 
-                    <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-33.3rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                    <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-17.2rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                         <template v-for="item in form.currentBill.order_items" :key="item.id">
                             <div
                                 v-if="item.balance_qty > 0"
@@ -484,7 +484,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
 
             <!-- Split Bills -->
             <template v-for="(bill, index) in form.splitBills" :key="bill.id">
-                <div class="min-w-[378px] max-w-[378px] h-[531px] flex flex-col justify-between items-start self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
+                <div class="min-w-[378px] max-w-[378px] flex flex-col justify-between items-start self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
                     <div class="flex flex-col items-start self-stretch">
                         <div class="flex justify-between items-center w-full p-4 border-b border-grey-100">
                             <div class="w-full flex gap-x-2 justify-start items-center self-stretch">
@@ -520,7 +520,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                             </div>
                         </div>
 
-                        <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-28.4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                        <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-17.2rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                             <template v-for="item in bill.order_items" :key="item.id">
                                 <div
                                     v-if="item.balance_qty > 0"
@@ -588,7 +588,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
             <!-- Add New Bill Button -->
             <div 
                 @click="addBill"
-                class="min-w-[378px] max-w-[378px] h-[531px] flex flex-col justify-center px-6 items-start gap-6 self-stretch relative rounded-[5px] border-2 border-grey-200 shadow-md border-dashed cursor-pointer"
+                class="min-w-[378px] max-w-[378px] flex flex-col justify-center px-6 items-start gap-6 self-stretch relative rounded-[5px] border-2 border-grey-200 shadow-md border-dashed cursor-pointer"
             >
                 <div class="flex w-full flex-col items-center gap-y-2 text-grey-300">
                     <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -648,6 +648,7 @@ class CustomerController extends Controller
     // used by order customer listing
     public function getAllCustomers(){
         $customerList = $this->getCustomers()
+                        ->with('billDiscountUsages')
                         ->get(['id', 'full_name', 'phone', 'ranking'])
                         ->map(function ($customer) {
                             $customer->image = $customer->getFirstMediaUrl('customer');

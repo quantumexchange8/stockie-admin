@@ -17,6 +17,10 @@ const { formatAmount } = transactionFormat();
             <div class="text-gray-900 text-base font-bold text-right w-full">RM {{ formatAmount(props.selectedVal.total_amount) }}</div>
         </div>
         <div class="flex items-center w-full">
+            <div class="text-gray-900 text-base text-left w-full">Bill Discount</div>
+            <div class="text-gray-900 text-base font-bold text-right w-full">RM {{ formatAmount(props.selectedVal.bill_discount_total) }}</div>
+        </div>
+        <div class="flex items-center w-full">
             <div class="text-gray-900 text-base text-left w-full">Voucher Discount</div>
             <div v-if="props.selectedVal.voucher" class="text-gray-900 text-base text-left w-full">
                 <span v-if="props.selectedVal.voucher.reward_type === 'Discount (Amount)'">(RM{{ props.selectedVal.voucher.discount }})</span>

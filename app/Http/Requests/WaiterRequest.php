@@ -24,6 +24,7 @@ class WaiterRequest extends FormRequest
         $rules = [
             'full_name'=>'required|string|max:255',
             'phone' => 'required|string|max:255',
+            'employment_type' => 'required|string',
             'salary' => 'required|string|min:0',
             'stockie_email' => 'required|email',
             'image' => 'required|max:8000',

@@ -26,7 +26,7 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
-    attendance: Array,
+    // attendance: Array,
     commissionData: {
         type: Array,
         default: () => {},
@@ -49,7 +49,7 @@ const items = ref([
 
 const { formatAmount } = transactionFormat();
 const waiter = ref(props.waiter);
-const attendance = ref(props.attendance);
+// const attendance = ref(props.attendance);
 const commissionRowsPerPage = ref(11);
 const incentiveRowsPerPage = ref(11);
 const tabs = ref(['Sales', 'Commission', 'Incentive', 'Attendance']);
@@ -76,9 +76,9 @@ const incentiveColumn = ref([
 ]);
 
 const attendanceColumn = ref([
-    {field: 'check_in', header: 'Check in', width: '35', sortable: true},
-    {field: 'check_out', header: 'Check out', width: '35', sortable: true},
-    {field: 'duration', header: 'Duration', width: '30', sortable: true},
+    {field: 'date', header: 'Date', width: '35', sortable: true},
+    {field: 'work_duration', header: 'Working Duration', width: '30', sortable: true},
+    {field: 'break_duration', header: 'Break Duration', width: '35', sortable: true},
 ]);
 
 
@@ -205,7 +205,6 @@ const incentiveTotalPages = computed(() => {
                                 :waiter="waiter" 
                                 :columns="attendanceColumn" 
                                 :dateFilter="defaultDateFilter" 
-                                :attendance="attendance"
                                 :rowType="rowType"
                             />
                         </template>
