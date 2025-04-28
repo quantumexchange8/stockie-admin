@@ -46,26 +46,109 @@ class AttendanceController extends Controller
      */
     public function getTodayAttendance()
     {
-        $today = today()->toDateString();
+        // $today = today()->toDateString();
     
-        $todayAttendance = $this->authUser->attendances()
-                                            ->where(function ($query) use ($today) {
-                                                // Clock in on today's date
-                                                $query->whereDate('check_in', $today)
-                                                        // OR clock in before today but check out after today's start
-                                                        ->orWhere(function ($subQuery) use ($today) {
-                                                            $subQuery->whereDate('check_in', '<', $today)
-                                                                    ->whereDate('check_out', '>=', $today);
-                                                        });
-                                            })
-                                            ->orderByDesc('check_in')
-                                            ->first();
+        // $todayAttendance = $this->authUser->attendances()
+        //                                     ->where(function ($query) use ($today) {
+        //                                         // Clock in on today's date
+        //                                         $query->whereDate('check_in', $today)
+        //                                                 // OR clock in before today but check out after today's start
+        //                                                 ->orWhere(function ($subQuery) use ($today) {
+        //                                                     $subQuery->whereDate('check_in', '<', $today)
+        //                                                             ->whereDate('check_out', '>=', $today);
+        //                                                 });
+        //                                     })
+        //                                     ->orderByDesc('check_in')
+        //                                     ->first();
 
+        // $response = [
+        //     'has_attendance' => !!$todayAttendance,
+        //     'check_in' => $todayAttendance?->check_in,
+        //     'check_out' => $todayAttendance?->check_out
+        // ];
+
+        
+        $waiter = $this->authUser;
+        
+        // Get records where:
+        // 1. Checked in today (regardless of check-out time), OR
+        // 2. Checked out today or after midnight but still part of today's shift
+
+        $existingAttendance = $this->checkExistingAttendance($waiter, 'out');
+
+        // If no records found
+        if (!$existingAttendance) {
+            return response()->json([
+                'message' => 'No attendance records found',
+                'data' => []
+            ]);
+        }
+
+        $latestCheckedIn = $existingAttendance->check_in;
+
+        $records = WaiterAttendance::where('user_id', $waiter->id)
+                                    ->where('check_in', '>=', $latestCheckedIn)
+                                    ->orderByRaw("
+                                        CASE 
+                                            WHEN status IN ('Break end', 'Checked out') THEN check_out 
+                                            ELSE check_in 
+                                        END
+                                    ")
+                                    ->get();
+        
+        // If no records found
+        if ($records->isEmpty()) {
+            return response()->json([
+                'message' => 'No attendance records found',
+                'data' => []
+            ]);
+        }
+        
+        // Structure the response
         $response = [
-            'has_attendance' => !!$todayAttendance,
-            'check_in' => $todayAttendance?->check_in,
-            'check_out' => $todayAttendance?->check_out
+            'check_in' => null,
+            'check_out' => null,
+            'breaks' => [],
+            // 'is_overnight' => false
         ];
+        
+        $currentBreak = null;
+        
+        foreach ($records as $record) {
+            switch ($record->status) {
+                case 'Checked in':
+                    $response['check_in'] = $record->check_in;
+
+                    break;
+                    
+                case 'Checked out':
+                    $response['check_out'] = $record->check_out;
+
+                    break;
+                    
+                case 'Break start':
+                    $currentBreak = [
+                        'start' => $record->check_in,
+                        'end' => null,
+                    ];
+                    break;
+                    
+                case 'Break end':
+                    if ($currentBreak) {
+                        $currentBreak['end'] = $record->check_out;
+                        $response['breaks'][] = $currentBreak;
+                        $currentBreak = null;
+                    }
+
+                    break;
+            }
+        }
+        
+        // Handle ongoing break
+        if ($currentBreak) {
+            $currentBreak['end'] = null;
+            $response['breaks'][] = $currentBreak;
+        }
 
         return response()->json($response);
     }
@@ -75,32 +158,139 @@ class AttendanceController extends Controller
      */
     public function getAllAttendances(Request $request)
     {
-        $query = WaiterAttendance::query();
-
-        // $query = $user->attendances;
+        $waiter = $this->authUser;
+        $dateFilter = $request->input('dateFilter');
+        $dateFilter = array_map(function ($date) {
+            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
+        }, $dateFilter);
     
-        // If start and end dates are provided, filter the attendances
-        if ($request->has(['start_date', 'end_date'])) {
-            $query->whereDate('check_in', '>=', $request->start_date)
-                    ->whereDate('check_in', '<=', $request->end_date);
+        $startDate = Carbon::parse($dateFilter[0])->startOfDay()->format('Y-m-d H:i:s');
+        $endDate = Carbon::parse(
+            count($dateFilter) > 1 ? $dateFilter[1] : $dateFilter[0]
+        )->endOfDay()->format('Y-m-d H:i:s');
+    
+        // Get all records sorted chronologically
+        $records = WaiterAttendance::whereDate('created_at', '>=', $startDate)
+                                    ->whereDate('created_at', '<=', $endDate)
+                                    ->where('user_id', $waiter->id)
+                                    ->orderByRaw("
+                                        CASE 
+                                            WHEN status IN ('Break end', 'Checked out') THEN check_out 
+                                            ELSE check_in 
+                                        END
+                                    ")
+                                    ->get();
+    
+        $salary = $waiter->salary ?? 0.00;
+        $totals = ['work' => 0, 'break' => 0, 'earnings' => 0];
+        $attendanceGroups = collect();
+        $currentGroup = null;
+    
+        // Group records into complete attendance periods
+        foreach ($records as $record) {
+            if ($record->status === 'Checked in') {
+                // Start new group
+                if ($currentGroup) {
+                    $attendanceGroups->push($currentGroup);
+                }
+                $currentGroup = [
+                    'check_in' => $record->check_in,
+                    'check_out' => null,
+                    'breaks' => [],
+                    'date' => Carbon::parse($record->check_in)->format('d/m/Y'),
+                    'status' => 'Ongoing'
+                ];
+            } 
+            elseif ($record->status === 'Checked out' && $currentGroup) {
+                // Complete the current group
+                $currentGroup['check_out'] = $record->check_out;
+                $currentGroup['status'] = 'Completed';
+                $attendanceGroups->push($currentGroup);
+                $currentGroup = null;
+            }
+            elseif (($record->status === 'Break start' || $record->status === 'Break end') && $currentGroup) {
+                // Add break records to current group
+                $currentGroup['breaks'][] = $record;
+            }
         }
     
-        // Order and retrieve attendances
-        $allAttendances = $query->where('user_id', $this->authUser->id)
-                                ->orderBy('check_in', 'desc')
-                                ->get(['check_in', 'check_out']);
+        // Add the last ongoing group if exists
+        if ($currentGroup) {
+            $attendanceGroups->push($currentGroup);
+        }
     
-        // Group attendances by date
-        // $groupedAttendances = $query->orderBy('check_in', 'desc')
-                                    // ->groupBy(fn ($attendance) => $attendance->check_in->format('d/m/Y'))
-                                    // ->get();
-
-        $response = [
-            'has_attendance' => !!$allAttendances,
-            'attendances' => $allAttendances ?? [],
+        // Calculate durations for each group
+        $groups = $attendanceGroups->map(function($group) use ($salary, &$totals, &$waiter) {
+            $workDuration = 0;
+            $breakDuration = 0;
+    
+            // Calculate work duration
+            $endTime = $group['check_out'] ?? now();
+            $workDuration = Carbon::parse($group['check_in'])->diffInSeconds($endTime);
+    
+            // Calculate break durations
+            $currentBreakStart = null;
+            $breakRecords = collect($group['breaks'])->sortBy('check_in');
+    
+            foreach ($breakRecords as $break) {
+                if ($break->status === 'Break start') {
+                    if ($currentBreakStart) {
+                        // Count the previous break until this new break starts
+                        $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($break->check_in);
+                    }
+                    $currentBreakStart = $break->check_in;
+                } 
+                elseif ($break->status === 'Break end' && $currentBreakStart) {
+                    $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($break->check_out);
+                    $currentBreakStart = null;
+                }
+            }
+    
+            // Handle any unfinished break
+            if ($currentBreakStart) {
+                $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($endTime);
+            }
+    
+            // Calculate earnings
+            $payableHours = max(0, $workDuration - $breakDuration) / 3600;
+            $earnings = $waiter->employment_type === 'Part-time' ? max(0, $payableHours * $salary) : 0.00;
+    
+            // Update totals
+            $totals['work'] += $workDuration;
+            $totals['break'] += $breakDuration;
+            $totals['earnings'] += $earnings;
+    
+            return [
+                'date' => $group['date'],
+                'check_in' => $group['check_in'],
+                'check_out' => $group['check_out'],
+                'status' => $group['status'],
+                'work_duration' => $this->formatHoursMinutes($workDuration),
+                'break_duration' => $this->formatHoursMinutes($breakDuration),
+                'earnings' => 'RM '.number_format($earnings, 2),
+                'break' => $group['breaks']
+            ];
+        })->sortByDesc('check_in')->values(); // Sort groups by check-in time descending
+    
+        $data = [
+            'attendances' => $groups,
+            'totals' => [
+                'work_duration' => $this->formatHoursMinutes($totals['work']),
+                'break_duration' => $this->formatHoursMinutes($totals['break']),
+                'earnings' => 'RM '.number_format($totals['earnings'], 2)
+            ]
         ];
 
-        return response()->json($response);
+        return response()->json($data);
+    }
+
+    // New helper function to format as "Xh Ym"
+    protected function formatHoursMinutes($seconds)
+    {
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        
+        return sprintf('%dh %02dm', $hours, $minutes);
     }
 
     /**
@@ -126,8 +316,8 @@ class AttendanceController extends Controller
 
             $checkInTime = Carbon::parse($validatedData['check_in']);
                     
-            $existingAttendance = $this->checkExistingAttendance($this->authUser, today());
-            if ($existingAttendance) {
+            $existingAttendance = $this->checkExistingAttendance($this->authUser, 'in');
+            if ($existingAttendance && ($existingAttendance->status === 'Checked in' || Carbon::parse($existingAttendance->check_in)->isToday())) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'You are already checked in for today.',
@@ -204,12 +394,13 @@ class AttendanceController extends Controller
                                             ->whereNotNull('check_in')
                                             ->where(function($query) {
                                                 $query->whereNull('check_out')
+                                                    ->orWhereNotNull('check_out')
                                                     ->orWhere('status', 'Break end');
                                             })
                                             ->latest()
                                             ->first();
     
-        if (!$lastAttendance || $lastAttendance->status === 'Break start') {
+        if (!$lastAttendance || !in_array($lastAttendance->status, ['Checked in', 'Break end'])) {
             return response()->json([
                 'message' => 'Cannot start break - invalid current status'
             ], 400);
@@ -239,7 +430,7 @@ class AttendanceController extends Controller
                                         ->latest()
                                         ->first();
     
-        if (!$breakStartRecord || $breakStartRecord->status === 'Break end') {
+        if (!$breakStartRecord || $breakStartRecord->status !== 'Break start') {
             return response()->json([
                 'message' => 'Cannot end break - invalid current status'
             ], 400);
@@ -279,27 +470,16 @@ class AttendanceController extends Controller
     /**
      * Check for existing attendance
      */
-    private function checkExistingAttendance(User $user, Carbon $checkInTime = null)
+    private function checkExistingAttendance(User $user, string $action)
     {
-        return $checkInTime 
-                ? $user->attendances()
-                        ->whereDate('check_in', $checkInTime->toDateString())
-                        ->where(function($query) {
-                            $query->where('status', 'Checked in')
-                                ->orWhere(function($subQuery) {
-                                    $subQuery->where('status', 'Checked out')
-                                             ->where('check_out', '<=', now()->subHour());
-                                });
-                        })
-                        ->latest()
-                        ->first(['id', 'check_in', 'check_out'])
-                : $user->attendances()
-                        ->where(function($query) {
-                            $query->where('status', 'Checked in')
-                                ->orWhere('status', 'Checked out');
-                        })
-                        ->latest()
-                        ->first(['id', 'check_in', 'status']);
+        return $user->attendances()
+                    ->when($action === 'in', fn ($subQuery) => $subQuery->whereNotNull('check_in'))
+                    ->where(function($query) {
+                        $query->where('status', 'Checked in')
+                            ->orWhere('status', 'Checked out');
+                    })
+                    ->latest()
+                    ->first(['id', 'check_in', 'status']);
     }
 
     /**
@@ -491,7 +671,7 @@ class AttendanceController extends Controller
     public function checkOut(Request $request)
     {
         $waiter = $this->authUser;
-        $existingAttendance = $this->checkExistingAttendance($waiter);
+        $existingAttendance = $this->checkExistingAttendance($waiter, 'out');
 
         if ($existingAttendance && $existingAttendance->status === 'Checked in') {
             $checkOutAt = now();
