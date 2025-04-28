@@ -159,7 +159,7 @@ class AttendanceController extends Controller
     public function getAllAttendances(Request $request)
     {
         $waiter = $this->authUser;
-        $dateFilter = $request->input('dateFilter');
+        $dateFilter = $request->input('date_filter');
         $dateFilter = array_map(function ($date) {
             return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
         }, $dateFilter);
