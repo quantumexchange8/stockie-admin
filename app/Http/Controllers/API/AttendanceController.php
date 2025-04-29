@@ -159,15 +159,16 @@ class AttendanceController extends Controller
     public function getAllAttendances(Request $request)
     {
         $waiter = $this->authUser;
-        $dateFilter = $request->input('date_filter');
-        $dateFilter = array_map(function ($date) {
-            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-        }, $dateFilter);
+
+        $dateFilter = array_map(
+            fn($date) => Carbon::parse($date)
+                ->timezone('Asia/Kuala_Lumpur')
+                ->toDateString(),
+            $request->input('date_filter')
+        );
     
-        $startDate = Carbon::parse($dateFilter[0])->startOfDay()->format('Y-m-d H:i:s');
-        $endDate = Carbon::parse(
-            count($dateFilter) > 1 ? $dateFilter[1] : $dateFilter[0]
-        )->endOfDay()->format('Y-m-d H:i:s');
+        $startDate = Carbon::parse($dateFilter[0])->startOfDay();
+        $endDate = Carbon::parse($dateFilter[1] ?? $dateFilter[0])->endOfDay();
     
         // Get all records sorted chronologically
         $records = WaiterAttendance::whereDate('created_at', '>=', $startDate)
@@ -179,109 +180,62 @@ class AttendanceController extends Controller
                                             ELSE check_in 
                                         END
                                     ")
-                                    ->get();
+                                    ->get(['id', 'user_id', 'check_in', 'check_out', 'status', 'created_at']);
     
+        // Early return if no records
+        if ($records->isEmpty()) {
+            return response()->json([]);
+        }
+
         $salary = $waiter->salary ?? 0.00;
-        $totals = ['work' => 0, 'break' => 0, 'earnings' => 0];
-        $attendanceGroups = collect();
+        // $totals = ['work' => 0, 'break' => 0, 'earnings' => 0];
+        $attendanceGroups = [];
         $currentGroup = null;
     
         // Group records into complete attendance periods
         foreach ($records as $record) {
-            if ($record->status === 'Checked in') {
-                // Start new group
-                if ($currentGroup) {
-                    $attendanceGroups->push($currentGroup);
-                }
-                $currentGroup = [
-                    'check_in' => $record->check_in,
-                    'check_out' => null,
-                    'breaks' => [],
-                    'date' => Carbon::parse($record->check_in)->format('d/m/Y'),
-                    'status' => 'Ongoing'
-                ];
-            } 
-            elseif ($record->status === 'Checked out' && $currentGroup) {
-                // Complete the current group
-                $currentGroup['check_out'] = $record->check_out;
-                $currentGroup['status'] = 'Completed';
-                $attendanceGroups->push($currentGroup);
-                $currentGroup = null;
-            }
-            elseif (($record->status === 'Break start' || $record->status === 'Break end') && $currentGroup) {
-                // Add break records to current group
-                $currentGroup['breaks'][] = $record;
+            switch ($record->status) {
+                case 'Checked in':
+                    if ($currentGroup) {
+                        $attendanceGroups[] = $currentGroup;
+                    }
+                    $currentGroup = [
+                        'check_in' => $record->check_in,
+                        'check_out' => null,
+                        'breaks' => [],
+                        'date' => Carbon::parse($record->check_in)->format('d/m/Y'),
+                        'status' => 'Ongoing'
+                    ];
+                    break;
+                    
+                case 'Checked out':
+                    if ($currentGroup) {
+                        $currentGroup['check_out'] = $record->check_out;
+                        $currentGroup['status'] = 'Completed';
+                        $attendanceGroups[] = $currentGroup;
+                        $currentGroup = null;
+                    }
+                    break;
+                    
+                case 'Break start':
+                case 'Break end':
+                    if ($currentGroup) {
+                        $currentGroup['breaks'][] = $record;
+                    }
+                    break;
             }
         }
     
         // Add the last ongoing group if exists
         if ($currentGroup) {
-            $attendanceGroups->push($currentGroup);
+            $attendanceGroups[] = $currentGroup;
         }
-    
-        // Calculate durations for each group
-        $groups = $attendanceGroups->map(function($group) use ($salary, &$totals, &$waiter) {
-            $workDuration = 0;
-            $breakDuration = 0;
-    
-            // Calculate work duration
-            $endTime = $group['check_out'] ?? now();
-            $workDuration = Carbon::parse($group['check_in'])->diffInSeconds($endTime);
-    
-            // Calculate break durations
-            $currentBreakStart = null;
-            $breakRecords = collect($group['breaks'])->sortBy('check_in');
-    
-            foreach ($breakRecords as $break) {
-                if ($break->status === 'Break start') {
-                    if ($currentBreakStart) {
-                        // Count the previous break until this new break starts
-                        $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($break->check_in);
-                    }
-                    $currentBreakStart = $break->check_in;
-                } 
-                elseif ($break->status === 'Break end' && $currentBreakStart) {
-                    $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($break->check_out);
-                    $currentBreakStart = null;
-                }
-            }
-    
-            // Handle any unfinished break
-            if ($currentBreakStart) {
-                $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($endTime);
-            }
-    
-            // Calculate earnings
-            $payableHours = max(0, $workDuration - $breakDuration) / 3600;
-            $earnings = $waiter->employment_type === 'Part-time' ? max(0, $payableHours * $salary) : 0.00;
-    
-            // Update totals
-            $totals['work'] += $workDuration;
-            $totals['break'] += $breakDuration;
-            $totals['earnings'] += $earnings;
-    
-            return [
-                'date' => $group['date'],
-                'check_in' => $group['check_in'],
-                'check_out' => $group['check_out'],
-                'status' => $group['status'],
-                'work_duration' => $this->formatHoursMinutes($workDuration),
-                'break_duration' => $this->formatHoursMinutes($breakDuration),
-                'earnings' => 'RM '.number_format($earnings, 2),
-                'break' => $group['breaks']
-            ];
-        })->sortByDesc('check_in')->values(); // Sort groups by check-in time descending
-    
-        $data = [
-            'attendances' => $groups,
-            'totals' => [
-                'work_duration' => $this->formatHoursMinutes($totals['work']),
-                'break_duration' => $this->formatHoursMinutes($totals['break']),
-                'earnings' => 'RM '.number_format($totals['earnings'], 2)
-            ]
-        ];
 
-        return response()->json($data);
+        // Process groups in parallel using collection methods
+        $groups = collect($attendanceGroups)->map(function($group) use ($salary, $waiter) {
+            return $this->processAttendanceGroup($group, $salary, $waiter);
+        })->sortByDesc('check_in')->values();
+        return response()->json($groups);
     }
 
     // New helper function to format as "Xh Ym"
@@ -291,6 +245,73 @@ class AttendanceController extends Controller
         $minutes = floor(($seconds % 3600) / 60);
         
         return sprintf('%dh %02dm', $hours, $minutes);
+    }
+
+    private function processAttendanceGroup(array $group, float $salary, User $waiter): array
+    {
+        $endTime = $group['check_out'] ?? now();
+        $workDuration = Carbon::parse($group['check_in'])->diffInSeconds($endTime);
+        
+        // Process breaks
+        $breakData = $this->calculateBreakDurations($group['breaks'], $endTime);
+        
+        // Calculate earnings
+        $payableHours = max(0, $workDuration - $breakData['breakDuration']) / 3600;
+        $earnings = $waiter->employment_type === 'Part-time' 
+            ? max(0, $payableHours * $salary) 
+            : 0.00;
+    
+        return [
+            'date' => $group['date'],
+            'check_in' => $group['check_in'],
+            'check_out' => $group['check_out'],
+            'status' => $group['status'],
+            'work_duration' => $this->formatHoursMinutes($workDuration),
+            'break_duration' => $this->formatHoursMinutes($breakData['breakDuration']),
+            'earnings' => 'RM '.number_format($earnings, 2),
+            'break' => $breakData['formattedBreaks']
+        ];
+    }
+    
+    private function calculateBreakDurations(array $breaks, $endTime): array
+    {
+        $breakDuration = 0;
+        $formattedBreaks = [];
+        $currentBreak = null;
+        
+        // Sort breaks once
+        $sortedBreaks = collect($breaks)->sortBy('check_in');
+        
+        foreach ($sortedBreaks as $break) {
+            if ($break->status === 'Break start') {
+                if ($currentBreak) {
+                    // Handle unclosed break
+                    $breakDuration += Carbon::parse($currentBreak['start'])
+                        ->diffInSeconds($break->check_in);
+                }
+                $currentBreak = ['start' => $break->check_in, 'end' => null];
+            } 
+            elseif ($break->status === 'Break end' && $currentBreak) {
+                $currentBreak['end'] = $break->check_out;
+                $breakDuration += Carbon::parse($currentBreak['start'])
+                    ->diffInSeconds($currentBreak['end']);
+                $formattedBreaks[] = $currentBreak;
+                $currentBreak = null;
+            }
+        }
+        
+        // Handle last unclosed break
+        if ($currentBreak) {
+            $currentBreak['end'] = null;
+            $breakDuration += Carbon::parse($currentBreak['start'])
+                ->diffInSeconds($endTime);
+            $formattedBreaks[] = $currentBreak;
+        }
+        
+        return [
+            'breakDuration' => $breakDuration,
+            'formattedBreaks' => $formattedBreaks
+        ];
     }
 
     /**
