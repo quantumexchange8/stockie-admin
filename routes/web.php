@@ -72,7 +72,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/waiterDetails/{id}', [WaiterController::class,'showWaiterDetails'])->name('waiter.waiter-details');
         Route::get('/orderDetails/{id}',[WaiterController::class,'orderDetails'])->name('waiter.order-details');
         Route::get('/salesReport/{id}', [WaiterController::class,'salesReport'])->name('waiter.sales-report');
-        Route::get('/viewAttendance/{id}', [WaiterController::class,'viewAttendance'])->name('waiter.view-attendance');
+        Route::get('/getAttendanceList/{id}', [WaiterController::class,'getAttendanceList'])->name('waiter.attendances');
+        Route::get('/getAttendanceListDetail/{id}', [WaiterController::class,'getAttendanceListDetail'])->name('waiter.attendance-details');
         Route::get('/filterSalesPerformance', [WaiterController::class, 'filterSalesPerformance'])->name('waiter.filter-salesperformance');
         Route::get('/filterCommEarned', [WaiterController::class, 'filterCommEarned'])->name('waiter.filter-commEarned');
         Route::get('/viewEmployeeIncentive', [WaiterController::class, 'viewEmployeeIncentive'])->name('waiter.viewEmployeeIncentive');
@@ -246,8 +247,8 @@ Route::middleware('auth')->group(function () {
      Route::prefix('table-room')->middleware([CheckPermission::class . ':table-room'])->group(function(){
         Route::get('/table-room', [TableRoomController::class, 'index'])->name('table-room');
         Route::post('/add-zones', [TableRoomController::class,'addZone'])->name('tableroom.add-zone');
-        Route::delete('/table-room/deleteZone/{id}', [TableRoomController::class, 'deleteZone'])->name('tableroom.delete-zone');
-        Route::delete('/table-room/deleteTable/{id}', [TableRoomController::class,'deleteTable'])->name('tableroom.delete-table');
+        Route::post('/table-room/deleteZone/{id}', [TableRoomController::class, 'deleteZone'])->name('tableroom.delete-zone');
+        Route::post('/table-room/deleteTable/{id}', [TableRoomController::class,'deleteTable'])->name('tableroom.delete-table');
         Route::post('/add-table', [TableRoomController::class,'addTable'])->name('tableroom.add-table');
         Route::get('/get-zonedetails', [TableRoomController::class, 'getZoneDetails'])->name('tableroom.getZoneDetails');
         Route::get('/get-tabledetails', [TableRoomController::class,'getTableDetails'])->name('tableroom.getTableDetails');
@@ -259,7 +260,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('order-management')->middleware([CheckPermission::class . ':order-management'])->group(function(){
         Route::get('/orders', [OrderController::class, 'index'])->name('orders');
         // Route::get('/orders/getOrderPaymentDetails{id}', [OrderController::class, 'getOrderPaymentDetails'])->name('orders.getOrderPaymentDetails');
-        Route::get('/orders/getOccupiedTablePayments{id}', [OrderController::class, 'getOccupiedTablePayments'])->name('orders.getOccupiedTablePayments');
+        Route::get('/orders/getOccupiedTablePayments', [OrderController::class, 'getOccupiedTablePayments'])->name('orders.getOccupiedTablePayments');
         Route::put('/orders/cancelOrder/{id}', [OrderController::class, 'cancelOrder'])->name('orders.cancel');
         Route::put('/orders/updateOrderStatus/{id}', [OrderController::class, 'updateOrderStatus'])->name('orders.complete');
         Route::put('/orders/updateOrderCustomer/{data}', [OrderController::class, 'updateOrderCustomer'])->name('orders.updateOrderCustomer');
@@ -299,6 +300,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');
         Route::get('/getCurrentTableOrder/{id}', [OrderController::class, 'getCurrentTableOrder'])->name('orders.getCurrentTableOrder');
         Route::get('/getOrderHistories', [OrderController::class, 'getOrderHistories'])->name('orders.getOrderHistories');
+        Route::get('/getOrderPaymentDetails/{id}', [OrderController::class, 'getOrderPaymentDetails'])->name('orders.getOrderPaymentDetails');
         Route::get('/getAllCategories', [OrderController::class, 'getAllCategories'])->name('orders.getAllCategories');
         Route::get('/getAllTaxes', [OrderController::class, 'getAllTaxes'])->name('orders.getAllTaxes');
         Route::get('/getBillDiscount', [OrderController::class, 'getBillDiscount'])->name('orders.getBillDiscount');

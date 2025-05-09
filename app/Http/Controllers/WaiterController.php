@@ -521,131 +521,190 @@ class WaiterController extends Controller
 //         }
 //     }
 
-    public function viewAttendance(Request $request, string $id)
+    public function getAttendanceList(Request $request, string $id)
     {
-        $dateFilter = $request->input('dateFilter');
-        $dateFilter = array_map(function ($date) {
-            return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-        }, $dateFilter);
-    
-        $startDate = Carbon::parse($dateFilter[0])->startOfDay()->format('Y-m-d H:i:s');
-        $secondaryDate = count($dateFilter) > 1 ? $dateFilter[1] : $dateFilter[0];
-        $endDate = Carbon::parse($secondaryDate)->endOfDay()->format('Y-m-d H:i:s');
-    
-        // Get all records sorted chronologically
-        $records = WaiterAttendance::whereDate('created_at', '>=', $startDate)
-                                    ->whereDate('created_at', '<=', $endDate)
-                                    ->where('user_id', $id)
-                                    ->orderByRaw("
-                                        CASE 
-                                            WHEN status IN ('Break end', 'Checked out') THEN check_out 
-                                            ELSE check_in 
-                                        END
-                                    ")
-                                    ->get();
-    
         $waiter = User::find($id);
-        $salary = $waiter->salary ?? 0.00;
-        $totals = ['work' => 0, 'break' => 0, 'earnings' => 0];
-        $attendanceGroups = collect();
+
+        $dateFilter = array_map(
+            fn($date) => Carbon::parse($date)
+                ->timezone('Asia/Kuala_Lumpur')
+                ->toDateString(),
+            $request->input('date_filter')
+        );
+    
+        $startDate = Carbon::parse($dateFilter[0])->startOfDay();
+        $endDate = Carbon::parse($dateFilter[1] ?? $dateFilter[0])->endOfDay();
+    
+        // Step 1: Get only the "Checked out" records within the filter
+        $checkIns = WaiterAttendance::where('user_id', $waiter->id)
+                                    ->where('status', 'Checked out')
+                                    ->where(function($query) use ($startDate, $endDate) {
+                                        // Records within date range
+                                        $query->whereDate('check_in', '>=', $startDate)
+                                                ->whereDate('check_in', '<=', $endDate);
+                                    })
+                                    ->orderBy('check_in')
+                                    ->get();
+
+        $currentCheckIn = WaiterAttendance::where('user_id', $waiter->id)
+                                            ->whereIn('status', ['Checked in', 'Checked out'])
+                                            ->where(function($query) use ($startDate, $endDate) {
+                                                // Records within date range
+                                                $query->whereDate('check_in', '>=', $startDate)
+                                                        ->whereDate('check_in', '<=', $endDate);
+                                            })
+                                            ->latest()
+                                            ->first();
+                                            
+        if ($currentCheckIn && $currentCheckIn->status === 'Checked in') {
+            $checkIns->push($currentCheckIn);
+        }
+
+        // Early return if no records
+        if ($checkIns->isEmpty()) {
+            return response()->json([]);
+        }
+                                    
+        // Step 2: For each check-in, get all related records (same day or after)
+        $groups = $checkIns->map(function ($checkInRecord) use ($waiter, $startDate, $endDate) {
+            $relatedRecords = WaiterAttendance::where('user_id', $waiter->id)
+                                                ->where(function($q) use ($checkInRecord) {
+                                                    // Records within date range
+                                                    $q->where('check_in', '>=', $checkInRecord->check_in)
+                                                        ->where(function($sq) use ($checkInRecord) {
+                                                            $existingCheckOut = $checkInRecord->check_out ?? now();
+
+                                                            $sq->where(function($ssq) use ($existingCheckOut) {
+                                                                    $ssq->where('check_in', '<=', $existingCheckOut)
+                                                                        ->whereNull('check_out');
+                                                                })
+                                                                ->orWhereDate('check_out', '<=', $existingCheckOut);
+                                                        });
+                                                })
+                                                ->orderByRaw("
+                                                    CASE 
+                                                        WHEN status IN ('Break end', 'Checked out') THEN check_out 
+                                                        ELSE check_in 
+                                                    END
+                                                ")
+                                                ->get();           
+
+            $currentGroup = null;
+        
+            // Group records into complete attendance periods
+            foreach ($relatedRecords as $record) {
+                switch ($record->status) {
+                    case 'Checked in':
+                        $currentGroup = [
+                            'check_in' => $record->check_in,
+                            'check_out' => null,
+                            'breaks' => [],
+                            'date' => Carbon::parse($record->check_in)->format('d/m/Y'),
+                            'status' => 'Ongoing'
+                        ];
+                        break;
+                        
+                    case 'Checked out':
+                        if ($currentGroup) {
+                            $currentGroup['check_out'] = $record->check_out;
+                            $currentGroup['status'] = 'Completed';
+                        }
+                        break;
+                        
+                    case 'Break start':
+                    case 'Break end':
+                        if ($currentGroup) {
+                            $currentGroup['breaks'][] = $record;
+                        }
+                        break;
+                }
+            }
+            if (!$currentGroup) dd($currentGroup, $relatedRecords, $checkInRecord);
+
+            // Only return summarized data (no detailed breaks)
+            return $this->processAttendanceGroup($currentGroup, $waiter->salary ?? 0, $waiter, false);
+        });
+        
+        return response()->json($groups->sortByDesc('check_in')->values());
+    }
+
+    public function getAttendanceListDetail(Request $request, string $id)
+    {
+        $waiter = User::find($id);
+
+        $targetDate = Carbon::parse($request->input('target_date'))->timezone('Asia/Kuala_Lumpur')->toDateString();
+        $startDate = Carbon::parse($targetDate)->startOfDay();
+        $endDate = Carbon::parse($targetDate)->endOfDay();
+        
+        $currentAttendance = WaiterAttendance::where('user_id', $waiter->id)
+                                            ->whereIn('status', ['Checked in', 'Checked out'])
+                                            ->where(function($query) use ($startDate, $endDate) {
+                                                // Records within date range
+                                                $query->whereDate('check_in', '>=', $startDate)
+                                                        ->whereDate('check_in', '<=', $endDate);
+                                            })
+                                            ->latest()
+                                            ->first();     
+                                    
+        // For each check-in, get all related records (same day or after)
+        $relatedRecords = WaiterAttendance::where('user_id', $waiter->id)
+                                            ->where(function($q) use ($currentAttendance) {
+                                                // Records within date range
+                                                $q->where('check_in', '>=', $currentAttendance->check_in)
+                                                    ->where(function($sq) use ($currentAttendance) {
+                                                        $existingCheckOut = $currentAttendance->check_out ?? now();
+
+                                                        $sq->where(function($ssq) use ($existingCheckOut) {
+                                                                $ssq->where('check_in', '<=', $existingCheckOut)
+                                                                    ->whereNull('check_out');
+                                                            })
+                                                            ->orWhereDate('check_out', '<=', $existingCheckOut);
+                                                    });
+                                            })
+                                            ->orderByRaw("
+                                                CASE 
+                                                    WHEN status IN ('Break end', 'Checked out') THEN check_out 
+                                                    ELSE check_in 
+                                                END
+                                            ")
+                                            ->get();
+                                            
+        // dd($currentAttendance, $relatedRecords->toArray());
         $currentGroup = null;
     
         // Group records into complete attendance periods
-        foreach ($records as $record) {
-            if ($record->status === 'Checked in') {
-                // Start new group
-                if ($currentGroup) {
-                    $attendanceGroups->push($currentGroup);
-                }
-                $currentGroup = [
-                    'check_in' => $record->check_in,
-                    'check_out' => null,
-                    'breaks' => [],
-                    'date' => Carbon::parse($record->check_in)->format('d/m/Y'),
-                    'status' => 'Ongoing'
-                ];
-            } 
-            elseif ($record->status === 'Checked out' && $currentGroup) {
-                // Complete the current group
-                $currentGroup['check_out'] = $record->check_out;
-                $currentGroup['status'] = 'Completed';
-                $attendanceGroups->push($currentGroup);
-                $currentGroup = null;
-            }
-            elseif (($record->status === 'Break start' || $record->status === 'Break end') && $currentGroup) {
-                // Add break records to current group
-                $currentGroup['breaks'][] = $record;
-            }
-        }
-    
-        // Add the last ongoing group if exists
-        if ($currentGroup) {
-            $attendanceGroups->push($currentGroup);
-        }
-    
-        // Calculate durations for each group
-        $groups = $attendanceGroups->map(function($group) use ($salary, &$totals, &$waiter) {
-            $workDuration = 0;
-            $breakDuration = 0;
-    
-            // Calculate work duration
-            $endTime = $group['check_out'] ?? now();
-            $workDuration = Carbon::parse($group['check_in'])->diffInSeconds($endTime);
-    
-            // Calculate break durations
-            $currentBreakStart = null;
-            $breakRecords = collect($group['breaks'])->sortBy('check_in');
-    
-            foreach ($breakRecords as $break) {
-                if ($break->status === 'Break start') {
-                    if ($currentBreakStart) {
-                        // Count the previous break until this new break starts
-                        $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($break->check_in);
+        foreach ($relatedRecords as $record) {
+            switch ($record->status) {
+                case 'Checked in':
+                    $currentGroup = [
+                        'check_in' => $record->check_in,
+                        'check_out' => null,
+                        'breaks' => [],
+                        'date' => Carbon::parse($record->check_in)->format('d/m/Y'),
+                        'status' => 'Ongoing'
+                    ];
+                    break;
+                    
+                case 'Checked out':
+                    if ($currentGroup) {
+                        $currentGroup['check_out'] = $record->check_out;
+                        $currentGroup['status'] = 'Completed';
                     }
-                    $currentBreakStart = $break->check_in;
-                } 
-                elseif ($break->status === 'Break end' && $currentBreakStart) {
-                    $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($break->check_out);
-                    $currentBreakStart = null;
-                }
+                    break;
+                    
+                case 'Break start':
+                case 'Break end':
+                    if ($currentGroup) {
+                        $currentGroup['breaks'][] = $record;
+                    }
+                    break;
             }
-    
-            // Handle any unfinished break
-            if ($currentBreakStart) {
-                $breakDuration += Carbon::parse($currentBreakStart)->diffInSeconds($endTime);
-            }
-    
-            // Calculate earnings
-            $payableHours = max(0, ($workDuration - $breakDuration)) / 3600;
-            $earnings = $waiter->employment_type === 'Part-time' ? max(0, $payableHours * $salary) : 0.00;
-    
-            // Update totals
-            $totals['work'] += $workDuration;
-            $totals['break'] += $breakDuration;
-            $totals['earnings'] += $earnings;
-    
-            return [
-                'date' => $group['date'],
-                'check_in' => $group['check_in'],
-                'check_out' => $group['check_out'],
-                'status' => $group['status'],
-                'work_duration' => $this->formatHoursMinutes($workDuration),
-                'break_duration' => $this->formatHoursMinutes($breakDuration),
-                'earnings' => 'RM '.number_format($earnings, 2),
-                'break_count' => count($group['breaks'])
-            ];
-        })->sortByDesc('check_in')->values(); // Sort groups by check-in time descending
-    
-        $data = [
-            'attendances' => $groups,
-            'totals' => [
-                'work_duration' => $this->formatHoursMinutes($totals['work']),
-                'break_duration' => $this->formatHoursMinutes($totals['break']),
-                'earnings' => 'RM '.number_format($totals['earnings'], 2)
-            ]
-        ];
+        }
 
-        return response()->json($data);
+        // Only return summarized data (no detailed breaks)
+        $processedAttendance = $this->processAttendanceGroup($currentGroup, $waiter->salary ?? 0, $waiter, true);
+        
+        return response()->json($processedAttendance);
     }
 
     // New helper function to format as "Xh Ym"
@@ -655,6 +714,93 @@ class WaiterController extends Controller
         $minutes = floor(($seconds % 3600) / 60);
         
         return sprintf('%dh %02dm', $hours, $minutes);
+    }
+
+    private function processAttendanceGroup(array $group, float $salary, User $waiter, $withBreaks): array
+    {
+        $endTime = $group['check_out'] ?? now();
+        $workDuration = Carbon::parse($group['check_in'])->diffInSeconds($endTime);
+        
+        // Process breaks
+        $breakData = $this->calculateBreakDurations($group['breaks'], $endTime, $withBreaks);
+        
+        // Calculate earnings
+        $payableHours = floor(max(0, $workDuration) / 60) / 60;
+        $earnings = $waiter->employment_type === 'Part-time' 
+            ? max(0, $payableHours * $salary) 
+            : 0.00;
+
+        // dd($group['check_in'], $waiter->shifts);
+        // dd(Carbon::parse($group['date'])->timezone('Asia/Kuala_Lumpur')->toDateString());
+    
+        $processedGroup = [
+            'date' => $group['date'],
+            'check_in' => $group['check_in'],
+            'check_out' => $group['check_out'],
+            'status' => $group['status'],
+            'work_duration' => $this->formatHoursMinutes($workDuration),
+            'break_duration' => $this->formatHoursMinutes($breakData['breakDuration']),
+            'earnings' => 'RM '.number_format($earnings, 2),
+        ];
+
+        if ($withBreaks) {
+            $shift = $waiter->shifts()
+                            ->whereDate('date', Carbon::parse($group['check_in']))
+                            ->with('shifts:id,shift_name')
+                            ->first(['id', 'shift_id']);
+
+            $processedGroup['shift'] = $shift;
+            $processedGroup['break'] = $breakData['formattedBreaks'];
+        }
+
+        return $processedGroup;
+    }
+    
+    private function calculateBreakDurations(array $breaks, $endTime, $withBreaks): array
+    {
+        $breakDuration = 0;
+        $formattedBreaks = [];
+        $currentBreak = null;
+        
+        // Sort breaks once
+        $sortedBreaks = collect($breaks)->sortBy('check_in');
+        
+        foreach ($sortedBreaks as $break) {
+            if ($break->status === 'Break start') {
+                if ($currentBreak) {
+                    // Handle unclosed break
+                    $breakDuration += Carbon::parse($currentBreak['start'])->diffInSeconds($break->check_in);
+                }
+                $currentBreak = [
+                    'id' => $break->id, 
+                    'start' => $break->check_in, 
+                    'end' => null
+                ];
+            } 
+            elseif ($break->status === 'Break end' && $currentBreak) {
+                $currentBreak['end'] = $break->check_out;
+                $breakDuration += Carbon::parse($currentBreak['start'])->diffInSeconds($currentBreak['end']);
+
+                if ($withBreaks) ($formattedBreaks[] = $currentBreak);
+                $currentBreak = null;
+            }
+        }
+        
+        // Handle last unclosed break
+        if ($currentBreak) {
+            $currentBreak['end'] = null;
+            $breakDuration += Carbon::parse($currentBreak['start'])->diffInSeconds($endTime);
+
+            if ($withBreaks) ($formattedBreaks[] = $currentBreak);
+        }
+
+        $data = ['breakDuration' => $breakDuration];
+
+        if ($withBreaks) {
+            $data['formattedBreaks'] = $formattedBreaks;
+        }
+
+        return $data;
     }
 
     public function filterSalesPerformance (Request $request)

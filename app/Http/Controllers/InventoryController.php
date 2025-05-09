@@ -645,7 +645,7 @@ class InventoryController extends Controller
                 }
 
                 if (isset($value['id'])) {
-                    $existingItem = IventoryItem::find($value['id']);
+                    $existingItem = IventoryItem::where('id', $value['id'])->first();
 
                     $existingItem->update([
                         'item_name' => $value['item_name'],

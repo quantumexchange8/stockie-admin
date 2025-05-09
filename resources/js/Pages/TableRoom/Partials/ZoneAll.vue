@@ -9,6 +9,7 @@ import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import Accordion from '@/Components/Accordion.vue';
 import { useCustomToast, useInputValidator } from '@/Composables';
+import { DeleteIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
     zones: {
@@ -16,21 +17,18 @@ const props = defineProps({
         required: true
     }
 });
-const emit = defineEmits(['close']);
-const zonesDetail = ref();
+const emit = defineEmits([ 'update:zones', 'close']);
 const editModal = ref(false);
 const deleteModal = ref(false);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const initialData = ref(null);
+const confirmationTitle = ref(``);
+const confirmationMessage = ref(``);
+const confirmation = ref(false);
+
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
-
-
-watch(() => props.zones, (newValue) => {
-    zonesDetail.value = newValue ? newValue : {};
-}, { immediate: true }
-)
 
 const form = useForm({
     id: '',
@@ -74,6 +72,8 @@ const openEditModal = (table, zone) => {
 const openDeleteModal = (type, id) => {
     form.type = type;
     form.id = id;
+    confirmationTitle.value = `Delete this ${form.type}?`;
+    confirmationMessage.value = `Are you sure you want to delete the selected ${form.type}? This action cannot be undone.`;
     deleteModal.value = true;
 }
 
@@ -85,6 +85,12 @@ const closeModal = (status) => {
             } else {
                 editModal.value = false;
                 deleteModal.value = false;
+                confirmation.value = false;
+                
+                setTimeout(() => {
+                    confirmationTitle.value = '';
+                    confirmationMessage.value = '';
+                }, 300)
             }
             break;
         }
@@ -96,6 +102,12 @@ const closeModal = (status) => {
             isUnsavedChangesOpen.value = false;
             editModal.value = false;
             deleteModal.value = false;
+            confirmation.value = false;
+                
+            setTimeout(() => {
+                confirmationTitle.value = '';
+                confirmationMessage.value = '';
+            }, 300)
             break;
         }
     }
@@ -121,6 +133,57 @@ const formSubmit = () => {
             }
     })}
 };
+
+// Delete inventory item
+const deleteTable = async () => {
+    try {
+        // Post using axios and get the new order id if new order is created
+        const response = await axios.post(`/table-room/table-room/deleteTable/${form.id}`, {
+            method: 'POST',
+            params: {
+                confirmation: confirmation.value,
+            }
+        });
+
+        if (response.data.type && response.data.type === 'reservation') {
+            confirmation.value = true;
+            confirmationTitle.value = response.data.title;
+            confirmationMessage.value = response.data.message;
+
+            return;
+
+        } else if (response.data.type && response.data.type === 'order') {
+            showMessage({ 
+                severity: 'warn',
+                summary: response.data.summary,
+                detail: response.data.detail,
+            });
+
+            return;
+        }
+        
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: `Selected ${form.type} has been deleted successfully.`,
+            });
+        }, 200);
+
+        emit('update:zones');
+        closeModal('leave');
+        confirmationTitle.value = '';
+        confirmationMessage.value = '';
+        confirmation.value = false;
+        
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+const filteredZones = computed(() => {
+    return props.zones.filter(zone => zone.tables.length > 0);
+});
+
 const requiredFields = ['table_no', 'seat', 'zone_id'];
 
 const isFormValid = computed(() => {
@@ -141,7 +204,7 @@ watch(form, () => {
 
 <template>
     <div class="flex flex-col gap-6">
-        <Accordion v-for="zone in zones" :key="zone.value" accordionClasses="gap-[24px]">
+        <Accordion v-for="zone in filteredZones" :key="zone.value" accordionClasses="gap-[24px]">
             <template #head>
                 <span class="text-sm text-grey-900 font-medium">
                     {{ zone.text }}
@@ -257,7 +320,7 @@ watch(form, () => {
         </Modal>
     </Modal>
 
-    <Modal 
+    <!-- <Modal 
         :maxWidth="'2xs'" 
         :closeable="true"
         :show="deleteModal"
@@ -290,5 +353,44 @@ watch(form, () => {
                 </div>
             </div>
         </form>
+    </Modal> -->
+
+    <Modal
+        :maxWidth="'2xs'"
+        :closeable="true"
+        :withHeader="false"
+        :show="deleteModal"
+        @close="closeModal('leave')"
+    >
+        <div class="flex flex-col items-center gap-9 rounded-[5px] border border-solid border-primary-200 bg-white m-[-24px]">
+            <div class="w-full flex flex-col items-center gap-[10px] bg-primary-50">
+                <div class="w-full flex pt-2 justify-center items-center">
+                    <DeleteIllus />
+                </div>
+            </div>
+            <div class="flex flex-col px-6 items-center gap-1 self-stretch">
+                <span class="self-stretch text-primary-900 text-center text-lg font-medium ">{{ confirmationTitle }}</span>
+                <span class="self-stretch text-grey-900 text-center text-base font-medium">{{ confirmationMessage }}</span>
+            </div>
+
+            <div class="flex px-6 pb-6 justify-center items-start gap-3 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="closeModal('leave')"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    variant="red"
+                    size="lg"
+                    type="submit"
+                    @click="deleteTable"
+                >
+                    Remove
+                </Button>
+            </div>
+        </div>
     </Modal>
 </template>

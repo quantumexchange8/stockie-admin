@@ -177,7 +177,7 @@ onMounted(() => {
             :hourFormat="timeOnly ? '24' : '12'"
             :selectionMode="props.range === true ? 'range' : 'single'"
             showIcon
-            :manualInput="false"
+            :manualInput="true"
             :minDate="minDate"
             :disabledDates="disabledDates"
             :showTime="props.withTime"
@@ -228,7 +228,7 @@ onMounted(() => {
                             // Invalid State
                             { 'border-primary-950': props.invalid },
                             // Spacing
-                            'mb-1 ml-0 -mr-4 py-3 px-4',
+                            'ml-0 -mr-4 py-3 px-4',
                             // Shape
                             'rounded-[5px] flex-1',
                             //Sizing

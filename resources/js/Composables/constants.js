@@ -84,6 +84,7 @@ export const emptyReward = () => {
         valid_period: "",
         valid_period_from: "",
         valid_period_to: "",
+        status: "Active",
     }
 };
 

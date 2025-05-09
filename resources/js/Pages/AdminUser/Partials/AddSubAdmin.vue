@@ -7,7 +7,7 @@ import Toggle from '@/Components/Toggle.vue';
 import { useCustomToast } from '@/Composables';
 import { permissionList } from '@/Composables/constants';
 import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const form = useForm({
     image: '',
@@ -21,27 +21,26 @@ const form = useForm({
 const emit = defineEmits(['close', 'isDirty', 'update:users']);
 const { showMessage } = useCustomToast();
 const isAddAdminClicked = ref(false);
-const isProcessing = ref(false);
 
 const addAdmin = async () => {
-    isProcessing.value = true;
+    form.processing = true;
     try {
-        form.post('admin-user/add-sub-admin', {
-            preserveScroll: true,
-            preserveState: 'errors',
-            onSuccess: () => {
-                showMessage({
-                    severity: 'success',
-                    summary: 'Successfully added.'
-                });
-                emit('close', 'leave');
-                setTimeout(() => {
-                    isProcessing.value = false; 
-                }, 2000);
-            }
-        })
+        // form.post('admin-user/add-sub-admin', {
+        //     preserveScroll: true,
+        //     preserveState: 'errors',
+        //     onSuccess: () => {
+        //         showMessage({
+        //             severity: 'success',
+        //             summary: 'Successfully added.'
+        //         });
+        //         emit('close', 'leave');
+        //         setTimeout(() => {
+        //             form.processing = false; 
+        //         }, 2000);
+        //     }
+        // })
 
-        const response = await axios.put('admin-user/add-sub-admin', form);
+        const response = await axios.post('admin-user/add-sub-admin', form);
 
         showMessage({
             severity: 'success',
@@ -49,14 +48,18 @@ const addAdmin = async () => {
         });
 
         emit('update:users', response.data);
+        form.reset();
+        form.clearErrors();
         emit('close', 'leave');
-        setTimeout(() => {
-            isProcessing.value = false; 
-        }, 2000);
 
     } catch (error) {
-        console.error(error);
+        if (error.response && error.response.data.errors) {
+            form.setError(error.response.data.errors); 
+            console.error('An unexpected error occurred:', error);
+        }
         isAddAdminClicked.value = false;
+    } finally {
+        form.processing = false; 
     }
 };
 
@@ -73,6 +76,11 @@ const updatePermission = (permission) => {
         form.permission.splice(index, 1);
     }
 }
+
+const isFormValid = computed(() => {
+    return ['role_id', 'full_name', 'position', 'email', 'password'].every(field => form[field]);
+})
+
 </script>
 
 <template>
@@ -107,44 +115,58 @@ const updatePermission = (permission) => {
                 <!-- form -->
                 <div class="flex items-start gap-6 self-stretch w-full pb-3">
                     <DragDropImage 
-                        :errorMessage="form.errors?.image"
+                        :errorMessage="form.errors?.image ? form.errors.image[0] : ''"
                         :inputName="'image'"
                         v-model="form.image"
                         class="!max-w-[320px] !h-[320px]"
                     />
 
-                    <div class="flex flex-col items-start gap-4 self-stretch w-full">
+                    <div class="flex flex-col items-start gap-4 self-stretch w-full pr-1 max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
                         <TextInput 
-                        :labelText="'ID'"
-                        :required="true"
-                        :inputName="'role_id'"
-                        :errorMessage="form.errors?.role_id"
-                        v-model="form.role_id"
-                    />
+                            :labelText="'ID'"
+                            :placeholder="'e.g. 000001'"
+                            :required="true"
+                            :inputName="'role_id'"
+                            :errorMessage="form.errors?.role_id ? form.errors.role_id[0] : ''"
+                            v-model="form.role_id"
+                        />
 
-                    <TextInput
-                        :labelText="'Name'"
-                        :required="true"
-                        :inputName="'full_name'"
-                        :errorMessage="form.errors?.full_name"
-                        v-model="form.full_name"
-                    />
+                        <TextInput 
+                            :labelText="'Password'"
+                            :placeholder="'Enter your password here'"
+                            :inputName="'password'"
+                            :inputType="'password'"
+                            :errorMessage="form.errors?.password ? form.errors.password[0] : ''"
+                            v-model="form.password"
+                        />
 
-                    <TextInput 
-                        :labelText="'Title'"
-                        :required="true"
-                        :inputName="'position'"
-                        :errorMessage="form.errors?.position"
-                        v-model="form.position"
-                    />
+                        <TextInput
+                            :labelText="'Name'"
+                            :placeholder="'e.g. John Doe'"
+                            :required="true"
+                            :inputName="'full_name'"
+                            :errorMessage="form.errors?.full_name ? form.errors.full_name[0] : ''"
+                            v-model="form.full_name"
+                        />
+                        
+                        <TextInput
+                            labelText="Email"
+                            :placeholder="'e.g. johndoe@gmail.com'"
+                            inputId="email"
+                            type="'email'"
+                            required
+                            :errorMessage="form.errors?.email ? form.errors.email[0] : ''"
+                            v-model="form.email"
+                        />
 
-                    <TextInput 
-                        :labelText="'Password'"
-                        :inputName="'password'"
-                        :inputType="'password'"
-                        :errorMessage="form.errors?.password"
-                        v-model="form.password"
-                    />
+                        <TextInput 
+                            :labelText="'Title'"
+                            :placeholder="'e.g. Accountant'"
+                            :required="true"
+                            :inputName="'position'"
+                            :errorMessage="form.errors?.position ? form.errors.position[0] : ''"
+                            v-model="form.position"
+                        />
                     </div>
                 </div>
                 <Button
@@ -185,7 +207,7 @@ const updatePermission = (permission) => {
                         <span class="text-grey-950 text-base font-medium">Allow '{{ permission.text }}' access</span>
                         <Toggle
                             :checked="!!form.permission.find(exist_permission => exist_permission === permission.value)"
-                            :disabled="form.processing || isProcessing"
+                            :disabled="form.processing"
                             @change="updatePermission(permission.value)"
                         >
                         </Toggle>
@@ -205,6 +227,7 @@ const updatePermission = (permission) => {
                         :variant="'primary'"
                         :size="'lg'"
                         :type="'submit'"
+                        :disabled="form.processing || !isFormValid"
                     >
                         Add
                     </Button>

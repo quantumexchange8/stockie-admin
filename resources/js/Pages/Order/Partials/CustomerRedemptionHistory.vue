@@ -5,6 +5,8 @@ import TabView from '@/Components/TabView.vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { computed, onMounted, ref } from 'vue';
+import OrderInvoice from './OrderInvoice.vue';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     customerId: Number,
@@ -13,6 +15,8 @@ const customerId = ref(props.customerId);
 const redeemHistory = ref([]);
 const tabs = ref(['All', 'Earned', 'Used']);
 const isLoading = ref(false);
+const selectedOrderId = ref(null);
+const orderInvoiceModalIsOpen = ref(false);
 
 const getRedeemHistory = async () => {
     isLoading.value = true;
@@ -41,6 +45,16 @@ const getRecordTitle = (item) => {
     }
 }
 
+const showOrderInvoiceModal = (item) => {
+    selectedOrderId.value = item.id;
+    orderInvoiceModalIsOpen.value = true;
+};
+
+const hideOrderInvoiceModal = () => {
+    setTimeout(() => selectedOrderId.value = null, 200);
+    orderInvoiceModalIsOpen.value = false;
+};
+
 onMounted(() => getRedeemHistory())
 </script>
 
@@ -58,7 +72,12 @@ onMounted(() => getRedeemHistory())
                                 <div class="flex justify-between items-center self-stretch gap-x-3">
                                     <div class="w-3/4 flex flex-col items-start gap-3">
                                         <div class="flex items-start gap-3 self-stretch">
-                                            <div class="flex w-[60px] h-[60px] justify-center items-center gap-[15px] rounded-[4.5px] border-[1.5px] border-solid border-primary-200 bg-primary-50" v-if="item.type === 'Earned'">
+                                            <div 
+                                                v-if="item.type === 'Earned'"
+                                                @click="item.point_type === 'Order' ? showOrderInvoiceModal(item) : ''" 
+                                                class="flex w-[60px] h-[60px] justify-center items-center gap-[15px] rounded-[4.5px] border-[1.5px] border-solid border-primary-200 bg-primary-50" 
+                                                :class="{'cursor-pointer': item.point_type === 'Order'}"
+                                            >
                                                 <ReceiptIcon class="text-primary-900" v-if="item.point_type === 'Order'" />
                                                 <PointsIcon class="text-primary-900" v-else/>
                                             </div>
@@ -102,7 +121,7 @@ onMounted(() => getRedeemHistory())
                                 <div class="flex justify-between items-center self-stretch gap-x-3">
                                     <div class="w-3/4 flex flex-col items-start gap-3">
                                         <div class="flex items-start gap-3 self-stretch">
-                                            <div class="flex w-[60px] h-[60px] justify-center items-center gap-[15px] rounded-[4.5px] border-[1.5px] border-solid border-primary-200 bg-primary-50">
+                                            <div @click="showOrderInvoiceModal(item)" class="flex w-[60px] h-[60px] justify-center items-center gap-[15px] rounded-[4.5px] border-[1.5px] border-solid border-primary-200 bg-primary-50 cursor-pointer">
                                                 <ReceiptIcon />
                                             </div>
                                             <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0] self-stretch">
@@ -165,4 +184,15 @@ onMounted(() => getRedeemHistory())
             </template>
         </TabView>
     </div>
+
+    <Modal
+        maxWidth="sm" 
+        closeable
+        class="[&>div:nth-child(2)>div>div]:p-1 [&>div:nth-child(2)>div>div]:sm:max-w-[420px]"
+        :withHeader="false"
+        :show="orderInvoiceModalIsOpen"
+        @close="hideOrderInvoiceModal"
+    >
+        <OrderInvoice :orderId="selectedOrderId" />
+    </Modal>
 </template>

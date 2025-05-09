@@ -20,7 +20,8 @@ class Table extends Model
         'seat', 
         'zone_id', 
         'status', 
-        'order_id'
+        'order_id',
+        'state'
     ];
 
     public function getActivitylogOptions(): LogOptions

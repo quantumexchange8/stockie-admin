@@ -13,7 +13,10 @@ class Zone extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
 
-    protected $fillable = ['name'];
+    protected $fillable = [
+        'name',
+        'status',
+    ];
 
     public function getActivitylogOptions(): LogOptions
     {

@@ -7,7 +7,7 @@ import { ArrowUpIcon, CircledArrowHeadDownIcon, CircledArrowHeadUpIcon } from '@
 
 const props = defineProps({
     selectedTable: Object,
-    order: Object
+    currentOrder: Object
 })
 
 const emit = defineEmits(['close', 'fetchZones']);
@@ -15,10 +15,26 @@ const emit = defineEmits(['close', 'fetchZones']);
 const tableOrders = ref([]);
 const taxes = ref([]);
 const collapsedSections = ref({}); // Object to keep track of each section's collapsed state
+const currentOrder = ref(props.currentOrder);
+
+// const orderTableIds = computed(() => {
+//     console.log(currentOrder.value);
+//     return currentOrder.value.order_table
+//         ?.map((orderTable) => orderTable?.table_id);
+// });
 
 const fetchPaymentHistories = async () => {
     try {
-        const response = await axios.get(route('orders.getOccupiedTablePayments', props.selectedTable.id));
+        const orderTableIds = [...new Set(currentOrder.value.order_table?.map((orderTable) => orderTable?.table_id))];
+
+        // console.log(props.selectedTable);
+        // console.log(orderTableIds);
+        const response = await axios.get('/order-management/orders/getOccupiedTablePayments', {
+            method: 'GET',
+            params: {
+                orderTableIds: orderTableIds
+            }
+        });
         tableOrders.value = response.data.table_orders;
         taxes.value = response.data.taxes;
 
@@ -58,6 +74,11 @@ const getKeepItemName = (item) => {
     });
     if (itemName) return itemName;
 };
+
+watch(() => props.currentOrder, (newValue) => {
+    currentOrder.value = newValue;
+});
+
 </script>
 
 <template>

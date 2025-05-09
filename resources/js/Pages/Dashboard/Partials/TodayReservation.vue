@@ -277,17 +277,29 @@ const closeOverlay = () => {
                 <CheckCircleIcon class="flex-shrink-0 size-5 text-primary-900" />
             </div> -->
 
-            <div class="p-3 flex items-center justify-between" @click="markReservationAsNoShow(selectedReservation.id)">
+            <div 
+                class="p-3 flex items-center justify-between" 
+                :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
+                @click="selectedReservation.status !== 'Checked in' ? markReservationAsNoShow(selectedReservation.id) : ''"
+            >
                 <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
                 <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
             </div>
 
-            <div class="p-3 flex items-center justify-between" @click="openForm('delay', selectedReservation)">
+            <div 
+                class="p-3 flex items-center justify-between" 
+                :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
+                @click="selectedReservation.status !== 'Checked in' ? openForm('delay', selectedReservation) : ''"
+            >
                 <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
                 <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
             </div>
 
-            <div class="p-3 flex items-center justify-between" @click="openForm('cancel', selectedReservation)">
+            <div 
+                class="p-3 flex items-center justify-between" 
+                :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
+                @click="selectedReservation.status !== 'Checked in' ? openForm('cancel', selectedReservation) : ''"
+            >
                 <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
                 <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
             </div>

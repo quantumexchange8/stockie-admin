@@ -74,7 +74,8 @@ class AttendanceController extends Controller
         // 1. Checked in today (regardless of check-out time), OR
         // 2. Checked out today or after midnight but still part of today's shift
 
-        $existingAttendance = $this->checkExistingAttendance($waiter, 'out');
+        // $existingAttendance = $this->checkExistingAttendance($waiter, 'out');
+        $existingAttendance = $waiter->latestAttendance()->first(['id', 'check_in', 'status']);
 
         // If no records found
         if (!$existingAttendance) {
@@ -256,7 +257,7 @@ class AttendanceController extends Controller
         $breakData = $this->calculateBreakDurations($group['breaks'], $endTime);
         
         // Calculate earnings
-        $payableHours = max(0, $workDuration - $breakData['breakDuration']) / 3600;
+        $payableHours = floor(max(0, $workDuration) / 60) / 60;
         $earnings = $waiter->employment_type === 'Part-time' 
             ? max(0, $payableHours * $salary) 
             : 0.00;
@@ -319,8 +320,16 @@ class AttendanceController extends Controller
      */
     public function checkIn(Request $request)
     {
-        $this->checkRecentAttendance($this->authUser);
-
+        // First check recent attendance and return if needed
+        // $recentAttendance = $this->checkRecentAttendance($this->authUser);
+        // if ($recentAttendance) {  // If there's recent attendance
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => "If you meant to clock back in, confirm to get started again.",
+        //     ], 402);
+        // }
+        $waiter = $this->authUser;
+        
         try {
             $validatedData = $request->validate(
                 [
@@ -337,7 +346,8 @@ class AttendanceController extends Controller
 
             $checkInTime = Carbon::parse($validatedData['check_in']);
                     
-            $existingAttendance = $this->checkExistingAttendance($this->authUser, 'in');
+            // $existingAttendance = $this->checkExistingAttendance($waiter, 'in');
+            $existingAttendance = $waiter->latestAttendance()->first(['id', 'check_in', 'status']);
             if ($existingAttendance && ($existingAttendance->status === 'Checked in' || Carbon::parse($existingAttendance->check_in)->isToday())) {
                 return response()->json([
                     'status' => 'error',
@@ -346,12 +356,12 @@ class AttendanceController extends Controller
             }
 
             // Case 1: No passcode exists
-            if (is_null($this->authUser->passcode)) {
-                return $this->handleNewPasscode($this->authUser, $checkInTime);
+            if (is_null($waiter->passcode)) {
+                return $this->handleNewPasscode($waiter, $checkInTime);
             }
 
             // Check if account is locked
-            if ($this->authUser->passcode_status === 'Locked') {
+            if ($waiter->passcode_status === 'Locked') {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Your account is locked. Please contact an administrator to reset your passcode.',
@@ -368,12 +378,12 @@ class AttendanceController extends Controller
             // }
 
             // Case 2: Verify existing passcode
-            if ($this->authUser->passcode !== $validatedData['passcode']) {
+            if ($waiter->passcode !== $validatedData['passcode']) {
                 // RateLimiter::hit($this->throttleKey($validatedData['passcode']));
-                return $this->handleFailedAttempt($this->authUser, $validatedData['passcode']);
+                return $this->handleFailedAttempt($waiter, $validatedData['passcode']);
             }
 
-            return $this->handleSuccessfulCheckIn($this->authUser, $checkInTime);
+            return $this->handleSuccessfulCheckIn($waiter, $checkInTime);
 
         }catch (ValidationException $e) {
             return response()->json([
@@ -473,35 +483,29 @@ class AttendanceController extends Controller
     /**
      * Check for recent attendance if waiter has logged out recently within an hour then will return confirmation message
      */
-    private function checkRecentAttendance(User $user)
-    {
-        $latestAttendance = $user->attendances()
-                                    ->where('status', 'Checked out')
-                                    ->whereBetween('check_out', [now()->subMinutes(60), now()])
-                                    ->first();
-
-        if (!$latestAttendance) return;
-
-        return response()->json([
-            'status' => 'error',
-            'message' => "If you meant to clock back in, confirm to get started again.",
-        ], 401);
-    }
+    // private function checkRecentAttendance(User $user)
+    // {
+    //     return $user->attendances()
+    //                 ->where('status', 'Checked out')
+    //                 ->whereDate('check_out', '>=', now()->subMinutes(60))
+    //                 ->whereDate('check_out', '<=', now())
+    //                 ->first();
+    // }
 
     /**
      * Check for existing attendance
      */
-    private function checkExistingAttendance(User $user, string $action)
-    {
-        return $user->attendances()
-                    ->when($action === 'in', fn ($subQuery) => $subQuery->whereNotNull('check_in'))
-                    ->where(function($query) {
-                        $query->where('status', 'Checked in')
-                            ->orWhere('status', 'Checked out');
-                    })
-                    ->latest()
-                    ->first(['id', 'check_in', 'status']);
-    }
+    // private function checkExistingAttendance(User $user, string $action)
+    // {
+    //     return $user->attendances()
+    //                 // ->when($action === 'in', fn ($subQuery) => $subQuery->whereNotNull('check_in'))
+    //                 ->where(function($query) {
+    //                     $query->where('status', 'Checked in')
+    //                         ->orWhere('status', 'Checked out');
+    //                 })
+    //                 ->latest()
+    //                 ->first(['id', 'check_in', 'status']);
+    // }
 
     /**
      * Handle new passcode generation and check-in
@@ -692,7 +696,8 @@ class AttendanceController extends Controller
     public function checkOut(Request $request)
     {
         $waiter = $this->authUser;
-        $existingAttendance = $this->checkExistingAttendance($waiter, 'out');
+        // $existingAttendance = $this->checkExistingAttendance($waiter, 'out');
+        $existingAttendance = $waiter->latestAttendance()->first(['id', 'check_in', 'status']);
 
         if ($existingAttendance && $existingAttendance->status === 'Checked in') {
             $checkOutAt = now();

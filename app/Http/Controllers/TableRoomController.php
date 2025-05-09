@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TableRoomRequest;
+use App\Models\Reservation;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -14,7 +15,8 @@ class TableRoomController extends Controller
 {
     public function index(Request $request)
     {
-        $zones = Zone::with('tables')
+        $zones = Zone::with(['tables' => fn ($query) => $query->where('state', 'active')])
+                        ->where('status', 'active')
                         ->select('id', 'name')
                         ->get()
                         ->map(function ($zone) {
@@ -42,7 +44,8 @@ class TableRoomController extends Controller
     }
 
     public function getZoneDetails() {
-        $zones = Zone::with('tables')
+        $zones = Zone::with(['tables' => fn ($query) => $query->where('state', 'active')])
+                        ->where('status', 'active')
                         ->select('id', 'name')
                         ->get()
                         ->map(function ($zone) {
@@ -161,11 +164,17 @@ class TableRoomController extends Controller
 
     public function deleteZone($id)
     {
-        $deleteTable = Table::where('zone_id', $id)->get();
+        $zone = Zone::with('tables:id,table_no,zone_id,status,state')
+                            ->where('id', $id)
+                            ->first();
+        
+        $tables = $zone->tables;
 
-        if ($deleteTable->every(fn ($table) => $table->status === 'Empty Seat')) {
-            if ($deleteTable->count() > 0) {
-                $deleteTable->each(function ($table) {
+        if ($tables->every(fn ($table) => $table->status === 'Empty Seat')) {
+            if ($tables->count() > 0) {
+                $tables->each(function ($table) {
+                    $table->update(['state' => 'inactive']);
+
                     activity()->useLog('delete-table')
                                 ->performedOn($table)
                                 ->event('deleted')
@@ -175,51 +184,127 @@ class TableRoomController extends Controller
                                     'table_no' => $table->table_no,
                                 ])
                                 ->log("Table '$table->table_no' is deleted.");
-    
-                    $table->delete();
                 });
             }
-    
-            $deleteZone = Zone::where('id', $id)->first();
 
+            $zone->delete();
+    
             activity()->useLog('delete-zone')
-                        ->performedOn($deleteZone)
+                        ->performedOn($zone)
                         ->event('deleted')
                         ->withProperties([
                             'edited_by' => auth()->user()->full_name,
                             'image' => auth()->user()->getFirstMediaUrl('user'),
-                            'zone_name' => $deleteZone->name,
+                            'zone_name' => $zone->name,
                         ])
-                        ->log("Zone '$deleteZone->name' is deleted.");
-
-            $deleteZone->delete();
+                        ->log("Zone '$zone->name' is deleted.");
     
-            $message = [
+            return response()->json([
                 'severity' => 'success',
                 'summary' => "Selected zone has been deleted successfully."
-            ];
-    
-            return redirect()->route('table-room')->with(['message' => $message]);
+            ]);
         }
-            
-        $message = [
+
+        return response()->json([
             'severity' => 'warn',
             'summary' => "Selected zone still has some table that are checked in."
-        ];
+        ]);
 
-        return redirect()->route('table-room')->with(['message' => $message]);
+        // $targetTable = Table::where('zone_id', $id)->get();
+
+        // if ($targetTable->every(fn ($table) => $table->status === 'Empty Seat')) {
+        //     if ($targetTable->count() > 0) {
+        //         $targetTable->each(function ($table) {
+        //             activity()->useLog('delete-table')
+        //                         ->performedOn($table)
+        //                         ->event('deleted')
+        //                         ->withProperties([
+        //                             'edited_by' => auth()->user()->full_name,
+        //                             'image' => auth()->user()->getFirstMediaUrl('user'),
+        //                             'table_no' => $table->table_no,
+        //                         ])
+        //                         ->log("Table '$table->table_no' is deleted.");
+    
+        //             $table->delete();
+        //         });
+        //     }
+    
+        //     $deleteZone = Zone::where('id', $id)->first();
+
+        //     activity()->useLog('delete-zone')
+        //                 ->performedOn($deleteZone)
+        //                 ->event('deleted')
+        //                 ->withProperties([
+        //                     'edited_by' => auth()->user()->full_name,
+        //                     'image' => auth()->user()->getFirstMediaUrl('user'),
+        //                     'zone_name' => $deleteZone->name,
+        //                 ])
+        //                 ->log("Zone '$deleteZone->name' is deleted.");
+
+        //     $deleteZone->delete();
+    
+        //     $message = [
+        //         'severity' => 'success',
+        //         'summary' => "Selected zone has been deleted successfully."
+        //     ];
+    
+        //     return redirect()->route('table-room')->with(['message' => $message]);
+        // }
+            
+        // $message = [
+        //     'severity' => 'warn',
+        //     'summary' => "Selected zone still has some table that are checked in."
+        // ];
+
+        // return redirect()->route('table-room')->with(['message' => $message]);
     }
 
     public function deleteTable(Request $request)
     {
+        $table = Table::where('id', $request->id)->first();
+
+        // Step 1: Check reservations that include this table ID in JSON
+        $reservedStatuses = ['Pending', 'Delayed']; // Add more if needed
+
+        $reservations = Reservation::where(function ($query) use ($reservedStatuses) {
+                                        $query->whereIn('status', $reservedStatuses);
+                                    })
+                                    ->whereJsonContains('table_no', ['id' => $table->id])
+                                    ->get();
+
+        if ($reservations->count() > 0 && $request->params['confirmation'] == false) {
+            // Step 2: Return confirmation response 
+            return response()->json([
+                'type' => 'reservation',
+                'title' => 'Cancel reservations',
+                'message' => 'There are active reservations made for this table. Are you sure you want to delete the selected table? This action cannot be undone.'
+            ]);
+        }
+
+        // Step 3: Check table status
+        if ($table->status !== 'Empty Seat') {
+            return response()->json([
+                'type' => 'order',
+                'summary' => 'Unable to delete table',
+                'detail' => "Table $table->table_no is currently checked in. To delete the table, it must be freed up first."
+            ]);
+        }
+
+        $table->update(['state' => 'inactive']);
         
-        $deleteType = Table::where('id', $request->id)->value('type');
-        $deleteTable = Table::where('id', $request->id);
-        $deleteTable->delete();
+        activity()->useLog('delete-table')
+                    ->performedOn($table)
+                    ->event('deleted')
+                    ->withProperties([
+                        'edited_by' => auth()->user()->full_name,
+                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                        'table_no' => $table->table_no,
+                    ])
+                    ->log("Table '$table->table_no' is deleted.");
 
         $message = [
             'severity' => 'success',
-            'summary' => "Selected $deleteType has been deleted successfully."
+            'summary' => "Selected $table->type has been deleted successfully."
         ];
 
         return redirect()->route('table-room')->with(['message' => $message]);

@@ -326,7 +326,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         <template #body>
                         </template>
                     </Accordion> -->
-                    <div class="flex flex-col gap-4" v-for="(reward, index) in form.rewards.filter((item) => item.status === 'Active')">
+                    <div class="flex flex-col gap-4" v-for="(reward, index) in form.rewards">
                         <div class="flex justify-between items-center self-stretch">
                             <span class="text-md font-bold text-grey-900">Reward {{ index + 1 }}</span>
                             <!-- *DNR* -->

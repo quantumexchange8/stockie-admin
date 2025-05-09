@@ -131,30 +131,31 @@ const customersArr = computed(() => {
 });
 
 const tablesArr = computed(() => {
-    return props.tables.map((table) => {
-        return {
-            'text': table.table_no,
-            'value': table.id,
-            'disabled': occupiedTables.value.some((occupiedTable) => occupiedTable.id === table.id),
-        }
-    })
+    return props.tables.filter((table) => table.state === 'active')
+                        .map((table) => {
+                            return {
+                                'text': table.table_no,
+                                'value': table.id,
+                                'disabled': occupiedTables.value.some((occupiedTable) => occupiedTable.id === table.id),
+                            }
+                        });
 });
 
 // Computed property for maximum seats
-const maxSeats = computed(() => selectedTable.value?.reduce((total, table) => total + table.seat, 0) ?? 0);
+// const maxSeats = computed(() => selectedTable.value?.reduce((total, table) => total + table.seat, 0) ?? 0);
 
 // Helper function to validate and format pax value
-const validatePaxValue = (value) => {
-    const numValue = parseInt(value) || '';
+// const validatePaxValue = (value) => {
+//     const numValue = parseInt(value) || '';
     
-    if (numValue < 0) return '';
+//     if (numValue < 0) return '';
 
-    if (numValue >= maxSeats.value && maxSeats.value !== 0) {
-        return selectedTable.value ? maxSeats.value : numValue;
-    }
+//     if (numValue >= maxSeats.value && maxSeats.value !== 0) {
+//         return selectedTable.value ? maxSeats.value : numValue;
+//     }
     
-    return numValue;
-}
+//     return numValue;
+// }
 
 const updateSelectedTables = (event) => {
     // More efficient table selection using Set for O(1) lookups
@@ -167,14 +168,14 @@ const updateSelectedTables = (event) => {
     } 
   
     // Update pax value based on new selection
-    form.pax = validatePaxValue(form.pax).toString();
+    // form.pax = validatePaxValue(form.pax).toString();
 };
 
-const paxInputValidation = (event) => {
-    const pax = validatePaxValue(event.target.value).toString();
-    event.target.value = pax;
-    form.pax = pax;
-}
+// const paxInputValidation = (event) => {
+//     const pax = validatePaxValue(event.target.value).toString();
+//     event.target.value = pax;
+//     form.pax = pax;
+// }
 
 const isFormValid = computed(() => {
     return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables', 'reserved_limit'].every(field => form[field]) && !form.processing;
@@ -206,7 +207,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :errorMessage="form.errors?.pax || ''"
                     v-model="form.pax"
                     @keypress="isValidNumberKey($event, false)"
-                    @input="paxInputValidation"
                 />
                 <Dropdown
                     inputName="name"

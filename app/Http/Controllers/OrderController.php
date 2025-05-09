@@ -65,9 +65,11 @@ class OrderController extends Controller
         $reservedTablesId = $this->getReservedTablesId();
 
         $zones = Zone::with([
+                            'tables' => fn ($query) => $query->where('state', 'active'),
                             'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged']),
                             'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty'
                         ])
+                        ->where('status', 'active')
                         ->select('id', 'name')
                         ->get()
                         ->map(function ($zone) use ($reservedTablesId) {
@@ -144,12 +146,6 @@ class OrderController extends Controller
                                         // 'image' => $customer->getFirstMediaUrl('customer'),
                                     // ];
                                 });
-
-        $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address_line1')->first();
-
-        if ($merchant) {
-            $merchant->image = $merchant->getFirstMediaUrl('merchant_settings');
-        }
         
         // Get the flashed messages from the session
         // $message = $request->session()->get('message');
@@ -162,7 +158,6 @@ class OrderController extends Controller
             // 'orders' => $orders,
             'occupiedTables' => Table::where('status', '!=', 'Empty Seat')->get(),
             'customers' => $customers,
-            'merchant' => $merchant
         ]);
     }
 
@@ -911,10 +906,12 @@ class OrderController extends Controller
         $reservedTablesId = $this->getReservedTablesId();
 
         $zones = Zone::with([
+                            'tables' => fn ($query) => $query->where('state', 'active'),
                             'tables.orderTables' => fn ($query) => $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided']),
                             'tables.orderTables.order.orderItems.subItems:id,item_qty,order_item_id,serve_qty',
                             'tables.order:id,order_no,amount,voucher_id',
                         ])
+                        ->where('status', 'active')
                         ->select('id', 'name')
                         ->get()
                         ->map(function ($zone) use ($reservedTablesId) {
@@ -1061,6 +1058,24 @@ class OrderController extends Controller
         });
 
         $orders = $query->with([
+                            'orderTable:id,table_id,order_id', 
+                            'orderTable.table:id,table_no', 
+                            'waiter:id,full_name',
+                        ])
+                        ->orderBy('updated_at', 'desc')
+                        ->get()
+                        ->values();
+        // dd($query->toSql(), $query->getBindings());
+
+        return response()->json($orders);
+    }
+
+    /**
+     * Get order payment details.
+     */
+    public function getOrderPaymentDetails(Request $request, string $id)
+    {
+        $order = Order::with([
                             'orderItems:id,order_id,type,product_id,item_qty,amount_before_discount,discount_id,discount_amount,amount,status', 
                             'orderItems.product:id,product_name,price,bucket,discount_id', 
                             'orderItems.product.discount:id,name', 
@@ -1076,34 +1091,37 @@ class OrderController extends Controller
                             'payment.voucher:id,reward_type,discount',
                         ])
                         ->orderBy('updated_at', 'desc')
-                        ->get()
-                        ->values();
-        // dd($query->toSql(), $query->getBindings());
+                        ->find($id);
 
-        $orders->each(function($order){
-            foreach ($order->orderItems as $orderItem) {
-                $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
-                unset($orderItem->product->discountItems);
-            }
+        foreach ($order->orderItems as $orderItem) {
+            $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+            unset($orderItem->product->discountItems);
+        }
 
-            if ($order->payment) {
-                // Also check if bill_discounts exists and is not null
-                $order->payment->applied_discounts = isset($order->payment->bill_discounts) 
-                    ? BillDiscount::whereIn('id', $order->payment->bill_discounts)
-                                    ->get(['id', 'name', 'discount_type', 'discount_rate'])
-                    : null; // return null if no discounts
-            }
+        if ($order->payment) {
+            // Also check if bill_discounts exists and is not null
+            $order->payment->applied_discounts = isset($order->payment->bill_discounts) 
+                ? BillDiscount::whereIn('id', $order->payment->bill_discounts)
+                                ->get(['id', 'name', 'discount_type', 'discount_rate'])
+                : null; // return null if no discounts
+        }
 
-            if($order->waiter){
-                $order->waiter->image = $order->waiter->getFirstMediaUrl('user');
-            };
-        });
+        if($order->waiter){
+            $order->waiter->image = $order->waiter->getFirstMediaUrl('user');
+        };
 
         $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('value', 'name');
 
+        $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address_line1')->first();
+
+        if ($merchant) {
+            $merchant->image = $merchant->getFirstMediaUrl('merchant_settings');
+        }
+
         $data = [
-            'orders' => $orders,
-            'taxes' => $taxes
+            'order' => $order,
+            'taxes' => $taxes,
+            'merchant' => $merchant
         ];
 
         return response()->json($data);
@@ -1379,7 +1397,7 @@ class OrderController extends Controller
 
                                         $inventoryItemName = $associatedSubItem->productItem->inventoryItem->item_name;
 
-                                        $name = Customer::where('id', $request->customer_id)->first()->pluck('full_name');
+                                        $name = Customer::where('id', $request->customer_id)->first('full_name')->full_name;
 
                                         activity()->useLog('keep-item-from-customer')
                                                     ->performedOn($newKeep)
@@ -2446,7 +2464,7 @@ class OrderController extends Controller
     /**
      * Get the payments made on specified currently occupied table.
      */
-    public function getOccupiedTablePayments(string $id) 
+    public function getOccupiedTablePayments(Request $request) 
     {
         $orderTables = OrderTable::with([
                                         'table', 
@@ -2456,10 +2474,8 @@ class OrderController extends Controller
                                         'order.orderItems.product',
                                         'order.orderItems.subItems.productItem.inventoryItem',
                                     ])
-                                    ->where([
-                                        ['table_id', $id],
-                                        ['status', 'Pending Clearance'],
-                                    ])
+                                    ->whereIn('table_id', $request->orderTableIds)
+                                    ->where('status', 'Pending Clearance')
                                     ->orderByDesc('updated_at')
                                     ->get()
                                     ->map(function ($orderTable) {

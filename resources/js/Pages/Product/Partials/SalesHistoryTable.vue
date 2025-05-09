@@ -67,7 +67,7 @@ const csvExport = () => {
             <Menu as="div" class="relative inline-block text-left col-span-full lg:col-span-2">
                 <div>
                     <MenuButton
-                        class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800"
+                        class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-3 max-h-11 text-sm font-medium text-primary-900 hover:text-primary-800"
                     >
                         Export
                         <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>

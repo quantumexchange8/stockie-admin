@@ -21,6 +21,7 @@ const capitilize = (string) => {
 const initialForm = ref({
     role_id: props.user.role_id,
     full_name: props.user.full_name,
+    email: props.user.email,
     position: capitilize(props.user.position),
 });
 const isDirty = ref(false);
@@ -35,12 +36,14 @@ const editForm = useForm({
     id: props.user.id,
     role_id: props.user.role_id,
     full_name: props.user.full_name,
+    email: props.user.email,
     position: capitilize(props.user.position),
     password: '',
     image: props.user.image ? props.user.image : '',
 })
 
 const editDetails = async () => {
+    editForm.processing = true;
     try {
         // editForm.put('admin-user/edit-admin-details', {
         //     preserveScroll: true,
@@ -68,18 +71,21 @@ const editDetails = async () => {
     } catch (error) {
         if (error.response && error.response.data.errors) {
             editForm.setError(error.response.data.errors); 
+            console.error('An unexpected error occurred:', error);
         }
-        console.error(error);
+    } finally {
+        editForm.processing = false; 
     }
 }
 
 const isFormValid = computed(() => {
-    return ['role_id', 'full_name', 'position', 'password'].every(field => editForm[field]);
+    return ['role_id', 'full_name', 'position', 'email'].every(field => editForm[field]);
 })
 
 watch((editForm), (newValue) => {
     isDirty.value = newValue.role_id !== initialForm.value.role_id ||
                     newValue.full_name !== initialForm.value.full_name ||
+                    newValue.email !== initialForm.value.email ||
                     newValue.position !== initialForm.value.position;
 
     emit('isDirty', isDirty.value)
@@ -91,44 +97,58 @@ watch((editForm), (newValue) => {
     <form @submit.prevent="editDetails">
         <div class="flex items-start gap-6 self-stretch">
             <DragDropImage 
-                :errorMessage="editForm.errors?.image"
+                :errorMessage="editForm.errors?.image ? editForm.errors.image[0] :''"
                 :inputName="'image'"
                 v-model="editForm.image"
                 class="!max-w-[320px] !h-[320px]"
             />
 
-            <div class="flex flex-col items-start gap-4 self-stretch w-full">
+            <div class="flex flex-col items-start gap-4 self-stretch w-full pr-1 max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
                 <TextInput 
                     :labelText="'ID'"
+                    :placeholder="'e.g. 00000'"
                     :required="true"
                     :inputName="'role_id'"
-                    :errorMessage="editForm.errors?.role_id"
+                    :errorMessage="editForm.errors?.role_id ? editForm.errors.role_id[0] : ''"
                     v-model="editForm.role_id"
                 />
 
                 <TextInput 
+                    :labelText="'Password'"
+                    :placeholder="'Enter your password here'"
+                    :required="true"
+                    :inputName="'password'"
+                    :inputType="'password'"
+                    :errorMessage="editForm.errors?.password ? editForm.errors.password[0] : ''"
+                    v-model="editForm.password"
+                />
+
+                <TextInput 
                     :labelText="'Name'"
+                    :placeholder="'e.g. John Doe'"
                     :required="true"
                     :inputName="'full_name'"
-                    :errorMessage="editForm.errors?.full_name"
+                    :errorMessage="editForm.errors?.full_name ? editForm.errors.full_name[0] : ''"
                     v-model="editForm.full_name"
+                />
+                        
+                <TextInput
+                    labelText="Email"
+                    :placeholder="'e.g. johndoe@gmail.com'"
+                    inputId="email"
+                    type="'email'"
+                    required
+                    :errorMessage="editForm.errors?.email ? editForm.errors.email[0] : ''"
+                    v-model="editForm.email"
                 />
 
                 <TextInput 
                     :labelText="'Title'"
+                    :placeholder="'e.g. Accountant'"
                     :required="true"
                     :inputName="'position'"
-                    :errorMessage="editForm.errors?.position"
+                    :errorMessage="editForm.errors?.position ? editForm.errors.position[0] : ''"
                     v-model="editForm.position"
-                />
-
-                <TextInput 
-                    :labelText="'Password'"
-                    :required="true"
-                    :inputName="'password'"
-                    :inputType="'password'"
-                    :errorMessage="editForm.errors?.password"
-                    v-model="editForm.password"
                 />
             </div>
         </div>

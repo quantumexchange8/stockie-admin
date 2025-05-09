@@ -107,12 +107,24 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(Order::class, 'user_id');
     }
 
-    public function currentAttendance(): ?WaiterAttendance
+    public function latestAttendance(): HasOne
     {
         return $this->hasOne(WaiterAttendance::class, 'user_id')
-                    ->where('status', 'Checked in')
-                    ->latest('check_in')
-                    ->first();
+                    ->where(function ($query) {
+                        $query->where('status', 'Checked in')
+                            ->orWhere('status', 'Checked out');
+                    })
+                    ->latest();
+    }
+
+    public function latestBreak(): HasOne
+    {
+        return $this->hasOne(WaiterAttendance::class, 'user_id')
+                    ->where(function ($query) {
+                        $query->where('status', 'Break start')
+                            ->orWhere('status', 'Break end');
+                    })
+                    ->latest();
     }
 
     public function attendances(): HasMany
@@ -168,6 +180,14 @@ class User extends Authenticatable implements HasMedia
     public function incentives(): HasMany
     {
         return $this->hasMany(EmployeeIncentive::class, 'user_id');
+    }
+
+     /**
+     * Get the shifts assigned to the user.
+     */
+    public function shifts(): HasMany
+    {
+        return $this->hasMany(WaiterShift::class, 'waiter_id');
     }
 
      /**

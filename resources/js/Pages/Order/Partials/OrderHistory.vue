@@ -15,18 +15,16 @@ import OverlayPanel from '@/Components/OverlayPanel.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
-    merchant: Object
 });
 
 const rows = ref([]);  
 const initialRows = ref([]);  
 const date_filter = ref('');  
 const status = ref('');
-const selectedOrder = ref(null);
+const selectedOrderId = ref(null);
 const orderInvoiceModalIsOpen = ref(false);
 const op = ref(null);
 const rowsPerPage = ref(6);
-const taxes = ref([]);
 
 const columns = ref([
     {field: 'updated_at', header: 'Date & Time', width: '15', sortable: false},
@@ -58,9 +56,8 @@ const getOrderHistories = async (filters = {}) => {
         const response = await axios.get('/order-management/getOrderHistories', {
             params: { dateFilter: filters }
         });
-        initialRows.value = response.data.orders;
-        rows.value = response.data.orders;
-        taxes.value = response.data.taxes;
+        initialRows.value = response.data;
+        rows.value = response.data;
     } catch (error) {
         console.error(error);
     } finally {
@@ -73,8 +70,8 @@ onMounted(() => getOrderHistories());
 watch(date_filter, (newValue) => getOrderHistories(newValue));
 
 const openOverlay = (event, item) => {
-    selectedOrder.value = item;
-    if (selectedOrder.value) op.value.show(event);
+    selectedOrderId.value = item.id;
+    if (selectedOrderId.value) op.value.show(event);
 };
 
 const closeOverlay = () => {
@@ -87,7 +84,7 @@ const showOrderInvoiceModal = () => {
 };
 
 const hideOrderInvoiceModal = () => {
-    setTimeout(() => selectedOrder.value = null, 200);
+    setTimeout(() => selectedOrderId.value = null, 200);
     orderInvoiceModalIsOpen.value = false;
 };
 
@@ -209,7 +206,7 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
     </div>
 
     <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">
-        <template v-if="selectedOrder">
+        <template v-if="selectedOrderId">
             <div class="flex flex-col items-center border-2 border-primary-50 rounded-md">
                 <Button
                     type="button"
@@ -234,16 +231,11 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
     <Modal
         maxWidth="sm" 
         closeable
-        title="Order History"
         class="[&>div:nth-child(2)>div>div]:p-1 [&>div:nth-child(2)>div>div]:sm:max-w-[420px]"
         :withHeader="false"
         :show="orderInvoiceModalIsOpen"
         @close="hideOrderInvoiceModal"
     >
-        <OrderInvoice 
-            :order="selectedOrder" 
-            :merchant="merchant" 
-            :taxes="taxes" 
-        />
+        <OrderInvoice :orderId="selectedOrderId" />
     </Modal>
 </template>

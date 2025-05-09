@@ -38,20 +38,21 @@ const { showMessage } = useCustomToast();
 const form = useForm({
     id: '',
     permission: '',
-})
+});
 
 const editForm = useForm({
     id: '',
     role_id: '',
     full_name: '',
+    email: '',
     position: '',
     password: '',
     image: '',
-})
+});
 
 const capitilize = (string) => {
     return string ? (string).charAt(0).toUpperCase() + (string).slice(1) : '';
-}
+};
 
 // const refetchAdminUsers = async () => {
 //     try {
@@ -69,7 +70,7 @@ const openDetail = (user) => {
     form.id = user.id;
     isDetailShow.value = true;
 
-}
+};
 
 const closeDetail = () => {
     if(isDeleteShow.value === false && isEditShow.value === false){
@@ -80,27 +81,28 @@ const closeDetail = () => {
         isEditShow.value === false;
     }
 
-}
+};
 
 const openDelete = () => {
     isDeleteShow.value = true;
-}
+};
 
 const closeDelete = () => {
     isDeleteShow.value = false;
-}
+};
 
 const openEdit = () => {
     isEditShow.value = true;
     editForm.id = selectedUser.value.id;
     editForm.role_id = selectedUser.value.role_id.toString();
     editForm.full_name = selectedUser.value.full_name;
+    editForm.email = selectedUser.value.email;
     editForm.position = capitilize(selectedUser.value.position);
     editForm.password = '';
     editForm.image = selectedUser.value.image ? selectedUser.value.image : '';
 
     initialEditForm.value = {...editForm};
-}
+};
 
 const closeEdit = (status) => {
     switch(status) {
@@ -120,11 +122,11 @@ const closeEdit = (status) => {
             break;
         }
     }
-}
+};
 
 const openAddAdmin = () => {
     isAddAdminOpen.value = true;
-}
+};
 
 const closeAddAdmin = (status) => {
     switch(status){
@@ -144,7 +146,7 @@ const closeAddAdmin = (status) => {
             break;
         }
     }
-}
+};
 
 const editPermission = async (permission) => {
     isProcessing.value = true;
@@ -180,7 +182,7 @@ const editPermission = async (permission) => {
     } catch (error) {
         console.error(error);
     }
-}
+};
 
 const deleteAdmin = async () => {
     try {
@@ -201,13 +203,21 @@ const deleteAdmin = async () => {
     } catch (error) {
         console.error(error);
     }
-}
+};
+
+const updateUserList = (updatedUsers) => {
+    const updatedSelectedUser = updatedUsers.find(((user) => user.id === selectedUser.value.id));
+    
+    users.value = updatedUsers;
+    selectedUser.value = updatedSelectedUser;
+};
 
 watch((editForm), (newValue) => {
     isDirty.value = newValue.full_name !== initialEditForm.value.full_name ||
                     newValue.role_id !== initialEditForm.value.role_id ||
+                    newValue.email !== initialEditForm.value.email ||
                     newValue.position !== initialEditForm.value.position;
-})
+});
 
 watch(() => searchQuery.value, (newValue) => {
     if (newValue === '') {
@@ -228,7 +238,7 @@ watch(() => searchQuery.value, (newValue) => {
                 role_id.includes(query) ||
                 permission.includes(query);
     })
-}, { immediate: true })
+}, { immediate: true });
 </script>
 
 <template>
@@ -296,7 +306,7 @@ watch(() => searchQuery.value, (newValue) => {
         @close="closeDetail('close')"
     >
         <div class="flex items-start gap-8 self-stretch">
-            <div class="flex flex-col p-3 items-start gap-8 rounded-[5px] border border-solid border-grey-100 bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)]">
+            <div class="flex flex-col p-3 items-start gap-8 rounded-[5px] max-w-60 border border-solid border-grey-100 bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)]">
                 <div class="flex flex-col items-center gap-3 self-stretch">
                     <img
                         :src="selectedUser.image"
@@ -309,16 +319,20 @@ watch(() => searchQuery.value, (newValue) => {
                         <span class="self-stretch text-grey-950 text-md font-bold">{{ selectedUser.full_name }}</span>
                         <div class="flex flex-col items-start gap-1 self-stretch">
                             <div class="grid grid-cols-3 items-start gap-3 self-stretch">
-                                <span class="text-grey-500 text-xs font-normal">Admin ID</span>
-                                <span class="text-grey-950 text-xs font-semibold grid-cols-2">{{ selectedUser.role_id }}</span>
+                                <span class="col-span-1 text-grey-500 text-xs font-normal">Admin ID</span>
+                                <span class="text-grey-950 text-xs font-semibold col-span-2 truncate">{{ selectedUser.role_id }}</span>
                             </div>
                             <div class="grid grid-cols-3 items-start gap-3 self-stretch">
-                                <span class="text-grey-500 text-xs font-normal">Title</span>
-                                <span class="text-grey-950 text-xs font-semibold grid-cols-2">{{ capitilize(selectedUser.position) }}</span>
+                                <span class="col-span-1 text-grey-500 text-xs font-normal">Email</span>
+                                <span class="text-grey-950 text-xs font-semibold col-span-2 truncate">{{ selectedUser.email }}efeuefefefefefe</span>
+                            </div>
+                            <div class="grid grid-cols-3 items-start gap-3 self-stretch">
+                                <span class="col-span-1 text-grey-500 text-xs font-normal">Title</span>
+                                <span class="text-grey-950 text-xs font-semibold col-span-2 truncate">{{ capitilize(selectedUser.position) }}</span>
                             </div>
                             <div class="grid grid-cols-3 items-center gap-3 self-stretch">
-                                <span class="text-grey-500 text-xs font-normal">Password</span>
-                                <div class="flex items-center gap-1">
+                                <span class="col-span-1 text-grey-500 text-xs font-normal">Password</span>
+                                <div class="flex items-center gap-1 col-span-2">
                                     <template v-for="n in 8" :key="n">
                                         <!-- <div class="text-[10px]">&#x2022;</div> -->
                                         <svg xmlns="http://www.w3.org/2000/svg" width="6" height="7" viewBox="0 0 6 7" fill="none">
@@ -372,9 +386,9 @@ watch(() => searchQuery.value, (newValue) => {
         >
             <EditAdminDetail 
                 :user="selectedUser"
-                @close="closeEdit()"
+                @close="closeEdit"
                 @isDirty="isDirty=$event"
-                @update:users="users = $event"
+                @update:users="updateUserList($event)"
             />
 
             <Modal 

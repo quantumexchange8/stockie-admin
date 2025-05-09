@@ -107,7 +107,7 @@ const rowType = {
 
 const saleRowsPerPage = ref(6);
 const saleTotalPages = computed(() => {
-    return Math.ceil(saleTransaction.length / saleRowsPerPage.value);
+    return Math.ceil(saleTransaction.value.length / saleRowsPerPage.value);
 })
 
 const action = (event, item) => {
@@ -336,14 +336,14 @@ const voidAction = async () => {
 
         <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">
             <div class="flex flex-col items-center border-2 border-primary-50 rounded-md">
-                <Button
+                <!-- <Button
                     type="button"
                     variant="tertiary"
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
                     @click="ConfirmVoid"
                 >
                     <span class="text-grey-700 font-normal">Void</span>
-                </Button>
+                </Button> -->
                 <Button
                     type="button"
                     variant="tertiary"

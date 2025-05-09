@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Hash;
@@ -60,17 +62,48 @@ class AdminUserController extends Controller
 
     public function editDetails(Request $request)
     {
-        $validatedData = $request->validate([
+        $subAdminId = $request->id;
+
+        $rules = [
             'id' => 'required',
-            'role_id' => 'required|string|max:255',
             'full_name' => 'required|string|max:255',
             'position' => 'required|string|max:255',
-            'password' => ['required', Password::defaults()],
-        ], [
+            'image' => 'required|max:8000',
+            'password' => [
+                $subAdminId ? 'nullable' : 'required',
+                Password::defaults(),
+                'string'
+            ],
+            'email' => [
+                'required',
+                'email',
+                $subAdminId 
+                        ? Rule::unique('users')->ignore($subAdminId)->whereNull('deleted_at')
+                        : 'unique:users,email,NULL,id,deleted_at,NULL'
+            ],
+            'role_id' => [
+                'required',
+                'string',
+                'max:255',
+                $subAdminId
+                        ? Rule::unique('users')->ignore($subAdminId)->whereNull('deleted_at')
+                        : 'unique:users,role_id,NULL,id,deleted_at,NULL'
+            ]
+        ];
+
+        $messages = [
             'required' => 'This field is required.',
-            'string' => 'Invalid input.',
-            'max' => 'Invalid input.'
-        ]);
+            'full_name.max' => 'Invalid input.',
+            'role_id.max' => 'Invalid input.',
+            'position.max' => 'Invalid input.',
+            'image.max' => 'The size of the image is too big.',
+            'string' => 'Invalid format.',
+            'role_id.unique' => 'This id already exists. Please try another one.',
+            'email.unique' => 'This email already exists. Please try another one.'
+        ];
+
+        // Validate the form data
+        $validatedData = $request->validate($rules, $messages);
 
         $targetUser = User::where('id', $validatedData['id'])->first();
         $targetUser->update([
@@ -90,10 +123,10 @@ class AdminUserController extends Controller
                     ])
                     ->log("Sub-admin $targetUser->name's detail is updated.");
 
-        if($request->hasfile('image')){
-            $targetUser->clearMediaCollection('user');
-            $targetUser->addMedia($request->image)->toMediaCollection('user');
-        }
+        // if($request->hasfile('image')){
+        //     $targetUser->clearMediaCollection('user');
+        //     $targetUser->addMedia($request->image)->toMediaCollection('user');
+        // }
 
         $data = $this->getAdminUsers();
 
@@ -103,29 +136,37 @@ class AdminUserController extends Controller
 
     public function addSubAdmin(Request $request)
     {
-        $validatedData = $request->validate([
-            'full_name' => ['required', 'max:255', 'string', 'unique:users,full_name'],
-            'role_id' => ['required', 'max:255', 'string', 'unique:users,role_id'],
-            'position' => ['required', 'max:255', 'string'],
-            'password' => ['required'],
-            'image' => ['required', 'max:8000'],
-        ], [
+        $rules = [
+            'full_name' => 'required|string|max:255',
+            'role_id' => 'required|string|max:255|unique:users,role_id',
+            'position' => 'required|string|max:255',
+            'password' => 'required',
+            'image' => 'required|max:8000',
+            'email' => 'required|email|unique:users,email,NULL,id,deleted_at,NULL'
+        ];
+
+        $messages = [
             'required' => 'This field is required.',
             'full_name.max' => 'Invalid input.',
             'role_id.max' => 'Invalid input.',
             'position.max' => 'Invalid input.',
             'image.max' => 'The size of the image is too big.',
             'string' => 'Invalid format.',
-            'unique' => 'This data already exists. Please try another one.'
-        ]);
+            'role_id.unique' => 'This id already exists. Please try another one.',
+            'email.unique' => 'This email already exists. Please try another one.',
+        ];
+
+        // Validate the form data
+        $validatedData = $request->validate($rules, $messages);
 
         $targetUser = User::create([
-            'full_name' => $validatedData['full_name'],
             'name' => $validatedData['full_name'],
+            'full_name' => $validatedData['full_name'],
             'email' => $request->input('email') ? $request->input('email') : '',
             'password' => Hash::make($validatedData['password']),
             'role_id' => $validatedData['role_id'],
             'position' => $validatedData['position'],
+            'employment_type'=> 'Full-time'
         ]);
 
         activity()->useLog('create-sub-admin')
@@ -138,9 +179,9 @@ class AdminUserController extends Controller
                     ])
                     ->log("Sub-admin '$targetUser->full_name' is added.");
 
-        if($request->hasFile('image')){
-            $targetUser->addMedia($request->image)->toMediaCollection('user');
-        }
+        // if($request->hasFile('image')){
+        //     $targetUser->addMedia($request->image)->toMediaCollection('user');
+        // }
 
         $targetUser->givePermissionTo($request->input('permission'));
 

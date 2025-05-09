@@ -219,6 +219,7 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
+                :disabled="reservation.status === 'Checked in'"
                 @click="showReservationForm"
             >
                 Delete
@@ -226,6 +227,7 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
             <Button
                 :type="'button'"
                 :size="'lg'"
+                :disabled="reservation.status === 'Checked in'"
                 @click="showEditReservationForm"
             >
                 Edit

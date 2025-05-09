@@ -87,6 +87,15 @@ const submit = () => {
             unsaved('leave');
             // window.location.href = 'order-management/orders';
         },
+        onError: (errors) => {
+            if (errors.summary && errors.detail) {
+                showMessage({ 
+                    severity: 'warn',
+                    summary: errors.summary,
+                    detail: errors.detail,
+                });
+            }
+        }
     })
 };
 

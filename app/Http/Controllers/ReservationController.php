@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderTable;
 use App\Models\Reservation;
+use App\Models\ShiftTransaction;
 use App\Models\Table;
 use App\Models\User;
 use App\Notifications\OrderAssignedWaiter;
@@ -50,13 +51,9 @@ class ReservationController extends Controller
                                             ->map(function ($res) {
                                                 $tableData = $res->table_no; 
                                                 
-                                                if (is_array($tableData)) {
-                                                    $res['merged_table_no'] = collect($tableData)
-                                                        ->pluck('name') 
-                                                        ->implode(', '); 
-                                                } else {
-                                                    $res['merged_table_no'] = $tableData; 
-                                                }
+                                                $res['merged_table_no'] = is_array($tableData)
+                                                        ? collect($tableData)->pluck('name')->implode(', ') 
+                                                        : $tableData;
 
                                                 return $res;
                                             });            
@@ -178,6 +175,12 @@ class ReservationController extends Controller
                     ])
                     ->log("Reservation detail for $reservation->name on $reservation->reservation_date is updated.");
 
+        $tableData = $reservation->table_no; 
+                                    
+        $reservation['merged_table_no'] = is_array($tableData)
+                ? collect($tableData)->pluck('name')->implode(', ') 
+                : $tableData;
+
         return response()->json($reservation);
     }
     
@@ -186,94 +189,105 @@ class ReservationController extends Controller
      */
     public function checkInGuest(Request $request, string $id)
     {
-        // Validate form request
-        $validatedData = $request->validate(
-            [
-                'assigned_waiter' => 'required|integer',
-                'pax' => 'required|string',
-                'tables' => 'required|array',
-                'handled_by' => 'required|integer',
-            ], 
-            ['required' => 'This field is required.']
-        );
+        return DB::transaction(function () use ($request, $id) {
+            // Validate form request
+            $validatedData = $request->validate(
+                [
+                    'assigned_waiter' => 'required|integer',
+                    'pax' => 'required|string',
+                    'tables' => 'required|array',
+                    'handled_by' => 'required|integer',
+                ], 
+                ['required' => 'This field is required.']
+            );
 
-        $reservation = Reservation::find($id);
+            $hasOpenedShift = ShiftTransaction::hasOpenedShift();
 
-        // Create new order
-        $newOrder = Order::create([
-            'order_no' => RunningNumberService::getID('order'),
-            'pax' => $validatedData['pax'],
-            'user_id' => $validatedData['assigned_waiter'],
-            'customer_id' => $reservation->customer_id ?? null,
-            'amount' => 0.00,
-            'total_amount' => 0.00,
-            'status' => 'Pending Serve',
-        ]);
-        
-        // Update selected tables and create order table records in a loop
-        foreach ($validatedData['tables'] as $table) {
-            $table = Table::find($table['id']);
-    
-            // Update table status and related order
-            $table->update([
-                'status' => 'Pending Order',
-                'order_id' => $newOrder->id
-            ]);
+            if (!$hasOpenedShift) {
+                return redirect()->back()->withErrors([
+                    'summary' => 'No shift has been opened yet',
+                    'detail' => "You'll need to open a shift before you can place order"
+                ]);
+            }
 
-            // Create new order table
-            OrderTable::create([
-                'table_id' => $table['id'],
+            $reservation = Reservation::find($id);
+
+            // Create new order
+            $newOrder = Order::create([
+                'order_no' => RunningNumberService::getID('order'),
                 'pax' => $validatedData['pax'],
-                'user_id' => $validatedData['handled_by'],
-                'status' => 'Pending Order',
-                'order_id' => $newOrder->id
+                'user_id' => $validatedData['assigned_waiter'],
+                'customer_id' => $reservation->customer_id ?? null,
+                'amount' => 0.00,
+                'total_amount' => 0.00,
+                'status' => 'Pending Serve',
             ]);
-        }
-
-        //Check in activity log and notification
-        $waiter = User::select('full_name', 'id')->find($validatedData['assigned_waiter']);
-        $waiter->image = $waiter->getFirstMediaUrl('user');
-
-        $orderTables = implode(', ', array_map(function ($table) {
-            return Table::where('id', $table)->pluck('table_no')->first();
-        }, $validatedData['tables']));
-
-        activity()->useLog('Order')
-                ->performedOn($newOrder)
-                ->event('check in')
-                ->withProperties([
-                    'waiter_name' => $waiter->full_name,
-                    'table_name' => $orderTables, 
-                    'waiter_image' => $waiter->image
-                ])
-                ->log("New customer check-in by :properties.waiter_name.");
+            
+            // Update selected tables and create order table records in a loop
+            foreach ($validatedData['tables'] as $table) {
+                $table = Table::find($table['id']);
         
-        Notification::send(User::all(), new OrderCheckInCustomer($orderTables, $waiter->full_name, $waiter->id));
+                // Update table status and related order
+                $table->update([
+                    'status' => 'Pending Order',
+                    'order_id' => $newOrder->id
+                ]);
 
-        //Assigned activity log and notification
-        activity()->useLog('Order')
+                // Create new order table
+                OrderTable::create([
+                    'table_id' => $table['id'],
+                    'pax' => $validatedData['pax'],
+                    'user_id' => $validatedData['handled_by'],
+                    'status' => 'Pending Order',
+                    'order_id' => $newOrder->id
+                ]);
+            }
+
+            //Check in activity log and notification
+            $waiter = User::select('full_name', 'id')->find($validatedData['assigned_waiter']);
+            $waiter->image = $waiter->getFirstMediaUrl('user');
+
+            $orderTables = implode(', ', array_map(function ($table) {
+                return Table::where('id', $table)->pluck('table_no')->first();
+            }, $validatedData['tables']));
+
+            activity()->useLog('Order')
                     ->performedOn($newOrder)
-                    ->event('assign to serve')
+                    ->event('check in')
                     ->withProperties([
                         'waiter_name' => $waiter->full_name,
-                        'waiter_image' => $waiter->image,
                         'table_name' => $orderTables, 
-                        'assigned_by' => auth()->user()->full_name,
-                        'assigner_image' => auth()->user()->getFirstMediaUrl('user'),
+                        'waiter_image' => $waiter->image
                     ])
-                    ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
+                    ->log("New customer check-in by :properties.waiter_name.");
+            
+            Notification::send(User::all(), new OrderCheckInCustomer($orderTables, $waiter->full_name, $waiter->id));
 
-        Notification::send(User::all(), new OrderAssignedWaiter($orderTables, auth()->user()->id, $waiter->id));
+            //Assigned activity log and notification
+            activity()->useLog('Order')
+                        ->performedOn($newOrder)
+                        ->event('assign to serve')
+                        ->withProperties([
+                            'waiter_name' => $waiter->full_name,
+                            'waiter_image' => $waiter->image,
+                            'table_name' => $orderTables, 
+                            'assigned_by' => auth()->user()->full_name,
+                            'assigner_image' => auth()->user()->getFirstMediaUrl('user'),
+                        ])
+                        ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
 
-        // Update reservation details
-        $reservation->update([
-            'status' => 'Checked in',
-            'action_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
-            'order_id' => $newOrder->id,
-            'handled_by' => $validatedData['handled_by'],
-        ]);
+            Notification::send(User::all(), new OrderAssignedWaiter($orderTables, auth()->user()->id, $waiter->id));
 
-        return redirect()->back();
+            // Update reservation details
+            $reservation->update([
+                'status' => 'Checked in',
+                'action_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+                'order_id' => $newOrder->id,
+                'handled_by' => $validatedData['handled_by'],
+            ]);
+
+            return redirect()->back();
+        });
     }
     
     /**
@@ -398,7 +412,16 @@ class ReservationController extends Controller
                                             ])
                                             ->whereIn('status', ['Pending', 'Delayed', 'Checked in'])
                                             ->orderBy(DB::raw("CASE WHEN status = 'Delayed' THEN action_date ELSE reservation_date END"), 'asc')
-                                            ->get();
+                                            ->get()
+                                            ->map(function ($res) {
+                                                $tableData = $res->table_no; 
+                                                
+                                                $res['merged_table_no'] = is_array($tableData)
+                                                        ? collect($tableData)->pluck('name')->implode(', ') 
+                                                        : $tableData;
+
+                                                return $res;
+                                            });  
 
         return response()->json($upcomingReservations);
     }

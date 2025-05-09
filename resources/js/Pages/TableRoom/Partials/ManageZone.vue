@@ -6,6 +6,7 @@ import { nextTick, reactive, ref, watch } from "vue";
 import { DeleteIcon, Menu2Icon, PlusIcon } from '@/Components/Icons/solid.jsx';
 import Modal from '@/Components/Modal.vue';
 import { useCustomToast } from "@/Composables";
+import { DeleteIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
     zonesArr: {
@@ -107,6 +108,37 @@ const submit = () => {
     } else {
         isEditing.value = false;
         form.reset();
+    }
+};
+
+// Delete inventory item
+const deleteZone = async () => {
+    try {
+        // Post using axios and get the new order id if new order is created
+        const response = await axios.post(`/table-room/table-room/deleteZone/${selectedZone.value}`);
+
+        if (response.data.severity && response.data.severity === 'warn') {
+            showMessage({ 
+                severity: response.data.severity,
+                summary: response.data.summary,
+            });
+
+            return;
+        }
+        
+        setTimeout(() => {
+            showMessage({ 
+                severity: response.data.severity,
+                summary: response.data.summary,
+            });
+        }, 200);
+
+        emit('getZoneDetails');
+        hideDeleteProductForm();
+        emit('close', 'leave');
+        
+    } catch (error) {
+        console.log(error);
     }
 };
 
@@ -323,7 +355,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
         </div>
     <!-- </form> -->
     
-    <Modal 
+    <!-- <Modal 
         :show="deleteProductFormIsOpen" 
         :maxWidth="'2xs'" 
         :closeable="true" 
@@ -333,5 +365,44 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
         :confirmationMessage="'Table and room in this zone will be deleted altogether. Are you sure you want to delete this zone?'"
         @close="hideDeleteProductForm" 
         v-if="selectedZone" 
-    />
+    /> -->
+
+    <Modal
+        :maxWidth="'2xs'"
+        :closeable="true"
+        :withHeader="false"
+        :show="deleteProductFormIsOpen"
+        @close="hideDeleteProductForm"
+    >
+        <div class="flex flex-col items-center gap-9 rounded-[5px] border border-solid border-primary-200 bg-white m-[-24px]">
+            <div class="w-full flex flex-col items-center gap-[10px] bg-primary-50">
+                <div class="w-full flex pt-2 justify-center items-center">
+                    <DeleteIllus />
+                </div>
+            </div>
+            <div class="flex flex-col px-6 items-center gap-1 self-stretch">
+                <span class="self-stretch text-primary-900 text-center text-lg font-medium ">Delete this zone?</span>
+                <span class="self-stretch text-grey-900 text-center text-base font-medium">Table and room in this zone will be deleted altogether. Are you sure you want to delete this zone?</span>
+            </div>
+
+            <div class="flex px-6 pb-6 justify-center items-start gap-3 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="hideDeleteProductForm"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    variant="red"
+                    size="lg"
+                    type="submit"
+                    @click="deleteZone"
+                >
+                    Remove
+                </Button>
+            </div>
+        </div>
+    </Modal>
 </template>

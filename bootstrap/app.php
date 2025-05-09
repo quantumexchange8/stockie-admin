@@ -35,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('activitylog:clean')->daily();
         $schedule->command('configurations:set-bill-discount-active')->everyTwoMinutes();
         // $schedule->command('fetch:latest-status-submission')->everyFifteenMinutes();
+        $schedule->command('waiters:auto-checkout')->dailyAt('16:50');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {

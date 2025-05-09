@@ -119,4 +119,13 @@ class Payment extends Model
     {
         return $this->hasMany(PaymentDetail::class, 'payment_id');
     }
+
+    /**
+     * PaymentRefund Model
+     * Get the payment refunds of this payment.
+     */
+    public function paymentRefunds(): HasMany
+    {
+        return $this->hasMany(PaymentRefund::class, 'payment_id');
+    }
 }

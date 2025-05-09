@@ -2,7 +2,7 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { computed, ref, onUnmounted, watch } from 'vue';
+import { computed, ref, onUnmounted, watch, onMounted } from 'vue';
 import Card from 'primevue/card';
 import Button from '@/Components/Button.vue';
 import Accordion from '@/Components/Accordion.vue';
@@ -177,11 +177,26 @@ const tablesArr = computed(() => {
 //     return `${reservationList}`;
 // }
 
-let intervals = ref([]);
+// let intervals = ref([]);
+const durations = ref({});
+const intervals = ref({});
 
-const setupDuration = (created_at) => {
+// Setup fetchZones emitter only once
+onMounted(() => {
+    const fetchZoneInterval = setInterval(() => {
+        emit('fetchZones');
+    }, 5000);
+    intervals.value['fetchZones'] = fetchZoneInterval;
+});
+
+const setupDuration = (tableId, created_at) => {
+    if (durations.value[tableId]) {
+        return durations.value[tableId];
+    }
+
     const startTime = dayjs(created_at);
     const formattedDuration = ref(dayjs.duration(dayjs().diff(startTime)).format('HH:mm:ss'));
+    durations.value[tableId] = formattedDuration;
 
     const updateDuration = () => {
         const now = dayjs();
@@ -189,10 +204,10 @@ const setupDuration = (created_at) => {
         formattedDuration.value = dayjs.duration(diff).format('HH:mm:ss');
     };
 
-    const intervalId = setInterval(updateDuration, 1000);
-    intervals.value.push(intervalId);
+    const durationInterval = setInterval(updateDuration, 1000);
+    intervals.value[tableId] = durationInterval;
 
-    return formattedDuration.value;
+    return formattedDuration;
 };
 
 const filteredZones = computed(() => {
@@ -207,15 +222,27 @@ const filteredZones = computed(() => {
                             : tempZones.filter(zone => zone.text === props.zoneName)[0];
 });
 
-onUnmounted(() => intervals.value.forEach(clearInterval));
+onUnmounted(() => {
+    // intervals.value.forEach(clearInterval);
+    Object.values(intervals.value).forEach(clearInterval);
+});
 
 const getCurrentOrderTableDuration = (table) => {
     let currentOrderTable = table.order_tables?.toSorted((a, b) => dayjs(b.created_at).diff(dayjs(a.created_at)));
-    // let currentOrderTable = table.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1 
-    //         ? table.order_tables.filter((table) => table.status !== 'Pending Clearance')[0].created_at
-    //         : table.order_tables[0].created_at;
+    // // let currentOrderTable = table.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1 
+    // //         ? table.order_tables.filter((table) => table.status !== 'Pending Clearance')[0].created_at
+    // //         : table.order_tables[0].created_at;
 
-    return table.order_tables.length > 0 ? setupDuration(currentOrderTable[0].created_at) : '';
+    // return table.order_tables.length > 0 ? setupDuration(currentOrderTable[0].created_at) : '';
+    
+    // const currentOrderTable = table.order_tables?.toSorted(
+    //     (a, b) => dayjs(b.created_at).diff(dayjs(a.created_at))
+    // );
+
+    if (!currentOrderTable?.length) return '';
+
+    const latestCreatedAt = currentOrderTable[0].created_at;
+    return setupDuration(table.id, latestCreatedAt);
 };
 
 const getStatusCount = (status) => {

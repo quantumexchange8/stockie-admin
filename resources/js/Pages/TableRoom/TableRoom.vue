@@ -244,7 +244,7 @@ const filteredZones = computed(() => {
                 </Modal>
             </template>
             <template #all>
-                <ZoneAll :zones="filteredZones"/>
+                <ZoneAll :zones="filteredZones" @update:zones="getZoneDetails" />
             </template>
             <template 
                 v-for="zone in tranformedZones" 

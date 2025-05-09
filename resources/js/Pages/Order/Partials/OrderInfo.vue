@@ -610,7 +610,10 @@ watch(() => props.selectedTable, (newValue) => {
                     />
                 </template>
                 <template #payment-history>
-                    <PaymentHistory :selectedTable="currentTable" />
+                    <PaymentHistory 
+                        :currentOrder="order"
+                        :selectedTable="currentTable"
+                    />
                 </template>
             </TabView>
         </div>
