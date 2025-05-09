@@ -238,7 +238,7 @@ const closeEdit = () => {
                         :closeable="true" 
                         @close="closeAssignShift"
                     >
-                        <AssignShift @close="closeAssignShift" />
+                        <AssignShift @close="closeAssignShift" @fetchshift="fetchWaiterShift"/>
                     </Modal>
                 </div>
             </div>

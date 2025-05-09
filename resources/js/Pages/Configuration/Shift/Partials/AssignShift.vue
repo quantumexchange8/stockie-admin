@@ -39,7 +39,7 @@ const weekDays = computed(() => {
     }));
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'fetchshift']);
 const selectDays = ref([]);
 const shifts = ref([]);
 const waiters = ref([]);
@@ -137,6 +137,7 @@ const submit = () => {
         onSuccess: () => {
             form.reset();
             emit('close');
+            emit('fetchshift');
         }
     });
 };
