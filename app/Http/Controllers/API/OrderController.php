@@ -1049,18 +1049,13 @@ class OrderController extends Controller
 
         $customer->image = $customer->getFirstMediaUrl('customer');
         
-        foreach ($customer->keepItems as $key => $keepItem) {
-            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-            $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
-            unset($keepItem->orderItemSubitem);
+        $customer->keep_items_count = $customer->keepItems->reduce(function ($total, $item) {
+            $itemQty = $item->qty > $item->cm ? $item->qty : 1;
 
-            $keepItem->image = $keepItem->orderItemSubitem->productItem 
-                                ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-                                : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+            return $total + $itemQty;
+        }, 0);
 
-            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
-
-        }
+        unset($customer->keepItems);
 
         return response()->json($customer);
     }
@@ -1091,7 +1086,7 @@ class OrderController extends Controller
             $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
 
         }
-        
+
 
         return response()->json($customer->keepItems);
     }
