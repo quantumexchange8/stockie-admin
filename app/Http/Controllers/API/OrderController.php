@@ -1029,39 +1029,72 @@ class OrderController extends Controller
         return response()->json($customers);
     }
     
-    // public function getOrderCustomer(Request $request) 
-    // {
-    //     $customer = Customer::with([
-    //                             'rank:id,name',
-    //                             'keepItems' => function ($query) {
-    //                                 $query->where('status', 'Keep')
-    //                                         ->with([
-    //                                             'orderItemSubitem.productItem:id,inventory_item_id',
-    //                                             'orderItemSubitem.productItem.inventoryItem:id,item_name',
-    //                                             'waiter:id,full_name'
-    //                                         ]);
-    //                             },
-    //                             'rewards:id,customer_id,ranking_reward_id,status,updated_at',
-    //                             'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
-    //                             'rewards.rankingReward.product:id,product_name'
-    //                         ])
-    //                         ->find($request->id);
+    public function getCustomerDetails(Request $request) 
+    {
+        $customer = Customer::with([
+                                'rank:id,name',
+                                'keepItems' => function ($query) {
+                                    $query->where('status', 'Keep')
+                                            ->with([
+                                                'orderItemSubitem.productItem:id,inventory_item_id',
+                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                'waiter:id,full_name'
+                                            ]);
+                                },
+                                'rewards:id,customer_id,ranking_reward_id,status,updated_at',
+                                'rewards.rankingReward:id,ranking_id,reward_type,min_purchase,discount,min_purchase_amount,bonus_point,free_item,item_qty,updated_at',
+                                'rewards.rankingReward.product:id,product_name'
+                            ])
+                            ->find($request->id);
+
+        $customer->image = $customer->getFirstMediaUrl('customer');
         
-    //     foreach ($customer->keepItems as $key => $keepItem) {
-    //         $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-    //         $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
-    //         unset($keepItem->orderItemSubitem);
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+            unset($keepItem->orderItemSubitem);
 
-    //         $keepItem->image = $keepItem->orderItemSubitem->productItem 
-    //                             ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-    //                             : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
 
-    //         $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
 
-    //     }
+        }
 
-    //     return response()->json($customer);
-    // }
+        return response()->json($customer);
+    }
+    
+    public function getCustomerKeepItems(Request $request) 
+    {
+        $customer = Customer::with([
+                                'keepItems' => function ($query) {
+                                    $query->where('status', 'Keep')
+                                            ->with([
+                                                'orderItemSubitem.productItem:id,inventory_item_id',
+                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                'waiter:id,full_name'
+                                            ]);
+                                },
+                            ])
+                            ->find($request->id);
+        
+        foreach ($customer->keepItems as $key => $keepItem) {
+            $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+            unset($keepItem->orderItemSubitem);
+
+            $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+            $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+
+        }
+        
+
+        return response()->json($customer->keepItems);
+    }
     
     public function getTableKeepItems(Request $request) 
     {
