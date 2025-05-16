@@ -81,7 +81,7 @@ class OrderController extends Controller
                                     ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at');
                             },
                             'tables.orderTables.order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
-                            'tables.orderTables.order.customer:id,full_name',
+                            // 'tables.orderTables.order.customer:id,full_name',
                             // 'tables.orderTables.order.customer.rewards' => function ($query) {
                             //     $query->where('status', 'Active')->select('id','customer_id', 'ranking_reward_id', 'status');
                             // },
@@ -108,9 +108,9 @@ class OrderController extends Controller
                 $currentOrderTable = $table->orderTables->firstWhere('status', '!=', 'Pending Clearance')
                     ?? $table->orderTables->first();
     
-                if ($currentOrderTable && $currentOrderTable->order && $currentOrderTable->order->customer) {
-                    $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
-                }
+                // if ($currentOrderTable && $currentOrderTable->order && $currentOrderTable->order->customer) {
+                //     $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
+                // }
                 
                 if ($currentOrderTable && $currentOrderTable->order) unset($currentOrderTable->order->orderItems);
 
@@ -1026,6 +1026,17 @@ class OrderController extends Controller
                                     return $customer;
                                 });
 
+        // $customers = Customer::where(function ($query) {
+        //                             $query->where('status', '!=', 'void')
+        //                                   ->orWhereNull('status'); // Handle NULL cases
+        //                         })
+        //                         ->get(['id', 'uuid', 'name', 'full_name', 'email', 'phone'])
+        //                         ->each(function ($customer) {
+        //                             $customer->image = $customer->getFirstMediaUrl('customer');
+
+        //                             return $customer;
+        //                         });
+
         return response()->json($customers);
     }
     
@@ -1692,12 +1703,13 @@ class OrderController extends Controller
 
             $validatedData = $request->validate(
                 [
-                    'full_name' => 'required|string|max:255',
-                    'phone' => 'required|string|max:255',
-                    'email' => 'required|email|unique:customers,email',
+                    'full_name' => 'required|string|max:255|unique:customers,full_name',
+                    'phone' => 'nullable|string|max:255',
+                    'email' => 'nullable|email|unique:customers,email',
                     'order_id' => 'required',
                 ], 
                 [
+                    'full_name.unique' => 'Username has already been taken.',
                     'email.unique' => 'Email has already been taken.',
                     'email.email' => 'Invalid email.',
                     'required' => 'This field is required.',
@@ -1709,11 +1721,12 @@ class OrderController extends Controller
         
             $newCustomer = Customer::create([
                 'uuid' => RunningNumberService::getID('customer'),
+                'name' => $validatedData['full_name'],
                 'full_name' => $validatedData['full_name'],
                 'dial_code' => '+60',
                 'phone' => $validatedData['phone'],
                 'email' => $validatedData['email'],
-                'password' => Hash::make('testtest'), // new Randomizer()->getBytes(8)
+                'password' => Hash::make('Test1234.'), // new Randomizer()->getBytes(8)
                 'ranking' => $defaultRank->id,
                 'point' => 0,
                 'total_spending' => 0.00,
