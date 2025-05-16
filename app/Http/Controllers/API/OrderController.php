@@ -81,7 +81,7 @@ class OrderController extends Controller
                                     ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at');
                             },
                             'tables.orderTables.order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
-                            // 'tables.orderTables.order.customer:id,full_name',
+                            'tables.orderTables.order.customer:id,full_name',
                             // 'tables.orderTables.order.customer.rewards' => function ($query) {
                             //     $query->where('status', 'Active')->select('id','customer_id', 'ranking_reward_id', 'status');
                             // },
@@ -108,9 +108,9 @@ class OrderController extends Controller
                 $currentOrderTable = $table->orderTables->firstWhere('status', '!=', 'Pending Clearance')
                     ?? $table->orderTables->first();
     
-                // if ($currentOrderTable && $currentOrderTable->order && $currentOrderTable->order->customer) {
-                //     $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
-                // }
+                if ($currentOrderTable && $currentOrderTable->order && $currentOrderTable->order->customer) {
+                    $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
+                }
                 
                 if ($currentOrderTable && $currentOrderTable->order) unset($currentOrderTable->order->orderItems);
 
