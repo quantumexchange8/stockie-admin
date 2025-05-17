@@ -51,8 +51,10 @@ class DashboardController extends Controller
                                         ->whereDate('orders.created_at', Carbon::yesterday())
                                         ->select('payments.grand_total')
                                         ->sum('payments.grand_total');
+
+        // dd($salesToday, $salesYesterday, $salesYesterday != 0);
         $comparedSale = 0;
-        if ($salesYesterday !== 0) {
+        if ($salesYesterday != 0) {
             $comparedSale = ($salesToday - $salesYesterday) / $salesYesterday * 100; 
         };
 
