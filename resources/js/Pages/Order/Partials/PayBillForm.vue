@@ -375,6 +375,7 @@ const openSuccessPaymentModal = () => {
 
 const closeSuccessPaymentModal = () => {
     isSuccessPaymentShow.value = false;
+    form.reset();
 
     if (splitBillDetails.value && splitBillDetails.value.id !== 'current') {
         paymentTransactions.value = [];
@@ -439,12 +440,11 @@ const submit = async () => {
                 summary: 'Payment Completed.',
             });
         }, 200);
-        form.reset();
         emit('fetchZones');
         emit('fetchPendingServe');
-
+        
         openSuccessPaymentModal();
-
+        
     } catch (error) {
         console.error(error);
         setTimeout(() => {
@@ -1141,7 +1141,7 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
                     </div>
 
                     <!-- Looped entered payment method and amount -->
-                    <div class="flex flex-col items-start gap-4 self-stretch max-h-[calc(100dvh-36.6rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                    <div class="flex flex-col items-start gap-4 self-stretch max-h-[calc(100dvh-30.6rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                         <template v-for="(transaction, index) in sortedTransactionMethods" :key="index">
                             <div 
                                 class="flex p-4 flex-col self-stretch gap-2 items-start rounded-[5px] border border-grey-100 shadow-sm cursor-pointer"
@@ -1455,7 +1455,7 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
         <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
             <div class="flex flex-col items-center gap-y-2 self-stretch">
                 <p class="self-stretch text-grey-900 text-base text-center font-medium">
-                    Paid by {{ paymentTransactions.map((transaction) => transaction.method === 'Card' ? 'Credit/Debit Card' : transaction.method).join(" & ") }}
+                    Paid by {{ form.payment_methods.map((transaction) => transaction.method === 'Card' ? 'Credit/Debit Card' : transaction.method).join(" & ") }}
                 </p>
                 <div class="flex items-center justify-center gap-x-3 self-stretch">
                     <div class="flex items-center gap-x-3 self-stretch">
@@ -1463,7 +1463,7 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
                         <ToastSuccessIcon class="flex-shrink-0 size-8" v-else />
                         <p class="text-grey-950 text-xl font-normal" v-if="hasCashMethod" >Change: </p>
                     </div>
-                    <p v-if="hasCashMethod" class="text-grey-950 text-xl font-semibold">{{ `RM ${change > 0 ? change.toFixed(2) : change}` }}</p>
+                    <p v-if="hasCashMethod" class="text-grey-950 text-xl font-semibold">{{ `RM ${form.change > 0 ? form.change.toFixed(2) : form.change}` }}</p>
                     <p v-else class="text-grey-950 text-xl font-semibold">{{ 'Payment Successful' }}</p>
                 </div>
             </div>

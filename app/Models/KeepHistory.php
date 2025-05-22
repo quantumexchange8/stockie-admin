@@ -22,6 +22,9 @@ class KeepHistory extends Model
         'cm',
         'keep_date',
         'kept_balance',
+        'user_id',
+        'kept_from_table',
+        'redeemed_to_table',
         'remark',
         'status',
     ];
@@ -47,5 +50,10 @@ class KeepHistory extends Model
     public function orderItem(): BelongsTo
     {
         return $this->belongsTo(OrderItem::class, 'order_item_id');
+    }
+
+    public function waiter(): BelongsTo
+    {
+        return $this->belongsTo(User::class,'user_id');
     }
 }

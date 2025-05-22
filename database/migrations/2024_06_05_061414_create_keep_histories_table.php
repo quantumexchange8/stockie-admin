@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('cm');
             $table->dateTime('keep_date');
             $table->integer('kept_balance')->nullable()->default(0);
+            $table->unsignedBigInteger('user_id');
+            $table->string('kept_from_table');
+            $table->string('redeemed_to_table')->nullable();
             $table->string('remark')->nullable();
             $table->string('status');
             $table->softDeletes();

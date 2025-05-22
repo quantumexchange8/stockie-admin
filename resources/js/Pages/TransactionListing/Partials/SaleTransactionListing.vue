@@ -146,11 +146,17 @@ const voidAction = async () => {
 
         try {
             
-            response = await axios.post('/transactions/void-transaction', {
+            const response = await axios.post('/transactions/void-transaction', {
                 params: {
                     id: selectedVal.value.id
                 }
             })
+
+            if (response.status === 200) {
+                closeConfirmmVoid();
+                closeAction();
+                fetchTransaction();
+            }
 
         } catch (error) {
             console.error(error);

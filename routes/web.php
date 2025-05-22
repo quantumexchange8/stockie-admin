@@ -309,12 +309,14 @@ Route::middleware('auth')->group(function () {
         //Order's keep item
         Route::put('/editKeptItemDetail', [OrderController:: class, 'editKeptItemDetail'])->name('editKeptItemDetail');
         Route::post('/reactivateExpiredItems', [OrderController::class, 'reactivateExpiredItems'])->name('reactivateExpiredItems');
+        Route::post('/expireKeepItem', [OrderController::class, 'expireKeepItem'])->name('expireKeepItem');
         Route::post('/deleteKeptItem', [OrderController::class, 'deleteKeptItem'])->name('deleteKeptItem');
     });
 
      /********* Customer **********/
      Route::prefix('customer')->middleware([CheckPermission::class . ':customer'])->group(function(){
         Route::get('/',[CustomerController::class,'index'])->name('customer');
+        Route::get('/import-keep-items',[CustomerController::class,'index'])->name('customer.import-keep-items');
         Route::get('/filterCustomer', [CustomerController::class,'getFilteredCustomers'])->name('customer.filter-customer');
         Route::get('/getRedeemableItems', [CustomerController::class,'getRedeemableItems'])->name('customer.getRedeemableItems');
         Route::get('/getKeepHistories/{id}', [CustomerController::class,'getKeepHistories'])->name('customer.getKeepHistories');
@@ -325,6 +327,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [CustomerController::class,'store'])->name('customer.store');
         Route::post('/returnKeepItem/{id}', [CustomerController::class,'returnKeepItem'])->name('customer.returnKeepItem');
         Route::post('/adjustPoint', [CustomerController::class, 'adjustPoint'])->name('customer.adjustPoint');
+        Route::post('/importKeepItems', [CustomerController::class, 'importKeepItems'])->name('customer.importKeepItems');
         Route::put('/{id}', [CustomerController::class, 'update'])->name('customer.update');
         Route::delete('/deleteCustomer/{id}', [CustomerController::class, 'deleteCustomer'])->name('customer.delete-customer');
      });

@@ -234,7 +234,7 @@ const filterCustomerList = computed(() => {
     return customerList.value
             .filter(customer => {
                 return customer.full_name.toLowerCase().includes(search)
-                        || customer.phone.toLowerCase().includes(search);
+                        || (customer.phone && customer.phone.toLowerCase().includes(search));
             });
 });
 

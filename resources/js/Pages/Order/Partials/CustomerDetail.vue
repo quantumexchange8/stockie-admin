@@ -4,7 +4,7 @@ import Tag from '@/Components/Tag.vue';
 import Button from '@/Components/Button.vue';
 import AddOrderItems from './AddOrderItems.vue';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
-import { Calendar, CircledArrowHeadRightIcon2, CommentIcon, GiftImage, HistoryIcon, MedalImage, TimesIcon } from '@/Components/Icons/solid.jsx';
+import { Calendar, CircledArrowHeadRightIcon2, CommentIcon, GiftImage, HistoryIcon, MedalImage, TimesIcon, WarningIcon } from '@/Components/Icons/solid.jsx';
 import axios from 'axios';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
@@ -20,6 +20,7 @@ import DateInput from '@/Components/Date.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import { deleteReason, expiryDates } from '@/Composables/constants';
+import { MovingIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
     customer: {
@@ -48,10 +49,12 @@ const op = ref(null);
 const isMoreActionOpen = ref(null);
 const isEditKeptItemOpen = ref(false);
 const isExtendExpirationOpen = ref(false);
+const isExpireKeptItemOpen = ref(false);
 const isDeleteKeptItemOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const selectedItem = ref();
 const initialEditForm = ref();
+const isLoading = ref(false);
 
 const form = useForm({
     order_id: props.orderId,
@@ -144,6 +147,7 @@ const openModal = (action) => {
     switch(action) {
         case 'edit': isEditKeptItemOpen.value = true; break;
         case 'extend': isExtendExpirationOpen.value = true; break;
+        case 'expire' : isExpireKeptItemOpen.value = true; break;
         case 'delete' : isDeleteKeptItemOpen.value = true; break;
     }
 }
@@ -151,14 +155,29 @@ const openModal = (action) => {
 const closeModal = (status) => {
     switch(status) {
         case 'close': {
-            if(initialEditForm.isDirty) isUnsavedChangesOpen.value = true;
-            else isEditKeptItemOpen.value = false; editForm.clearErrors();
+            if (initialEditForm.isDirty) {
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isEditKeptItemOpen.value = false; 
+                editForm.clearErrors();
+            } 
 
-            if(extendForm.expired_to !== 2) isUnsavedChangesOpen.value = true;
-            else isExtendExpirationOpen.value = false; extendForm.clearErrors();
+            if (extendForm.expired_to !== 2) {
+                isUnsavedChangesOpen.value = true;
+            } else { 
+                isExtendExpirationOpen.value = false; 
+                extendForm.clearErrors();
+            }
 
-            if(deleteForm.remark !== '' || deleteForm.remark_description !== '') isUnsavedChangesOpen.value = true;
-            else isDeleteKeptItemOpen.value = false; deleteForm.clearErrors();
+            if (deleteForm.remark !== '' || deleteForm.remark_description !== '') {
+                isUnsavedChangesOpen.value = true;
+            } else {
+                isDeleteKeptItemOpen.value = false; 
+                deleteForm.clearErrors();
+            }
+
+            isExpireKeptItemOpen.value = false;
+
             break;
         };
         case 'stay': {
@@ -166,10 +185,10 @@ const closeModal = (status) => {
             break;
         };
         case 'leave': {
-
             isUnsavedChangesOpen.value = false;
             isEditKeptItemOpen.value = false;
             isExtendExpirationOpen.value = false;
+            isExpireKeptItemOpen.value = false;
             isDeleteKeptItemOpen.value = false;
 
             selectedItem.value = '';
@@ -223,6 +242,8 @@ const submit = async () => {
 };
 
 const editKeptItem = async () => {
+    isLoading.value = true;
+
     try {
         const response = await axios.put(`/order-management/editKeptItemDetail`, editForm);
         emit('update:customerKeepItems', response.data);
@@ -236,6 +257,8 @@ const editKeptItem = async () => {
         editForm.reset();
     } catch (error) {
         console.error(error);
+    } finally {
+        isLoading.value = false;
     }
 }
 
@@ -254,6 +277,32 @@ const extendKeptItem = async () => {
         extendForm.reset();
     } catch (error) {
         console.error(error);
+    }
+}
+
+const expireKeptItem = async () => {
+    isLoading.value = true;
+
+    try {
+        const response = await axios.post(`/order-management/expireKeepItem`, {
+            id: selectedItem.value.id,
+            customer_id: props.customer.id
+        });
+
+        emit('update:customerKeepItems', response.data);
+        closeModal('leave');
+
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: 'Kept item successfully expired',
+                detail: 'Selected item has been expired and returned to inventory.'
+            });
+        }, 200)
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
     }
 }
 
@@ -293,6 +342,18 @@ const formatPoints = (points) => {
   const pointsStr = points.toString();
   
   return pointsStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
+const getKeepItemExpiryStatus = (keepItem) => {
+  const daysDiff = dayjs(keepItem.expired_to).diff(dayjs(), 'day');
+
+  const expiredStatus = daysDiff <= 0
+        ? 'now'
+        : daysDiff <= 7 
+            ? 'soon'
+            : 'normal';
+
+  return expiredStatus;
 };
 
 watch((editForm), (newValue) => {
@@ -463,6 +524,17 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     </div>
                 </div> -->
                 <div class="flex flex-col p-4 justify-center items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)]"  v-for="item in formatKeepItems(customer.keep_items)" :key="item.id">
+                    <!-- message container -->
+                    <div class="flex p-3 justify-center items-start gap-3 self-stretch rounded-[5px] bg-[#FDFBED]"
+                        v-if="getKeepItemExpiryStatus(item) !== 'normal'"
+                    >
+                        <!-- message header -->
+                        <WarningIcon />
+                        <div class="flex flex-col justify-between items-start flex-[1_0_0]">
+                            <span class="self-stretch text-[#A35F1A] text-base font-bold">{{ getKeepItemExpiryStatus(item) === 'soon' ? 'Expiring Soon' : 'Pending Action'  }}</span>
+                            <span class="self-stretch text-[#3E200A] text-sm font-normal">{{ getKeepItemExpiryStatus(item) === 'soon' ? `This kept item will be expired on ${dayjs(item.expired_to).format('DD/MM/YYYY')}.` : 'This item is expired. Please choose to expire it or extend the expiration date.'  }}</span>
+                        </div>
+                    </div>
                     <div class="flex flex-col items-start gap-3 self-stretch">
                         <div class="flex items-start gap-3 self-stretch">
                             <div class="flex flex-col items-start gap-0.5 flex-[1_0_0] self-stretch">
@@ -475,26 +547,22 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                                 class="size-[65px] object-contain"
                             >
                         </div>
-                        <div class="flex flex-col items-start gap-0.5 self-stretch">
-                            <div class="flex items-center gap-3 self-stretch">
-                                <span class="text-grey-500 text-sm font-normal">Expire on</span>
-                                <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.expired_to ? dayjs(item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
+                        <div class="grid grid-cols-10 w-full items-start">
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">Kept from</span>
+                            <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.kept_from_table }}</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">Expire on</span>
+                            <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.expired_to ? dayjs(item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">Kept by</span>
+                            <div class="col-span-8 flex items-center gap-1.5 flex-[1_0_0]">
+                                <img
+                                    :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    alt="WaiterImage"
+                                    class="rounded-full size-3 object-contain"
+                                >
+                                <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.waiter.full_name }}</span>
                             </div>
-                            <div class="flex items-center gap-3 self-stretch">
-                                <span class="text-grey-500 text-sm font-normal">Kept by</span>
-                                <div class="flex items-center gap-1.5 flex-[1_0_0]">
-                                    <img
-                                        :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                                        alt="WaiterImage"
-                                        class="rounded-full size-3 object-contain"
-                                    >
-                                    <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.waiter.full_name }}</span>
-                                </div>
-                            </div>
-                            <div class="flex items-start gap-4 self-stretch">
-                                <span class="text-grey-500 text-sm font-normal">Remark</span>
-                                <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.remark ? item.remark : '-' }}</span>
-                            </div>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">Remark</span>
+                            <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.remark ? item.remark : '-' }}</span>
                         </div>
                     </div>
                     <div class="flex items-start gap-3 self-stretch">
@@ -513,7 +581,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                             :disabled="tableStatus === 'Pending Clearance'"
                             @click="openOverlay($event, item)"
                         >
-                            Add to Order
+                            Add to room
                         </Button>
                     </div>
                 </div>
@@ -588,8 +656,11 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-not-allowed pointer-events-none bg-grey-50" @click="openModal('extend')" v-else>
             <span class="text-grey-300 text-base font-medium">Extend expiration date</span>
         </div> -->
+        <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" v-if="getKeepItemExpiryStatus(selectedItem) === 'now'" @click="openModal('expire')">
+            <span class="text-primary-800 text-base font-medium">Mark as expired</span>
+        </div>
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('delete')">
-            <span class="text-primary-800 text-base font-medium">Delete kept item</span>
+            <span class="text-primary-800 text-base font-medium">Delete kept itemd</span>
         </div>
     </OverlayPanel>
 
@@ -679,6 +750,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :variant="'primary'"
                         :type="'submit'"
                         :size="'lg'"
+                        :disabled="isLoading"
                     >
                         Save
                     </Button>
@@ -799,5 +871,46 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
             @close="closeModal('stay')"
             @leave="closeModal('leave')"
         />
+    </Modal>
+
+    <!-- Expire kept item -->
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="isExpireKeptItemOpen"
+        @close="closeModal('close')"
+        :withHeader="false"
+    >
+        <form @submit.prevent="expireKeptItem">
+            <div class="flex flex-col gap-9 pt-36">
+                <div class="bg-primary-50 flex items-center justify-center rounded-t-[5px] fixed top-0 w-full left-0">
+                    <MovingIllus class="mt-2.5"/>
+                </div>
+                <div class="flex flex-col gap-1" >
+                    <div class="text-primary-900 text-lg font-medium text-center">
+                        Mark as Expired?
+                    </div>
+                    <div class="text-gray-900 text-base font-medium text-center leading-tight" >
+                        This kept item will be marked as expired and customer can no longer redeem back this item. Are you sure you want to proceed?
+                    </div>
+                </div>
+                <div class="flex item-center gap-3">
+                    <Button
+                        variant="tertiary"
+                        size="lg"
+                        @click="closeModal('close')"
+                        type="button"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        size="lg"
+                        :disabled="isLoading"
+                    >
+                        Confirm
+                    </Button>
+                </div>
+            </div>
+        </form>
     </Modal>
 </template>

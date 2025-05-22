@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('cm', 13, 2)->nullable();
             $table->string('remark')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('kept_from_table');
             $table->string('status');
             $table->dateTime('expired_from');
             $table->dateTime('expired_to');

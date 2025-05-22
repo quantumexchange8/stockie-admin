@@ -47,8 +47,7 @@ const submit = async () => {
 
         showMessage({
             severity: 'success',
-            summary: 'Group added successfully.',
-            detail: 'You can always add new stock to this group.',
+            summary: 'Customer added successfully.',
         });
 
         emit('update:customerListing', response.data);

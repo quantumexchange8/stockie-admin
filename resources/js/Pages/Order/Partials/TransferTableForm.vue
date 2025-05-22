@@ -173,7 +173,7 @@ const getTableClasses = (table) => ({
         {
             'bg-grey-50': table.status === 'Empty Seat' && table.is_reserved,
             'bg-white': table.status === 'Empty Seat' && !table.is_reserved,
-            'bg-green-600': (table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order') && !table.is_reserved,
+            'bg-green-500': (table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order') && !table.is_reserved,
             'bg-orange-500': table.status === 'Pending Clearance' && !table.is_reserved,
         }
     ]),

@@ -16,10 +16,10 @@ return new class extends Migration
             $table->string('uuid');
             $table->string('name')->nullable()->default(NULL);
             $table->string('full_name');
-            $table->string('email')->unique();
+            $table->string('email')->unique()->nullable()->default(NULL);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('dial_code')->nullable()->default(NULL);
-            $table->string('phone')->unique();
+            $table->string('phone')->unique()->nullable()->default(NULL);
             $table->string('password');
             $table->string('ranking')->nullable()->default(NULL);
             $table->string('role')->nullable()->default(NULL);

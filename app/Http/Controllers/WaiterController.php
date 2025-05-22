@@ -619,7 +619,7 @@ class WaiterController extends Controller
                         break;
                 }
             }
-            if (!$currentGroup) dd($currentGroup, $relatedRecords, $checkInRecord);
+            // if (!$currentGroup) dd($currentGroup, $relatedRecords, $checkInRecord);
 
             // Only return summarized data (no detailed breaks)
             return $this->processAttendanceGroup($currentGroup, $waiter->salary ?? 0, $waiter, false);

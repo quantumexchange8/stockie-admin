@@ -99,7 +99,7 @@ const getTableClasses = (table) => ({
         {
             'bg-grey-50': table.status === 'Empty Seat' && table.is_reserved,
             'bg-white': table.status === 'Empty Seat' && !table.is_reserved,
-            'bg-green-600': (table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order') && !table.is_reserved,
+            'bg-green-500': (table.status === 'All Order Served' || table.status === 'Order Placed' || table.status === 'Pending Order') && !table.is_reserved,
             'bg-orange-500': table.status === 'Pending Clearance' && !table.is_reserved,
         }
     ]),
@@ -113,8 +113,9 @@ const getTableClasses = (table) => ({
             'text-grey-400': table.is_reserved,
         }
     ]),
+    amount: 'text-base font-semibold self-stretch text-center text-green-100',
     duration: computed(() => [
-        'text-base font-normal self-stretch text-center',
+        'text-xs font-normal self-stretch text-center',
         {
             // 'text-primary-100': table.status === 'Pending Order',
             'text-green-100': table.status === 'Order Placed' || table.status === 'All Order Served' || table.status === 'Pending Order',
@@ -184,7 +185,7 @@ const intervals = ref({});
 // Setup fetchZones emitter only once
 onMounted(() => {
     const fetchZoneInterval = setInterval(() => {
-        emit('fetchZones');
+        // emit('fetchZones');
     }, 5000);
     intervals.value['fetchZones'] = fetchZoneInterval;
 });
@@ -351,21 +352,25 @@ watch(() => props.hasOpenedShift, (newValue) => {
                             class="col-span-1 flex items-start content-start gap-6 self-stretch flex-wrap relative" 
                             v-for="table in zone.tables"
                         >
-                            <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative"
+                            <div class="flex flex-col px-6 pt-6 pb-3 justify-center items-center gap-y-3 rounded-[5px] border border-solid border-grey-100 min-h-[140.6px] w-full relative"
                                 :class="getTableClasses(table).state.value"
                                 @click="openOverlay($event, table)"
                             >
-                                <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
-                                <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                <div class="flex flex-col justify-center items-center gap-y-1">
+                                    <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                    <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
+                                    <template v-if="table.status === 'Empty Seat'">
+                                        <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                            <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                        </div>
+                                        <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                    </template>
+                                </div>
                                 <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                     {{ getCurrentOrderTableDuration(table) }}
                                 </div>
-                                <template v-else>
-                                    <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                        <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
-                                    </div>
-                                    <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
-                                </template>
+
+                                <MergedIcon class="absolute left-[8.375px] top-[8px] size-5 text-white" v-if="isMerged(table)"/>
                                 <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
                                     v-if="table.pending_count > 0"
                                 >
@@ -407,21 +412,25 @@ watch(() => props.hasOpenedShift, (newValue) => {
                                 >
                                     <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                                 </div> -->
-                                <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] relative"
+                                <div class="flex flex-col px-6 pt-6 pb-3 justify-center items-center gap-y-3 rounded-[5px] border border-solid border-grey-100 min-h-[140.6px] relative"
                                     :class="getTableClasses(table).state.value"
                                     @click="openOverlay($event, table)"
                                 >
-                                    <MergedIcon class="absolute left-2 top-2 size-5 text-white" v-if="isMerged(table)"/>
-                                    <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                    <div class="flex flex-col justify-center items-center gap-y-1">
+                                        <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                        <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
+                                        <template v-if="table.status === 'Empty Seat'">
+                                            <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                                <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                            </div>
+                                            <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                        </template>
+                                    </div>
                                     <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                         {{ getCurrentOrderTableDuration(table) }}
                                     </div>
-                                    <template v-else>
-                                        <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                            <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
-                                        </div>
-                                        <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
-                                    </template>
+
+                                    <MergedIcon class="absolute left-2 top-2 size-5 text-white" v-if="isMerged(table)"/>
                                     <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
                                         v-if="table.pending_count > 0"
                                     >
@@ -462,21 +471,25 @@ watch(() => props.hasOpenedShift, (newValue) => {
                         >
                             <p class="text-primary-700 text-2xs font-medium">Reservation: {{ table.reservations.length }}</p>
                         </div> -->
-                        <div class="flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] relative"
+                        <div class="flex flex-col px-6 pt-6 pb-3 justify-center items-center gap-y-3 rounded-[5px] border border-solid border-grey-100 min-h-[140.6px] relative"
                             :class="getTableClasses(table).state.value"
                             @click="openOverlay($event, table)"
                         >
-                            <MergedIcon class="absolute left-2 top-2 size-5 text-white" v-if="isMerged(table)"/>
-                            <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                            <div class="flex flex-col justify-center items-center gap-y-1">
+                                <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
+                                <template v-if="table.status === 'Empty Seat'">
+                                    <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
+                                        <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                    </div>
+                                    <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                </template>
+                            </div>
                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
                                 {{ getCurrentOrderTableDuration(table) }}
                             </div>
-                            <template v-else>
-                                <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                    <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
-                                </div>
-                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
-                            </template>
+
+                            <MergedIcon class="absolute left-2 top-2 size-5 text-white" v-if="isMerged(table)"/>
                             <div class="flex px-2 py-1 justify-center items-center gap-2.5 absolute top-[5px] right-0 rounded-l-[5px] bg-primary-600 shadow-[0_2px_4.2px_0_rgba(0,0,0,0.14)]"
                                 v-if="table.pending_count > 0"
                             >

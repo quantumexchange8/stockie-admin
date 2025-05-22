@@ -139,31 +139,31 @@ const submit = async () => {
     }
 };
 
-const pendingServeItems = computed(() => {
-    if (!props.order || !props.order.order_items) return [];
+// const pendingServeItems = computed(() => {
+//     if (!props.order || !props.order.order_items) return [];
 
-    return props.order.order_items.map((item) => {
-        // Filter and calculate `total_qty` and `total_served_qty` within a single pass
-        const filteredSubItems = item.sub_items.filter((subItem) => 
-            item.product.product_items.some((product_item) => 
-                subItem.product_item_id === product_item.id && product_item.inventory_item.keep === 'Active'
-            )
-        );
+//     return props.order.order_items.map((item) => {
+//         // Filter and calculate `total_qty` and `total_served_qty` within a single pass
+//         const filteredSubItems = item.sub_items.filter((subItem) => 
+//             item.product.product_items.some((product_item) => 
+//                 subItem.product_item_id === product_item.id && product_item.inventory_item.keep === 'Active'
+//             )
+//         );
 
-        // Calculate total quantities
-        const total_qty = filteredSubItems.reduce((total, sub_item) => total + (item.item_qty * sub_item.item_qty), 0);
-        const total_served_qty = filteredSubItems.reduce((total, sub_item) => total + sub_item.serve_qty, 0);
+//         // Calculate total quantities
+//         const total_qty = filteredSubItems.reduce((total, sub_item) => total + (item.item_qty * sub_item.item_qty), 0);
+//         const total_served_qty = filteredSubItems.reduce((total, sub_item) => total + sub_item.serve_qty, 0);
 
-        return {
-            ...item,
-            sub_items: filteredSubItems,
-            total_qty,
-            total_served_qty
-        };
-    })
-    .filter((item) => item.sub_items.length > 0)
-    .filter((undeleted) => undeleted.status !== 'Cancelled');
-});
+//         return {
+//             ...item,
+//             sub_items: filteredSubItems,
+//             total_qty,
+//             total_served_qty
+//         };
+//     })
+//     .filter((item) => item.sub_items.length > 0)
+//     .filter((undeleted) => undeleted.status !== 'Cancelled');
+// });
 
 
 const getKeptQuantity = (subItem) => {
@@ -171,9 +171,11 @@ const getKeptQuantity = (subItem) => {
 };
 
 const getTotalKeptQuantity = (item) => {
-    return item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
-            ? item.sub_items?.reduce((total, subItem) => total + getKeptQuantity(subItem), 0 ) ?? 0
-            : item.keep_item.keep_histories?.reduce((total, history) => total + parseInt(history.qty) + (parseFloat(history.cm) > 0 ? 1 : 0), 0) ?? 0;
+    // return item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' 
+    //         ? item.sub_items?.reduce((total, subItem) => total + getKeptQuantity(subItem), 0 ) ?? 0
+    //         : item.keep_item.keep_histories?.reduce((total, history) => total + parseInt(history.qty) + (parseFloat(history.cm) > 0 ? 1 : 0), 0) ?? 0;
+    
+    return item.sub_items?.reduce((total, subItem) => total + getKeptQuantity(subItem), 0 ) ?? 0;
 };
 
 const getTotalServedQty = (item) => {
@@ -246,12 +248,18 @@ const addItemToList = (item) => {
                 amount: subItem.product_item.inventory_item.keep === 'Active' 
                         ? item.product.category.keep_type !== 'cm' ? 0 : "0"
                         : 0,
-                remark: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.remark ? item.keep_item.remark : '',
-                expiration: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? false : item.keep_item.expired_from ? true : false,
-                expired_period: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? 0 : '',
-                date_range: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? [dayjs(item.keep_item.expired_from).toDate(), dayjs(item.keep_item.expired_to).toDate()] : '',
-                expired_from: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? dayjs(item.keep_item.expired_from).format('YYYY-MM-DD') : '',
-                expired_to: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_to ? dayjs(item.keep_item.expired_to).format('YYYY-MM-DD') : '',
+                // remark: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.remark ? item.keep_item.remark : '',
+                // expiration: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? false : item.keep_item.expired_from ? true : false,
+                // expired_period: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? 3 : item.keep_item.expired_from ? 0 : 3,
+                // date_range: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.expired_from ? [dayjs(item.keep_item.expired_from).toDate(), dayjs(item.keep_item.expired_to).toDate()] : '',
+                // expired_from: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? dayjs().format('YYYY-MM-DD') : item.keep_item.expired_from ? dayjs(item.keep_item.expired_from).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+                // expired_to: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? dayjs().add(3, 'month').format('YYYY-MM-DD') : item.keep_item.expired_to ? dayjs(item.keep_item.expired_to).format('YYYY-MM-DD') : dayjs().add(3, 'month').format('YYYY-MM-DD'),
+                remark: '',
+                expiration: false,
+                expired_period: 3,
+                date_range: '',
+                expired_from: dayjs().format('YYYY-MM-DD'),
+                expired_to: dayjs().add(3, 'month').format('YYYY-MM-DD'),
                 keep_id: item.type === 'Keep' ? item.keep_item_id : null
             });
         });
@@ -708,6 +716,7 @@ onMounted(() => {
                                         <Dropdown 
                                             imageOption
                                             withDescription
+                                            filter
                                             :inputArray="allCustomers"
                                             :labelText="'Keep for'"
                                             :dataValue="props.order.customer_id"
@@ -729,10 +738,10 @@ onMounted(() => {
                                             v-model="form.items.find(i => i.order_item_id === order_item.id).remark"
                                             :rows="5"
                                             :maxCharacters="60" 
-                                            :disabled="order_item.type === 'Keep'"
                                             class="col-span-full xl:col-span-4 [&>div>label:first-child]:text-xs [&>div>label:first-child]:font-medium [&>div>label:first-child]:text-grey-900"
                                             @input="updateRemarkForSubitems(order_item.id, $event.target.value)"
                                         />
+                                        <!-- :disabled="order_item.type === 'Keep'" -->
         
                                         <!-- <div class="flex justify-end items-center gap-3 self-stretch">
                                             <p class="text-base text-grey-900 font-normal">
@@ -755,7 +764,6 @@ onMounted(() => {
                                                     :inputArray="expiryPeriodOptions"
                                                     :dataValue="form.items.find(i => i.order_item_id === order_item.id).expired_period"
                                                     :inputName="'expired_period_' + index"
-                                                    :disabled="order_item.type === 'Keep'"
                                                     labelText="Expire Date Range"
                                                     inputId="expired_period"
                                                     :errorMessage="form.errors?.['items.0.expired_from']?.[0]  ?? ''"
@@ -765,6 +773,7 @@ onMounted(() => {
                                                         'Customise range...': Calendar,
                                                     }"
                                                 />
+                                                <!-- :disabled="order_item.type === 'Keep'" -->
         
                                                 <DateInput
                                                     v-if="form.items.find(i => i.order_item_id === order_item.id).expired_period === 0"
@@ -772,10 +781,10 @@ onMounted(() => {
                                                     :inputName="'date_range_' + index"
                                                     :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                                                     :range="true"
-                                                    :disabled="order_item.type === 'Keep'"
                                                     @onChange="updateValidPeriod(order_item.id, $event)"
                                                     v-model="form.items.find(i => i.order_item_id === order_item.id).date_range"
                                                 />
+                                                <!-- :disabled="order_item.type === 'Keep'" -->
                                                 <!-- <InputError :message="form.errors ? form.errors['items.0.expired_from'][0]  : ''" v-if="form.errors && form.errors['items.0.expired_from']" /> -->
                                             </div>
                                         <!-- </template> -->

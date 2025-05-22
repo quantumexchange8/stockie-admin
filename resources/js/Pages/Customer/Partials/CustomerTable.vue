@@ -10,12 +10,12 @@ import TextInput from "@/Components/TextInput.vue";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import { FilterMatchMode } from "primevue/api";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import Slider from "@/Components/Slider.vue";
 import RightDrawer from "@/Components/RightDrawer/RightDrawer.vue";
 import CustomerDetail from "./CustomerDetail.vue";
-import { useFileExport } from "@/Composables";
+import { useCustomToast, useFileExport } from "@/Composables";
 import dayjs from "dayjs";
 import CreateCustomer from "./CreateCustomer.vue";
 import EditCustomer from "./EditCustomer.vue";
@@ -38,6 +38,7 @@ const props = defineProps ({
 
 const emit = defineEmits(["applyCheckedFilters"]);
 const { exportToCSV } = useFileExport();
+const { showMessage } = useCustomToast();
 
 const customer = ref(props.customers);
 const isSidebarOpen = ref(false);
@@ -50,6 +51,7 @@ const searchQuery = ref('');
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const customerCurrentOrdersCount = ref(0);
+const showUploadButton = ref(false);
 
 const form = useForm({
     id: customer.id,
@@ -215,6 +217,217 @@ const formatPoints = (points) => {
   return pointsStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
+const fileInput = ref(null);
+const isLoading = ref(false);
+const fileName = ref('');
+const importForm = useForm({
+    keep_item_list: []
+});
+
+// Define which columns you want to extract
+const columnsToExtract = ref([
+  'Date2',
+  'NAME',
+  'ROOM',
+  'Item2',
+  'QTY',
+]);
+
+const importKeepItems = async () => {
+    isLoading.value = true;
+    importForm.post(`/customer/importKeepItems`, {
+        preserveScroll: true,
+        preserveState: 'errors',
+        onSuccess: () => {
+            setTimeout(() => {
+                showMessage({
+                    severity: 'success',
+                    summary: 'Keep item list has been imported successfully.'
+                });
+            }, 200);
+        },
+        onError: (error) => {
+            console.error(error);
+        },
+        onFinish: visit => {
+            isLoading.value = false;
+            fileInput.value = null;
+            importForm.keep_item_list = [];
+            fileName.value = '';
+        },
+    })
+    // try {
+    //     const response = await axios.post('/customer/importKeepItems', importForm);
+
+    //     setTimeout(() => {
+    //         showMessage({
+    //             severity: 'success',
+    //             summary: 'Keep item list has been imported successfully.'
+    //         });
+    //     }, 200);
+
+    // } catch (error) {
+    //     console.error(error);
+    // }  finally {
+    //     isLoading.value = false;
+    //     fileInput.value = null;
+    //     importForm.keep_item_list = [];
+    //     fileName.value = '';
+    // }
+}
+
+// Function to reformat dates
+const reformatDate = (dateValue) => {
+  if (!dateValue) return null;
+  
+  // If it's already a proper date string (from Excel)
+  if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const [year, month, day] = dateValue.split('-');
+    return `${year}/${month}/${day}`;
+  }
+  
+  // If it's an Excel date number (serial date)
+  if (typeof dateValue === 'number') {
+    const date = new Date((dateValue - (25567 + 1)) * 86400 * 1000);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}/${month}/${day}`;
+  }
+  
+  // Handle day-month formats (like "21-6")
+  if (typeof dateValue === 'string') {
+    // Check for day-month format (e.g., "21-6", "22/10")
+    const dayMonthMatch = dateValue.match(/^(\d{1,2})[-/](\d{1,2})(?:[-/](\d{2,4}))?$/);
+    
+    if (dayMonthMatch) {
+      let day = dayMonthMatch[1];
+      let month = dayMonthMatch[2];
+      let year = dayMonthMatch[3];
+      
+      // Pad with zeros if needed
+      day = day.padStart(2, '0');
+      month = month.padStart(2, '0');
+      
+      // If year is missing, use 2025 as default
+      year = year || '2025';
+      
+      // If year is 2 digits, assume 20XX
+      if (year.length === 2) {
+        year = `20${year}`;
+      }
+      
+      return `${year}/${month}/${day}`;
+    }
+  }
+  
+  // Return original value if we can't parse it
+  return dateValue;
+};
+
+// Load SheetJS from CDN
+const loadSheetJS = () => {
+  return new Promise((resolve) => {
+    if (window.XLSX) return resolve(window.XLSX);
+    
+    const script = document.createElement('script');
+    script.src = 'https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js';
+    script.onload = () => resolve(window.XLSX);
+    document.head.appendChild(script);
+  });
+};
+
+const triggerFileInput = () => {
+  fileInput.value.click();
+};
+
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  fileName.value = file.name;
+  importForm.keep_item_list = []; // Reset previous data
+  
+  try {
+    const XLSX = await loadSheetJS();
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      // Get first worksheet
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      
+      // Convert to array of arrays (raw data)
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      
+      if (rawData.length === 0) {
+        throw new Error('Empty Excel file');
+      }
+      
+      // Get headers (first row)
+      const headers = rawData[0].map(header => header.trim());
+      
+      // Find indices of columns we want to extract
+      const columnIndices = columnsToExtract.value.map(col => {
+        const index = headers.findIndex(header => header === col);
+        if (index === -1) {
+          console.warn(`Column "${col}" not found in Excel file`);
+        }
+        return index;
+      }).filter(index => index !== -1);
+      
+      // Extract data for selected columns
+      const result = rawData.slice(1)
+            .map(row => {
+                const extractedRow = {};
+                columnIndices.forEach((colIndex, i) => {
+                    if (colIndex !== -1 && colIndex < row.length) {
+                        const colName = columnsToExtract.value[i];
+                        let value = row[colIndex];
+                        
+                        // Special handling for Date2 column
+                        if (colName === 'Date2') {
+                            value = reformatDate(value);
+                        }
+                        
+                        extractedRow[colName] = value;
+                    }
+                });
+                return extractedRow;
+            })
+            .filter(row => Object.keys(row).length > 0)
+            .filter(row => row.NAME && String(row.NAME).trim() !== '');
+        
+        importForm.keep_item_list = result;
+        importKeepItems();
+    };
+    
+    reader.onerror = () => {
+      console.error('Error reading file');
+    };
+    
+    reader.readAsArrayBuffer(file);
+  } catch (error) {
+    console.error('Error processing Excel file:', error);
+  } finally {
+    fileInput.value = null;
+    importForm.keep_item_list = [];
+    fileName.value = '';
+  }
+};
+
+let hasTriggered = false;
+
+onMounted(() => {
+    const path = window.location.pathname;
+    if (path === '/customer/import-keep-items') {
+        showUploadButton.value = true;
+    }
+});
+
 watch(() => props.customers, (newValue) => customer.value = newValue)
 
 watch (() => searchQuery.value, (newValue) => {
@@ -228,8 +441,8 @@ watch (() => searchQuery.value, (newValue) => {
     customer.value = props.customers.filter(customer => {
         const tier = customer.rank.name.toLowerCase();
         const name = customer.full_name.toLowerCase();
-        const email = customer.email.toLowerCase();
-        const phoneNumber = customer.phone.toString().toLowerCase();
+        const email = customer.email?.toLowerCase();
+        const phoneNumber = customer.phone?.toString().toLowerCase();
         // const keptItem = customer.keep_items ? customer.keep_items.item_name.toLowerCase() : '';
         const keptItems = Array.isArray(customer.keep_items)
             ? customer.keep_items.some(item => item.item_name.toLowerCase().includes(query))
@@ -237,8 +450,8 @@ watch (() => searchQuery.value, (newValue) => {
 
         return  tier.includes(query) ||
                 name.includes(query) ||
-                email.includes(query) ||
-                phoneNumber.includes(query) ||
+                email?.includes(query) ||
+                phoneNumber?.includes(query) ||
                 keptItems;
                 // phoneNumber.includes(query);
     })
@@ -263,10 +476,29 @@ const deleteModalDescription = computed(() => {
         <div class="flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]">
             <div class="inline-flex items-center w-full justify-between gap-2.5">
                 <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Visited Customer</span>
+                <input 
+                    type="file" 
+                    ref="fileInput" 
+                    @change="handleFileUpload" 
+                    accept=".xlsx,.xls,.csv"
+                    class="hidden"
+                />
+                <Button
+                    v-if="showUploadButton"
+                    :type="'button'"
+                    :variant="'tertiary'"
+                    :size="'lg'"
+                    class="!w-fit"
+                    @click="triggerFileInput"
+                    :disabled="isLoading"
+                >
+                    <template v-if="isLoading">Processing...</template>
+                    <template v-else>Import Keep Items</template>
+                </Button>
                 <Menu as="div" class="relative inline-block text-left">
                     <div>
                         <MenuButton
-                            class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
+                            class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-3 max-h-11 text-sm font-medium text-primary-900 hover:text-primary-800">
                             Export
                             <UploadIcon class="size-4 cursor-pointer" />
                         </MenuButton>

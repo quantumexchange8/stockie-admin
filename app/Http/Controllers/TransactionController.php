@@ -112,7 +112,7 @@ class TransactionController extends Controller
                                     'order.orderItems.subItems.productItem.inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id,current_kept_amt', 
                                     'order.orderItems.commission:id,order_item_id,comm_item_id', 
                                 ])
-                                ->find($request->id);
+                                ->find($request->params['id']);
 
             $customer = $transaction->customer;
 
@@ -211,6 +211,7 @@ class TransactionController extends Controller
                                 'cm' => '0.00',
                                 'keep_date' => $keepItem->updated_at,
                                 'kept_balance' => $tempOrderItem->current_kept_amt + $item['item_qty'],
+                                'kept_from_table' => $keepItem->kept_from_table,
                                 'status' => 'Keep',
                             ]);
                             
@@ -221,11 +222,13 @@ class TransactionController extends Controller
 
                     $item->update(['status' => 'Cancelled']);
 
-                    // Handle waiter commision & incentives
-                    EmployeeCommission::where('id', $item->commission['id'])
-                                        ->update(['amount', 0.00]);
-                    
-                        // Need to add handling for incentive: what if the transaction is before an existing incentive
+                    if ($item->commission) {
+                        // Handle waiter commision & incentives
+                        EmployeeCommission::where('id', $item->commission['id'])
+                                            ->update(['amount', 0.00]);
+                        
+                            // Need to add handling for incentive: what if the transaction is before an existing incentive
+                    }
                 }
 
                 $existingOrder->update(['status' => 'Order Cancelled']);

@@ -24,6 +24,7 @@ class KeepItem extends Model
         'cm',
         'remark',
         'user_id',
+        'kept_from_table',
         'status',
         'expired_from',
         'expired_to',

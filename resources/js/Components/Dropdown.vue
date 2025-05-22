@@ -96,38 +96,39 @@ const updateSelectedOption = (option) => {
 }
 
 // Close dropdown when it loses focus
-const handleBlur = () => {
-    if (dropdownRef.value) {
-        if (open.value) {
-            dropdownRef.value.hide(); // Programmatically close the dropdown panel
-        }
-    }
-};
+// const handleBlur = () => {
+    // if (dropdownRef.value) {
+    //     console.log(dropdownRef.value);
+    //     if (open.value) {
+    //         dropdownRef.value.hide(); // Programmatically close the dropdown panel
+    //     }
+    // }
+// };
 
 // Only if the option array thats been passed has image provided
 const getOptionData = (value) => {
     return props.inputArray.find((item) => item.value === value);
 }
 
-onMounted(() => {
-    const dropdownInput = document.querySelector('.modal-component');
+// onMounted(() => {
+//     const dropdownInput = document.querySelector('.modal-component');
 
-    if (dropdownInput) {
-        dropdownInput.addEventListener('click', handleBlur);
-    } else {
-        document.addEventListener('click', handleBlur);
-    }
-});
+//     if (dropdownInput) {
+//         dropdownInput.addEventListener('click', handleBlur);
+//     } else {
+//         document.addEventListener('click', handleBlur);
+//     }
+// });
 
-onUnmounted(() => {
-    const dropdownInput = document.querySelector('.modal-component');
+// onUnmounted(() => {
+//     const dropdownInput = document.querySelector('.modal-component');
 
-    if (dropdownInput) {
-        dropdownInput.removeEventListener('click', handleBlur);
-    } else {
-        document.addEventListener('click', handleBlur);
-    }
-});
+//     if (dropdownInput) {
+//         dropdownInput.removeEventListener('click', handleBlur);
+//     } else {
+//         document.addEventListener('click', handleBlur);
+//     }
+// });
 </script>
 
 <template>

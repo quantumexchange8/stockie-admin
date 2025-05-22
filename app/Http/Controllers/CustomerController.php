@@ -4,9 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CustomerRequest;
 use App\Models\Customer;
+use App\Models\IventoryItem;
 use App\Models\KeepHistory;
 use App\Models\KeepItem;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\OrderItemSubitem;
+use App\Models\OrderTable;
+use App\Models\Payment;
+use App\Models\PaymentDetail;
 use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\Ranking;
@@ -15,6 +21,8 @@ use App\Models\User;
 use App\Notifications\InventoryOutOfStock;
 use App\Notifications\InventoryRunningOutOfStock;
 use App\Services\RunningNumberService;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -88,6 +96,7 @@ class CustomerController extends Controller
 
         Customer::create([
             'uuid' => RunningNumberService::getID('customer'),
+            'name' => $validatedData['full_name'],
             'full_name' => $validatedData['full_name'],
             'dial_code' => '+60',
             'phone' => $validatedData['phone'],
@@ -264,6 +273,8 @@ class CustomerController extends Controller
                     'qty' => $item->qty,
                     'cm' => number_format((float) $item->cm, 2, '.', ''),
                     'keep_date' => $item->created_at,
+                    'user_id' => auth()->user()->id,
+                    'kept_from_table' => $item->kept_from_table,
                     'remark' => $request->remark,
                     'status' => 'Deleted',
                 ]);
@@ -410,6 +421,8 @@ class CustomerController extends Controller
             'qty' => $request->type === 'qty' ? round($request->return_qty, 2) : 0.00,
             'cm' => $request->type === 'cm' ? round($selectedItem->cm, 2) : 0.00,
             'keep_date' => $selectedItem->created_at,
+            'user_id' => auth()->user()->id,
+            'kept_from_table' => $selectedItem->kept_from_table,
             'status' => 'Returned',
         ]);
 
@@ -447,7 +460,8 @@ class CustomerController extends Controller
                                         'keepItem.orderItemSubitem:id,order_item_id,product_item_id', 
                                         'keepItem.orderItemSubitem.productItem:id,inventory_item_id', 
                                         'keepItem.orderItemSubitem.productItem.inventoryItem:id,item_name', 
-                                        'keepItem.waiter:id,full_name'
+                                        'keepItem.waiter:id,full_name',
+                                        'waiter:id,full_name'
                                     ])
                                     ->whereHas('keepItem', function ($query) use ($id) {
                                         $query->where('customer_id', $id);
@@ -464,8 +478,9 @@ class CustomerController extends Controller
                                                         ? $history->keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
                                                         : $history->keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
     
-                                            $history->keepItem->waiter->image = $history->keepItem->waiter->getFirstMediaUrl('user');
-                                        }
+                                                $history->keepItem->waiter->image = $history->keepItem->waiter->getFirstMediaUrl('user');
+                                            }
+                                            $history->waiter->image = $history->waiter->getFirstMediaUrl('user');
                                         return $history;
                                     });
 
@@ -668,5 +683,191 @@ class CustomerController extends Controller
                                     ->count();
 
         return response()->json($currentOrdersCount);
+    }
+
+    public function importKeepItems(Request $request){
+        return DB::transaction(function () use ($request) {
+            // Create customer from imported excel
+            $customerList = collect($request->keep_item_list)->map(fn ($item) => $item['NAME'])->toArray();
+            $defaultRank = Ranking::where('name', 'Member')->first(['id', 'name']);
+
+            foreach ($customerList as $key => $value) {
+                $existingCustomer = Customer::where('name', $value)->first();
+
+                if (!$existingCustomer) {
+                    Customer::create([
+                        'uuid' => RunningNumberService::getID('customer'),
+                        'name' => $value,
+                        'full_name' => $value,
+                        'dial_code' => '+60',
+                        'password' => Hash::make('Test1234.'),
+                        'ranking' => $defaultRank->id,
+                        'point' => 0,
+                        'total_spending' => 0.00,
+                        'first_login' => '1',
+                        'status' => 'verified',
+                    ]);
+                }
+            }
+
+            // Check in table
+            $keepItemList = collect($request->keep_item_list);
+            
+            // Filter out empty rows (where Item2 might be null or empty)
+            $filteredItems = $keepItemList->filter(fn ($item) => isset($item['Item2']) && !empty($item['Item2']));
+        
+            // Group by item name and sum quantities
+            $itemTotals = $filteredItems->groupBy('Item2')->map(fn ($group) => $group->sum('QTY'));
+        
+            // Sort the items alphabetically
+            $sortedItems = $itemTotals->sortKeys();
+
+            // CHeck in customer to table
+            $order = Order::create([
+                'order_no' => RunningNumberService::getID('order'),
+                'pax' => 2,
+                'user_id' => 1,
+                'amount' => 0.00,
+                'total_amount' => 0.00,
+                'status' => 'Order Completed',
+            ]);
+
+            OrderTable::create([
+                'table_id' => 1,
+                'pax' => 2,
+                'user_id' => 1,
+                'status' => 'Order Completed',
+                'order_id' => $order->id
+            ]);
+
+
+            // Place order items
+            if (count($sortedItems) > 0) {
+                foreach ($sortedItems as $itemName => $itemQty) {
+                    $product = Product::whereHas('productItems.inventoryItem', function($query) use ($itemName) {
+                                            $query->where('item_name', ucwords($itemName));
+                                        })
+                                        ->where('bucket', 'single')
+                                        ->with('productItems')
+                                        ->select('id')
+                                        ->first();
+
+                    // dd($itemName, $itemQty, $product);
+
+                    $new_order_item = OrderItem::create([
+                        'order_id' => $order->id,
+                        'user_id' => 1,
+                        'type' => 'Normal',
+                        'product_id' => $product->id,
+                        'item_qty' => $itemQty,
+                        'amount_before_discount' => 0.00,
+                        'discount_id' => null,
+                        'discount_amount' => 0.00,
+                        'amount' => 0.00,
+                        'status' => 'Served',
+                    ]);
+
+                    if (count($product->productItems) > 0) {
+                        foreach ($product->productItems as $key => $value) {
+                            OrderItemSubitem::create([
+                                'order_item_id' => $new_order_item->id,
+                                'product_item_id' => $value['id'],
+                                'item_qty' => $value['qty'],
+                                'serve_qty' => $itemQty * $value['qty'],
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Keep item
+            if (count($keepItemList) > 0) {
+                $orderItems = $order->orderItems;
+                // dd($keepItemList);
+
+                // Loop through keep item listing
+                foreach ($keepItemList as $keepItemKey => $keepItem) {
+                    $keepItemName = ucwords($keepItem['Item2']);
+
+                    // Loop through order items
+                    foreach ($orderItems as $orderItemKey => $orderItem) {
+                        // Loop through order item's subitems
+                        foreach ($orderItem->subItems as $subItemKey => $subItem) {
+                            $associatedInventoryName = $subItem->productItem->inventoryItem->item_name;
+
+                            if ($keepItemName === $associatedInventoryName) {
+                                // dd($associatedInventoryName, $subItem, $keepItem);
+                                $customer = Customer::where('name', $keepItem['NAME'])->first('id');
+
+                                // if (!$customer) dd($keepItem, $customer);
+                                $newKeep = KeepItem::create([
+                                    'customer_id' => $customer->id,
+                                    'order_item_subitem_id' => $subItem['id'],
+                                    'qty' => $keepItem['QTY'],
+                                    'cm' => 0,
+                                    'remark' => null,
+                                    'user_id' => 1,
+                                    'kept_from_table' => $keepItem['ROOM'],
+                                    'status' => 'Keep',
+                                    'expired_from' => Carbon::parse($keepItem['Date2'])->format('Y-m-d H:i:s'),
+                                    'expired_to' => Carbon::parse($keepItem['Date2'])->addDays(90)->format('Y-m-d H:i:s')
+                                ]);
+
+                                $inventoryItem = IventoryItem::where('item_name', $keepItemName)->first();
+
+                                KeepHistory::create([
+                                    'keep_item_id' => $newKeep->id,
+                                    'qty' => $keepItem['QTY'],
+                                    'cm' => '0.00',
+                                    'keep_date' => $keepItem['Date2'],
+                                    'user_id' => auth()->user()->id,
+                                    'kept_balance' => $inventoryItem->current_kept_amt + $keepItem['QTY'],
+                                    'kept_from_table' => $keepItem['ROOM'],
+                                    'status' => 'Keep',
+                                ]);
+                                
+                                $inventoryItem->update([
+                                    'total_kept' => $inventoryItem->total_kept + $keepItem['QTY'],
+                                    'current_kept_amt' => $inventoryItem->current_kept_amt + $keepItem['QTY']
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Payment
+            $payment = Payment::create([
+                'order_id' => $order->id,
+                'table_id' => $order->orderTable->pluck('table.id'),
+                'receipt_no' => RunningNumberService::getID('payment'),
+                'receipt_start_date' => $order->created_at,
+                'receipt_end_date' => now('Asia/Kuala_Lumpur')->format('Y-m-d H:i:s'),
+                'total_amount' => 0.00,
+                'rounding' => 0.00,
+                'sst_amount' => 0.00,
+                'service_tax_amount' => 0.00,
+                'discount_id' => null,
+                'discount_amount' => 0.00,
+                'bill_discounts' => null,
+                'bill_discount_total' => 0.00,
+                'grand_total' => 0.00,
+                'amount_paid' => 0.00,
+                'change' => 0.00,
+                'point_earned' => 0,
+                'pax' => $order->pax,
+                'status' => 'Successful',
+                'customer_id' => null,
+                'handled_by' => 1,
+            ]);
+
+            PaymentDetail::create([
+                'payment_id' => $payment->id,
+                'payment_method' => 'Card',
+                'amount' => 0.00,
+            ]);
+
+            return redirect()->back();
+        });
     }
 }

@@ -98,6 +98,11 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasMany(KeepItem::class);
     }
+
+    public function keepHistories(): HasMany
+    {
+        return $this->hasMany(KeepHistory::class);
+    }
     
     /**
      * Get the orders served by the waiter.

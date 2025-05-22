@@ -1,6 +1,7 @@
 <script setup>
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { CommentIcon } from '@/Components/Icons/solid';
+import Modal from '@/Components/Modal.vue';
 import TabView from '@/Components/TabView.vue';
 import Tag from '@/Components/Tag.vue';
 import axios from 'axios';
@@ -15,6 +16,8 @@ const props = defineProps({
     selectedTab: Number,
 })
 
+const historyDetailIsOpen = ref(false);
+const selectedRecord = ref(null);
 const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired', 'Extended', 'Deleted']);
 
 const formatHistoryStatus = (status) => {
@@ -52,6 +55,29 @@ const filteredHistoryByStatus = (status) => {
     return filteredArr;
 }
 
+const getStatusVariant = (status) => {
+    switch (status) {
+        case 'Keep': return 'default';
+        case 'Returned':
+        case 'Served': return 'green'
+        case 'Extended': return 'blue'
+        case 'Deleted': return 'red'
+        default: return 'grey'
+    }
+}; 
+
+const openForm = (record) => {
+    selectedRecord.value = record;
+    historyDetailIsOpen.value = true;
+}
+
+const closeForm = () => {
+    historyDetailIsOpen.value = false;
+    setTimeout(() => {
+        selectedRecord.value = null;
+    }, 300);
+}
+
 onMounted(() => getKeepHistory());
 </script>
 
@@ -66,7 +92,7 @@ onMounted(() => getKeepHistory());
                                 <div class="flex w-full px-[10px] py-1 items-center gap-[10px] self-stretch rounded-sm bg-primary-25">
                                     <span class="text-primary-900 text-sm font-medium">{{ dayjs(item.created_at).format('DD/MM/YYYY, hh:mm A') }}</span>
                                 </div>
-                                <div class="w-full flex justify-between items-center self-stretch">
+                                <div class="w-full flex justify-between items-center self-stretch" @click="openForm(item)">
                                     <div class="flex w-full self-stretch items-start gap-3">
                                         <div class="size-[60px] relative bg-primary-25">
                                             <img 
@@ -79,27 +105,20 @@ onMounted(() => getKeepHistory());
                                             <div class="flex items-center gap-1 self-stretch">
                                                 <span class="text-grey-400 text-2xs font-normal">{{ item.keep_date ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}` : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
-                                                <span class="text-primary-900 text-2xs font-normal">
-                                                    {{ item.status === 'Returned' ? 'Returned by' : item.status === 'Expired' ? 'Expired' : 'Kept by' }}
-                                                </span>
+                                                <span class="text-primary-900 text-2xs font-normal">By</span>
                                                 <img 
-                                                    :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                    :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                     alt="WaiterProfileImage"
                                                     class="size-4 rounded-full object-contain"
                                                 >
-                                                <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.full_name }}</span>
+                                                <p class="text-primary-900 text-2xs font-normal">
+                                                    {{ item.waiter.full_name }} at 
+                                                    <span class="font-bold">{{ item.status === 'Served' ? item.redeemed_to_table : item.kept_from_table }}</span>
+                                                </p>
                                             </div>
                                             <div class="flex items-center gap-2 self-stretch">
                                                 <Tag 
-                                                    :variant="item.status === 'Keep' 
-                                                                    ? 'default' 
-                                                                    : item.status === 'Returned' || item.status === 'Served'
-                                                                            ? 'green' 
-                                                                            : item.status === 'Extended'
-                                                                                ? 'blue'
-                                                                                : item.status === 'Deleted' 
-                                                                                    ? 'red' 
-                                                                                    : 'grey'"
+                                                    :variant="getStatusVariant(item.status)"
                                                     :value="item.status"
                                                     class="flex px-2.5 py-1.5 justify-center items-center gap-2.5"
                                                 />
@@ -142,7 +161,7 @@ onMounted(() => getKeepHistory());
                                 <div class="flex w-full px-[10px] py-1 items-center gap-[10px] self-stretch rounded-sm bg-primary-25">
                                     <span class="text-primary-900 text-sm font-medium">{{ dayjs(item.created_at).format('DD/MM/YYYY, hh:mm A') }}</span>
                                 </div>
-                                <div class="w-full flex justify-between items-center self-stretch">
+                                <div class="w-full flex justify-between items-center self-stretch" @click="openForm(item)">
                                     <div class="flex w-full self-stretch items-start gap-3">
                                         <div class="size-[60px] bg-primary-25">
                                              <img 
@@ -155,27 +174,20 @@ onMounted(() => getKeepHistory());
                                             <div class="flex items-center gap-1 self-stretch">
                                                 <span class="text-grey-400 text-2xs font-normal">{{ item.keep_date ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}` : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
-                                                <span class="text-primary-900 text-2xs font-normal">
-                                                    {{ item.status === 'Returned' ? 'Returned by' : 'Kept by' }}
-                                                </span>
+                                                <span class="text-primary-900 text-2xs font-normal">By</span>
                                                 <img 
-                                                    :src="item.keep_item.waiter.image ? item.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                    :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                     alt="WaiterProfileImage"
                                                     class="size-4 rounded-full object-contain"
                                                 >
-                                                <span class="text-primary-900 text-2xs font-normal">{{ item.keep_item.waiter.full_name }}</span>
+                                                <span class="text-primary-900 text-2xs font-normal">
+                                                    {{ item.waiter.full_name }} at 
+                                                    <span class="font-bold">{{ item.status === 'Served' ? item.redeemed_to_table : item.kept_from_table }}</span>
+                                                </span>
                                             </div>
                                             <div class="flex items-center gap-2 self-stretch">
                                                 <Tag 
-                                                    :variant="item.status === 'Keep' 
-                                                                    ? 'default' 
-                                                                    : item.status === 'Returned' || item.status === 'Served'
-                                                                            ? 'green'
-                                                                            : item.status === 'Extended'
-                                                                                ? 'blue' 
-                                                                                : item.status === 'Deleted' 
-                                                                                    ? 'red' 
-                                                                                    : 'grey'"
+                                                    :variant="getStatusVariant(item.status)"
                                                     :value="item.status"
                                                     class="flex px-2.5 py-1.5 justify-center items-center gap-2.5"
                                                 />
@@ -208,4 +220,78 @@ onMounted(() => getKeepHistory());
             </template>
         </TabView>
     </div>
+
+    <!-- View keep history details -->
+    <Modal
+        :title="'Detail'"
+        :show="historyDetailIsOpen" 
+        :maxWidth="'2xs'" 
+        @close="closeForm"
+    >
+        <template v-if="selectedRecord">
+            <div class="flex flex-col gap-y-6 items-start max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <div class="flex flex-col items-start gap-y-4 self-stretch">
+                    <div class="flex flex-col gap-y-5 items-start self-stretch">
+                        <div class="flex flex-col gap-y-1 items-start">
+                            <p class="text-grey-900 text-base font-normal self-stretch">Current status</p>
+                            <Tag :value="selectedRecord.status" :variant="getStatusVariant(selectedRecord.status)" />
+                        </div>
+                        
+                        <div class="flex flex-col gap-y-1 items-start">
+                            <p class="text-grey-900 text-base font-normal self-stretch">Kept item</p>
+                            <p class="text-grey-900 text-base font-bold self-stretch">{{ selectedRecord.keep_item.item_name }}</p>
+                        </div>
+                    
+                        <div class="flex flex-col gap-y-1 items-start">
+                            <p class="text-grey-900 text-base font-normal self-stretch">Quantity/cm</p>
+                            <p class="text-grey-900 text-base font-bold self-stretch">
+                                <template v-if="selectedRecord.qty > selectedRecord.cm">{{ `x${selectedRecord.qty}` }}</template>
+                                <template v-else>{{ `${selectedRecord.cm} cm` }}</template>
+                            </p>
+                        </div>
+                    
+                        <div class="flex flex-col gap-y-1 items-start">
+                            <p class="text-grey-900 text-base font-normal self-stretch">Expire on</p>
+                            <p class="text-grey-900 text-base font-bold self-stretch">{{ dayjs(selectedRecord.keep_item.expired_to).format('DD/MM/YYYY') }}</p>
+                        </div>
+                    
+                        <div class="flex flex-col gap-y-1 items-start">
+                            <p class="text-grey-900 text-base font-normal self-stretch">Remark</p>
+                            <p class="text-grey-900 text-base font-bold self-stretch">{{ selectedRecord.remark ?? '-' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-y-4 p-2 items-start self-stretch bg-grey-50">
+                        <div class="flex flex-col items-start gap-y-1 self-stretch">
+                            <p class="text-black text-sm font-semibold">
+                                {{ `${selectedRecord.kept_from_table}, at ${dayjs(selectedRecord.keep_date).format('DD/MM/YYYY, HH:mm')}` }}
+                            </p>
+                            <div class="flex items-center gap-1 self-stretch">
+                                <p class="text-grey-700 text-xs font-normal">Kept by: {{ selectedRecord.keep_item.waiter.full_name }}</p>
+                                <img 
+                                    :src="selectedRecord.keep_item.waiter.image ? selectedRecord.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt="WaiterProfileImage"
+                                    class="size-4 rounded-full object-contain"
+                                >
+                            </div>
+                        </div>
+
+                        <div v-if="selectedRecord.status === 'Served'" class="flex flex-col items-start gap-y-1 self-stretch">
+                            <p class="text-black text-sm font-semibold">
+                                {{ `${selectedRecord.redeemed_to_table}, at ${dayjs(selectedRecord.created_at).format('DD/MM/YYYY, HH:mm')}` }}
+                            </p>
+                            <div class="flex items-center gap-1 self-stretch">
+                                <p class="text-grey-700 text-xs font-normal">Served by: {{ selectedRecord.waiter.full_name }}</p>
+                                <img 
+                                    :src="selectedRecord.waiter.image ? selectedRecord.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt="WaiterProfileImage"
+                                    class="size-4 rounded-full object-contain"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </Modal>
 </template>
