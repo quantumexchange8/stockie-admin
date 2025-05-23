@@ -185,7 +185,7 @@ const intervals = ref({});
 // Setup fetchZones emitter only once
 onMounted(() => {
     const fetchZoneInterval = setInterval(() => {
-        // emit('fetchZones');
+        emit('fetchZones');
     }, 5000);
     intervals.value['fetchZones'] = fetchZoneInterval;
 });
