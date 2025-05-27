@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\ConfigMerchant;
 use App\Models\Customer;
 use App\Models\CustomerReward;
+use App\Models\EmployeeCommission;
 use App\Models\IventoryItem;
 use App\Models\KeepHistory;
 use App\Models\KeepItem;
@@ -401,6 +402,7 @@ class OrderController extends Controller
         $products = Product::with([
                                 'productItems.inventoryItem', 
                                 'category:id,name', 
+                                'commItem.configComms'
                             ])
                             ->where('availability', 'Available')
                             ->orderBy('product_name')
@@ -426,7 +428,20 @@ class OrderController extends Controller
                                 }
                                 $product['stock_left'] = $minStockCount; 
                                 $product['category_name'] = $product->category->name;
+
+                                $configCommItem = $product->commItem;
+        
+                                if ($configCommItem) {
+                                    $commissionType = $configCommItem->configComms->comm_type;
+                                    $commissionRate = $configCommItem->configComms->rate;
+                                    $commissionAmount = $commissionType === 'Fixed amount per sold product' 
+                                            ? $commissionRate * 1
+                                            : $product->price * 1 * ($commissionRate / 100);
+                                }
                                 
+                                $product['commission_amount'] = $configCommItem ? round($commissionAmount, 2) : 0.00;
+                                
+                                unset($product->commItem);
                                 unset($product->category);
 
                                 return $product;
@@ -1193,8 +1208,24 @@ class OrderController extends Controller
 
     public function getOrderDetails(Request $request) 
     {
-        $order = Order::with(['orderTable.table', 'orderItems', 'voucher'])
+        $order = Order::with(['orderTable.table', 'orderItems.product.commItem.configComms', 'voucher'])
                         ->find($request->order_id);
+
+        $order->orderItems->each(function ($item) {
+            $item['image'] = $item->product->getFirstMediaUrl('product');
+
+            $configCommItem = $item->product->commItem;
+
+            if ($configCommItem) {
+                $commissionType = $configCommItem->configComms->comm_type;
+                $commissionRate = $configCommItem->configComms->rate;
+                $commissionAmount = $commissionType === 'Fixed amount per sold product' 
+                        ? $commissionRate * $item->item_qty
+                        : $item->product->price * $item->item_qty * ($commissionRate / 100);
+            }
+            
+            $item['commission_amount'] = $configCommItem ? round($commissionAmount, 2) : 0.00;
+        });
 
         $currentTable = $this->getPendingServeItemsQuery($request->table_id)->get();
 
@@ -1207,8 +1238,21 @@ class OrderController extends Controller
                 }
 
                 foreach ($table->order->orderItems as $orderItem) {
-                    $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+                    $orderItem['image'] = $orderItem->product->getFirstMediaUrl('product');
                     $pendingServeItems->push($orderItem);
+
+                    $configCommItem = $orderItem->product->commItem;
+
+                    if ($configCommItem) {
+                        $commissionType = $configCommItem->configComms->comm_type;
+                        $commissionRate = $configCommItem->configComms->rate;
+                        $commissionAmount = $commissionType === 'Fixed amount per sold product' 
+                                ? $commissionRate * 1
+                                : $orderItem->product->price * 1 * ($commissionRate / 100);
+                    }
+                    
+                    $orderItem['commission_amount'] = $configCommItem ? $commissionAmount : 0.00;
+                    unset($orderItem->product->commItem);
                 }
             }
         });
@@ -1589,7 +1633,7 @@ class OrderController extends Controller
                                         'order.voucher:id,reward_type,discount', 
                                         'order.payment.customer', 
                                         'order.orderItems' => fn($query) => $query->whereNotIn('status', ['Cancelled']),
-                                        'order.orderItems.product',
+                                        'order.orderItems.product.commItem.configComms',
                                         'order.orderItems.subItems.productItem.inventoryItem',
                                     ])
                                     ->where([
@@ -1618,6 +1662,18 @@ class OrderController extends Controller
                     if ($orderItem->product) { 
                         $orderItem->product->image = $orderItem->product->getFirstMediaUrl('product');
                         $orderItem->product->discount_item = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first(); 
+
+                        $configCommItem = $orderItem->product->commItem;
+
+                        if ($configCommItem) {
+                            $commissionType = $configCommItem->configComms->comm_type;
+                            $commissionRate = $configCommItem->configComms->rate;
+                            $commissionAmount = $commissionType === 'Fixed amount per sold product' 
+                                    ? $commissionRate * $orderItem->item_qty
+                                    : $orderItem->product->price * $orderItem->item_qty * ($commissionRate / 100);
+                        }
+                        
+                        $orderItem['commission_amount'] = $configCommItem ? round($commissionAmount, 2) : 0.00;
                     }
                 }
             }
@@ -1701,9 +1757,7 @@ class OrderController extends Controller
     public function createCustomerFromOrder(Request $request)
     {
         try {
-            $existingCustomer = Customer::where('email', $request->email)
-                                        ->orWhere('phone', $request->phone)
-                                        ->first(['id', 'full_name', 'phone']);
+            $existingCustomer = Customer::where('name', $request->full_name)->first(['id', 'full_name', 'phone']);
 
             if ($existingCustomer) {
                 $existingCustomer->image = $existingCustomer->getFirstMediaUrl('customer');
@@ -1719,12 +1773,13 @@ class OrderController extends Controller
             $validatedData = $request->validate(
                 [
                     'full_name' => 'required|string|max:255|unique:customers,full_name',
-                    'phone' => 'nullable|string|max:255',
+                    'phone' => 'nullable|integer',
                     'email' => 'nullable|email|unique:customers,email',
                     'order_id' => 'required',
                 ], 
                 [
                     'full_name.unique' => 'Username has already been taken.',
+                    'phone.integer' => 'This field must be in numbers only.',
                     'email.unique' => 'Email has already been taken.',
                     'email.email' => 'Invalid email.',
                     'required' => 'This field is required.',
