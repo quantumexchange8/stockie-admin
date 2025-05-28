@@ -347,13 +347,42 @@ class AttendanceController extends Controller
             $checkInTime = Carbon::parse($validatedData['check_in']);
                     
             // $existingAttendance = $this->checkExistingAttendance($waiter, 'in');
-            $existingAttendance = $waiter->latestAttendance()->first(['id', 'check_in', 'status']);
-            if ($existingAttendance && ($existingAttendance->status === 'Checked in' || Carbon::parse($existingAttendance->check_in)->isToday())) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'You are already checked in for today.',
-                ], 422);
-            }
+            // $existingAttendance = $waiter->latestAttendance()->first(['id', 'check_in', 'check_out', 'status']);
+            // if ($existingAttendance) {
+            //     if ($existingAttendance->status === 'Checked in') {
+            //         return response()->json([
+            //             'status' => 'error',
+            //             'message' => 'You are already checked in for today.',
+            //         ], 422);
+            //     }
+
+            //     if (
+            //         $existingAttendance->check_out && 
+            //         $request->clock_in_confirmation == false &&
+            //         Carbon::parse($existingAttendance->check_out) >= now()->subMinutes(60) &&
+            //         Carbon::parse($existingAttendance->check_out) <= now()
+            //     ) {
+            //         return response()->json([
+            //             'status' => 'error',
+            //             'message' => 'If you meant to clock back in, confirm to get started again.',
+            //         ], 422);
+            //     }
+
+            //     return response()->json([
+            //         'status' => 'error',
+            //         'message' => 'You are already checked in for today.',
+            //         'existingAttendance' => $existingAttendance,
+            //         'more_equal' => Carbon::parse($existingAttendance->check_out) >= now()->subMinutes(60),
+            //         'less_equal' => Carbon::parse($existingAttendance->check_out) <= now()
+            //     ], 422);
+
+            //     // if ($existingAttendance && ($existingAttendance->status === 'Checked in' || Carbon::parse($existingAttendance->check_in)->isToday())) {
+            //     //     return response()->json([
+            //     //         'status' => 'error',
+            //     //         'message' => 'You are already checked in for today.',
+            //     //     ], 422);
+            //     // }
+            // }
 
             // Case 1: No passcode exists
             if (is_null($waiter->passcode)) {

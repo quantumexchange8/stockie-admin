@@ -71,9 +71,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Tables
         Route::get('/tables', 'getAllTables');
         Route::get('/customers', 'getAllCustomers');
+        Route::get('/auto_unlock_timer', 'getAutoUnlockDuration');
         Route::post('/check_in_table', 'checkInTable');
         Route::post('/check_in_customer', 'checkInCustomer');
         Route::post('/check_in_reserved_table', 'checkInReservedTable');
+        Route::post('/lock_table', 'handleTableLock');
 
         // Order
         // Route::get('/order/order_summary', 'getOrderSummary');

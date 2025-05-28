@@ -22,6 +22,7 @@ use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\Ranking;
 use App\Models\Reservation;
+use App\Models\Setting;
 use App\Models\ShiftTransaction;
 use App\Models\StockHistory;
 use App\Models\Table;
@@ -76,7 +77,7 @@ class OrderController extends Controller
         $reservedTablesId = $this->getReservedTablesId();
 
         $zones = Zone::with([
-                            'tables:id,table_no,seat,zone_id,status,order_id',
+                            'tables:id,table_no,seat,zone_id,status,order_id,is_locked',
                             'tables.orderTables' => function ($query) {
                                 $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
                                     ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at');
@@ -1773,12 +1774,13 @@ class OrderController extends Controller
             $validatedData = $request->validate(
                 [
                     'full_name' => 'required|string|max:255|unique:customers,full_name',
-                    'phone' => 'nullable|integer',
+                    'phone' => 'nullable|integer|unique:customers,phone',
                     'email' => 'nullable|email|unique:customers,email',
                     'order_id' => 'required',
                 ], 
                 [
                     'full_name.unique' => 'Username has already been taken.',
+                    'phone.unique' => 'Phone number has already been taken.',
                     'phone.integer' => 'This field must be in numbers only.',
                     'email.unique' => 'Email has already been taken.',
                     'email.email' => 'Invalid email.',
@@ -2592,5 +2594,30 @@ class OrderController extends Controller
                 'errors' => $e
             ], 422);
         };
+    }
+
+    public function getAutoUnlockDuration() {
+        $setting = Setting::where('name', 'Table Auto Unlock')
+                            ->first(['name', 'value_type', 'value']);
+    
+        return response()->json($setting);
+    }
+    
+    public function handleTableLock(Request $request)
+    {
+        $action = $request->action;
+
+        if (in_array($action, ['lock', 'unlock'])) {
+            Table::whereIn('id', $request->table_id_array)->update(['is_locked' => $action === 'lock']);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $action === 'unlock' ? 'The table you were viewing has been unlocked' : 'The table you are currently viewing will be locked'
+            ], 201);
+        }
+
+        return response()->json([
+            'title' => 'Error handling table lock state.',
+        ], 422);
     }
 }
