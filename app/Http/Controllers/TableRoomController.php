@@ -147,6 +147,7 @@ class TableRoomController extends Controller
             'seat' => $validatedData['seat'],
             'zone_id' => $validatedData['zone_id'],
             'status' => 'Empty Seat',
+            'is_locked' => false,
         ]);
 
         activity()->useLog('create-table')

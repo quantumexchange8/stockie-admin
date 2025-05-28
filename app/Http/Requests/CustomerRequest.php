@@ -24,8 +24,13 @@ class CustomerRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
-            'phone' => 'nullable|string|max:255',
+        $rules['phone'] = [
+            'nullable',
+            'string',
+            'max:255',
+            $this->input('id') 
+                    ? Rule::unique('customers')->ignore($this->input('id'))->whereNull('deleted_at')
+                    : 'unique:customers,phone'
         ];
 
         $rules['password'] = [

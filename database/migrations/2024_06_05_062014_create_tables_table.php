@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('status');
             $table->string('order_id');
             $table->string('state')->default('active');
+            $table->boolean('is_locked');
             $table->softDeletes();
             $table->timestamps();
         });

@@ -1,4 +1,4 @@
-import { reactive, watchEffect, watch } from 'vue'
+import { reactive, watchEffect, watch, ref, onMounted, onUnmounted } from 'vue'
 import { useToast } from 'primevue/usetoast';
 import { usePage } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
@@ -364,4 +364,36 @@ export const vClickOutside = {
         document.removeEventListener("click", element.__clickedOutsideHandler__);
         delete element.__clickedOutsideHandler__; // Cleanup
     },
+};
+
+// CHeck for user inactivity after x seconds
+export function useIdleTimer(timeoutSeconds = 300, onIdle = () => {}) {
+    const idle = ref(false);
+    let timer = null;
+
+    const resetTimer = () => {
+        clearTimeout(timer);
+        idle.value = false;
+        timer = setTimeout(() => {
+            idle.value = true;
+            onIdle();
+        }, timeoutSeconds * 1000);
+    };
+
+    const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+
+    const start = () => {
+        activityEvents.forEach(e => window.addEventListener(e, resetTimer));
+        resetTimer();
+    };
+
+    const stop = () => {
+        activityEvents.forEach(e => window.removeEventListener(e, resetTimer));
+        clearTimeout(timer);
+    };
+
+    onMounted(start);
+    onUnmounted(stop);
+
+    return { idle };
 };

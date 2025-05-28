@@ -21,7 +21,8 @@ class Table extends Model
         'zone_id', 
         'status', 
         'order_id',
-        'state'
+        'state',
+        'is_locked',
     ];
 
     public function getActivitylogOptions(): LogOptions

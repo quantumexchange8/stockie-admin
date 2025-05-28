@@ -14,6 +14,7 @@ import ReservationListTable from './ReservationListTable.vue';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import OrderInfo from './OrderInfo.vue';
 import { MergedIcon, ShiftWorkerIcon } from '@/Components/Icons/solid';
+import { useCustomToast } from '@/Composables';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -31,16 +32,27 @@ const props = defineProps({
         default: false
     },
     isFullScreen: Boolean,
+    autoUnlockSetting: Object,
 });
 
+const { showMessage } = useCustomToast();
 const emit = defineEmits(['fetchZones']);
 
 const op = ref(null);
+const allZones = ref(props.zones);
 const selectedTable = ref(null);
 // const reservationListIsOpen = ref(false);
 // const reservationsRowsPerPage = ref(6);
 const drawerIsVisible = ref(false);
 const shiftIsOpened = ref(props.hasOpenedShift);
+const orderInfoDrawer = ref(null);
+const lockingInProgress = ref(false);
+
+// Locking control
+const autoUnlockTimer = ref(props.autoUnlockSetting);
+const isLocking = ref(false);
+const lockTimeoutId = ref(null);
+const wasLocked = ref(false);
 
 // const reservationsColumns = ref([
 //     { field: "reservation_at", header: "Date", width: "25", sortable: true },
@@ -62,12 +74,39 @@ const shiftIsOpened = ref(props.hasOpenedShift);
 //     delete: (id) => `/order-management/orders/reservation/${id}`,
 // };
 
-const openOverlay = (event, table) => {
+const openOverlay = async (event, table) => {
     if (!table.is_reserved) {
         selectedTable.value = table;
     
-        if (table && table.order_tables.length > 0) {
-            if (!drawerIsVisible.value) drawerIsVisible.value = true;
+        if (table.order_tables.length > 0) {
+            if (!table.is_locked && !isLocking.value) {
+                drawerIsVisible.value = true;
+
+                isLocking.value = true;
+                wasLocked.value = false;
+
+                // Clear any existing lock timeout
+                if (lockTimeoutId.value) {
+                    clearTimeout(lockTimeoutId.value);
+                }
+
+                // Set new timeout to lock table
+                lockTimeoutId.value = setTimeout(() => {
+                    if (orderInfoDrawer.value?.handleTableLock) {
+                        orderInfoDrawer.value.handleTableLock('lock');
+                        wasLocked.value = true;
+                    }
+                    lockTimeoutId.value = null;
+                    isLocking.value = false;
+                }, 3000);
+
+            } else if (table.is_locked) {
+                showMessage({
+                    severity: 'warn',
+                    summary: 'Table is currently locked',
+                    detail: 'This table is being viewed by another user. It will be unlocked after inactivity or by the user.',
+                });
+            }
         } else {
             op.value.show(event);
         }
@@ -79,8 +118,24 @@ const closeOverlay = () => {
     op.value.hide();
 };
 
-const closeDrawer = () => {
+const closeDrawer = (unlock = false) => {
     drawerIsVisible.value = false;
+
+    // Cancel pending lock attempt if still in progress
+    if (isLocking.value && lockTimeoutId.value) {
+        clearTimeout(lockTimeoutId.value);
+        lockTimeoutId.value = null;
+        isLocking.value = false;
+        wasLocked.value = false;
+        return;
+    }
+
+    // Unlock only if the lock was successfully applied
+    if (unlock && wasLocked.value && orderInfoDrawer.value?.handleTableLock && !orderInfoDrawer.value?.wasAutoUnlocked) {
+        if (wasLocked.value) orderInfoDrawer.value.handleTableLock(); // unlock
+        wasLocked.value = false;
+    }
+
     // setTimeout(() => emit('fetchZones'), 200)
 };
 
@@ -147,7 +202,7 @@ const waitersArr = computed(() => {
 
 const tablesArr = computed(() => {
     const seenTableNos = new Set();
-    return props.zones.reduce((allTables, zone) => {
+    return allZones.value.reduce((allTables, zone) => {
         zone.tables.forEach(({ table_no, id, seat }) => {
             if (!seenTableNos.has(table_no)) {
                 seenTableNos.add(table_no);
@@ -212,7 +267,7 @@ const setupDuration = (tableId, created_at) => {
 };
 
 const filteredZones = computed(() => {
-    let tempZones = props.zones.map(zone => ({
+    let tempZones = allZones.value.map(zone => ({
         ...zone,
         tables: zone.tables.map(table => {
             return table;
@@ -250,7 +305,7 @@ const getStatusCount = (status) => {
     let count = 0;
 
     if(props.isMainTab) {
-        props.zones.forEach((zone) => {
+        allZones.value.forEach((zone) => {
             count += zone.tables.filter((table) => table.status === status).length;
         });
     } else {
@@ -261,14 +316,42 @@ const getStatusCount = (status) => {
 }
 
 const isMerged = (targetTable) => {
-    return props.zones.some(zone =>
+    return allZones.value.some(zone =>
         zone.tables.some(table =>
             table.id !== targetTable.id && table.order_id === targetTable.order_id && table.status !== 'Empty Seat'
         )
     );
 };
+
+watch(() => props.autoUnlockSetting, (newValue) => {
+    autoUnlockTimer.value = newValue;
+});
+
 watch(() => props.hasOpenedShift, (newValue) => {
     shiftIsOpened.value = newValue;
+});
+
+watch(() => props.zones, (newValue) => {
+    allZones.value = newValue;
+    if (selectedTable.value) {
+        const updatedSelectedTable = allZones.value.map((z) => z.tables).flat().find((t) => t.id === selectedTable.value.id);
+        selectedTable.value = updatedSelectedTable;
+    }
+});
+
+watch(selectedTable, (newValue, oldValue) => {
+    if (drawerIsVisible.value == true && newValue.is_locked == false && oldValue && oldValue.is_locked == true) {
+        drawerIsVisible.value = false;
+        clearTimeout(lockTimeoutId.value);
+        lockTimeoutId.value = null;
+        isLocking.value = false;
+        wasLocked.value = false;
+
+        showMessage({
+            severity: 'info',
+            summary: 'The table you were viewing was manually unlocked',
+        });
+    };
 });
 
 // const showReservationList = (event, table) => {
@@ -295,12 +378,14 @@ watch(() => props.hasOpenedShift, (newValue) => {
         <RightDrawer 
             :withHeader="false"
             v-model:show="drawerIsVisible"
-            @close="drawerIsVisible = false"
+            @close="closeDrawer(true)"
         >
             <OrderInfo 
+                ref="orderInfoDrawer"
                 :selectedTable="selectedTable" 
                 :customers="customers"
                 :users="users"
+                :autoUnlockSetting="autoUnlockTimer"
                 @fetchZones="$emit('fetchZones')"
                 @close="closeDrawer"
             />

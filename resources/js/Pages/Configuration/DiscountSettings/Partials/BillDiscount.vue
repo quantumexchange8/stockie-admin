@@ -14,6 +14,7 @@ import { useCustomToast } from '@/Composables';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { DiscountIllust } from '@/Components/Icons/illus';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
@@ -172,29 +173,37 @@ onMounted(() => {
                 v-slot:[tab]
             >
                 <div class="flex flex-col items-start gap-5 self-stretch">
-                    <template v-for="discount in bill_discounts.filter(discount => discount.status === tab)">
-                        <div class="flex flex-col p-5 items-start gap-4 self-stretch rounded-[5px] border border-solid border-grey-100 bg-white shadow-[0_1px_12px_0_rgba(0,0,0,0.06)] cursor-pointer" @click="openBillDetail(discount)">
-                            <div class="flex flex-col items-start self-stretch">
-                                <div class="flex justify-between items-start self-stretch">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-grey-950 text-xl font-bold">{{ discount.discount_type === 'percentage' ? discount.discount_rate + '%' : 'RM' + discount.discount_rate }} off</span>
-                                    </div>
-                                    <div class="flex justify-end items-start gap-4">
+                    <template v-if="bill_discounts.filter(discount => discount.status === tab).length > 0">
+                        <template v-for="discount in bill_discounts.filter(discount => discount.status === tab)">
+                            <div class="flex flex-col p-5 items-start gap-4 self-stretch rounded-[5px] border border-solid border-grey-100 bg-white shadow-[0_1px_12px_0_rgba(0,0,0,0.06)] cursor-pointer" @click="openBillDetail(discount)">
+                                <div class="flex flex-col items-start self-stretch">
+                                    <div class="flex justify-between items-start self-stretch">
                                         <div class="flex items-center gap-3">
-                                            <DeleteIcon class="text-primary-600 hover:text-primary-800 cursor-pointer size-6" @click.prevent.stop="deleteBill(discount.id)"/>
-                                            <EditIcon class="text-primary-900 hover:text-primary-800 cursor-pointer size-6" @click.prevent.stop="openEditBill(discount)"/>
+                                            <span class="text-grey-950 text-xl font-bold">{{ discount.discount_type === 'percentage' ? discount.discount_rate + '%' : 'RM' + discount.discount_rate }} off</span>
                                         </div>
-                                        <Toggle 
-                                            :checked="discount.status === 'active'"
-                                            :disabled="!isDiscountDisabled(discount)"
-                                            @update:checked="updateStatus(discount)"
-                                            @click.stop
-                                        />
+                                        <div class="flex justify-end items-start gap-4">
+                                            <div class="flex items-center gap-3">
+                                                <DeleteIcon class="text-primary-600 hover:text-primary-800 cursor-pointer size-6" @click.prevent.stop="deleteBill(discount.id)"/>
+                                                <EditIcon class="text-primary-900 hover:text-primary-800 cursor-pointer size-6" @click.prevent.stop="openEditBill(discount)"/>
+                                            </div>
+                                            <Toggle 
+                                                :checked="discount.status === 'active'"
+                                                :disabled="!isDiscountDisabled(discount)"
+                                                @update:checked="updateStatus(discount)"
+                                                @click.stop
+                                            />
+                                        </div>
                                     </div>
+                                    <span class="self-stretch text-grey-700 text-md font-normal">{{ discount.name }}</span>
                                 </div>
-                                <span class="self-stretch text-grey-700 text-md font-normal">{{ discount.name }}</span>
+                                <span class="self-stretch text-grey-950 text-xs font-normal">{{ dayjs(discount.discount_from).format('DD/MM/YYYY') }} - {{ dayjs(discount.discount_to).format('DD/MM/YYYY') }}</span>
                             </div>
-                            <span class="self-stretch text-grey-950 text-xs font-normal">{{ dayjs(discount.discount_from).format('DD/MM/YYYY') }} - {{ dayjs(discount.discount_to).format('DD/MM/YYYY') }}</span>
+                        </template>
+                    </template>
+                    <template v-else>
+                        <div class="flex flex-col w-full items-center justify-center gap-5">
+                            <DiscountIllust />
+                            <span class="text-primary-900 text-sm font-medium">You haven't added any item discount yet...</span>
                         </div>
                     </template>
                 </div>

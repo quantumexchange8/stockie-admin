@@ -5,9 +5,9 @@ import OrderDetail from './OrderDetail.vue';
 import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
 import { CancelIllus, MovingIllus, OrderCompleteIllus } from '@/Components/Icons/illus';
-import { useForm, usePage } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import OrderInvoice from './OrderInvoice.vue';
-import { useCustomToast } from '@/Composables/index.js';
+import { useCustomToast, useIdleTimer } from '@/Composables/index.js';
 import CustomerDetail from './CustomerDetail.vue';
 import { KeepItemIcon, MergedIcon, PlaceOrderIcon, TimesIcon, TransferIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
@@ -29,6 +29,7 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
+    autoUnlockSetting: Object,
 })
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
@@ -61,6 +62,8 @@ const actionType = ref();
 const op = ref(null);
 const transferType = ref('');
 const splitTablesMode = ref(false);
+const wasAutoUnlocked = ref(false);
+const autoUnlockTimer = ref(props.autoUnlockSetting);
 
 const computedOrder = computed(() => {
     if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') return [];
@@ -139,6 +142,45 @@ const fetchPendingServe = async () => {
     }
 }
 
+const handleTableLock = (action = 'unlock', auto = false) => {
+    // console.log(action === 'unlock' ? 'You have been idle for 10 seconds!' : 'This table will now be locked');
+
+    const tableIdArray = order.value?.order_table?.map((ot) => ot.table.id);
+
+    if (tableIdArray) {
+        router.post('/order-management/orders/handleTableLock', {
+            action: action,
+            table_id_array: tableIdArray
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                showMessage({ 
+                    severity: 'info',
+                    summary: action === 'unlock' ? 'The table you were viewing has been unlocked' : 'The table you are currently viewing will be locked'
+                });
+
+                if (action === 'unlock') {
+                    wasAutoUnlocked.value = auto;
+                    emit('fetchZones');
+                    emit('close');
+                }
+            },
+            onError: (errors) => {
+                showMessage({ 
+                    severity: 'error',
+                    summary: errors,
+                });
+            }
+        });
+    }
+}
+
+defineExpose({ 
+    handleTableLock,
+    wasAutoUnlocked
+});
+
 const closeOverlay = () => {
     if (op.value) {
         op.value.hide();  // Ensure op.value is not null before calling hide
@@ -157,6 +199,12 @@ onMounted(async () => {
     await fetchPendingServe();
 });
 
+useIdleTimer(
+    autoUnlockTimer.value.value_type === 'minutes' 
+        ? Math.floor(autoUnlockTimer.value?.value ?? 0) * 60 
+        : Math.floor(autoUnlockTimer.value?.value ?? 0), 
+    () => handleTableLock('unlock', true)
+);
 
 const matchingOrderDetails = ref({
     tables: '',
@@ -299,7 +347,7 @@ const submit = (action) => {
                                 summary: 'Selected table is now available for next customers.',
                             });
                             closeDrawer();
-                            emit('close');
+                            handleTableLock();
                         }, 200);
                     }
                     form.reset();
@@ -324,7 +372,7 @@ const submit = (action) => {
                     emit('fetchZones');
                     hideCancelOrderForm();
                     closeDrawer();
-                    emit('close');
+                    handleTableLock();
                 },
             })
         }
@@ -365,7 +413,12 @@ const submit = (action) => {
 // };
 
 const isOrderCompleted = computed(() => {
-    if (!order.value || !order.value.order_items || order.value.order_items.length === 0) return false;
+    if (
+        !order.value || 
+        !order.value.order_items || 
+        order.value.order_items.length === 0 ||
+        order.value.order_items.filter((item) => item.status !== 'Cancelled').length === 0
+    ) return false;
 
     const mappedOrder = order.value.order_items 
                             ? order.value.order_items
@@ -464,6 +517,10 @@ watch(() => props.selectedTable, (newValue) => {
     currentTable.value = newValue;
 });
 
+watch(() => props.autoUnlockSetting, (newValue) => {
+    autoUnlockTimer.value = newValue;
+});
+
 </script>
 
 <template>
@@ -527,7 +584,7 @@ watch(() => props.selectedTable, (newValue) => {
     <div class="flex flex-col gap-4 items-start rounded-[5px]">
         <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
             <span class="text-primary-950 text-center text-md font-medium">Detail - {{ orderTableNames }}</span>
-            <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer;$emit('close')" />
+            <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer;handleTableLock()" />
         </div>
 
         <div class="flex px-5 items-start gap-4 self-stretch">
@@ -826,7 +883,7 @@ watch(() => props.selectedTable, (newValue) => {
             :currentOrderCustomer="order.customer"
             :currentOrder="order"
             @close="hideMergeTableForm"
-            @closeDrawer="$emit('close')"
+            @closeDrawer="handleTableLock"
             @closeOrderDetails="closeOrderDetails"
         />
         <MergeTableForm 
@@ -835,7 +892,7 @@ watch(() => props.selectedTable, (newValue) => {
             :currentOrderCustomer="order.customer"
             :currentOrder="order"
             @close="hideMergeTableForm"
-            @closeDrawer="$emit('close')"
+            @closeDrawer="handleTableLock"
             @closeOrderDetails="closeOrderDetails"
         />
     </Modal>
@@ -880,7 +937,7 @@ watch(() => props.selectedTable, (newValue) => {
             :currentOrder="order"
             :transferType="transferType"
             @close="hideTransferTableForm"
-            @closeDrawer="$emit('close')"
+            @closeDrawer="handleTableLock"
             @fetchZones="$emit('fetchZones')"
         />
     </Modal>

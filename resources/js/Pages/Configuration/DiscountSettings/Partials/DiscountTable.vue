@@ -1,5 +1,5 @@
 <script setup>
-import { EmptyIllus } from '@/Components/Icons/illus';
+import { DiscountIllust, EmptyIllus } from '@/Components/Icons/illus';
 import { DeleteIcon, EditIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import { transactionFormat } from '@/Composables';
@@ -22,13 +22,13 @@ const isDeleteDiscountOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
 const selectedDiscount = ref(null);
-const totalPages = computed(() => Math.ceil((props.details?.length || 0) / 4));
-// const details = ref(props.details);
+const rows = ref(props.details);
+const totalPages = computed(() => rows.value ? Math.ceil((rows.value.length) / 4) : 0);
 
 const computedRowsPerPage = computed(() => {
     const start = (currentPage.value - 1) * 4;
     const end = start + 4;
-    return props.details.slice(start, end);
+    return rows.value.slice(start, end);
 });
 
 const discountDetails = () => {
@@ -96,7 +96,8 @@ const goToPage = (event) => {
     }
 }
 
-watch(() => props.details, () => {
+watch(() => props.details, (newValue) => {
+    rows.value = newValue;
     currentPage.value = 1;
 }, { immediate: true });
 
@@ -231,18 +232,18 @@ watch(() => props.details, () => {
             <tr v-else>
                 <td colspan="8">
                     <div class="flex flex-col items-center justify-center gap-5">
-                        <EmptyIllus />
-                        <span class="text-primary-900 text-sm font-medium">We couldn't find any result...</span>
+                        <DiscountIllust />
+                        <span class="text-primary-900 text-sm font-medium">You haven't added any item discount yet...</span>
                     </div>
                 </td>
             </tr>
         </tbody>
     </table>
 
-    <!-- <Paginator
-        v-if="props.details.length > 0"
+    <Paginator
+        v-if="rows.length > 0"
         :rows="4" 
-        :totalRecords="props.details.length"
+        :totalRecords="rows.length"
         template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
         @page="onPageChange"
         :pt="{
@@ -418,7 +419,7 @@ watch(() => props.details, () => {
                 />
             </svg>
         </template>
-    </Paginator> -->
+    </Paginator>
 
     <Modal
         :title="'Edit Discount'"

@@ -216,6 +216,11 @@ Route::middleware('auth')->group(function () {
         /******* Points Settings ********/
         Route::post('/pointCalculate', [ConfigPromotionController::class, 'pointCalculate'])->name('configuration.pointCalculate');
         Route::get('/getPoint', [ConfigPromotionController::class, 'getPoint'])->name('configurations.getPoint');
+        
+        /******* Security Settings ********/
+        Route::get('/getAutoUnlockDuration', [ConfigPromotionController::class, 'getAutoUnlockDuration'])->name('configurations.getAutoUnlockDuration');
+        Route::post('/updateAutoLockDuration', [ConfigPromotionController::class, 'updateAutoLockDuration'])->name('configuration.updateAutoLockDuration');
+        Route::post('/handleTableLock', [OrderController::class,'handleTableLock'])->name('configurations.handleTableLock');
     });
 
     /******** Loyalty Programme **********/
@@ -277,6 +282,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/transferTable', [OrderController::class,'transferTable'])->name('orders.transferTable');
         Route::post('/orders/transferTableOrder', [OrderController::class,'transferTableOrder'])->name('orders.transferTableOrder');
         Route::post('/orders/splitTable', [OrderController::class,'splitTable'])->name('orders.splitTable');
+        Route::post('/orders/handleTableLock', [OrderController::class,'handleTableLock'])->name('orders.handleTableLock');
         
         // Order items
         Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');

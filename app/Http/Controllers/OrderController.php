@@ -147,6 +147,9 @@ class OrderController extends Controller
                                         // 'image' => $customer->getFirstMediaUrl('customer'),
                                     // ];
                                 });
+                                
+        $autoUnlockSetting = Setting::where('name', 'Table Auto Unlock')
+                                    ->first(['name', 'value_type', 'value']);
         
         // Get the flashed messages from the session
         // $message = $request->session()->get('message');
@@ -159,6 +162,7 @@ class OrderController extends Controller
             // 'orders' => $orders,
             'occupiedTables' => Table::where('status', '!=', 'Empty Seat')->get(),
             'customers' => $customers,
+            'autoUnlockSetting' => $autoUnlockSetting,
         ]);
     }
 
@@ -701,7 +705,10 @@ class OrderController extends Controller
                     return $orderItem->type === 'Keep';
                 });
 
-                foreach ($existingOrder->orderItems as $item) {
+                foreach ($existingOrder->orderItems as $item) { 
+                    // NEEED TO ADD  CONDITION TO CHECK WHHETHER THERE ARE ANY KEEP ITEM CREATED USING THE ORDER ITEM IF YES, THEN ONLY RETURN THE QTY AFTER DEDUCTING THE QTY FROM THE NEW KEEP ITEM. IF NO THEN RETURN ALL
+
+
                     // if ($item['status'] === 'Pending Serve') {
                     if ($item['type'] === 'Normal') {
                         foreach ($item->subItems as $subItem) {
@@ -3284,7 +3291,7 @@ class OrderController extends Controller
                                 'item_name' => $keepItem->orderItemSubitem->productItem->inventoryItem->item_name,
                             ])
                             ->log(":properties.item_name is expired.");
-                            
+
                 KeepHistory::create([
                     'keep_item_id' => $keepItem->id,
                     'qty' => $keepItem->qty,
@@ -4632,5 +4639,23 @@ class OrderController extends Controller
                                                 ->find($id);
 
         return response()->json($billDiscounts);
+    }
+    public function handleTableLock(Request $request)
+    {
+        $action = $request->action;
+
+        if (in_array($action, ['lock', 'unlock'])) {
+            Table::whereIn('id', $request->table_id_array)->update(['is_locked' => $action === 'lock']);
+
+            return redirect()->back();
+        }
+
+        if ($action === 'unlock-all') {
+            Table::where('is_locked', true)->update(['is_locked' => false]);
+            
+            return redirect()->back();
+        }
+
+        return redirect()->back()->withErrors('Error handling table lock state');
     }
 }

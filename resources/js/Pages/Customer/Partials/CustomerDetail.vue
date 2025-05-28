@@ -278,7 +278,7 @@ const formatPoints = (points) => {
 };
 
 const getKeepItemExpiryStatus = (keepItem) => {
-  const daysDiff = dayjs(keepItem.expired_to).diff(dayjs('2025-08-22'), 'day');
+  const daysDiff = dayjs(keepItem.expired_to).diff(dayjs(), 'day');
 
   const expiredStatus = daysDiff <= 0
         ? 'now'

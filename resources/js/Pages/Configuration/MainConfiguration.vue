@@ -14,6 +14,7 @@ import DiscountSettings from "./DiscountSettings/DiscountSettings.vue";
 import { Head } from "@inertiajs/vue3";
 import axios from "axios";
 import ShiftSetting from "./Shift/ShiftSetting.vue";
+import SecuritySettings from "./SecuritySettings/SecuritySettings.vue";
 
 const home = ref({
     label: 'Configuration',
@@ -26,7 +27,17 @@ const props = defineProps({
     selectedTab: Number,
 })
 
-const tabs = ref(["Discount Settings", "Employee Commission", "Employee Incentive Programme", "Employee Shift Settings", "Promotion", "Invoice Setting", "Points Settings"]);
+const tabs = ref([
+    "Discount Settings", 
+    "Employee Commission", 
+    "Employee Incentive Programme", 
+    "Employee Shift Settings", 
+    "Promotion", 
+    "Invoice Setting", 
+    "Points Settings",
+    "Security Settings"
+]);
+
 const merchant = ref(props.merchant);
 
 const refetchMerchant = async() => {
@@ -79,6 +90,9 @@ onMounted(() => {
             </template>
             <template #points-settings>
                 <PointsSettings />
+            </template>
+            <template #security-settings>
+                <SecuritySettings />
             </template>
         </TabView>
     </AuthenticatedLayout>

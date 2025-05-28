@@ -72,11 +72,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="submit">
         <div class="flex flex-col gap-6 pl-1 pr-2 py-1">
-            <Toast 
-                inline
-                severity="info"
-                summary="Login password will be generated and sent to customers' email."
-            />
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-8 flex-[1_0_0] self-stretch">
                 <TextInput
                     required
@@ -88,7 +83,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 />
                 
                 <TextInput
-                    required
                     inputName="phone"
                     labelText="Phone No."
                     placeholder="12 345 1234"
@@ -103,7 +97,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 </TextInput>
 
                 <TextInput
-                    required
                     :inputName="'email'"
                     :labelText="'Email'"
                     :placeholder="'e.g. meiwah@gmail.com'"

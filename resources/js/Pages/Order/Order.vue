@@ -26,6 +26,7 @@ const props = defineProps({
     // orders: Array,
     occupiedTables: Array,
     customers: Array,
+    autoUnlockSetting: Object,
 });
 
 const zones = ref(props.zones);
@@ -33,6 +34,7 @@ const tabs = ref([]);
 const orderHistoryIsOpen = ref(false);
 const isFullScreen = ref(false);
 const shiftIsOpened = ref(props.hasOpenedShift);
+const autoUnlockTimer = ref(props.autoUnlockSetting);
 
 const showOrderHistory = () => {
     orderHistoryIsOpen.value = true;
@@ -55,6 +57,10 @@ const fetchZones = async () => {
     try {
         const zonesResponse = await axios.get(route('orders.getAllZones'));
         zones.value = zonesResponse.data;
+
+        const auResponse = await axios.get(route('configurations.getAutoUnlockDuration'));
+        autoUnlockTimer.value = auResponse.data;
+
     } catch (error) {
         console.error(error);
     } finally {
@@ -150,7 +156,8 @@ const filteredZones = computed(() => {
 
             <TabView :tabs="tabs">
                 <template #all>
-                    <OrderTables 
+                    <OrderTables
+                        :autoUnlockSetting="autoUnlockTimer" 
                         isMainTab 
                         :zones="filteredZones" 
                         :users="users"
@@ -166,7 +173,8 @@ const filteredZones = computed(() => {
                     :key="zone.id" 
                     v-slot:[`${zone.name}`]
                 >
-                    <OrderTables 
+                    <OrderTables
+                        :autoUnlockSetting="autoUnlockTimer" 
                         :zones="filteredZones" 
                         :activeTab="zone.value" 
                         :zoneName="zone.text"
@@ -231,7 +239,8 @@ const filteredZones = computed(() => {
 
                     <TabView :tabs="tabs">
                         <template #all>
-                            <OrderTables 
+                            <OrderTables
+                                :autoUnlockSetting="autoUnlockTimer" 
                                 isMainTab 
                                 :zones="filteredZones" 
                                 :hasOpenedShift="shiftIsOpened"
@@ -247,7 +256,8 @@ const filteredZones = computed(() => {
                             :key="zone.id" 
                             v-slot:[`${zone.name}`]
                         >
-                            <OrderTables 
+                            <OrderTables
+                                :autoUnlockSetting="autoUnlockTimer" 
                                 :zones="filteredZones" 
                                 :activeTab="zone.value" 
                                 :zoneName="zone.text"
@@ -304,7 +314,8 @@ const filteredZones = computed(() => {
 
                 <TabView :tabs="tabs">
                     <template #all>
-                        <OrderTables 
+                        <OrderTables
+                            :autoUnlockSetting="autoUnlockTimer" 
                             isMainTab 
                             :zones="filteredZones" 
                             :users="users"
@@ -319,7 +330,8 @@ const filteredZones = computed(() => {
                         :key="zone.id" 
                         v-slot:[`${zone.name}`]
                     >
-                        <OrderTables 
+                        <OrderTables
+                            :autoUnlockSetting="autoUnlockTimer" 
                             :zones="filteredZones" 
                             :activeTab="zone.value" 
                             :zoneName="zone.text"

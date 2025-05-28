@@ -223,7 +223,7 @@ class CustomerController extends Controller
             ]
         );
         
-        $customer = Customer::with('keepItems', function ($query) {
+        $customer = Customer::with(['keepItems' => function ($query) {
                                 $query->with([
                                             'orderItemSubitem:id,product_item_id',
                                             'orderItemSubitem.productItem:id,inventory_item_id',
@@ -231,7 +231,7 @@ class CustomerController extends Controller
                                         ])
                                         ->where('status', 'Keep')
                                         ->whereColumn('qty', '>', 'cm');
-                            })
+                            }])
                             ->find($id);
 
         $user = Auth::user();
@@ -712,7 +712,7 @@ class CustomerController extends Controller
 
             // Check in table
             $keepItemList = collect($request->keep_item_list);
-            
+
             // Filter out empty rows (where Item2 might be null or empty)
             $filteredItems = $keepItemList->filter(fn ($item) => isset($item['Item2']) && !empty($item['Item2']));
         

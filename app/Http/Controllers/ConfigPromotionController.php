@@ -417,7 +417,7 @@ class ConfigPromotionController extends Controller
                 'point' => $request->point,
             ]);
 
-            activity()->useLog('return-kept-item')
+            activity()->useLog('edit-point-settings')
                         ->performedOn($isPointExist)
                         ->event('updated')
                         ->withProperties([
@@ -572,5 +572,41 @@ class ConfigPromotionController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    public function getAutoUnlockDuration() {
+        $setting = Setting::where('name', 'Table Auto Unlock')
+                            ->first(['name', 'value_type', 'value']);
+    
+        return response()->json($setting);
+    }
+
+    public function updateAutoLockDuration(Request $request)
+    {
+        $isSettingExist = Setting::where('name', 'Table Auto Unlock')->first();
+
+        if($isSettingExist) {
+            $isSettingExist->update([
+                'value_type' => $request->value_type,
+                'value' => $request->value,
+            ]);
+
+            activity()->useLog('edit-security-settings')
+                        ->performedOn($isSettingExist)
+                        ->event('updated')
+                        ->withProperties([
+                            'edited_by' => auth()->user()->full_name,
+                            'image' => auth()->user()->getFirstMediaUrl('user'),
+                        ])
+                        ->log("Security settings updated.");
+        } else {
+            Setting::create([
+                'name' => 'Table Auto Unlock',
+                'type' => 'lock_timer',
+                'value_type' => $request->value_type,
+                'value' => $request->value,
+            ]);
+        }
+
     }
 }
