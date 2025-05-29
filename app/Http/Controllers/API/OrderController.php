@@ -50,7 +50,7 @@ class OrderController extends Controller
     protected $authUser;
     public function __construct()
     {
-        $this->authUser = User::find(Auth::id());
+        $this->authUser = User::with('waiterPosition:id,name')->find(Auth::id());
         $this->authUser->image = $this->authUser->getFirstMediaUrl('user');
     }
 

@@ -26,6 +26,7 @@ class WaiterRequest extends FormRequest
             'phone' => 'required|string|max:255',
             'employment_type' => 'required|string',
             'salary' => 'required|string|min:0',
+            'position_id' => 'required|integer',
             'stockie_email' => 'required|email',
             'image' => 'required|max:8000',
         ];
@@ -73,8 +74,8 @@ class WaiterRequest extends FormRequest
             'email.email' => 'Invalid email.',
             'role_id.unique' => 'Staff ID has already been taken.',
             // 'phone.required' => 'This field is required.',
-            // 'salary.string' => 'Salary must be an decimal value.',
             'salary.min' => 'Salary must be at least 0.',
+            'position.integer' => 'Position id must be an integer value.',
             'worker_email.email' => 'Invalid email',
             'image.required' => 'Image is required.',
             'image.max' => 'The size of the image is too big.',

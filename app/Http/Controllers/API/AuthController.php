@@ -117,6 +117,7 @@ class AuthController extends Controller
     {
         $waiter = Auth::user();
         $waiter->image = $waiter->getFirstMediaUrl('user');
+        $waiter->waiter_position = $waiter->waiterPosition;
 
         return $waiter;
     }

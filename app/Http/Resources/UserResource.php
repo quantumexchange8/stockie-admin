@@ -25,6 +25,7 @@ class UserResource extends JsonResource
             'role_id' => $this->role_id,
             'image' => $this->getFirstMediaUrl('user'),
             'permission' => $this->hasRole('Super Admin') ? Permission::pluck('name') : $this->getAllPermissions()->pluck('name'),
+            'waiter_position' => $this->waiterPosition
         ];
     }
 }

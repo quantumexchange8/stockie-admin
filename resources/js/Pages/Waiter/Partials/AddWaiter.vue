@@ -4,7 +4,7 @@ import TextInput from "@/Components/TextInput.vue";
 import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, onMounted } from "vue";
 import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
 import Modal from "@/Components/Modal.vue";
 import RadioButton from "@/Components/RadioButton.vue";
@@ -14,9 +14,11 @@ import Label from "@/Components/Label.vue";
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
 const { isValidNumberKey } = useInputValidator();
-const isUnsavedChangesOpen = ref(false);
 
 const emit = defineEmits(["close", "isDirty"]);
+
+const isUnsavedChangesOpen = ref(false);
+const waiterPositionOptions = ref([]);
 
 const unsaved = (status) => {
     emit('close', status)
@@ -29,12 +31,26 @@ const form = useForm({
     email: "",
     role_id: "",
     employment_type: "",
+    position_id: "",
     salary: "",
     stockie_email: "",
     password: "",
     passcode: "",
     image: "",
 });
+
+const fetchWaiterPositions = async () => {
+    form.processing = true;
+    try {
+        const response = await axios.get(route('waiter.getWaiterPositions'));
+        waiterPositionOptions.value = response.data ?? [];
+        
+    } catch (error) {
+        console.error(error);
+    } finally {
+        form.processing = false;
+    }
+}
 
 const submit = () => {
     form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
@@ -56,11 +72,13 @@ const submit = () => {
     });
 };
 
-const requiredFields = ['full_name', 'phone_temp', 'email', 'role_id', 'employment_type', 'salary', 'stockie_email', 'password'];
+const requiredFields = ['full_name', 'phone_temp', 'email', 'role_id', 'employment_type', 'position_id', 'salary', 'stockie_email', 'password'];
 
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
-})
+});
+
+onMounted(() => fetchWaiterPositions());
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
@@ -146,6 +164,24 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :errorMessage="form.errors?.role_id || ''"
                                     v-model="form.role_id"
                                 />
+                                <TextInput
+                                    label-text="Salary per month (basic)"
+                                    inputId="salary"
+                                    type="'text'"
+                                    required
+                                    :iconPosition="'left'"
+                                    :errorMessage="form.errors?.salary || ''"
+                                    v-model="form.salary"
+                                    @keypress="isValidNumberKey($event, true)"
+                                >
+                                    <!-- class="!w-1/2" -->
+                                    <template #prefix>
+                                        <span class="text-grey-900">RM</span>
+                                    </template>
+                                </TextInput>
+                            </div>
+
+                            <div class="flex md:gap-4">
                                 <div class="w-full flex flex-col gap-y-1 items-start self-stretch">
                                     <Label required class="mb-1 text-xs !font-medium text-grey-900">
                                         Employment type
@@ -157,23 +193,18 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                         v-model:checked="form.employment_type"
                                     />
                                 </div>
+                                <div class="w-full flex flex-col gap-y-1 items-start self-stretch">
+                                    <Label required class="mb-1 text-xs !font-medium text-grey-900">
+                                        Waiter Position
+                                    </Label>
+                                    <RadioButton
+                                        :optionArr="waiterPositionOptions"
+                                        :checked="form.position_id"
+                                        :errorMessage="form.errors?.position_id || ''"
+                                        v-model:checked="form.position_id"
+                                    />
+                                </div>
                             </div>
-
-                            <TextInput
-                                label-text="Salary per month (basic)"
-                                inputId="salary"
-                                type="'text'"
-                                required
-                                :iconPosition="'left'"
-                                class="!w-1/2"
-                                :errorMessage="form.errors?.salary || ''"
-                                v-model="form.salary"
-                                @keypress="isValidNumberKey($event, true)"
-                            >
-                                <template #prefix>
-                                    <span class="text-grey-900">RM</span>
-                                </template>
-                            </TextInput>
                         </div>
 
                         <div class="flex flex-col md:gap-6 w-full">

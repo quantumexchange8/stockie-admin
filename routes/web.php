@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/filterSalesPerformance', [WaiterController::class, 'filterSalesPerformance'])->name('waiter.filter-salesperformance');
         Route::get('/filterCommEarned', [WaiterController::class, 'filterCommEarned'])->name('waiter.filter-commEarned');
         Route::get('/viewEmployeeIncentive', [WaiterController::class, 'viewEmployeeIncentive'])->name('waiter.viewEmployeeIncentive');
+        Route::get('/getWaiterPositions', [WaiterController::class, 'getWaiterPositions'])->name('waiter.getWaiterPositions');
     });
  
     /********* Menu Management **********/

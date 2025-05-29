@@ -18,7 +18,7 @@ return new class extends Migration
             $table->double('seat');
             $table->unsignedBigInteger('zone_id');
             $table->string('status');
-            $table->string('order_id');
+            $table->unsignedBigInteger('order_id')->nullable()->default(NULL);
             $table->string('state')->default('active');
             $table->boolean('is_locked');
             $table->softDeletes();

@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\WaiterAttendance;
+use App\Models\WaiterPosition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -129,6 +130,7 @@ class WaiterController extends Controller
             'role_id' => $validatedData['role_id'],
             'position' => 'waiter',
             'employment_type'=> $validatedData['employment_type'],
+            'position_id' => $validatedData['position_id'],
             'salary'=> $validatedData['salary'],
             'worker_email' => $validatedData['stockie_email'],
             'password' => Hash::make($validatedData['password']),
@@ -230,6 +232,7 @@ class WaiterController extends Controller
             'email'=>$validatedData['email'],
             'role_id' => $validatedData['role_id'],
             'employment_type'=> $validatedData['employment_type'],
+            'position_id' => $validatedData['position_id'],
             'salary'=> $validatedData['salary'],
             'worker_email' => $validatedData['stockie_email'],
             'profile_photo' => $validatedData['image'],
@@ -906,5 +909,15 @@ class WaiterController extends Controller
             'waiterCommission' => $commission,
         ]);
     }
+    
+    public function getWaiterPositions()
+    {
+        $positions = WaiterPosition::get()
+                                    ->map(fn ($position) => [
+                                        'text' => ucwords($position->name),
+                                        'value' => $position->id
+                                    ]);
 
+        return response()->json($positions);
+    }
 }
