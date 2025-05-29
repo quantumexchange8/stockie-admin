@@ -195,7 +195,6 @@ class ProductController extends Controller
 
     private function createProductAndItems($request, $validatedData, $validatedProductItems)
     {
-        // dd($request->hasFile('image'));
         $newProduct = Product::create([
             'product_name' => $validatedData['product_name'],
             'bucket' => $validatedData['bucket'] ? 'set' : 'single',

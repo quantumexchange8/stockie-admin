@@ -123,10 +123,10 @@ class AdminUserController extends Controller
                     ])
                     ->log("Sub-admin $targetUser->name's detail is updated.");
 
-        // if($request->hasfile('image')){
-        //     $targetUser->clearMediaCollection('user');
-        //     $targetUser->addMedia($request->image)->toMediaCollection('user');
-        // }
+        if($request->hasfile('image')){
+            $targetUser->clearMediaCollection('user');
+            $targetUser->addMedia($request->image)->toMediaCollection('user');
+        }
 
         $data = $this->getAdminUsers();
 
@@ -179,9 +179,9 @@ class AdminUserController extends Controller
                     ])
                     ->log("Sub-admin '$targetUser->full_name' is added.");
 
-        // if($request->hasFile('image')){
-        //     $targetUser->addMedia($request->image)->toMediaCollection('user');
-        // }
+        if($request->hasFile('image')){
+            $targetUser->addMedia($request->image)->toMediaCollection('user');
+        }
 
         $targetUser->givePermissionTo($request->input('permission'));
 
