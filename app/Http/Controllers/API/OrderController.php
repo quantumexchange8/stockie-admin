@@ -2631,4 +2631,39 @@ class OrderController extends Controller
             'title' => 'Error handling table lock state.',
         ], 422);
     }
+    
+    public function getExpiringPointHistories(Request $request)
+    {
+        $customer = Customer::find($request->id);
+
+        if (!$customer) {
+            return response()->json([
+                'status' => 'error',
+                'title' => 'The customer id does not exist'
+            ], 422);
+        }
+
+        $expiringPointHistories = PointHistory::where('customer_id', $request->id)
+                                                ->where(function ($query) {
+                                                    $query->where(function ($subQuery) {
+                                                            $subQuery->where([
+                                                                        ['type', 'Earned'],
+                                                                        ['expire_balance', '>', 0]
+                                                                    ]);
+                                                        })
+                                                        ->orWhere(function ($subQuery) {
+                                                            $subQuery->where([
+                                                                        ['type', 'Adjusted'],
+                                                                        ['expire_balance', '>', 0]
+                                                                    ])
+                                                                    ->whereColumn('new_balance', '>', 'old_balance');
+                                                        });
+                                                })
+                                                ->get(['id', 'expire_balance', 'expired_at']);
+
+        return response()->json([
+            'status' => 'success',
+            'expiring_point_histories' => $expiringPointHistories,
+        ], 200);
+    }
 }
