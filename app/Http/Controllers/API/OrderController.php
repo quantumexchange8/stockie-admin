@@ -536,6 +536,16 @@ class OrderController extends Controller
             foreach ($subItems as $key => $item) {
                 foreach ($request->items as $key => $updated_item) {
                     if ($item['id'] === $updated_item['sub_item_id']) {
+                        $maxServeQty = $orderItem->item_qty * $item->item_qty;
+                        $newServeQty = $item->serve_qty + $updated_item['serving_qty'];
+
+                        if ($newServeQty > $maxServeQty) {
+                            return response()->json([
+                                'status' => 'error',
+                                'title' => "Serving quantity exceeds the maximum allowed servable quantities."
+                            ], 422);
+                        }
+
                         $item->update(['serve_qty' => $item['serve_qty'] + $updated_item['serving_qty']]);
                         $item->save();
                         $item->refresh();
@@ -1634,7 +1644,7 @@ class OrderController extends Controller
                                         'table', 
                                         'order.voucher:id,reward_type,discount', 
                                         'order.payment.customer', 
-                                        'order.orderItems' => fn($query) => $query->whereNotIn('status', ['Cancelled']),
+                                        // 'order.orderItems' => fn($query) => $query->whereNotIn('status', ['Cancelled']),
                                         'order.orderItems.product.commItem.configComms',
                                         'order.orderItems.subItems.productItem.inventoryItem',
                                     ])
