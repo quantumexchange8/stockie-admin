@@ -1644,6 +1644,7 @@ class OrderController extends Controller
                                         'table', 
                                         'order.voucher:id,reward_type,discount', 
                                         'order.payment.customer', 
+                                        'order.payment.paymentMethods', 
                                         // 'order.orderItems' => fn($query) => $query->whereNotIn('status', ['Cancelled']),
                                         'order.orderItems.product.commItem.configComms',
                                         'order.orderItems.subItems.productItem.inventoryItem',
@@ -1995,6 +1996,40 @@ class OrderController extends Controller
                     'handled_by' => $waiter->id,
                     'redemption_date' => now()
                 ]);
+
+                $usableHistories = PointHistory::where(function ($query) {
+                                                        $query->where(function ($subQuery) {
+                                                                $subQuery->where([
+                                                                            ['type', 'Earned'],
+                                                                            ['expire_balance', '>', 0],
+                                                                        ])
+                                                                        ->whereNotNull('expired_at')
+                                                                        ->whereDate('expired_at', '>', now());
+                                                            })
+                                                            ->orWhere(function ($subQuery) {
+                                                                $subQuery->where([
+                                                                            ['type', 'Adjusted'],
+                                                                            ['expire_balance', '>', 0]
+                                                                        ])
+                                                                        ->whereNotNull('expired_at')
+                                                                        ->whereColumn('new_balance', '>', 'old_balance')
+                                                                        ->whereDate('expired_at', '>', now());
+                                                            });
+                                                    })
+                                                    ->orderBy('expired_at', 'asc') // earliest expiry first
+                                                    ->get();
+
+                $remainingPoints = $pointSpent;
+
+                foreach ($usableHistories as $history) {
+                    if ($remainingPoints <= 0) break;
+
+                    $deductAmount = min($remainingPoints, $history->expire_balance);
+                    $history->expire_balance -= $deductAmount;
+                    $history->save();
+
+                    $remainingPoints -= $deductAmount;
+                }
     
                 $customer->decrement('point', $pointSpent);
     
@@ -2643,20 +2678,32 @@ class OrderController extends Controller
             ], 422);
         }
 
+        $expiringNotificationTimer = Setting::where([
+                                                ['name', 'Point Expiration Notification'],
+                                                ['type', 'expiration']
+                                            ])
+                                            ->first(['id', 'value']);
+
         $expiringPointHistories = PointHistory::where('customer_id', $request->id)
-                                                ->where(function ($query) {
-                                                    $query->where(function ($subQuery) {
+                                                ->where(function ($query) use ($expiringNotificationTimer) {
+                                                    $query->where(function ($subQuery) use ($expiringNotificationTimer) {
                                                             $subQuery->where([
                                                                         ['type', 'Earned'],
-                                                                        ['expire_balance', '>', 0]
-                                                                    ]);
+                                                                        ['expire_balance', '>', 0],
+                                                                    ])
+                                                                    ->whereNotNull('expired_at')
+                                                                    ->whereDate('expired_at', '>', now())
+                                                                    ->whereDate('expired_at', '<', now()->addDays((int)$expiringNotificationTimer->value));
                                                         })
-                                                        ->orWhere(function ($subQuery) {
+                                                        ->orWhere(function ($subQuery) use ($expiringNotificationTimer) {
                                                             $subQuery->where([
                                                                         ['type', 'Adjusted'],
                                                                         ['expire_balance', '>', 0]
                                                                     ])
-                                                                    ->whereColumn('new_balance', '>', 'old_balance');
+                                                                    ->whereNotNull('expired_at')
+                                                                    ->whereColumn('new_balance', '>', 'old_balance')
+                                                                    ->whereDate('expired_at', '>', now())
+                                                                    ->whereDate('expired_at', '<', now()->addDays((int)$expiringNotificationTimer->value));
                                                         });
                                                 })
                                                 ->get(['id', 'expire_balance', 'expired_at']);
