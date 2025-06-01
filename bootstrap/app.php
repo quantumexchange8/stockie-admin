@@ -27,15 +27,17 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule) {
         $schedule->command('reservations:mark-no-show')->everyFiveMinutes();
-        $schedule->command('configuration:update-active-promo')->dailyAt('00:00');
-        $schedule->command('configuration:update-product-discount')->dailyAt('00:00');
-        $schedule->command('keepitems:check-expiration')->dailyAt('00:00');
-        $schedule->command('general:clear-notification')->dailyAt('00:00');
-        $schedule->command('configuration:update-employee-incentives')->dailyAt('00:00');
+        $schedule->command('configuration:update-active-promo')->daily();
+        $schedule->command('configuration:update-product-discount')->daily();
+        // $schedule->command('keepitems:check-expiration')->daily();
+        $schedule->command('general:clear-notification')->daily();
+        $schedule->command('configuration:update-employee-incentives')->daily();
         $schedule->command('activitylog:clean')->daily();
         $schedule->command('configurations:set-bill-discount-active')->everyTwoMinutes();
         // $schedule->command('fetch:latest-status-submission')->everyFifteenMinutes();
-        $schedule->command('waiters:auto-checkout')->dailyAt('16:50');
+        $schedule->command('waiters:auto-checkout')->dailyAt('06:00');
+        $schedule->command('customers:expire-points')->daily();
+        $schedule->command('customers:update-tier')->yearly();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {

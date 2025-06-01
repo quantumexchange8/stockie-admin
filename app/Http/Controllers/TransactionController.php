@@ -11,6 +11,7 @@ use App\Models\OrderItem;
 use App\Models\OrderItemSubitem;
 use App\Models\Payment;
 use App\Models\PaymentRefund;
+use App\Models\PointHistory;
 use App\Models\RefundDetail;
 use App\Models\RunningNumber;
 use App\Models\SaleHistory;
@@ -36,16 +37,19 @@ class TransactionController extends Controller
     {
 
         $transactions = Payment::query()
-            ->whereNot('status', 'pending')
-            ->with([
-                'customer', 
-                'order:id,amount,total_amount', 
-                'order.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount,discount_id',
-                'order.FilterOrderItems.product:id,product_name,price',
-                'order.FilterOrderItems.productDiscount:id,discount_id,price_before,price_after',
-                'voucher:id,reward_type,discount',
-                'paymentMethods:id,payment_id,payment_method,amount,created_at'
-            ]);
+                                ->whereNot('status', 'pending')
+                                ->with([
+                                    'customer', 
+                                    'order:id,amount,total_amount', 
+                                    'order.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount,discount_id,status',
+                                    'order.FilterOrderItems.product:id,product_name,price',
+                                    'order.FilterOrderItems.productDiscount:id,discount_id,price_before,price_after',
+                                    'order.FilterOrderItems.subItems.keepItems.oldestKeepHistory' => function ($query) {
+                                        $query->where('status', 'Keep');
+                                    },
+                                    'voucher:id,reward_type,discount',
+                                    'paymentMethods:id,payment_id,payment_method,amount,created_at'
+                                ]);
 
         if ($request->dateFilter) {
             $startDate = Carbon::parse($request->dateFilter[0])->timezone('Asia/Kuala_Lumpur')->startOfDay();
@@ -63,6 +67,22 @@ class TransactionController extends Controller
             if ($transaction->customer) {
                 $transaction->customer->profile_photo = $transaction->customer->getFirstMediaUrl('customer');
             }
+
+            $transaction->order['FilterOrderItems']->each(function ($orderItem) {
+                $orderItem['total_keep_subitem_qty'] = $orderItem->subItems->reduce(function ($totalKeptSubItems, $subItem) {
+                    $keptSubItems = $subItem->keepItems->reduce(function ($totalKeepQty, $keepItem) {
+                        return $totalKeepQty + (int)$keepItem->oldestKeepHistory['qty'];
+                    }, 0);
+
+                    return $totalKeptSubItems + $keptSubItems;
+                }, 0);
+                
+                return $orderItem;
+            });
+
+            $transaction->order['total_kept_item_qty'] = $transaction->order['FilterOrderItems']->reduce(function ($totalKeptItems, $orderItem) {
+                return $totalKeptItems + $orderItem['total_keep_subitem_qty'];
+            }, 0);
         });
 
         return response()->json($transactions);
@@ -72,13 +92,13 @@ class TransactionController extends Controller
     {
 
         $transactions = PaymentRefund::query()
-            ->with([
-                'customer', 
-                'refund_details',
-                'refund_details.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount',
-                'refund_details.FilterOrderItems.product:id,product_name,price',
-                'product:id,product_name,price',
-            ]);
+                                    ->with([
+                                        'customer', 
+                                        'refund_details',
+                                        'refund_details.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount',
+                                        'refund_details.FilterOrderItems.product:id,product_name,price',
+                                        'product:id,product_name,price',
+                                    ]);
 
         if ($request->dateFilter) {
             $startDate = Carbon::parse($request->dateFilter[0])->timezone('Asia/Kuala_Lumpur')->startOfDay();
@@ -119,24 +139,57 @@ class TransactionController extends Controller
             if ($customer) {
                 // Handle deduction of customer earned points
                 $oldPoint = $customer['point'];
-                $afterPointDeduction = $oldPoint - $transaction->point_earned;
+                $newPoint = $oldPoint - $transaction->point_earned;
 
-                $newPoint = $afterPointDeduction < 0 ? 0 : $afterPointDeduction;
+                $usableHistories = PointHistory::where(function ($query) {
+                                                        $query->where(function ($subQuery) {
+                                                                $subQuery->where([
+                                                                            ['type', 'Earned'],
+                                                                            ['expire_balance', '>', 0],
+                                                                        ])
+                                                                        ->whereNotNull('expired_at')
+                                                                        ->whereDate('expired_at', '>', now());
+                                                            })
+                                                            ->orWhere(function ($subQuery) {
+                                                                $subQuery->where([
+                                                                            ['type', 'Adjusted'],
+                                                                            ['expire_balance', '>', 0]
+                                                                        ])
+                                                                        ->whereNotNull('expired_at')
+                                                                        ->whereColumn('new_balance', '>', 'old_balance')
+                                                                        ->whereDate('expired_at', '>', now());
+                                                            });
+                                                    })
+                                                    ->where('customer_id', $customer->id)
+                                                    ->orderBy('expired_at', 'asc') // earliest expiry first
+                                                    ->get();
+
+                $remainingPoints = $transaction->point_earned;
+
+                foreach ($usableHistories as $history) {
+                    if ($remainingPoints <= 0) break;
+
+                    $deductAmount = min($remainingPoints, $history->expire_balance);
+                    $history->expire_balance -= $deductAmount;
+                    $history->save();
+
+                    $remainingPoints -= $deductAmount;
+                }
                 
                 // Handle remove/delete customer entry rewards if the customer upranked due to the earned points from the current transaction
-                $oldRank = $customer->rank;
-                $isUpranked = $afterPointDeduction < $oldRank['min_amount']; 
+                // $oldRank = $customer->rank;
+                // $isUpranked = $afterPointDeduction < $oldRank['min_amount']; 
 
-                if ($isUpranked) {
-                    $rewards = $customer->rewards->filter(function ($reward) use ($oldRank) {
-                        return $reward->rankingReward['ranking_id'] === $oldRank['id'];
-                    });
+                // if ($isUpranked) {
+                //     $rewards = $customer->rewards->filter(function ($reward) use ($oldRank) {
+                //         return $reward->rankingReward['ranking_id'] === $oldRank['id'];
+                //     });
 
-                    $rewards->each(function ($reward) {
-                        $reward->update(['status' => 'Inactive']);
-                        $reward->delete();
-                    });
-                }
+                //     $rewards->each(function ($reward) {
+                //         $reward->update(['status' => 'Inactive']);
+                //         $reward->delete();
+                //     });
+                // }
                 
                 $customer->update([
                     'point' => $newPoint,
@@ -151,9 +204,56 @@ class TransactionController extends Controller
                 foreach ($existingOrder->orderItems as $item) {
                     if ($item['type'] === 'Normal') {
                         foreach ($item->subItems as $subItem) {
+                            $totalQtyReturned = 0;
+                            $totalInitialKeptQty = 0;
+
+                            $keepItems = KeepItem::with([
+                                                    'orderItemSubitem.productItem.inventoryItem',
+                                                    'oldestKeepHistory' => function ($query) {
+                                                        $query->where('status', 'Keep');
+                                                    },
+                                                ])
+                                                ->where('order_item_subitem_id', $subItem->id)
+                                                ->get(); 
+
+                            if ($keepItems && $keepItems->count() > 0) {
+                                $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty) {
+                                    $ki->update(['status' => 'Deleted']); 
+    
+                                    activity()->useLog('delete-kept-item')
+                                                ->performedOn($ki)
+                                                ->event('deleted')
+                                                ->withProperties([
+                                                    'edited_by' => auth()->user()->full_name,
+                                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                                    'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                ])
+                                                ->log(":properties.item_name is deleted.");
+                                                
+                                    KeepHistory::create([
+                                        'keep_item_id' => $ki->id,
+                                        'qty' => $ki->qty,
+                                        'cm' => number_format((float) $ki->cm, 2, '.', ''),
+                                        'keep_date' => $ki->created_at,
+                                        'remark' => 'void',
+                                        'user_id' => auth()->user()->id,
+                                        'kept_from_table' => $ki->kept_from_table,
+                                        'redeemed_to_table' => 'void',
+                                        'status' => 'Deleted',
+                                    ]);
+
+                                    $totalQtyReturned += $ki->qty;
+                                    $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
+                                });
+
+                            }
+
                             $inventoryItem = $subItem->productItem->inventoryItem;
                             
-                            $restoredQty = $item['item_qty'] * $subItem['item_qty'];
+                            $restoredQty = $keepItems->count() > 0 
+                                    ? ($item['item_qty'] * $subItem['item_qty'] - $totalInitialKeptQty) +  $totalQtyReturned
+                                    : $item['item_qty'] * $subItem['item_qty'];
+                                    
                             $oldStockQty = $inventoryItem->stock_qty;
                             $newStockQty = $oldStockQty + $restoredQty;
 
@@ -189,8 +289,56 @@ class TransactionController extends Controller
                         $keepType = $keepItem->oldestKeepHistory->qty > $keepItem->oldestKeepHistory->cm ? 'qty' : 'cm';
 
                         if ($keepType === 'qty') {
+                            $totalQtyReturned = 0;
+                            $totalInitialKeptQty = 0;
+
+                            $keepItems = KeepItem::with([
+                                                    'orderItemSubitem.productItem.inventoryItem',
+                                                    'oldestKeepHistory' => function ($query) {
+                                                        $query->where('status', 'Keep');
+                                                    },
+                                                ])
+                                                ->where('order_item_subitem_id', $item->subItems[0]['id'])
+                                                ->get(); 
+
+                            if ($keepItems && $keepItems->count() > 0) {
+                                $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty) {
+                                    $ki->update(['status' => 'Deleted']); 
+    
+                                    activity()->useLog('delete-kept-item')
+                                                ->performedOn($ki)
+                                                ->event('deleted')
+                                                ->withProperties([
+                                                    'edited_by' => auth()->user()->full_name,
+                                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                                    'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                ])
+                                                ->log(":properties.item_name is deleted.");
+                                                
+                                    KeepHistory::create([
+                                        'keep_item_id' => $ki->id,
+                                        'qty' => $ki->qty,
+                                        'cm' => number_format((float) $ki->cm, 2, '.', ''),
+                                        'keep_date' => $ki->created_at,
+                                        'remark' => 'void',
+                                        'user_id' => auth()->user()->id,
+                                        'kept_from_table' => $ki->kept_from_table,
+                                        'redeemed_to_table' => 'void',
+                                        'status' => 'Deleted',
+                                    ]);
+
+                                    $totalQtyReturned += $ki->qty;
+                                    $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
+                                });
+
+                            }
+
+                            $returnKeepQty = $keepItems->count() > 0 
+                                    ? ($item['item_qty'] - $totalInitialKeptQty) + $totalQtyReturned 
+                                    : $item['item_qty'];
+                            
                             $keepItem->update([
-                                'qty' => $keepItem->qty + $item['item_qty'],
+                                'qty' => $keepItem->qty + $returnKeepQty,
                                 'status' => 'Keep',
                             ]);
 
@@ -207,16 +355,16 @@ class TransactionController extends Controller
                             KeepHistory::create([
                                 'keep_item_id' => $item['keep_id'],
                                 'order_item_id' => $item['order_item_id'],
-                                'qty' => round($item['item_qty'], 2),
+                                'qty' => round($returnKeepQty, 2),
                                 'cm' => '0.00',
                                 'keep_date' => $keepItem->updated_at,
-                                'kept_balance' => $tempOrderItem->current_kept_amt + $item['item_qty'],
+                                'kept_balance' => $tempOrderItem->current_kept_amt + $returnKeepQty,
                                 'kept_from_table' => $keepItem->kept_from_table,
                                 'status' => 'Keep',
                             ]);
                             
-                            $tempOrderItem->increment('total_kept', $item['item_qty']);
-                            $tempOrderItem->increment('current_kept_amt', $item['item_qty']);
+                            $tempOrderItem->increment('total_kept', $returnKeepQty);
+                            $tempOrderItem->increment('current_kept_amt', $returnKeepQty);
                         }
                     }
 
@@ -254,6 +402,8 @@ class TransactionController extends Controller
     public function refundTransaction(Request $request)
     {
         return DB::transaction(function () use ($request) {
+
+            dd($request->all());
             $calPoint = Setting::where('name', 'Point')->first(['point', 'value']);
             $refund_point = (int) round(((float) $request->params['refund_subtotal'] / (float) $calPoint->value) * (int) $calPoint->point);
 
@@ -268,24 +418,59 @@ class TransactionController extends Controller
                 if ($customer) {
                     // Handle deduction of customer earned points
                     $oldPoint = $customer->point;
-                    $afterPointDeduction = $oldPoint - $refund_point;
-    
-                    $newPoint = $afterPointDeduction < 0 ? 0 : $afterPointDeduction;
-                    
-                    // Handle remove/delete customer entry rewards if the customer upranked due to the earned points from the current transaction
-                    $oldRank = $customer->rank;
-                    $isUpranked = $afterPointDeduction < $oldRank['min_amount']; 
-    
-                    if ($isUpranked) {
-                        $rewards = $customer->rewards->filter(function ($reward) use ($oldRank) {
-                            return $reward->rankingReward['ranking_id'] === $oldRank['id'];
-                        });
-    
-                        $rewards->each(function ($reward) {
-                            $reward->update(['status' => 'Inactive']);
-                            $reward->delete();
-                        });
+                    $newPoint = $oldPoint - $refund_point;
+
+                    $usableHistories = PointHistory::where(function ($query) {
+                                                            $query->where(function ($subQuery) {
+                                                                    $subQuery->where([
+                                                                                ['type', 'Earned'],
+                                                                                ['expire_balance', '>', 0],
+                                                                            ])
+                                                                            ->whereNotNull('expired_at')
+                                                                            ->whereDate('expired_at', '>', now());
+                                                                })
+                                                                ->orWhere(function ($subQuery) {
+                                                                    $subQuery->where([
+                                                                                ['type', 'Adjusted'],
+                                                                                ['expire_balance', '>', 0]
+                                                                            ])
+                                                                            ->whereNotNull('expired_at')
+                                                                            ->whereColumn('new_balance', '>', 'old_balance')
+                                                                            ->whereDate('expired_at', '>', now());
+                                                                });
+                                                        })
+                                                        ->where('customer_id', $customer->id)
+                                                        ->orderBy('expired_at', 'asc') // earliest expiry first
+                                                        ->get();
+
+                    $remainingPoints = $refund_point;
+
+                    foreach ($usableHistories as $history) {
+                        if ($remainingPoints <= 0) break;
+
+                        $deductAmount = min($remainingPoints, $history->expire_balance);
+                        $history->expire_balance -= $deductAmount;
+                        $history->save();
+
+                        $remainingPoints -= $deductAmount;
                     }
+    
+                    // $newPoint = $afterPointDeduction < 0 ? 0 : $afterPointDeduction;
+                    
+                    // // Handle remove/delete customer entry rewards if the customer upranked due to the earned points from the current transaction
+                    // $oldRank = $customer->rank;
+                    // $isUpranked = $afterPointDeduction < $oldRank['min_amount']; 
+    
+                    // if ($isUpranked) {
+                    //     $rewards = $customer->rewards->filter(function ($reward) use ($oldRank) {
+                    //         return $reward->rankingReward['ranking_id'] === $oldRank['id'];
+                    //     });
+    
+                    //     $rewards->each(function ($reward) {
+                    //         $reward->update(['status' => 'Inactive']);
+                    //         $reward->delete();
+                    //     });
+                    // }
                     
                     $customer->update([
                         'point' => $newPoint,
@@ -314,17 +499,93 @@ class TransactionController extends Controller
                 $orderItem = OrderItem::with([
                                         'product.commItem.configComms',
                                         'subItems.productItem.inventoryItem:id,item_name,stock_qty,low_stock_qty,inventory_id,current_kept_amt', 
+                                        'subItems.keepItems',
                                         'commission:id,order_item_id,comm_item_id', 
                                         ])->find($refund_item['id']);
 
                 $oldRefundQty = $orderItem->refund_qty;
                 $newRefundQty = $oldRefundQty + $refund_item['refund_quantities'];
+                $totalKeepSubitemQty = $refund_item['total_keep_subitem_qty'];
 
                 if ($orderItem['type'] === 'Normal') {
                     foreach ($orderItem->subItems as $subItem) {
+                        if ($totalKeepSubitemQty > 0) {
+                            $totalQtyReturned = 0;
+                            $totalInitialKeptQty = 0;
+    
+                            $keepItems = KeepItem::with([
+                                                    'orderItemSubitem.productItem.inventoryItem',
+                                                    'oldestKeepHistory' => function ($query) {
+                                                        $query->where('status', 'Keep');
+                                                    },
+                                                ])
+                                                ->where('order_item_subitem_id', $subItem->id)
+                                                ->get(); 
+    
+                            if ($keepItems && $keepItems->count() > 0) {
+                                $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty, $totalKeepSubitemQty) {
+                                    $keepQty = $ki->qty;
+                                    if ($totalKeepSubitemQty >= $keepQty) {
+                                        $ki->update(['status' => 'Deleted']); 
+        
+                                        activity()->useLog('delete-kept-item')
+                                                    ->performedOn($ki)
+                                                    ->event('deleted')
+                                                    ->withProperties([
+                                                        'edited_by' => auth()->user()->full_name,
+                                                        'image' => auth()->user()->getFirstMediaUrl('user'),
+                                                        'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                    ])
+                                                    ->log(":properties.item_name is deleted.");
+                                                    
+                                        KeepHistory::create([
+                                            'keep_item_id' => $ki->id,
+                                            'qty' => $keepQty,
+                                            'cm' => number_format((float) $ki->cm, 2, '.', ''),
+                                            'keep_date' => $ki->created_at,
+                                            'remark' => 'refund',
+                                            'user_id' => auth()->user()->id,
+                                            'kept_from_table' => $ki->kept_from_table,
+                                            'redeemed_to_table' => 'refund',
+                                            'status' => 'Deleted',
+                                        ]);
+        
+                                        $totalQtyReturned += $keepQty;
+                                        $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
+
+                                    } else {
+                                        $ki->update(['qty' => $keepQty - $totalKeepSubitemQty]); 
+                                                    
+                                        KeepHistory::create([
+                                            'keep_item_id' => $ki->id,
+                                            'qty' => $keepQty - $totalKeepSubitemQty,
+                                            'cm' => number_format((float) $ki->cm, 2, '.', ''),
+                                            'keep_date' => $ki->created_at,
+                                            'remark' => 'refund',
+                                            'user_id' => auth()->user()->id,
+                                            'kept_from_table' => $ki->kept_from_table,
+                                            'redeemed_to_table' => 'refund',
+                                            'status' => 'Deleted',
+                                        ]);
+        
+                                        $totalQtyReturned += $keepQty;
+                                        $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
+                                    }
+
+                                    $totalKeepSubitemQty -= $keepQty;
+                                });
+    
+                            }
+                            
+                            $restoredQty = $keepItems->count() > 0 
+                                    ? ($refund_item['refund_quantities'] * $subItem['item_qty'] - $totalInitialKeptQty) +  $totalQtyReturned
+                                    : $refund_item['refund_quantities'] * $subItem['item_qty'];
+
+                        } else {
+                            $restoredQty = $refund_item['refund_quantities'] * $subItem['item_qty'];
+                        }
+
                         $inventoryItem = $subItem->productItem->inventoryItem;
-                        
-                        $restoredQty = $refund_item['refund_quantities'] * $subItem['item_qty'];
                         $oldStockQty = $inventoryItem->stock_qty;
                         $newStockQty = $oldStockQty + $restoredQty;
 
@@ -414,24 +675,24 @@ class TransactionController extends Controller
             if ($customer) {
                 // Handle deduction of customer earned points
                 $oldPoint = $customer->point;
-                $afterPointDeduction = $oldPoint + $refund_point;
+                $newPoint = $oldPoint + $refund_point;
 
-                $newPoint = $afterPointDeduction < 0 ? 0 : $afterPointDeduction;
+                // $newPoint = $afterPointDeduction < 0 ? 0 : $afterPointDeduction;
                 
-                // Handle remove/delete customer entry rewards if the customer upranked due to the earned points from the current transaction
-                $oldRank = $customer->rank;
-                $isUpranked = $afterPointDeduction < $oldRank['min_amount']; 
+                // // Handle remove/delete customer entry rewards if the customer upranked due to the earned points from the current transaction
+                // $oldRank = $customer->rank;
+                // $isUpranked = $afterPointDeduction < $oldRank['min_amount']; 
 
-                if ($isUpranked) {
-                    $rewards = $customer->rewards->filter(function ($reward) use ($oldRank) {
-                        return $reward->rankingReward['ranking_id'] === $oldRank['id'];
-                    });
+                // if ($isUpranked) {
+                //     $rewards = $customer->rewards->filter(function ($reward) use ($oldRank) {
+                //         return $reward->rankingReward['ranking_id'] === $oldRank['id'];
+                //     });
 
-                    $rewards->each(function ($reward) {
-                        $reward->update(['status' => 'Inactive']);
-                        $reward->delete();
-                    });
-                }
+                //     $rewards->each(function ($reward) {
+                //         $reward->update(['status' => 'Inactive']);
+                //         $reward->delete();
+                //     });
+                // }
                 
                 $customer->update([
                     'point' => $newPoint,

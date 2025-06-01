@@ -22,6 +22,7 @@ class PermissionsSeeder extends Seeder
             'shift-control',
             'shift-record',
             'menu-management',
+            'all-report',
             'inventory',
             'waiter',
             'customer',
@@ -34,6 +35,7 @@ class PermissionsSeeder extends Seeder
             'sales-analysis',
             'activity-logs',
             'configuration',
+            'free-up-table',
         ];
 
         foreach ($permissions as $permission) {

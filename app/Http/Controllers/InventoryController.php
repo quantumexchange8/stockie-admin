@@ -11,6 +11,7 @@ use App\Http\Requests\InventoryRequest;
 use App\Models\KeepHistory;
 use App\Models\KeepItem;
 use App\Models\StockHistory;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -1049,13 +1050,13 @@ class InventoryController extends Controller
 
     public function getStockFlowDetail(Request $request)
     {
-        $selectedtem = $request->selectedItem;
+        $selectedItem = $request->selectedItem;
 
         $keepHistories = KeepHistory::with([
                                         'keepItem.orderItemSubitem.productItem.inventoryItem' => fn ($query) => (
                                             $query->where([
-                                                ['id', $selectedtem['id']],
-                                                ['item_name', $selectedtem['item_name']],
+                                                ['id', $selectedItem['id']],
+                                                ['item_name', $selectedItem['item_name']],
                                             ])
                                         ),
                                         'keepItem.customer:id,full_name', 
@@ -1076,11 +1077,15 @@ class InventoryController extends Controller
                                         ];
                                     });
 
-        $stockHistories = StockHistory::with([
+        $stockHistories = StockHistory::where([
+                                            ['inventory_id', $selectedItem['inventory_id']],
+                                            ['inventory_item', $selectedItem['item_name']]
+                                        ])
+                                        ->with([
                                             'inventory' => fn ($query) => (
-                                                $query->where('id', $selectedtem['inventory_id'])
+                                                $query->where('id', $selectedItem['inventory_id'])
                                                         ->with(['inventoryItems' => fn ($query) => (
-                                                            $query->where('id', $selectedtem['id'])
+                                                            $query->where('id', $selectedItem['id'])
                                                         )])
                                                         ->select('id', 'name')
                                             )
@@ -1111,9 +1116,15 @@ class InventoryController extends Controller
 
         // Merge & sort by date for the histories of kept item flow
         $mergedHistories = $keepHistories->concat($stockReallocatedHistories)->sortByDesc('date');
-
+        
+        $filteredMergedHistories = $mergedHistories->filter(function ($record) use ($selectedItem) {
+            return $record['type'] === 'keep' 
+                    ? $record['keep_item']['orderItemSubitem']['productItem']['inventory_item_id'] === (int)$selectedItem['id']
+                    : $record;
+        });
+        
         $data = [
-            'mergedHistories' => $mergedHistories->values(),
+            'mergedHistories' => $filteredMergedHistories->values(),
             'stockHistories' => $stockHistories
         ];
 

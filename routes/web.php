@@ -106,6 +106,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/products/getRedemptionHistories/{id}', [ProductController::class, 'getRedemptionHistories'])->name('products.getRedemptionHistories');
     });
 
+     /********* All Report **********/
+     Route::prefix('report')->middleware([CheckPermission::class . ':all-report'])->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('report');
+        Route::get('/getReport', [ReportController::class, 'getReport'])->name('report.getReport');
+    });
+
      /********* Inventory **********/
      Route::prefix('inventory')->middleware([CheckPermission::class . ':inventory'])->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
@@ -211,18 +217,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/getClassificationCodes', [ConfigPromotionController::class, 'getClassificationCodes'])->name('configuration.getClassificationCodes');
         Route::get('/refetchMerchant', [ConfigPromotionController::class, 'refetchMerchant'])->name('configurations.refetchMerchant');
         Route::get('/getMSICCodes', [ConfigPromotionController::class, 'getMSICCodes'])->name('configurations.getMSICCodes');
+        Route::get('/getCutOffTime', [ConfigPromotionController::class, 'getCutOffTime'])->name('configurations.getCutOffTime');
+        Route::put('/editCutOffTime', [ConfigPromotionController::class, 'editCutOffTime'])->name('configurations.editCutOffTime');
         Route::put('/editAddress', [ConfigPromotionController::class, 'editAddress'])->name('configurations.editAddress');
         Route::put('/editTax', [ConfigPromotionController::class, 'editTax'])->name('configurations.editTax');
 
         /******* Points Settings ********/
-        Route::post('/pointCalculate', [ConfigPromotionController::class, 'pointCalculate'])->name('configuration.pointCalculate');
         Route::get('/getPoint', [ConfigPromotionController::class, 'getPoint'])->name('configurations.getPoint');
+        Route::get('/getPointExpirationSettings', [ConfigPromotionController::class, 'getPointExpirationSettings'])->name('configurations.getPointExpirationSettings');
+        Route::post('/pointCalculate', [ConfigPromotionController::class, 'pointCalculate'])->name('configuration.pointCalculate');
+        Route::post('/setPointExpiration', [ConfigPromotionController::class, 'setPointExpiration'])->name('configuration.setPointExpiration');
         
         /******* Security Settings ********/
-        Route::get('/getAutoUnlockDuration', [ConfigPromotionController::class, 'getAutoUnlockDuration'])->name('configurations.getAutoUnlockDuration');
         Route::post('/updateAutoLockDuration', [ConfigPromotionController::class, 'updateAutoLockDuration'])->name('configuration.updateAutoLockDuration');
         Route::post('/handleTableLock', [OrderController::class,'handleTableLock'])->name('configurations.handleTableLock');
     });
+    Route::get('/getAutoUnlockDuration', [ConfigPromotionController::class, 'getAutoUnlockDuration'])->name('configurations.getAutoUnlockDuration');
 
     /******** Loyalty Programme **********/
     Route::prefix('loyalty-programme')->middleware([CheckPermission::class . ':loyalty-programme'])->group(function(){
@@ -297,6 +307,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders/customer/keep/getCustomerKeepHistories/{id}', [OrderController::class, 'getCustomerKeepHistories'])->name('orders.customer.keep.getCustomerKeepHistories');
         Route::get('/orders/customer/point/getCustomerPointHistories/{id}', [OrderController::class, 'getCustomerPointHistories'])->name('orders.customer.point.getCustomerPointHistories');
         Route::get('/orders/customer/tier/getCustomerTierRewards/{id}', [OrderController::class, 'getCustomerTierRewards'])->name('orders.customer.tier.getCustomerTierRewards');
+        Route::get('/orders/customer/getExpiringPointHistories/{id}', [OrderController::class, 'getExpiringPointHistories'])->name('orders.customer.getExpiringPointHistories');
         Route::post('/orders/customer/keep/addKeptItemToOrder/{id}', [OrderController::class, 'addKeptItemToOrder'])->name('orders.customer.keep.addKeptItemToOrder');
         Route::post('/orders/customer/point/redeemItemToOrder/{id}', [OrderController::class, 'redeemItemToOrder'])->name('orders.customer.point.redeemItemToOrder');
         Route::post('/orders/customer/reward/redeemEntryRewardToOrder/{id}', [OrderController::class, 'redeemEntryRewardToOrder'])->name('orders.customer.reward.redeemEntryRewardToOrder');
@@ -331,6 +342,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/tierRewards/{id}', [CustomerController::class,'tierRewards'])->name('customer.tier-rewards');
         Route::get('/getAllCustomers', [CustomerController::class,'getAllCustomers'])->name('customer.all-customers');
         Route::get('/getCurrentOrdersCount/{id}', [CustomerController::class,'getCurrentOrdersCount'])->name('customer.current-orders-count');
+        Route::get('/getExpiringPointHistories/{id}', [CustomerController::class,'getExpiringPointHistories'])->name('customer.getExpiringPointHistories');
         Route::post('/', [CustomerController::class,'store'])->name('customer.store');
         Route::post('/returnKeepItem/{id}', [CustomerController::class,'returnKeepItem'])->name('customer.returnKeepItem');
         Route::post('/adjustPoint', [CustomerController::class, 'adjustPoint'])->name('customer.adjustPoint');
@@ -421,10 +433,6 @@ Route::middleware('auth')->group(function () {
 
     /********* Global use **********/
     Route::get('/getPayoutDetails', [GlobalController::class, 'getPayoutDetails'])->name('getPayoutDetails');
-    
-
-    /********* All Report **********/
-    Route::get('/all-report', [ReportController::class, 'allReport'])->name('all-report');
 });
 
 

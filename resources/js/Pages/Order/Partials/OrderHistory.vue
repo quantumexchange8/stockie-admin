@@ -113,6 +113,10 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
     //     return  getOrderTableNames(order.order_table).includes(query);
     // });
 // }, { immediate: false })
+
+// function printReceipt() {
+//   window.print();
+// }
 </script>
 
 <template>
@@ -227,6 +231,15 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
             </div>
         </template>
     </OverlayPanel>
+
+    <!-- <div class="hidden">
+        <div id="receipt">
+        <h2>My Receipt</h2>
+        <p>Item 1 - $10</p>
+        <p>Item 2 - $5</p>
+        <p>Total - $15</p>
+        </div>
+    </div> -->
 
     <Modal
         maxWidth="sm" 

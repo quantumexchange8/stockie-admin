@@ -325,10 +325,10 @@ const updateOrderCustomer = (event) => {
             @fetchOrderDetails="$emit('fetchOrderDetails')"
             @closeDrawer="$emit('close', true)"
             @update:customer-point="$emit('update:customer-point', $event)"
-            @update:customer-rank="$emit('update:customer-rank', $event)"
             @fetchPendingServe="$emit('fetchPendingServe')"
             @isDirty="isDirty = $event"
         />
+            <!-- @update:customer-rank="$emit('update:customer-rank', $event)" -->
         <Modal
             :unsaved="true"
             :maxWidth="'2xs'"

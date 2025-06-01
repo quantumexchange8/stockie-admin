@@ -1,8 +1,8 @@
 <script setup>
 import Button from '@/Components/Button.vue';
-import { CircledArrowHeadRightIcon2, GiftImage, HistoryIcon, MedalImage, WarningIcon } from '@/Components/Icons/solid';
+import { CircledArrowHeadRightIcon2, GiftImage, HistoryIcon, MedalImage, TimesIcon, WarningIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import ViewHistory from './ViewHistory.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import ReturnItem from './ReturnItem.vue';
@@ -38,6 +38,8 @@ const isDeleteKeptItemOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const viewType = ref('');
 const isLoading = ref(false);
+const expiringPointHistories = ref([]);
+const isMessageShown = ref(false);
 
 const editForm = useForm({
     id: '',
@@ -63,6 +65,21 @@ const deleteForm = useForm({
 
 
 const { formatPhone } = usePhoneUtils();
+
+const fetchExpiringPointHistories = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get(route('customer.getExpiringPointHistories', props.customer.id));
+        expiringPointHistories.value = response.data;
+
+        if (expiringPointHistories.value.length > 0) (isMessageShown.value = true);
+        
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+}
 
 const openDrawer = (action, customer) => {
     viewType.value = action;
@@ -289,6 +306,12 @@ const getKeepItemExpiryStatus = (keepItem) => {
   return expiredStatus;
 };
 
+const totalPointsExpiringSoon = computed(() => {
+    return expiringPointHistories.value.reduce((total, record) => total + record.expire_balance, 0);
+});
+
+onMounted(() => fetchExpiringPointHistories());
+
 watch((editForm), (newValue) => {
     initialEditForm.isDirty = newValue.id !== initialEditForm.value.id ||
                             newValue.kept_amount !== initialEditForm.value.kept_amount ||
@@ -316,6 +339,23 @@ watch((editForm), (newValue) => {
                         <span class="text-primary-950 text-sm font-medium">({{ formatPhone(customer.phone) }})</span>
                     </div>
                 </div>
+            </div>
+
+            <!-- message container -->
+            <div class="flex p-3 justify-center items-start gap-3 self-stretch rounded-[5px] bg-[#FDFBED]"
+                v-if="expiringPointHistories.length > 0 && isMessageShown"
+                @click.prevent.stop=""
+            >
+                <WarningIcon />
+                <div class="flex flex-col items-start gap-3 flex-[1_0_0]">
+                    <span class="self-stretch text-[#A35F1A] text-base font-bold">{{`${totalPointsExpiringSoon} points expiring soon:` }}</span>
+                    <ul class="list-disc pl-6">
+                        <template v-for="record in expiringPointHistories" :key="record.id">
+                            <li class="text-sm text-grey-950 font-normal"><span class="!font-bold">{{ `${record.expire_balance} points` }}</span> on {{ dayjs(record.expired_at).format('MMM D, YYYY') }}</li>
+                        </template>
+                    </ul>
+                </div>
+                <TimesIcon class="!text-[#6E3E19] cursor-pointer" @click.prevent.stop="isMessageShown = false"/>
             </div>
 
             <!-- current points and current tier -->
@@ -365,123 +405,123 @@ watch((editForm), (newValue) => {
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- keep item -->
-            <div class="w-full flex flex-col items-center gap-3 self-stretch">
-                <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
-                    <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Keep Item ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
-                    <div class="flex items-center gap-2 cursor-pointer" @click="openDrawer('keepHistory', customer)">
-                        <HistoryIcon class="w-4 h-4" />
-                        <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">View History</div>
-                    </div>
+        <!-- keep item -->
+        <div class="w-full flex flex-col items-center gap-3 self-stretch">
+            <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
+                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Keep Item ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
+                <div class="flex items-center gap-2 cursor-pointer" @click="openDrawer('keepHistory', customer)">
+                    <HistoryIcon class="w-4 h-4" />
+                    <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">View History</div>
                 </div>
-                <div class="flex flex-col justify-end items-start gap-2 self-stretch">
-                    <!-- <div class="flex py-3 items-center gap-3 self-stretch" v-for="item in formatKeepItems(customer.keep_items)" :key="item.id">
-                        <div class="flex flex-col justify-center items-start gap-3 flex-[1_0_0]">
-                            <div class="flex px-[10px] py-1 items-center gap-[10px] self-stretch rounded-sm bg-primary-25">
-                                <span class="text-primary-900 text-sm font-medium">{{ dayjs(item.created_at).format('DD/MM/YYYY, hh:mm A') }}</span>
-                            </div>
-                            <div class="flex items-center gap-3 self-stretch">
-                                <div class="flex flex-col items-start gap-3 flex-[1_0_0]">
-                                    <div class="flex items-start gap-3 self-stretch">
-                                        <img 
-                                            :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                            alt="CustomerKeepItem"
-                                            class="flex rounded-[1.5px] overflow-x-hidden size-[60px] object-contain"
-                                        />
-                                        <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
-                                            <div class="flex items-center gap-1 self-stretch">
-                                                <span class="text-grey-400 text-2xs font-normal" v-if="item.expired_to">{{ item.expired_to ? `Expire on ${dayjs(item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
-                                                <span class="size-1 bg-grey-900 rounded-full" v-if="item.expired_to"></span>
-                                                <span class="text-primary-900 text-2xs font-normal">Kept by</span>
-                                                <img 
-                                                    :src="item.waiter && item.waiter.image ? item.waiter.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
-                                                    alt="" 
-                                                    class="size-3 bg-red-900 rounded-full"
-                                                />
-                                                <span class="text-primary-900 text-2xs font-normal">{{ item.waiter.full_name }}</span>
-                                            </div>
-                                            <span class="text-grey-900 line-clamp-1 self-stretch overflow-hidden text-ellipsis text-sm font-medium">{{ item.item_name }}</span>
-                                            <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.remark">
-                                                <CommentIcon class="flex-shrink-0 mt-1" />
-                                                <span class="text-grey-900 text-sm font-normal">{{ item.remark }}</span>
-                                            </div>
+            </div>
+            <div class="flex flex-col justify-end items-start gap-2 self-stretch">
+                <!-- <div class="flex py-3 items-center gap-3 self-stretch" v-for="item in formatKeepItems(customer.keep_items)" :key="item.id">
+                    <div class="flex flex-col justify-center items-start gap-3 flex-[1_0_0]">
+                        <div class="flex px-[10px] py-1 items-center gap-[10px] self-stretch rounded-sm bg-primary-25">
+                            <span class="text-primary-900 text-sm font-medium">{{ dayjs(item.created_at).format('DD/MM/YYYY, hh:mm A') }}</span>
+                        </div>
+                        <div class="flex items-center gap-3 self-stretch">
+                            <div class="flex flex-col items-start gap-3 flex-[1_0_0]">
+                                <div class="flex items-start gap-3 self-stretch">
+                                    <img 
+                                        :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        alt="CustomerKeepItem"
+                                        class="flex rounded-[1.5px] overflow-x-hidden size-[60px] object-contain"
+                                    />
+                                    <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
+                                        <div class="flex items-center gap-1 self-stretch">
+                                            <span class="text-grey-400 text-2xs font-normal" v-if="item.expired_to">{{ item.expired_to ? `Expire on ${dayjs(item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
+                                            <span class="size-1 bg-grey-900 rounded-full" v-if="item.expired_to"></span>
+                                            <span class="text-primary-900 text-2xs font-normal">Kept by</span>
+                                            <img 
+                                                :src="item.waiter && item.waiter.image ? item.waiter.image : 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Unknown_person.jpg/434px-Unknown_person.jpg'" 
+                                                alt="" 
+                                                class="size-3 bg-red-900 rounded-full"
+                                            />
+                                            <span class="text-primary-900 text-2xs font-normal">{{ item.waiter.full_name }}</span>
+                                        </div>
+                                        <span class="text-grey-900 line-clamp-1 self-stretch overflow-hidden text-ellipsis text-sm font-medium">{{ item.item_name }}</span>
+                                        <div class="flex flex-nowrap gap-x-1 items-start" v-if="item.remark">
+                                            <CommentIcon class="flex-shrink-0 mt-1" />
+                                            <span class="text-grey-900 text-sm font-normal">{{ item.remark }}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex flex-col justify-center items-end gap-3">
-                                    <span class="text-primary-900 text-base font-medium">{{ item.qty > item.cm ? `x ${item.qty}` : `${item.cm} cm`  }}</span>
-                                    <Button 
-                                        :type="'button'" 
-                                        :size="'md'" 
-                                        @click="openItemOverlay($event, item)"
-                                    >
-                                        Return Item
-                                    </Button>
-                                </div>
                             </div>
-                        </div>
-                    </div> -->
-                    <div class="flex flex-col p-4 justify-center items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)]"  v-for="item in formatKeepItems(customer.keep_items)" :key="item.id">
-                        <!-- message container -->
-                        <div class="flex p-3 justify-center items-start gap-3 self-stretch rounded-[5px] bg-[#FDFBED]"
-                            v-if="getKeepItemExpiryStatus(item) !== 'normal'"
-                        >
-                            <!-- message header -->
-                            <WarningIcon />
-                            <div class="flex flex-col justify-between items-start flex-[1_0_0]">
-                                <span class="self-stretch text-[#A35F1A] text-base font-bold">{{ getKeepItemExpiryStatus(item) === 'soon' ? 'Expiring Soon' : 'Pending Action'  }}</span>
-                                <span class="self-stretch text-[#3E200A] text-sm font-normal">{{ getKeepItemExpiryStatus(item) === 'soon' ? `This kept item will be expired on ${dayjs(item.expired_to).format('DD/MM/YYYY')}.` : 'This item is expired. Please choose to expire it or extend the expiration date.'  }}</span>
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-start gap-3 self-stretch">
-                            <div class="flex items-start gap-3 self-stretch">
-                                <div class="flex flex-col items-start gap-0.5 flex-[1_0_0] self-stretch">
-                                    <span class="text-primary-800 text-lg font-bold">{{ parseFloat(item.qty) > parseFloat(item.cm) ? `x${item.qty}` : `${item.cm} cm` }}</span>
-                                    <span class="self-stretch text-grey-950 text-base font-medium">{{ item.item_name }}</span>
-                                </div>
-                                <img 
-                                    :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                                    alt="ProductImage"
-                                    class="size-[65px] object-contain"
+                            <div class="flex flex-col justify-center items-end gap-3">
+                                <span class="text-primary-900 text-base font-medium">{{ item.qty > item.cm ? `x ${item.qty}` : `${item.cm} cm`  }}</span>
+                                <Button 
+                                    :type="'button'" 
+                                    :size="'md'" 
+                                    @click="openItemOverlay($event, item)"
                                 >
-                            </div>
-                            <div class="grid grid-cols-10 w-full items-start">
-                                <span class="col-span-2 text-grey-500 text-sm font-normal">Kept from</span>
-                                <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.kept_from_table }}</span>
-                                <span class="col-span-2 text-grey-500 text-sm font-normal">Expire on</span>
-                                <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.expired_to ? dayjs(item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
-                                <span class="col-span-2 text-grey-500 text-sm font-normal">Kept by</span>
-                                <div class="col-span-8 flex items-center gap-1.5 flex-[1_0_0]">
-                                    <img
-                                        :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                                        alt="WaiterImage"
-                                        class="rounded-full size-3 object-contain"
-                                    >
-                                    <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.waiter.full_name }}</span>
-                                </div>
-                                <span class="col-span-2 text-grey-500 text-sm font-normal">Remark</span>
-                                <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.remark ? item.remark : '-' }}</span>
+                                    Return Item
+                                </Button>
                             </div>
                         </div>
+                    </div>
+                </div> -->
+                <div class="flex flex-col p-4 justify-center items-start gap-4 self-stretch rounded-[5px] bg-white shadow-[0_4px_15.8px_0_rgba(13,13,13,0.08)]"  v-for="item in formatKeepItems(customer.keep_items)" :key="item.id">
+                    <!-- message container -->
+                    <div class="flex p-3 justify-center items-start gap-3 self-stretch rounded-[5px] bg-[#FDFBED]"
+                        v-if="getKeepItemExpiryStatus(item) !== 'normal'"
+                    >
+                        <!-- message header -->
+                        <WarningIcon />
+                        <div class="flex flex-col justify-between items-start flex-[1_0_0]">
+                            <span class="self-stretch text-[#A35F1A] text-base font-bold">{{ getKeepItemExpiryStatus(item) === 'soon' ? 'Expiring Soon' : 'Pending Action'  }}</span>
+                            <span class="self-stretch text-[#3E200A] text-sm font-normal">{{ getKeepItemExpiryStatus(item) === 'soon' ? `This kept item will be expired on ${dayjs(item.expired_to).format('DD/MM/YYYY')}.` : 'This item is expired. Please choose to expire it or extend the expiration date.'  }}</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-start gap-3 self-stretch">
                         <div class="flex items-start gap-3 self-stretch">
-                            <Button
-                                :variant="'tertiary'"
-                                :type="'button'"
-                                :size="'md'"
-                                @click="openActionsOverlay($event, item)"
+                            <div class="flex flex-col items-start gap-0.5 flex-[1_0_0] self-stretch">
+                                <span class="text-primary-800 text-lg font-bold">{{ parseFloat(item.qty) > parseFloat(item.cm) ? `x${item.qty}` : `${item.cm} cm` }}</span>
+                                <span class="self-stretch text-grey-950 text-base font-medium">{{ item.item_name }}</span>
+                            </div>
+                            <img 
+                                :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                alt="ProductImage"
+                                class="size-[65px] object-contain"
                             >
-                                More Action
-                            </Button>
-                            <Button
-                                :variant="'primary'"
-                                :type="'button'"
-                                :size="'md'"
-                                @click="openItemOverlay($event, item)"
-                            >
-                                Return Item
-                            </Button>
                         </div>
+                        <div class="grid grid-cols-10 w-full items-start">
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">Kept from</span>
+                            <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.kept_from_table }}</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">Expire on</span>
+                            <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.expired_to ? dayjs(item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">Kept by</span>
+                            <div class="col-span-8 flex items-center gap-1.5 flex-[1_0_0]">
+                                <img
+                                    :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                    alt="WaiterImage"
+                                    class="rounded-full size-3 object-contain"
+                                >
+                                <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.waiter.full_name }}</span>
+                            </div>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">Remark</span>
+                            <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.remark ? item.remark : '-' }}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 self-stretch">
+                        <Button
+                            :variant="'tertiary'"
+                            :type="'button'"
+                            :size="'md'"
+                            @click="openActionsOverlay($event, item)"
+                        >
+                            More Action
+                        </Button>
+                        <Button
+                            :variant="'primary'"
+                            :type="'button'"
+                            :size="'md'"
+                            @click="openItemOverlay($event, item)"
+                        >
+                            Return Item
+                        </Button>
                     </div>
                 </div>
             </div>

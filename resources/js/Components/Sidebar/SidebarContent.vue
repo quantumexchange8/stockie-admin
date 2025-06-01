@@ -21,6 +21,7 @@ import {
     ShiftManagementIcon,
     TransactionListingIcon,
     EInvoiceIcon,
+    AllReportIcon,
 } from "@/Components/Icons/solid";
 import { usePage } from "@inertiajs/vue3";
 import SidebarTree from "./SidebarTree.vue";
@@ -94,7 +95,6 @@ const toggleNode = (node) => {
                         <OrderIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <!-- Work In Progress -->
                 <SidebarTree 
                     :value="nodes" 
                     :active="route().current('shift-management.control')"
@@ -116,6 +116,17 @@ const toggleNode = (node) => {
                         <MenuIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
+                <!-- Work In Progress -->
+                <!-- <SidebarLink 
+                    title="All Report" 
+                    :href="route('report')"
+                    :active="route().current('report')"
+                    v-if="existingPermissions?.includes('all-report')" 
+                >
+                    <template #icon>
+                        <AllReportIcon aria-hidden="true" />
+                    </template>
+                </SidebarLink> -->
             </div>
         </div>
 

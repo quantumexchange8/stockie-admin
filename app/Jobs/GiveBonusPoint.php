@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Customer;
 use App\Models\CustomerReward;
 use App\Models\PointHistory;
+use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -41,21 +42,38 @@ class GiveBonusPoint implements ShouldQueue
     {
         $customer = Customer::find($this->customerId);
         if($customer){
+            $pointExpirationDays = Setting::where([
+                                                ['name', 'Point Expiration'],
+                                                ['type', 'expiration']
+                                            ])
+                                            ->first(['id', 'value']);
+
+            $pointExpiredDate = now()->addDays((int)$pointExpirationDays->value);
+            
+            $afterReimbursePoint = $this->oldPoint < 0 
+                    ? $this->oldPoint + $this->totalPoints 
+                    : $this->totalPoints;
+
             PointHistory::create([
                 'product_id' => null,
                 'payment_id' => $this->paymentId,
                 'type' => 'Earned',
                 'point_type' => 'Order',
                 'qty' => 0,
-                'amount' => $this->totalPoints,
+                'amount' => $afterReimbursePoint <= 0 ? 0 : $afterReimbursePoint,
                 'old_balance' => $this->oldPoint,
                 'new_balance' => $customer->point,
+                'expire_balance' => $afterReimbursePoint <= 0 ? 0 : $afterReimbursePoint,
+                'expired_at' => $pointExpiredDate,
                 'customer_id' => $this->customerId,
                 'handled_by' => $this->handledBy,
                 'redemption_date' => now()
             ]);
 
-            $pointBonus = CustomerReward::where(['customer_id' => $this->customerId, 'status' => 'Active'])
+            $pointBonus = CustomerReward::where([
+                                            ['customer_id', $this->customerId], 
+                                            ['status', 'Active']
+                                        ])
                                         ->with(['rankingReward' => fn($query) => $query->where('reward_type', 'Bonus Point')])
                                         ->get();
 
@@ -64,8 +82,27 @@ class GiveBonusPoint implements ShouldQueue
             foreach ($pointBonus as $point) {
                 if ($point->rankingReward && $point->rankingReward->bonus_point) {
                     $bonusPointsTotal += $point->rankingReward->bonus_point;
+                    $afterReimburseBonusPoint = $customer->point < 0 
+                            ? $customer->point + $point->rankingReward->bonus_point 
+                            : $point->rankingReward->bonus_point;
 
                     $point->update(['status' => 'Redeemed']);
+
+                    PointHistory::create([
+                        'product_id' => null,
+                        'payment_id' => null,
+                        'type' => 'Earned',
+                        'point_type' => 'Entry Reward',
+                        'qty' => 0,
+                        'amount' => $afterReimburseBonusPoint <= 0 ? 0 : $afterReimburseBonusPoint,
+                        'old_balance' => $customer->point,
+                        'new_balance' => $customer->point + $point->rankingReward->bonus_point,
+                        'expire_balance' => $afterReimburseBonusPoint <= 0 ? 0 : $afterReimburseBonusPoint,
+                        'expired_at' => $pointExpiredDate,
+                        'customer_id' => $this->customerId,
+                        'handled_by' => $this->handledBy,
+                        'redemption_date' => now()
+                    ]);
                 }
             }
 

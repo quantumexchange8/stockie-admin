@@ -428,10 +428,10 @@ const submit = async () => {
         
         if ((splitBillDetails.value?.id === 'current' && splitBillDetails.value?.order_id === props.currentOrder.id) || !splitBillDetails.value) {
             let customerPointBalance = response.data.newPointBalance;
-            let customerRanking = response.data.newRanking;
+            // let customerRanking = response.data.newRanking;
     
             if (customerPointBalance !== undefined) emit('update:customer-point', customerPointBalance);
-            if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
+            // if (customerRanking !== undefined) emit('update:customer-rank', customerRanking);
         }
         
         setTimeout(() => {

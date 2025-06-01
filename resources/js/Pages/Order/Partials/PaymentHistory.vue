@@ -43,9 +43,15 @@ const fetchPaymentHistories = async () => {
                 collapsedSections.value[order.order_no] = true; // Collapsed by default
             });
 
-            if (tableOrders.value.length > 0) {
-                tableOrders.value = tableOrders.value.filter((order) => order.payment);
-            }
+            tableOrders.value.forEach((order) => {
+                order.order_items = order.order_items.filter((item) => 
+                    item.item_qty > 0 && 
+                    (order.status !== 'Order Cancelled' ? item.status !== 'Cancelled' : item.status === 'Cancelled'))
+            })
+
+            // if (tableOrders.value.length > 0) {
+            //     tableOrders.value = tableOrders.value.filter((order) => order.payment);
+            // }
         }
     } catch (error) {
         console.error(error);
@@ -89,7 +95,7 @@ watch(() => props.currentOrder, (newValue) => {
                     <div class="flex flex-col items-center gap-y-5 p-4 w-full self-stretch rounded bg-grey-50 shadow-[0px_4px_15.8px_0px_rgba(13,13,13,0.08)] !z-[1020]" >
                         <div class="flex flex-row items-center self-stretch justify-between pl-2 border-l-[6px] border-primary-800">
                             <div class="flex flex-col gap-y-2 items-start justify-center">
-                                <p class="text-grey-950 text-md font-normal">Bill #{{ order.payment.receipt_no }}</p>
+                                <p class="text-grey-950 text-md font-normal">{{ order.payment ? `Bill #${order.payment.receipt_no}` : 'Order Cancelled' }}</p>
                                 <div class="flex flex-row gap-x-3 items-center">
                                     <p class="text-grey-900 text-base font-normal">#{{ order.order_no }}</p>
                                     <span class="text-grey-200">&#x2022;</span>
@@ -105,12 +111,12 @@ watch(() => props.currentOrder, (newValue) => {
                                 </div>
                             </div>
                             <div class="flex flex-col justify-center items-end gap-y-1">
-                                <p class="text-grey-950 text-md font-bold truncate">RM {{ Number(order.payment.grand_total ?? 0).toFixed(2) }}</p>
-                                <p class="text-primary-800 text-base font-normal truncate">(+{{ order.payment.point_earned }} pts)</p>
+                                <p class="text-grey-950 text-md font-bold truncate">RM {{ Number(order.payment?.grand_total ?? order.total_amount).toFixed(2) }}</p>
+                                <p class="text-primary-800 text-base font-normal truncate" v-if="order.payment">(+{{ order.payment?.point_earned ?? 0 }} pts)</p>
                             </div>
                         </div>
                         <div class="w-full flex flex-col gap-y-2 items-start self-stretch">
-                            <div class="w-full grid grid-cols-12 justify-between gap-3 items-center py-3" v-for="(item, index) in order.order_items.filter((item) => item.item_qty > 0)" :key="index">
+                            <div class="w-full grid grid-cols-12 justify-between gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
                                 <div class="col-span-9 grid grid-cols-12 gap-3 items-center">
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
@@ -146,34 +152,34 @@ watch(() => props.currentOrder, (newValue) => {
                             <div class="flex flex-col gap-y-1 items-start self-stretch" v-show="!collapsedSections[order.order_no]">
                                 <div class="flex flex-row justify-between items-start self-stretch">
                                     <p class="text-grey-900 text-base font-normal">Sub-total</p>
-                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment.total_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment?.total_amount ?? 0).toFixed(2) }}</p>
                                 </div>
-                                <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.bill_discounts && order.payment.bill_discount_total > 0">
+                                <div class="flex flex-row justify-between items-start self-stretch" v-if="(order.payment?.bill_discounts ?? 0) && (order.payment?.bill_discount_total ?? 0) > 0">
                                     <p class="text-grey-900 text-base font-normal">Bill Discount</p>
-                                    <p class="text-grey-900 text-base font-medium">- RM {{ Number(order.payment.bill_discount_total ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">- RM {{ Number(order.payment?.bill_discount_total ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="order.voucher">
                                     <p class="text-grey-900 text-base font-normal">Voucher Discount {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
-                                    <p class="text-grey-900 text-base font-medium">- RM {{ Number(order.payment.discount_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">- RM {{ Number(order.payment?.discount_amount ?? 0).toFixed(2) }}</p>
                                 </div>
-                                <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.sst_amount > 0">
+                                <div class="flex flex-row justify-between items-start self-stretch" v-if="(order.payment?.sst_amount ?? 0) > 0">
                                     <!-- <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(taxes['SST'] ?? 0) }}%)</p> -->
-                                    <p class="text-grey-900 text-base font-normal">SST ({{ Math.round((order.payment.sst_amount / order.payment.total_amount) * 100) }}%)</p>
-                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment.sst_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-normal">SST ({{ Math.round(((order.payment?.sst_amount ?? 0) / (order.payment?.total_amount ?? 0)) * 100) }}%)</p>
+                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment?.sst_amount ?? 0).toFixed(2) }}</p>
                                 </div>
-                                <div class="flex flex-row justify-between items-start self-stretch" v-if="order.payment.service_tax_amount > 0">
+                                <div class="flex flex-row justify-between items-start self-stretch" v-if="(order.payment?.service_tax_amount ?? 0) > 0">
                                     <!-- <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p> -->
-                                    <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round((order.payment.service_tax_amount / order.payment.total_amount) * 100) }}%)</p>
-                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment.service_tax_amount ?? 0).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(((order.payment?.service_tax_amount ?? 0) / (order.payment?.total_amount ?? 0)) * 100) }}%)</p>
+                                    <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment?.service_tax_amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch">
                                     <p class="text-grey-900 text-base font-normal">Rounding</p>
-                                    <p class="text-grey-900 text-base font-medium">{{ Math.sign(order.payment.rounding) === -1 ? '-' : '' }} RM {{ Number(Math.abs(order.payment.rounding ?? 0)).toFixed(2) }}</p>
+                                    <p class="text-grey-900 text-base font-medium">{{ Math.sign(order.payment?.rounding ?? 0) === -1 ? '-' : '' }} RM {{ Number(Math.abs(order.payment?.rounding ?? 0)).toFixed(2) }}</p>
                                 </div>
                             </div>
                         </transition>
 
-                        <div class="flex justify-center items-center">
+                        <div class="flex justify-center items-center" v-if="order.payment">
                             <div class="flex flex-row gap-x-2 cursor-pointer" @click="toggleCollapse(order.order_no)">
                                 <CircledArrowHeadDownIcon :class="{ 'rotate-180': !collapsedSections[order.order_no] }" class="text-primary-700 transition-transform duration-300" />
                                 <p class="text-primary-900 text-sm font-normal cursor-pointer">

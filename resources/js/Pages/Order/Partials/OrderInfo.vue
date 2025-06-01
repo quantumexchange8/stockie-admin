@@ -33,6 +33,7 @@ const props = defineProps({
 })
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
+const existingPermissions = page.props.auth.user.data.permission;
 
 const { showMessage } = useCustomToast();
 
@@ -558,9 +559,9 @@ watch(() => props.autoUnlockSetting, (newValue) => {
                 @fetchOrderDetails="fetchOrderDetails"
                 @fetchPendingServe="fetchPendingServe"
                 @update:customer-point="customer.point = $event"
-                @update:customer-rank="customer.rank = $event"
                 @close="closePaymentDrawer"
             />
+                <!-- @update:customer-rank="customer.rank = $event" -->
         </template>
     </RightDrawer>
 <!-- 
@@ -708,7 +709,7 @@ watch(() => props.autoUnlockSetting, (newValue) => {
                             size="lg"
                             variant="tertiary"
                             class="col-span-1"
-                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0"
+                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0 || !existingPermissions?.includes('free-up-table')"
                             @click="form.action_type = 'clear'"
                         >
                             Free Up Table

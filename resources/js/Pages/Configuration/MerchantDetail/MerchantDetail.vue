@@ -10,6 +10,8 @@ import { useCustomToast, useInputValidator, usePhoneUtils } from '@/Composables'
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { onMounted, ref, watch } from 'vue';
+import DateInput from '@/Components/Date.vue';
+import dayjs from 'dayjs';
 
 const props = defineProps({
     merchant: {
@@ -31,6 +33,7 @@ const initialTaxes = ref([]);
 const codes = ref([]);
 const msic_codes = ref([]);
 const merchant_detail = ref(props.merchant);
+const cutOffTime = ref(null);
 const phonePrefixes = ref([{ text: '+60', value: '+60'}]);
 
 const getResults = async () => {
@@ -62,6 +65,21 @@ const getClassificationCodes = async () => {
             value: code.id,
             description: code.description
         }));
+    } catch (error) {
+        console.error(error)
+    } finally {
+        isLoading.value = false;
+    }
+}
+
+const getCutOffTime = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get(`/configurations/getCutOffTime`);
+        cutOffTime.value = response.data;
+
+        cutOffTimeForm.start_at = dayjs(cutOffTime.value.value).toDate();
+
     } catch (error) {
         console.error(error)
     } finally {
@@ -110,6 +128,10 @@ const addressForm = useForm({
     postal_code: merchant_detail.value?.postal_code ?? '',
     area: merchant_detail.value?.area ?? '',
     state: merchant_detail.value?.state ?? '',
+})
+
+const cutOffTimeForm = useForm({
+    start_at: '',
 })
 
 const taxForm = useForm({
@@ -186,6 +208,31 @@ const editAddress = async () => {
     }
 }
 
+const editCutOffTime = async () => {
+    isLoading.value = true;
+    try {
+        cutOffTimeForm.start_at = dayjs(cutOffTimeForm.start_at).format('H.mm');
+
+        const response = await axios.put(route('configurations.editCutOffTime'), cutOffTimeForm);
+        cutOffTime.value = response.data;
+
+        cutOffTimeForm.start_at = dayjs(cutOffTime.value.value).toDate();
+        showMessage({
+            severity: 'success',
+            summary: 'Cut-off time has been edited successfully.'
+        });
+        cutOffTimeForm.clearErrors();
+
+    } catch(error) {
+        if (error.response && error.response.data.errors) {
+            cutOffTimeForm.errors = error.response.data.errors; 
+        }
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+}
+
 const editTaxes = async () => {
     // taxForm.errors = {};
     if (taxForm.taxes.length > 0) {
@@ -219,6 +266,7 @@ watch(() => props.merchant, (newValue) => {
 
 onMounted(() => {
     getResults();
+    // getCutOffTime();
 })
 </script>
 
@@ -505,6 +553,39 @@ onMounted(() => {
                 </div>
             </div>
         </form>
+
+        <!-- Cut Off Time (All Report) -->
+        <!-- <form novalidate @submit="editCutOffTime" class="w-full">
+            <div class="flex flex-col p-6 items-start gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
+                <div class="flex justify-between items-center self-stretch">
+                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">Cut-off Time</span>
+                    <Button
+                        :type="'button'"
+                        :variant="'primary'"
+                        :size="'lg'"
+                        :disabled="cutOffTimeForm.processing || isLoading"
+                        class="!w-fit"
+                        @click="editCutOffTime"
+                    >
+                        Save changes
+                    </Button>
+                </div>
+                <div class="flex flex-col items-start gap-3 self-stretch">
+                    <div class="flex items-start gap-4 self-stretch">
+                        <DateInput
+                            timeOnly
+                            required
+                            :inputName="'start_at'"
+                            :labelText="'Start At'"
+                            :placeholder="'09:00'"
+                            class="!w-1/2"
+                            :errorMessage="cutOffTimeForm.errors.start_at ? cutOffTimeForm.errors.start_at[0] : ''"
+                            v-model="cutOffTimeForm.start_at"
+                        />
+                    </div>
+                </div>
+            </div>
+        </form> -->
 
         <!-- Tax Settings -->
         <form novalidate @submit="editTaxes" class="w-full" >

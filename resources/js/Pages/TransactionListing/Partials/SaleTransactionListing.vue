@@ -51,6 +51,7 @@ const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAI
 const detailIsOpen = ref(false);
 const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
+const confirmRefundIsOpen = ref(false);
 const consolidateIsOpen = ref(false);
 const selectedVal = ref(null);
 const { formatAmount, formatDate } = transactionFormat();
@@ -172,6 +173,15 @@ const refundModal = () => {
 
 const closeRefundModal = () => {
     refundIsOpen.value = false;
+    form.reset();
+}
+
+const confirmRefundModal = () => {
+    confirmRefundIsOpen.value = true;
+}
+
+const closeConfirmRefundModal = () => {
+    confirmRefundIsOpen.value = false;
 }
 
 const refundMethod = [
@@ -189,6 +199,7 @@ const closeConsolidate = () => {
 const form = useForm({
     refund_method: '',
     refund_others: '',
+    refund_reason: '',
     refund_item: [],
     refund_tax: false,
 });
@@ -205,11 +216,11 @@ const updateRefundQty = (itemId, qty, productId) => {
         existingItem.refund_quantities = qty;
         existingItem.refund_amount = refundAmount; // Update refund amount
         existingItem.product_id = productId; // Update refund amount
+        existingItem.total_keep_subitem_qty = orderItem.total_keep_subitem_qty; // Update refund amount
     } else {
-        form.refund_item.push({ id: itemId, refund_quantities: qty, refund_amount: refundAmount, product_id: productId});
+        form.refund_item.push({ id: itemId, refund_quantities: qty, refund_amount: refundAmount, product_id: productId, total_keep_subitem_qty: orderItem.total_keep_subitem_qty});
     }
 };
-
 
 const subTotalRefundAmount = computed(() => {
     if (!selectedVal.value || !selectedVal.value.order || !selectedVal.value.order.filter_order_items) {
@@ -344,6 +355,14 @@ const submitConsolidate = async () => {
     }
 
 }
+
+const isFormValid = computed(() => {
+    return ['refund_method', 'refund_item', 'refund_reason'].every(field => form[field] && (form.refund_item.length > 0 && form.refund_item.reduce((total, ri) => total + ri.refund_quantities, 0) > 0) && !form.processing);
+})
+
+// const refundItemKeptQty = computed(() => {
+//     return form.refund_item.reduce((total, item) => total + (item), 0) ?? 0;
+// })
 
 </script>
 
@@ -601,8 +620,14 @@ const submitConsolidate = async () => {
                 </div>
                 <div class="flex flex-col gap-5 pt-6">
                     <div class="flex flex-col gap-1 text-center self-stretch">
-                        <span class="text-primary-900 text-lg font-medium self-stretch">Void this transaction?</span>
-                        <span class="text-grey-900 text-base font-medium self-stretch">Voiding this transaction will remove it from active records and reverse any associated points or balances. This action cannot be undone.</span>
+                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ selectedVal.order.total_kept_item_qty > 0 ? `${selectedVal.order.total_kept_item_qty} kept item found` : 'Void this transaction?' }}</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">
+                            {{ 
+                                selectedVal.order.total_kept_item_qty > 0
+                                        ? 'By voiding this transaction, the kept item(s) will be removed from the customer’s account. Are you sure you want to void this bill?'
+                                        : 'Voiding this transaction will remove it from active records and reverse any associated points or balances. This action cannot be undone.' 
+                            }}
+                        </span>
                     </div>
                 </div>
                 <div class="flex justify-center items-start self-stretch gap-3">
@@ -665,6 +690,9 @@ const submitConsolidate = async () => {
                                         <span class="line-through text-gray-500 text-base ">RM{{ item.product_discount.price_before }} </span>
                                     </div>
                                     <span v-else>RM{{ item.amount }}</span>
+                                </div>
+                                <div v-if="item.total_keep_subitem_qty > 0" class="flex !w-fit items-center justify-cente gap-2.5 px-3 py-1 rounded-[5px] bg-primary-600">
+                                    <p class="text-primary-50 text-2xs">{{ `${item.total_keep_subitem_qty} item kept` }}</p>
                                 </div>
                             </div>
                             <div>
@@ -756,12 +784,52 @@ const submitConsolidate = async () => {
                         </Button>
                     </div>
                     <div class="w-full">
-                        <Button size="lg" variant="primary" class="w-full" @click="confirmRefund">
+                        <Button size="lg" variant="primary" class="w-full" :disabled="!isFormValid" @click="selectedVal.order.total_kept_item_qty > 0 ? confirmRefundModal() : confirmRefund()">
                             Confirm
                         </Button>
                     </div>
                 </div>
             </div>
+
+            <!-- Confirmation -->
+            <Modal
+                :maxWidth="'2xs'"
+                :closeable="true"
+                :show="confirmRefundIsOpen"
+                @close="closeConfirmRefundModal"
+                :withHeader="false"
+            >
+                <div class="flex flex-col gap-9">
+                    <div class="bg-primary-50 flex flex-col items-center gap-[10px] rounded-t-[5px] m-[-24px] pt-6 px-3">
+                        <div class="w-full flex justify-center shrink-0">
+                            <DeleteIllus />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-5 pt-6">
+                        <div class="flex flex-col gap-1 text-center self-stretch">
+                            <span class="text-primary-900 text-lg font-medium self-stretch">{{ `Kept item found` }}</span>
+                            <span class="text-grey-900 text-base font-medium self-stretch">By refunding this transaction, the kept item(s) will be removed from the customer’s account. Are you sure you want to proceed with refund?</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-center items-start self-stretch gap-3">
+                        <Button
+                            variant="tertiary"
+                            size="lg"
+                            type="button"
+                            @click="closeConfirmRefundModal"
+                        >
+                            Keep
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            @click="confirmRefund"
+                        >
+                            Refund
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </Modal>
     </Modal>
 

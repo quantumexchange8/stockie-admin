@@ -16,6 +16,7 @@ use App\Models\PaymentDetail;
 use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\Ranking;
+use App\Models\Setting;
 use App\Models\StockHistory;
 use App\Models\User;
 use App\Notifications\InventoryOutOfStock;
@@ -611,7 +612,6 @@ class CustomerController extends Controller
     
     public function adjustPoint(Request $request)
     {
-
         $request->validate([
             'id' => ['required', 'integer'],
             'point' => ['required', 'integer'],
@@ -627,13 +627,69 @@ class CustomerController extends Controller
 
         $targetCustomer = Customer::find($request->id);
 
+        $newPointBalance = !!$request->addition ? $targetCustomer->point + $request->point : $targetCustomer->point - $request->point;
+
+        $pointExpirationDays = Setting::where([
+                                            ['name', 'Point Expiration'],
+                                            ['type', 'expiration']
+                                        ])
+                                        ->first(['id', 'value']);
+
+        $pointExpiredDate = now()->addDays((int)$pointExpirationDays->value);
+
+        if (!!!$request->addition) {
+            $usableHistories = PointHistory::where(function ($query) {
+                                                $query->where(function ($subQuery) {
+                                                        $subQuery->where([
+                                                                    ['type', 'Earned'],
+                                                                    ['expire_balance', '>', 0],
+                                                                ])
+                                                                ->whereNotNull('expired_at')
+                                                                ->whereDate('expired_at', '>', now());
+                                                    })
+                                                    ->orWhere(function ($subQuery) {
+                                                        $subQuery->where([
+                                                                    ['type', 'Adjusted'],
+                                                                    ['expire_balance', '>', 0]
+                                                                ])
+                                                                ->whereNotNull('expired_at')
+                                                                ->whereColumn('new_balance', '>', 'old_balance')
+                                                                ->whereDate('expired_at', '>', now());
+                                                    });
+                                            })
+                                            ->where('customer_id', $targetCustomer->id)
+                                            ->orderBy('expired_at', 'asc') // earliest expiry first
+                                            ->get();
+
+            $remainingPoints = $request->point;
+
+            foreach ($usableHistories as $history) {
+                if ($remainingPoints <= 0) break;
+
+                $deductAmount = min($remainingPoints, $history->expire_balance);
+                $history->expire_balance -= $deductAmount;
+                $history->save();
+
+                $remainingPoints -= $deductAmount;
+            }
+
+            $afterReimbursePoint = $request->point;
+
+        } else {
+            $afterReimbursePoint = $targetCustomer->point < 0 
+                    ? $targetCustomer->point + $request->point 
+                    : $request->point;
+        }
+
         PointHistory::create([
             'type' => 'Adjusted',
             'point_type' => 'Adjustment',
             'qty' => 0,
-            'amount' => $request->point,
+            'amount' => $afterReimbursePoint <= 0 ? 0 : $afterReimbursePoint,
             'old_balance' => $targetCustomer->point,
-            'new_balance' => !!$request->addition ? $targetCustomer->point + $request->point : $targetCustomer->point - $request->point,
+            'new_balance' => $newPointBalance,
+            'expire_balance' => !!$request->addition ? $afterReimbursePoint : 0,
+            'expired_at' => !!$request->addition ? $pointExpiredDate : null,
             'remark' => $request->reason ? $request->reason : '',
             'customer_id' => $request->id,
             'handled_by' => auth()->user()->id,
@@ -641,7 +697,7 @@ class CustomerController extends Controller
         ]);
 
         $targetCustomer->update([
-            'point' => !!$request->addition ? $targetCustomer->point + $request->point : $targetCustomer->point - $request->point,
+            'point' => $newPointBalance,
         ]);
 
         $targetCustomer->save();
@@ -869,5 +925,40 @@ class CustomerController extends Controller
 
             return redirect()->back();
         });
+    }
+    
+    public function getExpiringPointHistories(string $id)
+    {
+        $expiringNotificationTimer = Setting::where([
+                                                ['name', 'Point Expiration Notification'],
+                                                ['type', 'expiration']
+                                            ])
+                                            ->first(['id', 'value']);
+
+        $expiringPointHistories = PointHistory::where('customer_id', $id)
+                                                ->where(function ($query) use ($expiringNotificationTimer) {
+                                                    $query->where(function ($subQuery) use ($expiringNotificationTimer) {
+                                                            $subQuery->where([
+                                                                        ['type', 'Earned'],
+                                                                        ['expire_balance', '>', 0],
+                                                                    ])
+                                                                    ->whereNotNull('expired_at')
+                                                                    ->whereDate('expired_at', '>', now())
+                                                                    ->whereDate('expired_at', '<', now()->addDays((int)$expiringNotificationTimer->value));
+                                                        })
+                                                        ->orWhere(function ($subQuery) use ($expiringNotificationTimer) {
+                                                            $subQuery->where([
+                                                                        ['type', 'Adjusted'],
+                                                                        ['expire_balance', '>', 0]
+                                                                    ])
+                                                                    ->whereNotNull('expired_at')
+                                                                    ->whereColumn('new_balance', '>', 'old_balance')
+                                                                    ->whereDate('expired_at', '>', now())
+                                                                    ->whereDate('expired_at', '<', now()->addDays((int)$expiringNotificationTimer->value));
+                                                        });
+                                                })
+                                                ->get(['id', 'expire_balance', 'expired_at']);
+
+        return response()->json($expiringPointHistories);
     }
 }

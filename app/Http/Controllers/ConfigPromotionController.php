@@ -8,6 +8,7 @@ use App\Models\ConfigPromotion;
 use App\Models\ItemCategory;
 use App\Models\MSICCodes;
 use App\Models\Setting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
@@ -446,6 +447,50 @@ class ConfigPromotionController extends Controller
         ]);
     }
 
+    public function getPointExpirationSettings() {
+        $settings = Setting::where('type', 'expiration')
+                            ->get(['id', 'name', 'value_type', 'value']);
+
+        $pointExpiration = $settings->filter(fn ($s) => $s->name === 'Point Expiration')->first();
+        $pointExpirationNotification = $settings->filter(fn ($s) => $s->name === 'Point Expiration Notification')->first();
+    
+        return response()->json([
+            'daysToExpire' => $pointExpiration->value,
+            'daysToNotify' => $pointExpirationNotification->value,
+        ]);
+    }
+
+    public function setPointExpiration(Request $request)
+    {
+        $pointExpiration = Setting::where([
+                                    ['name', 'Point Expiration'],
+                                    ['type', 'expiration'],
+                                ])
+                                ->first();
+
+        if ($pointExpiration && $pointExpiration->value != $request->days_to_expire) {
+            $pointExpiration->update([
+                // 'value_type' => 'day',
+                'value' => $request->days_to_expire,
+            ]);
+        }
+
+        $pointExpirationNotification = Setting::where([
+                                    ['name', 'Point Expiration Notification'],
+                                    ['type', 'expiration'],
+                                ])
+                                ->first();
+
+        if ($pointExpirationNotification && $pointExpirationNotification->value != $request->days_to_notify) {
+            $pointExpirationNotification->update([
+                // 'value_type' => 'day',
+                'value' => $request->days_to_notify,
+            ]);
+        }
+
+    }
+
+
     public function getClassificationCodes()
     {
         $codes = ClassificationCode::all();
@@ -572,6 +617,59 @@ class ConfigPromotionController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    public function getCutOffTime()
+    {
+        $cutOffTime = Setting::where([
+                                    ['name', 'Cut Off Time'],
+                                    ['type', 'timer'],
+                                ])
+                                ->first();
+        
+        // Step 1: Convert '6.35' to hours and minutes
+        [$hour, $minute] = explode('.', (string)$cutOffTime->value);
+        $minute = str_pad((int) $minute, 2, '0', STR_PAD_RIGHT); // ensures it's 2 digits
+
+        // Step 2: Format as 'HH:mm'
+        $timeString = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':' . $minute;
+
+        // Step 3 (optional): Convert to DateTime object (e.g., today at 06:35)
+        $cutOffTime->value = Carbon::createFromFormat('H:i', $timeString);
+
+        return response()->json($cutOffTime);
+    }
+
+    public function editCutOffTime(Request $request)
+    {
+        $request->validate([
+            'start_at' => 'required|string',
+        ], [
+            'required' => 'This field is required.',
+            'string' => 'Invalid input. Please try again.',
+        ]);
+        
+        $cutOffTime = Setting::where([
+                                    ['name', 'Cut Off Time'],
+                                    ['type', 'timer'],
+                                ])
+                                ->first();
+
+        $cutOffTime->update(['value' => $request->start_at]);
+
+        $cutOffTime->refresh();
+        
+        // Step 1: Convert '6.35' to hours and minutes
+        [$hour, $minute] = explode('.', (string)$cutOffTime->value);
+        $minute = str_pad((int) $minute, 2, '0', STR_PAD_RIGHT); // ensures it's 2 digits
+
+        // Step 2: Format as 'HH:mm'
+        $timeString = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':' . $minute;
+
+        // Step 3 (optional): Convert to DateTime object (e.g., today at 06:35)
+        $cutOffTime->value = Carbon::createFromFormat('H:i', $timeString);
+
+        return response()->json($cutOffTime);
     }
 
     public function getAutoUnlockDuration() {

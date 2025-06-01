@@ -712,11 +712,57 @@ class OrderController extends Controller
                     // if ($item['status'] === 'Pending Serve') {
                     if ($item['type'] === 'Normal') {
                         foreach ($item->subItems as $subItem) {
+                            $totalQtyReturned = 0;
+                            $totalInitialKeptQty = 0;
+
+                            $keepItems = KeepItem::with([
+                                                    'orderItemSubitem.productItem.inventoryItem',
+                                                    'oldestKeepHistory' => function ($query) {
+                                                        $query->where('status', 'Keep');
+                                                    },
+                                                ])
+                                                ->where('order_item_subitem_id', $subItem->id)
+                                                ->get(); 
+
+                            if ($keepItems && $keepItems->count() > 0) {
+                                $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty) {
+                                    $ki->update(['status' => 'Deleted']); 
+    
+                                    activity()->useLog('delete-kept-item')
+                                                ->performedOn($ki)
+                                                ->event('deleted')
+                                                ->withProperties([
+                                                    'edited_by' => auth()->user()->full_name,
+                                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                                    'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                ])
+                                                ->log(":properties.item_name is deleted.");
+                                                
+                                    KeepHistory::create([
+                                        'keep_item_id' => $ki->id,
+                                        'qty' => $ki->qty,
+                                        'cm' => number_format((float) $ki->cm, 2, '.', ''),
+                                        'keep_date' => $ki->created_at,
+                                        'remark' => 'Cancelled order',
+                                        'user_id' => auth()->user()->id,
+                                        'kept_from_table' => $ki->kept_from_table,
+                                        'status' => 'Deleted',
+                                    ]);
+
+                                    $totalQtyReturned += $ki->qty;
+                                    $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
+                                });
+
+                            }
+
                             $inventoryItem = $subItem->productItem->inventoryItem;
                             
                             // $qtySold = $subItem['serve_qty'];
                             // $restoredQty = $item['item_qty'] * $subItem['item_qty'] - $qtySold;
-                            $restoredQty = $item['item_qty'] * $subItem['item_qty'];
+                            $restoredQty = $keepItems->count() > 0 
+                                    ? ($item['item_qty'] * $subItem['item_qty'] - $totalInitialKeptQty) +  $totalQtyReturned
+                                    : $item['item_qty'] * $subItem['item_qty'];
+                                    
                             $oldStockQty = $inventoryItem->stock_qty;
                             $newStockQty = $oldStockQty + $restoredQty;
         
@@ -752,8 +798,55 @@ class OrderController extends Controller
                         $keepType = $keepItem->oldestKeepHistory->qty > $keepItem->oldestKeepHistory->cm ? 'qty' : 'cm';
 
                         if ($keepType === 'qty') {
+                            $totalQtyReturned = 0;
+                            $totalInitialKeptQty = 0;
+
+                            $keepItems = KeepItem::with([
+                                                    'orderItemSubitem.productItem.inventoryItem',
+                                                    'oldestKeepHistory' => function ($query) {
+                                                        $query->where('status', 'Keep');
+                                                    },
+                                                ])
+                                                ->where('order_item_subitem_id', $item->subItems[0]['id'])
+                                                ->get(); 
+
+                            if ($keepItems && $keepItems->count() > 0) {
+                                $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty) {
+                                    $ki->update(['status' => 'Deleted']); 
+    
+                                    activity()->useLog('delete-kept-item')
+                                                ->performedOn($ki)
+                                                ->event('deleted')
+                                                ->withProperties([
+                                                    'edited_by' => auth()->user()->full_name,
+                                                    'image' => auth()->user()->getFirstMediaUrl('user'),
+                                                    'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                ])
+                                                ->log(":properties.item_name is deleted.");
+                                                
+                                    KeepHistory::create([
+                                        'keep_item_id' => $ki->id,
+                                        'qty' => $ki->qty,
+                                        'cm' => number_format((float) $ki->cm, 2, '.', ''),
+                                        'keep_date' => $ki->created_at,
+                                        'remark' => 'Cancelled order',
+                                        'user_id' => auth()->user()->id,
+                                        'kept_from_table' => $ki->kept_from_table,
+                                        'status' => 'Deleted',
+                                    ]);
+
+                                    $totalQtyReturned += $ki->qty;
+                                    $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
+                                });
+
+                            }
+
+                            $returnKeepQty = $keepItems->count() > 0 
+                                    ? ($item['item_qty'] - $totalInitialKeptQty) + $totalQtyReturned 
+                                    : $item['item_qty'];
+                            
                             $keepItem->update([
-                                'qty' => $keepItem->qty + $item['item_qty'],
+                                'qty' => $keepItem->qty + $returnKeepQty,
                                 'status' => 'Keep',
                             ]);
         
@@ -769,17 +862,17 @@ class OrderController extends Controller
                             KeepHistory::create([
                                 'keep_item_id' => $item['keep_item_id'],
                                 'order_item_id' => $item['order_item_id'],
-                                'qty' => round($item['item_qty'], 2),
+                                'qty' => round($returnKeepQty, 2),
                                 'cm' => '0.00',
                                 'keep_date' => $keepItem->updated_at,
-                                'kept_balance' => $tempOrderItem->current_kept_amt + $item['item_qty'],
+                                'kept_balance' => $tempOrderItem->current_kept_amt + $returnKeepQty,
                                 'user_id' => auth()->user()->id,
                                 'kept_from_table' => $keepItem->kept_from_table,
                                 'status' => 'Keep',
                             ]);
                             
-                            $tempOrderItem->increment('total_kept', $item['item_qty']);
-                            $tempOrderItem->increment('current_kept_amt', $item['item_qty']);
+                            $tempOrderItem->increment('total_kept', $returnKeepQty);
+                            $tempOrderItem->increment('current_kept_amt', $returnKeepQty);
                         }
                     }
                     // }
@@ -2257,6 +2350,9 @@ class OrderController extends Controller
                 }
 
             } else {
+                if ($orderVoucher) {
+                    $this->updateOrderVoucher($order, null);
+                }
                 $voucherDiscountedAmount = 0.00;
                 $billDiscountedAmount = 0.00;
             }
@@ -2332,7 +2428,7 @@ class OrderController extends Controller
                 ]);
             });
 
-            Log::debug('order item', ['order item' => $order->orderItems]);
+            // Log::debug('order item', ['order item' => $order->orderItems]);
         
             // Handle customer points if applicable
             $customer = $order->customer;
@@ -2347,23 +2443,55 @@ class OrderController extends Controller
                 $oldRanking = $customer->ranking;
         
                 // Dispatch jobs for additional rewards
-                Bus::chain([
-                    new UpdateTier($customer->id, $newPointBalance, $newTotalSpending),
-                    new GiveEntryReward($oldRanking, $customer->id, $oldTotalSpending),
-                    new GiveBonusPoint($payment->id, $totalPoints, $oldPointBalance, $customer->id, $request->user_id)
-                ])->dispatch();
+                // Bus::chain([
+                //     new UpdateTier($customer->id, $newPointBalance, $newTotalSpending),
+                //     new GiveEntryReward($oldRanking, $customer->id, $oldTotalSpending),
+                //     new GiveBonusPoint($payment->id, $totalPoints, $oldPointBalance, $customer->id, $request->user_id)
+                // ])->dispatch();
+
+                $customer->update([
+                    'point' => $newPointBalance,
+                    'total_spending' => $newTotalSpending,
+                ]);
+                
+                $pointExpirationDays = Setting::where([
+                                                    ['name', 'Point Expiration'],
+                                                    ['type', 'expiration']
+                                                ])
+                                                ->first(['id', 'value']);
+
+                $pointExpiredDate = now()->addDays((int)$pointExpirationDays->value);
+                
+                $afterReimbursePoint = $oldPointBalance < 0 
+                        ? $oldPointBalance + $totalPoints 
+                        : $totalPoints;
+
+                PointHistory::create([
+                    'product_id' => null,
+                    'payment_id' => $payment->id,
+                    'type' => 'Earned',
+                    'point_type' => 'Order',
+                    'qty' => 0,
+                    'amount' => $afterReimbursePoint <= 0 ? 0 : $afterReimbursePoint,
+                    'old_balance' => $oldPointBalance,
+                    'new_balance' => $customer->point,
+                    'expire_balance' => $afterReimbursePoint <= 0 ? 0 : $afterReimbursePoint,
+                    'expired_at' => $pointExpiredDate,
+                    'customer_id' => $customer->id,
+                    'handled_by' => $request->user_id,
+                    'redemption_date' => now()
+                ]);
 
                 // Determine the new rank based on the new total spending 
-                $newRankingDetails = Ranking::where('min_amount', '<=', $newTotalSpending)
-                                    ->select('id', 'name')
-                                    ->orderBy('min_amount', 'desc')
-                                    ->first();
+                // $newRankingDetails = Ranking::where('min_amount', '<=', $newTotalSpending)
+                //                     ->select('id', 'name')
+                //                     ->orderBy('min_amount', 'desc')
+                //                     ->first();
                 
-                $newRankingDetails->image = $newRankingDetails->getFirstMediaUrl('ranking');
+                // $newRankingDetails->image = $newRankingDetails->getFirstMediaUrl('ranking');
 
                 $response = [
                     'newPointBalance' => $newPointBalance,
-                    'newRanking' => $newRankingDetails
                 ];
             }
 
@@ -2507,7 +2635,7 @@ class OrderController extends Controller
                                         'table', 
                                         'order.voucher:id,reward_type,discount', 
                                         'order.payment.customer', 
-                                        'order.orderItems' => fn($query) => $query->whereNotIn('status', ['Cancelled']),
+                                        // 'order.orderItems' => fn($query) => $query->whereNotIn('status', ['Cancelled']),
                                         'order.orderItems.product',
                                         'order.orderItems.subItems.productItem.inventoryItem',
                                     ])
@@ -2553,6 +2681,8 @@ class OrderController extends Controller
                 'voucher' => $order->voucher,
                 'order_items' => $order->orderItems,
                 'customer' => $order->customer,
+                'status' => $order->status,
+                'total_amount' => $order->total_amount,
             ];
         })->values();
 
@@ -2618,7 +2748,8 @@ class OrderController extends Controller
                                             'payment.order:id,order_no',
                                             'redeemableItem:id,product_name',
                                             'customer:id,ranking',
-                                            'customer.rank:id,name'
+                                            'customer.rank:id,name',
+                                            'handledBy:id,full_name'
                                         ]) 
                                         ->where('customer_id', $id)
                                         ->orderBy('created_at','desc')
@@ -2626,6 +2757,7 @@ class OrderController extends Controller
 
         $pointHistories->each(function ($record) {
             $record->image = $record->redeemableItem?->getFirstMediaUrl('product');
+            $record->waiter_image = $record->handledBy->getFirstMediaUrl('user');
         });
 
         return response()->json($pointHistories);
@@ -2782,6 +2914,41 @@ class OrderController extends Controller
                 'handled_by' => $validatedData['user_id'],
                 'redemption_date' => now()
             ]);
+
+            $usableHistories = PointHistory::where(function ($query) {
+                                                    $query->where(function ($subQuery) {
+                                                            $subQuery->where([
+                                                                        ['type', 'Earned'],
+                                                                        ['expire_balance', '>', 0],
+                                                                    ])
+                                                                    ->whereNotNull('expired_at')
+                                                                    ->whereDate('expired_at', '>', now());
+                                                        })
+                                                        ->orWhere(function ($subQuery) {
+                                                            $subQuery->where([
+                                                                        ['type', 'Adjusted'],
+                                                                        ['expire_balance', '>', 0]
+                                                                    ])
+                                                                    ->whereNotNull('expired_at')
+                                                                    ->whereColumn('new_balance', '>', 'old_balance')
+                                                                    ->whereDate('expired_at', '>', now());
+                                                        });
+                                                })
+                                                ->where('customer_id', $customer->id)
+                                                ->orderBy('expired_at', 'asc') // earliest expiry first
+                                                ->get();
+
+            $remainingPoints = $pointSpent;
+
+            foreach ($usableHistories as $history) {
+                if ($remainingPoints <= 0) break;
+
+                $deductAmount = min($remainingPoints, $history->expire_balance);
+                $history->expire_balance -= $deductAmount;
+                $history->save();
+
+                $remainingPoints -= $deductAmount;
+            }
 
             $customer->decrement('point', $pointSpent);
 
@@ -4657,5 +4824,40 @@ class OrderController extends Controller
         }
 
         return redirect()->back()->withErrors('Error handling table lock state');
+    }
+    
+    public function getExpiringPointHistories(string $id)
+    {
+        $expiringNotificationTimer = Setting::where([
+                                                ['name', 'Point Expiration Notification'],
+                                                ['type', 'expiration']
+                                            ])
+                                            ->first(['id', 'value']);
+
+        $expiringPointHistories = PointHistory::where('customer_id', $id)
+                                                ->where(function ($query) use ($expiringNotificationTimer) {
+                                                    $query->where(function ($subQuery) use ($expiringNotificationTimer) {
+                                                            $subQuery->where([
+                                                                        ['type', 'Earned'],
+                                                                        ['expire_balance', '>', 0],
+                                                                    ])
+                                                                    ->whereNotNull('expired_at')
+                                                                    ->whereDate('expired_at', '>', now())
+                                                                    ->whereDate('expired_at', '<', now()->addDays((int)$expiringNotificationTimer->value));
+                                                        })
+                                                        ->orWhere(function ($subQuery) use ($expiringNotificationTimer) {
+                                                            $subQuery->where([
+                                                                        ['type', 'Adjusted'],
+                                                                        ['expire_balance', '>', 0]
+                                                                    ])
+                                                                    ->whereNotNull('expired_at')
+                                                                    ->whereColumn('new_balance', '>', 'old_balance')
+                                                                    ->whereDate('expired_at', '>', now())
+                                                                    ->whereDate('expired_at', '<', now()->addDays((int)$expiringNotificationTimer->value));
+                                                        });
+                                                })
+                                                ->get(['id', 'expire_balance', 'expired_at']);
+
+        return response()->json($expiringPointHistories);
     }
 }

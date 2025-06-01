@@ -132,7 +132,7 @@ onMounted(() => {
                     :labelText="'Unlock Table After'"
                     required
                     :placeholder="'0'"
-                    @keypress="isValidNumberKey($event, true)"
+                    @keypress="isValidNumberKey($event, false)"
                     v-model="form.value"
                     class="max-w-[120px] [&>div:nth-child(1)>input]:text-left  [&>div:nth-child(1)>input]:pr-4"
                 />

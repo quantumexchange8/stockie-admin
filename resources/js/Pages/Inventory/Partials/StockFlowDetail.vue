@@ -17,24 +17,24 @@ const props = defineProps({
     selectedItem: Object,
 })
 
-const { showMessage } = useCustomToast();
-const { formatPhone } = usePhoneUtils();
+// const { showMessage } = useCustomToast();
+// const { formatPhone } = usePhoneUtils();
 
-const zones = ref('');
+// const zones = ref('');
 const tabs = ref(['Stock Flow', 'Kept Item Flow']);
 const isLoading = ref(false);
-const tableNames = ref('--');
-const tables = ref([]);
-const mergedTables = ref([]);
-const isConfirmShow = ref(false);
-const isSelectedCustomer = ref();
-const selectedTable = ref('');
+// const tableNames = ref('--');
+// const tables = ref([]);
+// const mergedTables = ref([]);
+// const isConfirmShow = ref(false);
+// const isSelectedCustomer = ref();
+// const selectedTable = ref('');
 const mergedHistories = ref();
 const stockHistories = ref();
-const checkedIn = ref([]);
-const isTransferItemModalOpen = ref(false);
-const isUnsavedChangesOpen = ref(false);
-const isDirty = ref(false);
+// const checkedIn = ref([]);
+// const isTransferItemModalOpen = ref(false);
+// const isUnsavedChangesOpen = ref(false);
+// const isDirty = ref(false);
 
 const emit = defineEmits(['close']);
 
@@ -42,26 +42,26 @@ const form = useForm({
     selectedItem: props.selectedItem,
 });
 
-const filterMergedHistories = (records) => {
-    return records.filter((record) => 
-        record.type === 'keep' 
-            ? record.keep_item.order_item_subitem.product_item.inventory_item_id === props.selectedItem.id
-            : record.inventory_id === props.selectedItem.inventory_id && record.inventory_item === props.selectedItem.item_name
-    );
-};
+// const filterMergedHistories = (records) => {
+//     return records.filter((record) => 
+//         record.type === 'keep' 
+//             ? record.keep_item.order_item_subitem.product_item.inventory_item_id === props.selectedItem.id
+//             : record.inventory_id === props.selectedItem.inventory_id && record.inventory_item === props.selectedItem.item_name
+//     );
+// };
 
-const filterStockHistories = (records) => {
-    return records.filter((record) => 
-        record.inventory_id === props.selectedItem.inventory_id && record.inventory_item === props.selectedItem.item_name
-    );
-};
+// const filterStockHistories = (records) => {
+//     return records.filter((record) => 
+//         record.inventory_id === props.selectedItem.inventory_id && record.inventory_item === props.selectedItem.item_name
+//     );
+// };
 
 const getStockFlowDetail = async () => {
     isLoading.value = true;
     try {
         const response = await axios.get(route('getStockFlowDetail', form));
-        mergedHistories.value = filterMergedHistories(response.data.mergedHistories);
-        stockHistories.value = filterStockHistories(response.data.stockHistories);
+        mergedHistories.value = response.data.mergedHistories;
+        stockHistories.value = response.data.stockHistories;
 
     } catch (error) {
         console.error(error)
@@ -177,7 +177,7 @@ onMounted(() => {
                         <tbody>
                             <tr v-for="(record, index) in mergedHistories" :key="index" class="border-b border-grey-100">
                                 <td class="w-[40%]">
-                                    <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(record.created_at).format('HH:mm, DD/MM/YYYY') }}</span>
+                                    <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(record.date).format('HH:mm, DD/MM/YYYY') }}</span>
                                 </td>
                                 <td class="w-[15%]">
                                     <div class="flex justify-start items-center gap-3 px-3">

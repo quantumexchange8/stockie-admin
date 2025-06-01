@@ -245,9 +245,9 @@ const addItemToList = (item) => {
                 //                 ? (subItem.item_qty * item.item_qty) - getTotalKeptQuantity(item)
                 //                 : item.keep_item.oldest_keep_history.cm 
                 //         : 0,
-                amount: subItem.product_item.inventory_item.keep === 'Active' 
-                        ? item.product.category.keep_type !== 'cm' ? 0 : "0"
-                        : 0,
+                amount: subItem.product_item.inventory_item.keep === 'Active' ? "0" : 0,
+                        // ? item.product.category.keep_type !== 'cm' ? 0 : "0"
+                        
                 // remark: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? '' : item.keep_item.remark ? item.keep_item.remark : '',
                 // expiration: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? false : item.keep_item.expired_from ? true : false,
                 // expired_period: item.type === 'Normal' || item.type === 'Redemption' || item.type === 'Reward' ? 3 : item.keep_item.expired_from ? 0 : 3,

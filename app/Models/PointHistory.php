@@ -26,6 +26,8 @@ class PointHistory extends Model implements HasMedia
         'amount',
         'old_balance',
         'new_balance',
+        'expire_balance',
+        'expired_at',
         'remark',
         'customer_id',
         'handled_by',

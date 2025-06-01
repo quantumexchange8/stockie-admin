@@ -21,6 +21,8 @@ return new class extends Migration
             $table->integer('amount');
             $table->integer('old_balance');
             $table->integer('new_balance');
+            $table->integer('expire_balance')->nullable()->default(0);
+            $table->dateTime('expired_at')->nullable()->default(NULL);
             $table->string('remark')->nullable()->default(NULL);
             $table->unsignedBigInteger('customer_id');
             $table->unsignedBigInteger('handled_by');

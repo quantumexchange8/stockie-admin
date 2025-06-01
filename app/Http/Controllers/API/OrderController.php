@@ -2016,6 +2016,7 @@ class OrderController extends Controller
                                                                         ->whereDate('expired_at', '>', now());
                                                             });
                                                     })
+                                                    ->where('customer_id', $customer->id)
                                                     ->orderBy('expired_at', 'asc') // earliest expiry first
                                                     ->get();
 

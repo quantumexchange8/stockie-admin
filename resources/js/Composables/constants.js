@@ -148,6 +148,7 @@ export const permissionList = [
     { text: "Shift Control", value: 'shift-control' },
     { text: "Shift Record", value: 'shift-record' },
     { text: "Menu Management", value: 'menu-management' },
+    { text: "All Report", value: 'all-report' },
     { text: "Inventory", value: 'inventory' },
     { text: "Waiter", value: 'waiter' },
     { text: "Customer", value: 'customer' },
@@ -160,4 +161,5 @@ export const permissionList = [
     { text: "Sales Analysis", value: 'sales-analysis' },
     { text: "Activity Logs", value: 'activity-logs' },
     { text: "Configuration", value: 'configuration' },
+    { text: "Free Up Table", value: 'free-up-table' },
 ]

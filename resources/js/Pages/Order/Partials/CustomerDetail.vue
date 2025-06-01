@@ -55,6 +55,8 @@ const isUnsavedChangesOpen = ref(false);
 const selectedItem = ref();
 const initialEditForm = ref();
 const isLoading = ref(false);
+const expiringPointHistories = ref([]);
+const isMessageShown = ref(false);
 
 const form = useForm({
     order_id: props.orderId,
@@ -85,6 +87,21 @@ const deleteForm = useForm({
     remark: '',
     remark_description: '',
 })
+
+const fetchExpiringPointHistories = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get(route('orders.customer.getExpiringPointHistories', props.customer.id));
+        expiringPointHistories.value = response.data;
+
+        if (expiringPointHistories.value.length > 0) (isMessageShown.value = true);
+        
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
+}
 
 const openDrawer = (action) => {
     viewType.value = action;
@@ -356,12 +373,18 @@ const getKeepItemExpiryStatus = (keepItem) => {
   return expiredStatus;
 };
 
+onMounted(() => fetchExpiringPointHistories());
+
 watch((editForm), (newValue) => {
     initialEditForm.isDirty = newValue.id !== initialEditForm.value.id ||
                             newValue.kept_amount !== initialEditForm.value.kept_amount ||
                             newValue.remark !== initialEditForm.value.remark ||
                             newValue.expired_to !== initialEditForm.value.expired_to;
 })
+
+const totalPointsExpiringSoon = computed(() => {
+    return expiringPointHistories.value.reduce((total, record) => total + record.expire_balance, 0);
+});
 
 const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[field]) && !form.processing);
 
@@ -402,67 +425,86 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
     </RightDrawer>
 
     <div class="w-full flex flex-col gap-6 items-start rounded-[5px] py-4 pr-1 max-h-[calc(100dvh-28rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
-        <div class="w-full flex flex-col items-center gap-3 pt-6">
-            <img 
-                :src="customer && customer.image ? customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                alt="CustomerProfilePic"
-                class="size-20 rounded-full"
-            >
-            <div class="w-full flex flex-col items-center gap-2">
-                <span class="text-primary-900 text-base font-semibold">{{ customer.full_name }}</span>
-                <div class="flex justify-center items-center gap-2">
-                    <span class="text-primary-950 text-sm font-medium">{{ customer.email }}</span>
-                    <span class="w-1 h-1 rounded-full bg-grey-300"></span>
-                    <span class="text-primary-950 text-sm font-medium">{{ formatPhone(customer.phone) }}</span>
+        <div class="w-full flex flex-col items-center gap-5 self-stretch">
+            <div class="w-full flex flex-col items-center gap-3 pt-6">
+                <img 
+                    :src="customer && customer.image ? customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                    alt="CustomerProfilePic"
+                    class="size-20 rounded-full"
+                >
+                <div class="w-full flex flex-col items-center gap-2">
+                    <span class="text-primary-900 text-base font-semibold">{{ customer.full_name }}</span>
+                    <div class="flex justify-center items-center gap-2">
+                        <span class="text-primary-950 text-sm font-medium">{{ customer.email }}</span>
+                        <span class="w-1 h-1 rounded-full bg-grey-300"></span>
+                        <span class="text-primary-950 text-sm font-medium">{{ formatPhone(customer.phone) }}</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- current points and current tier -->
-        <div class="w-full flex justify-center items-start gap-6 self-stretch">
-            <div class="flex flex-col p-4 items-start gap-3 flex-[1_0_0] rounded-[5px] bg-gradient-to-br from-primary-900 to-[#5E0A0E] relative">
-                <div class="w-full flex justify-between items-center">
-                    <span class="text-base font-semibold text-primary-25 whitespace-nowrap w-full">Current Points</span>
-                    <CircledArrowHeadRightIcon2
-                        class="size-6 text-primary-900 [&>rect]:fill-primary-25 [&>rect]:hover:fill-primary-800 cursor-pointer z-10"
-                        @click="openDrawer('currentPoints')" 
-                    />
+            <!-- message container -->
+            <div class="flex p-3 justify-center items-start gap-3 self-stretch rounded-[5px] bg-[#FDFBED]"
+                v-if="expiringPointHistories.length > 0 && isMessageShown"
+                @click.prevent.stop=""
+            >
+                <WarningIcon />
+                <div class="flex flex-col items-start gap-3 flex-[1_0_0]">
+                    <span class="self-stretch text-[#A35F1A] text-base font-bold">{{`${totalPointsExpiringSoon} points expiring soon:` }}</span>
+                    <ul class="list-disc pl-6">
+                        <template v-for="record in expiringPointHistories" :key="record.id">
+                            <li class="text-sm text-grey-950 font-normal"><span class="!font-bold">{{ `${record.expire_balance} points` }}</span> on {{ dayjs(record.expired_at).format('MMM D, YYYY') }}</li>
+                        </template>
+                    </ul>
                 </div>
-                <div class="flex flex-col items-start gap-1">
-                    <span class="text-white text-[36px] leading-normal font-light tracking-[-0.72px]">{{ formatPoints(customer.point) }}</span>
-                    <span class="text-white text-lg font-normal">pts</span>
-                </div>
-                <div class="absolute bottom-0 right-0">
-                    <GiftImage />
-                </div>
+                <TimesIcon class="!text-[#6E3E19] cursor-pointer" @click.prevent.stop="isMessageShown = false"/>
             </div>
-            <div class="flex flex-col p-4 items-start gap-3 flex-[1_0_0] self-stretch rounded-[5px] border border-solid border-primary-50 
-                        bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#FFFAFA] to-[#FFFFFF] relative">
-                <div class="w-full flex justify-between items-center">
-                    <span class="text-base font-semibold text-primary-900 whitespace-nowrap w-full">Current Tier</span>
-                    <CircledArrowHeadRightIcon2
-                        class="size-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer z-10"
-                        @click="openDrawer('currentTier')" 
-                    />
-                </div>
-                <div class="w-full flex flex-col justify-center items-start gap-1 self-stretch">
-                    <template v-if="customer.rank && customer.rank.name !== 'No Tier'">
-                        <div class="flex flex-col justify-center items-center gap-[10px]">
-                            <img 
-                                :src="customer.rank.image ? customer.rank.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                alt="CustomerRankIcon"
-                                class="size-[48px]"
-                            >
-                        </div>
-                        <div class="flex flex-col justify-center items-center gap-2 !z-10">
-                            <span class="text-primary-900 text-lg font-medium">{{ customer.rank.name }}</span>
-                        </div>
-                    </template>
-                    <template v-else>
-                        <span class="text-primary-900 text-lg font-medium"> - </span>
-                    </template>
+
+            <!-- current points and current tier -->
+            <div class="w-full flex justify-center items-start gap-6 self-stretch">
+                <div class="flex flex-col p-4 items-start gap-3 flex-[1_0_0] rounded-[5px] bg-gradient-to-br from-primary-900 to-[#5E0A0E] relative">
+                    <div class="w-full flex justify-between items-center">
+                        <span class="text-base font-semibold text-primary-25 whitespace-nowrap w-full">Current Points</span>
+                        <CircledArrowHeadRightIcon2
+                            class="size-6 text-primary-900 [&>rect]:fill-primary-25 [&>rect]:hover:fill-primary-800 cursor-pointer z-10"
+                            @click="openDrawer('currentPoints')" 
+                        />
+                    </div>
+                    <div class="flex flex-col items-start gap-1">
+                        <span class="text-white text-[36px] leading-normal font-light tracking-[-0.72px]">{{ formatPoints(customer.point) }}</span>
+                        <span class="text-white text-lg font-normal">pts</span>
+                    </div>
                     <div class="absolute bottom-0 right-0">
-                        <MedalImage />
+                        <GiftImage />
+                    </div>
+                </div>
+                <div class="flex flex-col p-4 items-start gap-3 flex-[1_0_0] self-stretch rounded-[5px] border border-solid border-primary-50 
+                            bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#FFFAFA] to-[#FFFFFF] relative">
+                    <div class="w-full flex justify-between items-center">
+                        <span class="text-base font-semibold text-primary-900 whitespace-nowrap w-full">Current Tier</span>
+                        <CircledArrowHeadRightIcon2
+                            class="size-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer z-10"
+                            @click="openDrawer('currentTier')" 
+                        />
+                    </div>
+                    <div class="w-full flex flex-col justify-center items-start gap-1 self-stretch">
+                        <template v-if="customer.rank && customer.rank.name !== 'No Tier'">
+                            <div class="flex flex-col justify-center items-center gap-[10px]">
+                                <img 
+                                    :src="customer.rank.image ? customer.rank.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt="CustomerRankIcon"
+                                    class="size-[48px]"
+                                >
+                            </div>
+                            <div class="flex flex-col justify-center items-center gap-2 !z-10">
+                                <span class="text-primary-900 text-lg font-medium">{{ customer.rank.name }}</span>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <span class="text-primary-900 text-lg font-medium"> - </span>
+                        </template>
+                        <div class="absolute bottom-0 right-0">
+                            <MedalImage />
+                        </div>
                     </div>
                 </div>
             </div>

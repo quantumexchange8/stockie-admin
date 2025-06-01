@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PermissionsSeeder::class);
         $this->call(RolesSeeder::class);
         $this->call(RankSeeder::class);
+        $this->call(DefaultSettingsSeeder::class);
         $this->call(ClassificationCodesSeeder::class);
         $this->call(MSICCodesSeeder::class);
         $this->call(StateSeeder::class);

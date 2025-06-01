@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref,computed } from "vue";
 import dayjs from "dayjs";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
@@ -57,7 +57,16 @@ const props = defineProps({
 });
 
 const calendarRef = ref(null);
-const modelValue = ref(props.modelValue);
+
+// const modelValue = ref(props.modelValue);
+const modelValue = computed({
+    get: () => props.modelValue,
+    set: (value) => {
+        emit("update:modelValue", value);
+        emit("onChange", value);
+    },
+});
+
 const initialModelValue = ref(props.modelValue);
 const isFocused = ref(false);
 
