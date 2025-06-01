@@ -232,7 +232,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/updateAutoLockDuration', [ConfigPromotionController::class, 'updateAutoLockDuration'])->name('configuration.updateAutoLockDuration');
         Route::post('/handleTableLock', [OrderController::class,'handleTableLock'])->name('configurations.handleTableLock');
     });
-    Route::get('/getAutoUnlockDuration', [ConfigPromotionController::class, 'getAutoUnlockDuration'])->name('configurations.getAutoUnlockDuration');
+    Route::get('/configurations/getAutoUnlockDuration', [ConfigPromotionController::class, 'getAutoUnlockDuration'])->name('configurations.getAutoUnlockDuration');
 
     /******** Loyalty Programme **********/
     Route::prefix('loyalty-programme')->middleware([CheckPermission::class . ':loyalty-programme'])->group(function(){
