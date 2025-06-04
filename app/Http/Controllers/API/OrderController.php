@@ -265,7 +265,7 @@ class OrderController extends Controller
     {
         $customer = $order->customer;
         $removalTarget = $customer->rewards->where('ranking_reward_id', $order->voucher_id)->first();
-            
+        
         if ($removalTarget) {
             $order->update(['voucher_id' => null]);
             $removalTarget->update(['status' => 'Active']);
@@ -661,7 +661,7 @@ class OrderController extends Controller
         $validatedOrderItems = [];
         $allItemErrors = [];
 
-        $currentOrder = Order::select('id', 'pax', 'amount', 'customer_id', 'user_id', 'status')
+        $currentOrder = Order::select('id', 'pax', 'amount', 'customer_id', 'user_id', 'status', 'voucher_id')
                                 ->with(['orderTable:id,table_id,status,order_id', 'customer.rewards'])
                                 ->find($request->order_id);
 
@@ -897,6 +897,7 @@ class OrderController extends Controller
                 }
             }
 
+            $order = Order::with(['orderTable.table', 'orderItems'])->find($addNewOrder ? $newOrder->id : $request->order_id);
             $oldVoucherId = $request->old_voucher_id ?: null;
         
             if ($request->new_voucher_id !== $oldVoucherId) {
@@ -923,17 +924,15 @@ class OrderController extends Controller
                                                 ])
                                                 ->find($request->new_voucher_id);
     
-                    if ($selectedReward) {
-                        $tierReward = $selectedReward->rankingReward;
+                    if ($selectedReward && $selectedReward->rankingReward && in_array($selectedReward->rankingReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
+                        $selectedReward->update(['status' => 'Redeemed']);
+                        $order->update(['voucher_id', $selectedReward->id]);
                     }
+                
                 } else {
                     $this->removeOrderVoucher($currentOrder);
                 }
-
             }
-
-            $order = Order::with(['orderTable.table', 'orderItems'])
-                            ->find($addNewOrder ? $newOrder->id : $request->order_id);
 
             if ($order) {
                 $statusArr = collect($order->orderItems->pluck('status')->unique());
@@ -953,15 +952,10 @@ class OrderController extends Controller
                 
                 $order->update([
                     'amount' => $order->amount + $temp,
-                    'voucher_id' => $request->new_voucher_id && isset($tierReward) && in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)']) ? $tierReward->id : $oldVoucherId,
                     'total_amount' => $order->amount + $temp,
                     'discount_amount' => $order->discount_amount + $totalDiscountedAmount,
                     'status' => $orderStatus
                 ]);
-                
-                if (isset($tierReward) && in_array($tierReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
-                    $selectedReward->update(['status' => 'Redeemed']);
-                };
                 
                 // Update all tables associated with this order
                 $order->orderTable->each(function ($tab) use ($orderTableStatus) {
@@ -970,10 +964,11 @@ class OrderController extends Controller
                 });
             }
 
+            $order->refresh();
+
             $currentTable = $this->getPendingServeItemsQuery($request->table_id)->get();
 
             $pendingServeItems = collect();
-
             $currentTable->each(function ($table) use (&$pendingServeItems) {
                 if ($table->order) {
                     if ($table->order->customer_id) {
