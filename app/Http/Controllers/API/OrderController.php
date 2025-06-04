@@ -662,8 +662,8 @@ class OrderController extends Controller
         $allItemErrors = [];
 
         $currentOrder = Order::select('id', 'pax', 'amount', 'customer_id', 'user_id', 'status')
-                                    ->with('orderTable:id,table_id,status,order_id')
-                                    ->find($request->order_id);
+                                ->with(['orderTable:id,table_id,status,order_id', 'customer.rewards'])
+                                ->find($request->order_id);
 
         $addNewOrder = in_array($currentOrder->status, ['Order Completed', 'Order Cancelled', 'Order Voided']) && $currentOrder->orderTable->every(fn ($table) => in_array($table->status, ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']));
         $tablesArray = $currentOrder->orderTable->map(fn ($table) => $table->table_id)->toArray();
@@ -899,32 +899,37 @@ class OrderController extends Controller
 
             $oldVoucherId = $request->old_voucher_id ?: null;
         
-            if ($request->new_voucher_id && $request->new_voucher_id !== $oldVoucherId) {
-                $oldSelectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
-                                            ->with([
-                                                'rankingReward:id,reward_type,discount,free_item,item_qty',
-                                                'rankingReward.product:id,product_name',
-                                                'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
-                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
-                                            ])
-                                            ->find($oldVoucherId);
-                                        
-                if ($oldSelectedReward) {
-                    $oldSelectedReward->update(['status' => 'Active']);
+            if ($request->new_voucher_id !== $oldVoucherId) {
+                if ($request->new_voucher_id) {
+                    $oldSelectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
+                                                ->with([
+                                                    'rankingReward:id,reward_type,discount,free_item,item_qty',
+                                                    'rankingReward.product:id,product_name',
+                                                    'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
+                                                    'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+                                                ])
+                                                ->find($oldVoucherId);
+                                            
+                    if ($oldSelectedReward) {
+                        $oldSelectedReward->update(['status' => 'Active']);
+                    }
+    
+                    $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
+                                                ->with([
+                                                    'rankingReward:id,reward_type,discount,free_item,item_qty',
+                                                    'rankingReward.product:id,product_name',
+                                                    'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
+                                                    'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+                                                ])
+                                                ->find($request->new_voucher_id);
+    
+                    if ($selectedReward) {
+                        $tierReward = $selectedReward->rankingReward;
+                    }
+                } else {
+                    $this->removeOrderVoucher($currentOrder);
                 }
 
-                $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
-                                            ->with([
-                                                'rankingReward:id,reward_type,discount,free_item,item_qty',
-                                                'rankingReward.product:id,product_name',
-                                                'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
-                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
-                                            ])
-                                            ->find($request->new_voucher_id);
-
-                if ($selectedReward) {
-                    $tierReward = $selectedReward->rankingReward;
-                }
             }
 
             $order = Order::with(['orderTable.table', 'orderItems'])
