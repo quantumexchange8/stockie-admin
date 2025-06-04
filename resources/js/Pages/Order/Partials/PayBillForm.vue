@@ -21,6 +21,8 @@ import isBetween from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { MovingIllus } from '@/Components/Icons/illus';
+import OrderReceipt from './OrderReceipt.vue';
+
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -58,6 +60,8 @@ const isSplitBillMode = ref(false);
 const splitBillDetails = ref(null);
 const selectedItems = ref([]);
 const searchQuery = ref('');
+const orderInvoice = ref(null);
+const showOrderReceipt = ref(false);
 
 const form = useForm({
     user_id: userId.value,
@@ -375,6 +379,7 @@ const openSuccessPaymentModal = () => {
 
 const closeSuccessPaymentModal = () => {
     isSuccessPaymentShow.value = false;
+    setTimeout(() => showOrderReceipt.value = false, 3000);
     form.reset();
 
     if (splitBillDetails.value && splitBillDetails.value.id !== 'current') {
@@ -1051,6 +1056,10 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
 //     }
 // });
 
+const printInvoiceReceipt = () => {
+    showOrderReceipt.value = true;
+    setTimeout(() => orderInvoice.value.printReceipt(), 3000);
+}
 </script>
 
 <template>
@@ -1469,13 +1478,19 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
             </div>
 
             <div class="flex flex-col items-start gap-4 self-stretch">
-                <div @click="" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] bg-grey-50 h-36">
+                <div @click="printInvoiceReceipt" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] border border-grey-200 h-36 cursor-pointer">
                     <p class="text-grey-950 text-md font-medium">Print receipt</p>
                 </div>
-                <div @click="closeSuccessPaymentModal" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] h-36 border border-grey-200">
+                <div @click="closeSuccessPaymentModal" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] h-36 border border-grey-200 cursor-pointer">
                     <p class="text-grey-950 text-md font-medium">No receipt</p>
                 </div>
             </div>
         </div>
     </Modal>
+
+    <div class="hidden">
+        <template v-if="showOrderReceipt">
+            <OrderReceipt ref="orderInvoice" :orderId="order.id" />
+        </template>
+    </div>
 </template>

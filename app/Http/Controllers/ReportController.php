@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\Iventory;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -32,6 +33,7 @@ class ReportController extends Controller
                 ->toDateString(),
             $request->input('date_filter')
         );
+
         $typeFilter = $request->input('typeFilter');
 
         $startDate = Carbon::parse($dateFilter[0])->startOfDay();
@@ -129,29 +131,85 @@ class ReportController extends Controller
                         });
 
         } elseif ($typeFilter === 'member_purchase') {
-            $data = Payment::where(function ($query) use ($dateFilter, $startDate, $endDate) {
-                                $query->whereDate('receipt_start_date', '>=', $startDate)
-                                        ->whereDate('receipt_start_date', '<=', $endDate);
+            $data = Customer::whereHas('payments', function ($query) use ($startDate, $endDate) {
+                                 $query->where(function ($subQuery) use ($startDate, $endDate) {
+                                            $subQuery->whereDate('receipt_start_date', '>=', $startDate)
+                                                    ->whereDate('receipt_start_date', '<=', $endDate);
+                                        })
+                                        ->where('status', 'Successful')
+                                        ->whereNotNull('transaction_id');
                             })
-                            ->where('status', 'Successful')
-                            ->whereNotNull('transaction_id')
+                            ->whereNot('status', 'void')
                             ->with([
-                                'order', 
-                                'customer', 
+                                'payments' => function ($query) use ($startDate, $endDate) {
+                                    $query->where(function ($subQuery) use ($startDate, $endDate) {
+                                                $subQuery->whereDate('receipt_start_date', '>=', $startDate)
+                                                        ->whereDate('receipt_start_date', '<=', $endDate);
+                                            })
+                                            ->where('status', 'Successful')
+                                            ->whereNotNull('transaction_id');
+                                },
+                                'payments.order'
                             ])
                             ->orderBy('id')
                             ->get();
 
         } elseif ($typeFilter === 'current_stock') {
-            $data = Iventory::where('status', 'Active')
-                            ->with([
-                                'inventoryItems.itemCategory', 
-                            ])
-                            ->orderBy('id')
-                            ->get();
+            $data = Iventory::with([
+                                    'inventoryItems' => function ($query) {
+                                        $query->selectRaw('
+                                                iventory_items.*, 
+                                                SUM(
+                                                    CASE 
+                                                        WHEN keep_items.qty > 0 AND keep_items.cm = 0 THEN keep_items.qty
+                                                        WHEN keep_items.qty = 0 AND keep_items.cm > 0 THEN 1
+                                                        ELSE 0 
+                                                    END
+                                                ) as total_keep_qty
+                                            ')
+                                            ->leftJoin('product_items', 'iventory_items.id', '=', 'product_items.inventory_item_id')
+                                            ->leftJoin('order_item_subitems', 'product_items.id', '=', 'order_item_subitems.product_item_id')
+                                            ->leftJoin('keep_items', function ($join) {
+                                                $join->on('order_item_subitems.id', '=', 'keep_items.order_item_subitem_id')
+                                                     ->where('keep_items.status', 'Keep');
+                                            })
+                                            ->where('iventory_items.status', '!=', 'Inactive')
+                                            ->groupBy('iventory_items.id');
+                                    },
+                                    'inventoryItems.itemCategory:id,name',
+                                    'inventoryItems.productItems:id,inventory_item_id,product_id',
+                                    'inventoryItems.productItems.product:id',
+                                    'inventoryItems.productItems.orderSubitems:id,product_item_id',
+                                ])
+                                ->where('status', 'Active')
+                                ->orderBy('id')
+                                ->get()
+                                ->map(function ($group) {
+                                    $group->inventory_image = $group->getFirstMediaUrl('inventory');
+
+                                    $group->inventoryItems->each(function ($item) {
+                                        // Collect unique product and assign to $item->products
+                                        $item->products = $item->productItems
+                                                ->pluck('product')
+                                                ->unique('id')
+                                                ->map(fn($product) => [
+                                                    'id' => $product->id,
+                                                    'image' => $product->getFirstMediaUrl('product'),
+                                                ])
+                                                ->values();
+
+                                        $item->total_keep_qty = $item->total_keep_qty ?? 0;
+                            
+                                        unset($item->productItems);
+                                        
+                                    });
+
+                                    return $group;
+                                });
 
         }
 
+        
         return response()->json($data);
     }
 }

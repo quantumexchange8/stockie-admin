@@ -20,6 +20,7 @@ import Checkbox from '@/Components/Checkbox.vue';
 import MergeTableForm from './MergeTableForm.vue';
 import TransferTableForm from './TransferTableForm.vue';
 import SplitTablesForm from './SplitTablesForm.vue';
+import TableKeepHistory from './TableKeepHistory.vue';
 
 const props = defineProps({
     errors: Object,
@@ -56,6 +57,7 @@ const mergeTableIsOpen = ref(false);
 const transferOptionIsOpen = ref(false);
 const transferTableIsOpen = ref(false);
 const drawerIsVisible = ref(false);
+const drawerIsVisible2 = ref(false);
 const selectedTab = ref(0);
 const currentOrderTable = ref({});
 const pendingServeItems = ref([]);
@@ -234,6 +236,17 @@ const closeDrawer = () => {
     drawerIsVisible.value = false;
     actionType.value = null;
 };
+
+const openDrawer2 = () => {
+    if (!drawerIsVisible2.value) {
+        drawerIsVisible2.value = true;
+    }
+};
+
+const closeDrawer2 = () => {
+    drawerIsVisible2.value = false;
+};
+
 
 const openPaymentDrawer = () => {
     if (!drawerIsVisible.value) drawerIsVisible.value = true;
@@ -529,8 +542,10 @@ watch(() => props.autoUnlockSetting, (newValue) => {
         :header="actionType === 'keep' ? 'Keep Item' : actionType === 'add' ? '' : 'Make Payment'" 
         :withHeader="actionType !== 'add'"
         previousTab
+        :withHistory="actionType === 'keep'"
         v-model:show="drawerIsVisible"
         @close="actionType ? closeDrawer() : closePaymentDrawer()"
+        @openHistory="actionType === 'keep' ? openDrawer2() : ''"
     >
         <template v-if="actionType === 'keep'">
             <KeepItem
@@ -563,6 +578,20 @@ watch(() => props.autoUnlockSetting, (newValue) => {
             />
                 <!-- @update:customer-rank="customer.rank = $event" -->
         </template>
+    </RightDrawer>
+
+    <RightDrawer 
+        :header="'Table Keep History'" 
+        :withHeader="true"
+        previousTab
+        v-model:show="drawerIsVisible2"
+        @close="closeDrawer2"
+    >
+        <TableKeepHistory
+            :order="order" 
+            :selectedTable="currentTable"
+            @close="closeDrawer2();closeDrawer()"
+        />
     </RightDrawer>
 <!-- 
     <RightDrawer 

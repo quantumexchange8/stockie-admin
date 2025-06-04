@@ -266,7 +266,7 @@ watch(() => props.merchant, (newValue) => {
 
 onMounted(() => {
     getResults();
-    // getCutOffTime();
+    getCutOffTime();
 })
 </script>
 
@@ -555,7 +555,7 @@ onMounted(() => {
         </form>
 
         <!-- Cut Off Time (All Report) -->
-        <!-- <form novalidate @submit="editCutOffTime" class="w-full">
+        <form novalidate @submit="editCutOffTime" class="w-full">
             <div class="flex flex-col p-6 items-start gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
                 <div class="flex justify-between items-center self-stretch">
                     <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">Cut-off Time</span>
@@ -585,7 +585,7 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
-        </form> -->
+        </form>
 
         <!-- Tax Settings -->
         <form novalidate @submit="editTaxes" class="w-full" >

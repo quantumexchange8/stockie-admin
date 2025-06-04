@@ -75,8 +75,8 @@ const variantClasses = computed(() => ({
 }[variant]));
 
 const sizeClasses = computed(() => ({
-    'md': iconOnly ? 'p-2' : 'px-4 py-2 text-sm',
-    'lg': iconOnly ? 'p-3' : 'px-6 py-3 text-base',
+    'md': iconOnly ? 'p-2 max-h-[34px]' : 'px-4 py-2 text-sm max-h-[34px]',
+    'lg': iconOnly ? 'p-3 max-h-11' : 'px-6 py-3 text-base max-h-11',
 }[size]));
 
 const shapeClasses = computed(() => ({

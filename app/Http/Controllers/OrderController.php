@@ -1219,7 +1219,7 @@ class OrderController extends Controller
 
         $taxes = Setting::whereIn('name', ['SST', 'Service Tax'])->pluck('value', 'name');
 
-        $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address_line1')->first();
+        $merchant = ConfigMerchant::select('id', 'merchant_name', 'merchant_contact', 'merchant_address_line1', 'merchant_address_line2', 'postal_code', 'area', 'state')->first();
 
         if ($merchant) {
             $merchant->image = $merchant->getFirstMediaUrl('merchant_settings');
@@ -3360,6 +3360,69 @@ class OrderController extends Controller
             'uniqueOrders' => $uniqueOrders,
             'allCustomers' => $allCustomers,
         ]);
+    }
+
+    public function getTableKeepHistories(string $id) 
+    {
+        // Fetch order tables with necessary relationships
+        $orderTables = OrderTable::with([
+                                    'table',
+                                    'order.orderItems' => fn($query) => $query->whereIn('status', ['Served', 'Pending Serve']),
+                                    'order.orderItems.subItems.productItem.inventoryItem',
+                                    'order.orderItems.subItems.keepItems.keepHistories' => fn($query) => $query->where('status', 'Keep'),
+                                    'order.orderItems.subItems.keepItems.waiter:id,full_name',
+                                    'order.orderItems.subItems.keepItems.customer:id,full_name',
+                                    'order.orderItems.subItems.keepItems.orderItemSubitem.productItem:id,inventory_item_id',
+                                    'order.orderItems.subItems.keepItems.orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                ])
+                                ->where('table_id', $id)
+                                ->whereIn('status', ['Pending Clearance', 'All Order Served', 'Order Placed'])
+                                ->orderByDesc('updated_at')
+                                ->get();
+    
+        // Collect unique orders and map keep histories
+        $uniqueOrders = $orderTables->pluck('order')->unique('id')->map(function ($order) {
+            return [
+                'order_time' => Carbon::parse($order->created_at)->format('d/m/Y, H:i'),
+                'order_id' => $order->id,
+                'order_no' => $order->order_no,
+                'keep_histories' => $order->orderItems->flatMap(fn($item) =>
+                    $item->subItems->flatMap(fn($subItem) =>
+                        $subItem->keepItems->flatMap(fn($keepItem) =>
+                            $keepItem->keepHistories->map(function ($history) use ($keepItem, $subItem) {
+                                $keepItem->customer['image'] = $keepItem->customer->getFirstMediaUrl('customer');
+                                $keepItem->waiter['image'] = $keepItem->waiter->getFirstMediaUrl('user');
+
+                                return array_merge($history->toArray(), [
+                                    'keep_item' => [
+                                        'id' => $keepItem->id,
+                                        'sub_item_id' => $keepItem->sub_item_id,
+                                        'product_item_id' => $subItem->productItem->id,
+                                        'inventory_item_name' => $subItem->productItem->inventoryItem->item_name,
+                                        'expired_from' => $keepItem->expired_from,
+                                        'expired_to' => $keepItem->expired_to,
+                                        'created_at' => $keepItem->created_at,
+                                        'updated_at' => $keepItem->updated_at,
+                                        'waiter' => $keepItem->waiter,
+                                        'customer' => $keepItem->customer,
+                                        'image' => $subItem->productItem 
+                                                ? $subItem->productItem->product->getFirstMediaUrl('product') 
+                                                : $subItem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory'),
+                                    ]
+                                ]);
+                            })
+                        )
+                    )
+                )->values(),
+                'customer' => $order->customer ? [
+                    'id' => $order->customer->id,
+                    'name' => $order->customer->name,
+                    'image' => $order->customer->getFirstMediaUrl('customer')
+                ] : null,
+            ];
+        })->values();
+    
+        return response()->json($uniqueOrders);
     }
 
     public function reactivateExpiredItems(Request $request)

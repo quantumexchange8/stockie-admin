@@ -117,7 +117,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <!-- Work In Progress -->
-                <!-- <SidebarLink 
+                <SidebarLink 
                     title="All Report" 
                     :href="route('report')"
                     :active="route().current('report')"
@@ -126,7 +126,7 @@ const toggleNode = (node) => {
                     <template #icon>
                         <AllReportIcon aria-hidden="true" />
                     </template>
-                </SidebarLink> -->
+                </SidebarLink>
             </div>
         </div>
 

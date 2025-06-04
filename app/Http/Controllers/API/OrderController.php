@@ -271,6 +271,38 @@ class OrderController extends Controller
             $removalTarget->update(['status' => 'Active']);
         }
     }
+
+    /**
+     * Remove the voucher applied to the order and reinstate back to customer's reward list.
+     */
+    private function updateOrderVoucher($order, $appliedVoucher)
+    {
+        $orderVoucher = $order->voucher;
+
+        // Case 1: No voucher applied - remove existing voucher if present
+        if (!$appliedVoucher) {
+            if ($orderVoucher) {
+                $this->removeOrderVoucher($order);
+            }
+            return;
+        }
+
+        // Case 2: Voucher applied
+        $isDifferentVoucher = !$orderVoucher || $orderVoucher->id !== $appliedVoucher['id'];
+    
+        // Remove old voucher if it's different from the new one
+        if ($orderVoucher && $isDifferentVoucher) {
+            $this->removeOrderVoucher($order);
+        }
+    
+        // Apply new voucher if it's different or if there was no voucher before
+        if ($isDifferentVoucher) {
+            $selectedReward = CustomerReward::find($appliedVoucher['customer_reward_id']);
+            $order->update(['voucher_id' => $appliedVoucher['id']]);
+            $selectedReward->update(['status' => 'Redeemed']);
+        }
+    }
+
     
     /**
      * Check in customer to table.
@@ -897,41 +929,64 @@ class OrderController extends Controller
                 }
             }
 
-            $order = Order::with(['orderTable.table', 'orderItems'])->find($addNewOrder ? $newOrder->id : $request->order_id);
+            $order = Order::with(['orderTable.table', 'orderItems', 'voucher'])->find($addNewOrder ? $newOrder->id : $request->order_id);
             $oldVoucherId = $request->old_voucher_id ?: null;
         
-            if ($request->new_voucher_id !== $oldVoucherId) {
-                if ($request->new_voucher_id) {
-                    $oldSelectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
-                                                ->with([
-                                                    'rankingReward:id,reward_type,discount,free_item,item_qty',
-                                                    'rankingReward.product:id,product_name',
-                                                    'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
-                                                    'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
-                                                ])
-                                                ->find($oldVoucherId);
-                                            
-                    if ($oldSelectedReward) {
-                        $oldSelectedReward->update(['status' => 'Active']);
-                    }
+            // if ($request->new_voucher_id !== $oldVoucherId) {
+            //     if ($request->new_voucher_id) {
+            //         if ($oldVoucherId) {
+            //             $oldSelectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
+            //                                         ->with([
+            //                                             'rankingReward:id,reward_type,discount,free_item,item_qty',
+            //                                             'rankingReward.product:id,product_name',
+            //                                             'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
+            //                                             'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+            //                                         ])
+            //                                         ->find($oldVoucherId);
+                                                
+            //             if ($oldSelectedReward) {
+            //                 $oldSelectedReward->update(['status' => 'Active']);
+            //             }
+            //         }
     
-                    $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
-                                                ->with([
-                                                    'rankingReward:id,reward_type,discount,free_item,item_qty',
-                                                    'rankingReward.product:id,product_name',
-                                                    'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
-                                                    'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
-                                                ])
-                                                ->find($request->new_voucher_id);
+            //         $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
+            //                                     ->with([
+            //                                         'rankingReward:id,reward_type,discount,free_item,item_qty',
+            //                                         'rankingReward.product:id,product_name',
+            //                                         'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
+            //                                         'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+            //                                     ])
+            //                                     ->find($request->new_voucher_id);
     
-                    if ($selectedReward && $selectedReward->rankingReward && in_array($selectedReward->rankingReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
-                        $selectedReward->update(['status' => 'Redeemed']);
-                        $order->update(['voucher_id', $selectedReward->id]);
-                    }
+            //         if ($selectedReward && $selectedReward->rankingReward && in_array($selectedReward->rankingReward->reward_type, ['Discount (Amount)', 'Discount (Percentage)'])) {
+            //             $selectedReward->update(['status' => 'Redeemed']);
+            //             $order->update(['voucher_id' => $selectedReward->id]);
+            //             Log::info("updated order: $order");
+            //         }
                 
-                } else {
-                    $this->removeOrderVoucher($currentOrder);
-                }
+            //     } else {
+            //         $this->removeOrderVoucher($currentOrder);
+            //     }
+            // }
+
+            if ($request->new_voucher_id) {
+                $selectedReward = CustomerReward::select('id', 'customer_id', 'ranking_reward_id', 'status')
+                                            ->with([
+                                                'rankingReward:id,reward_type,discount,free_item,item_qty',
+                                                'rankingReward.product:id,product_name',
+                                                'rankingReward.product.productItems:id,product_id,inventory_item_id,qty',
+                                                'rankingReward.product.productItems.inventoryItem:id,item_name,stock_qty,inventory_id,low_stock_qty,current_kept_amt'
+                                            ])
+                                            ->find($request->new_voucher_id);
+
+                $voucher = [
+                    'id' => $selectedReward->rankingReward->id,
+                    'customer_reward_id' => $selectedReward->id,
+                ];
+                $this->updateOrderVoucher($order, $voucher);
+
+            } else {
+                $this->updateOrderVoucher($order, null);
             }
 
             if ($order) {

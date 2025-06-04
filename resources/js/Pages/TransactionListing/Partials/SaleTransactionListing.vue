@@ -108,6 +108,14 @@ const rowType = {
     groupRowsBy: "",
 };
 
+const form = useForm({
+    refund_method: '',
+    refund_others: '',
+    refund_reason: '',
+    refund_item: [],
+    refund_tax: false,
+});
+
 const saleRowsPerPage = ref(6);
 
 const saleTotalPages = computed(() => {
@@ -121,7 +129,13 @@ const action = (event, item) => {
 
 const closeAction = () => {
     detailIsOpen.value = false;
+    const transaction = saleTransaction.value.find((sale) => sale.id === selectedVal.value.id);
+    transaction.order.filter_order_items.forEach(orderItem => delete orderItem.refund_quantities);
     
+    setTimeout(() => {
+        form.reset();
+        selectedVal.value = null;
+    }, 300);
 }
 
 const actionOption = (event) => {
@@ -173,7 +187,6 @@ const refundModal = () => {
 
 const closeRefundModal = () => {
     refundIsOpen.value = false;
-    form.reset();
 }
 
 const confirmRefundModal = () => {
@@ -196,14 +209,6 @@ const closeConsolidate = () => {
     consolidateIsOpen.value = false;
 }
 
-const form = useForm({
-    refund_method: '',
-    refund_others: '',
-    refund_reason: '',
-    refund_item: [],
-    refund_tax: false,
-});
-
 const updateRefundQty = (itemId, qty, productId) => {
     const orderItem = selectedVal.value.order?.filter_order_items.find(o => o.id === itemId);
     if (!orderItem || orderItem.item_qty === 0) return; // Prevent division by zero
@@ -217,8 +222,16 @@ const updateRefundQty = (itemId, qty, productId) => {
         existingItem.refund_amount = refundAmount; // Update refund amount
         existingItem.product_id = productId; // Update refund amount
         existingItem.total_keep_subitem_qty = orderItem.total_keep_subitem_qty; // Update refund amount
+        existingItem.remaining_qty = orderItem.remaining_qty; // Update remaining quantities
     } else {
-        form.refund_item.push({ id: itemId, refund_quantities: qty, refund_amount: refundAmount, product_id: productId, total_keep_subitem_qty: orderItem.total_keep_subitem_qty});
+        form.refund_item.push({ 
+            id: itemId, 
+            refund_quantities: qty, 
+            refund_amount: refundAmount, 
+            product_id: productId, 
+            total_keep_subitem_qty: orderItem.total_keep_subitem_qty,
+            remaining_qty: orderItem.remaining_qty,
+        });
     }
 };
 
@@ -312,6 +325,7 @@ const confirmRefund = async () => {
 
         if (response.status === 200) {
             closeConfirmmVoid();
+            closeRefundModal();
             closeAction();
             fetchTransaction();
         }
@@ -521,282 +535,95 @@ const isFormValid = computed(() => {
         :title="'Sales transaction detail'"
         :maxWidth="'sm'"
     >
-        <!-- {{ selectedVal }} -->
-        <div class="flex flex-col gap-6 ">
-            <div class="flex flex-col gap-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <Tag 
-                            :variant="selectedVal.status === 'Successful' ? 'green' : selectedVal.status === 'Voided' ? 'red' : 'grey' "  
-                            :value="selectedVal.status === 'Successful' ? 'Completed' : 'Voided'" 
-                        />
-                    </div>
-                    <div @click="actionOption($event, row)"><DotVerticleIcon /></div>
-                </div>
-                <div class="grid grid-cols-2 gap-5">
-                    <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Date & Time</div>
-                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.receipt_end_date }}</div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Transaction No.</div>
-                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.receipt_no }}</div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Total</div>
-                        <div class="text-gray-900 text-base font-bold">RM {{ formatAmount(selectedVal.grand_total) }}</div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Customer</div>
-                        <div class="text-gray-900 text-base font-bold flex items-center gap-2">
-                            <div class="max-w-5 max-h-5" v-if="selectedVal.customer">
-                                <img :src="selectedVal.customer.profile_photo ? selectedVal.customer.profile_photo : '' " alt="">
-                            </div>
-                            <div>{{ selectedVal.customer ?  selectedVal.customer.full_name : 'Guest'}}</div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Points Given</div>
-                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.customer ? selectedVal.point_earned : 0}} pts</div>
-                    </div>
-                </div>
-            </div>
-            <div>
-                <TabView :tabs="tabs" :selectedTab="props.selectedTab ? props.selectedTab : 0">
-                    <template #sales-detail>
-                        <SalesDetail :selectedVal="selectedVal" />
-                    </template>
-                    <template #product-sold>
-                        <ProductSold :selectedVal="selectedVal" />
-                    </template>
-                    <template #payment-method>
-                        <PaymentMethod :selectedVal="selectedVal" />
-                    </template>
-                </TabView>
-            </div>
-        </div>
-
-        <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">
-            <div class="flex flex-col items-center border-2 border-primary-50 rounded-md">
-                <Button
-                    type="button"
-                    variant="tertiary"
-                    class="w-fit border-0 hover:bg-primary-50 !justify-start"
-                    @click="ConfirmVoid"
-                >
-                    <span class="text-grey-700 font-normal">Void</span>
-                </Button>
-                <Button
-                    type="button"
-                    variant="tertiary"
-                    class="w-fit border-0 hover:bg-primary-50 !justify-start"
-                    @click="refundModal"
-                >
-                    <span class="text-grey-700 font-normal">Refund</span>
-                </Button>
-                <Button
-                    type="button"
-                    variant="tertiary"
-                    class="w-fit border-0 hover:bg-primary-50 !justify-start"
-                >
-                    <span class="text-grey-700 font-normal">Print Receipt</span>
-                </Button>
-            </div>
-        </OverlayPanel>
-
-        <!-- Void -->
-        <Modal
-            :maxWidth="'2xs'"
-            :closeable="true"
-            :show="voideIsOpen"
-            @close="closeConfirmmVoid"
-            :withHeader="false"
-        >
-            <div class="flex flex-col gap-9">
-                <div class="bg-primary-50 flex flex-col items-center gap-[10px] rounded-t-[5px] m-[-24px] pt-6 px-3">
-                    <div class="w-full flex justify-center shrink-0">
-                        <DeleteIllus />
-                    </div>
-                </div>
-                <div class="flex flex-col gap-5 pt-6">
-                    <div class="flex flex-col gap-1 text-center self-stretch">
-                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ selectedVal.order.total_kept_item_qty > 0 ? `${selectedVal.order.total_kept_item_qty} kept item found` : 'Void this transaction?' }}</span>
-                        <span class="text-grey-900 text-base font-medium self-stretch">
-                            {{ 
-                                selectedVal.order.total_kept_item_qty > 0
-                                        ? 'By voiding this transaction, the kept item(s) will be removed from the customer’s account. Are you sure you want to void this bill?'
-                                        : 'Voiding this transaction will remove it from active records and reverse any associated points or balances. This action cannot be undone.' 
-                            }}
-                        </span>
-                    </div>
-                </div>
-                <div class="flex justify-center items-start self-stretch gap-3">
-                    <Button
-                        variant="tertiary"
-                        size="lg"
-                        type="button"
-                        @click="closeConfirmmVoid"
-                    >
-                        Keep
-                    </Button>
-                    <Button
-                        variant="primary"
-                        size="lg"
-                        @click="voidAction"
-                    >
-                        Void
-                    </Button>
-                </div>
-            </div>
-        </Modal>
-
-        <!-- Refund -->
-        <Modal
-            :maxWidth="'sm'"
-            :closeable="true"
-            :show="refundIsOpen"
-            @close="closeRefundModal"
-            :title="'Select refund item'"
-        >
-            <div class="flex flex-col gap-6 max-h-[80vh] overflow-y-scroll">
-                <div class="p-4 flex items-center gap-10">
-                    <div class="flex gap-3">
+        <template v-if="selectedVal">
+            <div class="flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit max-h-[calc(100dvh-8rem)]">
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <ToastInfoIcon />
+                            <Tag 
+                                :variant="selectedVal.status === 'Successful' ? 'green' : selectedVal.status === 'Voided' ? 'red' : 'grey' "  
+                                :value="selectedVal.status === 'Successful' ? 'Completed' : 'Voided'" 
+                            />
+                        </div>
+                        <div @click="actionOption($event, row)"><DotVerticleIcon /></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1">
+                            <div class="text-gray-900 text-base">Date & Time</div>
+                            <div class="text-gray-900 text-base font-bold">{{ selectedVal.receipt_end_date }}</div>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <div class="text-blue-500 text-base font-medium">Refunds are limited to cost items only.</div>
-                            <div class="text-sm text-gray-700">Kept item, redeemed product, and entry reward item will not show in this list.</div>
+                            <div class="text-gray-900 text-base">Transaction No.</div>
+                            <div class="text-gray-900 text-base font-bold">{{ selectedVal.receipt_no }}</div>
                         </div>
-                    </div>
-                    <div>
-                        <Button
-                            
-                        >
-                            OK
-                        </Button>
-                    </div>
-                </div>
-                <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px] min-h-40 max-h-80 overflow-y-scroll">
-                    <div class="text-gray-950 text-md font-semibold">Select refund item</div>
-                    <div class="flex flex-col gap-4">
-                        <div v-for="item in selectedVal.order.filter_order_items" :key="item.id" class="flex items-center gap-6"  >
-                            <div class="text-gray-900 text-base font-normal">{{ item.item_qty }}x</div>
-                            <div class="flex flex-col gap-1 w-full">
-                                <div class="text-gray-900 text-base font-semibold max-w-[284px] truncate">{{ item.product.product_name }}</div>
-                                <div class="flex items-center">
-                                    <div v-if="item.discount_amount > 0" class="flex items-center gap-2">
-                                        <span class="text-gray-900 text-base">RM{{ item.product_discount.price_after }} </span> 
-                                        <span class="line-through text-gray-500 text-base ">RM{{ item.product_discount.price_before }} </span>
-                                    </div>
-                                    <span v-else>RM{{ item.amount }}</span>
+                        <div class="flex flex-col gap-1">
+                            <div class="text-gray-900 text-base">Total</div>
+                            <div class="text-gray-900 text-base font-bold">RM {{ formatAmount(selectedVal.grand_total) }}</div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <div class="text-gray-900 text-base">Customer</div>
+                            <div class="text-gray-900 text-base font-bold flex items-center gap-2">
+                                <div class="max-w-5 max-h-5" v-if="selectedVal.customer">
+                                    <img :src="selectedVal.customer.profile_photo ? selectedVal.customer.profile_photo : '' " alt="">
                                 </div>
-                                <div v-if="item.total_keep_subitem_qty > 0" class="flex !w-fit items-center justify-cente gap-2.5 px-3 py-1 rounded-[5px] bg-primary-600">
-                                    <p class="text-primary-50 text-2xs">{{ `${item.total_keep_subitem_qty} item kept` }}</p>
-                                </div>
-                            </div>
-                            <div>
-                                <template v-if="item.item_qty - item.refund_qty > 0">
-                                    <NumberCounter
-                                        :labelText="''"
-                                        :inputName="'qty_' + item.id"
-                                        :minValue="0"
-                                        :maxValue="item.item_qty - item.refund_qty"
-                                        v-model="item.refund_quantities"
-                                        @update:modelValue="(qty) => updateRefundQty(item.id, qty, item.product.id)"
-                                        class="!w-fit whitespace-nowrap max-w-[139px]"
-                                    />
-                                </template>
-                                <span v-else class="text-red-500 text-sm font-medium">Fully Refunded</span>
+                                <div>{{ selectedVal.customer ?  selectedVal.customer.full_name : 'Guest'}}</div>
                             </div>
                         </div>
-                    </div>
-                    
-                </div>
-                <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px]">
-                    <div class="text-gray-950 text-md font-semibold">Refund Method</div>
-                    <div>
-                        <RadioButton
-                            :optionArr="refundMethod"
-                            :checked="form.refund_method"
-                            v-model:checked="form.refund_method"
-                        />
-                    </div>
-                    <div v-if="form.refund_method === 'Others'">
-                        <TextInput
-                            label-text=""
-                            :inputType="'text'"
-                            :placeholder="'Enter others details'"
-                            v-model="form.refund_others"
-                            autofocus
-                            autocomplete="refund_others"
-                        />
-                    </div>
-                </div>
-                <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px]">
-                    <div class="text-gray-950 text-md font-semibold">Refund Reason</div>
-                    <div>
-                        <TextInput
-                            label-text=""
-                            :inputType="'text'"
-                            :placeholder="'Enter refund reason'"
-                            v-model="form.refund_reason"
-                            autofocus
-                            autocomplete="refund_reason"
-                        />
-                    </div>
-                </div>
-                <div class=" py-4 px-3 flex flex-col gap-5 bg-[#FCFCFC]">
-                    <div class="flex items-center justify-between">
-                        <div>Total Refund</div>
-                        <div>RM {{ totalRefundAmount }}</div>
-                    </div>
-                    <div v-if="form.refund_tax === true" class="flex flex-col gap-1">
-                        <div class="flex items-center w-full">
-                            <div class="text-gray-900 text-base w-full">Sub-total</div>
-                            <div class="text-gray-900 font-bold text-base text-right w-full">{{ subTotalRefundAmount }}</div>
-                        </div>
-                        <div class="flex items-center w-full">
-                            <div class="text-gray-900 text-base w-full">SST(6%)</div>
-                            <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalSstRefund }}</div>
-                        </div>
-                        <div class="flex items-center w-full">
-                            <div class="text-gray-900 text-base w-full">Service Tax</div>
-                            <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalServiceTaxRefund }}</div>
-                        </div>
-                        <div class="flex items-center w-full">
-                            <div class="text-gray-900 text-base w-full">Rouding</div>
-                            <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalRoundingRefund }}</div>
+                        <div class="flex flex-col gap-1">
+                            <div class="text-gray-900 text-base">Points Given</div>
+                            <div class="text-gray-900 text-base font-bold">{{ selectedVal.customer ? selectedVal.point_earned : 0}} pts</div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <Checkbox 
-                            v-model:checked="form.refund_tax"
-                            :value="'refund_with_tax'"
-                        />
-                        <span>Refund with taxes</span>
-                    </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <div class="w-full">
-                        <Button size="lg" variant="tertiary" class="w-full" @click="cancelRefund">
-                            Cancel
-                        </Button>
-                    </div>
-                    <div class="w-full">
-                        <Button size="lg" variant="primary" class="w-full" :disabled="!isFormValid" @click="selectedVal.order.total_kept_item_qty > 0 ? confirmRefundModal() : confirmRefund()">
-                            Confirm
-                        </Button>
-                    </div>
+                <div>
+                    <TabView :tabs="tabs" :selectedTab="props.selectedTab ? props.selectedTab : 0">
+                        <template #sales-detail>
+                            <SalesDetail :selectedVal="selectedVal" />
+                        </template>
+                        <template #product-sold>
+                            <ProductSold :selectedVal="selectedVal" />
+                        </template>
+                        <template #payment-method>
+                            <PaymentMethod :selectedVal="selectedVal" />
+                        </template>
+                    </TabView>
                 </div>
             </div>
 
-            <!-- Confirmation -->
+            <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">
+                <div class="flex flex-col items-center border-2 border-primary-50 rounded-md">
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                        @click="ConfirmVoid"
+                    >
+                        <span class="text-grey-700 font-normal">Void</span>
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                        @click="refundModal"
+                    >
+                        <span class="text-grey-700 font-normal">Refund</span>
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                    >
+                        <span class="text-grey-700 font-normal">Print Receipt</span>
+                    </Button>
+                </div>
+            </OverlayPanel>
+
+            <!-- Void -->
             <Modal
                 :maxWidth="'2xs'"
                 :closeable="true"
-                :show="confirmRefundIsOpen"
-                @close="closeConfirmRefundModal"
+                :show="voideIsOpen"
+                @close="closeConfirmmVoid"
                 :withHeader="false"
             >
                 <div class="flex flex-col gap-9">
@@ -807,8 +634,14 @@ const isFormValid = computed(() => {
                     </div>
                     <div class="flex flex-col gap-5 pt-6">
                         <div class="flex flex-col gap-1 text-center self-stretch">
-                            <span class="text-primary-900 text-lg font-medium self-stretch">{{ `Kept item found` }}</span>
-                            <span class="text-grey-900 text-base font-medium self-stretch">By refunding this transaction, the kept item(s) will be removed from the customer’s account. Are you sure you want to proceed with refund?</span>
+                            <span class="text-primary-900 text-lg font-medium self-stretch">{{ selectedVal.order.total_kept_item_qty > 0 ? `${selectedVal.order.total_kept_item_qty} kept item found` : 'Void this transaction?' }}</span>
+                            <span class="text-grey-900 text-base font-medium self-stretch">
+                                {{ 
+                                    selectedVal.order.total_kept_item_qty > 0
+                                            ? 'By voiding this transaction, the kept item(s) will be removed from the customer’s account. Are you sure you want to void this bill?'
+                                            : 'Voiding this transaction will remove it from active records and reverse any associated points or balances. This action cannot be undone.' 
+                                }}
+                            </span>
                         </div>
                     </div>
                     <div class="flex justify-center items-start self-stretch gap-3">
@@ -816,21 +649,199 @@ const isFormValid = computed(() => {
                             variant="tertiary"
                             size="lg"
                             type="button"
-                            @click="closeConfirmRefundModal"
+                            @click="closeConfirmmVoid"
                         >
                             Keep
                         </Button>
                         <Button
                             variant="primary"
                             size="lg"
-                            @click="confirmRefund"
+                            @click="voidAction"
                         >
-                            Refund
+                            Void
                         </Button>
                     </div>
                 </div>
             </Modal>
-        </Modal>
+
+            <!-- Refund -->
+            <Modal
+                :maxWidth="'sm'"
+                :closeable="true"
+                :show="refundIsOpen"
+                @close="closeRefundModal"
+                :title="'Select refund item'"
+            >
+                <div class="flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit max-h-[calc(100dvh-8rem)]">
+                    <div class="p-4 flex items-center gap-10">
+                        <div class="flex gap-3">
+                            <div>
+                                <ToastInfoIcon />
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <div class="text-blue-500 text-base font-medium">Refunds are limited to cost items only.</div>
+                                <div class="text-sm text-gray-700">Kept item, redeemed product, and entry reward item will not show in this list.</div>
+                            </div>
+                        </div>
+                        <div>
+                            <Button >OK</Button>
+                        </div>
+                    </div>
+                    <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px] min-h-40 max-h-80 overflow-y-scroll">
+                        <div class="text-gray-950 text-md font-semibold">Select refund item</div>
+                        <div class="flex flex-col gap-4">
+                            <div v-for="item in selectedVal.order.filter_order_items" :key="item.id" class="flex items-center gap-6"  >
+                                <div class="text-gray-900 text-base font-normal">{{ item.item_qty }}x</div>
+                                <div class="flex flex-col gap-1 w-full">
+                                    <div class="text-gray-900 text-base font-semibold max-w-[284px] truncate">{{ item.product.product_name }}</div>
+                                    <div class="flex items-center">
+                                        <div v-if="item.discount_amount > 0" class="flex items-center gap-2">
+                                            <span class="text-gray-900 text-base">RM{{ item.product_discount.price_after }} </span> 
+                                            <span class="line-through text-gray-500 text-base ">RM{{ item.product_discount.price_before }} </span>
+                                        </div>
+                                        <span v-else>RM{{ item.amount }}</span>
+                                    </div>
+                                    <div v-if="item.total_keep_subitem_qty > 0" class="flex !w-fit items-center justify-cente gap-2.5 px-3 py-1 rounded-[5px] bg-primary-600">
+                                        <p class="text-primary-50 text-2xs">{{ `${item.total_keep_subitem_qty} item kept` }}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <template v-if="item.remaining_qty > 0">
+                                        <NumberCounter
+                                            :labelText="''"
+                                            :inputName="'qty_' + item.id"
+                                            :minValue="0"
+                                            :maxValue="item.remaining_qty"
+                                            v-model="item.refund_quantities"
+                                            @update:modelValue="(qty) => updateRefundQty(item.id, qty, item.product.id)"
+                                            class="!w-fit whitespace-nowrap max-w-[139px]"
+                                        />
+                                    </template>
+                                    <span v-else class="text-red-500 text-sm font-medium">Fully Refunded</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px]">
+                        <div class="text-gray-950 text-md font-semibold">Refund Method</div>
+                        <div>
+                            <RadioButton
+                                :optionArr="refundMethod"
+                                :checked="form.refund_method"
+                                v-model:checked="form.refund_method"
+                            />
+                        </div>
+                        <div v-if="form.refund_method === 'Others'">
+                            <TextInput
+                                label-text=""
+                                :inputType="'text'"
+                                :placeholder="'Enter others details'"
+                                v-model="form.refund_others"
+                                autofocus
+                                autocomplete="refund_others"
+                            />
+                        </div>
+                    </div>
+                    <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px]">
+                        <div class="text-gray-950 text-md font-semibold">Refund Reason</div>
+                        <div>
+                            <TextInput
+                                label-text=""
+                                :inputType="'text'"
+                                :placeholder="'Enter refund reason'"
+                                v-model="form.refund_reason"
+                                autofocus
+                                autocomplete="refund_reason"
+                            />
+                        </div>
+                    </div>
+                    <div class=" py-4 px-3 flex flex-col gap-5 bg-[#FCFCFC]">
+                        <div class="flex items-center justify-between">
+                            <div>Total Refund</div>
+                            <div>RM {{ totalRefundAmount }}</div>
+                        </div>
+                        <div v-if="form.refund_tax === true" class="flex flex-col gap-1">
+                            <div class="flex items-center w-full">
+                                <div class="text-gray-900 text-base w-full">Sub-total</div>
+                                <div class="text-gray-900 font-bold text-base text-right w-full">{{ subTotalRefundAmount }}</div>
+                            </div>
+                            <div class="flex items-center w-full">
+                                <div class="text-gray-900 text-base w-full">SST(6%)</div>
+                                <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalSstRefund }}</div>
+                            </div>
+                            <div class="flex items-center w-full">
+                                <div class="text-gray-900 text-base w-full">Service Tax</div>
+                                <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalServiceTaxRefund }}</div>
+                            </div>
+                            <div class="flex items-center w-full">
+                                <div class="text-gray-900 text-base w-full">Rouding</div>
+                                <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalRoundingRefund }}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Checkbox 
+                                v-model:checked="form.refund_tax"
+                                :value="'refund_with_tax'"
+                            />
+                            <span>Refund with taxes</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-full">
+                            <Button size="lg" variant="tertiary" class="w-full" @click="cancelRefund">
+                                Cancel
+                            </Button>
+                        </div>
+                        <div class="w-full">
+                            <Button size="lg" variant="primary" class="w-full" :disabled="!isFormValid" @click="confirmRefundModal">
+                                Confirm
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirmation -->
+                <Modal
+                    :maxWidth="'2xs'"
+                    :closeable="true"
+                    :show="confirmRefundIsOpen"
+                    @close="closeConfirmRefundModal"
+                    :withHeader="false"
+                >
+                    <div class="flex flex-col gap-9">
+                        <div class="bg-primary-50 flex flex-col items-center gap-[10px] rounded-t-[5px] m-[-24px] pt-6 px-3">
+                            <div class="w-full flex justify-center shrink-0">
+                                <DeleteIllus />
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-5 pt-6">
+                            <div class="flex flex-col gap-1 text-center self-stretch">
+                                <span class="text-primary-900 text-lg font-medium self-stretch">Heads-up!</span>
+                                <span class="text-grey-900 text-base font-medium self-stretch">This refund applies to regular items only. Kept items will remain existing status and are not eligible for refund.</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-center items-start self-stretch gap-3">
+                            <Button
+                                variant="tertiary"
+                                size="lg"
+                                type="button"
+                                @click="closeConfirmRefundModal"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                @click="confirmRefund"
+                            >
+                                Confirm
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+            </Modal>
+        </template>
     </Modal>
 
 </template>

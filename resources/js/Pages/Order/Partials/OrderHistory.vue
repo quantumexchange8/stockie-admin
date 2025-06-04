@@ -13,6 +13,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import SearchBar from '@/Components/SearchBar.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import OrderReceipt from './OrderReceipt.vue';
 
 const props = defineProps({
 });
@@ -23,8 +24,11 @@ const date_filter = ref('');
 const status = ref('');
 const selectedOrderId = ref(null);
 const orderInvoiceModalIsOpen = ref(false);
+const orderReceiptModalIsOpen = ref(false);
 const op = ref(null);
 const rowsPerPage = ref(6);
+const orderInvoice = ref(null);
+const showOrderReceipt = ref(false);
 
 const columns = ref([
     {field: 'updated_at', header: 'Date & Time', width: '15', sortable: false},
@@ -76,6 +80,7 @@ const openOverlay = (event, item) => {
 
 const closeOverlay = () => {
     if (op.value)  op.value.hide();
+    setTimeout(() => showOrderReceipt.value = false, 3000);
 };
 
 const showOrderInvoiceModal = () => {
@@ -86,6 +91,16 @@ const showOrderInvoiceModal = () => {
 const hideOrderInvoiceModal = () => {
     setTimeout(() => selectedOrderId.value = null, 200);
     orderInvoiceModalIsOpen.value = false;
+};
+
+const showOrderReceiptModal = () => {
+    setTimeout(() => orderReceiptModalIsOpen.value = true, 100);
+    closeOverlay();
+};
+
+const hideOrderReceiptModal = () => {
+    setTimeout(() => selectedOrderId.value = null, 200);
+    orderReceiptModalIsOpen.value = false;
 };
 
 // const sortedRows = computed(() => {
@@ -114,9 +129,10 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
     // });
 // }, { immediate: false })
 
-// function printReceipt() {
-//   window.print();
-// }
+const printInvoiceReceipt = () => {
+    showOrderReceipt.value = true;
+    setTimeout(() => orderInvoice.value.printReceipt(), 3000);
+}
 </script>
 
 <template>
@@ -224,7 +240,7 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
                     type="button"
                     variant="tertiary"
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
-                    @click=""
+                    @click="printInvoiceReceipt"
                 >
                     <span class="text-grey-700 font-normal">Download</span>
                 </Button>
@@ -240,6 +256,21 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
         <p>Total - $15</p>
         </div>
     </div> -->
+
+    <!-- <Modal
+        maxWidth="sm" 
+        closeable
+        class="[&>div:nth-child(2)>div>div]:p-1 [&>div:nth-child(2)>div>div]:sm:max-w-[420px]"
+        :withHeader="false"
+        :show="orderReceiptModalIsOpen"
+        @close="hideOrderReceiptModal"
+    > -->
+    <div class="hidden">
+        <template v-if="showOrderReceipt">
+            <OrderReceipt ref="orderInvoice" :orderId="selectedOrderId" />
+        </template>
+    </div>
+    <!-- </Modal> -->
 
     <Modal
         maxWidth="sm" 

@@ -69,13 +69,34 @@ class TransactionController extends Controller
             }
 
             $transaction->order['FilterOrderItems']->each(function ($orderItem) {
-                $orderItem['total_keep_subitem_qty'] = $orderItem->subItems->reduce(function ($totalKeptSubItems, $subItem) {
-                    $keptSubItems = $subItem->keepItems->reduce(function ($totalKeepQty, $keepItem) {
+                // $orderItem['total_keep_subitem_qty'] = $orderItem->subItems->reduce(function ($totalKeptSubItems, $subItem) {
+                //     $keptSubItems = $subItem->keepItems->reduce(function ($totalKeepQty, $keepItem) {
+                //         return $totalKeepQty + (int)$keepItem->oldestKeepHistory['qty'];
+                //     }, 0);
+
+                //     return $totalKeptSubItems + $keptSubItems;
+                // }, 0);
+                
+                $minimumQty = [];
+                $totalKeepSubitemQty = 0;
+
+                $orderItem->subItems->each(function ($subItem) use (&$totalKeepSubitemQty, &$minimumQty, $orderItem) {
+                    $subItem['subitem_keep_count'] = $subItem->keepItems->reduce(function ($totalKeepQty, $keepItem) {
                         return $totalKeepQty + (int)$keepItem->oldestKeepHistory['qty'];
                     }, 0);
+                    
+                    $totalKeepSubitemQty += $subItem['subitem_keep_count'];
 
-                    return $totalKeptSubItems + $keptSubItems;
-                }, 0);
+                    $untouchedQty = floor(($subItem['item_qty'] * $orderItem['item_qty'] - $subItem['subitem_keep_count']) / $subItem['item_qty']);
+                    // dd($orderItem, $subItem, $untouchedQty);
+                    array_push($minimumQty, $untouchedQty);
+
+                    return $subItem;
+                });
+
+                // dd($orderItem, $minimumQty);
+                $orderItem['total_keep_subitem_qty'] = $totalKeepSubitemQty;
+                $orderItem['remaining_qty'] = min($minimumQty) - $orderItem['refund_qty'];
                 
                 return $orderItem;
             });
@@ -403,7 +424,7 @@ class TransactionController extends Controller
     {
         return DB::transaction(function () use ($request) {
 
-            dd($request->all());
+            // dd($request->all());
             $calPoint = Setting::where('name', 'Point')->first(['point', 'value']);
             $refund_point = (int) round(((float) $request->params['refund_subtotal'] / (float) $calPoint->value) * (int) $calPoint->point);
 
@@ -505,86 +526,10 @@ class TransactionController extends Controller
 
                 $oldRefundQty = $orderItem->refund_qty;
                 $newRefundQty = $oldRefundQty + $refund_item['refund_quantities'];
-                $totalKeepSubitemQty = $refund_item['total_keep_subitem_qty'];
 
                 if ($orderItem['type'] === 'Normal') {
                     foreach ($orderItem->subItems as $subItem) {
-                        if ($totalKeepSubitemQty > 0) {
-                            $totalQtyReturned = 0;
-                            $totalInitialKeptQty = 0;
-    
-                            $keepItems = KeepItem::with([
-                                                    'orderItemSubitem.productItem.inventoryItem',
-                                                    'oldestKeepHistory' => function ($query) {
-                                                        $query->where('status', 'Keep');
-                                                    },
-                                                ])
-                                                ->where('order_item_subitem_id', $subItem->id)
-                                                ->get(); 
-    
-                            if ($keepItems && $keepItems->count() > 0) {
-                                $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty, $totalKeepSubitemQty) {
-                                    $keepQty = $ki->qty;
-                                    if ($totalKeepSubitemQty >= $keepQty) {
-                                        $ki->update(['status' => 'Deleted']); 
-        
-                                        activity()->useLog('delete-kept-item')
-                                                    ->performedOn($ki)
-                                                    ->event('deleted')
-                                                    ->withProperties([
-                                                        'edited_by' => auth()->user()->full_name,
-                                                        'image' => auth()->user()->getFirstMediaUrl('user'),
-                                                        'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
-                                                    ])
-                                                    ->log(":properties.item_name is deleted.");
-                                                    
-                                        KeepHistory::create([
-                                            'keep_item_id' => $ki->id,
-                                            'qty' => $keepQty,
-                                            'cm' => number_format((float) $ki->cm, 2, '.', ''),
-                                            'keep_date' => $ki->created_at,
-                                            'remark' => 'refund',
-                                            'user_id' => auth()->user()->id,
-                                            'kept_from_table' => $ki->kept_from_table,
-                                            'redeemed_to_table' => 'refund',
-                                            'status' => 'Deleted',
-                                        ]);
-        
-                                        $totalQtyReturned += $keepQty;
-                                        $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
-
-                                    } else {
-                                        $ki->update(['qty' => $keepQty - $totalKeepSubitemQty]); 
-                                                    
-                                        KeepHistory::create([
-                                            'keep_item_id' => $ki->id,
-                                            'qty' => $keepQty - $totalKeepSubitemQty,
-                                            'cm' => number_format((float) $ki->cm, 2, '.', ''),
-                                            'keep_date' => $ki->created_at,
-                                            'remark' => 'refund',
-                                            'user_id' => auth()->user()->id,
-                                            'kept_from_table' => $ki->kept_from_table,
-                                            'redeemed_to_table' => 'refund',
-                                            'status' => 'Deleted',
-                                        ]);
-        
-                                        $totalQtyReturned += $keepQty;
-                                        $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
-                                    }
-
-                                    $totalKeepSubitemQty -= $keepQty;
-                                });
-    
-                            }
-                            
-                            $restoredQty = $keepItems->count() > 0 
-                                    ? ($refund_item['refund_quantities'] * $subItem['item_qty'] - $totalInitialKeptQty) +  $totalQtyReturned
-                                    : $refund_item['refund_quantities'] * $subItem['item_qty'];
-
-                        } else {
-                            $restoredQty = $refund_item['refund_quantities'] * $subItem['item_qty'];
-                        }
-
+                        $restoredQty = $refund_item['refund_quantities'] * $subItem['item_qty'];
                         $inventoryItem = $subItem->productItem->inventoryItem;
                         $oldStockQty = $inventoryItem->stock_qty;
                         $newStockQty = $oldStockQty + $restoredQty;

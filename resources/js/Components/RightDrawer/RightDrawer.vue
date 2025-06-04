@@ -1,7 +1,7 @@
 <script setup>
 import { watch, onMounted, onUnmounted, ref } from 'vue'
 import Sidebar from 'primevue/sidebar';
-import { ArrowLeftIcon, TimesIcon } from '../Icons/solid';
+import { ArrowLeftIcon, TimesIcon, HistoryIcon } from '../Icons/solid';
 
 const props = defineProps({
     title: String,
@@ -20,10 +20,14 @@ const props = defineProps({
     withHeader: {
         type: Boolean,
         default: true
+    },
+    withHistory: {
+        type: Boolean,
+        default: false
     }
 })
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'openHistory']);
 
 const visible = ref(props.show);
 
@@ -34,6 +38,10 @@ watch(() => props.show, (newValue) => {
 const close = () => {
     visible.value = false;
     emit('close');
+};
+
+const openHistoryCallback = () => {
+    emit('openHistory');
 };
 
 const closeOnEscape = (e) => {
@@ -151,6 +159,11 @@ onUnmounted(() => {
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                         @click="closeCallback" 
                         v-if="!previousTab"
+                    />
+                    <HistoryIcon
+                        class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
+                        @click="openHistoryCallback" 
+                        v-if="withHistory"
                     />
                 </div>
                 <slot></slot>

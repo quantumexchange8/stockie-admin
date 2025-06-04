@@ -165,7 +165,6 @@ const submit = async () => {
 //     .filter((undeleted) => undeleted.status !== 'Cancelled');
 // });
 
-
 const getKeptQuantity = (subItem) => {
     return subItem.keep_items?.reduce((totalKeeps, keepItem) => totalKeeps + parseInt(keepItem.oldest_keep_history.qty) + (parseFloat(keepItem.oldest_keep_history.cm) > 0 ? 1 : 0), 0) ?? 0;
 };

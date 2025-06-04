@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\ItemCategory;
+use App\Models\PayoutConfig;
 use App\Models\RunningNumber;
+use App\Models\Setting;
 use App\Models\WaiterPosition;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -25,10 +27,10 @@ class DefaultSettingsSeeder extends Seeder
             ['type'=> 'Jug', 'name' => 'Jug', 'low_stock_qty' => 25],
         ];
 
-        foreach ($defaultItemCategories as $category) {
+        foreach ($defaultItemCategories as $itemCategory) {
             ItemCategory::firstOrCreate(
-                ['type' => $category['type']], // unique check condition
-                $category                      // values to set if not found
+                ['type' => $itemCategory['type']], // unique check condition
+                $itemCategory                      // values to set if not found
             );
         }
 
@@ -47,15 +49,33 @@ class DefaultSettingsSeeder extends Seeder
             );
         }
 
-        // Default Payout Configs (for e-invoice settings)
-        $defaultPayoutConfigs = [
-            ['merchant_id'=> 1, 'api_key' => 'bia5B0thBOUTHtfgz9lMEu9wMzoVPnRzCNQCPkFw', 'url'=> 'https://ct-einvoice.currenttech.pro/'],
+        // // Default Payout Configs (for e-invoice settings)
+        // $defaultPayoutConfigs = [
+        //     ['merchant_id'=> 1, 'api_key' => 'bia5B0thBOUTHtfgz9lMEu9wMzoVPnRzCNQCPkFw', 'url'=> 'https://ct-einvoice.currenttech.pro/'],
+        // ];
+
+        // foreach ($defaultPayoutConfigs as $payoutConfig) {
+        //     PayoutConfig::firstOrCreate(
+        //         ['merchant_id' => $payoutConfig['merchant_id']], // unique check condition
+        //         $payoutConfig                      // values to set if not found
+        //     );
+        // }
+
+        // Default Running Numbers
+        $defaultRunningNumbers = [
+            ['type'=> 'reservation', 'prefix' => 'R', 'digits' => 6, 'last_number' => 0],
+            ['type'=> 'order', 'prefix' => 'M', 'digits' => 4, 'last_number' => 0],
+            ['type'=> 'payment', 'prefix' => 'RCPT', 'digits' => 8, 'last_number' => 0],
+            ['type'=> 'customer', 'prefix' => 'CID', 'digits' => 6, 'last_number' => 0],
+            ['type'=> 'refund', 'prefix' => 'RFD', 'digits' => 5, 'last_number' => 0],
+            ['type'=> 'shift', 'prefix' => null, 'digits' => null, 'last_number' => 0],
+            ['type'=> 'consolidate', 'prefix' => 'CSLD', 'digits' => 6, 'last_number' => 0],
         ];
 
-        foreach ($defaultPayoutConfigs as $payoutConfig) {
-            Category::firstOrCreate(
-                ['merchant_id' => $payoutConfig['merchant_id']], // unique check condition
-                $payoutConfig                      // values to set if not found
+        foreach ($defaultRunningNumbers as $runningNumber) {
+            RunningNumber::firstOrCreate(
+                ['type' => $runningNumber['type']], // unique check condition
+                $runningNumber                      // values to set if not found
             );
         }
 
@@ -72,7 +92,7 @@ class DefaultSettingsSeeder extends Seeder
         ];
 
         foreach ($defaultSettings as $setting) {
-            RunningNumber::firstOrCreate(
+            Setting::firstOrCreate(
                 ['name' => $setting['name']], // unique check condition
                 $setting                      // values to set if not found
             );

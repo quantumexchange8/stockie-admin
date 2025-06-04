@@ -283,6 +283,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/updateOrderPayment', [OrderController::class, 'updateOrderPayment'])->name('orders.updateOrderPayment');
         Route::put('/orders/removeOrderVoucher/{id}', [OrderController::class, 'removeOrderVoucher'])->name('orders.removeOrderVoucher');
         Route::get('/orders/getTableKeepItem/{id}', [OrderController::class, 'getTableKeepItem'])->name('orders.getTableKeepItem');
+        Route::get('/orders/getTableKeepHistories/{id}', [OrderController::class, 'getTableKeepHistories'])->name('orders.getTableKeepHistories');
 
         // Order tables
         Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');

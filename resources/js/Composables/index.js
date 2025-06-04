@@ -317,14 +317,14 @@ export function useInputValidator() {
 
 export function useFileExport() {
     function arrayToCsv(data) {
-        const array = [Object.keys(data[0]), ...data];
-
-        return array.map(it => Object.values(it).toString()).join('\n');
+        const headers = Object.keys(data[0]);
+        const rows = data.map(row => headers.map(header => `"${row[header] ?? ''}"`).join(','));
+        return [headers.join(','), ...rows].join('\n');
     };
 
     function downloadBlob(content, fileName, contentType) {
         // Create a blob
-        var blob = new Blob([content], { type: contentType });
+        var blob = new Blob(['\uFEFF' + content], { type: contentType });
         var url = URL.createObjectURL(blob);
         // Create a link to download it
         var pom = document.createElement('a');
