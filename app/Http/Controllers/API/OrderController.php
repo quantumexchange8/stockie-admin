@@ -2089,7 +2089,7 @@ class OrderController extends Controller
     
                 $customer->decrement('point', $pointSpent);
     
-                $order = Order::with(['orderTable.table'])->find($addNewOrder ? $newOrder->id : $validatedData['order_id']);
+                $order = Order::with(['orderTable.table', 'voucher'])->find($addNewOrder ? $newOrder->id : $validatedData['order_id']);
                 
                 if ($order) {
                     $statusArr = collect($order->orderItems->pluck('status')->unique());
@@ -2384,7 +2384,7 @@ class OrderController extends Controller
                         ]);
                     });
 
-                    $order = Order::with(['orderTable.table'])->find($addNewOrder ? $newOrder->id : $validatedData['order_id']);
+                    $order = Order::with(['orderTable.table', 'voucher'])->find($addNewOrder ? $newOrder->id : $validatedData['order_id']);
                     
                     if ($order) {
                         $statusArr = collect($order->orderItems->pluck('status')->unique());

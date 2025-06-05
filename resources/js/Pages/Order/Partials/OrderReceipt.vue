@@ -101,7 +101,7 @@ const appliedDiscounts = computed(() => {
 
     const appliedBillDiscounts = [];
 
-    order.value.payment?.applied_discounts.forEach((d) => {
+    order.value.payment?.applied_discounts?.forEach((d) => {
         let discountedAmount = d.discount_type === 'amount'
             ? d.discount_rate
             : order.value.payment?.total_amount * (d.discount_rate / 100);
@@ -133,9 +133,17 @@ const generateECode = (receipt_no, merchant, secret) => {
     return md5(`${receipt_no}${merchant}${secret}`).toString();
 }
 
-function printReceipt() {
-    getOrderPaymentDetails();
-    getPayoutDetails();
+const printReceipt = async () => {
+    try {
+        await Promise.all([
+            getOrderPaymentDetails(),
+            getPayoutDetails()
+        ]);
+
+    } catch (err) {
+        console.error("Failed to fetch receipt data:", err);
+        return; // Abort printing
+    }
 
     const element = receiptContent.value;
     if (!element) return;
@@ -324,6 +332,7 @@ defineExpose({
                         :columns="discountSummaryColumns"
                         :rowType="rowType"
                         :paginator="false"
+                        class="[&>div>div>table>thead>tr>th>div>span]:text-2xs [&>div>div>table>thead>tr>th]:items-center"
                     >
                         <template #discount_summary="row">
                             <p class="text-grey-900 text-2xs font-medium">

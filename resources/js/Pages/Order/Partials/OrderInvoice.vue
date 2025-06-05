@@ -84,7 +84,7 @@ const appliedDiscounts = computed(() => {
 
     const appliedBillDiscounts = [];
 
-    order.value.payment.applied_discounts.forEach((d) => {
+    order.value.payment?.applied_discounts?.forEach((d) => {
         let discountedAmount = d.discount_type === 'amount'
             ? d.discount_rate
             : order.value.payment.total_amount * (d.discount_rate / 100);

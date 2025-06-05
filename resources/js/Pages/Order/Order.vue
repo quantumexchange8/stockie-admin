@@ -35,6 +35,7 @@ const orderHistoryIsOpen = ref(false);
 const isFullScreen = ref(false);
 const shiftIsOpened = ref(props.hasOpenedShift);
 const autoUnlockTimer = ref(props.autoUnlockSetting);
+const isFetchingZones = ref(false);
 
 const showOrderHistory = () => {
     orderHistoryIsOpen.value = true;
@@ -54,6 +55,9 @@ const filters = ref({
 });
 
 const fetchZones = async () => {
+    if (isFetchingZones.value) return; // prevent if already fetching
+
+    isFetchingZones.value = true;
     try {
         const zonesResponse = await axios.get(route('orders.getAllZones'));
         zones.value = zonesResponse.data;
@@ -64,7 +68,7 @@ const fetchZones = async () => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        isFetchingZones.value = false;
     }
 };
 
