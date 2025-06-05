@@ -71,31 +71,32 @@ const rowType = {
 
 const hasVoucherApplied = computed(() => {
     if (!order.value) return false;
-    return order.value.payment.discount_id && order.value.payment.voucher;
+    return (!!order.value.payment.discount_id && !!order.value.payment.voucher) || order.value.payment.applied_discounts?.length > 0;
 })
 
 const appliedDiscounts = computed(() => {
-    // const appliedVoucher = order.value.payment.voucher ? [order.value] : null;
-    const voucherRate = order.value.payment.voucher.reward_type === 'Discount (Percentage)' ? `${order.value.payment.voucher.discount}%` : `RM ${order.value.payment.voucher.discount}`;
-    const appliedVoucher = {
-        discount_summary: `${voucherRate} Discount (Entry Reward for ${order.value.customer.rank.name})`,
-        discount_amount: Number(order.value.payment.discount_amount ?? 0).toFixed(2)
-    };
+    let discountSummary = [];
 
-    const appliedBillDiscounts = [];
+    if (!!order.value.payment.discount_id && !!order.value.payment.voucher) {
+        const voucherRate = order.value.payment.voucher.reward_type === 'Discount (Percentage)' ? `${order.value.payment.voucher.discount}%` : `RM ${order.value.payment.voucher.discount}`;
+        discountSummary.push({
+            discount_summary: `${voucherRate} Discount (Entry Reward for ${order.value.customer.rank.name})`,
+            discount_amount: Number(order.value.payment.discount_amount ?? 0).toFixed(2)
+        });
+    }
 
     order.value.payment?.applied_discounts?.forEach((d) => {
         let discountedAmount = d.discount_type === 'amount'
             ? d.discount_rate
             : order.value.payment.total_amount * (d.discount_rate / 100);
 
-        appliedBillDiscounts.push({
+        discountSummary.push({
             discount_summary: d.name,
             discount_amount: Number(discountedAmount ?? 0).toFixed(2)
         })
     });
 
-    return [appliedVoucher, ...appliedBillDiscounts];
+    return discountSummary;
 });
 
 // const sstAmount = computed(() => {

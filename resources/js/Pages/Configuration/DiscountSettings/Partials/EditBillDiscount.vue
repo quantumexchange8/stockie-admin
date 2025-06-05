@@ -58,8 +58,8 @@ const isCustomerUsage = ref(discount.value.customer_usage > 0);
 const isTotalUsage = ref(discount.value.total_usage > 0);
 const isCustomerUsageRenew = ref(!!discount.value.customer_usage_renew);
 const isTotalUsageRenew = ref(!!discount.value.total_usage_renew);
-const isMemberExclusive = ref(!!discount.value.tier);
-const isEligibleMethod = ref(!!discount.value.payment_method);
+const isMemberExclusive = ref(!!discount.value.tier && discount.value.tier.length > 0);
+const isEligibleMethod = ref(!!discount.value.payment_method && discount.value.payment_method.length > 0);
 const tiers = ref(null);
 
 const form = useForm({
@@ -564,7 +564,7 @@ watch(
                             </div>
                             <Toggle
                                 :checked="isMemberExclusive"
-                                @update:checked="isMemberExclusive = !isMemberExclusive; if(!isMemberExclusive) form.reset('tier')"
+                                @update:checked="isMemberExclusive = !isMemberExclusive; form.tier = []"
                             />
                         </div>
                         <MultiSelect 

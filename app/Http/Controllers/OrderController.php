@@ -4343,6 +4343,7 @@ class OrderController extends Controller
     // Transfer selected order items between tables
     public function transferTable(Request $request)
     {
+        return DB::transaction(function () use ($request) {
         $currentTable = $request->currentTable;
         $targetTable = $request->targetTable;
 
@@ -4360,7 +4361,7 @@ class OrderController extends Controller
             &$totalCurrentOrderDiscountedAmount, 
             &$totalTargetOrderAmount, 
             &$totalTargetOrderDiscountedAmount, 
-            $currentTable,
+            &$currentTable,
             $request) 
         {
             $balanceQty = $item['balance_qty'];
@@ -4437,7 +4438,7 @@ class OrderController extends Controller
                     // $totalTargetOrderAmount -= $item['amount'] * $balancePercentage;
                     // $totalTargetOrderDiscountedAmount -= $item['discount_amount'] * $balancePercentage;
 
-                    $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem) {
+                    $orderItem->subItems->each(function ($subItem) use (&$originalQty, &$balanceQty, &$newOrderItem) {
                         $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
                         $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
 
@@ -4448,7 +4449,7 @@ class OrderController extends Controller
                             'serve_qty' => $newQtyServed,
                         ]);
 
-                        $subItem->decrement('serve_qty', $newQtyServed);
+                        // $subItem->decrement('serve_qty', $newQtyServed);
                     });
                 }
 
@@ -4465,11 +4466,11 @@ class OrderController extends Controller
                     $totalCurrentOrderAmount -= $item['amount'] * $balancePercentage;
                     $totalCurrentOrderDiscountedAmount -= $item['discount_amount'] * $balancePercentage;
 
-                    $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem) {
-                        $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
+                    $orderItem->subItems->each(function ($subItem) use (&$originalQty, &$balanceQty, &$newOrderItem) {
+                        $newSubItemServeQty = ($originalQty - $balanceQty) * $subItem['item_qty'];
                         $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
 
-                        $subItem->decrement('serve_qty', $newQtyServed);
+                        $subItem->decrement('serve_qty', (int)$newQtyServed);
                     });
                 }
             }
@@ -4479,7 +4480,7 @@ class OrderController extends Controller
             &$totalCurrentOrderDiscountedAmount, 
             &$totalTargetOrderAmount, 
             &$totalTargetOrderDiscountedAmount, 
-            $targetTable,
+            &$targetTable,
             $request) 
         {
             $balanceQty = $item['balance_qty'];
@@ -4567,7 +4568,7 @@ class OrderController extends Controller
                             'serve_qty' => $newQtyServed,
                         ]);
 
-                        $subItem->decrement('serve_qty', $newQtyServed);
+                        // $subItem->decrement('serve_qty', $newQtyServed);
                     });
                 }
 
@@ -4584,11 +4585,11 @@ class OrderController extends Controller
                     $totalTargetOrderAmount -= $item['amount'] * $balancePercentage;
                     $totalTargetOrderDiscountedAmount -= $item['discount_amount'] * $balancePercentage;
 
-                    $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem) {
-                        $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
+                    $orderItem->subItems->each(function ($subItem) use (&$originalQty, &$balanceQty, &$newOrderItem) {
+                        $newSubItemServeQty = ($originalQty - $balanceQty) * $subItem['item_qty'];
                         $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
 
-                        $subItem->decrement('serve_qty', $newQtyServed);
+                        $subItem->decrement('serve_qty', (int)$newQtyServed);
                     });
                 }
             }
@@ -4658,6 +4659,7 @@ class OrderController extends Controller
         }
 
         return redirect()->back();
+        });
     }
 
     // Direct transfer all items of the order to the target table and void order

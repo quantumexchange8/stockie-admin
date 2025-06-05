@@ -33,15 +33,15 @@ const getOrderPaymentDetails = async () => {
         const orderItemsCount = order.value.order_items?.filter((item) => item.status === 'Served' && item.item_qty > 0).length;
         
         if (orderItemsCount > 1) {
-            receiptHeight.value += (4 * (orderItemsCount - 1));
+            receiptHeight.value += (8 * (orderItemsCount - 1));
         }
         
         if (order.value.payment?.point_history) {
-            receiptHeight.value += 34;
+            receiptHeight.value += 17;
         }
         
-        if (order.value.payment?.discount_id && order.value.payment?.voucher) {
-            receiptHeight.value += 42;
+        if ((!!order.value.payment.discount_id && !!order.value.payment.voucher) || order.value.payment.applied_discounts?.length > 0) {
+            receiptHeight.value += 35;
         }
 
     } catch (error) {
@@ -88,31 +88,32 @@ const rowType = {
 
 const hasVoucherApplied = computed(() => {
     if (!order.value) return false;
-    return order.value.payment?.discount_id && order.value.payment?.voucher;
+    return (!!order.value.payment.discount_id && !!order.value.payment.voucher) || order.value.payment.applied_discounts?.length > 0;
 })
 
 const appliedDiscounts = computed(() => {
-    // const appliedVoucher = order.value.payment?.voucher ? [order.value] : null;
-    const voucherRate = order.value.payment?.voucher.reward_type === 'Discount (Percentage)' ? `${order.value.payment?.voucher.discount}%` : `RM ${order.value.payment?.voucher.discount}`;
-    const appliedVoucher = {
-        discount_summary: `${voucherRate} Discount (Entry Reward for ${order.value.customer.rank.name})`,
-        discount_amount: Number(order.value.payment?.discount_amount ?? 0).toFixed(2)
-    };
+    let discountSummary = [];
 
-    const appliedBillDiscounts = [];
+    if (!!order.value.payment.discount_id && !!order.value.payment.voucher) {
+        const voucherRate = order.value.payment.voucher.reward_type === 'Discount (Percentage)' ? `${order.value.payment.voucher.discount}%` : `RM ${order.value.payment.voucher.discount}`;
+        discountSummary.push({
+            discount_summary: `${voucherRate} Discount (Entry Reward for ${order.value.customer.rank.name})`,
+            discount_amount: Number(order.value.payment.discount_amount ?? 0).toFixed(2)
+        });
+    }
 
     order.value.payment?.applied_discounts?.forEach((d) => {
         let discountedAmount = d.discount_type === 'amount'
             ? d.discount_rate
-            : order.value.payment?.total_amount * (d.discount_rate / 100);
+            : order.value.payment.total_amount * (d.discount_rate / 100);
 
-        appliedBillDiscounts.push({
+        discountSummary.push({
             discount_summary: d.name,
             discount_amount: Number(discountedAmount ?? 0).toFixed(2)
         })
     });
 
-    return [appliedVoucher, ...appliedBillDiscounts];
+    return discountSummary;
 });
 
 // const sstAmount = computed(() => {
@@ -202,7 +203,7 @@ defineExpose({
 </style>
 
 <template>
-    <div ref="receiptContent" class="w-full relative flex flex-col gap-10">
+    <div ref="receiptContent" class="w-full relative flex flex-col gap-10 pl-[0.8px]">
         <div class="relative flex flex-col gap-[120px] pb-6">
             <WineBackgroundIllus1 class="absolute inset-x-0 -top-4 !w-full z-0"/>
 
@@ -217,13 +218,20 @@ defineExpose({
                             <p class="text-primary-25 text-2xs font-normal">{{ formatPhone(merchant?.merchant_contact) }}</p>
                         </div>
                         <img 
+                            src="../../../../../public/merchant/logo.jpg" 
+                            alt="MerchantLogo" 
+                            width="32" 
+                            height="32" 
+                            class="flex-shrink-0 w-2/12 rounded-full"
+                        />
+                        <!-- <img 
                             :src="merchant?.image ? merchant?.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                             alt="MerchantLogo" 
                             width="32" 
                             height="32" 
                             class="flex-shrink-0 w-2/12 rounded-full"
                             crossorigin="anonymous"
-                        />
+                        /> -->
                     </div>
     
                     <div class="flex flex-col bg-primary-25 rounded-md items-center px-4 py-6">

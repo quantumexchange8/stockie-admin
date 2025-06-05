@@ -285,27 +285,6 @@ const isValidated = computed(() => {
                             :disabled="item.balance_qty === 1"
                         />
                     </div>
-                    <div
-                        v-for="item in form.currentTable.order_items"
-                        :key="item.id"
-                        class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3 gap-x-3 border-b border-grey-100"
-                    >
-                        <Checkbox 
-                            class="col-span-full sm:col-span-1"
-                            :checked="item.selected"
-                            @update:checked="selectItem(item)"
-                        />
-                        <div class="col-span-full sm:col-span-6 flex flex-col items-center gap-3" :class="item.bucket === 'set' ? '!line-clamp-3' : '!line-clamp-2'">
-                            <Tag value="Set" v-if="item.bucket === 'set'"/>
-                            <p>{{ item.product_name }}</p>
-                        </div>
-                        <NumberCounter
-                            v-model="item.transfer_qty"
-                            :maxValue="item.balance_qty"
-                            class="col-span-full sm:col-span-5"
-                            :disabled="item.balance_qty === 1"
-                        />
-                    </div>
                 </div>
                 <!-- Move overlay shown when items from target table are selected -->
                 <div 

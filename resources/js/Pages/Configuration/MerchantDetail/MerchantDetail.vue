@@ -106,6 +106,7 @@ const getMSICCodes = async () => {
 const merchantForm = useForm({
     id: merchant_detail.value?.id ?? '',
     merchant_image: merchant_detail.value?.merchant_image ?? '',
+    image: '',
     name: merchant_detail.value?.merchant_name ?? '',
     tin_no: merchant_detail.value?.tin_no ?? '',
     prefix: phonePrefixes.value[0]?.value,
@@ -151,6 +152,7 @@ const handleFileSelect = (event) => {
     const file = event.target.files[0];
     
     if (file && file.type.startsWith('image/')) { 
+        merchantForm.image = file;
         merchantForm.merchant_image = getObjectURL(file);
     }
 }
@@ -167,7 +169,7 @@ const editDetails = async () => {
     merchantForm.phone_no = merchantForm.phone_temp ? transformPhone(merchantForm.phone_temp, true) : '';
 
     try {
-        const response = await axios.post(route('configurations.updateMerchant'), merchantForm);
+        const response = await axios.post(route('configurations.updateMerchant'), merchantForm, { headers: { 'Content-Type': 'multipart/form-data' } });
         merchant_detail.value = response.data;
         showMessage({
             severity: 'success',

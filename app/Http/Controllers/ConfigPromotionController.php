@@ -10,6 +10,7 @@ use App\Models\MSICCodes;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -286,9 +287,12 @@ class ConfigPromotionController extends Controller
             'irbm_client_key' => $request->irbm_client_key,
         ]);
 
-        if($request->hasFile('merchant_image')){
+        if($request->hasFile('image')){
+            // Overwrite into public path merchant folder
+            $request->image->move(public_path('merchant'), 'logo.jpg');
+
             $config_merchant->clearMediaCollection('merchant_settings');
-            $config_merchant->addMedia($request->merchant_image)->toMediaCollection('merchant_settings');
+            $config_merchant->addMedia($request->image)->toMediaCollection('merchant_settings');
         }
 
         $config_merchant->save();

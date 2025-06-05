@@ -116,12 +116,12 @@ const filteredZones = computed(() => {
 <template>
     <Head title="Order Management" />
 
+    <Toast />
+
     <AuthenticatedLayout v-if="!isFullScreen">
         <template #header>
             <Breadcrumb :home="home" />
         </template>
-
-        <Toast />
 
         <div class="flex flex-col gap-6 justify-center p-1">
             <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 rounded-[5px]">
