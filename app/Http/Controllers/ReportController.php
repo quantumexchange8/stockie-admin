@@ -114,7 +114,7 @@ class ReportController extends Controller
                                                 ->orderByDesc('orders.created_at')
                                                 ->get();
 
-                            $user['commission'] = $user['sales']->reduce(function ($total, $order) {
+                            $user['commission'] = round($user['sales']->reduce(function ($total, $order) {
                                                                     $product = $order->product;
                                                                     $commItem = $product->commItem;
                                                                     
@@ -125,8 +125,10 @@ class ReportController extends Controller
                                                                         : 0;
                                                             
                                                                     return $total + round($commissionAmt, 2);
-                                                                }, 0);
-
+                                                                }, 0), 2);
+                            
+                            $user['sales'] = round($user['sales']->reduce(fn ($total, $orderItem) => $total + round($orderItem['amount'], 2), 0), 2);
+                            
                             return $user;
                         });
 

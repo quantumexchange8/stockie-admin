@@ -47,64 +47,10 @@ class ActivityController extends Controller
 
     private function processNotifications($notifications)
     {
-        $processedNotifications = $notifications->map(function ($notification) {
-            $type = $notification->type;
-    
-            //type contains Inventory = Inventory type notification
-            if (str_contains($type, 'Inventory')) {
-
-                $inventoryData = $notification->data;
-                if (str_contains($type, 'Inventory')) {
-                    $inventoryData = $notification->data;
-            
-                    if (isset($inventoryData['inventory_id'])) {
-                        $inventoryId = $inventoryData['inventory_id'];
-            
-                        // Fetch all product items related to the inventory item
-                        $productItems = ProductItem::with('product.category')
-                            ->where('inventory_item_id', $inventoryId)
-                            ->get();
-            
-                        $inventoryData['product_image'] = [];
-                        $inventoryData['redeem_item_image'] = [];
-                        $inventoryData['categories'] = [];
-            
-                        foreach ($productItems as $productItem) {
-                            // Add product images if available
-                            if ($productItem->product) {
-                                $productImage = $productItem->product->getFirstMediaUrl('product');
-                                // if ($productImage) {
-                                //     $inventoryData['product_image'][] = $productImage;
-                                // }
-                                $inventoryData['product_image'][] = $productImage ?? null;
-
-            
-                                // Add categories if available
-                                if ($productItem->product->category) {
-                                    $inventoryData['categories'][] = $productItem->product->category->name;
-                                }
-                            }
-                            
-                            // Add redeem item images
-                            $redeemImage = $productItem->product->getFirstMediaUrl('product');
-                            // if ($redeemImage) {
-                            //     $inventoryData['redeem_item_image'][] = $redeemImage;
-                            // }
-                            $inventoryData['redeem_item_image'][] = $redeemImage ?? null;
-
-                        }
-            
-                        // Assign back to notification
-                        $notification->data = $inventoryData;
-                    }
-                }
-
-            //type contains Waiter = Waiter check in check out notification
-            } elseif (str_contains($type, 'Waiter')) {
-                $notification->extra = 'This is waiter check in check out notification';
-
-            //type contains Order = Table / Room Activities notification
-            } elseif (str_contains($type, 'Order')) {
+        $processedNotifications = $notifications
+            ->filter(fn ($notification) => str_contains($notification->type, 'Order'))
+            ->take(20)
+            ->map(function ($notification) {
                 $orderData = $notification->data;
 
                 if(isset($orderData['waiter_id'])){
@@ -114,6 +60,7 @@ class ActivityController extends Controller
                         $orderData['waiter_name'] = $waiter->full_name;
                     }
                 }
+
                 if(isset($orderData['assigner_id'])){
                     $assigner = User::find($orderData['assigner_id']);
                     if($assigner){
@@ -123,17 +70,13 @@ class ActivityController extends Controller
                 }
 
                 $notification->data = $orderData;
-            } else {
-                // Default action for unrecognized types
-                $notification->extra = 'Unknown type';
-            }
-    
-            return $notification; 
-        });
+        
+                return $notification; 
+            });
 
         return [
-            'notifications' => $processedNotifications,
-            'notifications_count' => $processedNotifications->count()
+            'notifications_count' => $processedNotifications->count(),
+            'notifications' => $processedNotifications
         ];
     }
     
@@ -160,8 +103,12 @@ class ActivityController extends Controller
     public function markUnreadNotifications()
     {
         try {
-            // Mark all unread notifications as read
-            $this->authUser->unreadNotifications()->update(['read_at' => now()]);
+            if ($this->authUser->unreadNotifications->count() > 0) {
+                // Mark all unread notifications as read
+                $this->authUser->unreadNotifications()
+                    // ->where('type', 'like', '%Order%')
+                    ->update(['read_at' => now()]);
+            }
 
             return response()->json([
                 'status' => 'success',
