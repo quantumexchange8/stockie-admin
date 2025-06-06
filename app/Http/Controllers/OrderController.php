@@ -1515,6 +1515,7 @@ class OrderController extends Controller
 
                                         $name = Customer::where('id', $request->customer_id)->first('full_name')->full_name;
 
+                                        // dd($name);
                                         activity()->useLog('keep-item-from-customer')
                                                     ->performedOn($newKeep)
                                                     ->event('kept')

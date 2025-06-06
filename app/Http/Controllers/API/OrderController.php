@@ -1464,7 +1464,7 @@ class OrderController extends Controller
 
                                         $inventoryItemName = $associatedSubItem->productItem->inventoryItem->item_name;
 
-                                        $name = Customer::where('id', $request->customer_id)->first()->pluck('full_name');
+                                        $name = Customer::where('id', $request->customer_id)->first()->full_name;
 
                                         activity()->useLog('keep-item-from-customer')
                                                     ->performedOn($newKeep)

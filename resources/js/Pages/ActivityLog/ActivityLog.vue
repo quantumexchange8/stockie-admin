@@ -50,6 +50,7 @@ const getLogs = async (filters = {}, checkedFilters = {}) => {
         })
         logs.value = response.data;
         initialLogs.value = response.data;
+
     } catch (error) {
         console.error(error)
     } finally {
@@ -81,6 +82,14 @@ const clearFilters = (close) => {
 const applyCheckedFilters = (close) => {
     getLogs(date_filter.value, checkedFilters.value);
     close();
+}
+
+const getLogAuthor = (log) => {
+    if (log.properties.created_by) return log.properties.created_by;
+
+    if (log.properties.edited_by) return log.properties.created_by;
+
+    return log.properties.deleted_by;
 }
 
 watch(() => searchQuery.value, (newValue) => {
@@ -175,7 +184,7 @@ watch(() => date_filter.value, (newValue) => {
                             <DefaultIcon class="size-9 rounded-full" v-else />
                             <div class="flex flex-col justify-center items-start gap-4 flex-[1_0_0]">
                                 <div class="flex flex-col items-start self-stretch">
-                                    <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-sm font-bold">{{ log.properties.created_by ?? log.properties.edited_by ?? log.properties.deleted_by }}</span>
+                                    <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-sm font-bold">{{ getLogAuthor(log) }}</span>
                                     <span class="self-stretch text-grey-900 text-sm font-normal">{{ log.description }}</span>
                                 </div>
                                 <div class="flex items-start gap-1 self-stretch">

@@ -244,9 +244,9 @@ class NotificationController extends Controller
         
     }
 
-    public function latestNotification()
+    public function getLatestNotifcations()
     {
-        // Retrieve all notifications
+        // Retrieve all unread notifications
         $notifications = auth()->user()->unreadNotifications;
         // $notifications = auth()->user()->notifications;
 
@@ -312,24 +312,39 @@ class NotificationController extends Controller
         // auth()->user()->unreadNotifications->markAsRead();
         $allNotifications = $orderNotifications->count() + $inventoryNotifications->count() + $waiterNotifications->count();
 
-        return response()->json([
+        return [
             'order_notifications' => $orderNotifications,
             'inventory_notifications' => $inventoryNotifications,
             'waiter_notifications' => $waiterNotifications,
             'all_notifications' => $allNotifications
-        ]);
+        ];
     }
 
-    public function markAsRead(Request $request)
+    public function latestNotification()
     {
-        $notifications = $request->input('notifications');
+        // Retrieve latest unread notifications
+        $unreadNotifications = $this->getLatestNotifcations();
 
-        // Ensure the notifications are valid
-        $notificationIds = collect($notifications)->pluck('id');
+        return response()->json($unreadNotifications);
+    }
 
-        // Mark notifications as read
-        auth()->user()->notifications()->whereIn('id', $notificationIds)->update(['read_at' => now()]);
+    public function markAsRead()
+    {
+        // $notifications = $request->input('notifications');
 
+        // // Ensure the notifications are valid
+        // $notificationIds = collect($notifications)->pluck('id');
+
+        // // Mark notifications as read
+        // auth()->user()->notifications()->whereIn('id', $notificationIds)->update(['read_at' => now()]);
+
+        // Mark all unread notifications as read
+        auth()->user()->unreadNotifications()->update(['read_at' => now()]);
+
+        // Retrieve latest unread notifications
+        $unreadNotifications = $this->getLatestNotifcations();
+
+        return response()->json($unreadNotifications);
     }
 
 }

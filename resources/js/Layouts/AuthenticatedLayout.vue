@@ -26,17 +26,21 @@ const waiter_notifications = ref([]);
 const notificationLength = ref(0);
 const all_notifications = ref(0);
 
+const updateLatestNotifications = (notifications) => {
+    order_notifications.value = notifications.order_notifications;
+    inventory_notifications.value = notifications.inventory_notifications;
+    waiter_notifications.value = notifications.waiter_notifications;
+    all_notifications.value = notifications.all_notifications;
+
+    notificationLength.value =  Object.keys(inventory_notifications.value).length + 
+                                Object.keys(order_notifications.value).length +
+                                Object.keys(waiter_notifications.value).length;
+}
+
 const getNotifications = async () => {
     try {
         const response = await axios.get('/notifications/latestNotification');
-        order_notifications.value = response.data.order_notifications;
-        inventory_notifications.value = response.data.inventory_notifications;
-        waiter_notifications.value = response.data.waiter_notifications;
-        all_notifications.value = response.data.all_notifications;
-
-        notificationLength.value =  Object.keys(inventory_notifications.value).length + 
-                                    Object.keys(order_notifications.value).length +
-                                    Object.keys(waiter_notifications.value).length;
+        updateLatestNotifications(response.data);
 
     } catch (error) {
         console.error(error);
@@ -45,14 +49,14 @@ const getNotifications = async () => {
 
 const markAllAsRead = async () => {
     try {
-        const notificationsToMarkAsRead = [
-            ... (Array.isArray(order_notifications.value) ? order_notifications.value : []),
-            ... (Array.isArray(inventory_notifications.value) ? inventory_notifications.value : []),
-            ... (Array.isArray(waiter_notifications.value) ? waiter_notifications.value : [])
-        ];
+        // const notificationsToMarkAsRead = [
+        //     ... (Array.isArray(order_notifications.value) ? order_notifications.value : []),
+        //     ... (Array.isArray(inventory_notifications.value) ? inventory_notifications.value : []),
+        //     ... (Array.isArray(waiter_notifications.value) ? waiter_notifications.value : [])
+        // ];
 
-        await axios.post('/notifications/markAsRead', { notifications: notificationsToMarkAsRead });
-        getNotifications();
+        const response = await axios.post('/notifications/markAsRead');
+        updateLatestNotifications(response.data);
     } catch (error) {
         console.error(error);
     }
@@ -84,7 +88,11 @@ const openOverlay = (event) => {
 
 const closeOverlay = () => {
     notificationLength.value = 0;
-    markAllAsRead();
+    
+    if (all_notifications.value > 0) {
+        markAllAsRead();
+    }
+
     op.value.hide();
 }
 
