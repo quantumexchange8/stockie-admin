@@ -19,31 +19,31 @@ class ActivityController extends Controller
         $this->authUser = User::find(Auth::id());
     }
 
-    // public function getRecentActivityLogs()
-    // {
-    //     $logs = Activity::where('event', 'assign to serve')
-    //                     ->orderBy('created_at', 'desc')
-    //                     ->limit(3)
-    //                     ->get()
-    //                     ->filter(fn ($log) => (
-    //                         $log->properties['waiter_name'] === Auth::user()->full_name
-    //                     ));
+    public function getRecentActivityLogs()
+    {
+        $logs = Activity::where('event', 'assign to serve')
+                        ->orderBy('created_at', 'desc')
+                        ->limit(3)
+                        ->get()
+                        ->filter(fn ($log) => (
+                            $log->properties['waiter_name'] === Auth::user()->full_name
+                        ));
 
 
-    //     return response()->json($logs);
-    // }
+        return response()->json($logs);
+    }
 
-    // public function getAllActivityLogs()
-    // {
-    //     $logs = Activity::where('event', 'assign to serve')
-    //                     ->orderBy('created_at', 'desc')
-    //                     ->get()
-    //                     ->filter(fn ($log) => (
-    //                         $log->properties['waiter_name'] === Auth::user()->full_name
-    //                     ));
+    public function getAllActivityLogs()
+    {
+        $logs = Activity::where('event', 'assign to serve')
+                        ->orderBy('created_at', 'desc')
+                        ->get()
+                        ->filter(fn ($log) => (
+                            $log->properties['waiter_name'] === Auth::user()->full_name
+                        ));
 
-    //     return response()->json($logs);
-    // }
+        return response()->json($logs);
+    }
 
     private function processNotifications($notifications)
     {

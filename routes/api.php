@@ -102,8 +102,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::controller(ActivityController::class)->prefix('activity')->group(function(){
-        // Route::get('/recent_activities', 'getRecentActivityLogs');
-        // Route::get('/activities', 'getAllActivityLogs');
+        Route::get('/recent_activities', 'getRecentActivityLogs');
+        Route::get('/activities', 'getAllActivityLogs');
+        
         Route::get('/notifications', 'getNotifications');
         Route::get('/unread_notifications', 'getUnreadNotifcations');
         Route::post('/mark_unread_notifications', 'markUnreadNotifications');
