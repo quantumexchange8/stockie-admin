@@ -191,7 +191,7 @@ onMounted(() => {
                                         <span class="col-span-2 text-grey-500 text-sm font-normal">Expire on</span>
                                         <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ record.keep_item.expired_to ? dayjs(record.keep_item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
                                         <span class="col-span-2 text-grey-500 text-sm font-normal">Remark</span>
-                                        <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ record.remark ? record.remark : '-' }}</span>
+                                        <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ record.keep_item.remark ? record.keep_item.remark : '-' }}</span>
                                         <div class="col-span-full flex items-center py-2">
                                             <hr class="w-full border-grey-100"></hr>
                                         </div>

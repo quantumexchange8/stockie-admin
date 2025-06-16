@@ -83,7 +83,11 @@ class OrderController extends Controller
                                     ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at');
                             },
                             'tables.orderTables.order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
-                            // 'tables.orderTables.order.customer:id,full_name',
+                            'tables.orderTables.order.orderTable' => function ($query) {
+                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                                        ->select('id', 'order_id', 'table_id');
+                            },
+                            'tables.orderTables.order.orderTable.table:id,table_no',
                             // 'tables.orderTables.order.customer.rewards' => function ($query) {
                             //     $query->where('status', 'Active')->select('id','customer_id', 'ranking_reward_id', 'status');
                             // },
@@ -132,6 +136,21 @@ class OrderController extends Controller
                 $table->reservation = Reservation::whereJsonContains('table_no', ['id' => $table->id])
                                                     ->whereIn('status', ['Pending', 'Checked in'])
                                                     ->first();
+
+                $table->order_table_names = $table->table_no;
+
+                // Find the first non-pending clearance table
+                if ($table->orderTables) {
+                    $orderTable = $table->orderTables->firstWhere('status', '!=', 'Pending Clearance') ?? $table->orderTables->first();
+                    Log::info("orderTable: " . $orderTable);
+                    $table->order_table_names = $orderTable?->order_id
+                            ? collect($orderTable->order->orderTable)
+                                ->map(fn($ot) => $ot['table']['table_no'] ?? null)
+                                ->filter() // remove nulls
+                                ->sort() // lexicographic sort
+                                ->implode(', ')
+                            : $table->table_no;
+                }
 
                 // Unset the orderTables property to clean up the response
                 $table->unsetRelation('orderTables');
@@ -2212,6 +2231,7 @@ class OrderController extends Controller
                                         'sub_item_id' => $keepItem->sub_item_id,
                                         'product_item_id' => $subItem->productItem->id,
                                         'inventory_item_name' => $subItem->productItem->inventoryItem->item_name,
+                                        'remark' => $keepItem->remark,
                                         'expired_from' => $keepItem->expired_from,
                                         'expired_to' => $keepItem->expired_to,
                                         'created_at' => $keepItem->created_at,
@@ -2225,7 +2245,7 @@ class OrderController extends Controller
                 )->values(),
                 'customer' => $order->customer ? [
                     'id' => $order->customer->id,
-                    'name' => $order->customer->name,
+                    'name' => $order->customer->full_name,
                     'image' => $order->customer->getFirstMediaUrl('customer')
                 ] : null,
             ];
