@@ -11,6 +11,7 @@ class RefundDetail extends Model
     protected $fillable = [
         'payment_refund_id',
         'order_item_id',
+        'product_id',
         'refund_qty',
         'refund_amount',
     ];

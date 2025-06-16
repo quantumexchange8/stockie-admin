@@ -127,6 +127,15 @@ class Product extends Model implements HasMedia
         return $this->hasOne(ConfigEmployeeCommItem::class, 'item');
     }
 
+    /**
+     * RefundDetail Model
+     * Get the refund details of the product.
+     */
+    public function refundDetails(): HasMany
+    {
+        return $this->hasMany(RefundDetail::class, 'product_id');
+    }
+
     // Register the model event
     protected static function booted()
     {

@@ -11,6 +11,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "league/flysystem-aws-s3-v3": "^3.28",
+        "mike42/escpos-php": "^2.2",
         "opcodesio/log-viewer": "^3.14",
         "spatie/laravel-activitylog": "^4.9",
         "spatie/laravel-medialibrary": "^11.5",

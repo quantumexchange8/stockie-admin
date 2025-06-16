@@ -29,6 +29,7 @@ const op = ref(null);
 const rowsPerPage = ref(6);
 const orderInvoice = ref(null);
 const showOrderReceipt = ref(false);
+const receiptImage = ref(null);
 
 const columns = ref([
     {field: 'updated_at', header: 'Date & Time', width: '15', sortable: false},
@@ -80,7 +81,7 @@ const openOverlay = (event, item) => {
 
 const closeOverlay = () => {
     if (op.value)  op.value.hide();
-    setTimeout(() => showOrderReceipt.value = false, 3000);
+    // setTimeout(() => showOrderReceipt.value = false, 3000);
 };
 
 const showOrderInvoiceModal = () => {
@@ -130,13 +131,13 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
 // }, { immediate: false })
 
 const printInvoiceReceipt = () => {
-    showOrderReceipt.value = true;
+    showOrderInvoiceModal();
     setTimeout(() => orderInvoice.value.printReceipt(), 200);
 }
 </script>
 
 <template>
-    <div class="flex flex-col items-centers gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit h-full !max-h-[calc(100dvh-17rem)]">
+    <div class="flex flex-col items-centers gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit h-full !max-h-[calc(100dvh-9rem)]">
         <div class="flex flex-wrap sm:flex-nowrap justify-between items-start gap-x-7 gap-y-6">
             <SearchBar
                 placeholder="Search"
@@ -223,6 +224,15 @@ const printInvoiceReceipt = () => {
                 </template>
             </Table>
         </div>
+        <!-- <div v-if="receiptImage">
+            <h3>Preview:</h3>
+            <img :src="receiptImage" alt="Receipt Preview" class="w-full max-w-md" />
+        </div>
+        <div class="">
+            <template v-if="showOrderReceipt">
+                <OrderInvoice ref="orderInvoice" :orderId="selectedOrderId" @update:print-preview="receiptImage = $event" />
+            </template>
+        </div> -->
     </div>
 
     <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">
@@ -265,11 +275,6 @@ const printInvoiceReceipt = () => {
         :show="orderReceiptModalIsOpen"
         @close="hideOrderReceiptModal"
     > -->
-    <div class="hidden">
-        <template v-if="showOrderReceipt">
-            <OrderReceipt ref="orderInvoice" :orderId="selectedOrderId" />
-        </template>
-    </div>
     <!-- </Modal> -->
 
     <Modal
@@ -280,6 +285,6 @@ const printInvoiceReceipt = () => {
         :show="orderInvoiceModalIsOpen"
         @close="hideOrderInvoiceModal"
     >
-        <OrderInvoice :orderId="selectedOrderId" />
+        <OrderInvoice ref="orderInvoice" :orderId="selectedOrderId" @close="hideOrderInvoiceModal" />
     </Modal>
 </template>

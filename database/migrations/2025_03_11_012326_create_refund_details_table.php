@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('payment_refund_id');
             $table->unsignedBigInteger('order_item_id');
+            $table->bigInteger('product_id')->nullable()->default(NULL);
             $table->integer('refund_qty');
             $table->double('refund_amount');
             $table->timestamps();

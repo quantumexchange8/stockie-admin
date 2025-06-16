@@ -58,6 +58,11 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Mike42\Escpos\Printer;
+use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
+use Mike42\Escpos\EscposImage;
+use Mike42\Escpos\GdEscposImage;
+
 class OrderController extends Controller
 {
     public function index(Request $request)
@@ -1191,7 +1196,7 @@ class OrderController extends Controller
                             'orderTable:id,table_id,order_id', 
                             'orderTable.table:id,table_no', 
                             'waiter:id,full_name',
-                            'customer:id,ranking,point',
+                            'customer:id,full_name,dial_code,phone,email,ranking,point',
                             'customer.rank:id,name',
                             'payment:id,order_id,receipt_no,receipt_end_date,total_amount,rounding,sst_amount,service_tax_amount,discount_id,discount_amount,bill_discounts,bill_discount_total,grand_total,point_earned,pax,status',
                             'payment.pointHistory:id,payment_id,amount,new_balance',
@@ -4925,5 +4930,298 @@ class OrderController extends Controller
                                                 ->get(['id', 'expire_balance', 'expired_at']);
 
         return response()->json($expiringPointHistories);
+    }
+
+    public function printReceipt(Request $request)
+    {
+        // 1. Extract base64 data
+        // $base64Image = $request->input('image');
+        // $image = str_replace('data:image/jpeg;base64,', '', $base64Image);
+        // $image = str_replace(' ', '+', $image);
+        // $imageData = base64_decode($image);
+
+        // // Define the public path
+        // $filename = 'receipt.jpeg';
+        // $publicPath = public_path('order');
+        // $fullPath = "$publicPath/$filename";
+
+        // // Save the file
+        // file_put_contents($fullPath, $imageData);
+
+        // dd(extension_loaded('imagick'));
+        // 1. Use normalized path
+        // $inputPath = public_path('order/tux.png');
+        // $outputPath = public_path('order/tuxd.jpg');
+        
+        // // 1. Open the original image (with transparency)
+        // $src = imagecreatefrompng($inputPath);
+        // if (!$src) {
+        //     throw new \Exception("Failed to open PNG.");
+        // }
+
+        // // 2. Create a truecolor image with white background
+        // $width = imagesx($src);
+        // $height = imagesy($src);
+        // $dst = imagecreatetruecolor($width, $height);
+        // $white = imagecolorallocate($dst, 255, 255, 255);
+        // imagefill($dst, 0, 0, $white);
+
+        // // 3. Copy and flatten original onto new image
+        // imagecopy($dst, $src, 0, 0, 0, 0, $width, $height);
+
+        // // 4. Save to a new file (flattened)
+        // imagejpeg($dst, $outputPath);
+
+        // // 5. Clean up
+        // imagedestroy($src);
+        // imagedestroy($dst);
+        
+        // dd(file_exists(public_path('order/tuxd.png')), is_readable(public_path('order/tuxd.png')), getimagesize(public_path('order/tuxd.png')), public_path('order/tuxd.png'));
+        
+        $order = $request->order;
+        $merchant = $request->merchant;
+        $url = $request->url;
+        $has_voucher_applied = $request->has_voucher_applied;
+        $applied_discounts = $request->applied_discounts;
+        $table_names = $request->table_names;
+
+        try {
+            // $img = EscposImage::load($outputPath, false);
+            // $connector = new NetworkPrintConnector("192.168.0.77", 9100);
+            // $printer = new Printer($connector);
+
+            // dd($img);
+            // $printer->graphics($img); // or $printer->graphics($img); for better quality
+            // $printer->text("Carlsberg event.\n");
+            // $printer->feed();
+            // $printer->cut();
+            // $printer->close();
+            
+            $connector = new NetworkPrintConnector("192.168.0.77", 9100);
+            $printer = new Printer($connector);
+
+            // Set condensed font for 48-character width (Font B)
+            $printer->setFont(Printer::FONT_B);
+            
+            // ===== HEADER SECTION =====
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT);
+            $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+            $printer->setEmphasis(true);
+            $printer->text($merchant['merchant_name'] . "\n");
+            $printer->selectPrintMode();
+            $printer->setEmphasis(false);
+            $printer->text($this->formatAddress($merchant['merchant_address_line1'], $merchant['merchant_address_line2']) . "\n");
+            $printer->text("Phone: " . $merchant['merchant_contact'] . "\n");
+            $printer->feed();
+            
+            // Amount and date
+            $printer->setEmphasis(true);
+            $printer->text("INVOICE\n");
+            $printer->setEmphasis(false);
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $printer->feed();
+            
+            // ===== MEMBER INFO =====
+            if ($order['customer']) {
+                $customerName = $order['customer']['full_name'];
+
+                $printer->text("$customerName\n");
+                $this->printTwoColumns($printer, "Phone No.", $order['customer']['phone'] ? str_replace("+", "", $order['customer']['dial_code']) . $order['customer']['phone'] : '-');
+                $this->printTwoColumns($printer, "Email", $order['customer']['email'] ?: '-');
+                $this->printTwoColumns($printer, "Tier", $order['customer']['rank']['name']);
+                $this->printTwoColumns($printer, "Points Earned", $order['payment']['point_history']['amount'] ?? 0);
+                $this->printTwoColumns($printer, "Points Balance", $order['payment']['point_history']['new_balance'] ?? 0);
+                $printer->feed();
+            }
+            
+            // ===== RECEIPT INFO =====
+            $this->printTwoColumns($printer, "Receipt No.", $order['payment']['receipt_no'] ?? '-');
+            $this->printTwoColumns($printer, "Table No.", $table_names);
+            $this->printTwoColumns($printer, "Pax", $order['payment']['pax'] ?? '-');
+            $this->printTwoColumns($printer, "Date", Carbon::parse($order['created_at'])->format('d/m/Y H:i A'));
+            
+            // ===== ITEMS TABLE =====
+            $filteredOrderItems = collect($order['order_items'])->filter(fn ($item) => $item['status'] === 'Served' && $item['item_qty'] > 0);
+
+            $this->printDivider($printer);
+            $this->printThreeColumns($printer, "QTY", "ITEM", "AMT (RM)");
+            $this->printDivider($printer);
+
+            foreach ($filteredOrderItems as $key => $item) {
+                $itemQty = $item['item_qty'];
+
+                // Item name
+                $itemType = $item['type'] !== 'Normal' ? "(" . $item['type'] . ")" : '';
+                $itemBucket = $item['product']['bucket'] === 'set' ? '(Set) ': '';
+                $itemName = "$itemType$itemBucket" . $item['product']['product_name'];
+
+                if ($item['discount_id']) {
+                    // Item price
+                    $amountBeforeDiscount = number_format( $item['type'] === 'Normal' ? $item['amount'] : 0, 2);
+                    $discountName = $item['product_discount']['discount']['name'] . " Discount";
+                    
+                    $this->printThreeColumns($printer, $itemQty, $itemName, $amountBeforeDiscount);
+                    $this->printThreeColumns($printer, '', $discountName, "- " . $item['discount_amount']);
+                    
+                } else {
+                    // Item price
+                    $totalAmount = number_format($item['amount'], 2);
+                    
+                    $this->printThreeColumns($printer, $itemQty, $itemName, $totalAmount);
+                }
+            }
+            
+            $this->printDivider($printer);
+            
+            // ===== TOTALS SECTION =====
+            $this->printTwoColumnsRight($printer, "Subtotal", number_format($order['payment']['total_amount'] ?? 0, 2));
+
+            if ($order['payment']['bill_discounts'] && $order['payment']['bill_discount_total'] > 0) {
+                $this->printTwoColumnsRight($printer, "Bill Discount", "- " . number_format($order['payment']['bill_discount_total'] ?? 0, 2));
+            }
+
+            if ($order['payment']['voucher']) {
+                $voucherDiscountExtTitle = $order['payment']['voucher']['reward_type'] === 'Discount (Percentage)' ? "(" . $order['payment']['voucher']['discount'] . "%)" : '';
+
+                $this->printTwoColumnsRight($printer, "Voucher Discount $voucherDiscountExtTitle", "- " . number_format($order['payment']['discount_amount'] ?? 0, 2));
+            }
+            
+            if ($order['payment']['service_tax_amount'] > 0) {
+                $serviceTaxExtTitle = round(($order['payment']['service_tax_amount'] / $order['payment']['total_amount']) * 100);
+                $this->printTwoColumnsRight($printer, "Service Tax ($serviceTaxExtTitle%)", number_format($order['payment']['service_tax_amount'] ?? 0, 2));
+            }
+
+            if ($order['payment']['sst_amount'] > 0) {
+                $sstExtTitle = round(($order['payment']['sst_amount'] / $order['payment']['total_amount']) * 100);
+                $this->printTwoColumnsRight($printer, "SST ($sstExtTitle%)", number_format($order['payment']['sst_amount'] ?? 0, 2));
+            }
+            
+            $this->printTwoColumnsRight($printer, "Rounding", ($order['payment']['rounding'] < 0 ? '-' : '') . number_format(abs($order['payment']['rounding'] ?? 0), 2));
+
+            $printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT | Printer::MODE_DOUBLE_WIDTH);
+            $printer->setEmphasis(true);
+            $this->printTwoColumnsRight($printer, "NET TOTAL", $order['payment']['grand_total'] ?? '0.00', 10, 14);
+            $printer->selectPrintMode();
+            $printer->setEmphasis(false);
+
+            $this->printDivider($printer);
+            $printer->feed();
+            
+            // ===== DISCOUNT SUMMARY =====
+            $printer->text("-------***DISCOUNT SUMMARY***-------"); // 28 + 6
+            if ($has_voucher_applied) {
+                $this->printWrappedTwoColumnsRight($printer, "DISCOUNTS", "AMT (RM)");
+
+                foreach ($applied_discounts as $key => $discount) {
+                    $this->printWrappedTwoColumnsRight($printer, $discount['discount_summary'], "- " . number_format($discount['discount_amount'], 2));
+
+                }
+                
+                $printer->feed();
+            }
+            
+            // ===== FOOTER SECTION =====
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text("Scan QR below to request your e-Invoice\n");
+            $printer->feed();
+            
+            // Generate QR code (size 5 works well with 48-char width)
+            $printer->qrCode($url, Printer::QR_ECLEVEL_L, 6);
+            $printer->feed();
+            
+            $printer->text("Thank you for your visit!\n");
+            $printer->text("Order invoice generated by\nSTOCKIE\n");
+            $printer->text("-------***Printed: " . now()->format('d/m/Y H:i A') . "***-------"); // 28 + 6
+            $printer->feed(3);
+            
+            // ===== FINISH PRINTING =====
+            $printer->cut(Printer::CUT_FULL);
+            $printer->close();
+
+            return response()->json('success');
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
+    // ===== HELPER METHODS =====
+    private function printDivider(Printer $printer, $length = 48)
+    {
+        $printer->text(str_repeat("-", $length) . "\n");
+    }
+
+    private function printTwoColumns(Printer $printer, $left, $right, $leftWidth = 15, $rightWidth = 33)
+    {
+        $printer->text(sprintf("%-{$leftWidth}s%-{$rightWidth}s\n", 
+            substr($left, 0, $leftWidth), 
+            substr(" : $right", 0, $rightWidth)
+        ));
+    }
+
+    private function printTwoColumnsRight(Printer $printer, $left, $right, $leftWidth = 36, $rightWidth = 12)
+    {
+        $printer->text(sprintf("%-{$leftWidth}s%{$rightWidth}s\n", 
+            substr($left, 0, $leftWidth),
+            substr($right, 0, $rightWidth)
+        ));
+    }
+
+    private function printWrappedTwoColumnsRight(Printer $printer, $left, $right, $leftWidth = 36, $rightWidth = 12)
+    {
+        $wrappedLines = wordwrap($left, $leftWidth, "\n", true);
+        $lines = explode("\n", $wrappedLines);
+        
+        // First line with both columns
+        $printer->text(sprintf("%-{$leftWidth}s%{$rightWidth}s\n",
+            substr($lines[0], 0, $leftWidth),
+            substr($right, 0, $rightWidth)
+        ));
+        
+        // Subsequent lines (if any) without right column
+        for ($i = 1; $i < count($lines); $i++) {
+            $printer->text(sprintf("%-{$leftWidth}s\n",
+                substr($lines[$i], 0, $leftWidth)
+            ));
+        }
+    }
+
+    private function printThreeColumns(Printer $printer, $col1, $col2, $col3, $col1Width = 6, $col2Width = 30, $col3Width = 12)
+    {
+        // Split the item name into multiple lines if needed
+        $wrappedLines = wordwrap($col2, $col2Width, "\n", true);
+        $lines = explode("\n", $wrappedLines);
+        
+        // Print first line with all columns
+        $printer->text(sprintf("%-{$col1Width}s%-{$col2Width}s%{$col3Width}s\n",
+            substr($col1, 0, $col1Width),
+            substr($lines[0], 0, $col2Width),
+            substr($col3, 0, $col3Width)
+        ));
+        
+        // Print remaining lines (if any) with empty first column
+        for ($i = 1; $i < count($lines); $i++) {
+            $printer->text(sprintf("%-{$col1Width}s%-{$col2Width}s\n",
+                '', // Empty first column
+                substr($lines[$i], 0, $col2Width)
+            ));
+        }
+    }
+
+    public function formatAddress($address1, $address2, $maxLineLength = 32) {
+        $formatted = "";
+        
+        // Process address line 1
+        if (!empty($address1)) {
+            $formatted .= wordwrap($address1, $maxLineLength, "\n", true);
+        }
+        
+        // Process address line 2 if exists
+        if (!empty($address2)) {
+            if (!empty($formatted)) $formatted .= "\n";
+            $formatted .= wordwrap($address2, $maxLineLength, "\n", true);
+        }
+        
+        return $formatted;
     }
 }
