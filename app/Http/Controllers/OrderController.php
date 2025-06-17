@@ -3974,7 +3974,8 @@ class OrderController extends Controller
                 $currentTable = Table::find($table['id']);
                 $currentTable->update([
                     'order_id' => $designatedOrderId,
-                    'status' => $orderTableStatus
+                    'status' => $orderTableStatus,
+                    'is_locked' => true
                 ]);
 
                 // Find the latest order_table without creating intermediate collections
@@ -4078,6 +4079,7 @@ class OrderController extends Controller
                     $existingOrderTable->table->update([
                         'status' => 'Empty Seat',
                         'order_id' => null,
+                        'is_locked' => false,
                     ]);
 
                 }
@@ -4260,7 +4262,8 @@ class OrderController extends Controller
                     $newOrder->orderTable->each(function ($tab) use ($orderTableStatus) {
                         $tab->table->update([
                             'status' => $orderTableStatus,
-                            'order_id' => $tab->order_id
+                            'order_id' => $tab->order_id,
+                            'is_locked' => false,
                         ]);
                         $tab->update(['status' => $orderTableStatus]);
                     });
@@ -4775,7 +4778,8 @@ class OrderController extends Controller
                 $currentMatchedTable = Table::find($table['id']);
                 $currentMatchedTable->update([
                     'order_id' => null,
-                    'status' => 'Empty Seat'
+                    'status' => 'Empty Seat',
+                    'is_locked' => false
                 ]);
                 
                 foreach ($table['order_tables'] as $orderTable) {
@@ -4812,7 +4816,8 @@ class OrderController extends Controller
                 $currentMatchedTable = Table::find($table['id']);
                 $currentMatchedTable->update([
                     'order_id' => null,
-                    'status' => 'Empty Seat'
+                    'status' => 'Empty Seat',
+                    'is_locked' => false
                 ]);
                 
                 foreach ($table['order_tables'] as $orderTable) {

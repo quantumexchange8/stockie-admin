@@ -949,7 +949,6 @@ onUnmounted(stop);
             :currentOrderCustomer="order.customer"
             :currentOrder="order"
             @close="hideMergeTableForm"
-            @closeDrawer="handleTableLock"
             @closeOrderDetails="closeOrderDetails"
         />
         <MergeTableForm 
@@ -958,7 +957,6 @@ onUnmounted(stop);
             :currentOrderCustomer="order.customer"
             :currentOrder="order"
             @close="hideMergeTableForm"
-            @closeDrawer="handleTableLock"
             @closeOrderDetails="closeOrderDetails"
         />
     </Modal>
@@ -1003,7 +1001,6 @@ onUnmounted(stop);
             :currentOrder="order"
             :transferType="transferType"
             @close="hideTransferTableForm"
-            @closeDrawer="handleTableLock"
             @fetchZones="$emit('fetchZones')"
         />
     </Modal>

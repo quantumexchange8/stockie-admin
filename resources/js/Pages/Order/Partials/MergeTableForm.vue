@@ -43,7 +43,7 @@ const removeRewardFormIsOpen = ref(false);
 const currentHasVoucher = ref(false);
 const targetHasVoucher = ref(false);
 
-const emit = defineEmits(['close', 'closeDrawer', 'closeOrderDetails']);
+const emit = defineEmits(['close', 'closeOrderDetails']);
 
 const form = useForm({
     id: props.currentOrderTable.id,
@@ -149,10 +149,6 @@ const setupDuration = (created_at) => {
 };
 
 onUnmounted(() => intervals.value.forEach(clearInterval));
-
-const filterZones = () => {
-
-}
 
 const getCurrentOrderTableDuration = (table) => {
     let currentOrderTable = table.order_tables.filter((table) => table.status !== 'Pending Clearance').length === 1 

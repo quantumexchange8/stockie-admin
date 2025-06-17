@@ -15,7 +15,7 @@ class AuthController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function login(Request $request)
+    public function authenticateCredentials(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => [
@@ -40,7 +40,7 @@ class AuthController extends Controller
                 'errors' => $validator->errors()
             ];
       
-            return response()->json($response, 401);    
+            return $response;    
         }
 
         if (!Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
@@ -49,20 +49,76 @@ class AuthController extends Controller
                 'errors' => [ 'passwowrd' => [ 'Incorrect password. Please try again. Kindly reach out to your admin if you need further assistance.' ] ]
             ];
       
-            return response()->json($response, 401);   
+            return $response;   
         }
 
         $user = User::where('position', 'waiter')->find(Auth::user()->id);
 
-        // Revoke all existing tokens before creating a new one
-        $user->tokens()->delete();
+        if (!$user) {
+            $response = [
+                'status' => 'Error logging in',
+                'errors' => [ 'email' => [ 'Only waiters are able to log in here!' ] ]
+            ];
+      
+            return $response;   
+        }
 
         $response = [
-            'id' => $user->id,
-            'full_name' => $user->full_name,
-            'email' => $user->email,
-            'image' => $user->getFirstMediaUrl('user'),
-            'token' => $user->createToken('mobile_app_token')->plainTextToken,
+            'status' => 'Success',
+            'user' => $user
+        ];
+
+        return $response;
+    }
+
+    /**
+     * Handle checking for user existing token.
+     */
+    public function checkForExistingToken(Request $request)
+    {
+        $response = $this->authenticateCredentials($request);
+
+        if ($response['status'] === 'Error logging in') {
+            return response()->json($response, 401);   
+        }
+
+        $authenticatedUser = $response['user'];
+
+        $isWaiterLoggedIn = $authenticatedUser->tokens()
+                                    ->where('name', 'mobile_app_token')
+                                    ->whereNull('expires_at') // or ->where('expires_at', '>', now()) if you use expiry
+                                    ->exists();
+
+        $response = [
+            'is_logged_in' => $isWaiterLoggedIn,
+            'status_code' => $isWaiterLoggedIn ? 401 : 200
+        ];
+  
+        return response()->json($response['is_logged_in'], $response['status_code']);
+    }
+
+    /**
+     * Handle an incoming authentication request.
+     */
+    public function login(Request $request)
+    {
+        $response = $this->authenticateCredentials($request);
+
+        if ($response['status'] === 'Error logging in') {
+            return response()->json($response, 401);   
+        }    
+
+        $authenticatedUser = $response['user'];
+
+        // Revoke all existing tokens before creating a new one
+        $authenticatedUser->tokens()->delete();
+
+        $response = [
+            'id' => $authenticatedUser->id,
+            'full_name' => $authenticatedUser->full_name,
+            'email' => $authenticatedUser->email,
+            'image' => $authenticatedUser->getFirstMediaUrl('user'),
+            'token' => $authenticatedUser->createToken('mobile_app_token')->plainTextToken,
             'status' => 'Logged in',
         ];
   

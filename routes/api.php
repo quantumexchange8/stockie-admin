@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 /********* Login **********/
 Route::controller(AuthController::class)->group(function(){
+    Route::post('check_login_status', 'checkForExistingToken');
     Route::post('login', 'login');
 });
 

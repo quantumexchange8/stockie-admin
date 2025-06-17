@@ -52,7 +52,7 @@ const removeRewardFormIsOpen = ref(false);
 const currentHasVoucher = ref(false);
 const targetHasVoucher = ref(false);
 
-const emit = defineEmits(['close', 'closeDrawer', 'fetchZones']);
+const emit = defineEmits(['close', 'fetchZones']);
 
 const form = useForm({
     customer_id: props.currentOrderCustomer?.id ?? null,
@@ -242,7 +242,6 @@ const closeModal = (status) => {
 const closeAll = () => {
     emit('fetchZones');
     emit('close');
-    emit('closeDrawer');
 };
 const submit = () => {
     const selectedCustomer = isSelectedCustomer.value?.id ?? form.customer_id;
@@ -273,7 +272,6 @@ const submit = () => {
             emit('fetchZones');
             closeConfirm();
             emit('close');
-            emit('closeDrawer');
         }
     })
 }

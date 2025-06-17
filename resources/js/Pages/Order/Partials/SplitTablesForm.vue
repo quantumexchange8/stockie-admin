@@ -43,7 +43,7 @@ const checkedIn = ref([]);
 const { showMessage } = useCustomToast();
 const { formatPhone } = usePhoneUtils();
 
-const emit = defineEmits(['close', 'closeDrawer', 'closeOrderDetails']);
+const emit = defineEmits(['close', 'closeOrderDetails']);
 
 const getAllZones = async() => {
     isLoading.value = true;
