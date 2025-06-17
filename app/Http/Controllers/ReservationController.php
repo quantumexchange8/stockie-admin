@@ -260,8 +260,14 @@ class ReservationController extends Controller
                         'waiter_image' => $waiter->image
                     ])
                     ->log("New customer check-in by :properties.waiter_name.");
+
+            $toBeNotified = $waiter->id === auth()->user()->id
+                ? User::where('position', 'admin')->get()
+                : User::where('position', 'admin')
+                        ->orWhere('id', $waiter->id)
+                        ->get();
             
-            Notification::send(User::all(), new OrderCheckInCustomer($orderTables, $waiter->full_name, $waiter->id));
+            Notification::send($toBeNotified, new OrderCheckInCustomer($orderTables, $waiter->full_name, $waiter->id));
 
             //Assigned activity log and notification
             activity()->useLog('Order')
@@ -276,7 +282,7 @@ class ReservationController extends Controller
                         ])
                         ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
 
-            Notification::send(User::all(), new OrderAssignedWaiter($orderTables, auth()->user()->id, $waiter->id));
+            Notification::send($toBeNotified, new OrderAssignedWaiter($orderTables, auth()->user()->id, $waiter->id));
 
             // Update reservation details
             $reservation->update([

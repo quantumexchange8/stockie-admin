@@ -235,7 +235,13 @@ class OrderController extends Controller
                     ])
                     ->log("New customer check-in by :properties.waiter_name.");
 
-        Notification::send(User::all(), new OrderCheckInCustomer($tableString, $waiter->full_name, $waiter->id));
+        $toBeNotified = $waiter->id === auth()->user()->id
+            ? User::where('position', 'admin')->get()
+            : User::where('position', 'admin')
+                    ->orWhere('id', $waiter->id)
+                    ->get();
+
+        Notification::send($toBeNotified, new OrderCheckInCustomer($tableString, $waiter->full_name, $waiter->id));
 
         //assign to serve
         activity()->useLog('Order')
@@ -250,7 +256,7 @@ class OrderController extends Controller
                     ])
                     ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
 
-        Notification::send(User::all(), new OrderAssignedWaiter($tableString, auth()->user()->id, $waiter->id));
+        Notification::send($toBeNotified, new OrderAssignedWaiter($tableString, auth()->user()->id, $waiter->id));
 
         return redirect()->back();
     }
@@ -437,7 +443,7 @@ class OrderController extends Controller
 
                 $totalDiscountedAmount += $currentProductDiscount ? ($currentProductDiscount['price_before'] - $currentProductDiscount['price_after']) * $item['item_qty'] : 0.00;
 
-                Notification::send(User::all(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
+                Notification::send(User::where('position', 'admin')->get(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
 
                 // placed an order for {{table name}}.
                 activity()->useLog('Order')
@@ -494,11 +500,11 @@ class OrderController extends Controller
                         ]);
 
                         if($newStatus === 'Out of stock'){
-                            Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                            Notification::send(User::where('position', 'admin')->get(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                         };
 
                         if($newStatus === 'Low in stock'){
-                            Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                            Notification::send(User::where('position', 'admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                         }
                     }
                 }
@@ -3498,11 +3504,11 @@ class OrderController extends Controller
             ]);
             
             if($newStatus === 'Out of stock'){
-                Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                Notification::send(User::where('position', 'admin')->get(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
             };
 
             if($newStatus === 'Low in stock'){
-                Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                Notification::send(User::where('position', 'admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
             }
         }
 
@@ -3572,11 +3578,11 @@ class OrderController extends Controller
                     ]);
 
                     if($newStatus === 'Out of stock'){
-                        Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                        Notification::send(User::where('position', 'admin')->get(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                     };
 
                     if($newStatus === 'Low in stock'){
-                        Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                        Notification::send(User::where('position', 'admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                     }
                 }
             // } 
@@ -3692,11 +3698,11 @@ class OrderController extends Controller
             ]);
             
             if($newStatus === 'Out of stock'){
-                Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                Notification::send(User::where('position', 'admin')->get(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
             };
 
             if($newStatus === 'Low in stock'){
-                Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                Notification::send(User::where('position', 'admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
             }
         }
 
@@ -5128,7 +5134,7 @@ class OrderController extends Controller
             $printer->feed();
             
             // Generate QR code (size 5 works well with 48-char width)
-            $printer->qrCode($url, Printer::QR_ECLEVEL_L, 6);
+            $printer->qrCode($url, Printer::QR_ECLEVEL_L, );
             $printer->feed();
             
             $printer->text("Thank you for your visit!\n");

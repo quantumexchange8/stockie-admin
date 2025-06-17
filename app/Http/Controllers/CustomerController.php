@@ -313,11 +313,11 @@ class CustomerController extends Controller
                     ]);
             
                     if($newStatus === 'Out of stock'){
-                        Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                        Notification::send(User::where('position', 'admin')->get(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                     };
         
                     if($newStatus === 'Low in stock'){
-                        Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                        Notification::send(User::where('position', 'admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                     }
                 }
             }

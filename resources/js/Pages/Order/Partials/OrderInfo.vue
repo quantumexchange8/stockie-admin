@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import TabView from '@/Components/TabView.vue';
 import OrderDetail from './OrderDetail.vue';
 import Button from '@/Components/Button.vue';
@@ -67,6 +67,9 @@ const transferType = ref('');
 const splitTablesMode = ref(false);
 const wasAutoUnlocked = ref(false);
 const autoUnlockTimer = ref(props.autoUnlockSetting);
+const hasItemInCart = ref(false);
+const unlockConfirmationIsOpen = ref(false);
+const unlockTableConfirmationTimer = ref(300);
 
 const computedOrder = computed(() => {
     if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') return [];
@@ -151,6 +154,11 @@ const handleTableLock = (action = 'unlock', auto = false) => {
     const tableIdArray = order.value?.order_table?.map((ot) => ot.table.id);
 
     if (tableIdArray) {
+        if (hasItemInCart.value) {
+            showUnlockConfirmation();
+            return;
+        }
+
         router.post('/order-management/orders/handleTableLock', {
             action: action,
             table_id_array: tableIdArray
@@ -158,10 +166,10 @@ const handleTableLock = (action = 'unlock', auto = false) => {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                showMessage({ 
-                    severity: 'info',
-                    summary: action === 'unlock' ? 'The table you were viewing has been unlocked' : 'The table you are currently viewing will be locked'
-                });
+                // showMessage({ 
+                //     severity: 'info',
+                //     summary: action === 'unlock' ? 'The table you were viewing has been unlocked' : 'The table you are currently viewing will be locked'
+                // });
 
                 if (action === 'unlock') {
                     wasAutoUnlocked.value = auto;
@@ -235,6 +243,7 @@ const openDrawer = (action) => {
 const closeDrawer = () => {
     drawerIsVisible.value = false;
     actionType.value = null;
+    hasItemInCart.value = false;
 };
 
 const openDrawer2 = () => {
@@ -321,6 +330,30 @@ const showRemoveRewardForm = () => {
 const hideRemoveRewardForm = () => {
     removeRewardFormIsOpen.value = false;
 };
+
+const showUnlockConfirmation = () => {
+    unlockConfirmationIsOpen.value = true;
+};
+
+const hideUnlockConfirmation = () => {
+    unlockConfirmationIsOpen.value = false;
+};
+
+const manualClose = () => {
+    hideUnlockConfirmation();
+    hasItemInCart.value = false;
+    handleTableLock('unlock', true);
+};
+
+const { idle, start, stop } = useIdleTimer(
+    Math.floor(unlockTableConfirmationTimer.value),
+    () => manualClose(),
+    false // Don't auto-start
+);
+
+watch(unlockConfirmationIsOpen, (isOpen) => {
+    isOpen ? start() : stop();
+});
 
 // const showOrderInvoiceModal = () => {
 //     orderCompleteModalIsOpen.value = false;
@@ -535,6 +568,8 @@ watch(() => props.autoUnlockSetting, (newValue) => {
     autoUnlockTimer.value = newValue;
 });
 
+onUnmounted(stop);
+
 </script>
 
 <template>
@@ -563,6 +598,7 @@ watch(() => props.autoUnlockSetting, (newValue) => {
                 @fetchZones="$emit('fetchZones')"
                 @fetchOrderDetails="fetchOrderDetails"
                 @fetchPendingServe="fetchPendingServe"
+                @update:hasItemInCart="hasItemInCart = $event"
                 @close="closeDrawer();closeOverlay()"
             />
         </template>
@@ -970,5 +1006,41 @@ watch(() => props.autoUnlockSetting, (newValue) => {
             @closeDrawer="handleTableLock"
             @fetchZones="$emit('fetchZones')"
         />
+    </Modal>
+
+    <Modal 
+        :maxWidth="'2xs'" 
+        :closeable="true"
+        :show="unlockConfirmationIsOpen"
+        :withHeader="false"
+        class="[&>div>div>div]:!p-0"
+        @close="hideUnlockConfirmation"
+    >
+        <div class="flex flex-col gap-9">
+            <div class="bg-primary-50 pt-6 flex items-center justify-center rounded-t-[5px]">
+                <MovingIllus/>
+            </div>
+            <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Unlock table?</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >You still have items in your cart! Would you like to unlock table or stay?</div>
+            </div>
+            <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="hideUnlockConfirmation"
+                >
+                    Stay
+                </Button>
+                <Button
+                    variant="red"
+                    size="lg"
+                    @click.once="manualClose"
+                >
+                    Unlock
+                </Button>
+            </div>
+        </div>
     </Modal>
 </template>

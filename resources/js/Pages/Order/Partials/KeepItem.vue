@@ -791,7 +791,7 @@ onMounted(() => {
                                     <Button
                                         :variant="'primary'"
                                         :size="'lg'"
-                                        :disabled="form.processing"
+                                        :disabled="form.processing || form.items.find(i => i.order_item_id === order_item.id).amount == 0"
                                         v-if="form.items.find(i => i.order_item_id === order_item.id)"
                                     >
                                         Keep

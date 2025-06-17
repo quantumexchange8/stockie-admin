@@ -34,7 +34,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails','fetchPendingServe']);
+const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails','fetchPendingServe', 'update:hasItemInCart']);
 
 const query = ref('');
 const tabs = ref(['All']);
@@ -226,6 +226,11 @@ const closeStockDetailItemModal = () => {
     isStockDetailModalOpen.value = false;
     setTimeout(()=> selectedProduct.value = '', 200);
 }
+
+watch(() => form.items.map(i => i.item_qty), (newValue) => {
+    const totalQtyPlaced = newValue.reduce((total, qty) => total + qty, 0);
+    emit('update:hasItemInCart', totalQtyPlaced > 0);
+});
 
 </script>
 

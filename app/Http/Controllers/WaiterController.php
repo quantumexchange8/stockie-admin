@@ -225,7 +225,9 @@ class WaiterController extends Controller
         
         $waiter = User::where('id', $request->id)->first();
 
-        $waiter->update([
+        $isPasscodeSame = $validatedData['passcode'] == $waiter->passcode;
+
+        $dataToUpdate = [
             'name' => $validatedData['full_name'],
             'full_name' => $validatedData['full_name'],
             'phone' => $validatedData['phone'],
@@ -236,8 +238,15 @@ class WaiterController extends Controller
             'salary'=> $validatedData['salary'],
             'worker_email' => $validatedData['stockie_email'],
             'profile_photo' => $validatedData['image'],
-            'passcode' => $validatedData['passcode'],
-        ]);
+            // 'passcode' => $validatedData['passcode']
+        ];
+
+        if (!$isPasscodeSame) {
+            $dataToUpdate['passcode'] = $validatedData['passcode'];
+            $dataToUpdate['passcode_status'] = null;
+        }
+
+        $waiter->update($dataToUpdate);
 
         activity()->useLog('edit-waiter-detail')
                     ->performedOn($waiter)

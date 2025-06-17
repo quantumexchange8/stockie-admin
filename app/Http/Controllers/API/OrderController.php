@@ -241,7 +241,7 @@ class OrderController extends Controller
                         ])
                         ->log("New customer check-in by :properties.waiter_name.");
 
-            Notification::send(User::all(), new OrderCheckInCustomer($tableString, $waiter->full_name, $waiter->id));
+            Notification::send(User::where('position', 'admin')->get(), new OrderCheckInCustomer($tableString, $waiter->full_name, $waiter->id));
 
             //assign to serve
             activity()->useLog('Order')
@@ -256,7 +256,7 @@ class OrderController extends Controller
                         ])
                         ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
 
-            Notification::send(User::all(), new OrderAssignedWaiter($tableString, $waiter->id, $waiter->id));
+            Notification::send(User::where('position', 'admin')->get(), new OrderAssignedWaiter($tableString, $waiter->id, $waiter->id));
 
             return response()->json([
                 'status' => 'success',
@@ -516,7 +516,7 @@ class OrderController extends Controller
                 'order:id,order_no,created_at,customer_id',
                 'order.orderItems' => function ($query) {
                     $query->where('status', 'Pending Serve')
-                        ->select('id', 'amount_before_discount', 'amount', 'product_id', 'item_qty', 'order_id', 'status');
+                        ->select('id', 'amount_before_discount', 'amount', 'product_id', 'item_qty', 'order_id', 'user_id', 'status');
                 },
                 'order.orderItems.product:bucket,id,price,product_name,point',
                 'order.orderItems.subItems:id,item_qty,product_item_id,serve_qty,order_item_id',
@@ -551,6 +551,65 @@ class OrderController extends Controller
         });
     
         return response()->json($pendingServeItems);
+    }
+    
+    /**
+     * Get all pending serve items thats has been ordered by the user.
+     */
+    public function getAllPendingServeItems()
+    {
+        $tables = Table::whereHas('orderTables', function ($query) {
+                                $query->whereNotIn('status', ['Order Completed', 'Order Cancelled', 'Order Voided'])
+                                        ->whereHas('order.orderItems', function ($subQuery) {
+                                            $subQuery->where([
+                                                ['status', 'Pending Serve'],
+                                                ['user_id', $this->authUser->id]
+                                            ]);
+                                        });
+                            })
+                            ->where([
+                                ['status', '!=', 'Empty Seat'],
+                                ['state', 'active']
+                            ])
+                            ->with([
+                                'orderTables:id,table_id,order_id,status',
+                                'orderTables' => function ($query) {
+                                    $query->whereNotIn('status', ['Order Completed', 'Order Cancelled', 'Order Voided']);
+                                },
+                                'orderTables.order:id,order_no,created_at,customer_id',
+                                'orderTables.order.orderItems' => function ($query) {
+                                    $query->where([
+                                            ['status', 'Pending Serve'],
+                                            ['user_id', $this->authUser->id]
+                                        ])
+                                        ->select('id', 'amount_before_discount', 'amount', 'product_id', 'item_qty', 'order_id', 'user_id', 'status');
+                                },
+                                'orderTables.order.orderItems.product:bucket,id,price,product_name,point',
+                                'orderTables.order.orderItems.subItems:id,item_qty,product_item_id,serve_qty,order_item_id',
+                                'orderTables.order.orderItems.subItems.productItem:id,product_id,inventory_item_id',
+                                'orderTables.order.orderItems.subItems.productItem.inventoryItem:id,item_name',
+                                'orderTables.order.customer:id,full_name'
+                            ])
+                            ->select('id', 'table_no', 'status', 'state', 'order_id')
+                            ->orderByDesc('id')
+                            ->get();
+
+        $tables->each(function ($table) {
+            $table->orderTables->each(function ($orderTable) {
+                if ($orderTable->order) {
+                    if ($orderTable->order->customer_id) {
+                        $orderTable->order->customer->image = $orderTable->order->customer->getFirstMediaUrl('customer');
+                    }
+
+                    foreach ($orderTable->order->orderItems as $orderItem) {
+                        $orderItem->image = $orderItem->product->getFirstMediaUrl('product');
+                    }
+                }
+            });
+        });
+
+    
+        return response()->json($tables);
     }
 
     /**
@@ -817,7 +876,7 @@ class OrderController extends Controller
     
                     $totalDiscountedAmount += $currentProductDiscount ? ($currentProductDiscount['price_before'] - $currentProductDiscount['price_after']) * $item['item_qty'] : 0.00;
     
-                    Notification::send(User::all(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
+                    Notification::send(User::where('position', 'admin')->get(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
     
                     // placed an order for {{table name}}.
                     activity()->useLog('Order')
@@ -872,11 +931,11 @@ class OrderController extends Controller
                             ]);
     
                             if($newStatus === 'Out of stock'){
-                                Notification::send(User::all(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                                Notification::send(User::where('position', 'admin')->get(), new InventoryOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                             };
     
                             if($newStatus === 'Low in stock'){
-                                Notification::send(User::all(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
+                                Notification::send(User::where('position', 'admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                             }
                         }
                     }
@@ -2625,7 +2684,7 @@ class OrderController extends Controller
                     ])
                     ->log("New customer check-in by :properties.waiter_name.");
             
-            Notification::send(User::all(), new OrderCheckInCustomer($orderTables, $assignedWaiter->full_name, $assignedWaiter->id));
+            Notification::send(User::where('position', 'admin')->get(), new OrderCheckInCustomer($orderTables, $assignedWaiter->full_name, $assignedWaiter->id));
 
             //Assigned activity log and notification
             activity()->useLog('Order')
@@ -2640,7 +2699,7 @@ class OrderController extends Controller
                         ])
                         ->log("Assigned :properties.waiter_name to serve :properties.table_name.");
 
-            Notification::send(User::all(), new OrderAssignedWaiter($orderTables, $waiter->id, $assignedWaiter->id));
+            Notification::send(User::where('position', 'admin')->get(), new OrderAssignedWaiter($orderTables, $waiter->id, $assignedWaiter->id));
 
             // Update reservation details
             $reservation->update([

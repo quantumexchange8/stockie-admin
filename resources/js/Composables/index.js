@@ -367,7 +367,7 @@ export const vClickOutside = {
 };
 
 // CHeck for user inactivity after x seconds
-export function useIdleTimer(timeoutSeconds = 300, onIdle = () => {}) {
+export function useIdleTimer(timeoutSeconds = 300, onIdle = () => {}, autoStart = true) {
     const idle = ref(false);
     let timer = null;
 
@@ -392,8 +392,10 @@ export function useIdleTimer(timeoutSeconds = 300, onIdle = () => {}) {
         clearTimeout(timer);
     };
 
-    onMounted(start);
-    onUnmounted(stop);
+    if (autoStart) {
+        onMounted(start);
+        onUnmounted(stop);
+    }
 
-    return { idle };
+    return { idle, start, stop };
 };

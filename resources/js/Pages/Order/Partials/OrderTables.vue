@@ -347,10 +347,10 @@ watch(selectedTable, (newValue, oldValue) => {
         isLocking.value = false;
         wasLocked.value = false;
 
-        showMessage({
-            severity: 'info',
-            summary: 'The table you were viewing was manually unlocked',
-        });
+        // showMessage({
+        //     severity: 'info',
+        //     summary: 'The table you were viewing was manually unlocked',
+        // });
     };
 });
 

@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::controller(OrderController::class)->prefix('orders')->group(function(){
         // Tables
         Route::get('/tables', 'getAllTables');
+        Route::get('/all_pending_serve_items', 'getAllPendingServeItems');
         Route::get('/customers', 'getAllCustomers');
         Route::get('/auto_unlock_timer', 'getAutoUnlockDuration');
         Route::post('/check_in_table', 'checkInTable');
