@@ -16,6 +16,11 @@ class RefundDetail extends Model
         'refund_amount',
     ];
 
+    public function paymentRefund(): BelongsTo
+    {
+        return $this->belongsTo(PaymentRefund::class, 'payment_refund_id');
+    }
+
     public function FilterOrderItems(): BelongsTo
     {
         return $this->belongsTo(OrderItem::class, 'order_item_id', 'id')->where('type', 'Normal')->where('status', 'Served');

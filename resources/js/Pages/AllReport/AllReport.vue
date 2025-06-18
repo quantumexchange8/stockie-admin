@@ -12,7 +12,10 @@ import SalesSummary from './Partials/SalesSummary.vue';
 import PaymentMethod from './Partials/PaymentMethod.vue';
 import MemberPurchase from './Partials/MemberPurchase.vue';
 import CurrentStock from './Partials/CurrentStock.vue';
+import EmployeeEarning from './Partials/EmployeeEarning.vue';
 import { transactionFormat } from '@/Composables/index.js';
+import ProductSales from './Partials/ProductSales.vue';
+import CategorySales from './Partials/CategorySales.vue';
 
 const { formatAmount } = transactionFormat();
 
@@ -23,9 +26,9 @@ const home = ref({
 const salesTypes = ref([
     { text: 'Sales Summary', value: 'sales_summary'},
     { text: 'Payment Method', value: 'payment_method'},
-    // { text: 'Product Sales', value: 'product_sales'},
-    // { text: 'Category Sales', value: 'category_sales'},
-    // { text: 'Employee Earnings', value: 'employee_earning'},
+    { text: 'Product Sales', value: 'product_sales'},
+    { text: 'Category Sales', value: 'category_sales'},
+    { text: 'Employee Earnings', value: 'employee_earning'},
     { text: 'Member Purchase', value: 'member_purchase'},
     { text: 'Current Stock', value: 'current_stock'},
 ]);
@@ -50,29 +53,30 @@ const paymentMethodHeader = ref([
 ]);
 
 const productSalesHeader = ref([
-    { title: 'Product', width: '14' },
-    { title: 'Sold', width: '14' },
+    { title: 'Product', width: '23' },
+    { title: 'Sold', width: '7' },
     { title: 'Gross (RM)', width: '14' },
     { title: 'Disc. (RM)', width: '14' },
     { title: 'Tax (RM)', width: '14' },
-    { title: 'Refund (RM)', width: '16' },
+    { title: 'Refund (RM)', width: '14' },
     { title: 'Net (RM)', width: '14' },
 ]);
 
 const categorySalesHeader = ref([
-    { title: 'Category', width: '14' },
+    { title: 'Category', width: '23' },
+    { title: 'Sold', width: '7' },
     { title: 'Gross (RM)', width: '14' },
     { title: 'Disc. (RM)', width: '14' },
     { title: 'Tax (RM)', width: '14' },
-    { title: 'Refund (RM)', width: '16' },
+    { title: 'Refund (RM)', width: '14' },
     { title: 'Net (RM)', width: '14' },
 ]);
 
 const employeeEarningsHeader = ref([
-    { title: 'Employee', width: '14' },
-    { title: 'Sales (RM)', width: '14' },
-    { title: 'Incentive (RM)', width: '14' },
-    { title: 'Commission (RM)', width: '16' },
+    { title: 'Employee', width: '43' },
+    { title: 'Sales (RM)', width: '19' },
+    { title: 'Incentive (RM)', width: '19' },
+    { title: 'Commission (RM)', width: '19' },
 ]);
 
 const memberPurchaseHeader = ref([
@@ -93,6 +97,9 @@ const currentStockHeader = ref([
 const reportComponents = {
     sales_summary: SalesSummary,
     payment_method: PaymentMethod,
+    product_sales: ProductSales,
+    category_sales: CategorySales,
+    employee_earning: EmployeeEarning,
     member_purchase: MemberPurchase,
     current_stock: CurrentStock,
 };
@@ -101,6 +108,9 @@ const getHeaderForType = (type) => {
     const headerMap = {
         sales_summary: salesSummaryHeader.value,
         payment_method: paymentMethodHeader.value,
+        product_sales: productSalesHeader.value,
+        category_sales: categorySalesHeader.value,
+        employee_earning: employeeEarningsHeader.value,
         member_purchase: memberPurchaseHeader.value,
         current_stock: currentStockHeader.value,
     };
@@ -108,7 +118,7 @@ const getHeaderForType = (type) => {
 };
 
 const rows = ref([]);
-const sales_type = ref('current_stock');
+const sales_type = ref('category_sales');
 const isLoading = ref(false);
 const reportComponentRef = ref(null);
 

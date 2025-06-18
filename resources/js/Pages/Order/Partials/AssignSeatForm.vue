@@ -26,7 +26,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 const { showMessage } = useCustomToast();
 const { isValidNumberKey } = useInputValidator();
 
-const emit = defineEmits(['close', 'fetchZones']);
+const emit = defineEmits(['close', 'fetchZones', 'openDrawer']);
 
 const selectedTable = ref(props.table);
 const selectedTableName = ref(props.table.table_no);
@@ -54,8 +54,9 @@ const formSubmit = () => {
                 });
                 form.reset();
             }, 200);
-            emit('close');
+            emit('openDrawer', selectedTable.value);
             emit('fetchZones');
+            emit('close');
         },
     })
 };

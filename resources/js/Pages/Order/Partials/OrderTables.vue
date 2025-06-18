@@ -74,11 +74,11 @@ const wasLocked = ref(false);
 //     delete: (id) => `/order-management/orders/reservation/${id}`,
 // };
 
-const openOverlay = async (event, table) => {
+const openOverlay = async (event, table, autoOpened = false) => {
     if (!table.is_reserved) {
         selectedTable.value = table;
     
-        if (table.order_tables.length > 0) {
+        if (table.order_tables.length > 0 || autoOpened) {
             if (!table.is_locked && !isLocking.value) {
                 drawerIsVisible.value = true;
 
@@ -322,6 +322,14 @@ const isMerged = (targetTable) => {
         )
     );
 };
+
+const openDrawer = (targetTable) => {
+    const checkedInTable = allZones.value
+        .flatMap((zone) => zone.tables)
+        .find((table) => table.id === targetTable.id);
+        
+    setTimeout(() => openOverlay(null, checkedInTable, true), 200);
+}
 
 watch(() => props.autoUnlockSetting, (newValue) => {
     autoUnlockTimer.value = newValue;
@@ -645,6 +653,7 @@ watch(selectedTable, (newValue, oldValue) => {
             :tablesArr="tablesArr"
             @close="closeOverlay"
             @fetchZones="$emit('fetchZones')"
+            @openDrawer="openDrawer($event)"
         />
     </OverlayPanel>
 </template>

@@ -164,7 +164,7 @@ const handleTableLock = (action = 'unlock', auto = false) => {
             table_id_array: tableIdArray
         }, {
             preserveScroll: true,
-            preserveState: true,
+            preserveState: action === 'unlock' ? 'errors' : true,
             onSuccess: () => {
                 // showMessage({ 
                 //     severity: 'info',
