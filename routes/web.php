@@ -287,6 +287,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders/getTableKeepItem/{id}', [OrderController::class, 'getTableKeepItem'])->name('orders.getTableKeepItem');
         Route::get('/orders/getTableKeepHistories/{id}', [OrderController::class, 'getTableKeepHistories'])->name('orders.getTableKeepHistories');
         Route::post('/orders/printReceipt', [OrderController::class, 'printReceipt'])->name('orders.printReceipt');
+        Route::post('/orders/getTestReceipt', [OrderController::class, 'getTestReceipt'])->name('orders.getTestReceipt');
 
         // Order tables
         Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');

@@ -9,6 +9,7 @@ import { usePhoneUtils, useCustomToast } from '@/Composables/index.js';
 import QRCodeVue3 from "qrcode-vue3";
 import md5 from 'crypto-js/md5';
 import html2canvas from 'html2canvas'
+import Button from '@/Components/Button.vue';
 
 const props = defineProps({
     orderId: Number,
@@ -25,6 +26,7 @@ const merchant = ref('');
 const payout = ref();
 const receiptContent = ref(null);
 const receiptImage = ref(null);
+const isLoading = ref(false);
 
 const getOrderPaymentDetails = async () => {
     try {
@@ -193,6 +195,136 @@ const printReceipt = async () => {
 
 }
 
+const testPrintReceipt = async () => {
+    try {
+        // Fetch required data first
+        await Promise.all([
+            getOrderPaymentDetails(),
+            getPayoutDetails()
+        ]);
+
+        // Prepare the request data
+        const requestData = {
+            order: order.value,
+            merchant: merchant.value,
+            url: `${payout.value?.url}invoice?invoice_no=${order.value.payment?.receipt_no}&merchant_id=${payout.value?.merchant_id}&amount=${order.value.payment?.grand_total}&eCode=${generateECode(
+                order.value.payment?.receipt_no,
+                payout.value?.merchant_id,
+                payout.value?.api_key,
+            )}`,
+            has_voucher_applied: hasVoucherApplied.value,
+            applied_discounts: appliedDiscounts.value,
+            table_names: orderTableNames.value,
+        };
+
+        // Send to backend to generate ESC/POS commands
+        const response = await axios.post('/order-management/orders/getTestReceipt', requestData, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.data.success) {
+            // For RawBT on Android
+            if (window.RawBt) {
+                RawBt.print(
+                    response.data.printData,
+                    (success) => {
+                        console.log('Print success:', success);
+                        showMessage({
+                            severity: 'success',
+                            summary: 'Receipt sent to printer successfully'
+                        });
+                        emit('close');
+                    },
+                    (error) => {
+                        console.error('Print error:', error);
+                        showMessage({
+                            severity: 'error',
+                            summary: 'Failed to print receipt',
+                            detail: error
+                        });
+                    },
+                    response.data.printerOptions
+                );
+            } 
+            // Fallback for browsers (will prompt download)
+            else {
+                // const link = document.createElement('a');
+                // link.href = `data:application/octet-stream;base64,${response.data.printData}`;
+                // link.download = `receipt_${order.value.payment?.receipt_no || 'unknown'}.prn`;
+                // link.click();
+                
+                showMessage({
+                    severity: 'info',
+                    summary: 'Receipt downloaded',
+                    detail: 'Print the downloaded file using RawBT or other thermal printer software'
+                });
+                emit('close');
+            }
+        } else {
+            throw new Error(response.data.error || 'Failed to generate receipt');
+        }
+
+    } catch (err) {
+        console.error("Printing failed:", err);
+        showMessage({
+            severity: 'error',
+            summary: 'Failed to print receipt',
+            detail: err.message
+        });
+    }
+}
+
+const testPrintReceipt2 = async () => {
+    try {
+        await Promise.all([
+            getOrderPaymentDetails(),
+            getPayoutDetails()
+        ]);
+
+    } catch (err) {
+        console.error("Failed to fetch receipt data:", err);
+        return; // Abort printing
+    }
+
+    try {
+        const res = await axios.post('/order-management/orders/getTestReceipt',
+            { 
+                order: order.value,
+                merchant: merchant.value,
+                url: `${payout.value?.url}invoice?invoice_no=${order.value.payment?.receipt_no}&merchant_id=${payout.value?.merchant_id}&amount=${order.value.payment?.grand_total}&eCode=${generateECode(
+                    order.value.payment?.receipt_no,
+                    payout.value?.merchant_id,
+                    payout.value?.api_key,
+                )}`,
+                has_voucher_applied: hasVoucherApplied.value,
+                applied_discounts: appliedDiscounts.value,
+                table_names: orderTableNames.value,
+             },
+        );
+
+        const data = await res.json();
+        const base64 = btoa(unescape(encodeURIComponent(data.printData)));
+        alert("Sending to RawBT...");
+        window.location.href = `rawbt:base64,${base64}`;
+        
+        // showMessage({
+        //     severity: 'success',
+        //     summary: 'Print receipt successfully.'
+        // }); 
+
+        emit('close');
+        
+    } catch (err) {
+        showMessage({
+            severity: 'error',
+            summary: err
+        }); 
+    }
+
+}
+
 defineExpose({
     printReceipt
 });
@@ -251,6 +383,25 @@ defineExpose({
                                 height="64" 
                                 class="flex-shrink-0 w-2/12 rounded-full"
                             />
+                        </div>
+                        
+                        <div class="flex w-full items-start px-1 gap-x-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
+                                @click="testPrintReceipt"
+                            >
+                                <span class="text-grey-700 font-normal">Test Print</span>
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
+                                @click="testPrintReceipt2"
+                            >
+                                <span class="text-grey-700 font-normal">Test Print 2</span>
+                            </Button>
                         </div>
         
                         <div class="flex flex-col bg-primary-25 rounded-md items-center px-4 py-6">
