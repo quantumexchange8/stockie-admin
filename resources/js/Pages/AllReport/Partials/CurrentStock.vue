@@ -101,8 +101,8 @@ defineExpose({
                 <tbody>
                     <template v-for="item in row.inventory_items">
                         <tr class="border-b border-grey-100">
-                            <td class="w-[43%]">
-                                <span class="text-grey-900 text-2xs font-semibold text-ellipsis whitespace-nowrap overflow-hidden px-3 py-4">{{ item.item_name }}</span>
+                            <td class="w-[43%] px-3">
+                                <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ item.item_name }}</span>
                             </td>
                             <td class="w-[19%]">
                                 <div class="flex justify-start items-center gap-3 px-3">

@@ -53,22 +53,22 @@ const paymentMethodHeader = ref([
 ]);
 
 const productSalesHeader = ref([
-    { title: 'Product', width: '23' },
+    { title: 'Product', width: '22' },
     { title: 'Sold', width: '7' },
     { title: 'Gross (RM)', width: '14' },
     { title: 'Disc. (RM)', width: '14' },
     { title: 'Tax (RM)', width: '14' },
-    { title: 'Refund (RM)', width: '14' },
+    { title: 'Refund (RM)', width: '15' },
     { title: 'Net (RM)', width: '14' },
 ]);
 
 const categorySalesHeader = ref([
-    { title: 'Category', width: '23' },
+    { title: 'Category', width: '22' },
     { title: 'Sold', width: '7' },
     { title: 'Gross (RM)', width: '14' },
     { title: 'Disc. (RM)', width: '14' },
     { title: 'Tax (RM)', width: '14' },
-    { title: 'Refund (RM)', width: '14' },
+    { title: 'Refund (RM)', width: '15' },
     { title: 'Net (RM)', width: '14' },
 ]);
 
@@ -80,10 +80,10 @@ const employeeEarningsHeader = ref([
 ]);
 
 const memberPurchaseHeader = ref([
-    { title: 'Customer', width: '22' },
-    { title: 'Total Purchase(RM)', width: '21' },
-    { title: 'No.of Purchase', width: '17' },
-    { title: 'Avg. Amt. Spent(RM)', width: '23' },
+    { title: 'Customer', width: '25' },
+    { title: 'Total Purchase (RM)', width: '22' },
+    { title: 'No.of Purchase', width: '18' },
+    { title: 'Avg. Spent (RM)', width: '18' },
     { title: 'Points Earned', width: '17' },
 ]);
 
@@ -118,7 +118,7 @@ const getHeaderForType = (type) => {
 };
 
 const rows = ref([]);
-const sales_type = ref('category_sales');
+const sales_type = ref('sales_summary');
 const isLoading = ref(false);
 const reportComponentRef = ref(null);
 

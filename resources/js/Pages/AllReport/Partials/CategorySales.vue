@@ -184,8 +184,8 @@ defineExpose({
         <tbody>
             <template v-for="row in props.rows">
                 <tr class="border-b border-grey-100">
-                    <td class="w-[23%]">
-                        <span class="text-grey-900 text-2xs font-semibold text-ellipsis whitespace-nowrap overflow-hidden px-3 py-4">{{ row.name }}</span>
+                    <td class="w-[22%] px-3">
+                        <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ row.name }}</span>
                     </td>
                     <td class="w-[7%]">
                         <div class="flex justify-start items-center gap-3 px-3">
@@ -207,7 +207,7 @@ defineExpose({
                             <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getCategoryTotalTaxAmount(row)) }}</span>
                         </div>
                     </td>
-                    <td class="w-[14%]">
+                    <td class="w-[15%]">
                         <div class="flex justify-start items-center gap-3 px-3">
                             <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getCategoryTotalRefundAmount(row)) }}</span>
                         </div>
@@ -222,7 +222,7 @@ defineExpose({
         </tbody>
         <tfoot>
             <tr class="!border-y-2 border-grey-200">
-                <td class="w-[23%]">
+                <td class="w-[22%]">
                     <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">Total</span>
                 </td>
                 <td class="w-[7%]">
@@ -245,7 +245,7 @@ defineExpose({
                         <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ totalTaxAmount }}</span>
                     </div>
                 </td>
-                <td class="w-[14%]">
+                <td class="w-[15%]">
                     <div class="flex justify-start items-center gap-3 px-3">
                         <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ totalRefundAmount }}</span>
                     </div>

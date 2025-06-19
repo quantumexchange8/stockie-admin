@@ -77,21 +77,21 @@ const csvExport = () => {
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
-        { Customer: title, 'Total Purchase (RM)': '', 'No.of Purchase': '', 'Avg. Amt. Spent (RM)': '', 'Points Earned': '' },
-        { Customer: dateRange, 'Total Purchase (RM)': '', 'No.of Purchase': '', 'Avg. Amt. Spent (RM)': '', 'Points Earned': '' },
-        { Customer: 'Customer', 'Total Purchase (RM)': 'Total Purchase (RM)', 'No.of Purchase': 'No.of Purchase', 'Avg. Amt. Spent (RM)': 'Avg. Amt. Spent (RM)', 'Points Earned': 'Points Earned' },
+        { Customer: title, 'Total Purchase (RM)': '', 'No.of Purchase': '', 'Avg. Spent (RM)': '', 'Points Earned': '' },
+        { Customer: dateRange, 'Total Purchase (RM)': '', 'No.of Purchase': '', 'Avg. Spent (RM)': '', 'Points Earned': '' },
+        { Customer: 'Customer', 'Total Purchase (RM)': 'Total Purchase (RM)', 'No.of Purchase': 'No.of Purchase', 'Avg. Spent (RM)': 'Avg. Spent (RM)', 'Points Earned': 'Points Earned' },
         ...props.rows.map(row => ({
             'Customer': row.full_name,
             'Total Purchase (RM)': formatAmount(getTotalPurchaseAmount(row)),
             'No.of Purchase': getTotalPurchaseCount(row),
-            'Avg. Amt. Spent (RM)': formatAmount(getTotalPurchaseAmount(row) / getTotalPurchaseCount(row)),
+            'Avg. Spent (RM)': formatAmount(getTotalPurchaseAmount(row) / getTotalPurchaseCount(row)),
             'Points Earned': `${formatAmount(getTotalPointsEarned(row), 0)} pts`,
         })),
         {
             'Customer': 'Total',
             'Total Purchase (RM)': formatAmount(combinedTotalPurchaseAmount.value),
             'No.of Purchase': combinedTotalPurchaseCount.value,
-            'Avg. Amt. Spent (RM)': formatAmount(isNaN(combinedTotalPurchaseAmount.value / combinedTotalPurchaseCount.value) ? 0.00 : combinedTotalPurchaseAmount.value / combinedTotalPurchaseCount.value),
+            'Avg. Spent (RM)': formatAmount(isNaN(combinedTotalPurchaseAmount.value / combinedTotalPurchaseCount.value) ? 0.00 : combinedTotalPurchaseAmount.value / combinedTotalPurchaseCount.value),
             'Points Earned': `${formatAmount(combinedTotalPointsEarned.value, 0)} pts`,
         }
     ];
@@ -119,20 +119,20 @@ defineExpose({
         <tbody>
             <template v-for="row in props.rows">
                 <tr class="border-b border-grey-100">
-                    <td class="w-[22%]">
-                        <span class="text-grey-900 text-2xs font-semibold text-ellipsis whitespace-nowrap overflow-hidden px-3 py-4">{{ row.full_name }}</span>
+                    <td class="w-[25%] px-3">
+                        <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ row.full_name }}</span>
                     </td>
-                    <td class="w-[21%]">
+                    <td class="w-[22%]">
                         <div class="flex justify-start items-center gap-3 px-3">
                             <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4"> {{ formatAmount(getTotalPurchaseAmount(row)) }}</span>
                         </div>
                     </td>
-                    <td class="w-[17%]">
+                    <td class="w-[18%]">
                         <div class="flex justify-start items-center gap-3 px-3">
                             <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ getTotalPurchaseCount(row) }}</span>
                         </div>
                     </td>
-                    <td class="w-[23%]">
+                    <td class="w-[18%]">
                         <div class="flex justify-start items-center gap-3 px-3">
                             <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getTotalPurchaseAmount(row) / getTotalPurchaseCount(row)) }}</span>
                         </div>
@@ -145,20 +145,20 @@ defineExpose({
                 </tr>
             </template>
             <tr class="!border-y-2 border-grey-200">
-                <td class="w-[22%]">
+                <td class="w-[25%]">
                     <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">Total</span>
                 </td>
-                <td class="w-[21%]">
+                <td class="w-[22%]">
                     <div class="flex justify-start items-center gap-3 px-3">
                         <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4"> {{ formatAmount(combinedTotalPurchaseAmount) }}</span>
                     </div>
                 </td>
-                <td class="w-[17%]">
+                <td class="w-[18%]">
                     <div class="flex justify-start items-center gap-3 px-3">
                         <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ combinedTotalPurchaseCount }}</span>
                     </div>
                 </td>
-                <td class="w-[23%]">
+                <td class="w-[18%]">
                     <div class="flex justify-start items-center gap-3 px-3">
                         <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ formatAmount(isNaN(combinedTotalPurchaseAmount / combinedTotalPurchaseCount) ? 0.00 : combinedTotalPurchaseAmount / combinedTotalPurchaseCount ) }}</span>
                     </div>
