@@ -201,15 +201,10 @@ const testPrintReceipt = async (option = 1) => {
             getOrderPaymentDetails(),
             getPayoutDetails()
         ]);
-
-    } catch (err) {
-        console.error("Failed to fetch receipt data:", err);
-        return; // Abort printing
-    }
-
-    try {
-        const response = await axios.post('/order-management/orders/getTestReceipt',
-            { 
+        
+        const config = {
+            // Common request data
+            data: { 
                 order: order.value,
                 merchant: merchant.value,
                 url: `${payout.value?.url}invoice?invoice_no=${order.value.payment?.receipt_no}&merchant_id=${payout.value?.merchant_id}&amount=${order.value.payment?.grand_total}&eCode=${generateECode(
@@ -220,29 +215,47 @@ const testPrintReceipt = async (option = 1) => {
                 has_voucher_applied: hasVoucherApplied.value,
                 applied_discounts: appliedDiscounts.value,
                 table_names: orderTableNames.value,
-                print_option: option,
-             },
-        );
+                print_option: option
+            },
+            // Set responseType based on option
+            responseType: option === 4 ? 'arraybuffer' : 'json'
+        };
 
-        if (response.data.success) {
-            if (option === 1) {
-                const base64 = atob(response.data.data);;
-                    alert("Sending to RawBT...");
-                window.location.href = `rawbt:base64,${base64}`;
-            } else if (option === 2) {
-                const base64 = btoa(unescape(encodeURIComponent(response.data.data)));
-                    alert("Sending to RawBT...");
-                window.location.href = `rawbt:base64,${base64}`;
-            } else if (option === 3) {
-                const base64 = btoa(unescape(encodeURIComponent(response.data.data)));
-                    alert("Sending to RawBT...");
-                window.location.href = `rawbt:base64,${base64}`;
+        const response = await axios.post('/order-management/orders/getTestReceipt', config.data, config);
+
+        if (option === 4 || option === 5) {
+            // Handle binary response for option 4 & 5
+            let base64;
+            if (option === 4) {
+                base64 = btoa(
+                    new Uint8Array(response.data).reduce(
+                        (data, byte) => data + String.fromCharCode(byte), ''
+                    )
+                );
+            } else {
+                base64 = btoa(unescape(encodeURIComponent(response.data)));
             }
-            emit('close');
-        } else {
-            throw new Error('No receipt data received');
+            alert("Sending to RawBT...");
+            // console.log(base64);
+            window.location.href = `rawbt:base64,${base64}`;
+        } else if (response.data?.success) {
+            // Handle JSON response for options 1-3
+            let base64;
+            
+            if (option === 1) {
+                base64 = response.data.data;
+            } else if (option === 2) {
+                const binaryString = atob(response.data.data);
+                base64 = btoa(unescape(encodeURIComponent(binaryString)));
+            } else if (option === 3) {
+                base64 = btoa(atob(response.data.data));
+            }
+
+            alert("Sending to RawBT...");
+            // console.log(base64);
+            window.location.href = `rawbt:base64,${base64}`;
         }
-        
+
         // showMessage({
         //     severity: 'success',
         //     summary: 'Print receipt successfully.'
@@ -251,10 +264,12 @@ const testPrintReceipt = async (option = 1) => {
         emit('close');
         
     } catch (err) {
+        console.error("Print failed:", err);
         showMessage({
             severity: 'error',
-            summary: err
-        }); 
+            summary: 'Print failed',
+            detail: err.message
+        });
     }
 
 }
@@ -319,7 +334,7 @@ defineExpose({
                             />
                         </div>
                         
-                        <div class="flex w-full items-start px-1 gap-x-2">
+                        <div class="flex flex-wrap w-full items-start px-1 gap-2">
                             <Button
                                 type="button"
                                 variant="secondary"
@@ -343,6 +358,22 @@ defineExpose({
                                 @click="testPrintReceipt(3)"
                             >
                                 <span class="text-grey-700 font-normal">Test Print 3</span>
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
+                                @click="testPrintReceipt(4)"
+                            >
+                                <span class="text-grey-700 font-normal">Test Print 4</span>
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
+                                @click="testPrintReceipt(5)"
+                            >
+                                <span class="text-grey-700 font-normal">Test Print 5</span>
                             </Button>
                         </div>
         
