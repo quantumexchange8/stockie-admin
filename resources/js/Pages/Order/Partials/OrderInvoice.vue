@@ -195,88 +195,7 @@ const printReceipt = async () => {
 
 }
 
-const testPrintReceipt = async () => {
-    try {
-        // Fetch required data first
-        await Promise.all([
-            getOrderPaymentDetails(),
-            getPayoutDetails()
-        ]);
-
-        // Prepare the request data
-        const requestData = {
-            order: order.value,
-            merchant: merchant.value,
-            url: `${payout.value?.url}invoice?invoice_no=${order.value.payment?.receipt_no}&merchant_id=${payout.value?.merchant_id}&amount=${order.value.payment?.grand_total}&eCode=${generateECode(
-                order.value.payment?.receipt_no,
-                payout.value?.merchant_id,
-                payout.value?.api_key,
-            )}`,
-            has_voucher_applied: hasVoucherApplied.value,
-            applied_discounts: appliedDiscounts.value,
-            table_names: orderTableNames.value,
-        };
-
-        // Send to backend to generate ESC/POS commands
-        const response = await axios.post('/order-management/orders/getTestReceipt', requestData, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.data.success) {
-            // For RawBT on Android
-            if (window.RawBt) {
-                RawBt.print(
-                    response.data.printData,
-                    (success) => {
-                        console.log('Print success:', success);
-                        showMessage({
-                            severity: 'success',
-                            summary: 'Receipt sent to printer successfully'
-                        });
-                        emit('close');
-                    },
-                    (error) => {
-                        console.error('Print error:', error);
-                        showMessage({
-                            severity: 'error',
-                            summary: 'Failed to print receipt',
-                            detail: error
-                        });
-                    },
-                    response.data.printerOptions
-                );
-            } 
-            // Fallback for browsers (will prompt download)
-            else {
-                // const link = document.createElement('a');
-                // link.href = `data:application/octet-stream;base64,${response.data.printData}`;
-                // link.download = `receipt_${order.value.payment?.receipt_no || 'unknown'}.prn`;
-                // link.click();
-                
-                showMessage({
-                    severity: 'info',
-                    summary: 'Receipt downloaded',
-                    detail: 'Print the downloaded file using RawBT or other thermal printer software'
-                });
-                emit('close');
-            }
-        } else {
-            throw new Error(response.data.error || 'Failed to generate receipt');
-        }
-
-    } catch (err) {
-        console.error("Printing failed:", err);
-        showMessage({
-            severity: 'error',
-            summary: 'Failed to print receipt',
-            detail: err.message
-        });
-    }
-}
-
-const testPrintReceipt2 = async () => {
+const testPrintReceipt = async (option = 1) => {
     try {
         await Promise.all([
             getOrderPaymentDetails(),
@@ -304,10 +223,18 @@ const testPrintReceipt2 = async () => {
              },
         );
 
-        const data = await res.json();
-        const base64 = btoa(unescape(encodeURIComponent(data.printData)));
-        alert("Sending to RawBT...");
-        window.location.href = `rawbt:base64,${base64}`;
+        if (response.data.success) {
+            if (option === 1) {
+                const base64 = atob(response.data.data);;
+                window.location.href = `rawbt:base64,${base64}`;
+            } else if (option === 2) {
+                const base64 = btoa(unescape(encodeURIComponent(response.data.text)));
+                window.location.href = `rawbt:base64,${base64}`;
+            }
+            emit('close');
+        } else {
+            throw new Error('No receipt data received');
+        }
         
         // showMessage({
         //     severity: 'success',
@@ -390,7 +317,7 @@ defineExpose({
                                 type="button"
                                 variant="secondary"
                                 class="!w-fit border-0 hover:bg-primary-50 !justify-start"
-                                @click="testPrintReceipt"
+                                @click="testPrintReceipt(1)"
                             >
                                 <span class="text-grey-700 font-normal">Test Print</span>
                             </Button>
@@ -398,7 +325,7 @@ defineExpose({
                                 type="button"
                                 variant="secondary"
                                 class="!w-fit border-0 hover:bg-primary-50 !justify-start"
-                                @click="testPrintReceipt2"
+                                @click="testPrintReceipt(2)"
                             >
                                 <span class="text-grey-700 font-normal">Test Print 2</span>
                             </Button>

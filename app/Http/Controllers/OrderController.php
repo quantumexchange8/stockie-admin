@@ -5159,177 +5159,6 @@ class OrderController extends Controller
         }
     }
 
-    public function getTestReceipt(Request $request)
-    {
-        $order = $request->order;
-        $merchant = $request->merchant;
-        $url = $request->url;
-        $has_voucher_applied = $request->has_voucher_applied;
-        $applied_discounts = $request->applied_discounts;
-        $table_names = $request->table_names;
-
-        try {
-            // Create a virtual connector to capture output
-            $connector = new FilePrintConnector("php://temp");
-            $printer = new Printer($connector);
-
-            // Set condensed font for 48-character width (Font B)
-            $printer->setFont(Printer::FONT_B);
-            
-            // ===== HEADER SECTION =====
-            $printer->setJustification(Printer::JUSTIFY_CENTER);
-            $printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT);
-            $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
-            $printer->setEmphasis(true);
-            $printer->text($merchant['merchant_name'] . "\n");
-            $printer->selectPrintMode();
-            $printer->setEmphasis(false);
-            $printer->text($this->formatAddress($merchant['merchant_address_line1'], $merchant['merchant_address_line2']) . "\n");
-            $printer->text("Phone: " . $merchant['merchant_contact'] . "\n");
-            $printer->feed();
-            
-            // // Amount and date
-            // $printer->setEmphasis(true);
-            // $printer->text("INVOICE\n");
-            // $printer->setEmphasis(false);
-            // $printer->setJustification(Printer::JUSTIFY_LEFT);
-            // $printer->feed();
-            
-            // // ===== MEMBER INFO =====
-            // if ($order['customer']) {
-            //     $customerName = $order['customer']['full_name'];
-
-            //     $printer->text("$customerName\n");
-            //     $this->printTwoColumns($printer, "Phone No.", $order['customer']['phone'] ? str_replace("+", "", $order['customer']['dial_code']) . $order['customer']['phone'] : '-');
-            //     $this->printTwoColumns($printer, "Email", $order['customer']['email'] ?: '-');
-            //     $this->printTwoColumns($printer, "Tier", $order['customer']['rank']['name']);
-            //     $this->printTwoColumns($printer, "Points Earned", $order['payment']['point_history']['amount'] ?? 0);
-            //     $this->printTwoColumns($printer, "Points Balance", $order['payment']['point_history']['new_balance'] ?? 0);
-            //     $printer->feed();
-            // }
-            
-            // // ===== RECEIPT INFO =====
-            // $this->printTwoColumns($printer, "Receipt No.", $order['payment']['receipt_no'] ?? '-');
-            // $this->printTwoColumns($printer, "Table No.", $table_names);
-            // $this->printTwoColumns($printer, "Pax", $order['payment']['pax'] ?? '-');
-            // $this->printTwoColumns($printer, "Date", Carbon::parse($order['created_at'])->format('d/m/Y H:i A'));
-            
-            // // ===== ITEMS TABLE =====
-            // $filteredOrderItems = collect($order['order_items'])->filter(fn ($item) => $item['status'] === 'Served' && $item['item_qty'] > 0);
-
-            // $this->printDivider($printer);
-            // $this->printThreeColumns($printer, "QTY", "ITEM", "AMT (RM)");
-            // $this->printDivider($printer);
-
-            // foreach ($filteredOrderItems as $key => $item) {
-            //     $itemQty = $item['item_qty'];
-
-            //     // Item name
-            //     $itemType = $item['type'] !== 'Normal' ? "(" . $item['type'] . ")" : '';
-            //     $itemBucket = $item['product']['bucket'] === 'set' ? '(Set) ': '';
-            //     $itemName = "$itemType$itemBucket" . $item['product']['product_name'];
-
-            //     if ($item['discount_id']) {
-            //         // Item price
-            //         $amountBeforeDiscount = number_format( $item['type'] === 'Normal' ? $item['amount'] : 0, 2);
-            //         $discountName = $item['product_discount']['discount']['name'] . " Discount";
-                    
-            //         $this->printThreeColumns($printer, $itemQty, $itemName, $amountBeforeDiscount);
-            //         $this->printThreeColumns($printer, '', $discountName, "- " . $item['discount_amount']);
-                    
-            //     } else {
-            //         // Item price
-            //         $totalAmount = number_format($item['amount'], 2);
-                    
-            //         $this->printThreeColumns($printer, $itemQty, $itemName, $totalAmount);
-            //     }
-            // }
-            
-            // $this->printDivider($printer);
-            
-            // // ===== TOTALS SECTION =====
-            // $this->printTwoColumnsRight($printer, "Subtotal", number_format($order['payment']['total_amount'] ?? 0, 2));
-
-            // if ($order['payment']['bill_discounts'] && $order['payment']['bill_discount_total'] > 0) {
-            //     $this->printTwoColumnsRight($printer, "Bill Discount", "- " . number_format($order['payment']['bill_discount_total'] ?? 0, 2));
-            // }
-
-            // if ($order['payment']['voucher']) {
-            //     $voucherDiscountExtTitle = $order['payment']['voucher']['reward_type'] === 'Discount (Percentage)' ? "(" . $order['payment']['voucher']['discount'] . "%)" : '';
-
-            //     $this->printTwoColumnsRight($printer, "Voucher Discount $voucherDiscountExtTitle", "- " . number_format($order['payment']['discount_amount'] ?? 0, 2));
-            // }
-            
-            // if ($order['payment']['service_tax_amount'] > 0) {
-            //     $serviceTaxExtTitle = round(($order['payment']['service_tax_amount'] / $order['payment']['total_amount']) * 100);
-            //     $this->printTwoColumnsRight($printer, "Service Tax ($serviceTaxExtTitle%)", number_format($order['payment']['service_tax_amount'] ?? 0, 2));
-            // }
-
-            // if ($order['payment']['sst_amount'] > 0) {
-            //     $sstExtTitle = round(($order['payment']['sst_amount'] / $order['payment']['total_amount']) * 100);
-            //     $this->printTwoColumnsRight($printer, "SST ($sstExtTitle%)", number_format($order['payment']['sst_amount'] ?? 0, 2));
-            // }
-            
-            // $this->printTwoColumnsRight($printer, "Rounding", ($order['payment']['rounding'] < 0 ? '-' : '') . number_format(abs($order['payment']['rounding'] ?? 0), 2));
-
-            // $printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT | Printer::MODE_DOUBLE_WIDTH);
-            // $printer->setEmphasis(true);
-            // $this->printTwoColumnsRight($printer, "NET TOTAL", $order['payment']['grand_total'] ?? '0.00', 10, 14);
-            // $printer->selectPrintMode();
-            // $printer->setEmphasis(false);
-
-            // $this->printDivider($printer);
-            // $printer->feed();
-            
-            // // ===== DISCOUNT SUMMARY =====
-            // if ($has_voucher_applied) {
-            //     $printer->text("------*** DISCOUNT SUMMARY ***------"); // 28 + 6
-            //     $this->printWrappedTwoColumnsRight($printer, "DISCOUNTS", "AMT (RM)");
-
-            //     foreach ($applied_discounts as $key => $discount) {
-            //         $this->printWrappedTwoColumnsRight($printer, $discount['discount_summary'], "- " . number_format($discount['discount_amount'], 2));
-
-            //     }
-                
-            //     $printer->feed();
-            // }
-            
-            // ===== FOOTER SECTION =====
-            $printer->setJustification(Printer::JUSTIFY_CENTER);
-            // $printer->text("Scan QR below to request your e-Invoice\n");
-            // $printer->feed();
-            
-            // Generate QR code (size 5 works well with 48-char width)
-            $printer->qrCode($url, Printer::QR_ECLEVEL_L, 5);
-            $printer->feed();
-            
-            $printer->text("Thank you for your visit!\n");
-            $printer->text("Order invoice generated by\nSTOCKIE\n");
-            $printer->feed();
-            $printer->text("------*** Printed: " . now()->format('d/m/Y H:i A') . " ***------");
-            $printer->feed(3);
-            
-            // ===== FINISH PRINTING =====
-            $printer->cut(Printer::CUT_FULL);
-            $printer->close();
-
-            // Get the buffered output
-            $escposData = ob_get_clean();
-
-            // Return as JSON with RawBT-compatible format
-            return response()->json([
-                'success' => true,
-                'printData' => $escposData,
-            ]);
-        } catch (\Exception $e) {
-            ob_end_clean();
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
     // ===== HELPER METHODS =====
     private function printDivider(Printer $printer, $length = 48)
     {
@@ -5408,5 +5237,229 @@ class OrderController extends Controller
         }
         
         return $formatted;
+    }
+
+    public function getTestReceipt(Request $request)
+    {
+        $order = $request->order;
+        $merchant = $request->merchant;
+        $url = $request->url;
+        $has_voucher_applied = $request->has_voucher_applied;
+        $applied_discounts = $request->applied_discounts;
+        $table_names = $request->table_names;
+
+        $printerIp = '192.168.0.77';
+        $printerPort = '9100';
+        
+        // Create a buffer to capture ESC/POS commands
+        $buffer = '';
+        
+        // Helper function to add text with line breaks
+        $addText = function($text) use (&$buffer) {
+            $buffer .= $text . "\n";
+        };
+        
+        // Helper function to add raw ESC/POS commands
+        $addCommand = function($command) use (&$buffer) {
+            $buffer .= $command;
+        };
+        
+        // ===== ESC/POS INITIALIZATION =====
+        $addCommand("\x1B\x40"); // Initialize printer
+        $addCommand("\x1B\x21\x00"); // Normal text (clear all formatting)
+        $addCommand("\x1B\x4D\x00"); // Select Font B (default)
+        
+        // ===== HEADER SECTION =====
+        $addCommand("\x1B\x61\x01"); // Center alignment
+        $addCommand("\x1B\x21\x30"); // Double height + width
+        $addText($merchant['merchant_name']);
+        $addCommand("\x1B\x21\x00"); // Normal text
+        
+        $addText($this->formatAddress($merchant['merchant_address_line1'], $merchant['merchant_address_line2']));
+        $addText("Phone: " . $merchant['merchant_contact']);
+        $addText(""); // Empty line
+        
+        // Invoice title
+        $addCommand("\x1B\x21\x08"); // Bold
+        $addText("INVOICE");
+        $addCommand("\x1B\x21\x00"); // Normal text
+        $addCommand("\x1B\x61\x00"); // Left alignment
+        $addText(""); // Empty line
+        
+        // ===== MEMBER INFO =====
+        if ($order['customer']) {
+            $customerName = $order['customer']['full_name'];
+            $addText("$customerName");
+            
+            $this->printTwoColumnsRaw($addText, "Phone No.", $order['customer']['phone'] ? str_replace("+", "", $order['customer']['dial_code']) . $order['customer']['phone'] : '-');
+            $this->printTwoColumnsRaw($addText, "Email", $order['customer']['email'] ?: '-');
+            $this->printTwoColumnsRaw($addText, "Tier", $order['customer']['rank']['name']);
+            $this->printTwoColumnsRaw($addText, "Points Earned", $order['payment']['point_history']['amount'] ?? 0);
+            $this->printTwoColumnsRaw($addText, "Points Balance", $order['payment']['point_history']['new_balance'] ?? 0);
+            $addText(""); // Empty line
+        }
+        
+        // ===== RECEIPT INFO =====
+        $this->printTwoColumnsRaw($addText, "Receipt No.", $order['payment']['receipt_no'] ?? '-');
+        $this->printTwoColumnsRaw($addText, "Table No.", $table_names);
+        $this->printTwoColumnsRaw($addText, "Pax", $order['payment']['pax'] ?? '-');
+        $this->printTwoColumnsRaw($addText, "Date", Carbon::parse($order['created_at'])->format('d/m/Y H:i A'));
+        
+        // ===== ITEMS TABLE =====
+        $addText(str_repeat("-", 48));
+        $this->printThreeColumnsRaw($addText, "QTY", "ITEM", "AMT (RM)");
+        $addText(str_repeat("-", 48));
+        
+        $filteredOrderItems = collect($order['order_items'])->filter(fn ($item) => $item['status'] === 'Served' && $item['item_qty'] > 0);
+        
+        foreach ($filteredOrderItems as $key => $item) {
+            $itemQty = $item['item_qty'];
+            $itemType = $item['type'] !== 'Normal' ? "(" . $item['type'] . ")" : '';
+            $itemBucket = $item['product']['bucket'] === 'set' ? '(Set) ' : '';
+            $itemName = "$itemType$itemBucket" . $item['product']['product_name'];
+            
+            if ($item['discount_id']) {
+                $amountBeforeDiscount = number_format($item['type'] === 'Normal' ? $item['amount'] : 0, 2);
+                $discountName = $item['product_discount']['discount']['name'] . " Discount";
+                
+                $this->printThreeColumnsRaw($addText, $itemQty, $itemName, $amountBeforeDiscount);
+                $this->printThreeColumnsRaw($addText, '', $discountName, "- " . $item['discount_amount']);
+            } else {
+                $totalAmount = number_format($item['amount'], 2);
+                $this->printThreeColumnsRaw($addText, $itemQty, $itemName, $totalAmount);
+            }
+        }
+        
+        $addText(str_repeat("-", 48));
+        
+        // ===== TOTALS SECTION =====
+        $this->printTwoColumnsRightRaw($addText, "Subtotal", number_format($order['payment']['total_amount'] ?? 0, 2));
+        
+        if ($order['payment']['bill_discounts'] && $order['payment']['bill_discount_total'] > 0) {
+            $this->printTwoColumnsRightRaw($addText, "Bill Discount", "- " . number_format($order['payment']['bill_discount_total'] ?? 0, 2));
+        }
+        
+        if ($order['payment']['voucher']) {
+            $voucherDiscountExtTitle = $order['payment']['voucher']['reward_type'] === 'Discount (Percentage)' ? "(" . $order['payment']['voucher']['discount'] . "%)" : '';
+            $this->printTwoColumnsRightRaw($addText, "Voucher Discount $voucherDiscountExtTitle", "- " . number_format($order['payment']['discount_amount'] ?? 0, 2));
+        }
+        
+        if ($order['payment']['service_tax_amount'] > 0) {
+            $serviceTaxExtTitle = round(($order['payment']['service_tax_amount'] / $order['payment']['total_amount']) * 100);
+            $this->printTwoColumnsRightRaw($addText, "Service Tax ($serviceTaxExtTitle%)", number_format($order['payment']['service_tax_amount'] ?? 0, 2));
+        }
+        
+        if ($order['payment']['sst_amount'] > 0) {
+            $sstExtTitle = round(($order['payment']['sst_amount'] / $order['payment']['total_amount']) * 100);
+            $this->printTwoColumnsRightRaw($addText, "SST ($sstExtTitle%)", number_format($order['payment']['sst_amount'] ?? 0, 2));
+        }
+        
+        $this->printTwoColumnsRightRaw($addText, "Rounding", ($order['payment']['rounding'] < 0 ? '-' : '') . number_format(abs($order['payment']['rounding'] ?? 0), 2));
+        
+        // NET TOTAL
+        $addCommand("\x1B\x21\x30"); // Double height + width
+        $addCommand("\x1B\x45\x01"); // Bold
+        $this->printTwoColumnsRightRaw($addText, "NET TOTAL", $order['payment']['grand_total'] ?? '0.00', 10, 14);
+        $addCommand("\x1B\x21\x00"); // Normal text
+        $addCommand("\x1B\x45\x00"); // Bold off
+        
+        $addText(str_repeat("-", 48));
+        $addText(""); // Empty line
+        
+        // ===== DISCOUNT SUMMARY =====
+        if ($has_voucher_applied) {
+            $addText("------*** DISCOUNT SUMMARY ***------");
+            $this->printTwoColumnsRightRaw($addText, "DISCOUNTS", "AMT (RM)");
+            
+            foreach ($applied_discounts as $key => $discount) {
+                $this->printTwoColumnsRightRaw($addText, $discount['discount_summary'], "- " . number_format($discount['discount_amount'], 2));
+            }
+            
+            $addText(""); // Empty line
+        }
+        
+        // ===== FOOTER SECTION =====
+        $addCommand("\x1B\x61\x01"); // Center alignment
+        $addText("Scan QR below to request your e-Invoice");
+        $addText(""); // Empty line
+        
+        // Generate QR code
+        $qrData = $url;
+        $qrLen = strlen($qrData) + 3;
+        $pL = $qrLen % 256;
+        $pH = intval($qrLen / 256);
+
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x43\x05"; // Module size (5)
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x45\x31"; // Error correction level L
+        $buffer .= "\x1D\x28\x6B" . chr($pL) . chr($pH) . "\x31\x50\x30" . $qrData; // Store data
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x51\x30"; // Print the QR
+        
+        $addText(""); // Empty line
+        $addText("Thank you for your visit!");
+        $addText("Order invoice generated by");
+        $addText("STOCKIE");
+        $addText(""); // Empty line
+        $addText("------*** Printed: " . now()->format('d/m/Y H:i A') . " ***------");
+        
+        // Add some empty lines and cut
+        $addText("\n\n\n\n\n");
+        $addCommand("\x1D\x56\x01"); // Partial cut
+
+        try {
+            $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
+            if (!$socket) {
+                return "Error: $errstr ($errno)";
+            }
+
+            fwrite($socket, $buffer);
+            fclose($socket);
+
+            // Return base64 encoded version for JSON safety
+            return response()->json([
+                'success' => true,
+                'data' => base64_encode($buffer), // Encode binary as base64
+                'message' => 'Print job sent'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Print receipt error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ===== RAW HELPER METHODS =====
+    private function printTwoColumnsRaw($addText, $left, $right, $leftWidth = 15, $rightWidth = 33)
+    {
+        $left = substr($left, 0, $leftWidth);
+        $right = substr(" : $right", 0, $rightWidth);
+        $addText(sprintf("%-{$leftWidth}s%-{$rightWidth}s", $left, $right));
+    }
+
+    private function printTwoColumnsRightRaw($addText, $left, $right, $leftWidth = 36, $rightWidth = 12)
+    {
+        $left = substr($left, 0, $leftWidth);
+        $right = substr($right, 0, $rightWidth);
+        $addText(sprintf("%-{$leftWidth}s%{$rightWidth}s", $left, $right));
+    }
+
+    private function printThreeColumnsRaw($addText, $col1, $col2, $col3, $col1Width = 6, $col2Width = 30, $col3Width = 12)
+    {
+        $wrappedLines = wordwrap($col2, $col2Width, "\n", true);
+        $lines = explode("\n", $wrappedLines);
+        
+        // First line
+        $col1 = substr($col1, 0, $col1Width);
+        $line1 = substr($lines[0], 0, $col2Width);
+        $col3 = substr($col3, 0, $col3Width);
+        $addText(sprintf("%-{$col1Width}s%-{$col2Width}s%{$col3Width}s", $col1, $line1, $col3));
+        
+        // Additional lines
+        for ($i = 1; $i < count($lines); $i++) {
+            $line = substr($lines[$i], 0, $col2Width);
+            $addText(sprintf("%-{$col1Width}s%-{$col2Width}s", '', $line));
+        }
     }
 }
