@@ -5239,7 +5239,41 @@ class OrderController extends Controller
         return $formatted;
     }
 
-    public function getTestReceipt(Request $request)
+    // ===== TEST =====
+    // ===== RAW HELPER METHODS =====
+    private function printTwoColumnsRaw($addText, $left, $right, $leftWidth = 15, $rightWidth = 33)
+    {
+        $left = substr($left, 0, $leftWidth);
+        $right = substr(" : $right", 0, $rightWidth);
+        $addText(sprintf("%-{$leftWidth}s%-{$rightWidth}s", $left, $right));
+    }
+
+    private function printTwoColumnsRightRaw($addText, $left, $right, $leftWidth = 36, $rightWidth = 12)
+    {
+        $left = substr($left, 0, $leftWidth);
+        $right = substr($right, 0, $rightWidth);
+        $addText(sprintf("%-{$leftWidth}s%{$rightWidth}s", $left, $right));
+    }
+
+    private function printThreeColumnsRaw($addText, $col1, $col2, $col3, $col1Width = 6, $col2Width = 30, $col3Width = 12)
+    {
+        $wrappedLines = wordwrap($col2, $col2Width, "\n", true);
+        $lines = explode("\n", $wrappedLines);
+        
+        // First line
+        $col1 = substr($col1, 0, $col1Width);
+        $line1 = substr($lines[0], 0, $col2Width);
+        $col3 = substr($col3, 0, $col3Width);
+        $addText(sprintf("%-{$col1Width}s%-{$col2Width}s%{$col3Width}s", $col1, $line1, $col3));
+        
+        // Additional lines
+        for ($i = 1; $i < count($lines); $i++) {
+            $line = substr($lines[$i], 0, $col2Width);
+            $addText(sprintf("%-{$col1Width}s%-{$col2Width}s", '', $line));
+        }
+    }
+
+    public function getReceipt(Request $request)
     {
         $order = $request->order;
         $merchant = $request->merchant;
@@ -5248,9 +5282,6 @@ class OrderController extends Controller
         $applied_discounts = $request->applied_discounts;
         $table_names = $request->table_names;
 
-        $printerIp = '192.168.0.77';
-        $printerPort = '9100';
-        
         // Create a buffer to capture ESC/POS commands
         $buffer = '';
         
@@ -5405,19 +5436,29 @@ class OrderController extends Controller
         $addText("\n\n\n\n\n");
         $addCommand("\x1D\x56\x01"); // Partial cut
 
-        try {
-            $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
-            if (!$socket) {
-                return "Error: $errstr ($errno)";
-            }
+        return $buffer;
+    }
 
-            fwrite($socket, $buffer);
-            fclose($socket);
+    public function getTestReceipt(Request $request)
+    {
+        // $printerIp = '192.168.0.77';
+        // $printerPort = '9100';
+
+        $buffer = $this->getReceipt($request);
+        
+        try {
+            // $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
+            // if (!$socket) {
+            //     return "Error: $errstr ($errno)";
+            // }
+
+            // fwrite($socket, $buffer);
+            // fclose($socket);
 
             // Return base64 encoded version for JSON safety
             return response()->json([
                 'success' => true,
-                'data' => base64_encode($buffer), // Encode binary as base64
+                'data' => $request->print_option === 3 ? $buffer : base64_encode($buffer), // Encode binary as base64
                 'message' => 'Print job sent'
             ]);
             
@@ -5427,39 +5468,6 @@ class OrderController extends Controller
                 'error' => 'Internal server error',
                 'message' => $e->getMessage()
             ], 500);
-        }
-    }
-
-    // ===== RAW HELPER METHODS =====
-    private function printTwoColumnsRaw($addText, $left, $right, $leftWidth = 15, $rightWidth = 33)
-    {
-        $left = substr($left, 0, $leftWidth);
-        $right = substr(" : $right", 0, $rightWidth);
-        $addText(sprintf("%-{$leftWidth}s%-{$rightWidth}s", $left, $right));
-    }
-
-    private function printTwoColumnsRightRaw($addText, $left, $right, $leftWidth = 36, $rightWidth = 12)
-    {
-        $left = substr($left, 0, $leftWidth);
-        $right = substr($right, 0, $rightWidth);
-        $addText(sprintf("%-{$leftWidth}s%{$rightWidth}s", $left, $right));
-    }
-
-    private function printThreeColumnsRaw($addText, $col1, $col2, $col3, $col1Width = 6, $col2Width = 30, $col3Width = 12)
-    {
-        $wrappedLines = wordwrap($col2, $col2Width, "\n", true);
-        $lines = explode("\n", $wrappedLines);
-        
-        // First line
-        $col1 = substr($col1, 0, $col1Width);
-        $line1 = substr($lines[0], 0, $col2Width);
-        $col3 = substr($col3, 0, $col3Width);
-        $addText(sprintf("%-{$col1Width}s%-{$col2Width}s%{$col3Width}s", $col1, $line1, $col3));
-        
-        // Additional lines
-        for ($i = 1; $i < count($lines); $i++) {
-            $line = substr($lines[$i], 0, $col2Width);
-            $addText(sprintf("%-{$col1Width}s%-{$col2Width}s", '', $line));
         }
     }
 }

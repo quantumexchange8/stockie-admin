@@ -208,7 +208,7 @@ const testPrintReceipt = async (option = 1) => {
     }
 
     try {
-        const res = await axios.post('/order-management/orders/getTestReceipt',
+        const response = await axios.post('/order-management/orders/getTestReceipt',
             { 
                 order: order.value,
                 merchant: merchant.value,
@@ -220,15 +220,22 @@ const testPrintReceipt = async (option = 1) => {
                 has_voucher_applied: hasVoucherApplied.value,
                 applied_discounts: appliedDiscounts.value,
                 table_names: orderTableNames.value,
+                print_option: option,
              },
         );
 
         if (response.data.success) {
             if (option === 1) {
                 const base64 = atob(response.data.data);;
+                    alert("Sending to RawBT...");
                 window.location.href = `rawbt:base64,${base64}`;
             } else if (option === 2) {
-                const base64 = btoa(unescape(encodeURIComponent(response.data.text)));
+                const base64 = btoa(unescape(encodeURIComponent(response.data.data)));
+                    alert("Sending to RawBT...");
+                window.location.href = `rawbt:base64,${base64}`;
+            } else if (option === 3) {
+                const base64 = btoa(unescape(encodeURIComponent(response.data.data)));
+                    alert("Sending to RawBT...");
                 window.location.href = `rawbt:base64,${base64}`;
             }
             emit('close');
@@ -328,6 +335,14 @@ defineExpose({
                                 @click="testPrintReceipt(2)"
                             >
                                 <span class="text-grey-700 font-normal">Test Print 2</span>
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
+                                @click="testPrintReceipt(3)"
+                            >
+                                <span class="text-grey-700 font-normal">Test Print 3</span>
                             </Button>
                         </div>
         
