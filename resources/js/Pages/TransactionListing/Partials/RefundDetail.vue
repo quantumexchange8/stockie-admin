@@ -19,9 +19,7 @@ const { formatAmount } = transactionFormat();
         </div>
         <div v-if="props.selectedVal.refund_sst > 0" class="flex items-center w-full">
             <div class="text-gray-900 text-base text-left w-full">SST </div>
-            <div class="text-gray-900 text-base text-left w-full">
-                <span>RM {{ props.selectedVal.refund_sst }}</span>
-            </div>
+            <div class="text-gray-900 text-base font-bold text-right w-full"><span>RM {{ props.selectedVal.refund_sst }}</span></div>
         </div>
         <div v-if="props.selectedVal.refund_service_tax" class="flex items-center w-full">
             <div class="text-gray-900 text-base text-left w-full">Service Tax</div>

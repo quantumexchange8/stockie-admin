@@ -194,6 +194,26 @@ const printReceipt = async () => {
     }
 }
 
+const checkAppInstalled = (scheme, callback) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = `${scheme}://check`;
+    
+    let timer = setTimeout(() => {
+        callback(false);
+        document.body.removeChild(iframe);
+    }, 500);
+    
+    window.addEventListener('blur', function handler() {
+        clearTimeout(timer);
+        callback(true);
+        document.body.removeChild(iframe);
+        window.removeEventListener('blur', handler);
+    });
+    
+    document.body.appendChild(iframe);
+}
+
 // old print to local printer function
 const testPrintReceipt = async () => {
     try {
@@ -217,9 +237,18 @@ const testPrintReceipt = async () => {
 
         const response = await axios.post('/order-management/orders/getTestReceipt', params);
         const base64 = response.data.data;
+        
+        checkAppInstalled('stockie_app', (installed) => {
+            if (installed) {
+                console.log('Stockie App detected');
 
-        alert("Sending to RawBT...");
-        window.location.href = `rawbt:base64,${base64}`;
+                alert("Sending to RawBT...");
+
+                window.location.href = `rawbt:base64,${base64}`;
+            } else {
+                console.log('Stockie App not detected');
+            }
+        });
 
         // showMessage({
         //     severity: 'success',

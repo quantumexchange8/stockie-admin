@@ -23,10 +23,10 @@ import Dropdown from "@/Components/Dropdown.vue";
 import dayjs from 'dayjs'
 
 const salesColumn = ref([
-    {field: 'created_at', header: 'Date & Time', width: '20', sortable: true},
+    {field: 'created_at', header: 'Date & Time', width: '18', sortable: true},
     {field: 'refund_no', header: 'Refund No. ', width: '21.5', sortable: true},
     {field: 'total_refund_amount', header: 'Total', width: '16', sortable: true},
-    {field: 'customer.full_name', header: 'Customer', width: '20', sortable: true},
+    {field: 'customer.full_name', header: 'Customer', width: '23.5', sortable: true},
     {field: 'status', header: 'Status', width: '16', sortable: true},
     {field: 'action', header: '', width: '5', sortable: false},
 ]);
@@ -289,7 +289,7 @@ const voidAction = async () => {
                             :value="selectedVal.status === 'Completed' ? 'Completed' : 'Voided'" 
                         />
                     </div>
-                    <div @click="actionOption($event, row)"><DotVerticleIcon /></div>
+                    <!-- <div @click="actionOption($event, row)"><DotVerticleIcon /></div> -->
                 </div>
                 <div class="grid grid-cols-2 gap-5">
                     <div class="flex flex-col gap-1">

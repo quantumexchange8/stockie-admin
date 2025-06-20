@@ -6,6 +6,7 @@ import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import DateInput from '@/Components/Date.vue';
 import { useFileExport } from '@/Composables/index.js';
 import { UploadIcon } from '@/Components/Icons/solid';
+import Button from '@/Components/Button.vue';
 
 const props = defineProps({
     errors: Object,
@@ -30,6 +31,7 @@ const props = defineProps({
         type: Number,
         required: true,
     },
+    productName: String
 })
 const saleHistories = ref(props.rows)
 
@@ -43,14 +45,30 @@ watch(() => date_filter.value, (newValue) => {
     emit('applyDateFilter', newValue);
 })
 
+watch(() => props.rows, (newValue) => {
+    saleHistories.value = newValue;
+})
+
 const csvExport = () => {
-    const mappedData =  saleHistories.value.map(salesHistory => ({
-        'Date': dayjs(salesHistory.created_at).format('DD/MM/YYYY'),
-        'Time': dayjs(salesHistory.created_at).format('hh:mm A'),
-        'Amount': 'RM ' + salesHistory.total_price.toFixed(2),
-        'Quantity': salesHistory.qty,
-    }));
-    exportToCSV(mappedData, 'Sale History');
+    const title = props.productName;
+    const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
+    const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
+    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { Date: title, 'Time': '', 'Amount': '', 'Quantity': '' },
+        { Date: dateRange, 'Time': '', 'Amount': '', 'Quantity': '' },
+        { Date: 'Date', 'Time': 'Time', 'Amount': 'Amount', 'Quantity': 'Quantity' },
+        ...saleHistories.value.map(row => ({
+            'Date': dayjs(row.created_at).format('DD/MM/YYYY'),
+            'Time': dayjs(row.created_at).format('hh:mm A'),
+            'Amount': 'RM ' + row.total_price.toFixed(2),
+            'Quantity': row.qty,
+        })),
+    ];
+
+    exportToCSV(formattedRows, 'Sale History');
 }
 </script>
 
@@ -64,7 +82,23 @@ const csvExport = () => {
                 class="w-60"
                 v-model="date_filter"
             />
-            <Menu as="div" class="relative inline-block text-left col-span-full lg:col-span-2">
+            
+            <Button
+                :type="'button'"
+                :variant="'tertiary'"
+                :size="'lg'"
+                :iconPosition="'left'"
+                class="!w-fit"
+                :disabled="saleHistories.length === 0"
+                @click="csvExport"
+            >
+                <template #icon >
+                    <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                </template>
+                Export
+            </Button>
+
+            <!-- <Menu as="div" class="relative inline-block text-left col-span-full lg:col-span-2">
                 <div>
                     <MenuButton
                         class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-3 max-h-11 text-sm font-medium text-primary-900 hover:text-primary-800"
@@ -115,12 +149,12 @@ const csvExport = () => {
                         </MenuItem>
                     </MenuItems>
                 </transition>
-            </Menu>
+            </Menu> -->
         </div>
 
         <Table 
             :variant="'list'"
-            :rows="rows"
+            :rows="saleHistories"
             :totalPages="totalPages"
             :columns="columns"
             :rowsPerPage="rowsPerPage"

@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import { useFileExport } from '@/Composables/index.js';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { UploadIcon } from '@/Components/Icons/solid';
+import Button from '@/Components/Button.vue';
 
 const props = defineProps({
     dateFilter: Array,
@@ -32,6 +33,7 @@ const props = defineProps({
         type: Number,
         required: true,
     },
+    productName: String
 });
 
 const { exportToCSV } = useFileExport();
@@ -49,21 +51,53 @@ watch(() => date_filter.value, (newValue) => {
     emit('applyDateFilter', newValue);
 })
 
+watch(() => props.rows, (newValue) => {
+    redemptionHistories.value = newValue;
+})
+
+
 const csvExport = () => {
-    const mappedData =  props.rows.map(redemptionHistory => ({
-        'Date': dayjs(redemptionHistory.redemption_date).format('DD/MM/YYYY'),
-        'Redeemable_Item': redemptionHistory.redeemable_item.product_name,
-        'Quantity': redemptionHistory.qty,
-        'Redeemed_By': redemptionHistory.handled_by.name,
-    }));
-    exportToCSV(mappedData, 'Redemption History');
+    const title = props.productName;
+    const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
+    const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
+    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { Date: title, 'Redeemable_Item': '', 'Quantity': '', 'Redeemed_By': '' },
+        { Date: dateRange, 'Redeemable_Item': '', 'Quantity': '', 'Redeemed_By': '' },
+        { Date: 'Date', 'Redeemable_Item': 'Redeemable_Item', 'Quantity': 'Quantity', 'Redeemed_By': 'Redeemed_By' },
+        ...redemptionHistories.value.map(row => ({
+            'Date': dayjs(row.redemption_date).format('DD/MM/YYYY'),
+            'Redeemable_Item': row.redeemable_item.product_name,
+            'Quantity': row.qty,
+            'Redeemed_By': row.handled_by.name,
+        })),
+    ];
+
+    exportToCSV(formattedRows, 'Redemption History');
 }
 </script>
 
 <template>
     <div class="flex flex-col gap-6">
         <div class="flex items-center justify-end w-full">
-            <Menu as="div" class="relative inline-block text-left">
+            <Button
+                :type="'button'"
+                :variant="'tertiary'"
+                :size="'lg'"
+                :iconPosition="'left'"
+                class="!w-fit"
+                :disabled="redemptionHistories.length === 0"
+                @click="csvExport"
+            >
+                <template #icon >
+                    <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                </template>
+                Export
+            </Button>
+
+            <!-- <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton
                         class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-3 max-h-11 text-sm font-medium text-primary-900 hover:text-primary-800"
@@ -114,7 +148,7 @@ const csvExport = () => {
                         </MenuItem>
                     </MenuItems>
                 </transition>
-            </Menu>
+            </Menu> -->
         </div>
 
         <div class="flex items-start gap-5">
@@ -135,7 +169,7 @@ const csvExport = () => {
 
         <Table 
             :variant="'list'"
-            :rows="rows"
+            :rows="redemptionHistories"
             :totalPages="totalPages"
             :columns="columns"
             :rowsPerPage="rowsPerPage"

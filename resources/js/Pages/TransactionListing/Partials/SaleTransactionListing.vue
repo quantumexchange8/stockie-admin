@@ -24,6 +24,7 @@ import RadioButton from '@/Components/RadioButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import dayjs from 'dayjs'
 import Dropdown from '@/Components/Dropdown.vue';
+import OrderInvoice from '@/Pages/Order/Partials/OrderInvoice.vue';
 
 const clearFilters = (close) => {
     checkedFilters.value = resetFilters();
@@ -59,6 +60,8 @@ const tabs = ref(["Sales Detail", "Product Sold", "Payment Method"]);
 const op = ref(null);
 const docs_type = ref('sales_tranaction');
 const rowsPerPage = ref(5);
+const orderInvoice = ref(null);
+const showOrderReceipt = ref(false);
 
 const props = defineProps({
     selectedTab: Number,
@@ -374,6 +377,12 @@ const isFormValid = computed(() => {
     return ['refund_method', 'refund_item', 'refund_reason'].every(field => form[field] && (form.refund_item.length > 0 && form.refund_item.reduce((total, ri) => total + ri.refund_quantities, 0) > 0) && !form.processing);
 })
 
+
+const printInvoiceReceipt = () => {
+    showOrderReceipt.value = true;
+    setTimeout(() => orderInvoice.value.testPrintReceipt(), 200);
+}
+
 // const refundItemKeptQty = computed(() => {
 //     return form.refund_item.reduce((total, item) => total + (item), 0) ?? 0;
 // })
@@ -612,6 +621,7 @@ const isFormValid = computed(() => {
                         type="button"
                         variant="tertiary"
                         class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                        @click="printInvoiceReceipt"
                     >
                         <span class="text-grey-700 font-normal">Print Receipt</span>
                     </Button>
@@ -843,5 +853,11 @@ const isFormValid = computed(() => {
             </Modal>
         </template>
     </Modal>
+
+    <div class="hidden">
+        <template v-if="showOrderReceipt">
+            <OrderInvoice ref="orderInvoice" :orderId="selectedVal.order_id" />
+        </template>
+    </div>
 
 </template>

@@ -121,7 +121,7 @@ const exportToCSV = (mappedData, fileNamePrefix) => {
 const csvExport = () => {
     const title = 'Product Sales';
     const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
-    const endDate = props.dateFilter.length > 1 ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
+    const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
     const dateRange = `Date Range: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field

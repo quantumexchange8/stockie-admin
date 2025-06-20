@@ -163,7 +163,7 @@ const exportCsv = () => {
 
 const dateRangeDisplay = computed(() => {
     const start = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
-    const end = date_filter.value.length > 1 ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).format('DD/MM/YYYY');
+    const end = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
 
     return sales_type.value === 'current_stock' ? dayjs().format('DD/MM/YYYY HH:mm:ss') : `${start} - ${end}`;
 })

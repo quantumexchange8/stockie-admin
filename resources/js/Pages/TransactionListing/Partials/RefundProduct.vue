@@ -14,9 +14,9 @@ const { formatAmount } = transactionFormat();
 
     <div class="flex flex-col bg-[#FCFCFC]">
         <div class="flex items-center py-2 px-3 gap-3 bg-gray-100">
-            <div class="max-w-[324px] w-full">Product Name</div>
-            <div class="max-w-[30px] w-full">Qty</div>
-            <div class="max-w-[102px] w-full text-right">Price</div>
+            <div class="max-w-[324px] w-full text-sm text-gray-950 font-semibold">Product Name</div>
+            <div class="max-w-[30px] w-full text-sm text-gray-950 font-semibold">Qty</div>
+            <div class="max-w-[102px] w-full text-sm text-gray-950 font-semibold text-right">Price</div>
         </div>
         <div v-if="props.selectedVal.refund_details" class="flex flex-col p-3 gap-4 max-h-64 overflow-y-scroll">
             <div v-for="item in props.selectedVal.refund_details" :key="item.id" >

@@ -15,9 +15,9 @@ const { formatAmount } = transactionFormat();
 
     <div class="flex flex-col bg-[#FCFCFC]">
         <div class="flex items-center py-2 px-3 gap-3 bg-gray-100">
-            <div class="max-w-[193px] w-full">Method</div>
-            <div class="max-w-[102px] w-full text-right">Amount</div>
-            <div class="max-w-[151px] w-full text-right">Date &amp; Time</div>
+            <div class="max-w-[193px] w-full text-sm text-gray-950 font-semibold">Method</div>
+            <div class="max-w-[102px] w-full text-sm text-gray-950 font-semibold text-right">Amount</div>
+            <div class="max-w-[151px] w-full text-sm text-gray-950 font-semibold text-right">Date &amp; Time</div>
         </div>
         <div v-if="props.selectedVal.order" class="flex flex-col p-3 gap-4 max-h-64 overflow-y-scroll">
             <template v-for="(item, index) in props.selectedVal.payment_methods" :key="item.id" >

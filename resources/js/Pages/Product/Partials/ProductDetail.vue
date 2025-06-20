@@ -239,6 +239,7 @@ onMounted(() => {
                             :totalPages="saleHistoriesTotalPages"
                             :rowsPerPage="saleHistoriesRowsPerPage"
                             :rowType="rowType"
+                            :productName="product.product_name"
                             class="w-full"
                             @applyDateFilter="getProductSaleHistories($event)"
                         />
@@ -308,6 +309,7 @@ onMounted(() => {
                             :totalPages="redemptionHistoriesTotalPages"
                             :rowsPerPage="redemptionHistoriesRowsPerPage"
                             :rowType="rowType"
+                            :productName="product.product_name"
                             class="w-full"
                             @applyDateFilter="getRedemptionHistories($event)"
                         />

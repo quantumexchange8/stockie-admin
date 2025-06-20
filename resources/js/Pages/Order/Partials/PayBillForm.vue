@@ -1479,8 +1479,8 @@ const printInvoiceReceipt = () => {
             </div>
 
             <div class="flex flex-col items-start gap-4 self-stretch">
-                <div @click="" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] bg-grey-50 h-36 cursor-not-allowed">
-                    <p class="text-grey-100 text-md font-medium">Print receipt</p>
+                <div @click="printInvoiceReceipt" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] border border-grey-200 h-36 cursor-pointer">
+                    <p class="text-grey-950 text-md font-medium">Print receipt</p>
                 </div>
                 <div @click="closeSuccessPaymentModal" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] h-36 border border-grey-200 cursor-pointer">
                     <p class="text-grey-950 text-md font-medium">No receipt</p>
