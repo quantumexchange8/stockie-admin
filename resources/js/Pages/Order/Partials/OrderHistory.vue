@@ -132,7 +132,7 @@ const getOrderTableNames = (order_table) => order_table?.map((orderTable) => ord
 
 const printInvoiceReceipt = () => {
     showOrderInvoiceModal();
-    setTimeout(() => orderInvoice.value.printReceipt(), 200);
+    setTimeout(() => orderInvoice.value.testPrintReceipt(), 200);
 }
 </script>
 

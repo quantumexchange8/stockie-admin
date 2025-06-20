@@ -22,6 +22,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { MovingIllus } from '@/Components/Icons/illus';
 import OrderReceipt from './OrderReceipt.vue';
+import OrderInvoice from './OrderInvoice.vue';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -1058,7 +1059,7 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
 
 const printInvoiceReceipt = () => {
     showOrderReceipt.value = true;
-    setTimeout(() => orderInvoice.value.printReceipt(), 3000);
+    setTimeout(() => orderInvoice.value.testPrintReceipt(), 200);
 }
 </script>
 
@@ -1490,7 +1491,7 @@ const printInvoiceReceipt = () => {
 
     <div class="hidden">
         <template v-if="showOrderReceipt">
-            <OrderReceipt ref="orderInvoice" :orderId="order.id" />
+            <OrderInvoice ref="orderInvoice" :orderId="order.id" />
         </template>
     </div>
 </template>

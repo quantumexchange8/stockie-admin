@@ -192,69 +192,34 @@ const printReceipt = async () => {
             summary: err
         }); 
     }
-
 }
 
-const testPrintReceipt = async (option = 1) => {
+// old print to local printer function
+const testPrintReceipt = async () => {
     try {
         await Promise.all([
             getOrderPaymentDetails(),
             getPayoutDetails()
         ]);
         
-        const config = {
-            // Common request data
-            data: { 
-                order: order.value,
-                merchant: merchant.value,
-                url: `${payout.value?.url}invoice?invoice_no=${order.value.payment?.receipt_no}&merchant_id=${payout.value?.merchant_id}&amount=${order.value.payment?.grand_total}&eCode=${generateECode(
-                    order.value.payment?.receipt_no,
-                    payout.value?.merchant_id,
-                    payout.value?.api_key,
-                )}`,
-                has_voucher_applied: hasVoucherApplied.value,
-                applied_discounts: appliedDiscounts.value,
-                table_names: orderTableNames.value,
-                print_option: option
-            },
-            // Set responseType based on option
-            responseType: option === 4 ? 'arraybuffer' : 'json'
+        const params = { 
+            order: order.value,
+            merchant: merchant.value,
+            url: `${payout.value?.url}invoice?invoice_no=${order.value.payment?.receipt_no}&merchant_id=${payout.value?.merchant_id}&amount=${order.value.payment?.grand_total}&eCode=${generateECode(
+                order.value.payment?.receipt_no,
+                payout.value?.merchant_id,
+                payout.value?.api_key,
+            )}`,
+            has_voucher_applied: hasVoucherApplied.value,
+            applied_discounts: appliedDiscounts.value,
+            table_names: orderTableNames.value,
         };
 
-        const response = await axios.post('/order-management/orders/getTestReceipt', config.data, config);
+        const response = await axios.post('/order-management/orders/getTestReceipt', params);
+        const base64 = response.data.data;
 
-        if (option === 4 || option === 5) {
-            // Handle binary response for option 4 & 5
-            let base64;
-            if (option === 4) {
-                base64 = btoa(
-                    new Uint8Array(response.data).reduce(
-                        (data, byte) => data + String.fromCharCode(byte), ''
-                    )
-                );
-            } else {
-                base64 = btoa(unescape(encodeURIComponent(response.data)));
-            }
-            alert("Sending to RawBT...");
-            // console.log(base64);
-            window.location.href = `rawbt:base64,${base64}`;
-        } else if (response.data?.success) {
-            // Handle JSON response for options 1-3
-            let base64;
-            
-            if (option === 1) {
-                base64 = response.data.data;
-            } else if (option === 2) {
-                const binaryString = atob(response.data.data);
-                base64 = btoa(unescape(encodeURIComponent(binaryString)));
-            } else if (option === 3) {
-                base64 = btoa(atob(response.data.data));
-            }
-
-            alert("Sending to RawBT...");
-            // console.log(base64);
-            window.location.href = `rawbt:base64,${base64}`;
-        }
+        alert("Sending to RawBT...");
+        window.location.href = `rawbt:base64,${base64}`;
 
         // showMessage({
         //     severity: 'success',
@@ -271,11 +236,11 @@ const testPrintReceipt = async (option = 1) => {
             detail: err.message
         });
     }
-
 }
 
 defineExpose({
-    printReceipt
+    printReceipt,
+    testPrintReceipt
 });
 
 </script>
@@ -334,48 +299,16 @@ defineExpose({
                             />
                         </div>
                         
-                        <div class="flex flex-wrap w-full items-start px-1 gap-2">
+                        <!-- <div class="flex flex-wrap w-full items-start px-1 gap-2">
                             <Button
                                 type="button"
                                 variant="secondary"
                                 class="!w-fit border-0 hover:bg-primary-50 !justify-start"
-                                @click="testPrintReceipt(1)"
+                                @click="testPrintReceipt"
                             >
                                 <span class="text-grey-700 font-normal">Test Print</span>
                             </Button>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
-                                @click="testPrintReceipt(2)"
-                            >
-                                <span class="text-grey-700 font-normal">Test Print 2</span>
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
-                                @click="testPrintReceipt(3)"
-                            >
-                                <span class="text-grey-700 font-normal">Test Print 3</span>
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
-                                @click="testPrintReceipt(4)"
-                            >
-                                <span class="text-grey-700 font-normal">Test Print 4</span>
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
-                                @click="testPrintReceipt(5)"
-                            >
-                                <span class="text-grey-700 font-normal">Test Print 5</span>
-                            </Button>
-                        </div>
+                        </div> -->
         
                         <div class="flex flex-col bg-primary-25 rounded-md items-center px-4 py-6">
                             <p class="text-primary-800 text-base font-medium">TOTAL SPENT</p>
