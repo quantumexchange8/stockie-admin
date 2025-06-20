@@ -5123,7 +5123,7 @@ class OrderController extends Controller
             
             // ===== DISCOUNT SUMMARY =====
             if ($has_voucher_applied) {
-                $printer->text("------*** DISCOUNT SUMMARY ***------"); // 28 + 6
+                $printer->text("------------*** DISCOUNT SUMMARY ***------------");
                 $this->printWrappedTwoColumnsRight($printer, "DISCOUNTS", "AMT (RM)");
 
                 foreach ($applied_discounts as $key => $discount) {
@@ -5399,7 +5399,7 @@ class OrderController extends Controller
         
         // ===== DISCOUNT SUMMARY =====
         if ($has_voucher_applied) {
-            $addText("------*** DISCOUNT SUMMARY ***------");
+            $addText("------------*** DISCOUNT SUMMARY ***------------");
             $this->printTwoColumnsRightRaw($addText, "DISCOUNTS", "AMT (RM)");
             
             foreach ($applied_discounts as $key => $discount) {
