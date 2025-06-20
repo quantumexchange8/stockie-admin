@@ -228,7 +228,7 @@ const checkAppInstalled = (scheme, callback) => {
 }
 
 // old print to local printer function
-const testPrintReceipt = async () => {
+const testPrintReceipt = async (option = 1) => {
     try {
         await Promise.all([
             getOrderPaymentDetails(),
@@ -250,10 +250,30 @@ const testPrintReceipt = async () => {
 
         const response = await axios.post('/order-management/orders/getTestReceipt', params);
         const base64 = response.data.data;
-        
-        alert("Sending to Stockie App...");
 
-        window.location.href = `stockie_app://print/base64,${base64}`;
+        if (option === 1) {
+            alert("Sending to Stockie App...");
+            // Create a hidden iframe for app detection
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = `stockie_app://print/base64,${base64}`;
+            
+            // Add to DOM and remove after a short delay
+            document.body.appendChild(iframe);
+            setTimeout(() => {
+                document.body.removeChild(iframe)
+                // If still on page after 500ms, trigger fallback
+                if (!document.hidden) {
+                    window.location.href = `stockie_app://print/base64,${base64}`;
+                }
+            }, 500);
+    
+            // window.location.href = `stockie_app://print:base64,${base64}`;
+        } else {
+            alert("Sending to Rawbt App...");
+    
+            window.location.href = `rawbt:base64,${base64}`;
+        }
         // window.location.href = `rawbt:base64,${base64}`;
 
         // checkAppInstalled('stockie_app', (installed) => {
@@ -342,16 +362,16 @@ defineExpose({
                             />
                         </div>
                         
-                        <!-- <div class="flex flex-wrap w-full items-start px-1 gap-2">
+                        <div class="flex flex-wrap w-full items-start px-1 gap-2">
                             <Button
                                 type="button"
                                 variant="secondary"
                                 class="!w-fit border-0 hover:bg-primary-50 !justify-start"
-                                @click="testPrintReceipt"
+                                @click="testPrintReceipt(2)"
                             >
                                 <span class="text-grey-700 font-normal">Test Print</span>
                             </Button>
-                        </div> -->
+                        </div>
         
                         <div class="flex flex-col bg-primary-25 rounded-md items-center px-4 py-6">
                             <p class="text-primary-800 text-base font-medium">TOTAL SPENT</p>
