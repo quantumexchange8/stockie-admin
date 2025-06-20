@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->decimal('price_before', 13, 2);
             $table->decimal('price_after', 13, 2);
+            $table->string('status')->default('active');
             $table->softDeletes();
             $table->timestamps();
         });

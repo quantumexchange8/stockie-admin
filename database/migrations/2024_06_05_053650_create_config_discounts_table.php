@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('rate', 13, 2);
             $table->dateTime('discount_from');
             $table->dateTime('discount_to');
+            $table->string('status')->default('active');
             $table->softDeletes();
             $table->timestamps();
         });

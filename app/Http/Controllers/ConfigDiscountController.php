@@ -22,7 +22,8 @@ class ConfigDiscountController extends Controller
         $dateFilter = $request->input('date');
 
         if($request->input('id') !== []){
-            $currentDiscount = ConfigDiscount::select('id', 'discount_from', 'discount_to')
+            $currentDiscount = ConfigDiscount::where('status', 'active')
+                                                ->select('id', 'discount_from', 'discount_to')
                                                 ->firstWhere('id', $request->input('id'));
         }
         $categories = Category::select(['id', 'name'])
@@ -51,10 +52,12 @@ class ConfigDiscountController extends Controller
                                         })
                                         ->with([
                                             'discountItems' => function ($query) {
-                                                $query->select('id', 'discount_id', 'product_id', 'price_before', 'price_after');
+                                                $query->where('status', 'active')
+                                                    ->select('id', 'discount_id', 'product_id', 'price_before', 'price_after');
                                             },
                                             'discountItems.discount' => function ($query) {
-                                                $query->select('id', 'discount_from', 'discount_to');
+                                                $query->where('status', 'active')
+                                                    ->select('id', 'discount_from', 'discount_to');
                                             }
                                         ])
                                         ->where('availability', 'Available')
@@ -111,7 +114,7 @@ class ConfigDiscountController extends Controller
 
             //only immediately write in IF today is within active period, else just put into discount_item
             //for task scheduler to handle and update by its own
-            if (Carbon::now()->between($request->discount_from, $request->discount_to)) {
+            if (Carbon::now()->betweenIncluded($request->discount_from, $request->discount_to)) {
                 Product::find($discountProduct['id'])->update([
                     'discount_id' => $newDiscount->id,
                 ]);
@@ -120,8 +123,14 @@ class ConfigDiscountController extends Controller
     }
 
     public function discountDetails() {
-        $discount = ConfigDiscount::with('discountItems.product')
-                                    ->whereHas('discountItems')
+        $discount = ConfigDiscount::whereHas('discountItems')
+                                    ->where('status', 'active')
+                                    ->with([
+                                        'discountItems' => function ($query) {
+                                            $query->where('status', 'active')
+                                                ->with('product');
+                                        },
+                                    ])
                                     ->orderBy('discount_from')
                                     ->get();
 
@@ -160,6 +169,7 @@ class ConfigDiscountController extends Controller
     public function deleteDiscount(String $id) {
 
         $deleteDiscount = ConfigDiscount::find($id);
+
         activity()->useLog('delete-discount')
                     ->performedOn($deleteDiscount)
                     ->event('deleted')
@@ -169,11 +179,13 @@ class ConfigDiscountController extends Controller
                         'discount_name' => $deleteDiscount->name,
                     ])
                     ->log("$deleteDiscount->name is deleted.");
-        $deleteDiscount->delete();
-        ConfigDiscountItem::where('discount_id', $id)->delete();
-        Product::where('discount_id', $id)->update([
-            'discount_id' => null,
-        ]);
+
+        ConfigDiscountItem::where('discount_id', $id)
+                            ->update(['status' => 'inactive']);
+
+        Product::where('discount_id', $id)->update(['discount_id' => null]);
+
+        $deleteDiscount->update(['status' => 'inactive']);
     }
 
     public function editDiscount(DiscountRequest $request, String $id) {
@@ -189,34 +201,48 @@ class ConfigDiscountController extends Controller
             'discount_to' => $request->discount_to,
         ]);
     
-        $existingProductIds = $discount->discountItems()->pluck('product_id')->toArray();
+        $existingProductIds = $discount->discountItems()
+                                        ->where('status', 'active')
+                                        ->pluck('product_id')
+                                        ->toArray();
+
         $newProductIds = array_column($request->discount_product, 'id');
     
         //matched discount_id but not exist in updated product list = delete
-        $deleteItem = ConfigDiscountItem::where('discount_id', $id)
+        $deleteItem = ConfigDiscountItem::where([
+                                            ['discount_id', $id],
+                                            ['status', 'active'],
+                                        ])
                                         ->with('product:id,product_name')
                                         ->whereNotIn('product_id', $newProductIds)
                                         ->get();
 
-        foreach ($deleteItem as $item) {
-            activity()->useLog('delete-discount-item')
-                        ->performedOn($item)
-                        ->event('deleted')
-                        ->withProperties([
-                            'edited_by' => auth()->user()->full_name,
-                            'image' => auth()->user()->getFirstMediaUrl('user'),
-                            'product_name' => $item->product->product_name,
-                        ])
-                        ->log(":properties.product_name is deleted.");
-        }
+        if ($deleteItem && $deleteItem->count() > 0) {
+            foreach ($deleteItem as $item) {
+                activity()->useLog('delete-discount-item')
+                            ->performedOn($item)
+                            ->event('deleted')
+                            ->withProperties([
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'product_name' => $item->product->product_name,
+                            ])
+                            ->log(":properties.product_name is deleted.");
+    
+                Product::find($item['product_id'])->update(['discount_id' => null]);
 
-        $deleteItem->delete();
+                $item->update(['status' => 'inactive']);
+            }
+        }
     
         foreach ($request->discount_product as $product) {
             if (in_array($product['id'], $existingProductIds)) {
                 //matched discount_id and matched product_id = update
-                $editItem = ConfigDiscountItem::where('discount_id', $id)
-                                                ->where('product_id', $product['id'])
+                $editItem = ConfigDiscountItem::where([
+                                                    ['discount_id', $id],
+                                                    ['product_id', $product['id']],
+                                                    ['status', 'active'],
+                                                ])
                                                 ->with('product:id,product_name')
                                                 ->first();
                 $editItem->update([
@@ -245,16 +271,30 @@ class ConfigDiscountController extends Controller
                                     ? $product['price'] * (1 - $request->discount_rate / 100) 
                                     : $product['price'] - $request->discount_rate,
                 ]);
+
+                //only immediately write in IF today is within active period, else just put into discount_item
+                //for task scheduler to handle and update by its own
+                if (Carbon::now()->betweenIncluded($request->discount_from, $request->discount_to)) {
+                    Product::find($product['id'])->update(['discount_id' => $id]);
+                }
             }
         }
     }
 
     public function editProductDetails (String $id, Request $request)
     {
-        $discountItems = Product::with(['discountItems.discount'])
-                                ->whereHas('discountItems', function ($query) use ($id) {
-                                    $query->where('discount_id', $id);
+        $discountItems = Product::whereHas('discountItems', function ($query) use ($id) {
+                                    $query->where([
+                                            ['discount_id', $id],
+                                            ['status', 'active']
+                                        ]);
                                 })
+                                ->with([
+                                        'discountItems' => function ($query) {
+                                            $query->where('status', 'active')
+                                                ->with('discount');
+                                        },
+                                    ])
                                 ->get();
 
         $discountItems->each(function ($product) {

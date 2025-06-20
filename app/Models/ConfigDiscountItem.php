@@ -21,6 +21,7 @@ class ConfigDiscountItem extends Model
         'product_id',
         'price_before',
         'price_after',
+        'status',
     ];
 
     public function getActivitylogOptions(): LogOptions

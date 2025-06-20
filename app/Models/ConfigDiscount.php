@@ -29,6 +29,7 @@ class ConfigDiscount extends Model
         'rate',
         'discount_from',
         'discount_to',
+        'status',
     ];
 
     public function getActivitylogOptions(): LogOptions
