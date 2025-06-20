@@ -194,7 +194,14 @@ const printReceipt = async () => {
     }
 }
 
+let appCheckHandler = null;
+
 const checkAppInstalled = (scheme, callback) => {
+    // Clear any existing handler
+    if (appCheckHandler) {
+        window.removeEventListener('blur', appCheckHandler);
+    }
+
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
     iframe.src = `${scheme}://check`;
@@ -202,15 +209,21 @@ const checkAppInstalled = (scheme, callback) => {
     let timer = setTimeout(() => {
         callback(false);
         document.body.removeChild(iframe);
+        if (appCheckHandler) {
+            window.removeEventListener('blur', appCheckHandler);
+            appCheckHandler = null;
+        }
     }, 500);
     
-    window.addEventListener('blur', function handler() {
+    appCheckHandler = function handler() {
         clearTimeout(timer);
         callback(true);
         document.body.removeChild(iframe);
         window.removeEventListener('blur', handler);
-    });
+        appCheckHandler = null;
+    };
     
+    window.addEventListener('blur', appCheckHandler);
     document.body.appendChild(iframe);
 }
 
@@ -240,13 +253,12 @@ const testPrintReceipt = async () => {
         
         checkAppInstalled('stockie_app', (installed) => {
             if (installed) {
-                console.log('Stockie App detected');
-
+                alert("Stockie App detected!");
                 alert("Sending to RawBT...");
 
                 window.location.href = `rawbt:base64,${base64}`;
             } else {
-                console.log('Stockie App not detected');
+                alert("Stockie App not detected!");
             }
         });
 
