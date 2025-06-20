@@ -251,16 +251,18 @@ const testPrintReceipt = async () => {
         const response = await axios.post('/order-management/orders/getTestReceipt', params);
         const base64 = response.data.data;
         
-        checkAppInstalled('stockie_app', (installed) => {
-            if (installed) {
-                alert("Stockie App detected!");
-                alert("Sending to RawBT...");
+        alert("Sending to Stockie App...");
 
-                window.location.href = `rawbt:base64,${base64}`;
-            } else {
-                alert("Stockie App not detected!");
-            }
-        });
+        window.location.href = `stockie_app://print/base64,${base64}`;
+        // window.location.href = `rawbt:base64,${base64}`;
+
+        // checkAppInstalled('stockie_app', (installed) => {
+        //     if (installed) {
+        //         alert("Stockie App detected!");
+        //     } else {
+        //         alert("Stockie App not detected!");
+        //     }
+        // });
 
         // showMessage({
         //     severity: 'success',
