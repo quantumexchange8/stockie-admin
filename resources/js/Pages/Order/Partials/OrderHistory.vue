@@ -250,6 +250,7 @@ const printInvoiceReceipt = () => {
                     type="button"
                     variant="tertiary"
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                    disabled
                     @click="printInvoiceReceipt"
                 >
                     <span class="text-grey-700 font-normal">Download</span>
