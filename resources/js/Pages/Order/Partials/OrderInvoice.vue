@@ -251,14 +251,19 @@ const testPrintReceipt = async (option = 1) => {
         const response = await axios.post('/order-management/orders/getTestReceipt', params);
         const base64 = response.data.data;
 
-        const url = `stockie_app:hello`;
+        const url = `stockie-app://hello`;
 
         if (option === 1) {
             alert("Sending to Stockie App...");
-            // Create a hidden iframe for app detection
-            window.location.href = url;
+
+            try {
+                window.location.href = url;
+            } catch (e) {
+                console.error('Failed to open app:', e);
+                alert(`Failed to open Stockie app \n ${e}`);
+            }
     
-            // window.location.href = `stockie_app://print:base64,${base64}`;
+            // window.location.href = `-://print:base64,${base64}`;
         } else if (option === 2) {
             alert("Sending to Stockie App...");
             const iframe = document.createElement('iframe');
