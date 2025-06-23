@@ -251,7 +251,7 @@ const testPrintReceipt = async (option = 1) => {
         const response = await axios.post('/order-management/orders/getTestReceipt', params);
         const base64 = response.data.data;
 
-        const url = `stockie-app://hello`;
+        const url = `stockie-app://print?base64=${base64}`;
 
         if (option === 1) {
             alert("Sending to Stockie App...");
