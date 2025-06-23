@@ -71,6 +71,10 @@ const filterShiftListing = async (filters = {}, checkedFilters = {}) => {
 
 watch(date_filter, (newValue) => filterShiftListing(newValue));
 
+watch(() => props.shiftTransactions, (newValue) => {
+    shiftTransactionsList.value = newValue;
+})
+
 const shiftTotalPages = computed(() => {
     return Math.ceil(shiftTransactionsList.value.length / shiftRowsPerPage.value);
 });
@@ -88,13 +92,25 @@ const closeModal = () => {
 };
 
 const csvExport = () => { 
-    const mappedShiftTransactions = shiftTransactionsList.value.map(row => ({
-        'Shift No.': row.shift_no,
-        'Shift Opened': dayjs(row.shift_opened).format('DD/MM/YYYY, HH:mm'),
-        'Shift Closed': dayjs(row.shift_closed).format('DD/MM/YYYY, HH:mm'),
-        'Net Sales': `RM ${formatAmount(row.net_sales)}`,
-    }));
-    exportToCSV(mappedShiftTransactions, 'Shift Transaction List');
+    const title = 'Shift Transaction List';
+    const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
+    const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
+    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { 'Shift No.': title, 'Shift Opened': '', 'Shift Closed': '', 'Net Sales': '' },
+        { 'Shift No.': dateRange, 'Shift Opened': '', 'Shift Closed': '', 'Net Sales': '' },
+        { 'Shift No.': 'Shift No.', 'Shift Opened': 'Shift Opened', 'Shift Closed': 'Shift Closed', 'Net Sales': 'Net Sales' },
+        ...shiftTransactionsList.value.map(row => ({
+            'Shift No.': row.shift_no,
+            'Shift Opened': dayjs(row.shift_opened).format('DD/MM/YYYY, HH:mm'),
+            'Shift Closed': dayjs(row.shift_closed).format('DD/MM/YYYY, HH:mm'),
+            'Net Sales': `RM ${formatAmount(row.net_sales)}`,
+        })),
+    ];
+
+    exportToCSV(formattedRows, 'Shift Transaction List');
 }
 
 </script>
@@ -118,8 +134,23 @@ const csvExport = () => {
                         class="!w-fit"
                         v-model="date_filter"
                     />
+            
+                    <Button
+                        :type="'button'"
+                        :variant="'tertiary'"
+                        :size="'lg'"
+                        :iconPosition="'left'"
+                        class="!w-fit"
+                        :disabled="shiftTransactionsList.length === 0"
+                        @click="csvExport"
+                    >
+                        <template #icon >
+                            <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                        </template>
+                        Export
+                    </Button>
 
-                    <Menu as="div" class="relative inline-block text-left">
+                    <!-- <Menu as="div" class="relative inline-block text-left">
                         <div>
                             <MenuButton
                                 class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -160,7 +191,7 @@ const csvExport = () => {
                                 </MenuItem>
                             </MenuItems>
                         </transition>
-                    </Menu>
+                    </Menu> -->
                 </div>
             </div>
 

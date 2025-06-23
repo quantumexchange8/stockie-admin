@@ -238,7 +238,6 @@ class WaiterController extends Controller
             'salary'=> $validatedData['salary'],
             'worker_email' => $validatedData['stockie_email'],
             'profile_photo' => $validatedData['image'],
-            // 'passcode' => $validatedData['passcode']
         ];
 
         if (!$isPasscodeSame) {

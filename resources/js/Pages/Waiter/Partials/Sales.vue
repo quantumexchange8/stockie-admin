@@ -11,6 +11,7 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import Modal from '@/Components/Modal.vue';
 import axios from 'axios';
 import { transactionFormat, useFileExport } from '@/Composables';
+import Button from '@/Components/Button.vue';
 
 const props = defineProps({
     dateFilter: Array,
@@ -96,12 +97,25 @@ const filters = ref({
 
 const csvExport = () => {
     const waiterName = waiter.value?.full_name || 'Unknown Waiter';
-    const mappedOrders = order.value.map(order => ({
-        'Date': order.created_at,
-        'Amount': 'RM ' + order.total_amount.toFixed(2),
-        'Commission': 'RM ' + order.commission,
-    }));
-    exportToCSV(mappedOrders, `${waiterName}_Daily Sales Report`);
+    const title = `${waiterName}_Daily Sales Report`;
+    const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
+    const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
+    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { Date: title, 'Order No.': '', 'Amount': '', 'Commission': '' },
+        { Date: dateRange, 'Order No.': '', 'Amount': '', 'Commission': '' },
+        { Date: 'Date', 'Order No.': 'Order No.', 'Amount': 'Amount', 'Commission': 'Commission' },
+        ...order.value.map(row => ({
+            'Date': row.created_at,
+            'Order No.': row.order_no,
+            'Amount': 'RM ' + row.total_amount.toFixed(2),
+            'Commission': 'RM ' + row.commission,
+        })),
+    ];
+
+    exportToCSV(formattedRows, `${waiterName}_Daily Sales Report`);
 }
 
 const salesTotalPages = computed(() => {
@@ -114,7 +128,23 @@ const salesTotalPages = computed(() => {
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Daily Sales Report</span>
-            <Menu as="div" class="relative inline-block text-left">
+            
+            <Button
+                :type="'button'"
+                :variant="'tertiary'"
+                :size="'lg'"
+                :iconPosition="'left'"
+                class="!w-fit"
+                :disabled="order.length === 0"
+                @click="csvExport"
+            >
+                <template #icon >
+                    <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                </template>
+                Export
+            </Button>
+
+            <!-- <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton
                         class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -155,7 +185,7 @@ const salesTotalPages = computed(() => {
                         </MenuItem>
                     </MenuItems>
                 </transition>
-            </Menu>
+            </Menu> -->
         </div>
             <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">
                 <SearchBar 

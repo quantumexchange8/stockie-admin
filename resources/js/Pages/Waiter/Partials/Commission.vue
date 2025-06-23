@@ -1,4 +1,5 @@
 <script setup>
+import Button from '@/Components/Button.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { UploadIcon } from '@/Components/Icons/solid';
 import SearchBar from '@/Components/SearchBar.vue';
@@ -31,12 +32,22 @@ const filters = ref({
 
 const csvExport = () => {
     const waiterName = props.waiter.full_name || 'Unknown Waiter';
-    const dataArr = data.value.map(data => ({
-        'Date': data.created_at,
-        'Monthly Sale': `RM ${data.monthly_sale}`,
-        'Commission': `RM ${data.commissionAmt}`,        
-    }));
-    exportToCSV(dataArr, `${waiterName}_Monthly Commission Report`)
+    const title = `${waiterName}_Monthly Commission Report`;
+    const currentDate = dayjs().format('DD/MM/YYYY');
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { Date: title, 'Monthly Sale': '', 'Commission': '' },
+        { Date: currentDate, 'Monthly Sale': '', 'Commission': '' },
+        { Date: 'Date', 'Monthly Sale': 'Monthly Sale', 'Commission': 'Commission' },
+        ...data.value.map(row => ({
+            'Date': row.created_at,
+            'Monthly Sale': `RM ${row.monthly_sale}`,
+            'Commission': `RM ${row.commissionAmt}`,
+        })),
+    ];
+
+    exportToCSV(formattedRows, `${waiterName}_Monthly Commission Report`);
 };
 
 watch(() => searchQuery.value, (newValue) => {
@@ -64,7 +75,23 @@ watch(() => searchQuery.value, (newValue) => {
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Monthly Commission Report</span>
-            <Menu as="div" class="relative inline-block text-left">
+            
+            <Button
+                :type="'button'"
+                :variant="'tertiary'"
+                :size="'lg'"
+                :iconPosition="'left'"
+                class="!w-fit"
+                :disabled="data.length === 0"
+                @click="csvExport"
+            >
+                <template #icon >
+                    <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                </template>
+                Export
+            </Button>
+
+            <!-- <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton
                         class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -105,7 +132,7 @@ watch(() => searchQuery.value, (newValue) => {
                         </MenuItem>
                     </MenuItems>
                 </transition>
-            </Menu>
+            </Menu> -->
         </div>
         
         <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">

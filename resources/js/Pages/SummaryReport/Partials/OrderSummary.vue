@@ -1,4 +1,5 @@
 <script setup>
+import Button from '@/Components/Button.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { DropdownIcon, UploadIcon } from '@/Components/Icons/solid';
 import { useFileExport } from '@/Composables';
@@ -234,12 +235,20 @@ watch(
 
 const csvExport = () => {
     const orderYear = selected.value || 'Unknown';
+    const title = `Year ${orderYear} Order Summary`;
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const mappedOrders = props.ordersArray.map((orders, index) => ({
-        'Month': months[index], 
-        'Order Count': orders, 
-    }));
-    exportToCSV(mappedOrders, `${orderYear}_Order Summary`)
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { Month: title, 'Order Count': '' },
+        { Month: 'Month', 'Order Count': 'Order Count' },
+        ...props.ordersArray.map((orders, index) => ({
+            'Month': months[index], 
+            'Order Count': orders, 
+        })),
+    ];
+
+    exportToCSV(formattedRows, `Year_${orderYear}_Order Summary`);
 };
 
 onMounted(() => {
@@ -303,9 +312,24 @@ onMounted(() => {
                         </MenuItems>
                     </transition>
                 </Menu>
-
+            
                  <!-- export menu -->
-                 <Menu as="div" class="relative inline-block text-left">
+                <Button
+                    :type="'button'"
+                    :variant="'tertiary'"
+                    :size="'lg'"
+                    :iconPosition="'left'"
+                    class="!w-fit"
+                    :disabled="ordersArray.length === 0"
+                    @click="csvExport"
+                >
+                    <template #icon >
+                        <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                    </template>
+                    Export
+                </Button>
+
+                 <!-- <Menu as="div" class="relative inline-block text-left">
                     <div>
                         <MenuButton
                             class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -346,7 +370,7 @@ onMounted(() => {
                             </MenuItem>
                         </MenuItems>
                     </transition>
-                </Menu>
+                </Menu> -->
             </div>
         </div>
 
@@ -359,11 +383,12 @@ onMounted(() => {
 
         <template v-else>
             <div class="w-full h-full px-6">
-                <Chart type="bar" 
-                :data="chartData" 
-                :options="chartOptions"
-                :plugins="[customPlugin]"
-                class="w-full h-full"
+                <Chart 
+                    type="bar" 
+                    :data="chartData" 
+                    :options="chartOptions"
+                    :plugins="[customPlugin]"
+                    class="w-full h-full"
                 />
             </div>
         </template>

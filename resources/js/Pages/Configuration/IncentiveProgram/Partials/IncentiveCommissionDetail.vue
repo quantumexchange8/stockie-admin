@@ -227,8 +227,8 @@ watch(() => searchQuery.value, (newValue) => {
 
         <Toast />
 
-        <div class="w-full flex p-5 items-start gap-5 flex-[1_0_0] self-stretch flex-col md:flex-col lg:flex-row">
-            <div class="w-full h-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100 min-w-[700px] overflow-auto scrollbar-webkit">
+        <div class="w-full grid grid-cols-12 p-5 items-start gap-5 self-stretch lg:flex-row">
+            <div class="!w-full col-span-full lg:col-span-8 h-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100 overflow-auto scrollbar-webkit">
                 <div class="w-full flex flex-col items-center gap-6 self-stretch">
                     <div class="flex justify-between items-center flex-[1_0_0] self-stretch">
                         <span class="text-primary-900 text-md font-medium">Past Achiever</span>
@@ -240,28 +240,28 @@ watch(() => searchQuery.value, (newValue) => {
                         v-model="searchQuery"
                     />
 
-                    <table class="w-full border-spacing-3 border-collapse min-w-[600px]">
+                    <table class="w-full border-spacing-3 border-collapse">
                         <thead class="w-full bg-primary-50 overflow-hidden">
                             <tr>
-                                <th class="w-[13%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('achiever')">
+                                <th class="w-[35%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('achiever')">
                                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
                                         Achiever
                                         <TableSortIcon class="w-4 text-primary-800 flex-shrink-0"/>
                                     </span>
                                 </th>
-                                <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('sales')">
+                                <th class="w-[24%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('sales')">
                                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
                                         Sales
                                         <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
                                     </span>
                                 </th>
-                                <th class="w-[10%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('earned')">
+                                <th class="w-[24%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('earned')">
                                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
                                         Earned
                                         <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
                                     </span>
                                 </th>
-                                <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('status')">
+                                <th class="w-[17%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('status')">
                                     <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
                                         Status
                                         <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
@@ -287,7 +287,7 @@ watch(() => searchQuery.value, (newValue) => {
                                             <table class="w-full border-spacing-1 border-separate">
                                                 <tbody class="w-full">
                                                     <tr>
-                                                        <td class="w-[5%]">
+                                                        <td class="w-[7%]">
                                                             <svg 
                                                                 width="20" 
                                                                 height="20" 
@@ -305,7 +305,7 @@ watch(() => searchQuery.value, (newValue) => {
                                                                 <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ group.month }}</span>
                                                             </div>
                                                         </td>
-                                                        <td class="w-[56%]"></td>
+                                                        <td class="w-[70%]"></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -325,7 +325,7 @@ watch(() => searchQuery.value, (newValue) => {
                                                     class="w-full flex items-center gap-x-3 rounded-[5px] text-sm text-grey-900 font-medium odd:bg-white even:bg-primary-25 odd:text-grey-900 even:text-grey-900 hover:bg-primary-50" 
                                                     v-for="(data, index) in group.data" :key="index"
                                                 >
-                                                    <div class="w-[29%] py-2 px-3 truncate flex gap-2.5 items-center">
+                                                    <div class="w-[35%] py-2 px-3 truncate flex gap-2.5 items-center">
                                                         <!-- <div class="size-8 rounded-full bg-primary-300"></div> -->
                                                         <img 
                                                             :src="data.image ? data.image 
@@ -336,7 +336,7 @@ watch(() => searchQuery.value, (newValue) => {
                                                         {{ data.name }}
                                                     </div>
                                                     <div class="w-[24%] py-2 px-3">RM {{ formatAmount(data.total_sales) }}</div>
-                                                    <div class="w-[23%] py-2 px-3">RM {{ formatAmount(data.incentive) }}</div>
+                                                    <div class="w-[24%] py-2 px-3">RM {{ formatAmount(data.incentive) }}</div>
                                                     <div class="w-[17%] py-2 px-3">
                                                         <Menu as="div" class="relative inline-block text-left">
                                                             <div>
@@ -389,7 +389,6 @@ watch(() => searchQuery.value, (newValue) => {
                                                             </transition>
                                                         </Menu>
                                                     </div>
-                                                    <div class="w-[7%] py-2 px-3"></div>
                                                 </div>
                                             </DisclosurePanel>
                                         </transition>

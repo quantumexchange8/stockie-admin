@@ -2,7 +2,7 @@
 import Button from '@/Components/Button.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { DropdownIcon, UploadIcon } from '@/Components/Icons/solid';
-import { useFileExport } from '@/Composables';
+import { transactionFormat, useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import Chart from 'primevue/chart';
 import { onMounted, ref, watch } from 'vue';
@@ -24,6 +24,7 @@ const chartData = ref();
 const chartOptions = ref();
 const categories = ref(props.categories);
 const { exportToCSV } = useFileExport();
+const { formatAmount } = transactionFormat();
 
 const selectedCategory = ref(props.categories[0]);
 
@@ -59,11 +60,19 @@ const csvExport = () => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const salesYear = selectedYear.value || 'Unknown';
     const salesCategory = selectedCategory.value || 'Unknown category';
-    const mappedSalesCategory = props.salesCategory.map((salesCategory, index) => ({
-        'Month': months[index], 
-        'Sales': `RM ${parseFloat(salesCategory).toFixed(2)}`,
-    }));
-    exportToCSV(mappedSalesCategory, `${salesYear}_Sales in ${salesCategory}`);
+    const title = `Year ${salesYear} Sales in ${salesCategory}`;
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { Month: title, 'Sales': '' },
+        { Month: 'Month', 'Sales': 'Sales' },
+        ...props.salesCategory.map((salesCategory, index) => ({
+            'Month': months[index], 
+            'Sales': `RM ${formatAmount(salesCategory)}`,
+        })),
+    ];
+
+    exportToCSV(formattedRows, `Year_${salesYear}_Sales in ${salesCategory}`);
 }
 
 const setChartData = () => {
@@ -429,9 +438,24 @@ onMounted(() => {
                         </MenuItems>
                     </transition>
                 </Menu>
-
+            
                  <!-- export menu -->
-                 <Menu as="div" class="relative inline-block text-left">
+                <Button
+                    :type="'button'"
+                    :variant="'tertiary'"
+                    :size="'lg'"
+                    :iconPosition="'left'"
+                    class="!w-fit"
+                    :disabled="salesCategory.length === 0"
+                    @click="csvExport"
+                >
+                    <template #icon >
+                        <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                    </template>
+                    Export
+                </Button>
+
+                 <!-- <Menu as="div" class="relative inline-block text-left">
                     <div>
                         <MenuButton
                             class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -472,7 +496,7 @@ onMounted(() => {
                             </MenuItem>
                         </MenuItems>
                     </transition>
-                </Menu>
+                </Menu> -->
             </div>
         </div>
 

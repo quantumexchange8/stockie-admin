@@ -41,7 +41,7 @@ class WaiterRequest extends FormRequest
             'email',
             $this->input('id') 
                     ? Rule::unique('users')->ignore($this->input('id'))->whereNull('deleted_at')
-                    : 'unique:users,email,NULL,id,deleted_at,NULL'
+                    : 'unique:users,email'
         ];
 
         $rules['role_id'] = [
@@ -49,7 +49,7 @@ class WaiterRequest extends FormRequest
             'string',
             $this->input('id')
                     ? Rule::unique('users')->ignore($this->input('id'))->whereNull('deleted_at')
-                    : 'unique:users,role_id,NULL,id,deleted_at,NULL'
+                    : 'unique:users,role_id'
         ];
 
         $rules['passcode'] = [
@@ -59,7 +59,7 @@ class WaiterRequest extends FormRequest
             'max_digits:6',
             $this->input('id') 
                     ? Rule::unique('users')->ignore($this->input('id'))->whereNull('deleted_at') 
-                    : 'unique:users,passcode,NULL,id,deleted_at,NULL',
+                    : 'unique:users,passcode',
             
         ];
 

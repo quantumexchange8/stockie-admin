@@ -151,7 +151,7 @@ watch(() => form.isDirty, (newValue) => isDirty.value = newValue)
 </script>
 
 <template>
-    <div class="w-full h-full flex flex-col p-6 items-center gap-6 rounded-[5px] border border-solid border-primary-100 min-w-[300px]">
+    <div class="w-full col-span-full lg:col-span-4 h-full flex flex-col p-6 items-center gap-6 rounded-[5px] border border-solid border-primary-100 min-w-[300px]">
         <div class="w-full flex flex-col items-end gap-6 flex-[1_0_0] self-stretch">
             <div class="w-full flex items-center justify-between gap-2.5 self-stretch">
                 <span class="text-primary-900 text-md font-medium">Achievement Detail</span>

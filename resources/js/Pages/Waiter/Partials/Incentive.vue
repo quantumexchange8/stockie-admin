@@ -10,6 +10,7 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { UploadIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
 import { transactionFormat, useFileExport } from '@/Composables';
+import Button from '@/Components/Button.vue';
 
 const props = defineProps({
     waiter: {
@@ -39,13 +40,23 @@ const { exportToCSV } = useFileExport();
 
 const csvExport = () => {
     const waiterName = props.waiter || 'Unknown Waiter';
-    const mappedData = incentiveData.value.map(data => ({
-        'Date': data.period_start,
-        'Total': data.amount,
-        'Incentive': data.sales_target,
-        'Status': data.status,        
-    }));
-    exportToCSV(mappedData, `${waiterName}_Monthly Incentive Report`);
+    const title = `${waiterName}_Monthly Incentive Report`;
+    const currentDate = dayjs().format('DD/MM/YYYY');
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { Date: title, 'Total Sales': '', 'Incentive': '', 'Status': '' },
+        { Date: currentDate, 'Total Sales': '', 'Incentive': '', 'Status': '' },
+        { Date: 'Date', 'Total Sales': 'Total Sales', 'Incentive': 'Incentive', 'Status': 'Status' },
+        ...incentiveData.value.map(row => ({
+            'Date': dayjs(row.period_start).format('MMMM YYYY'),
+            'Total Sales': `RM ${formatAmount(row.amount)}`,
+            'Incentive': `RM ${formatAmount(row.sales_target)} ` +  (row.type == 'percentage' ? `(${parseInt(row.rate * 100)}% of total sales)` : `(RM ${row.rate} of total sales)`),
+            'Status': row.status,        
+        })),
+    ];
+
+    exportToCSV(formattedRows, `${waiterName}_Monthly Incentive Report`);
 }
 
 const filters = ref({
@@ -57,7 +68,23 @@ const filters = ref({
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Monthly Incentive Report</span>
-            <Menu as="div" class="relative inline-block text-left">
+            
+            <Button
+                :type="'button'"
+                :variant="'tertiary'"
+                :size="'lg'"
+                :iconPosition="'left'"
+                class="!w-fit"
+                :disabled="incentiveData.length === 0"
+                @click="csvExport"
+            >
+                <template #icon >
+                    <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                </template>
+                Export
+            </Button>
+
+            <!-- <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
                         Export
@@ -95,7 +122,7 @@ const filters = ref({
                         </MenuItem>
                     </MenuItems>
                 </transition>
-            </Menu>
+            </Menu> -->
         </div>
         
         <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">

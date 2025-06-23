@@ -202,14 +202,24 @@ const toggleKeepStatus = () => {
 }
 
 const csvExport = () => {
-    const mappedCustomers = props.customers.map(customer => ({
-        'Tier': parseInt(customer.ranking) !== 0 ? customer.rank.name : 'No Tier',
-        'Customer': customer.full_name,
-        'Points': customer.point,
-        'Keep': customer.keep_items_count,
-        'Joined Date': dayjs(customer.created_at).format('DD/MM/YYYY'),
-    }));
-    exportToCSV(mappedCustomers, 'Customer List')
+    const title = 'Customer List';
+    const currentDate = dayjs().format('DD/MM/YYYY');
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { Tier: title, 'Customer': '', 'Points': '', 'Keep': '', 'Joined Date': '' },
+        { Tier: currentDate, 'Customer': '', 'Points': '', 'Keep': '', 'Joined Date': '' },
+        { Tier: 'Tier', 'Customer': 'Customer', 'Points': 'Points', 'Keep': 'Keep', 'Joined Date': 'Joined Date' },
+        ...customer.value.map(row => ({
+            'Tier': parseInt(row.ranking) !== 0 ? row.rank.name : 'No Tier',
+            'Customer': row.full_name,
+            'Points': row.point,
+            'Keep': row.keep_items_count,
+            'Joined Date': dayjs(row.created_at).format('DD/MM/YYYY'),
+        }))
+    ];
+
+    exportToCSV(formattedRows, 'Customer List');
 }
 
 const formatPoints = (points) => {
@@ -495,7 +505,23 @@ const deleteModalDescription = computed(() => {
                     <template v-if="isLoading">Processing...</template>
                     <template v-else>Import Keep Items</template>
                 </Button>
-                <Menu as="div" class="relative inline-block text-left">
+            
+                <Button
+                    :type="'button'"
+                    :variant="'tertiary'"
+                    :size="'lg'"
+                    :iconPosition="'left'"
+                    class="!w-fit"
+                    :disabled="customer.length === 0"
+                    @click="csvExport"
+                >
+                    <template #icon >
+                        <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                    </template>
+                    Export
+                </Button>
+                
+                <!-- <Menu as="div" class="relative inline-block text-left">
                     <div>
                         <MenuButton
                             class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-3 max-h-11 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -536,7 +562,7 @@ const deleteModalDescription = computed(() => {
                             </MenuItem>
                         </MenuItems>
                     </transition>
-                </Menu>
+                </Menu> -->
             </div>
 
             <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">

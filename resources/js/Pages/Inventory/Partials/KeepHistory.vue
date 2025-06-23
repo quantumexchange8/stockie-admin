@@ -97,14 +97,42 @@ const getFilteredRows = (tab) => {
     }
 }
 
-const csvExport = () => {
-    const keepHistory = getFilteredRows(tranformedTabs.value[selectedTab.value]).map(keepHistory => ({
-        'Item Name': keepHistory.item_name,
-        'Quantity': keepHistory.qty,
-        'Date': dayjs(keepHistory.created_at).format('DD/MM/YYYY'),
-        'Keep For': keepHistory.keep_item.customer.full_name
-    }));
-    exportToCSV(keepHistory, `Keep_History`);
+const csvExport = (action_type) => {
+    const title = 'Keep History';
+    const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
+    const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
+    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    let rows = [];
+
+    switch (action_type) {
+        case 'all':
+            rows = initialKeepHistories.value;
+            break;
+        case 'active':
+            rows = keepHistories.value.filter((history) => history.status == 'Keep');
+            break;
+        case 'served-returned':
+            rows = keepHistories.value.filter((history) => history.status == 'Returned' || history.status == 'Served');
+            break;
+        case 'expired':
+            rows = keepHistories.value.filter((history) => history.status == 'Expired');
+            break;
+    }
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    const formattedRows = [
+        { 'Item Name': title, 'Quantity': '', 'Date': '', 'Keep For': '' },
+        { 'Item Name': dateRange, 'Quantity': '', 'Date': '', 'Keep For': '' },
+        { 'Item Name': 'Item Name', 'Quantity': 'Quantity', 'Date': 'Date', 'Keep For': 'Keep For' },
+        ...rows.map(row => ({
+            'Item Name': row.item_name,
+            'Quantity': row.qty,
+            'Date': dayjs(row.created_at).format('DD/MM/YYYY'),
+            'Keep For': row.keep_item.customer.full_name
+        })),
+    ];
+
+    exportToCSV(formattedRows, 'Keep History');
 }
 
 const changeActiveTab = (event) => {
@@ -214,27 +242,42 @@ watch(() => searchQuery.value, (newValue) => {
                             leave-from-class="transform scale-100 opacity-100" 
                             leave-to-class="transform scale-95 opacity-0"
                         >
-                            <MenuItems
-                                class="absolute z-10 right-0 mt-2 w-32 p-1 gap-0.5 origin-top-right divide-y divide-y-grey-100 rounded-md bg-white shadow-lg"
-                                >
+                            <MenuItems class="absolute z-10 right-0 mt-2 w-40 p-1 gap-0.5 origin-top-right divide-y divide-y-grey-100 rounded-md bg-white shadow-lg">
                                 <MenuItem v-slot="{ active }">
-                                <button type="button" :class="[
-                                    { 'bg-primary-100': active },
-                                    { 'bg-grey-50 pointer-events-none': keepHistories.length === 0 },
-                                    'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                                ]" :disabled="keepHistories.length === 0" @click="csvExport">
-                                    CSV
-                                </button>
+                                    <button type="button" :class="[
+                                        { 'bg-primary-100': active },
+                                        { 'bg-grey-50 pointer-events-none': initialKeepHistories.length === 0 },
+                                        'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                                    ]" :disabled="initialKeepHistories.length === 0" @click="csvExport('all')">
+                                        All
+                                    </button>
                                 </MenuItem>
-
                                 <MenuItem v-slot="{ active }">
-                                <button type="button" :class="[
-                                    // { 'bg-primary-100': active },
-                                    { 'bg-grey-50 pointer-events-none': keepHistories.length === 0 },
-                                    'bg-grey-50 pointer-events-none group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                                ]" :disabled="keepHistories.length === 0">
-                                    PDF
-                                </button>
+                                    <button type="button" :class="[
+                                        { 'bg-primary-100': active },
+                                        { 'bg-grey-50 pointer-events-none': keepHistories.filter((history) => history.status == 'Keep').length === 0 },
+                                        'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                                    ]" :disabled="keepHistories.filter((history) => history.status == 'Keep').length === 0" @click="csvExport('active')">
+                                        Active
+                                    </button>
+                                </MenuItem>
+                                <MenuItem v-slot="{ active }">
+                                    <button type="button" :class="[
+                                        { 'bg-primary-100': active },
+                                        { 'bg-grey-50 pointer-events-none': keepHistories.filter((history) => history.status == 'Returned' || history.status == 'Served').length === 0 },
+                                        'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                                    ]" :disabled="keepHistories.filter((history) => history.status == 'Returned' || history.status == 'Served').length === 0" @click="csvExport('served-returned')">
+                                        Served/Returned
+                                    </button>
+                                </MenuItem>
+                                <MenuItem v-slot="{ active }">
+                                    <button type="button" :class="[
+                                        { 'bg-primary-100': active },
+                                        { 'bg-grey-50 pointer-events-none': keepHistories.filter((history) => history.status == 'Expired').length === 0 },
+                                        'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
+                                    ]" :disabled="keepHistories.filter((history) => history.status == 'Expired').length === 0" @click="csvExport('expired')">
+                                        Expired
+                                    </button>
                                 </MenuItem>
                             </MenuItems>
                         </transition>

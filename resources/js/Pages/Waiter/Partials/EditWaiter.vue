@@ -179,7 +179,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     v-model="form.role_id"
                                 />
                                 <TextInput
-                                    label-text="Salary per month (basic)"
+                                    :label-text="`Salary per ` + (form.employment_type === 'Full-time' ? 'month (basic)' : 'hour')"
                                     inputId="salary"
                                     type="'text'"
                                     :iconPosition="'left'"

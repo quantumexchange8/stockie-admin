@@ -51,8 +51,8 @@ watch(() => props.rows, (newValue) => {
 
 const csvExport = () => {
     const title = props.productName;
-    const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
-    const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
+    const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
+    const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
     const dateRange = `Date Range: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field

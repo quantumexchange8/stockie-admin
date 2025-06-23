@@ -8,6 +8,7 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import { computed, onMounted, ref, watch } from 'vue';
 import { FilterMatchMode } from 'primevue/api';
 import { transactionFormat, useFileExport } from '@/Composables';
+import Button from '@/Components/Button.vue';
 import duration from 'dayjs/plugin/duration';
 import dayjs from 'dayjs';
 import Modal from '@/Components/Modal.vue';
@@ -78,11 +79,43 @@ const viewAttendance = async (filters = {}, id) => {
 
 const csvExport = () => {
     const waiterName = waiter.value?.full_name || 'Unknown Waiter';
-    const mappedAttendance = attendances.value.map(attendance => ({
-        'Check in': attendance.check_in,
-        'Check out': attendance.check_out,
-    }));
-    exportToCSV(mappedAttendance, `Waiter_${waiterName}_Attendance Report`);
+    const title = `Waiter_${waiterName}_Attendance Report`;
+    const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
+    const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
+    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+
+    // Use consistent keys with empty values, and put title/date range in the first field
+    let formattedRows = [
+        { Date: title, 'Working Duration': '', 'Break Duration': '' },
+        { Date: dateRange, 'Working Duration': '', 'Break Duration': '' },
+        { Date: 'Date', 'Working Duration': 'Working Duration', 'Break Duration': 'Break Duration' },
+        ...attendances.value.map(row => {
+            let data = {
+                'Date': row.date,
+                'Working Duration': row.work_duration,
+                'Break Duration': row.break_duration ?? '-',
+            };
+
+            if (waiter.value.employment_type === 'Part-time' && tableColumns.value.find((c) => c.field === 'earnings')) {
+                data['Est. Rate (RM/hour)'] = row.earnings;
+            }
+
+            return data;
+        }),
+    ];
+
+    if (waiter.value.employment_type === 'Part-time' && tableColumns.value.find((c) => c.field === 'earnings')) {
+        formattedRows.forEach((row, index) => {
+            if ([0, 1].includes(index)) {
+                row['Est. Rate (RM/hour)'] = '';
+
+            } else if (index == 2) {
+                row['Est. Rate (RM/hour)'] = 'Est. Rate (RM/hour)';
+            }
+        });
+    }
+
+    exportToCSV(formattedRows, `Waiter_${waiterName}_Attendance Report`);
 };
 
 const openModal = (attendance) => {
@@ -129,7 +162,23 @@ onMounted(() => {
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
             <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Attendance Report</span>
-            <Menu as="div" class="relative inline-block text-left">
+            
+            <Button
+                :type="'button'"
+                :variant="'tertiary'"
+                :size="'lg'"
+                :iconPosition="'left'"
+                class="!w-fit"
+                :disabled="attendances.length === 0"
+                @click="csvExport"
+            >
+                <template #icon >
+                    <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
+                </template>
+                Export
+            </Button>
+
+            <!-- <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton
                         class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -170,7 +219,7 @@ onMounted(() => {
                         </MenuItem>
                     </MenuItems>
                 </transition>
-            </Menu>
+            </Menu> -->
         </div>
         <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">
             <SearchBar 
@@ -211,9 +260,6 @@ onMounted(() => {
                 </template>
                 <template #break_duration="row">
                     <span class="text-grey-900 text-sm font-medium">{{ row.break_duration ?? '-' }}</span>
-                </template>
-                <template #rate="row">
-                    <span class="text-grey-900 text-sm font-medium">RM {{ formatAmount(row.rate ?? 0) }}</span>
                 </template>
             </Table>
         </div>
