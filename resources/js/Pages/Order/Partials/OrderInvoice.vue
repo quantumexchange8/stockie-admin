@@ -251,26 +251,26 @@ const testPrintReceipt = async (option = 1) => {
         const response = await axios.post('/order-management/orders/getTestReceipt', params);
         const base64 = response.data.data;
 
+        const url = `stockie_app:hello`;
+
         if (option === 1) {
             alert("Sending to Stockie App...");
             // Create a hidden iframe for app detection
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            // iframe.src = `stockie_app://print/base64,${base64}`;
-            iframe.src = `stockie_app:hello`;
-            
-            // Add to DOM and remove after a short delay
-            document.body.appendChild(iframe);
-            setTimeout(() => {
-                document.body.removeChild(iframe)
-                // If still on page after 500ms, trigger fallback
-                if (!document.hidden) {
-                    window.location.href = `stockie_app:hello`;
-                }
-            }, 500);
+            window.location.href = url;
     
             // window.location.href = `stockie_app://print:base64,${base64}`;
-        } else {
+        } else if (option === 2) {
+            alert("Sending to Stockie App...");
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = url;
+            document.body.appendChild(iframe);
+            
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 1000);
+    
+        } else if (option === 3) {
             alert("Sending to Rawbt App...");
     
             window.location.href = `rawbt:base64,${base64}`;
@@ -363,7 +363,7 @@ defineExpose({
                             />
                         </div>
                         
-                        <!-- <div class="flex flex-wrap w-full items-start px-1 gap-2">
+                        <div class="flex flex-wrap w-full items-start px-1 gap-2">
                             <Button
                                 type="button"
                                 variant="secondary"
@@ -372,7 +372,15 @@ defineExpose({
                             >
                                 <span class="text-grey-700 font-normal">Test Print</span>
                             </Button>
-                        </div> -->
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                class="!w-fit border-0 hover:bg-primary-50 !justify-start"
+                                @click="testPrintReceipt(3)"
+                            >
+                                <span class="text-grey-700 font-normal">Test Print</span>
+                            </Button>
+                        </div>
         
                         <div class="flex flex-col bg-primary-25 rounded-md items-center px-4 py-6">
                             <p class="text-primary-800 text-base font-medium">TOTAL SPENT</p>
