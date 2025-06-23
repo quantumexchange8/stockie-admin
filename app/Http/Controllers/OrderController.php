@@ -5444,6 +5444,7 @@ class OrderController extends Controller
         // $printerIp = '192.168.0.77';
         // $printerPort = '9100';
 
+        // Get the complete ESC/POS commands
         $buffer = $this->getReceipt($request);
         
         try {
