@@ -228,7 +228,7 @@ const checkAppInstalled = (scheme, callback) => {
 }
 
 // old print to local printer function
-const testPrintReceipt = async (option = 1) => {
+const testPrintReceipt = async () => {
     try {
         await Promise.all([
             getOrderPaymentDetails(),
@@ -253,49 +253,24 @@ const testPrintReceipt = async (option = 1) => {
 
         const url = `stockie-app://print?base64=${base64}`;
 
-        if (option === 1) {
-            alert("Sending to Stockie App...");
+        try {
+            window.location.href = url;
 
-            try {
-                window.location.href = url;
-            } catch (e) {
-                console.error('Failed to open app:', e);
-                alert(`Failed to open Stockie app \n ${e}`);
-            }
-    
-            // window.location.href = `-://print:base64,${base64}`;
-        } else if (option === 2) {
-            alert("Sending to Stockie App...");
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = url;
-            document.body.appendChild(iframe);
-            
-            setTimeout(() => {
-                document.body.removeChild(iframe);
-            }, 1000);
-    
-        } else if (option === 3) {
-            alert("Sending to Rawbt App...");
-    
-            window.location.href = `rawbt:base64,${base64}`;
+        } catch (e) {
+            console.error('Failed to open app:', e);
+            alert(`Failed to open Stockie app \n ${e}`);
+
+        } finally {
+            emit('close');
         }
-        // window.location.href = `rawbt:base64,${base64}`;
 
-        // checkAppInstalled('stockie_app', (installed) => {
-        //     if (installed) {
-        //         alert("Stockie App detected!");
-        //     } else {
-        //         alert("Stockie App not detected!");
-        //     }
-        // });
+        // window.location.href = `rawbt:base64,${base64}`;
 
         // showMessage({
         //     severity: 'success',
         //     summary: 'Print receipt successfully.'
         // }); 
 
-        emit('close');
         
     } catch (err) {
         console.error("Print failed:", err);
@@ -368,7 +343,7 @@ defineExpose({
                             />
                         </div>
                         
-                        <div class="flex flex-wrap w-full items-start px-1 gap-2">
+                        <!-- <div class="flex flex-wrap w-full items-start px-1 gap-2">
                             <Button
                                 type="button"
                                 variant="secondary"
@@ -385,7 +360,7 @@ defineExpose({
                             >
                                 <span class="text-grey-700 font-normal">Test Print</span>
                             </Button>
-                        </div>
+                        </div> -->
         
                         <div class="flex flex-col bg-primary-25 rounded-md items-center px-4 py-6">
                             <p class="text-primary-800 text-base font-medium">TOTAL SPENT</p>
