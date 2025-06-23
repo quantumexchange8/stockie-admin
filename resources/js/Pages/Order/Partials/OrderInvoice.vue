@@ -257,7 +257,7 @@ const testPrintReceipt = async (option = 1) => {
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             // iframe.src = `stockie_app://print/base64,${base64}`;
-            iframe.src = `stockie_app://print`;
+            iframe.src = `stockie_app:hello`;
             
             // Add to DOM and remove after a short delay
             document.body.appendChild(iframe);
@@ -265,7 +265,7 @@ const testPrintReceipt = async (option = 1) => {
                 document.body.removeChild(iframe)
                 // If still on page after 500ms, trigger fallback
                 if (!document.hidden) {
-                    window.location.href = `stockie_app://print`;
+                    window.location.href = `stockie_app:hello`;
                 }
             }, 500);
     
