@@ -408,6 +408,7 @@ Route::middleware('auth')->group(function () {
         
         Route::get('/shift-record', [ShiftController::class, 'viewShiftRecord'])->name('shift-management.record');
         Route::get('/shift-record/getFilteredShiftTransactions', [ShiftController::class, 'getFilteredShiftTransactions'])->name('shift-management.record.getFilteredShiftTransactions');
+        Route::post('/shift-record/getShiftReportReceipt', [ShiftController::class, 'getShiftReportReceipt'])->name('shift-management.record.getShiftReportReceipt');
     });
 
     /********* Transaction Listing **********/

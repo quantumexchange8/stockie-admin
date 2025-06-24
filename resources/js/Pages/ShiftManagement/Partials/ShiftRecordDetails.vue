@@ -14,11 +14,46 @@ const props = defineProps({
     currentSelectedShift: Object,
 });
 
+const { showMessage } = useCustomToast();
+
 const selectedShift = ref(props.currentSelectedShift);
 const tabs = ref([
     { title: 'Shift Overview', disabled: false },
     { title: 'Pay In/Out History', disabled: false }
 ]);
+
+const printShfitReportReceipt = async () => {
+    try {
+        const params = { 
+            shift_transaction: selectedShift.value
+        };
+
+        const response = await axios.post('/shift-management/shift-record/getShiftReportReceipt', params);
+        const base64 = response.data.data;
+
+        const url = `stockie-app://print?base64=${base64}`;
+
+        try {
+            window.location.href = url;
+
+        } catch (e) {
+            console.error('Failed to open app:', e);
+            alert(`Failed to open Stockie app \n ${e}`);
+
+        } finally {
+            emit('close');
+        }
+
+        
+    } catch (err) {
+        console.error("Print failed:", err);
+        showMessage({
+            severity: 'error',
+            summary: 'Print failed',
+            detail: err.message
+        });
+    }
+}
 
 watch(() => props.currentSelectedShift, (newValue) => {
     selectedShift.value = newValue;
@@ -250,9 +285,9 @@ watch(() => props.currentSelectedShift, (newValue) => {
             type="button"
             variant="tertiary"
             size="lg"
-            @click=""
+            @click="printShfitReportReceipt"
         >
-            Export Report
+            Print Report
         </Button>
     </div>
 </template>

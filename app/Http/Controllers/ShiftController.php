@@ -222,4 +222,193 @@ class ShiftController extends Controller
         
         return response()->json($shiftTransactions);
     }
+
+    // ===== RAW HELPER METHODS =====
+    // For 2 column valued row
+    private function printTwoColumnsRightRaw($addText, $left, $right, $boldSide = 'right')
+    {
+        $leftWidth = 24;
+        $rightWidth = 24;
+
+        // Process left text with wrapping
+        $leftLines = explode("\n", wordwrap($left, $leftWidth, "\n", true));
+        $rightLines = explode("\n", wordwrap($right, $rightWidth, "\n", true));
+        
+        $maxLines = max(count($leftLines), count($rightLines));
+        
+        for ($i = 0; $i < $maxLines; $i++) {
+            $currentLeft = $leftLines[$i] ?? '';
+            $currentRight = $rightLines[$i] ?? '';
+            
+            // Format left side (left-aligned)
+            $leftFormatted = substr($currentLeft, 0, $leftWidth);
+            $leftPadding = str_repeat(' ', max(0, $leftWidth - strlen($leftFormatted)));
+            
+            // Format right side (right-aligned)
+            $rightFormatted = substr($currentRight, 0, $rightWidth);
+            $rightPadding = str_repeat(' ', max(0, $rightWidth - strlen($rightFormatted)));
+            
+            // Build the line with optional bold
+            $line = "";
+            
+            // Left side
+            if ($boldSide === 'left') {
+                $line .= "\x1B\x21\x08"; // Bold on
+            }
+            $line .= $leftFormatted;
+            if ($boldSide === 'left') {
+                $line .= "\x1B\x21\x00"; // Bold off
+            }
+            $line .= $leftPadding;
+            
+            // Right side
+            if ($boldSide === 'right') {
+                $line .= "\x1B\x21\x08"; // Bold on
+            }
+            $line .= $rightPadding . $rightFormatted;
+            if ($boldSide === 'right') {
+                $line .= "\x1B\x21\x00"; // Bold off
+            }
+            
+            $addText($line);
+        }
+    }
+
+    // For 1.25x headers
+    private function printHeader($addText, $addCommand, $text) 
+    {
+        $addCommand("\x1B\x61\x01"); // Center alignment
+        $addCommand("\x1B\x21\x00"); // Normal size
+        $addCommand("\x1B\x45\x01"); // Bold on
+        $addText($text);
+
+        $addCommand("\x1B\x45\x00"); // Bold off
+        $addCommand("\x1B\x61\x00"); // Left alignment
+        $addText(""); // Empty line
+    }
+
+    public function getReceipt(Request $request)
+    {
+        $shift_transaction = $request->shift_transaction;
+        $openingCashier = $shift_transaction['opened_by'];
+        $closingCashier = $shift_transaction['closed_by'];
+
+        // Create a buffer to capture ESC/POS commands
+        $buffer = '';
+        
+        // Helper function to add text with line breaks
+        $addText = function($text) use (&$buffer) {
+            $buffer .= $text . "\n";
+        };
+        
+        // Helper function to add raw ESC/POS commands
+        $addCommand = function($command) use (&$buffer) {
+            $buffer .= $command;
+        };
+        
+        // ===== ESC/POS INITIALIZATION =====
+        $addCommand("\x1B\x40"); // Initialize printer
+        $addCommand("\x1B\x21\x00"); // Normal text (clear all formatting)
+        $addCommand("\x1B\x4D\x00"); // Select Font B (default)
+        
+        // ===== HEADER SECTION =====
+        $addCommand("\x1B\x61\x01"); // Center alignment
+        $addCommand("\x1B\x21\x30"); // Double height + width
+        $addCommand("\x1B\x45\x01"); // Bold
+        $addText("Shift Report");
+        $addCommand("\x1B\x21\x00"); // Normal text
+        $addCommand("\x1B\x45\x00"); // Bold off
+        $addText("Shift #" . $shift_transaction['shift_no']);
+
+        $addText(""); // Empty line
+        $addText(str_repeat("-", 48));
+        $addText(""); // Empty line
+        
+        // ===== SHIFT BASIC INFO =====
+        $addCommand("\x1B\x61\x00"); // Left alignment
+        $this->printTwoColumnsRightRaw($addText, "Shift opened", '');
+        $this->printTwoColumnsRightRaw($addText, Carbon::parse($shift_transaction['shift_opened'])->format('d/m/Y H:i A'), "by Admin Adminimus Adminosus " . $openingCashier['full_name'], 'left');
+        $this->printTwoColumnsRightRaw($addText, "Shift closed", '');
+        $this->printTwoColumnsRightRaw($addText, Carbon::parse($shift_transaction['shift_closed'])->format('d/m/Y H:i A'), "by " . $closingCashier['full_name'], 'left');
+        
+        $addText(""); // Empty line
+        $addText(""); // Empty line
+        
+        // ===== SALES SUMMARY SECTION =====
+        $this->printHeader($addText, $addCommand, "Sales Summary");
+        $this->printTwoColumnsRightRaw($addText, "Cash Sales", "RM " . number_format($shift_transaction['cash_sales'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Card Sales", "RM " . number_format($shift_transaction['card_sales'], 2));
+        $this->printTwoColumnsRightRaw($addText, "E-Wallet Sales", "RM " . number_format($shift_transaction['ewallet_sales'], 2));
+        
+        $addText(str_repeat("-", 48));
+
+        $this->printTwoColumnsRightRaw($addText, "Gross Sales", "RM " . number_format($shift_transaction['gross_sales'], 2));
+        $this->printTwoColumnsRightRaw($addText, "SST", "RM " . number_format($shift_transaction['sst_amount'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Service tax", "RM " . number_format($shift_transaction['service_tax_amount'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Refunds", "- RM " . number_format($shift_transaction['total_refund'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Voids", "- RM " . number_format($shift_transaction['total_void'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Discounts", "- RM " . number_format($shift_transaction['total_discount'], 2));
+
+        $addText(str_repeat("-", 48));
+
+        $this->printTwoColumnsRightRaw($addText, "Net Sales (excl. taxes)", "RM " . number_format($shift_transaction['net_sales'], 2));
+        
+        $addText(""); // Empty line
+        $addText(""); // Empty line
+
+        // ===== SHIFT & CASH DRAWER DETAIL SECTION =====
+        $this->printHeader($addText, $addCommand, "Shift & cash drawer detail");
+        $this->printTwoColumnsRightRaw($addText, "Starting cash", "RM " . number_format($shift_transaction['starting_cash'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Paid in", "RM " . number_format($shift_transaction['paid_in'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Paid out", "- RM " . number_format($shift_transaction['paid_out'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Cash refunds", "- RM " . number_format($shift_transaction['cash_refund'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Expected cash", "RM " . number_format($shift_transaction['expected_cash'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Closing cash", "RM " . number_format($shift_transaction['closing_cash'], 2));
+        $this->printTwoColumnsRightRaw($addText, "Cash difference", ($shift_transaction['difference'] < 0 ? '- ' : '') . "RM " . number_format(abs($shift_transaction['difference']), 2));
+
+        $addText(""); // Empty line
+        $addText(""); // Empty line
+        
+        // ===== FOOTER SECTION =====
+        $addCommand("\x1B\x61\x01"); // Center alignment
+        $addText("Generated on: " . now()->format('Y-m-d H:i'));
+        
+        // Add some empty lines and cut
+        $addText("\n\n\n\n\n");
+        $addCommand("\x1D\x56\x01"); // Partial cut
+
+        return $buffer;
+    }
+
+    public function getShiftReportReceipt(Request $request)
+    {
+        // $printerIp = '192.168.0.77';
+        // $printerPort = '9100';
+
+        // Get the complete ESC/POS commands
+        $buffer = $this->getReceipt($request);
+        
+        try {
+            // $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
+            // if (!$socket) {
+            //     return "Error: $errstr ($errno)";
+            // }
+
+            // fwrite($socket, $buffer);
+            // fclose($socket);
+
+            return response()->json([
+                'success' => true,
+                'data' => base64_encode($buffer), // Encode binary as base64
+                'message' => 'Print job sent'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Print receipt error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
