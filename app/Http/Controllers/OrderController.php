@@ -13,6 +13,7 @@ use App\Models\Category;
 use App\Models\ConfigIncentive;
 use App\Models\ConfigIncentiveEmployee;
 use App\Models\ConfigMerchant;
+use App\Models\ConfigPrinter;
 use App\Models\Customer;
 use App\Models\CustomerReward;
 use App\Models\EmployeeCommission;
@@ -5444,22 +5445,31 @@ class OrderController extends Controller
         // $printerIp = '192.168.0.77';
         // $printerPort = '9100';
 
+        // $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
+        // if (!$socket) {
+        //     return "Error: $errstr ($errno)";
+        // }
+
+        // fwrite($socket, $buffer);
+        // fclose($socket);
+
+        // Get printer
+        $printer = ConfigPrinter::where([
+                                    ['name', 'Cashier'],
+                                    ['status', 'active']
+                                ])
+                                ->first();
+
         // Get the complete ESC/POS commands
         $buffer = $this->getReceipt($request);
         
         try {
-            // $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
-            // if (!$socket) {
-            //     return "Error: $errstr ($errno)";
-            // }
-
-            // fwrite($socket, $buffer);
-            // fclose($socket);
 
             // Return base64 encoded version for JSON safety
             return response()->json([
                 'success' => true,
                 'data' => base64_encode($buffer), // Encode binary as base64
+                'printer' => $printer,
                 'message' => 'Print job sent'
             ]);
             

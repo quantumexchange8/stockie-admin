@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ConfigPrinter;
 use App\Models\ShiftPayHistory;
 use App\Models\ShiftTransaction;
 use App\Services\RunningNumberService;
@@ -385,21 +386,30 @@ class ShiftController extends Controller
         // $printerIp = '192.168.0.77';
         // $printerPort = '9100';
 
+        // $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
+        // if (!$socket) {
+        //     return "Error: $errstr ($errno)";
+        // }
+
+        // fwrite($socket, $buffer);
+        // fclose($socket);
+
+        // Get printer
+        $printer = ConfigPrinter::where([
+                                    ['name', 'Cashier'],
+                                    ['status', 'active']
+                                ])
+                                ->first();
+
+
         // Get the complete ESC/POS commands
         $buffer = $this->getReceipt($request);
         
         try {
-            // $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
-            // if (!$socket) {
-            //     return "Error: $errstr ($errno)";
-            // }
-
-            // fwrite($socket, $buffer);
-            // fclose($socket);
-
             return response()->json([
                 'success' => true,
                 'data' => base64_encode($buffer), // Encode binary as base64
+                'printer' => $printer,
                 'message' => 'Print job sent'
             ]);
             

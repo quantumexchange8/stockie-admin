@@ -29,9 +29,36 @@ const printShfitReportReceipt = async () => {
         };
 
         const response = await axios.post('/shift-management/shift-record/getShiftReportReceipt', params);
-        const base64 = response.data.data;
+        const printer = response.data.printer;
 
-        const url = `stockie-app://print?base64=${base64}`;
+        if (!printer || !printer.ip_address || !printer.port_number) {
+            let summary = '';
+            let detail = '';
+
+            if (!printer) {
+                summary = 'Unable to detect selected printer';
+                detail = 'Please contact admin to setup the printer.';
+
+            } else if (!printer.ip_address) {
+                summary = 'Invalid printer IP address';
+                detail = 'Please contact admin to setup the printer IP address.';
+
+            } else if (!printer.port_number) {
+                summary = 'Invalid printer port number';
+                detail = 'Please contact admin to setup the printer port number.';
+            }
+
+            showMessage({
+                severity: 'error',
+                summary: summary,
+                detail: detail,
+            });;
+
+            return;
+        }
+
+        const base64 = response.data.data;
+        const url = `stockie-app://print?base64=${base64}&ip=${printer.ip_address}&port=${printer.port_number}`;
 
         try {
             window.location.href = url;

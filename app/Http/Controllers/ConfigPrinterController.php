@@ -178,19 +178,27 @@ class ConfigPrinterController extends Controller
         // $printerIp = '192.168.0.77';
         // $printerPort = '9100';
 
+        // $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
+        // if (!$socket) {
+        //     return "Error: $errstr ($errno)";
+        // }
+
+        // fwrite($socket, $buffer);
+        // fclose($socket);
+
+        // Get printer
+        $printer = ConfigPrinter::where([
+                                    ['name', $printerName],
+                                    ['status', 'active']
+                                ])
+                                ->first();
+
         try {
-            // $socket = fsockopen($printerIp, $printerPort, $errno, $errstr, 5);
-            // if (!$socket) {
-            //     return "Error: $errstr ($errno)";
-            // }
-
-            // fwrite($socket, $buffer);
-            // fclose($socket);
-
             // Return base64 encoded version for JSON safety
             return response()->json([
                 'success' => true,
                 'data' => base64_encode($buffer), // Encode binary as base64
+                'printer' => $printer,
                 'message' => 'Print job sent'
             ]);
             
