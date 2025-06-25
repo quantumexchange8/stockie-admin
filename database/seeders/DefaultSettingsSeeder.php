@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\ConfigPrinter;
 use App\Models\ItemCategory;
 use App\Models\PayoutConfig;
 use App\Models\RunningNumber;
@@ -49,7 +50,7 @@ class DefaultSettingsSeeder extends Seeder
             );
         }
 
-        // // Default Payout Configs (for e-invoice settings)
+        // // Default Payout Configs (for e-invoice settings) - shouldn't auto insert as the value during live may be different
         // $defaultPayoutConfigs = [
         //     ['merchant_id'=> 1, 'api_key' => 'bia5B0thBOUTHtfgz9lMEu9wMzoVPnRzCNQCPkFw', 'url'=> 'https://ct-einvoice.currenttech.pro/'],
         // ];
@@ -108,6 +109,19 @@ class DefaultSettingsSeeder extends Seeder
             WaiterPosition::firstOrCreate(
                 ['name' => $position['name']], // unique check condition
                 $position                      // values to set if not found
+            );
+        }
+
+        // Default Config Printers
+        $defaultConfigPrinters = [
+            ['name'=> 'Cashier', 'ip_address' => '', 'port_number' => '9100', 'status' => 'active'],
+            ['name'=> 'Bar', 'ip_address' => '', 'port_number' => '9100', 'status' => 'active'],
+        ];
+
+        foreach ($defaultConfigPrinters as $printer) {
+            ConfigPrinter::firstOrCreate(
+                ['name' => $printer['name']], // unique check condition
+                $printer                      // values to set if not found
             );
         }
 

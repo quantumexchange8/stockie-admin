@@ -5457,13 +5457,6 @@ class OrderController extends Controller
             // fclose($socket);
 
             // Return base64 encoded version for JSON safety
-            if ($request->print_option === 4 || $request->print_option === 5) {
-                return response($buffer)
-                    ->header('Content-Type', 'application/octet-stream')
-                    ->header('Content-Disposition', 'attachment; filename=receipt.prn');
-                
-            }
-
             return response()->json([
                 'success' => true,
                 'data' => base64_encode($buffer), // Encode binary as base64

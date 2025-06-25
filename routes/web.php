@@ -7,6 +7,7 @@ use App\Http\Controllers\CallbackEinvoiceController;
 use App\Http\Controllers\ConfigCommissionController;
 use App\Http\Controllers\ConfigDiscountController;
 use App\Http\Controllers\ConfigEmployeeIncProgController;
+use App\Http\Controllers\ConfigPrinterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
@@ -233,6 +234,13 @@ Route::middleware('auth')->group(function () {
         /******* Security Settings ********/
         Route::post('/updateAutoLockDuration', [ConfigPromotionController::class, 'updateAutoLockDuration'])->name('configuration.updateAutoLockDuration');
         Route::post('/handleTableLock', [OrderController::class,'handleTableLock'])->name('configurations.handleTableLock');
+        
+        /******* Security Settings ********/
+        Route::get('/getAllPrinters', [ConfigPrinterController::class, 'getAllPrinters'])->name('configurations.getAllPrinters');
+        Route::post('/createPrinter', [ConfigPrinterController::class, 'createPrinter'])->name('configuration.createPrinter');
+        Route::post('/editPrinter/{id}', [ConfigPrinterController::class,'editPrinter'])->name('configurations.editPrinter');
+        Route::post('/deletePrinter/{id}', [ConfigPrinterController::class,'deletePrinter'])->name('configurations.deletePrinter');
+        Route::post('/getPrinterTest', [ConfigPrinterController::class, 'getPrinterTest'])->name('configurations.getPrinterTest');
     });
     Route::get('/configurations/getAutoUnlockDuration', [ConfigPromotionController::class, 'getAutoUnlockDuration'])->name('configurations.getAutoUnlockDuration');
 

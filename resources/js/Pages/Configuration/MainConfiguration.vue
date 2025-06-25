@@ -15,6 +15,7 @@ import { Head } from "@inertiajs/vue3";
 import axios from "axios";
 import ShiftSetting from "./Shift/ShiftSetting.vue";
 import SecuritySettings from "./SecuritySettings/SecuritySettings.vue";
+import PrintingSettings from "./PrintingSettings/PrintingSettings.vue";
 
 const home = ref({
     label: 'Configuration',
@@ -35,7 +36,8 @@ const tabs = ref([
     "Promotion", 
     "Invoice Setting", 
     "Points Settings",
-    "Security Settings"
+    "Security Settings",
+    "Printing Settings"
 ]);
 
 const merchant = ref(props.merchant);
@@ -93,6 +95,9 @@ onMounted(() => {
             </template>
             <template #security-settings>
                 <SecuritySettings />
+            </template>
+            <template #printing-settings>
+                <PrintingSettings />
             </template>
         </TabView>
     </AuthenticatedLayout>
