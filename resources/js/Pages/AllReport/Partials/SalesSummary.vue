@@ -102,41 +102,48 @@ defineExpose({
             </tr>
         </thead>
         <tbody>
-            <tr v-for="(row, index) in props.rows" :key="index" class="border-b border-grey-100">
-                <td class="w-[14%]">
-                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(row.receipt_start_date).format('DD/MM/YYYY') }}</span>
-                </td>
-                <td class="w-[14%]">
-                    <div class="flex justify-start items-center gap-3 px-3">
-                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(row.grand_total) }}</span>
-                    </div>
-                </td>
-                <td class="w-[14%]">
-                    <div class="flex justify-start items-center gap-3 px-3">
-                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getSalesTaxesAmount(row)) }}</span>
-                    </div>
-                </td>
-                <td class="w-[16%]">
-                    <div class="flex justify-start items-center gap-3 px-3">
-                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getSalesRefundsAmount(row)) }}</span>
-                    </div>
-                </td>
-                <td class="w-[14%]">
-                    <div class="flex justify-start items-center gap-3 px-3">
-                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">0.00</span>
-                    </div>
-                </td>
-                <td class="w-[14%]">
-                    <div class="flex justify-start items-center gap-3 px-3">
-                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getSalesDiscountAmount(row)) }}</span>
-                    </div>
-                </td>
-                <td class="w-[14%]">
-                    <div class="flex justify-start items-center gap-3 px-3">
-                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ getSalesNetAmount(row) }}</span>
-                    </div>
-                </td>
-            </tr>
+            <template v-if="props.rows.length > 0">
+                <tr v-for="(row, index) in props.rows" :key="index" class="border-b border-grey-100">
+                    <td class="w-[14%]">
+                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(row.receipt_start_date).format('DD/MM/YYYY') }}</span>
+                    </td>
+                    <td class="w-[14%]">
+                        <div class="flex justify-start items-center gap-3 px-3">
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(row.grand_total) }}</span>
+                        </div>
+                    </td>
+                    <td class="w-[14%]">
+                        <div class="flex justify-start items-center gap-3 px-3">
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getSalesTaxesAmount(row)) }}</span>
+                        </div>
+                    </td>
+                    <td class="w-[16%]">
+                        <div class="flex justify-start items-center gap-3 px-3">
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getSalesRefundsAmount(row)) }}</span>
+                        </div>
+                    </td>
+                    <td class="w-[14%]">
+                        <div class="flex justify-start items-center gap-3 px-3">
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">0.00</span>
+                        </div>
+                    </td>
+                    <td class="w-[14%]">
+                        <div class="flex justify-start items-center gap-3 px-3">
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getSalesDiscountAmount(row)) }}</span>
+                        </div>
+                    </td>
+                    <td class="w-[14%]">
+                        <div class="flex justify-start items-center gap-3 px-3">
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ getSalesNetAmount(row) }}</span>
+                        </div>
+                    </td>
+                </tr>
+            </template>
         </tbody>
     </table>
+    <template v-if="props.rows.length == 0">
+        <div class="flex pt-2 items-center justify-center">
+            <p class="text-2xs text-grey-950">No result</p>
+        </div>
+    </template>
 </template>

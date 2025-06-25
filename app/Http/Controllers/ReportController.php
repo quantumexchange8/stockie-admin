@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\PaymentDetail;
 use App\Models\PaymentRefund;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -29,6 +30,8 @@ class ReportController extends Controller
      */
     public function getReport(Request $request) 
     {
+        $typeFilter = $request->input('typeFilter');
+
         $dateFilter = array_map(
             fn($date) => Carbon::parse($date)
                 ->timezone('Asia/Kuala_Lumpur')
@@ -36,47 +39,49 @@ class ReportController extends Controller
             $request->input('date_filter')
         );
 
-        $typeFilter = $request->input('typeFilter');
+        $setting = Setting::where([
+                                    ['name', 'Cut Off Time'],
+                                    ['type', 'timer'],
+                                ])
+                                ->first();
 
-        $startDate = Carbon::parse($dateFilter[0])->startOfDay();
-        $endDate = Carbon::parse($dateFilter[1] ?? $dateFilter[0])->endOfDay();
+        [$cutoffHour, $cutoffMinute] = explode('.', (string) $setting->value);
+        $cutoffMinute = str_pad((int) $cutoffMinute, 2, '0', STR_PAD_RIGHT);
+
+        $from = Carbon::parse($dateFilter[0])->setTime($cutoffHour, $cutoffMinute);
+        $to = Carbon::parse($dateFilter[1] ?? $dateFilter[0])
+                    ->addDay()
+                    ->setTime($cutoffHour, $cutoffMinute)
+                    ->subSecond();
 
         $data = match($typeFilter) {
-            'sales_summary' => $this->getSalesSummary($startDate, $endDate),
-            'payment_method' => $this->getPaymentMethodSales($startDate, $endDate),
-            'product_sales' => $this->getProductSales($startDate, $endDate),
-            'category_sales' => $this->getCategorySalesData($startDate, $endDate),
-            'employee_earning' => $this->getEmployeeEarningData($startDate, $endDate),
-            'member_purchase' => $this->getMemberPurchaseData($startDate, $endDate),
-            'current_stock' => $this->getCurrentStockData($startDate, $endDate),
+            'sales_summary' => $this->getSalesSummary($from, $to),
+            'payment_method' => $this->getPaymentMethodSales($from, $to),
+            'product_sales' => $this->getProductSales($from, $to),
+            'category_sales' => $this->getCategorySalesData($from, $to),
+            'employee_earning' => $this->getEmployeeEarningData($from, $to),
+            'member_purchase' => $this->getMemberPurchaseData($from, $to),
+            'current_stock' => $this->getCurrentStockData(),
         };
         
         return response()->json($data);
     }
 
-    public function getSalesSummary($startDate, $endDate) 
+    public function getSalesSummary($from, $to) 
     {
-        $data = Payment::where(function ($query) use ($startDate, $endDate) {
-                            $query->whereDate('receipt_start_date', '>=', $startDate)
-                                    ->whereDate('receipt_start_date', '<=', $endDate);
-                        })
+        $data = Payment::whereBetween('receipt_start_date', [$from, $to])
                         ->where('status', 'Successful')
                         ->whereNotNull('transaction_id')
-                        ->with([
-                            'order.orderItems', 
-                        ])
-                        ->orderBy('id')
+                        ->with('order.orderItems')
+                        ->orderBy('receipt_start_date')
                         ->get();
 
         return $data;
     }
 
-    public function getPaymentMethodSales($startDate, $endDate) 
+    public function getPaymentMethodSales($from, $to) 
     {
-        $data = Payment::where(function ($query) use ($startDate, $endDate) {
-                            $query->whereDate('receipt_start_date', '>=', $startDate)
-                                    ->whereDate('receipt_start_date', '<=', $endDate);
-                        })
+        $data = Payment::whereBetween('receipt_start_date', [$from, $to])
                         ->where('status', 'Successful')
                         ->whereNotNull('transaction_id')
                         ->with([
@@ -90,13 +95,12 @@ class ReportController extends Controller
         return $data;
     }
 
-    public function getProductSales($startDate, $endDate) 
+    public function getProductSales($from, $to) 
     {
         $data = Product::whereHas('orderItems', fn ($query) =>
                             $query->whereHas('order', fn ($subQuery) =>
                                     $subQuery->whereHas('payment', fn ($innerQuery) =>
-                                            $innerQuery->whereDate('receipt_start_date', '>=', $startDate)
-                                                ->whereDate('receipt_start_date', '<=', $endDate)
+                                            $innerQuery->whereBetween('receipt_start_date', [$from, $to])
                                                 ->where('status', 'Successful')
                                                 ->whereNotNull('transaction_id')
                                         )
@@ -111,8 +115,7 @@ class ReportController extends Controller
                             $subQuery->where('refund_qty', '>', 0)
                                 ->whereHas('paymentRefund', fn ($innerQuery) =>
                                     $innerQuery->where('status', 'Completed')
-                                            ->whereDate('updated_at', '>=', $startDate)
-                                            ->whereDate('updated_at', '<=', $endDate)
+                                            ->whereBetween('updated_at', [$from, $to])
                                 )
                         )
                         ->with([
@@ -123,8 +126,7 @@ class ReportController extends Controller
                                 ])->whereHas('order', fn ($orderQuery) =>
                                     $orderQuery->where('status', 'Order Completed')
                                             ->whereHas('payment', fn ($paymentQuery) =>
-                                                $paymentQuery->whereDate('receipt_start_date', '>=', $startDate)
-                                                                ->whereDate('receipt_start_date', '<=', $endDate)
+                                                $paymentQuery->whereBetween('receipt_start_date', [$from, $to])
                                                                 ->where('status', 'Successful')
                                                                 ->whereNotNull('transaction_id')
                                             )
@@ -135,24 +137,22 @@ class ReportController extends Controller
                                 $refundQuery->where('refund_qty', '>', 0)
                                     ->whereHas('paymentRefund', fn ($innerQuery) =>
                                         $innerQuery->where('status', 'Completed')
-                                                ->whereDate('updated_at', '>=', $startDate)
-                                                ->whereDate('updated_at', '<=', $endDate)
+                                                ->whereBetween('updated_at', [$from, $to])
                                     ),
                         ])
-                        ->orderBy('id')
+                        ->orderBy('product_name')
                         ->get();
 
         return $data;
     }
 
-    public function getCategorySalesData($startDate, $endDate) 
+    public function getCategorySalesData($from, $to) 
     {
         $data = Category::wherehas('products', fn ($query) =>
                             $query->whereHas('orderItems', fn ($subQuery) =>
                                     $subQuery->whereHas('order', fn ($innerQuery) =>
                                             $innerQuery->whereHas('payment', fn ($innerSubQuery) =>
-                                                    $innerSubQuery->whereDate('receipt_start_date', '>=', $startDate)
-                                                        ->whereDate('receipt_start_date', '<=', $endDate)
+                                                    $innerSubQuery->whereBetween('receipt_start_date', [$from, $to])
                                                         ->where('status', 'Successful')
                                                         ->whereNotNull('transaction_id')
                                                 )
@@ -167,8 +167,7 @@ class ReportController extends Controller
                                     $subQuery->where('refund_qty', '>', 0)
                                         ->whereHas('paymentRefund', fn ($innerQuery) =>
                                             $innerQuery->where('status', 'Completed')
-                                                    ->whereDate('updated_at', '>=', $startDate)
-                                                    ->whereDate('updated_at', '<=', $endDate)
+                                                    ->whereBetween('updated_at', [$from, $to])
                                         )
                                 )
                         )
@@ -177,8 +176,7 @@ class ReportController extends Controller
                                 $productQuery->whereHas('orderItems', fn ($subQuery) =>
                                     $subQuery->whereHas('order', fn ($innerQuery) =>
                                         $innerQuery->whereHas('payment', fn ($innerSubQuery) =>
-                                            $innerSubQuery->whereDate('receipt_start_date', '>=', $startDate)
-                                                        ->whereDate('receipt_start_date', '<=', $endDate)
+                                            $innerSubQuery->whereBetween('receipt_start_date', [$from, $to])
                                                         ->where('status', 'Successful')
                                                         ->whereNotNull('transaction_id')
                                         )->where('status', 'Order Completed')
@@ -190,8 +188,7 @@ class ReportController extends Controller
                                     $subQuery->where('refund_qty', '>', 0)
                                         ->whereHas('paymentRefund', fn ($innerQuery) =>
                                             $innerQuery->where('status', 'Completed')
-                                                    ->whereDate('updated_at', '>=', $startDate)
-                                                    ->whereDate('updated_at', '<=', $endDate)
+                                                    ->whereBetween('updated_at', [$from, $to])
                                         )
                                 )->with([
                                     'orderItems' => fn ($orderItemQuery) =>
@@ -201,8 +198,7 @@ class ReportController extends Controller
                                         ])->whereHas('order', fn ($orderQuery) =>
                                             $orderQuery->where('status', 'Order Completed')
                                                     ->whereHas('payment', fn ($paymentQuery) =>
-                                                        $paymentQuery->whereDate('receipt_start_date', '>=', $startDate)
-                                                                        ->whereDate('receipt_start_date', '<=', $endDate)
+                                                        $paymentQuery->whereBetween('receipt_start_date', [$from, $to])
                                                                         ->where('status', 'Successful')
                                                                         ->whereNotNull('transaction_id')
                                                     )
@@ -213,8 +209,7 @@ class ReportController extends Controller
                                         $refundQuery->where('refund_qty', '>', 0)
                                             ->whereHas('paymentRefund', fn ($innerQuery) =>
                                                 $innerQuery->where('status', 'Completed')
-                                                        ->whereDate('updated_at', '>=', $startDate)
-                                                        ->whereDate('updated_at', '<=', $endDate)
+                                                        ->whereBetween('updated_at', [$from, $to])
                                             ),
                                 ]),
                         ])
@@ -224,16 +219,15 @@ class ReportController extends Controller
         return $data;
     }
 
-    public function getEmployeeEarningData($startDate, $endDate) 
+    public function getEmployeeEarningData($from, $to) 
     {
         $data = User::where('position', 'waiter')
                     ->orderBy('id')
                     ->get()
-                    ->map(function ($user) use ($startDate, $endDate) {
+                    ->map(function ($user) use ($from, $to) {
                         $user['sales'] = $user->sales()
                                             ->with(['order','product.commItem.configComms'])
-                                            ->whereDate('orders.created_at', '>=', $startDate)
-                                            ->whereDate('orders.created_at', '<=', $endDate)
+                                            ->whereBetween('orders.created_at', [$from, $to])
                                             ->select('order_items.*')
                                             ->orderByDesc('orders.created_at')
                                             ->get();
@@ -254,8 +248,7 @@ class ReportController extends Controller
                         $user['sales'] = round($user['sales']->reduce(fn ($total, $orderItem) => $total + round($orderItem['amount'], 2), 0), 2);
                         
                         $user['incentives'] = $user->incentives()
-                                                    ->whereDate('created_at', '>=', $startDate)
-                                                    ->whereDate('created_at', '<=', $endDate)
+                                                    ->whereBetween('created_at', [$from, $to])
                                                     ->get();
 
                         $user['incentives'] = round($user['incentives']->reduce(function ($total, $inc) {
@@ -272,23 +265,17 @@ class ReportController extends Controller
         return $data;
     }
 
-    public function getMemberPurchaseData($startDate, $endDate) 
+    public function getMemberPurchaseData($from, $to) 
     {
-        $data = Customer::whereHas('payments', function ($query) use ($startDate, $endDate) {
-                                $query->where(function ($subQuery) use ($startDate, $endDate) {
-                                        $subQuery->whereDate('receipt_start_date', '>=', $startDate)
-                                                ->whereDate('receipt_start_date', '<=', $endDate);
-                                    })
+        $data = Customer::whereHas('payments', function ($query) use ($from, $to) {
+                                $query->whereBetween('receipt_start_date', [$from, $to])
                                     ->where('status', 'Successful')
                                     ->whereNotNull('transaction_id');
                         })
                         ->whereNot('status', 'void')
                         ->with([
-                            'payments' => function ($query) use ($startDate, $endDate) {
-                                $query->where(function ($subQuery) use ($startDate, $endDate) {
-                                            $subQuery->whereDate('receipt_start_date', '>=', $startDate)
-                                                    ->whereDate('receipt_start_date', '<=', $endDate);
-                                        })
+                            'payments' => function ($query) use ($from, $to) {
+                                $query->whereBetween('receipt_start_date', [$from, $to])
                                         ->where('status', 'Successful')
                                         ->whereNotNull('transaction_id');
                             },
@@ -300,7 +287,7 @@ class ReportController extends Controller
         return $data;
     }
 
-    public function getCurrentStockData($startDate, $endDate) 
+    public function getCurrentStockData() 
     {
         $data = Iventory::with([
                             'inventoryItems' => function ($query) {

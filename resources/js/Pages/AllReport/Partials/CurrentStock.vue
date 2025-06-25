@@ -85,64 +85,71 @@ defineExpose({
 </script>
 
 <template>
-    <div class="flex flex-col gap-y-5 items-start self-stretch">
-        <div v-for="(row, index) in props.rows" :key="index" class="flex flex-col gap-y-4 items-start self-stretch">
-            <p class="text-grey-950 font-bold text-sm self-stretch">{{ row.name }}</p>
-            <table class="w-full border-spacing-3 border-collapse">
-                <thead class="bg-grey-100">
-                    <tr>
-                        <th v-for="column in props.columns" :class="`w-[${column.width}%] py-2 px-3`">
-                            <span class="flex justify-between items-center text-2xs text-grey-950 font-semibold">
-                                {{ column.title }}
-                            </span> 
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template v-for="item in row.inventory_items">
-                        <tr class="border-b border-grey-100">
-                            <td class="w-[43%] px-3">
-                                <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ item.item_name }}</span>
+    <div class="flex w-full flex-col gap-y-5 items-start self-stretch">
+        <template v-if="props.rows.length > 0">
+            <div v-for="(row, index) in props.rows" :key="index" class="flex flex-col gap-y-4 items-start self-stretch">
+                <p class="text-grey-950 font-bold text-sm self-stretch">{{ row.name }}</p>
+                <table class="w-full border-spacing-3 border-collapse">
+                    <thead class="bg-grey-100">
+                        <tr>
+                            <th v-for="column in props.columns" :class="`w-[${column.width}%] py-2 px-3`">
+                                <span class="flex justify-between items-center text-2xs text-grey-950 font-semibold">
+                                    {{ column.title }}
+                                </span> 
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template v-for="item in row.inventory_items">
+                            <tr class="border-b border-grey-100">
+                                <td class="w-[43%] px-3">
+                                    <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ item.item_name }}</span>
+                                </td>
+                                <td class="w-[19%]">
+                                    <div class="flex justify-start items-center gap-3 px-3">
+                                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(item.stock_qty, 0) }}</span>
+                                    </div>
+                                </td>
+                                <td class="w-[19%]">
+                                    <div class="flex justify-start items-center gap-3 px-3">
+                                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ item.item_category.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="w-[19%]">
+                                    <div class="flex justify-start items-center gap-3 px-3">
+                                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ item.keep === 'Active' ? formatAmount(item.total_keep_qty, 0) : 'NA' }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                        <tr class="!border-y-2 border-grey-190">
+                            <td class="w-[43%]">
+                                <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">Total</span>
                             </td>
                             <td class="w-[19%]">
                                 <div class="flex justify-start items-center gap-3 px-3">
-                                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(item.stock_qty, 0) }}</span>
+                                    <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4"> {{ formatAmount(getGroupTotalStockQty(row), 0) }}</span>
                                 </div>
                             </td>
                             <td class="w-[19%]">
                                 <div class="flex justify-start items-center gap-3 px-3">
-                                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ item.item_category.name }}</span>
+                                    <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">NA</span>
                                 </div>
                             </td>
                             <td class="w-[19%]">
                                 <div class="flex justify-start items-center gap-3 px-3">
-                                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ item.keep === 'Active' ? formatAmount(item.total_keep_qty, 0) : 'NA' }}</span>
+                                    <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ formatAmount(getGroupTotalKeepQty(row), 0) }}</span>
                                 </div>
                             </td>
                         </tr>
-                    </template>
-                    <tr class="!border-y-2 border-grey-190">
-                        <td class="w-[43%]">
-                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">Total</span>
-                        </td>
-                        <td class="w-[19%]">
-                            <div class="flex justify-start items-center gap-3 px-3">
-                                <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4"> {{ formatAmount(getGroupTotalStockQty(row), 0) }}</span>
-                            </div>
-                        </td>
-                        <td class="w-[19%]">
-                            <div class="flex justify-start items-center gap-3 px-3">
-                                <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">NA</span>
-                            </div>
-                        </td>
-                        <td class="w-[19%]">
-                            <div class="flex justify-start items-center gap-3 px-3">
-                                <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ formatAmount(getGroupTotalKeepQty(row), 0) }}</span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+        <template v-else>
+            <div class="flex w-full pt-2 items-center justify-center">
+                <p class="text-2xs text-grey-950">No result</p>
+            </div>
+        </template>
     </div>
 </template>
