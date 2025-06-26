@@ -76,13 +76,15 @@ const form = useForm({
 });
 
 const fetchTaxes = async () => {
+    form.processing = true;
+
     try {
         const response = await axios.get(route('orders.getAllTaxes'));
         taxes.value = response.data;
     } catch (error) {
         console.error(error);
     } finally {
-
+        form.processing = false;
     }
 };
 
@@ -333,6 +335,8 @@ const processBillDiscounts = (billDiscounts) => {
 };
 
 const fetchAutoAppliedDiscounts = async () => {
+    form.processing = true;
+
     try {
         const response = await axios.get('/order-management/getBillDiscount', {
             params: { current_customer_id: order.value.customer_id }
@@ -342,7 +346,7 @@ const fetchAutoAppliedDiscounts = async () => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        form.processing = false;
     }
 };
 
