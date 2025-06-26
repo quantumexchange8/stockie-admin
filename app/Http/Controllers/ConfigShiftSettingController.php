@@ -36,8 +36,11 @@ class ConfigShiftSettingController extends Controller
         if ($request->waiter_id) {
 
             $waiterShifts = WaiterShift::query()
-                    ->where('waiter_id', $request->waiter_id)
-                    ->where('weeks', $request->weeks)
+                    ->where([
+                        ['waiter_id', $request->waiter_id],
+                        ['weeks', $request->weeks],
+                    ])
+                    ->whereDate('date', '>=', today())
                     ->get();
 
         } else {
@@ -65,8 +68,10 @@ class ConfigShiftSettingController extends Controller
     {
         
         $waiters = WaiterShift::query()
-                    ->where('waiter_id', $request->waiter_id)
-                    ->where('weeks', $request->weeks)
+                    ->where([
+                        ['waiter_id', $request->waiter_id],
+                        ['weeks', $request->weeks],
+                    ])
                     ->with(['users:id,name,full_name', 'shifts'])
                     ->get();
 
@@ -269,16 +274,24 @@ class ConfigShiftSettingController extends Controller
 
     public function assignShift(Request $request)
     {
-
-        // dd($request->all());
-
         $validatedData = $request->validate([
             'waiter_id' => ['required', 'exists:users,id'], // Ensure waiter exists
             'assign_shift' => ['required', 'array'], // Ensure assign_shift is an array
             'assign_shift.*' => ['required', 'integer', 'exists:shifts,id'], // Ensure shift IDs are valid
             'days' => ['required', 'array', 'min:1'], // Ensure at least one day is selected
             'week' => ['required'],
-        ]);
+        ], ['required' => 'This field is required.']);
+
+        $days = $request->input('days', []);
+        $assignments = $request->input('assign_shift', []);
+
+        $missing = collect($days)->filter(fn ($day) => empty($assignments[$day]));
+
+        if ($missing->isNotEmpty()) {
+            return back()->withErrors([
+                'assign_shift' => 'Please assign shift for the selected days.'
+            ])->withInput();
+        }
 
         $waiter_id = $validatedData['waiter_id'];
         $selectedDays = $validatedData['days'];
@@ -347,8 +360,9 @@ class ConfigShiftSettingController extends Controller
 
     public function deleteShift(Request $request)
     {
-
-        $shifts = WaiterShift::where('waiter_id', $request->waiter_id)->where('weeks', $request->weeks)->get();
+        $shifts = WaiterShift::where('waiter_id', $request['params']['waiter_id'])
+                            ->where('weeks', $request['params']['weeks'])
+                            ->get();
 
         foreach($shifts as $shift) {
             $shift->delete();
@@ -359,13 +373,10 @@ class ConfigShiftSettingController extends Controller
 
     public function updateShift(Request $request)
     {
-
-        // dd($request->all());
-
         foreach ($request->assign_shift as $waitershift_id => $shift_id) {
-            // Ensure shift_id is stored as an integer
-            $shift_id = (int) $shift_id;
-    
+            // Ensure shift_id is stored as an integer or 'off'
+            $shift_id = $shift_id == null ? 'off' : $shift_id;
+
             // Update the existing WaiterShift record
             WaiterShift::where('id', $waitershift_id)
                 ->where('waiter_id', $request->waiter_id)

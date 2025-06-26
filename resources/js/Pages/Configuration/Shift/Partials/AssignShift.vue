@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { transactionFormat } from '@/Composables';
 import RadioButton from '@/Components/RadioButton.vue';
+import InputError from '@/Components/InputError.vue';
 
 dayjs.extend(weekOfYear);
 
@@ -174,80 +175,87 @@ const submit = () => {
                     :inputName="'week'" 
                     :labelText="'Assign Week'"
                     :inputArray="weeks"
-                    :errorMessage="form.errors?.weeks || ''"
+                    :errorMessage="form.errors?.week || ''"
                     :dataValue="form.week"
                     v-model="form.week"
                 />
             </div>
         </div>
-
-        <div class="flex flex-col gap-4">
-            <div class="flex flex-col gap-1">
-                <div class="text-gray-950 text-base font-bold">Select Day(s)</div>
-                <div class="text-gray-950 text-sm font-normal">Applicable days for this shift.</div>
-            </div>
-            <div class="flex flex-wrap gap-5">
-                <div v-for="day in weekDays" :key="day.dayName" class="flex items-center gap-2">
-                    <Checkbox 
-                        v-model:checked="form.days"
-                        :value="day.dayName"
-                        :disabled="!allowedDaysThisWeek.includes(day.dayName)"
-                    />
-                    <span :class="{
-                        'text-gray-400': !allowedDaysThisWeek.includes(day.dayName),
-                        'text-black': allowedDaysThisWeek.includes(day.dayName)
-                    }">
-                        {{ day.dayName }}
-                    </span>
+        <div class="flex flex-col gap-1">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-1">
+                    <div class="text-gray-950 text-base font-bold">Select Day(s)</div>
+                    <div class="text-gray-950 text-sm font-normal">Applicable days for this shift.</div>
+                </div>
+                <div class="flex flex-wrap gap-5">
+                    <div v-for="day in weekDays" :key="day.dayName" class="flex items-center gap-2">
+                        <Checkbox 
+                            v-model:checked="form.days"
+                            :value="day.dayName"
+                            :disabled="!allowedDaysThisWeek.includes(day.dayName)"
+                        />
+                        <span :class="{
+                            'text-gray-400': !allowedDaysThisWeek.includes(day.dayName),
+                            'text-black': allowedDaysThisWeek.includes(day.dayName)
+                        }">
+                            {{ day.dayName }}
+                        </span>
+                    </div>
                 </div>
             </div>
+            <InputError :message="form.errors.days ? form.errors.days : ''" />
         </div>
-        <div class="flex flex-col gap-6">
-            <div class="flex items-center">
-                <div class="flex flex-col">
-                    <div class="text-gray-950 text-base font-bold">Assign Shift</div>
-                    <div class="text-gray-950 text-sm font-normal">Assign shift to different working day.</div>
-                </div>
-            </div>
-
-            <!-- loop -->
+        <div class="flex flex-col gap-1">
             <div class="flex flex-col gap-6">
-                <div v-for="selectedDay in sortedSelectedDays" :key="selectedDay" class=" flex flex-col gap-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-1.5 bg-primary-800 h-[18px] max-h-[18px]"></div>
-                        <div class="text-gray-950 font-bold text-sm">
-                            {{ selectedDay }} 
-                        </div>
-                        <div></div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-4 w-full">
-                        <div v-for="shift in shifts" :key="shift.id" :class="[
-                                'p-4 rounded-[5px] max-w-[246px] w-1/2 flex gap-4 border',
-                                form.assign_shift[selectedDay] === shift.id 
-                                    ? 'border-primary-900 bg-primary-25' 
-                                    : 'border-gray-100'
-                            ]"
-                        >
-                            <div class="border " :style="{ borderColor: `${shift.color}` }"></div>
-                            <div class="flex flex-col max-w-[165px] w-full">
-                                <div class="text-gray-950 text-base font-semibold">{{ shift.shift_name }}</div>
-                                <div class="text-gray-700 text-base font-normal">{{ formatTimeHM(shift.shift_start) }} - {{ formatTimeHM(shift.shift_end) }}</div>
-                            </div>
-
-                            <!-- Radio Button to select one shift per day -->
-                            <div>
-                                <RadioButton 
-                                    v-model:checked="form.assign_shift[selectedDay]" 
-                                    :inputId="`shift-${selectedDay}-${shift.id}`" 
-                                    :dynamic="false"
-                                    :name="selectedDay" 
-                                    :value="shift.id" 
-                                />
-                            </div>
-                        </div>
+                <div class="flex items-center">
+                    <div class="flex flex-col">
+                        <div class="text-gray-950 text-base font-bold">Assign Shift</div>
+                        <div class="text-gray-950 text-sm font-normal">Assign shift to different working day.</div>
                     </div>
                 </div>
+
+                <!-- loop -->
+                <template v-if="sortedSelectedDays.length > 0">
+                    <div class="flex flex-col gap-6">
+                        <div v-for="selectedDay in sortedSelectedDays" :key="selectedDay" class=" flex flex-col gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 bg-primary-800 h-[18px] max-h-[18px]"></div>
+                                <div class="text-gray-950 font-bold text-sm">
+                                    {{ selectedDay }} 
+                                </div>
+                                <div></div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-4 w-full">
+                                <div v-for="shift in shifts" :key="shift.id" :class="[
+                                        'p-4 rounded-[5px] max-w-[246px] w-1/2 flex gap-4 border',
+                                        form.assign_shift[selectedDay] === shift.id 
+                                            ? 'border-primary-900 bg-primary-25' 
+                                            : 'border-gray-100'
+                                    ]"
+                                >
+                                    <div class="border " :style="{ borderColor: `${shift.color}` }"></div>
+                                    <div class="flex flex-col max-w-[165px] w-full">
+                                        <div class="text-gray-950 text-base font-semibold">{{ shift.shift_name }}</div>
+                                        <div class="text-gray-700 text-base font-normal">{{ formatTimeHM(shift.shift_start) }} - {{ formatTimeHM(shift.shift_end) }}</div>
+                                    </div>
+
+                                    <!-- Radio Button to select one shift per day -->
+                                    <div>
+                                        <RadioButton 
+                                            v-model:checked="form.assign_shift[selectedDay]" 
+                                            :inputId="`shift-${selectedDay}-${shift.id}`" 
+                                            :dynamic="false"
+                                            :name="selectedDay" 
+                                            :value="shift.id" 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </div>
+            <InputError :message="form.errors.assign_shift ? form.errors.assign_shift : ''" />
         </div>
         <div class="pt-3 flex items-center gap-4 w-full sticky bottom-0 bg-white">
             <Button

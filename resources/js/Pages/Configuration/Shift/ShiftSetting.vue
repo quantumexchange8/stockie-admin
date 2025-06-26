@@ -213,7 +213,7 @@ const closeEdit = () => {
                         :closeable="true" 
                         @close="closeEditShift"
                     >
-                        <EditShift @close="closeEditShift" :selectedShift="selectedShift" :selectedDay="selectedDay" :thisWeekVal="thisWeekVal" />
+                        <EditShift @close="closeEditShift" @update:waiter-shifts="fetchWaiterShift" :selectedShift="selectedShift" :selectedDay="selectedDay" :thisWeekVal="thisWeekVal" />
                     </Modal>
 
                     <div>

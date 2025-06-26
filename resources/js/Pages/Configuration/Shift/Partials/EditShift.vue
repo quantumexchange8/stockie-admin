@@ -4,7 +4,7 @@ import Modal from '@/Components/Modal.vue';
 import { onMounted, ref, watchEffect } from 'vue';
 import ViewShift from './ViewShift.vue';
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'update:waiter-shifts']);
 const waiters = ref([]);
 const viewIsOpen = ref(false);
 const selectedWaiter = ref(null);
@@ -40,14 +40,14 @@ const viewShift = (id) => {
 }
 
 const closeShift = () => {
-    viewIsOpen.value = false
+    viewIsOpen.value = false;
 }
 
 </script>
 
 <template>
 
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6 max-h-[calc(100dvh-8rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
         <div class="flex flex-col gap-4 text-base text-gray-900">
             <div class="flex flex-col gap-1">
                 <div>Shift Name</div>
@@ -97,7 +97,7 @@ const closeShift = () => {
         :closeable="true" 
         @close="closeShift"
     >
-        <ViewShift :selectedWaiter="selectedWaiter" :weekNo="thisWeekVal" @close="closeShift" />
+        <ViewShift :selectedWaiter="selectedWaiter" :weekNo="thisWeekVal" @close="closeShift" @update:waiter-shifts="$emit('update:waiter-shifts')" @updated:waiters="fetchWaiter" />
     </Modal>
 
 </template>

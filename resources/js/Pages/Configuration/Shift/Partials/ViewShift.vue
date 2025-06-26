@@ -14,10 +14,11 @@ dayjs.extend(weekOfYear);
 const today = dayjs().startOf('week').add(1, 'day');
 const currentWeek = ref(today.week());
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'update:waiter-shifts', 'updated:waiters']);
 const waiters = ref([]);
 const findWaiter = ref();
 const editShiftIsOpen = ref(false);
+const isLoading = ref(false);
 const { formatTimeHM } = transactionFormat();
 const form = ref({ assign_shift: {} });
 
@@ -27,6 +28,7 @@ const props = defineProps({
 });
 
 const fetchWaiterShift = async () => {
+    isLoading.value = true;
 
     try {
         const response = await axios.get('/configurations/viewShift', {
@@ -38,8 +40,13 @@ const fetchWaiterShift = async () => {
 
         waiters.value = response.data.waiters;
         findWaiter.value = response.data.findWaiter;
+
+        emit('update:waiter-shifts');
+
     } catch (error) {
         console.error(error);
+    } finally {
+        isLoading.value = false;
     }
 };
 
@@ -48,6 +55,7 @@ watchEffect(() => {
 });
 
 const deleteShift = async () => {
+    isLoading.value = true;
 
     try {
         
@@ -60,11 +68,15 @@ const deleteShift = async () => {
 
         if (response.status === 200) {
             // toast.add({ severity: 'success', summary: 'Success', detail: 'Shifts updated!', life: 3000 });
+            emit('update:waiter-shifts');
+            emit('updated:waiters');
             emit('close');
         }
 
     } catch (error) {
         console.error(error);
+    } finally {
+        isLoading.value = false;
     }
 }
 
@@ -99,7 +111,7 @@ const closeEditShift = () => {
                 </div>
             </div>
             <div class="w-full h-[1px] bg-[#ECEFF2]"></div>
-            <div v-if="waiters.length > 0">
+            <div class="max-h-[calc(100dvh-17rem)] overflow-y-auto scrollbar-webkit scrollbar-thin" v-if="waiters.length > 0">
                 <div v-for="waiter in waiters" :key="waiter.id">
                     <div class="flex items-center gap-2">
                         <div class="font-bold">{{ dayjs(waiter.date, 'YYYY-MM-DD').format('DD MMM') }}</div>
@@ -120,7 +132,7 @@ const closeEditShift = () => {
                 <Button
                     variant="red"
                     size="lg"
-                    :disabled="currentWeek === props.weekNo || props.weekNo < currentWeek "
+                    :disabled="currentWeek === props.weekNo || props.weekNo < currentWeek || isLoading"
                     @click="deleteShift"
                 >
                     Delete
