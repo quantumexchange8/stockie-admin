@@ -114,45 +114,52 @@ class DashboardController extends Controller
             })->toArray(); 
         })->flatten(1);
 
+        $todayDate = Carbon::today();
+        $tomorrow = $todayDate->copy()->addDay();
+
         //on duty today
-        $waiters = User::where([
+        $waiters = User::whereHas('shifts.shifts', function ($query) use ($todayDate, $tomorrow) {
+                            $query->whereRaw("
+                                TIMESTAMP(waiter_shifts.date, shifts.shift_start) < ?
+                                AND
+                                TIMESTAMP(
+                                    CASE 
+                                        WHEN shifts.shift_end < shifts.shift_start THEN DATE_ADD(waiter_shifts.date, INTERVAL 1 DAY)
+                                        ELSE waiter_shifts.date
+                                    END,
+                                    shifts.shift_end
+                                ) > ?
+                            ", [$tomorrow->format('Y-m-d 00:00:00'), $todayDate->format('Y-m-d 00:00:00')]);
+                        })
+                        ->where([
                             ['position', 'waiter'],
                             ['status', 'Active']
                         ])
                         ->get(['id', 'full_name'])
-                        ->map(function ($waiter) { 
-                            return [
+                        ->map(fn ($waiter) => (
+                            [
                                 'text' => $waiter->full_name,
                                 'value' => $waiter->id,
                                 'image' => $waiter->getFirstMediaUrl('user'),
-                            ];
-                        });
+                            ]
+                        ));
 
         $onDuty = [];
         $today = Carbon::today();
 
         foreach ($waiters as $waiter) {
             $attendance = WaiterAttendance::where('user_id', $waiter['value'])
+                                            ->whereIn('status', ['Checked in', 'Checked out'])
                                             ->whereDate('check_in', $today)
+                                            ->latest()
                                             ->first();
             
             $status = 'No Record';
             $time = null;
         
             if ($attendance !== null) {
-                $check_in = $attendance->check_in;
-                $check_out = $attendance->check_out;
-        
-                switch (true) {
-                    case $check_in !== null && $check_out === null:
-                        $status = 'Checked in';
-                        $time = Carbon::parse($check_in)->format('H:i');
-                        break;
-                    case $check_in !== null && $check_out !== null:
-                        $status = 'Checked out';
-                        $time = Carbon::parse($check_out)->format('H:i');
-                        break;
-                }
+                $status = $attendance->status;
+                $time = Carbon::parse($status === 'Checked in' ? $attendance->check_in : $attendance->check_out)->format('H:i');
             };
 
             // $waiter->image = $waiter->getFirstMediaUrl('user');

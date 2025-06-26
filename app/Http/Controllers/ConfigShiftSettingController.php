@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\WaiterShift;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class ConfigShiftSettingController extends Controller
@@ -113,20 +114,55 @@ class ConfigShiftSettingController extends Controller
             'breaks' => ['required', 'array', 'min:1'],
             'days' => ['required', 'array', 'min:1'],
         ]);
+        
+        $validatedBreaks = [];
+        $allItemErrors = [];
+
+        foreach ($validated['breaks'] as $index => $item) {
+            $rules = [
+                'break_value' => 'required|integer',
+                'break_time' => 'required|string',
+            ];
+
+            $requestMessages = [
+                'required' => 'This field is required.',
+                'string' => 'This field must be a string.',
+                'integer' => 'This field must be an integer.',
+            ];
+
+            // Validate the item data
+            $validator = Validator::make($item, $rules, $requestMessages);
+            
+            if ($validator->fails()) {
+                // Collect the errors for each item and add to the array with item index
+                foreach ($validator->errors()->messages() as $field => $messages) {
+                    $allItemErrors["breaks.$index.$field"] = $messages;
+                }
+            } else {
+                // Collect the validated item and manually add the 'id' field back
+                $validatedItem = $validator->validated();
+                if (isset($item['id'])) {
+                    $validatedItem['id'] = $item['id'];
+                }
+                $validatedBreaks[] = $validatedItem;
+            }
+        }
+
+        // If there are any item validation errors, return them
+        if (!empty($allItemErrors)) return redirect()->back()->withErrors($allItemErrors)->withInput();
 
         $shift = Shift::create([
-            'shift_name' => $request->shift_name,
-            'shift_code' => $request->shift_code,
-            'shift_start' => Carbon::parse($request->time_start)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
-            'shift_end' => Carbon::parse($request->time_end)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
-            'late' => $request->late,
-            'color' => $request->color,
-            'apply_days' => $request->days,
+            'shift_name' => $validated['shift_name'],
+            'shift_code' => $validated['shift_code'],
+            'shift_start' => Carbon::parse($validated['time_start'])->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
+            'shift_end' => Carbon::parse($validated['time_end'])->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
+            'late' => $validated['late'],
+            'color' => $validated['color'],
+            'apply_days' => $validated['days'],
         ]);
 
-        foreach ($request->breaks as $break) {
-
-            $shiftBreak = ShiftBreak::create([
+        foreach ($validatedBreaks as $break) {
+            ShiftBreak::create([
                 'shift_id' => $shift->id,
                 'break_value' => $break['break_value'],
                 'break_time' => $break['break_time'],
@@ -139,7 +175,6 @@ class ConfigShiftSettingController extends Controller
 
     public function editShift(Request $request)
     {
-        
         $validated = $request->validate([
             'shift_name' => ['required'],
             'shift_code' => ['required'],
@@ -150,17 +185,53 @@ class ConfigShiftSettingController extends Controller
             'breaks' => ['required', 'array', 'min:1'],
             'days' => ['required', 'array', 'min:1'],
         ]);
+        
+        $validatedBreaks = [];
+        $allItemErrors = [];
+
+        foreach ($validated['breaks'] as $index => $item) {
+            $rules = [
+                'break_value' => 'required|integer',
+                'break_time' => 'required|string',
+            ];
+
+            $requestMessages = [
+                'required' => 'This field is required.',
+                'string' => 'This field must be a string.',
+                'integer' => 'This field must be an integer.',
+            ];
+
+            // Validate the item data
+            $validator = Validator::make($item, $rules, $requestMessages);
+            
+            if ($validator->fails()) {
+                // Collect the errors for each item and add to the array with item index
+                foreach ($validator->errors()->messages() as $field => $messages) {
+                    $allItemErrors["breaks.$index.$field"] = $messages;
+                }
+            } else {
+                // Collect the validated item and manually add the 'id' field back
+                $validatedItem = $validator->validated();
+                if (isset($item['id'])) {
+                    $validatedItem['id'] = $item['id'];
+                }
+                $validatedBreaks[] = $validatedItem;
+            }
+        }
+
+        // If there are any item validation errors, return them
+        if (!empty($allItemErrors)) return redirect()->back()->withErrors($allItemErrors)->withInput();
 
         $shift = Shift::find($request->shift_id);
 
         $shift->update([
-            'shift_name' => $request->shift_name,
-            'shift_code' => $request->shift_code,
-            'shift_start' => Carbon::parse($request->time_start)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
-            'shift_end' => Carbon::parse($request->time_end)->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
-            'late' => $request->late,
-            'color' => $request->color,
-            'apply_days' => $request->days,
+            'shift_name' => $validated['shift_name'],
+            'shift_code' => $validated['shift_code'],
+            'shift_start' => Carbon::parse($validated['time_start'])->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
+            'shift_end' => Carbon::parse($validated['time_end'])->setTimezone('Asia/Kuala_Lumpur')->format('H:i'),
+            'late' => $validated['late'],
+            'color' => $validated['color'],
+            'apply_days' => $validated['days'],
         ]);
 
         // Get existing breaks for this shift
@@ -176,7 +247,6 @@ class ConfigShiftSettingController extends Controller
 
         // Process each break in the request
         foreach ($request->breaks as $break) {
-
             if (isset($break['id']) && $break['id']) {
                 // If the break exists, update it
                 if ($existingBreaks->has($break['id'])) {
