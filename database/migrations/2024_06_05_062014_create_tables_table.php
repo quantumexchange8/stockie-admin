@@ -21,6 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('order_id')->nullable()->default(NULL);
             $table->string('state')->default('active');
             $table->boolean('is_locked');
+            $table->bigInteger('locked_by')->nullable()->default(NULL);
             $table->softDeletes();
             $table->timestamps();
         });

@@ -208,7 +208,7 @@ onMounted(() => getRedeemables());
                         :inputName="'point'"
                         :placeholder="'0'"
                         v-model="form.point"
-                        @keypress="isValidNumberKey($event, false)"
+                        @keypress="isValidNumberKey($event, true)"
                     >
                         <template #prefix>
                             <span class="text-grey-900 text-base font-normal">pts</span>

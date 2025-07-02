@@ -307,6 +307,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/transferTableOrder', [OrderController::class,'transferTableOrder'])->name('orders.transferTableOrder');
         Route::post('/orders/splitTable', [OrderController::class,'splitTable'])->name('orders.splitTable');
         Route::post('/orders/handleTableLock', [OrderController::class,'handleTableLock'])->name('orders.handleTableLock');
+        Route::post('/orders/handleTableUnlockOnly', [OrderController::class,'handleTableUnlockOnly'])->name('orders.handleTableUnlockOnly');
         
         // Order items
         Route::post('/orders/storeOrderItem', [OrderController::class, 'storeOrderItem'])->name('orders.items.store');
@@ -327,7 +328,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/getRedeemableItems', [OrderController::class, 'getRedeemableItems'])->name('orders.getRedeemableItems');
         Route::get('/orders/getAllCustomers', [OrderController::class, 'getAllCustomer'])->name('orders.getAllCustomer');
-        Route::get('/getAllZones', [OrderController::class, 'getAllZones'])->name('orders.getAllZones');
+        Route::post('/getAllZones', [OrderController::class, 'getAllZones'])->name('orders.getAllZones');
         Route::get('/getAllProducts', [OrderController::class, 'getAllProducts'])->name('orders.getAllProducts');
         Route::get('/getCurrentTableOrder/{id}', [OrderController::class, 'getCurrentTableOrder'])->name('orders.getCurrentTableOrder');
         Route::get('/getOrderHistories', [OrderController::class, 'getOrderHistories'])->name('orders.getOrderHistories');

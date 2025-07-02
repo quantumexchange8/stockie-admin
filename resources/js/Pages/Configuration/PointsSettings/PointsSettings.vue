@@ -158,7 +158,7 @@ onMounted(() => {
                     :errorMessage="form.errors?.point"
                     :iconPosition="'right'"
                     :placeholder="'0'"
-                    @keypress="isValidNumberKey($event, false)"
+                    @keypress="isValidNumberKey($event, true)"
                     v-model="form.point"
                     class="max-w-[218px] [&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pr-4 [&>div:nth-child(1)>input]:pl-4"
                 >

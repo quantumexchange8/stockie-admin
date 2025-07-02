@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string('type');
             $table->string('point_type');
             $table->integer('qty');
-            $table->integer('amount');
-            $table->integer('old_balance');
-            $table->integer('new_balance');
-            $table->integer('expire_balance')->nullable()->default(0);
+            $table->decimal('amount', 13, 2);
+            $table->decimal('old_balance', 13, 2);
+            $table->decimal('new_balance', 13, 2);
+            $table->decimal('expire_balance', 13, 2)->nullable()->default(0.00);
             $table->dateTime('expired_at')->nullable()->default(NULL);
             $table->string('remark')->nullable()->default(NULL);
             $table->unsignedBigInteger('customer_id');

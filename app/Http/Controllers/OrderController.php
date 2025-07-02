@@ -1021,8 +1021,20 @@ class OrderController extends Controller
     /**
      * Get all zones along with its tables and order.
      */
-    public function getAllZones()
+    public function getAllZones(Request $request)
     {
+        $lockedTables = collect($request->locked_tables)->map(fn ($t) => $t['tableId']);
+
+        Table::where([
+                    ['locked_by', auth()->user()->id],
+                    ['updated_at', '<', now()->subSeconds(5)],
+                ])
+                ->whereNotIn('id', $lockedTables)
+                ->update([
+                    'is_locked' => false,
+                    'locked_by' => null,
+                ]);
+
         $reservedTablesId = $this->getReservedTablesId();
 
         $zones = Zone::with([
@@ -2375,7 +2387,7 @@ class OrderController extends Controller
             $grandTotal = $this->priceRounding($calculatedSum >= 0.00 ? $calculatedSum : 0.00);
 
             $roundingDiff = $grandTotal - $calculatedSum;
-            $totalPoints = ($grandTotal / $pointConversion['value']) * $pointConversion['point'];
+            $totalPoints = round(($grandTotal / $pointConversion['value']) * $pointConversion['point'], 2);
             $amountPaid = collect($request->payment_methods)->sum('amount');
 
             $payment = Payment::create([
@@ -2396,7 +2408,7 @@ class OrderController extends Controller
                 'grand_total' => $grandTotal,
                 'amount_paid' => $amountPaid,
                 'change' => $request->change,
-                'point_earned' => (int) round($totalPoints, 0, PHP_ROUND_HALF_UP),
+                'point_earned' => $totalPoints,
                 'pax' => $order->pax,
                 'status' => 'Successful',
                 'customer_id' => $order->customer_id,
@@ -4892,18 +4904,79 @@ class OrderController extends Controller
 
         return response()->json($billDiscounts);
     }
+
+    public function handleTableUnlockOnly(Request $request)
+    {
+        Log::info('UNLOCK route hit');
+
+        // ✅ Don't do any Eloquent for now. Just confirm log shows.
+
+        // return response()->noContent();
+        // $tableId = $data['id'];
+
+        // $orderTables = OrderTable::select('id', 'table_id', 'status', 'updated_at', 'order_id')
+        //                             ->with('table:id,table_no,status')
+        //                             ->where('table_id', $tableId)
+        //                             ->orderByDesc('updated_at')
+        //                             ->get();
+
+        // // Find the first non-pending clearance table
+        // $currentOrderTable = $orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+        //                                     ->firstWhere('status', '!=', 'Pending Clearance') 
+        //                     ?? $orderTables->first();
+                            
+        // if ($currentOrderTable) {
+        //     // Lazy load relationships only for the selected table
+        //     $currentOrderTable->load([
+        //         'order.orderTable' => function ($query) {
+        //             $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+        //                     ->select('id', 'order_id', 'table_id', 'status');
+        //         },
+        //         'order.orderTable.table:id,table_no',
+        //     ]);
+
+        // }
+
+        // $tableIdArray = $currentOrderTable->order->orderTable->map(fn ($ot) => $ot['table']['id'])->toArray();
+
+        // $tables = Table::whereIn('id', $tableIdArray)->get();
+
+        // $tables->each(fn ($table) => 
+        //     $table->update(['is_locked' => false])
+        // );
+        // dd([
+        //     'data' => $data,
+        //     'tableIdArray' => $tableIdArray,
+        //     'tables' => $tables,
+        // ]);
+        // return response()->json([
+        //     'data' => $data,
+        //     'tableIdArray' => $tableIdArray,
+        //     'tables' => $tables,
+        // ]);
+
+    }
+    
     public function handleTableLock(Request $request)
     {
         $action = $request->action;
 
         if (in_array($action, ['lock', 'unlock'])) {
-            Table::whereIn('id', $request->table_id_array)->update(['is_locked' => $action === 'lock']);
+            Table::whereIn('id', $request->table_id_array)
+                    ->update([
+                        'is_locked' => $action === 'lock',
+                        'locked_by' => $action === 'lock' ? auth()->user()->id : null,
+                    ]);
 
             return redirect()->back();
         }
 
         if ($action === 'unlock-all') {
-            Table::where('is_locked', true)->update(['is_locked' => false]);
+            Table::where('is_locked', true)
+                    ->update([
+                        'is_locked' => false,
+                        'locked_by' => null,
+                    ]);
             
             return redirect()->back();
         }

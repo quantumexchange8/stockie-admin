@@ -59,7 +59,9 @@ const fetchZones = async () => {
 
     isFetchingZones.value = true;
     try {
-        const zonesResponse = await axios.get(route('orders.getAllZones'));
+        const lockedTables = JSON.parse(sessionStorage.getItem('table_locks'));
+
+        const zonesResponse = await axios.post(route('orders.getAllZones', { locked_tables: lockedTables }));
         zones.value = zonesResponse.data;
 
         const auResponse = await axios.get(route('configurations.getAutoUnlockDuration'));

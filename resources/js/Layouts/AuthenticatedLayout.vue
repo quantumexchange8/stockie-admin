@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
 import { sidebarState, rightSidebarState } from '@/Composables'
 import { NumberedNotificationIcon, LanguageIcon, LogOutIcon, CheckIcon } from '@/Components/Icons/solid';
@@ -11,6 +11,7 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import NotificationsOverlay from './NotificationsOverlay.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import axios from 'axios';
+import { onBeforeUnmount } from 'vue';
 
 defineProps({
     title: String
@@ -41,6 +42,16 @@ const getNotifications = async () => {
     try {
         const response = await axios.get('/notifications/latestNotification');
         updateLatestNotifications(response.data);
+
+        // const lockData = sessionStorage.getItem(`table_locks`);
+        // if (lockData) {
+        //     const { locked, timestamp } = JSON.parse(lockData);
+        //     if (locked && (Date.now() - timestamp < AUTO_UNLOCK_TIMEOUT)) {
+        //         // Restore lock state
+        //     } else {
+        //         sessionStorage.removeItem(`tableLock_${tableId}`);
+        //     }
+        // }
 
     } catch (error) {
         console.error(error);
@@ -123,7 +134,28 @@ watch(() => notificationLength.value, (newValue) => {
     notificationLength.value = newValue;
 }, { immediate: true });
 
+const lockChannel = new BroadcastChannel('table-locks');
+
 onMounted(() => {
+    const clearLockTables = sessionStorage.getItem('clear_lock_tables');
+    const tabUid = sessionStorage.getItem('tab_uid') || Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('tab_uid', tabUid);
+
+    if (clearLockTables) {
+        const lockedTables = JSON.parse(sessionStorage.getItem('table_locks'));
+        // console.log(clearLockTables);
+        // console.log(lockedTables);
+
+        if (lockedTables && lockedTables.length > 0) {
+            lockChannel.postMessage({
+                type: 'group-unlock',
+                tableId: lockedTables,
+                sourceTabUid: tabUid,
+            });
+        }
+    }
+    sessionStorage.setItem('clear_lock_tables', false);
+
     rightSidebarState.isOpen = false;
     sidebarState.isOpen = false;
     getNotifications();
@@ -268,6 +300,7 @@ onMounted(() => {
                 <main class="w-full flex justify-center shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] p-4">
                     <div class="xl:max-w-[1440px] max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-webkit flex flex-col w-full self-center gap-[10px] flex-shrink-1 p-1">
                         <slot />
+                        <PWAManager />
                     </div>
                 </main>
             </div>

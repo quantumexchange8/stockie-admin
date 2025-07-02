@@ -329,7 +329,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                             v-model="reward.bonus_point"
                                             :inputName="'bonus_point_' + index"
                                             :errorMessage="form.errors ? form.errors['items.' + index + '.bonus_point']  : ''"
-                                            @keypress="isValidNumberKey($event, false)"
+                                            @keypress="isValidNumberKey($event, true)"
                                         >
                                             <template #prefix>pts</template>
                                         </TextInput>

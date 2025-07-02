@@ -23,6 +23,7 @@ class Table extends Model
         'order_id',
         'state',
         'is_locked',
+        'locked_by',
     ];
 
     public function getActivitylogOptions(): LogOptions

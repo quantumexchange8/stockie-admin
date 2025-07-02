@@ -2,7 +2,7 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { computed, ref, onUnmounted, watch, onMounted } from 'vue';
+import { computed, ref, onUnmounted, watch, onMounted, watchEffect, onBeforeUnmount } from 'vue';
 import Card from 'primevue/card';
 import Button from '@/Components/Button.vue';
 import Accordion from '@/Components/Accordion.vue';
@@ -15,6 +15,7 @@ import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import OrderInfo from './OrderInfo.vue';
 import { MergedIcon, ShiftWorkerIcon } from '@/Components/Icons/solid';
 import { useCustomToast } from '@/Composables';
+import { router } from '@inertiajs/vue3';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -46,13 +47,17 @@ const selectedTable = ref(null);
 const drawerIsVisible = ref(false);
 const shiftIsOpened = ref(props.hasOpenedShift);
 const orderInfoDrawer = ref(null);
-const lockingInProgress = ref(false);
+const wasUnlocked = ref(false);
+const nextUrl = ref(null);
+const confirmationIsOpen = ref(false);
 
 // Locking control
 const autoUnlockTimer = ref(props.autoUnlockSetting);
 const isLocking = ref(false);
 const lockTimeoutId = ref(null);
 const wasLocked = ref(false);
+const lockedTables = ref([]);
+const tabUid = ref(sessionStorage.getItem('tab_uid') || Math.random().toString(36).substring(2, 15));
 
 // const reservationsColumns = ref([
 //     { field: "reservation_at", header: "Date", width: "25", sortable: true },
@@ -74,6 +79,86 @@ const wasLocked = ref(false);
 //     delete: (id) => `/order-management/orders/reservation/${id}`,
 // };
 
+// Use BroadcastChannel to communicate between tabs
+const lockChannel = new BroadcastChannel('table-locks');
+
+const updateLockedTables = (type, id, sourceTabUid) => {
+    if (type === 'lock') {
+        if (!lockedTables.value.some(t => t.tableId === id)) {
+            lockedTables.value.push({ tableId: id, lockedByTabUid: sourceTabUid });
+            sessionStorage.setItem('table_locks', JSON.stringify(lockedTables.value));
+        }
+    } else {
+        lockedTables.value = lockedTables.value.filter(t => !(t.tableId === id && t.lockedByTabUid === sourceTabUid));
+        sessionStorage.setItem('table_locks', JSON.stringify(lockedTables.value));
+        // const index = lockedTables.value.findIndex((t) => t === id);
+        // if (index !== -1) {
+        //     lockedTables.value.splice(index, 1);
+        // }
+    }
+};
+
+// When acquiring lock in any tab:
+const broadcastMessage = (type) => {
+    // console.log(type);
+
+    if (type === 'lock-table' || type === 'unlock-table') {
+        lockChannel.postMessage({
+            type: type,
+            tableId: selectedTable.value.id,
+            sourceTabUid: tabUid.value, // Identify which tab sent the message
+        });
+
+        const updateType = type === 'lock-table' ? 'lock' : 'unlock';
+    
+        updateLockedTables(updateType, selectedTable.value.id, tabUid.value);
+    }
+
+    if (type === 'group-unlock') {
+        lockChannel.postMessage({
+            type: type,
+            tableId: lockedTables.value,
+        });
+        lockedTables.value = [];
+    }
+};
+
+// Listen in other tabs
+lockChannel.onmessage = (event) => {
+    const { type, tableId, sourceTabUid } = event.data;
+
+    if (event.data?.tableId) {
+        // console.log(event.data.tableId);
+
+        switch (type) {
+            case 'lock-table':
+                updateLockedTables('lock', tableId, sourceTabUid);
+                break;
+            case 'unlock-table':
+                // console.log('table unlock triggered');
+                updateLockedTables('unlock', tableId, sourceTabUid);
+                break;
+            case 'group-unlock':
+                // console.log('group unlock triggered');
+                // console.log(typeof event.data.tableId);
+                // console.log(event.data.tableId);
+                // event.data.tableId.forEach(tid => {
+                //     // console.log(tid);
+
+                //     const index = lockedTables.value.findIndex((t) => t === tid);
+                //     if (index !== -1) {
+                //         lockedTables.value.splice(index, 1);
+                //     }
+                // });
+                
+                // Only remove tables locked by the tab that sent the group-unlock
+                lockedTables.value = lockedTables.value.filter(t => t.lockedByTabUid !== sourceTabUid);
+                sessionStorage.setItem('table_locks', JSON.stringify(lockedTables.value));
+                break;
+        }
+    }
+};
+
 const openOverlay = async (event, table, autoOpened = false) => {
     if (!table.is_reserved) {
         selectedTable.value = table;
@@ -94,6 +179,7 @@ const openOverlay = async (event, table, autoOpened = false) => {
                 lockTimeoutId.value = setTimeout(() => {
                     if (orderInfoDrawer.value?.handleTableLock) {
                         orderInfoDrawer.value.handleTableLock('lock');
+                        broadcastMessage('lock-table');
                         wasLocked.value = true;
                     }
                     lockTimeoutId.value = null;
@@ -131,8 +217,11 @@ const closeDrawer = (unlock = false) => {
     }
 
     // Unlock only if the lock was successfully applied
-    if (unlock && wasLocked.value && orderInfoDrawer.value?.handleTableLock && !orderInfoDrawer.value?.wasAutoUnlocked) {
-        if (wasLocked.value) orderInfoDrawer.value.handleTableLock(); // unlock
+    if (unlock && wasLocked.value && orderInfoDrawer.value?.handleTableLock) {
+        if (!orderInfoDrawer.value?.wasAutoUnlocked) {
+            broadcastMessage('unlock-table');
+            orderInfoDrawer.value.handleTableLock(); // unlock
+        }
         wasLocked.value = false;
     }
 
@@ -233,12 +322,145 @@ const tablesArr = computed(() => {
 //     return `${reservationList}`;
 // }
 
+// const confirmLeave = () => {
+//     confirmLeaveOpen.value = false;
+//     window.location.href = nextUrl.value; // Hard reload or allow Inertia to proceed
+// };
+
+// const cancelLeave = () => {
+//     confirmLeaveOpen.value = false;
+//     nextUrl.value = null;
+// };
+
+// const handleBeforeUnload = (event) => {
+//     if (drawerIsVisible.value) {
+//         event.preventDefault();
+        // if (confirm("You are still viewing an order. Are you sure you want to leave?")) {
+        //     history.back();
+        //     console.log('You chose to go');
+        // } else {
+        //     console.log('You chose to stay');
+        // }
+        // event.returnValue = ''; // Required for Chrome to trigger alert
+        // return '';
+//     }
+// };
+
+const unlockTableOnLeave = (event) => {
+    // if (!drawerIsVisible.value || wasUnlocked.value || !selectedTable.value?.id) return;
+    
+    event.preventDefault();
+
+    sessionStorage.setItem('clear_lock_tables', true);
+    // broadcastMessage('group-unlock');
+    wasUnlocked.value = true;
+
+    if (event.type === 'beforeunload') {
+        // Only unlock if the tab is closing, not just losing visibility
+        broadcastMessage('group-unlock');
+    }
+    // Close the channel
+    // lockChannel.close();
+    // const img = new Image();
+    // img.src = `/api/unlock-table-on-leave?id=${selectedTable.value.id}`;
+    //     fetch('/order-management/orders/handleTableUnlockOnly', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({ id: selectedTable.value.id }),
+    //         keepalive: true
+    //     });
+};
+
+// const rere = async () => {
+//     try {
+//         fetch('/order-management/orders/handleTableUnlockOnly', {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//             body: JSON.stringify({ id: selectedTable.value.id }),
+//             keepalive: true
+//         });
+//     } catch (error) {
+//         console.error(error);
+//     }
+// }
+
+// const setNextUrl = (url) => (nextUrl.value = url);
+// const setConfirmLeaveOpen = (status) => (confirmationIsOpen.value = status);
+
+// watchEffect(() => {
+//     const handler = (event) => {
+//         if (drawerIsVisible.value) {
+//             event.preventDefault();
+//             setNextUrl(event.detail.visit.url);
+//             setConfirmLeaveOpen(true);
+//         }
+//     };
+
+//     const unlisten = router.on('before', handler);
+//     return () => unlisten();
+// });
+
+// const confirmLeave = () => {
+//     setConfirmLeaveOpen(false);
+//     router.visit(nextUrl.value);
+// };
+
+// const cancelLeave = () => {
+//     setConfirmLeaveOpen(false);
+//     setNextUrl(null); // Clear nextUrl
+// };
+
+// const handlePopState = (event) => {
+//     if (drawerIsVisible.value) {
+//         event.preventDefault?.();
+//         history.back();
+        // if (confirm("You are still viewing an order. Are you sure you want to leave?")) {
+        //     console.log('You chose to go');
+        // } else {
+        //     console.log('You chose to stay');
+        // }
+        // const confirmLeave = window.confirm("You are still viewing an order. Are you sure you want to leave?");
+        // if (!confirmLeave) {
+        //     history.pushState(null, '', location.href); // cancel back
+        // }
+//     }
+// };
+
 // let intervals = ref([]);
 const durations = ref({});
 const intervals = ref({});
 
 // Setup fetchZones emitter only once
 onMounted(() => {
+    tabUid.value = sessionStorage.getItem('tab_uid');
+
+    // document.addEventListener('visibilitychange', () => {
+    //     if (document.visibilityState === 'hidden') {
+    //         unlockTableOnLeave();
+    //     }
+    // });
+    window.addEventListener('beforeunload', unlockTableOnLeave);
+    // window.addEventListener('popstate', handlePopState);
+    // history.pushState({ drawerGuard: true }, '', window.location.href); // Push fake state
+    
+    
+    // const handler = (event) => {
+    //     if (drawerIsVisible.value) {
+    //         event.preventDefault();
+    //         setNextUrl(event.detail.visit.url);
+    //         setConfirmLeaveOpen(true);
+    //     }
+    // };
+
+    // const unlisten = router.on('before', handler);
+    // onUnmounted(() => {
+    //     unlisten();
+    // });
+
     const fetchZoneInterval = setInterval(() => {
         emit('fetchZones');
     }, 5000);
@@ -280,7 +502,13 @@ const filteredZones = computed(() => {
 
 onUnmounted(() => {
     // intervals.value.forEach(clearInterval);
+    // window.removeEventListener('popstate', handlePopState); // <-- and this
+    sessionStorage.setItem('clear_lock_tables', true);
+    // console.log('release');
+    // Close the channel
+    // window.removeEventListener('popstate', handlePopState);
     Object.values(intervals.value).forEach(clearInterval);
+    window.removeEventListener('beforeunload', unlockTableOnLeave);
 });
 
 const getCurrentOrderTableDuration = (table) => {
@@ -394,8 +622,9 @@ watch(selectedTable, (newValue, oldValue) => {
                 :customers="customers"
                 :users="users"
                 :autoUnlockSetting="autoUnlockTimer"
+                @update:broadcast-message="broadcastMessage($event)"
                 @fetchZones="$emit('fetchZones')"
-                @close="closeDrawer"
+                @close="closeDrawer(true)"
             />
         </RightDrawer>
     </template>
@@ -644,6 +873,30 @@ watch(selectedTable, (newValue, oldValue) => {
         </template>
 
     </div> 
+    
+    <!-- <Modal 
+        :title="'Confirmation'"
+        :show="confirmationIsOpen" 
+        :maxWidth="'sm'" 
+        @close="setConfirmLeaveOpen(false)"
+    >
+        <Button
+            :href="cancelLeave"
+            type="button"
+            size="lg"
+            class="!w-fit"
+        >
+            Cancel
+        </Button>
+        <Button
+            :href="confirmLeave"
+            type="button"
+            size="lg"
+            class="!w-fit"
+        >
+            Go
+        </Button>
+    </Modal> -->
 
     <!-- Assign Seat -->
     <OverlayPanel ref="op">

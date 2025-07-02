@@ -21,7 +21,7 @@ return new class extends Migration
             $table->double('refund_service_tax')->default(0);
             $table->double('refund_rounding')->default(0);
             $table->double('total_refund_amount')->default(0);
-            $table->double('refund_point')->default(0);
+            $table->decimal('refund_point', 13, 2)->default(0.00);
             $table->string('refund_method');
             $table->string('others_remark')->nullable()->default(NULL);
             $table->string('refund_remark')->nullable()->default(NULL);

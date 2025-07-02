@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('ranking')->nullable()->default(NULL);
             $table->string('role')->nullable()->default(NULL);
-            $table->string('point');
+            $table->decimal('point', 13, 2);
             $table->decimal('total_spending', 13, 2)->default(0.00);
             $table->string('profile_photo')->nullable()->default(NULL);
             $table->string('verification_code')->nullable();

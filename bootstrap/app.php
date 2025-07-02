@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ->web(append: [
                 \App\Http\Middleware\HandleInertiaRequests::class,
                 \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+                \App\Http\Middleware\SkipCsrfForBeacon::class,
             ])
             ->statefulApi();
 
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('waiters:auto-checkout')->dailyAt('06:00');
         $schedule->command('customers:expire-points')->daily();
         $schedule->command('customers:update-tier')->yearly();
+        $schedule->command('tables:reset-locked-tables')->everyFiveSeconds();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {

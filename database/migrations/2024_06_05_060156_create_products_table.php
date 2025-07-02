@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('price');
             $table->string('bucket');
             $table->boolean('is_redeemable');
-            $table->string('point');
+            $table->deciaml('point', 13, 2);
             $table->unsignedInteger('category_id');
             $table->unsignedBigInteger('discount_id');
             // $table->string('keep');

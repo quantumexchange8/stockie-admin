@@ -30,7 +30,7 @@ return new class extends Migration
             $table->decimal('grand_total', 13, 2);
             $table->decimal('amount_paid', 13, 2);
             $table->decimal('change', 13, 2); 
-            $table->integer('point_earned');
+            $table->decimal('point_earned', 13, 2);
             $table->string('pax');
             $table->string('status');
             $table->string('invoice_status')->default('pending');

@@ -38,7 +38,7 @@ const existingPermissions = page.props.auth.user.data.permission;
 
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones']);
+const emit = defineEmits(['update:broadcast-message', 'fetchZones', 'close']);
 
 const tabs = ref([
     { title: 'Order Detail', disabled: false },
@@ -159,6 +159,10 @@ const handleTableLock = (action = 'unlock', auto = false) => {
             return;
         }
 
+        if (action === 'unlock') {
+            emit('update:broadcast-message', 'unlock-table');
+        }
+
         router.post('/order-management/orders/handleTableLock', {
             action: action,
             table_id_array: tableIdArray
@@ -182,6 +186,10 @@ const handleTableLock = (action = 'unlock', auto = false) => {
                     severity: 'error',
                     summary: errors,
                 });
+                // Roll back broadcast if server fails
+                if (action === 'unlock') {
+                    emit('update:broadcast-message', 'lock-table');
+                }
             }
         });
     }

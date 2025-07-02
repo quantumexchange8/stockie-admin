@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('type');
             $table->string('value_type');
             $table->decimal('value', 6, 2);
-            $table->integer('point');
+            $table->decimal('point', 13, 2)->nullable()->default(NULL);
             $table->softDeletes();
             $table->timestamps();
         });

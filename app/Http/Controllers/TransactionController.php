@@ -426,7 +426,7 @@ class TransactionController extends Controller
 
             // dd($request->all());
             $calPoint = Setting::where('name', 'Point')->first(['point', 'value']);
-            $refund_point = (int) round(((float) $request->params['refund_subtotal'] / (float) $calPoint->value) * (int) $calPoint->point);
+            $refund_point = round(((float) $request->params['refund_subtotal'] / (float) $calPoint->value) * $calPoint->point, 2);
 
             if ($request->params['customer_id'] !== 'Guest') {
                 $customer = Customer::with([

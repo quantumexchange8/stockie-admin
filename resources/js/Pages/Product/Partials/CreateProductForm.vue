@@ -238,7 +238,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             class="!w-1/3 [&>div>input]:text-center"
                             :errorMessage="form.errors?.point || ''"
                             v-model="form.point"
-                            @keypress="isValidNumberKey($event, false)"
+                            @keypress="isValidNumberKey($event, true)"
                         >
                             <template #prefix>pts</template>
                         </TextInput>
