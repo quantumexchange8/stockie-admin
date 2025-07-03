@@ -41,7 +41,7 @@ Route::get('/', function () {
     ]);
 });
 
-Route::middleware(['auth', \App\Http\Middleware\EnsureSingleSession::class])->group(function () {
+Route::middleware(['auth', 'single.session'])->group(function () {
     // Route::get('/phpinfo', function () {
     //     phpinfo();
     // });

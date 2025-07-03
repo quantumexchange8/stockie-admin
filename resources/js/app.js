@@ -1,5 +1,6 @@
 import "./bootstrap";
 import "../css/app.css";
+import axios from 'axios';
 
 import { createApp, h } from "vue";
 import { createInertiaApp } from "@inertiajs/vue3";
@@ -13,6 +14,34 @@ import { vClickOutside } from './Composables/index.js';
 
 import { registerSW } from 'virtual:pwa-register';
 import PWAManager from '@/Components/PWAInstallManager.vue';
+
+axios.interceptors.response.use(
+    response => response,
+    error => {
+        const status = error.response?.status;
+        
+        if (status === 401) {
+            // Unauthorized - redirect to login
+            window.location.href = '/login?session_expired=1';
+        } 
+        else if (status === 419) {
+            // CSRF token mismatch - refresh page
+            window.location.reload();
+        }
+        else if (status >= 500) {
+            // Server error - show notification
+            const toast = useToast();
+            toast.add({
+                severity: 'error',
+                summary: 'Server Error',
+                detail: 'Please try again later',
+                life: 5000
+            });
+        }
+        
+        return Promise.reject(error);
+    }
+);
 
 const updateSW = registerSW({
     onNeedRefresh() {
