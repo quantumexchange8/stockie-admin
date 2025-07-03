@@ -301,7 +301,7 @@ class ProductController extends Controller
 
         $redemptionHistories = $product->pointHistories()->whereDate('created_at', '>=', $dateFilter[0])
                                                         ->whereDate('created_at', '<=', $dateFilter[1])
-                                                        ->with(['redeemableItem:id,product_name', 'handledBy:id,name'])
+                                                        ->with(['redeemableItem:id,product_name', 'handledBy:id,full_name'])
                                                         ->orderBy('created_at', 'desc')
                                                         ->get();
     
@@ -674,7 +674,7 @@ class ProductController extends Controller
                                     $subQuery->whereDate('created_at', '<=', $dateFilter[1]);
                                 });
 
-        $data = $query->with(['redeemableItem:id,product_name', 'handledBy:id,name'])
+        $data = $query->with(['redeemableItem:id,product_name', 'handledBy:id,full_name'])
                         ->where('product_id', $id)
                         ->orderBy('created_at', 'desc')
                         ->get();

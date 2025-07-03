@@ -22,9 +22,6 @@ const { flashMessage } = useCustomToast();
 const initialCustomers = ref(props.customers);
 const customers = ref(props.customers);
 const customerRowsPerPage = ref(10);
-const customerTotalPages = computed(() => {
-    return Math.ceil(props.customers.length / customerRowsPerPage.value);
-})
 const highestPoints = computed(() => {
     return Math.max(...initialCustomers.value.map(customer => customer.point));
 });
@@ -107,7 +104,6 @@ onMounted(() => flashMessage());
             :customers="customers" 
             :actions="actions" 
             :rowType="rowType" 
-            :totalPages="customerTotalPages" 
             :rowsPerPage="customerRowsPerPage"
             :highestPoints="highestPoints"
             :rankingArr="rankingArr"

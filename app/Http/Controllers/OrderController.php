@@ -241,6 +241,7 @@ class OrderController extends Controller
             ? User::where('position', 'admin')->get()
             : User::where('position', 'admin')
                     ->orWhere('id', $waiter->id)
+                    ->whereNot('id', auth()->user()->id)
                     ->get();
 
         Notification::send($toBeNotified, new OrderCheckInCustomer($tableString, $waiter->full_name, $waiter->id));
@@ -445,7 +446,14 @@ class OrderController extends Controller
 
                 $totalDiscountedAmount += $currentProductDiscount ? ($currentProductDiscount['price_before'] - $currentProductDiscount['price_after']) * $item['item_qty'] : 0.00;
 
-                Notification::send(User::where('position', 'admin')->get(), new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
+                $toBeNotified = $waiter->id === $fixedOrderDetails['assigned_waiter']
+                    ? User::where('position', 'admin')->get()
+                    : User::where('position', 'admin')
+                            ->orWhere('id', $fixedOrderDetails['assigned_waiter'])
+                            ->whereNot('id', $waiter->id)
+                            ->get();
+
+                Notification::send($toBeNotified, new OrderPlaced($tableString, $waiter->full_name, $waiter->id));
 
                 // placed an order for {{table name}}.
                 activity()->useLog('Order')

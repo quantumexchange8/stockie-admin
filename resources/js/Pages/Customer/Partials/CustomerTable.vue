@@ -30,7 +30,7 @@ const props = defineProps ({
         default: () => {},
     },
     rowType: Object,
-    totalPages: Number,
+    // totalPages: Number,
     rowsPerPage: Number,
     highestPoints: Number,
     rankingArr: Array
@@ -478,6 +478,10 @@ const deleteModalDescription = computed(() => {
         ? 'You cannot delete this customer until all current orders are completed and paid. Would you like to proceed to view customer order?'
         : 'To delete this customer, you have to enter the passcode provided from the master admin.';
 });
+
+const totalPages = computed(() => {
+    return Math.ceil(customer.value.length / props.rowsPerPage);
+})
 
 </script>
 

@@ -189,7 +189,7 @@ watch(() => searchQuery.value, (newValue) => {
     rows.value = props.rows.filter(row => {
         const reservation_date = row.reservation_date.toString().toLowerCase();
         const name = row.name.toLowerCase();
-        const phone = row.phone.toString().toLowerCase();
+        const phone = '0' + row.phone.toString().toLowerCase();
         const table_no = row.merged_table_no.toLowerCase();
         const pax = row.pax.toString().toLowerCase();
 

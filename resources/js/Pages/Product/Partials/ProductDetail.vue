@@ -41,10 +41,10 @@ const saleHistoriesColumns = ref([
 ]);
 
 const redemptionHistoriesColumns = ref([
-    {field: 'redemption_date', header: 'Date', width: '20', sortable: false},
-    {field: 'amount', header: 'Redeemed with', width: '45', sortable: true},
-    {field: 'qty', header: 'Quantity', width: '15', sortable: false},
-    {field: 'handled_by.name', header: 'Redeemed by', width: '20', sortable: false},
+    {field: 'redemption_date', header: 'Date', width: '20', sortable: true},
+    {field: 'amount', header: 'Redeemed with', width: '30', sortable: true},
+    {field: 'qty', header: 'Quantity', width: '15', sortable: true},
+    {field: 'handled_by.full_name', header: 'Redeemed by', width: '35', sortable: true},
 ]);
 
 const productItemsColumns = ref([

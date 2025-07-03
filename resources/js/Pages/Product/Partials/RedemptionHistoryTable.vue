@@ -42,6 +42,7 @@ const emit = defineEmits(["applyDateFilter"]);
 
 const date_filter = ref(props.dateFilter);
 const redemptionHistories = ref(props.rows); 
+const searchQuery = ref('');
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -55,6 +56,27 @@ watch(() => props.rows, (newValue) => {
     redemptionHistories.value = newValue;
 })
 
+watch(() => searchQuery.value, (newValue) => {
+    if (newValue === '') {
+        // If no search query, reset rows to props.rows
+        redemptionHistories.value = props.rows;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    redemptionHistories.value = props.rows.filter(row => {
+        const redemptionDate = dayjs(row.redemption_date).format('YYYY/MM/DD').toLowerCase();
+        const amount = row.amount.toString().toLowerCase() + ' pts';
+        const qty = row.qty.toString().toLowerCase();
+        const handledByName = row.handled_by.full_name.toLowerCase();
+
+        return  redemptionDate.includes(query) ||
+                amount.includes(query) ||
+                qty.includes(query) ||
+                handledByName.includes(query);
+    });
+}, { immediate: true });
 
 const csvExport = () => {
     const title = props.productName;
@@ -71,7 +93,7 @@ const csvExport = () => {
             'Date': dayjs(row.redemption_date).format('DD/MM/YYYY'),
             'Redeemable_Item': row.redeemable_item.product_name,
             'Quantity': row.qty,
-            'Redeemed_By': row.handled_by.name,
+            'Redeemed_By': row.handled_by.full_name,
         })),
     ];
 
@@ -155,7 +177,7 @@ const csvExport = () => {
             <SearchBar
                 placeholder="Search"
                 :showFilter="false"
-                v-model="filters['global'].value"
+                v-model="searchQuery"
                 class="col-span-full md:col-span-7"
             />
             <DateInput
@@ -174,8 +196,6 @@ const csvExport = () => {
             :columns="columns"
             :rowsPerPage="rowsPerPage"
             :rowType="rowType"
-            :searchFilter="true"
-            :filters="filters"
             minWidth="min-w-[675px]"
         >
             <template #empty>
@@ -188,8 +208,8 @@ const csvExport = () => {
             <template #amount="row">
                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.amount }} pts</span>
             </template>
-            <template #handled_by.name="row">
-                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.handled_by.name }}</span>
+            <template #handled_by.full_name="row">
+                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.handled_by.full_name }}</span>
             </template>
         </Table>
     </div>

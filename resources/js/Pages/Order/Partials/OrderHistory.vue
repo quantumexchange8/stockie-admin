@@ -30,6 +30,7 @@ const rowsPerPage = ref(6);
 const orderInvoice = ref(null);
 const showOrderReceipt = ref(false);
 const receiptImage = ref(null);
+const searchQuery = ref('');
 
 const columns = ref([
     {field: 'updated_at', header: 'Date & Time', width: '15', sortable: false},
@@ -114,21 +115,31 @@ const totalPages = computed(() => Math.ceil(rows.value.length / rowsPerPage.valu
 
 const getOrderTableNames = (order_table) => order_table?.map((orderTable) => orderTable.table.table_no).join(', ') ?? '';
 
-// watch(() => filters.value.global.value, (newValue) => {
-    // if (!newValue) {
-    //     // If no search query, reset rows to props.rows
-    //     rows.value = newRows;
-    //     return;
-    // }
+watch(() => searchQuery.value, (newValue) => {
+    if (newValue === '') {
+        // If no search query, reset rows to props.rows
+        rows.value = initialRows.value;
+        return;
+    }
 
-    //  const query = newValue.toLowerCase();
+    const query = newValue.toLowerCase();
 
-    // console.log(rows.value);
-    // rows.value = initialRows.value.filter(order => {
-    //     console.log(getOrderTableNames(order.order_table));
-    //     return  getOrderTableNames(order.order_table).includes(query);
-    // });
-// }, { immediate: false })
+    rows.value = initialRows.value.filter(row => {
+        const updatedAt = dayjs(row.updated_at).format('DD/MM/YYYY, HH:mm').toLowerCase();
+        const tableNo = getOrderTableNames(row.order_table).toLowerCase();
+        const orderNo = row.order_no.toLowerCase();
+        const totalAmount = row.total_amount.toString().toLowerCase();
+        const waiterFullName = row.waiter.full_name.toLowerCase();
+        const status = row.status.toLowerCase();
+
+        return  updatedAt.includes(query) ||
+                tableNo.includes(query) ||
+                orderNo.includes(query) ||
+                totalAmount.includes(query) ||
+                waiterFullName.includes(query) ||
+                status.includes(query);
+    });
+}, { immediate: true });
 
 const printInvoiceReceipt = () => {
     showOrderInvoiceModal();
@@ -142,7 +153,7 @@ const printInvoiceReceipt = () => {
             <SearchBar
                 placeholder="Search"
                 :showFilter="false"
-                v-model="filters['global'].value"
+                v-model="searchQuery"
                 class="sm:max-w-[309px]"
             />
             <div class="flex w-full items-start justify-end gap-x-7">
@@ -170,8 +181,6 @@ const printInvoiceReceipt = () => {
                 :columns="columns"
                 :rowsPerPage="rowsPerPage"
                 :totalPages="totalPages"
-                :searchFilter="true"
-                :filters="filters"
                 minWidth="min-w-[965px]"
             >
                 <template #empty>

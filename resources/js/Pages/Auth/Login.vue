@@ -6,9 +6,11 @@ import Checkbox from "@/Components/Checkbox.vue";
 import InputError from "@/Components/InputError.vue";
 import TextInput from "@/Components/TextInput.vue";
 import Toast from "@/Components/Toast.vue";
+import Modal from "@/Components/Modal.vue";
 import { useCustomToast } from "@/Composables";
+import { LogoutIllust } from '@/Components/Icons/illus';
 import { Head, useForm } from "@inertiajs/vue3";
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 
 defineProps({
     canResetPassword: {
@@ -21,17 +23,36 @@ defineProps({
 
 const { flashMessage } = useCustomToast();
 
+const isConfirmLoginModalOpen = ref(false);
+
 const form = useForm({
     role_id: "",
     password: "",
+    confirm_login: false,
     remember: false,
 });
 
 const submit = () => {
     form.post(route("login"), {
-        onFinish: () => form.reset("password"),
+        onError: (error) => {
+            form.confirm_login = false;
+            if (error['user_has_session']) openModal();
+        },
+        onFinish: () => {
+            if (form.confirm_login) form.reset("password");
+        },
     });
 };
+
+const openModal = () => (isConfirmLoginModalOpen.value = true);
+
+const closeModal = () => (isConfirmLoginModalOpen.value = false);
+
+const confirmLogin = () => {
+    form.confirm_login = true;
+    submit();
+    closeModal();
+}
 
 onMounted(() => {
     flashMessage();
@@ -129,4 +150,46 @@ onMounted(() => {
             </form>
         </div>
     </div>
+
+    <Modal
+        :maxWidth="'2xs'"
+        :closeable="true"
+        :show="isConfirmLoginModalOpen"
+        @close="closeModal"
+        :withHeader="false"
+    >
+        <div class="inline-flex flex-col items-center gap-9" >
+            <div class="bg-primary-50 flex flex-col items-center gap-[10px] rounded-t-[5px] m-[-24px] pt-6 px-3">
+                <div class="w-full shrink-0">
+                    <LogoutIllust />
+                </div>
+            </div>
+            <div class="flex flex-col gap-5 pt-6">
+                <div class="flex flex-col gap-1 text-center self-stretch">
+                    <span class="text-primary-900 text-lg font-medium self-stretch">Active Session Detected</span>
+                    <span class="text-grey-900 text-base font-medium self-stretch">Your account is currently in use on another device. Continuing will log out the other session. Are you sure you want to proceed?</span>
+                </div>
+            </div>
+
+            <div class="flex justify-center items-start self-stretch gap-3">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="closeModal"
+                >
+                    Cancel
+                </Button>
+                <Button
+                    variant="primary"
+                    size="lg"
+                    type="button"
+                    :disabled="form.processing"
+                    @click="confirmLogin"
+                >
+                    Confirm
+                </Button>
+            </div>
+        </div>
+    </Modal>
 </template>
