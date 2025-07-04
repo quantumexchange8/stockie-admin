@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
     /**
+     * Handle checking for existing auth user.
+     */
+    public function checkForAuthUser()
+    {
+        return response()->json(auth()->check());
+    }
+
+    /**
      * Handle an incoming authentication request.
      */
     public function authenticateCredentials(Request $request)

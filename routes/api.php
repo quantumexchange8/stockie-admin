@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::controller(AuthController::class)->group(function(){
     Route::post('check_login_status', 'checkForExistingToken');
     Route::post('login', 'login');
+    Route::get('auth/check', 'checkForAuthUser');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -112,6 +113,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/mark_unread_notifications', 'markUnreadNotifications');
     });
 });
+
+// Route::post('/unlock-table-on-leave', [OrderController::class, 'handleTableUnlockOnly'])
+//     ->withoutMiddleware(['auth:sanctum', 'auth']); // ← 🔥 Critical
 
 // callback update from ct-einvoice
 Route::post('/client-submitted-einvoice', [CallbackEinvoiceController::class, 'updateClientEinvoice'])->name('updateClientEinvoice');

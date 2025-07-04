@@ -59,26 +59,6 @@ const wasLocked = ref(false);
 const lockedTables = ref([]);
 const tabUid = ref(sessionStorage.getItem('tab_uid') || Math.random().toString(36).substring(2, 15));
 
-// const reservationsColumns = ref([
-//     { field: "reservation_at", header: "Date", width: "25", sortable: true },
-//     { field: "reservation_time", header: "Time", width: "25", sortable: true },
-//     { field: "pax", header: "No. of Pax", width: "25", sortable: true },
-//     { field: "action", header: "", width: "25", sortable: false, edit: true, delete: true },
-// ]);
-
-// const rowType = {
-//     rowGroups: false,
-//     expandable: false,
-//     groupRowsBy: "",
-// };
-
-// const actions = {
-//     view: () => ``,
-//     replenish: () => '',
-//     edit: () => '',
-//     delete: (id) => `/order-management/orders/reservation/${id}`,
-// };
-
 // Use BroadcastChannel to communicate between tabs
 const lockChannel = new BroadcastChannel('table-locks');
 
@@ -110,14 +90,17 @@ const broadcastMessage = (type) => {
         });
 
         const updateType = type === 'lock-table' ? 'lock' : 'unlock';
-    
-        updateLockedTables(updateType, selectedTable.value.id, tabUid.value);
+
+        selectedTable.value.joined_tables.forEach(table => {
+            updateLockedTables(updateType, table, tabUid.value);
+        });
     }
 
     if (type === 'group-unlock') {
         lockChannel.postMessage({
             type: type,
             tableId: lockedTables.value,
+            sourceTabUid: tabUid.value,
         });
         lockedTables.value = [];
     }

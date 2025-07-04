@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Setting;
 use App\Models\Table;
 use DB;
 use Illuminate\Console\Command;
@@ -35,7 +36,18 @@ class ResetLockedTables extends Command
                             ->get(['user_id'])
                             ->toArray();
 
+        $autoUnlockSetting = Setting::where('name', 'Table Auto Unlock')
+                                    ->first(['name', 'value_type', 'value']);
+
+        $duration = $autoUnlockSetting->value_type === 'minutes'
+            ? ((int)floor($autoUnlockSetting->value ?? 0)) * 60
+            : ((int)floor($autoUnlockSetting->value ?? 0));
+
         Table::whereNotIn('locked_by', $activeUsers)
+                ->orWhere(fn ($query) =>
+                    $query->whereIn('locked_by', $activeUsers)
+                        ->where('updated_at', '<=', now()->subSeconds($duration))
+                )
                 ->update([
                     'is_locked' => false,
                     'locked_by' => null,

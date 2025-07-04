@@ -207,11 +207,10 @@ const filteredZones = computed(() => {
         :show="isFullScreen"
     > -->
         <div class="p-5 bg-[#fcebecd4] h-screen" v-else>
-            <div class="inline-flex p-6 flex-col rounded-lg bg-white/70 shadow-[-4px_-9px_36.4px_0_rgba(199,57,42,0.05)] backdrop-blur-[25.700000762939453px] w-full"
-            >
+            <div class="inline-flex p-6 flex-col rounded-lg bg-white/70 shadow-[-4px_-9px_36.4px_0_rgba(199,57,42,0.05)] backdrop-blur-[25.700000762939453px] w-full">
                 <div class="flex flex-col items-start gap-6">
-                    <div class="flex justify-between items-center self-stretch">
-                        <div class="flex items-center gap-7">
+                    <div class="flex justify-between items-center self-stretch gap-4 flex-wrap">
+                        <div class="flex items-center gap-5">
                             <Button
                                 :variant="'tertiary'"
                                 :type="'button'"
@@ -226,13 +225,13 @@ const filteredZones = computed(() => {
                             </Button>
                             <span class="text-primary-900 text-lg font-medium whitespace-nowrap">Order Management</span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3 w-full min-[651px]:!w-fit">
                             <Button
                                 :type="'button'"
                                 :variant="'tertiary'"
                                 :size="'lg'"
                                 :iconPosition="'left'"
-                                class="md:!w-fit"
+                                class="w-full min-[651px]:!w-fit"
                                 @click="showOrderHistory"
                             >
                                 <template #icon>

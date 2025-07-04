@@ -1031,6 +1031,13 @@ class OrderController extends Controller
      */
     public function getAllZones(Request $request)
     {
+        $autoUnlockSetting = Setting::where('name', 'Table Auto Unlock')
+                                    ->first(['name', 'value_type', 'value']);
+
+        $duration = $autoUnlockSetting->value_type === 'minutes'
+            ? ((int)floor($autoUnlockSetting->value ?? 0)) * 60
+            : ((int)floor($autoUnlockSetting->value ?? 0));
+
         $lockedTables = collect($request->locked_tables)->map(fn ($t) => $t['tableId']);
 
         Table::where([
@@ -1042,6 +1049,13 @@ class OrderController extends Controller
                     'is_locked' => false,
                     'locked_by' => null,
                 ]);
+
+        Table::where([
+                    ['locked_by', auth()->user()->id],
+                    ['updated_at', '>', now()->subSeconds($duration)],
+                ])
+                ->whereIn('id', $lockedTables)
+                ->update(['updated_at' => now()]);
 
         $reservedTablesId = $this->getReservedTablesId();
 
@@ -1076,6 +1090,34 @@ class OrderController extends Controller
                                             unset($item->product);
                                         });
                                     });
+                                    
+                                    // Find the first non-pending clearance table
+                                    $currentOrderTable = $table->orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                                                                        ->firstWhere('status', '!=', 'Pending Clearance') 
+                                                        ?? $table->orderTables->first();
+
+                                    // Initialize joined_tables as empty array by default
+                                    $table->joined_tables = [];
+                                                        
+                                    if ($currentOrderTable && $currentOrderTable->order) {
+                                        // Eager load the necessary relationships
+                                        $currentOrderTable->order->load([
+                                            'orderTable' => function ($query) {
+                                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                                                    ->select('id', 'order_id', 'table_id', 'status')
+                                                    ->with('table:id,table_no');
+                                            }
+                                        ]);
+                                        
+                                        // Safely get joined tables
+                                        if ($currentOrderTable->order->orderTable) {
+                                            $table->joined_tables = $currentOrderTable->order->orderTable
+                                                ->pluck('table.id')
+                                                ->filter()
+                                                ->values()
+                                                ->toArray();
+                                        }
+                                    }
                     
                                     $table->is_reserved = in_array($table->id, $reservedTablesId);
                                     $table->pending_count = $pendingCount;
@@ -4915,7 +4957,7 @@ class OrderController extends Controller
 
     public function handleTableUnlockOnly(Request $request)
     {
-        Log::info('UNLOCK route hit');
+        // Log::info('UNLOCK route hit');
 
         // ✅ Don't do any Eloquent for now. Just confirm log shows.
 

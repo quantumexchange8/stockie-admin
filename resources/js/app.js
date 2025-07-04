@@ -15,6 +15,38 @@ import { vClickOutside } from './Composables/index.js';
 // import { registerSW } from 'virtual:pwa-register';
 // import PWAManager from '@/Components/PWAInstallManager.vue';
 
+// Session Continuity Check
+const checkSession = async () => {
+    try {
+        const response = await axios.get('/api/auth/check', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const isAuthenticated = response.data;
+        
+        // If authenticated but on login page, redirect to dashboard
+        if (isAuthenticated && window.location.pathname === '/login') {
+            window.location.href = '/dashboard';
+        }
+        
+        // If not authenticated but not on login page, redirect to login
+        if (!isAuthenticated && window.location.pathname !== '/login') {
+            window.location.href = '/login?session_expired=1';
+        }
+    } catch (error) {
+        console.error('Session check failed:', error);
+        if (window.location.pathname !== '/login') {
+            window.location.href = '/login?session_error=1';
+        }
+    }
+};
+
+// Run session check on initial load
+checkSession();
+
 // For handling unauthorized requests when user session has been removed or ended
 axios.interceptors.response.use(
     response => response,
