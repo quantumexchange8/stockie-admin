@@ -12,9 +12,10 @@ import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
 import { vClickOutside } from './Composables/index.js';
 
-import { registerSW } from 'virtual:pwa-register';
-import PWAManager from '@/Components/PWAInstallManager.vue';
+// import { registerSW } from 'virtual:pwa-register';
+// import PWAManager from '@/Components/PWAInstallManager.vue';
 
+// For handling unauthorized requests when user session has been removed or ended
 axios.interceptors.response.use(
     response => response,
     error => {
@@ -43,33 +44,33 @@ axios.interceptors.response.use(
     }
 );
 
-const updateSW = registerSW({
-    onNeedRefresh() {
-        // Show PrimeVue toast instead of default alert
-        const toast = useToast();
-        toast.add({
-            severity: 'info',
-            summary: 'Update Available',
-            detail: 'A new version is available. Click to reload.',
-            life: 10000,
-            onClick: () => {
-                    updateSW(true);
-                    toast.remove();
-                }
-            });
-        },
-        onOfflineReady() {
-            console.log('App ready for offline use');
-            // Optional: Show offline ready notification
-            const toast = useToast();
-            toast.add({
-                severity: 'success',
-                summary: 'Offline Ready',
-                detail: 'App is ready for offline use',
-                life: 3000
-            });
-        },
-    });
+// const updateSW = registerSW({
+//     onNeedRefresh() {
+//         // Show PrimeVue toast instead of default alert
+//         const toast = useToast();
+//         toast.add({
+//             severity: 'info',
+//             summary: 'Update Available',
+//             detail: 'A new version is available. Click to reload.',
+//             life: 10000,
+//             onClick: () => {
+//                     updateSW(true);
+//                     toast.remove();
+//                 }
+//             });
+//         },
+//         onOfflineReady() {
+//             console.log('App ready for offline use');
+//             // Optional: Show offline ready notification
+//             const toast = useToast();
+//             toast.add({
+//                 severity: 'success',
+//                 summary: 'Offline Ready',
+//                 detail: 'App is ready for offline use',
+//                 life: 3000
+//             });
+//         },
+//     });
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
@@ -92,7 +93,7 @@ createInertiaApp({
             .use(ToastService)
             .directive('tooltip', Tooltip)
             .directive('click-outside', vClickOutside)
-            .component('PWAManager', PWAManager)
+            // .component('PWAManager', PWAManager)
             .mount(el);
     },
     progress: {
