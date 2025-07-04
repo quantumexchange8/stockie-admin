@@ -4,7 +4,7 @@ return [
     'name' => 'Stockie Admin PWA',
     'manifest' => [
         'name' => env('APP_NAME', 'Stockie Admin'),
-        'short_name' => 'Stockie',
+        'short_name' => 'Stockie Admin',
         'start_url' => '/',
         'background_color' => '#ffffff',
         'theme_color' => '#ffffff',
