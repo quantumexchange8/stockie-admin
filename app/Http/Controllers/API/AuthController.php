@@ -17,7 +17,7 @@ class AuthController extends Controller
      */
     public function checkForAuthUser()
     {
-        return response()->json(auth()->check());
+        return response()->json(auth()->check())->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     /**

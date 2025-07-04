@@ -17,35 +17,68 @@ import { vClickOutside } from './Composables/index.js';
 
 // Session Continuity Check
 const checkSession = async () => {
+    // Skip check for these paths to prevent loops
+    const excludedPaths = ['/login', '/logout', '/auth/*'];
+    const currentPath = window.location.pathname;
+    
+    const isExcluded = excludedPaths.some(path => {
+        if (path.endsWith('*')) {
+            return currentPath.startsWith(path.slice(0, -1));
+        }
+        return currentPath === path;
+    });
+    
     try {
         const response = await axios.get('/api/auth/check', {
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            }
+            },
+            // Important for session cookies to be sent
+            withCredentials: true 
         });
 
         const isAuthenticated = response.data;
-        
-        // If authenticated but on login page, redirect to dashboard
-        if (isAuthenticated && window.location.pathname === '/login') {
-            window.location.href = '/dashboard';
+    
+        // Only redirect if we're actually on login page
+        if (isAuthenticated && currentPath === '/login') {
+            // Use Inertia.js redirect if available
+            if (typeof window.Inertia !== 'undefined') {
+                window.Inertia.visit('/dashboard');
+            } else {
+                window.location.href = '/dashboard';
+            }
+            return;
         }
         
-        // If not authenticated but not on login page, redirect to login
-        if (!isAuthenticated && window.location.pathname !== '/login') {
-            window.location.href = '/login?session_expired=1';
+        // Only redirect to login if not authenticated
+        if (!isAuthenticated && currentPath !== '/login') {
+            if (typeof window.Inertia !== 'undefined') {
+                window.Inertia.visit('/login');
+            } else {
+                window.location.href = '/login';
+            }
         }
     } catch (error) {
         console.error('Session check failed:', error);
-        if (window.location.pathname !== '/login') {
-            window.location.href = '/login?session_error=1';
+        if (currentPath !== '/login') {
+            if (typeof window.Inertia !== 'undefined') {
+                window.Inertia.visit('/login');
+            } else {
+                window.location.href = '/login';
+            }
         }
     }
 };
 
-// Run session check on initial load
-checkSession();
+// Run session check on initial load - but only after Inertia is ready
+if (typeof window.Inertia !== 'undefined') {
+    window.Inertia.on('navigate', () => {
+        setTimeout(checkSession, 100); // Small delay after navigation
+    });
+} else {
+    document.addEventListener('DOMContentLoaded', checkSession);
+}
 
 // For handling unauthorized requests when user session has been removed or ended
 axios.interceptors.response.use(
