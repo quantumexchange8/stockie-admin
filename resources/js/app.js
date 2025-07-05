@@ -15,73 +15,73 @@ import { vClickOutside } from './Composables/index.js';
 // import { registerSW } from 'virtual:pwa-register';
 // import PWAManager from '@/Components/PWAInstallManager.vue';
 
-// Session Continuity Check
-const checkSession = async () => {
-    // Skip check for these paths to prevent loops
-    const excludedPaths = ['/login', '/logout', '/auth/*'];
-    const currentPath = window.location.pathname;
-    console.log(currentPath);
+// // Session Continuity Check
+// const checkSession = async () => {
+//     // Skip check for these paths to prevent loops
+//     const excludedPaths = ['/login', '/logout', '/auth/*'];
+//     const currentPath = window.location.pathname;
+//     console.log(currentPath);
     
-    const isExcluded = excludedPaths.some(path => {
-        if (path.endsWith('*')) {
-            return currentPath.startsWith(path.slice(0, -1));
-        }
-        return currentPath === path;
-    });
+//     const isExcluded = excludedPaths.some(path => {
+//         if (path.endsWith('*')) {
+//             return currentPath.startsWith(path.slice(0, -1));
+//         }
+//         return currentPath === path;
+//     });
 
-    if (isExcluded) return;
+//     if (isExcluded) return;
     
-    try {
-        const response = await axios.get('/api/auth/check', {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            // Important for session cookies to be sent
-            withCredentials: true 
-        });
+//     try {
+//         const response = await axios.get('/api/auth/check', {
+//             headers: {
+//                 'Accept': 'application/json',
+//                 'X-Requested-With': 'XMLHttpRequest'
+//             },
+//             // Important for session cookies to be sent
+//             withCredentials: true 
+//         });
 
-        const isAuthenticated = response.data;
+//         const isAuthenticated = response.data;
     
-        // Only redirect if we're actually on login page
-        if (isAuthenticated && currentPath === '/login') {
-            // Use Inertia.js redirect if available
-            if (typeof window.Inertia !== 'undefined') {
-                window.Inertia.visit('/dashboard');
-            } else {
-                window.location.href = '/dashboard';
-            }
-            return;
-        }
+//         // Only redirect if we're actually on login page
+//         if (isAuthenticated && currentPath === '/login') {
+//             // Use Inertia.js redirect if available
+//             if (typeof window.Inertia !== 'undefined') {
+//                 window.Inertia.visit('/dashboard');
+//             } else {
+//                 window.location.href = '/dashboard';
+//             }
+//             return;
+//         }
         
-        // Only redirect to login if not authenticated
-        if (!isAuthenticated && currentPath !== '/login') {
-            if (typeof window.Inertia !== 'undefined') {
-                window.Inertia.visit('/login');
-            } else {
-                window.location.href = '/login';
-            }
-        }
-    } catch (error) {
-        console.error('Session check failed:', error);
-        if (currentPath !== '/login') {
-            if (typeof window.Inertia !== 'undefined') {
-                window.Inertia.visit('/login');
-            } else {
-                window.location.href = '/login';
-            }
-        }
-    }
-};
+//         // Only redirect to login if not authenticated
+//         if (!isAuthenticated && currentPath !== '/login') {
+//             if (typeof window.Inertia !== 'undefined') {
+//                 window.Inertia.visit('/login');
+//             } else {
+//                 window.location.href = '/login';
+//             }
+//         }
+//     } catch (error) {
+//         console.error('Session check failed:', error);
+//         if (currentPath !== '/login') {
+//             if (typeof window.Inertia !== 'undefined') {
+//                 window.Inertia.visit('/login');
+//             } else {
+//                 window.location.href = '/login';
+//             }
+//         }
+//     }
+// };
 
-// Run session check on initial load - but only after Inertia is ready
-if (typeof window.Inertia !== 'undefined') {
-    window.Inertia.on('navigate', () => {
-        setTimeout(checkSession, 100); // Small delay after navigation
-    });
-} else {
-    document.addEventListener('DOMContentLoaded', checkSession);
-}
+// // Run session check on initial load - but only after Inertia is ready
+// if (typeof window.Inertia !== 'undefined') {
+//     window.Inertia.on('navigate', () => {
+//         setTimeout(checkSession, 100); // Small delay after navigation
+//     });
+// } else {
+//     document.addEventListener('DOMContentLoaded', checkSession);
+// }
 
 // For handling unauthorized requests when user session has been removed or ended
 axios.interceptors.response.use(

@@ -9,8 +9,8 @@ import Toast from "@/Components/Toast.vue";
 import Modal from "@/Components/Modal.vue";
 import { useCustomToast } from "@/Composables";
 import { LogoutIllust } from '@/Components/Icons/illus';
-import { Head, useForm } from "@inertiajs/vue3";
-import { onMounted, ref } from "vue";
+import { Head, useForm, usePage } from "@inertiajs/vue3";
+import { onMounted, ref, computed } from "vue";
 
 defineProps({
     canResetPassword: {
@@ -22,7 +22,9 @@ defineProps({
 });
 
 const { flashMessage } = useCustomToast();
+const page = usePage();
 
+const user = computed(() => page.props.auth.user);
 const isConfirmLoginModalOpen = ref(false);
 
 const form = useForm({
@@ -56,6 +58,14 @@ const confirmLogin = () => {
 
 onMounted(() => {
     flashMessage();
+    // console.log(user.value);
+
+    // const redirectTo = user.value && user.value != null 
+    //     ? '/dashboard'
+    //     : '/dashboard';
+    if (user.value != null) {
+        window.location.href = '/dashboard';
+    }
 });
 </script>
 
