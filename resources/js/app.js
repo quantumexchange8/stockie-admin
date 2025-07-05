@@ -20,6 +20,7 @@ const checkSession = async () => {
     // Skip check for these paths to prevent loops
     const excludedPaths = ['/login', '/logout', '/auth/*'];
     const currentPath = window.location.pathname;
+    console.log(currentPath);
     
     const isExcluded = excludedPaths.some(path => {
         if (path.endsWith('*')) {
@@ -27,6 +28,8 @@ const checkSession = async () => {
         }
         return currentPath === path;
     });
+
+    if (isExcluded) return;
     
     try {
         const response = await axios.get('/api/auth/check', {
@@ -137,11 +140,11 @@ axios.interceptors.response.use(
 //         },
 //     });
 
-// const appName = import.meta.env.VITE_APP_NAME || "Laravel";
+const appName = import.meta.env.VITE_APP_NAME || "Stockie Admin";
 
 createInertiaApp({
-    // title: (title) => `${title} - ${appName}`,
-    title: (title) => `${title} - Stockie Admin`,
+    // title: (title) => `${title} - Stockie Admin`,
+    title: (title) => `${title} - ${appName}`,
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.vue`,
