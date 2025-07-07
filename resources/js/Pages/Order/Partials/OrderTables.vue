@@ -50,6 +50,7 @@ const orderInfoDrawer = ref(null);
 const wasUnlocked = ref(false);
 const nextUrl = ref(null);
 const confirmationIsOpen = ref(false);
+const isLoading = ref(false);
 
 // Locking control
 const autoUnlockTimer = ref(props.autoUnlockSetting);
@@ -542,6 +543,27 @@ const openDrawer = (targetTable) => {
     setTimeout(() => openOverlay(null, checkedInTable, true), 200);
 }
 
+const kickDrawer = async () => {
+    isLoading.value = true;
+    try {
+        const {data} = await axios.get(route('orders.kickDrawer'));
+
+        if (data) {
+            showMessage({
+                severity: 'success',
+                summary: 'Cash drawer kicked!',
+            });
+        }
+    } catch (error) {
+        showMessage({
+            severity: 'error',
+            summary: 'Unable to detect cash drawer',
+        });
+    } finally {
+        isLoading.value = false;
+    }
+};
+
 watch(() => props.autoUnlockSetting, (newValue) => {
     autoUnlockTimer.value = newValue;
 });
@@ -646,6 +668,16 @@ watch(selectedTable, (newValue, oldValue) => {
                 </div>
                 <span class="text-grey-700 text-center text-sm font-normal">Pending Clearance</span>
             </div>
+
+            <Button
+                type="button"
+                size="lg"
+                class="!w-fit"
+                :disabled="isLoading"
+                @click="kickDrawer"
+            >
+                Open Cash Drawer
+            </Button>
         </div>
         
         <template v-if="shiftIsOpened">

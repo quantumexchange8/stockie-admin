@@ -5604,4 +5604,25 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
+    public function kickDrawer()
+    {
+        try {
+            // Connection
+            $socket = fsockopen('192.168.0.77', 9100);
+
+            // Kick drawer through printer
+            fwrite($socket, chr(77) . chr(112) . chr(0) . chr(60) . chr(120));
+
+            // Close connection
+            fclose($socket);
+
+            $wasKicked = true;
+            
+        } catch (\Exception $e) {
+            $wasKicked = false;
+        }
+
+        return response()->json($wasKicked);
+    }
 }
