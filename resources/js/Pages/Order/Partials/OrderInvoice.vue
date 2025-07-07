@@ -239,7 +239,7 @@ const testPrintReceipt = async () => {
                 severity: 'error',
                 summary: summary,
                 detail: detail,
-            });;
+            });
 
             return;
         }

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('table_id');
             $table->string('reservation');
             $table->string('pax');
-            $table->unsignedBigInteger('user_id')->nullable()->default(NULL);;
+            $table->unsignedBigInteger('user_id')->nullable()->default(NULL);
             $table->string('status');
             $table->dateTime('reservation_date');
             $table->unsignedBigInteger('order_id')->nullable()->default(NULL);

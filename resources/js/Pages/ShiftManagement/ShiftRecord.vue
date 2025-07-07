@@ -33,7 +33,7 @@ const shiftRowsPerPage = ref(12);
 
 const defaultLatest2Months = computed(() => {
     let currentDate = dayjs().endOf('month');
-    let lastMonth = currentDate.subtract(2, 'month').startOf('month');;
+    let lastMonth = currentDate.subtract(2, 'month').startOf('month');
 
     return [lastMonth.toDate(), currentDate.toDate()];
 });

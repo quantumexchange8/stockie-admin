@@ -545,19 +545,60 @@ const openDrawer = (targetTable) => {
 
 const kickDrawer = async () => {
     isLoading.value = true;
+    
     try {
-        const {data} = await axios.get(route('orders.kickDrawer'));
+        const response = await axios.post('/order-management/orders/kickDrawer');
+        const printer = response.data.printer;
 
-        if (data) {
+        if (!printer || !printer.ip_address || !printer.port_number) {
+            let summary = '';
+            let detail = '';
+
+            if (!printer) {
+                summary = 'Unable to detect selected printer';
+                detail = 'Please contact admin to setup the printer.';
+
+            } else if (!printer.ip_address) {
+                summary = 'Invalid printer IP address';
+                detail = 'Please contact admin to setup the printer IP address.';
+
+            } else if (!printer.port_number) {
+                summary = 'Invalid printer port number';
+                detail = 'Please contact admin to setup the printer port number.';
+            }
+
+            showMessage({
+                severity: 'error',
+                summary: summary,
+                detail: detail,
+            });
+
+            return;
+        }
+
+        const base64 = response.data.data;
+        const url = `stockie-app://print?base64=${base64}&ip=${printer.ip_address}&port=${printer.port_number}`;
+
+        try {
+            window.location.href = url;
+
             showMessage({
                 severity: 'success',
                 summary: 'Cash drawer kicked!',
             });
+            
+        } catch (e) {
+            console.error('Failed to open app:', e);
+            alert(`Failed to open Stockie app \n ${e}`);
+
         }
-    } catch (error) {
+        
+    } catch (err) {
+        console.error("Kick drawer failed:", err);
         showMessage({
             severity: 'error',
-            summary: 'Unable to detect cash drawer',
+            summary: 'Kick drawer failed',
+            detail: err.message
         });
     } finally {
         isLoading.value = false;

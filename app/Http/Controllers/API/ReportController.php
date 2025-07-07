@@ -417,7 +417,7 @@ class ReportController extends Controller
                                             'sales' => number_format($incentive->amount, 2),
                                             'incentive_rate' => number_format($incentive->rate, 2),
                                         ])
-                                        ->keyBy('month');;
+                                        ->keyBy('month');
 
         $incentivesArray = collect(range(1,  12))->map(function ($month) use ($incentiveData) {
             $monthData = $incentiveData->get($month, [

@@ -147,7 +147,7 @@ const testPrint = async (printer_name) => {
                 severity: 'error',
                 summary: summary,
                 detail: detail,
-            });;
+            });
 
             return;
         }

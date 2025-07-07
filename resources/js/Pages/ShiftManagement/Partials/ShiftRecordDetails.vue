@@ -52,7 +52,7 @@ const printShfitReportReceipt = async () => {
                 severity: 'error',
                 summary: summary,
                 detail: detail,
-            });;
+            });
 
             return;
         }
