@@ -333,7 +333,7 @@ const tablesArr = computed(() => {
 const unlockTableOnLeave = (event) => {
     // if (!drawerIsVisible.value || wasUnlocked.value || !selectedTable.value?.id) return;
     
-    event.preventDefault();
+    // event.preventDefault();
 
     sessionStorage.setItem('clear_lock_tables', true);
     // broadcastMessage('group-unlock');
@@ -586,7 +586,7 @@ const kickDrawer = async () => {
                 severity: 'success',
                 summary: 'Cash drawer kicked!',
             });
-            
+
         } catch (e) {
             console.error('Failed to open app:', e);
             alert(`Failed to open Stockie app \n ${e}`);
@@ -710,7 +710,7 @@ watch(selectedTable, (newValue, oldValue) => {
                 <span class="text-grey-700 text-center text-sm font-normal">Pending Clearance</span>
             </div>
 
-            <Button
+            <!-- <Button
                 type="button"
                 size="lg"
                 class="!w-fit"
@@ -718,7 +718,7 @@ watch(selectedTable, (newValue, oldValue) => {
                 @click="kickDrawer"
             >
                 Open Cash Drawer
-            </Button>
+            </Button> -->
         </div>
         
         <template v-if="shiftIsOpened">

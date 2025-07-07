@@ -411,6 +411,60 @@ const closeSuccessPaymentModal = () => {
 
 };
 
+const kickDrawer = (printer, base64) => {
+    try {
+        if (!printer || !printer.ip_address || !printer.port_number) {
+            let summary = '';
+            let detail = '';
+
+            if (!printer) {
+                summary = 'Unable to detect selected printer';
+                detail = 'Please contact admin to setup the printer.';
+
+            } else if (!printer.ip_address) {
+                summary = 'Invalid printer IP address';
+                detail = 'Please contact admin to setup the printer IP address.';
+
+            } else if (!printer.port_number) {
+                summary = 'Invalid printer port number';
+                detail = 'Please contact admin to setup the printer port number.';
+            }
+
+            showMessage({
+                severity: 'error',
+                summary: summary,
+                detail: detail,
+            });
+
+            return;
+        }
+
+        const url = `stockie-app://print?base64=${base64}&ip=${printer.ip_address}&port=${printer.port_number}`;
+
+        try {
+            window.location.href = url;
+
+            showMessage({
+                severity: 'success',
+                summary: 'Cash drawer kicked!',
+            });
+
+        } catch (e) {
+            console.error('Failed to open app:', e);
+            alert(`Failed to open Stockie app \n ${e}`);
+
+        }
+        
+    } catch (err) {
+        console.error("Kick drawer failed:", err);
+        showMessage({
+            severity: 'error',
+            summary: 'Kick drawer failed',
+            detail: err.message
+        });
+    }
+};
+
 const submit = async () => {
     form.processing = true;
     form.payment_methods = paymentTransactions.value.filter((transaction => transaction.amount >= 0));
@@ -450,6 +504,9 @@ const submit = async () => {
                 summary: 'Payment Completed.',
             });
         }, 200);
+
+        kickDrawer(response.data.printer, response.data.data);
+
         emit('fetchZones');
         emit('fetchPendingServe');
         
