@@ -1121,6 +1121,7 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
 const printInvoiceReceipt = () => {
     showOrderReceipt.value = true;
     setTimeout(() => orderInvoice.value.testPrintReceipt(), 200);
+    closeSuccessPaymentModal();
 }
 </script>
 
