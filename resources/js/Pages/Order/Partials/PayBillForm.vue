@@ -1126,11 +1126,6 @@ const printInvoiceReceipt = () => {
 
 const printPreviewReceipt = async () => {
     try {
-        await Promise.all([
-            getOrderPaymentDetails(),
-            getPayoutDetails()
-        ]);
-        
         const params = { 
             order: order.value,
             taxes: taxes.value,

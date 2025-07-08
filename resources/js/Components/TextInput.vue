@@ -93,24 +93,38 @@ const toggleShow = () => {
 // };
 
 const handleInput = (e) => {
+    let value = e.target.value;
+    
     if (props.inputType === 'number') {
-        let value = e.target.value;
+        // First, remove all invalid characters
         const regex = props.withDecimal ? /[^0-9.]/g : /[^0-9]/g;
         value = value.replace(regex, '');
-
+        
+        // Then handle decimal formatting
         if (props.withDecimal) {
             const parts = value.split('.');
-            if (parts.length > 2) {
-                value = `${parts[0]}.${parts.slice(1).join('')}`;
+            
+            // Ensure only one decimal point
+            if (parts.length > 1) {
+                value = parts[0] + '.' + parts.slice(1).join('');
             }
-            if (parts[1]?.length > 2) {
-                value = `${parts[0]}.${parts[1].slice(0, 2)}`;
+            
+            // Limit to 2 decimal places
+            if (parts.length > 1 && parts[1].length > 2) {
+                value = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+            
+            // Handle cases like ".5" -> "0.5"
+            if (value.startsWith('.')) {
+                value = '0' + value;
             }
         }
-
+        
+        // Update the input's value directly (important for mobile)
+        e.target.value = value;
         emit('update:modelValue', value);
     } else {
-        emit('update:modelValue', e.target.value);
+        emit('update:modelValue', value);
     }
 };
 
