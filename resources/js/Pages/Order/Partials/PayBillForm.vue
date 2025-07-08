@@ -413,8 +413,8 @@ const closeSuccessPaymentModal = () => {
 
 const kickDrawer = (printer, base64) => {
     try {
-        if (printer && !!!printer.kick_cash_drawer) return;
-        
+        if (printer && !!printer.kick_cash_drawer == false) return;
+
         if (!printer || !printer.ip_address || !printer.port_number) {
             let summary = '';
             let detail = '';
@@ -1472,7 +1472,6 @@ const printPreviewReceipt = async () => {
             <div class="relative col-span-1 flex items-center justify-center rounded-b-[5px]">
                 <Button
                     variant="primary"
-                    type="button"
                     size="lg"
                     :disabled="!isValidated"
                 >
