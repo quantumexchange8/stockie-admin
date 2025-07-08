@@ -43,7 +43,9 @@ const form = useForm({
 
 const getAllZones = async() => {
     try {
-        const response = await axios.get(route('orders.getAllZones'));
+        const lockedTables = JSON.parse(sessionStorage.getItem('table_locks'));
+
+        const response = await axios.post(route('orders.getAllZones', { locked_tables: lockedTables }));
         initialZones.value = response.data;
         zones.value = response.data;
 

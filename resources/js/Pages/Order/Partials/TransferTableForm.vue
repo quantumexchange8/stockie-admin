@@ -111,7 +111,9 @@ const form = useForm({
 const getAllZones = async() => {
     isLoading.value = true;
     try {
-        const response = await axios.get(route('orders.getAllZones'));
+        const lockedTables = JSON.parse(sessionStorage.getItem('table_locks'));
+
+        const response = await axios.post(route('orders.getAllZones', { locked_tables: lockedTables }));
         zones.value = response.data;
     } catch(error) {
         console.error(error)
