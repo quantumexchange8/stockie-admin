@@ -1123,6 +1123,77 @@ const printInvoiceReceipt = () => {
     setTimeout(() => orderInvoice.value.testPrintReceipt(), 200);
     closeSuccessPaymentModal();
 }
+
+const printPreviewReceipt = async () => {
+    try {
+        await Promise.all([
+            getOrderPaymentDetails(),
+            getPayoutDetails()
+        ]);
+        
+        const params = { 
+            order: order.value,
+            taxes: taxes.value,
+            applied_discounts: form.discounts,
+            table_names: tableNames.value,
+        };
+
+        const response = await axios.post('/order-management/orders/getPreviewReceipt', params);
+        const printer = response.data.printer;
+
+        if (!printer || !printer.ip_address || !printer.port_number) {
+            let summary = '';
+            let detail = '';
+
+            if (!printer) {
+                summary = 'Unable to detect selected printer';
+                detail = 'Please contact admin to setup the printer.';
+
+            } else if (!printer.ip_address) {
+                summary = 'Invalid printer IP address';
+                detail = 'Please contact admin to setup the printer IP address.';
+
+            } else if (!printer.port_number) {
+                summary = 'Invalid printer port number';
+                detail = 'Please contact admin to setup the printer port number.';
+            }
+
+            showMessage({
+                severity: 'error',
+                summary: summary,
+                detail: detail,
+            });
+
+            return;
+        }
+
+        const base64 = response.data.data;
+        const url = `stockie-app://print?base64=${base64}&ip=${printer.ip_address}&port=${printer.port_number}`;
+
+        try {
+            window.location.href = url;
+
+        } catch (e) {
+            console.error('Failed to open app:', e);
+            alert(`Failed to open Stockie app \n ${e}`);
+
+        } finally {
+            emit('close');
+        }
+
+        // window.location.href = `rawbt:base64,${base64}`;
+
+        
+    } catch (err) {
+        console.error("Print failed:", err);
+        showMessage({
+            severity: 'error',
+            summary: 'Print failed',
+            detail: err.message
+        });
+    }
+}
+
 </script>
 
 <template>
@@ -1213,7 +1284,7 @@ const printInvoiceReceipt = () => {
                     </div>
 
                     <!-- Looped entered payment method and amount -->
-                    <div class="flex flex-col items-start gap-4 self-stretch max-h-[calc(100dvh-30.6rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                    <div class="flex flex-col items-start gap-4 self-stretch max-h-[calc(100dvh-36rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                         <template v-for="(transaction, index) in sortedTransactionMethods" :key="index">
                             <div 
                                 class="flex p-4 flex-col self-stretch gap-2 items-start rounded-[5px] border border-grey-100 shadow-sm cursor-pointer"
@@ -1391,17 +1462,28 @@ const printInvoiceReceipt = () => {
             </div>
         </div>
 
-        <div class="relative flex px-6 pt-3 items-center justify-end gap-4 self-stretch rounded-b-[5px] mx-[-20px]">
+        <div class="grid grid-cols-1 sm:grid-cols-2 items-center gap-3 self-stretch">
             <Button
-                variant="primary"
-                type="submit"
+                variant="tertiary"
+                type="button"
                 size="lg"
-                :disabled="!isValidated"
+                class="col-span-1"
+                @click="printPreviewReceipt"
             >
-                Confirm
+                Print
             </Button>
-            <div v-if="!isValidated" class="absolute inset-0 px-11 pt-3 mx-[-20px]">
-                <div class="h-full cursor-not-allowed" @click="displayExceedBalanceToast"></div>
+            <div class="relative col-span-1 flex items-center justify-center rounded-b-[5px]">
+                <Button
+                    variant="primary"
+                    type="button"
+                    size="lg"
+                    :disabled="!isValidated"
+                >
+                    Confirm
+                </Button>
+                <div v-if="!isValidated" class="absolute inset-0 ">
+                    <div class="h-full cursor-not-allowed" @click="displayExceedBalanceToast"></div>
+                </div>
             </div>
         </div>
     </form>

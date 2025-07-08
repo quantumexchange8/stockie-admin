@@ -1281,11 +1281,40 @@ class OrderController extends Controller
         }
 
         if ($order->payment) {
+            // $order->payment->applied_discounts = isset($order->payment->bill_discounts) 
+            //     ? BillDiscount::whereIn('id', $order->payment->bill_discounts)
+            //                     ->get(['id', 'name', 'discount_type', 'discount_rate'])
+            //     : null; // return null if no discounts
+
             // Also check if bill_discounts exists and is not null
-            $order->payment->applied_discounts = isset($order->payment->bill_discounts) 
-                ? BillDiscount::whereIn('id', $order->payment->bill_discounts)
-                                ->get(['id', 'name', 'discount_type', 'discount_rate'])
-                : null; // return null if no discounts
+            if ($order->payment->bill_discounts) {
+                $discountIds = [];
+                $manualDiscounts = [];
+
+                foreach ($order->payment->bill_discounts as $discount) {
+                    if (is_numeric($discount)) {
+                        // It's an ID reference
+                        $discountIds[] = $discount;
+                    } elseif (is_array($discount)) {
+                        // It's a manual discount object
+                        $manualDiscounts[] = $discount;
+                    }
+                }
+
+                // Get database discounts for the IDs
+                $databaseDiscounts = [];
+                if (!empty($discountIds)) {
+                    $databaseDiscounts = BillDiscount::whereIn('id', $discountIds)
+                        ->get(['id', 'name', 'discount_type', 'discount_rate'])
+                        ->toArray();
+                }
+
+                // Combine both types of discounts
+                $order->payment->applied_discounts = array_merge($databaseDiscounts, $manualDiscounts);
+
+            } else {
+                $order->payment->applied_discounts = null;
+            }
         }
 
         if($order->waiter){
@@ -2352,72 +2381,83 @@ class OrderController extends Controller
                 }
                 
                 // Calculate bill discount(s) amount
-                if ($appliedDiscounts->filter(fn ($discount) => $discount['type'] === 'bill')->count() > 0) {
-                    $billDiscounts = $appliedDiscounts->filter(fn ($discount) => $discount['type'] === 'bill');
+                if ($appliedDiscounts->filter(fn ($discount) => $discount['type'] === 'bill' || $discount['type'] === 'manual')->count() > 0) {
+                    $billDiscounts = $appliedDiscounts->filter(fn ($discount) => $discount['type'] === 'bill' || $discount['type'] === 'manual');
                     $billDiscountedAmount = 0.00;
 
                     foreach ($billDiscounts as $key => $d) {
-                        $discount = BillDiscount::find($d['id']);
-                        $billDiscountedAmount += $discount->discount_type === 'amount'
-                                ? $discount->discount_rate
-                                : $subTotal * ($discount->discount_rate / 100);
-                        
-                        array_push($appliedBillDiscounts, $discount->id);
-
-                        // if (!$order->customer) continue;
-
-                        $hasCustomerLimit = $discount->customer_usage > 0;
-                        $hasTotalLimit = $discount->total_usage > 0;
-                        
-                        // Skip if no limits to enforce
-                        if (!$hasCustomerLimit && !$hasTotalLimit) continue;
-                        
-                        $existingCustomerRecord = $order->customer
-                                ? BillDiscountUsage::where([
-                                                        ['bill_discount_id', $discount->id],
-                                                        ['customer_id', $order->customer_id]
-                                                    ])
-                                                    ->first()
-                                : null;
-                                                                    
-                        // Check limits
-                        $canApply = true;
-                        $shouldDecrement = false;
-        
-                        if (
-                            $hasCustomerLimit && 
-                            $existingCustomerRecord && 
-                            $existingCustomerRecord->customer_usage >= $discount->customer_usage
-                        ) {
-                            $canApply = false;
-                        }
-                        
-                        if ($hasTotalLimit) {
-                            if ($discount->remaining_usage <= 0) {
-                                $canApply = false;
-                            } else {
-                                $shouldDecrement = true;
-                            }
-                        }
-                        
-                        if (!$canApply) continue;
-                                                                    
-                        if ($existingCustomerRecord) {
-                            $existingCustomerRecord->increment('customer_usage');
+                        if ($d['type'] === 'bill') {
+                            $discount = BillDiscount::find($d['id']);
+                            $billDiscountedAmount += $discount->discount_type === 'amount'
+                                    ? $discount->discount_rate
+                                    : $subTotal * ($discount->discount_rate / 100);
                             
-                        } else {
-                            if ($order->customer) {
-                                BillDiscountUsage::create([
-                                    'bill_discount_id' => $discount->id,
-                                    'customer_id' => $order->customer_id,
-                                    'customer_usage' => 1,
-                                    'total_usage' => 0,
-                                ]);
+                            array_push($appliedBillDiscounts, $discount->id);
+    
+                            // if (!$order->customer) continue;
+    
+                            $hasCustomerLimit = $discount->customer_usage > 0;
+                            $hasTotalLimit = $discount->total_usage > 0;
+                            
+                            // Skip if no limits to enforce
+                            if (!$hasCustomerLimit && !$hasTotalLimit) continue;
+                            
+                            $existingCustomerRecord = $order->customer
+                                    ? BillDiscountUsage::where([
+                                                            ['bill_discount_id', $discount->id],
+                                                            ['customer_id', $order->customer_id]
+                                                        ])
+                                                        ->first()
+                                    : null;
+                                                                        
+                            // Check limits
+                            $canApply = true;
+                            $shouldDecrement = false;
+            
+                            if (
+                                $hasCustomerLimit && 
+                                $existingCustomerRecord && 
+                                $existingCustomerRecord->customer_usage >= $discount->customer_usage
+                            ) {
+                                $canApply = false;
                             }
-                        }
-        
-                        if ($shouldDecrement) {
-                            $discount->decrement('remaining_usage');
+                            
+                            if ($hasTotalLimit) {
+                                if ($discount->remaining_usage <= 0) {
+                                    $canApply = false;
+                                } else {
+                                    $shouldDecrement = true;
+                                }
+                            }
+                            
+                            if (!$canApply) continue;
+                                                                        
+                            if ($existingCustomerRecord) {
+                                $existingCustomerRecord->increment('customer_usage');
+                                
+                            } else {
+                                if ($order->customer) {
+                                    BillDiscountUsage::create([
+                                        'bill_discount_id' => $discount->id,
+                                        'customer_id' => $order->customer_id,
+                                        'customer_usage' => 1,
+                                        'total_usage' => 0,
+                                    ]);
+                                }
+                            }
+            
+                            if ($shouldDecrement) {
+                                $discount->decrement('remaining_usage');
+                            }
+                        } else {
+                            $discountRate = $d['rate'];
+                            $billDiscountedAmount += $subTotal * ($discountRate / 100);
+                            $manualDiscount = [
+                                'discount_type' => 'manual',
+                                'discount_rate' => $discountRate,
+                            ];
+                            
+                            array_push($appliedBillDiscounts, $manualDiscount);
                         }
                     }
 
@@ -5400,6 +5440,258 @@ class OrderController extends Controller
         }
     }
 
+    public function getPreviewReceiptLayout(Request $request)
+    {
+        $order = $request->order;
+        $taxes = $request->taxes;
+        $table_names = $request->table_names;
+        $merchant = ConfigMerchant::first(['id', 'merchant_name', 'merchant_contact', 'merchant_address_line1', 'merchant_address_line2', 'postal_code', 'area', 'state']);
+        $pointConversion = Setting::where('type', 'point')->first(['name', 'type', 'value', 'point']);
+
+        $discounts = [];
+        $billDiscountAmount = 0.00;
+        $voucherDiscount = null;
+        $voucherDiscountAmount = 0.00;
+        $totalDiscountAmount = 0.00;
+        $hasBillDiscount = false;
+
+        foreach ($request->applied_discounts as $discount) {
+            $discountAmount = 0.00;
+            $discountSummary = '';
+
+            switch ($discount['type']) {
+                case 'bill':
+                    $discountSummary = $discount['name'] ?? 'Bill Discount';
+                    $discountRate = (float)($discount['discount_rate'] ?? 0);
+
+                    $discountAmount = $discount['discount_type'] === 'amount'
+                        ? $discountRate
+                        : $order['total_amount'] * ($discountRate / 100);
+
+                    $billDiscountAmount += $discountAmount;
+                    $hasBillDiscount = true;
+                    break;
+
+                case 'voucher':
+                    $rankName = $discount['ranking']['name'] ?? 'Unknown Rank';
+                    $discountRate = (float)($discount['discount'] ?? 0);
+
+                    $voucherRate = $discount['reward_type'] === 'Discount (Percentage)' 
+                        ? "$discountRate%" 
+                        : `RM $discountRate`;
+                        
+                    $discountSummary = "$voucherRate Discount (Entry Reward for $rankName)";
+                    
+                    $discountAmount = $discount['reward_type'] === 'Discount (Percentage)' 
+                        ? $order['total_amount'] * ($discount['discount'] / 100)
+                        : $discount['discount'];
+
+                    $voucherDiscount = $discount;
+                    $voucherDiscountAmount += $discountAmount;
+                    break;
+
+                case 'manual':
+                    $discountRate = (float)($discount['rate'] ?? 0);
+                    $discountSummary = "$discountRate% Discount";
+                    $discountAmount = $order['total_amount'] * ($discountRate / 100);
+                    $hasBillDiscount = true;
+                    break;
+            }
+
+            $discounts[] = [
+                'discount_summary' => $discountSummary,
+                'discount_amount' => $discountAmount
+            ];
+
+            $totalDiscountAmount += $discountAmount;
+        }
+
+        $has_voucher_applied = count($discounts) > 0;
+        $totalDiscountAmount = round($totalDiscountAmount, 2);
+
+        // Calculate taxes
+        $sstAmount = round((float)$order['total_amount'] * ((float)($taxes['SST'] ?? 0) / 100), 2);
+        $serviceTaxAmount = round((float)$order['total_amount'] * ((float)($taxes['Service Tax'] ?? 0) / 100), 2);
+
+        // Calculate grand total and rounding
+        $calculatedSum = (float)$order['total_amount'] + $sstAmount + $serviceTaxAmount - $totalDiscountAmount;
+        $grandTotal = $this->priceRounding(max($calculatedSum, 0.00));
+        $roundingDiff = $grandTotal - $calculatedSum;
+
+        // Calculate points to be earned from this payment
+        $totalPoints = round(($grandTotal / $pointConversion['value']) * $pointConversion['point'], 2);
+
+        // Create a buffer to capture ESC/POS commands
+        $buffer = '';
+        
+        // Helper function to add text with line breaks
+        $addText = function($text) use (&$buffer) {
+            $buffer .= $text . "\n";
+        };
+        
+        // Helper function to add raw ESC/POS commands
+        $addCommand = function($command) use (&$buffer) {
+            $buffer .= $command;
+        };
+        
+        // ===== ESC/POS INITIALIZATION =====
+        $addCommand("\x1B\x40"); // Initialize printer
+        $addCommand("\x1B\x21\x00"); // Normal text (clear all formatting)
+        $addCommand("\x1B\x4D\x00"); // Select Font B (default)
+        
+        // ===== HEADER SECTION =====
+        $addCommand("\x1B\x61\x01"); // Center alignment
+        $addCommand("\x1B\x21\x30"); // Double height + width
+        $addText($merchant['merchant_name']);
+        $addCommand("\x1B\x21\x00"); // Normal text
+        
+        $addText($this->formatAddress($merchant['merchant_address_line1'], $merchant['merchant_address_line2']));
+        $addText("Phone: " . $merchant['merchant_contact']);
+        $addText(""); // Empty line
+        
+        // Invoice title
+        $addCommand("\x1B\x21\x08"); // Bold
+        $addText("INVOICE");
+        $addCommand("\x1B\x21\x00"); // Normal text
+        $addCommand("\x1B\x61\x00"); // Left alignment
+        $addText(""); // Empty line
+        
+        // ===== MEMBER INFO =====
+        if ($order['customer']) {
+            $customerName = $order['customer']['full_name'];
+            $customerRank = Ranking::where('id', $order['customer']['ranking'])->first(['name']);
+
+            $addText("$customerName");
+            
+            $this->printTwoColumnsRaw($addText, "Phone No.", $order['customer']['phone'] ? str_replace("+", "", $order['customer']['dial_code']) . $order['customer']['phone'] : '-');
+            $this->printTwoColumnsRaw($addText, "Email", $order['customer']['email'] ?: '-');
+            $this->printTwoColumnsRaw($addText, "Tier", $customerRank['name']);
+            $this->printTwoColumnsRaw($addText, "Points Earned", $totalPoints ?? 0);
+            $this->printTwoColumnsRaw($addText, "Points Balance", ($order['customer']['point'] + $totalPoints) ?? 0);
+            $addText(""); // Empty line
+        }
+        
+        // ===== RECEIPT INFO =====
+        $this->printTwoColumnsRaw($addText, "Receipt No.", '-');
+        $this->printTwoColumnsRaw($addText, "Table No.", $table_names);
+        $this->printTwoColumnsRaw($addText, "Pax", $order['pax'] ?? '-');
+        $this->printTwoColumnsRaw($addText, "Date", Carbon::parse($order['created_at'])->format('d/m/Y H:i A'));
+        
+        // ===== ITEMS TABLE =====
+        $addText(str_repeat("-", 48));
+        $this->printThreeColumnsRaw($addText, "QTY", "ITEM", "AMT (RM)");
+        $addText(str_repeat("-", 48));
+        
+        $filteredOrderItems = collect($order['order_items'])->filter(fn ($item) => $item['status'] === 'Served' && $item['item_qty'] > 0);
+        
+        foreach ($filteredOrderItems as $key => $item) {
+            $itemQty = $item['item_qty'];
+            $itemType = $item['type'] !== 'Normal' ? "(" . $item['type'] . ")" : '';
+            $itemBucket = $item['product']['bucket'] === 'set' ? '(Set) ' : '';
+            $itemName = "$itemType$itemBucket" . $item['product']['product_name'];
+            
+            if ($item['discount_id']) {
+                $amountBeforeDiscount = number_format($item['type'] === 'Normal' ? $item['amount'] : 0, 2);
+                $discountName = $item['product_discount']['discount']['name'] . " Discount";
+                
+                $this->printThreeColumnsRaw($addText, $itemQty, $itemName, $amountBeforeDiscount);
+                $this->printThreeColumnsRaw($addText, '', $discountName, "- " . $item['discount_amount']);
+            } else {
+                $totalAmount = number_format($item['amount'], 2);
+                $this->printThreeColumnsRaw($addText, $itemQty, $itemName, $totalAmount);
+            }
+        }
+        
+        $addText(str_repeat("-", 48));
+        
+        // ===== TOTALS SECTION =====
+        $this->printTwoColumnsRightRaw($addText, "Subtotal", number_format($order['total_amount'] ?? 0, 2));
+        
+        if ($hasBillDiscount && $billDiscountAmount > 0) {
+            $this->printTwoColumnsRightRaw($addText, "Bill Discount", "- " . number_format($order['payment']['bill_discount_total'] ?? 0, 2));
+        }
+
+        if ($voucherDiscount) {
+            $voucherDiscountExtTitle = $voucherDiscount['reward_type'] === 'Discount (Percentage)' ? "(" . $voucherDiscount['discount'] . "%)" : '';
+            $this->printTwoColumnsRightRaw($addText, "Voucher Discount $voucherDiscountExtTitle", "- " . number_format($voucherDiscountAmount ?? 0, 2));
+        }
+
+        if ($serviceTaxAmount > 0) {
+            $serviceTaxExtTitle = round($taxes['Service Tax']);
+            $this->printTwoColumnsRightRaw($addText, "Service Tax ($serviceTaxExtTitle%)", number_format($serviceTaxAmount ?? 0, 2));
+        }
+        
+        if ($sstAmount > 0) {
+            $sstExtTitle = round($taxes['SST']);
+            $this->printTwoColumnsRightRaw($addText, "SST ($sstExtTitle%)", number_format($sstAmount ?? 0, 2));
+        }
+
+        $this->printTwoColumnsRightRaw($addText, "Rounding", ($roundingDiff < 0 ? '-' : '') . number_format(abs($roundingDiff ?? 0), 2));
+        
+        // NET TOTAL
+        $addCommand("\x1B\x21\x30"); // Double height + width
+        $addCommand("\x1B\x45\x01"); // Bold
+        $this->printTwoColumnsRightRaw($addText, "NET TOTAL", $grandTotal ?? '0.00', 10, 14);
+        $addCommand("\x1B\x21\x00"); // Normal text
+        $addCommand("\x1B\x45\x00"); // Bold off
+        
+        $addText(str_repeat("-", 48));
+        $addText(""); // Empty line
+        
+        // ===== DISCOUNT SUMMARY =====
+        if ($has_voucher_applied) {
+            $addText("------------*** DISCOUNT SUMMARY ***------------");
+            $this->printTwoColumnsRightRaw($addText, "DISCOUNTS", "AMT (RM)");
+            
+            foreach ($discounts as $key => $discount) {
+                $this->printTwoColumnsRightRaw($addText, $discount['discount_summary'], "- " . number_format($discount['discount_amount'], 2));
+            }
+            
+            $addText(""); // Empty line
+        }
+        
+        // ===== FOOTER SECTION =====
+        $addCommand("\x1B\x61\x01"); // Center alignment
+        $addText("------*** Printed: " . now()->format('d/m/Y H:i A') . " ***------");
+        
+        // Add some empty lines and cut
+        $addText("\n\n\n\n\n");
+        $addCommand("\x1D\x56\x01"); // Partial cut
+
+        return $buffer;
+    }
+
+    public function getPreviewReceipt(Request $request)
+    {
+        // Get printer
+        $printer = ConfigPrinter::where([
+                                    ['name', 'Cashier'],
+                                    ['status', 'active']
+                                ])
+                                ->first();
+
+        // Get the complete ESC/POS commands
+        $buffer = $this->getPreviewReceiptLayout($request);
+        
+        try {
+
+            // Return base64 encoded version for JSON safety
+            return response()->json([
+                'success' => true,
+                'data' => base64_encode($buffer), // Encode binary as base64
+                'printer' => $printer,
+                'message' => 'Print job sent'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Print receipt error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getReceipt(Request $request)
     {
         $order = $request->order;
@@ -5629,4 +5921,6 @@ class OrderController extends Controller
             'printer' => $printer,
         ];
     }
+
+
 }

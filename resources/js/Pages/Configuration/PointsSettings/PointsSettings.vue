@@ -3,7 +3,7 @@ import Button from '@/Components/Button.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Toast from '@/Components/Toast.vue';
 import Label from "@/Components/Label.vue";
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
@@ -12,7 +12,6 @@ const point = ref({});
 const pointExpirationSettings = ref({});
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const form = useForm({
     value: point.value.respectiveValue ?? '',
@@ -141,10 +140,11 @@ onMounted(() => {
                 <span>Spend</span>
                 <TextInput
                     :inputId="'value'"
+                    :inputType="'number'"
+                    withDecimal
                     :errorMessage="form.errors?.value"
                     :iconPosition="'left'"
                     :placeholder="'0'"
-                    @keypress="isValidNumberKey($event, true)"
                     v-model="form.value"
                     class="max-w-[191px] [&>div:nth-child(1)>input]:text-right  [&>div:nth-child(1)>input]:pr-4"
                 >
@@ -155,10 +155,11 @@ onMounted(() => {
                 <span>equal to</span>
                 <TextInput
                     :inputId="'point'"
+                    :inputType="'number'"
+                    withDecimal
                     :errorMessage="form.errors?.point"
                     :iconPosition="'right'"
                     :placeholder="'0'"
-                    @keypress="isValidNumberKey($event, true)"
                     v-model="form.point"
                     class="max-w-[218px] [&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pr-4 [&>div:nth-child(1)>input]:pl-4"
                 >
@@ -190,11 +191,11 @@ onMounted(() => {
                     <div class="flex col-span-full lg:col-span-1 items-end gap-x-1">
                         <TextInput
                             :inputId="'days_to_expire'"
+                            :inputType="'number'"
                             :errorMessage="expirationSettingsForm.errors?.days_to_expire"
                             :labelText="'Points Expiration'"
                             required
                             :placeholder="'0'"
-                            @keypress="isValidNumberKey($event, false)"
                             v-model="expirationSettingsForm.days_to_expire"
                             class="max-w-[120px] [&>div:nth-child(1)>input]:text-left  [&>div:nth-child(1)>input]:pr-4"
                         />
@@ -215,9 +216,9 @@ onMounted(() => {
                         <div class="flex items-end gap-x-1">
                             <TextInput
                                 :inputId="'days_to_notify'"
+                                :inputType="'number'"
                                 :errorMessage="expirationSettingsForm.errors?.days_to_notify"
                                 :placeholder="'0'"
-                                @keypress="isValidNumberKey($event, false)"
                                 v-model="expirationSettingsForm.days_to_notify"
                                 class="max-w-[120px] [&>div:nth-child(1)>input]:text-left  [&>div:nth-child(1)>input]:pr-4"
                             />

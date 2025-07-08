@@ -4,6 +4,8 @@ import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
 import { EyeIcon, EyeOffIcon } from "./Icons/solid";
+import { useInputValidator } from '@/Composables';
+
 const props = defineProps({
     inputName: String,
     modelValue: String,
@@ -36,6 +38,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    withDecimal: {
+        type: Boolean,
+        default: false,
+    },
     maxlength: Number,
 });
 
@@ -51,7 +57,9 @@ const {
     required
 } = props;
 
-defineEmits(["update:modelValue", "blur"]);
+const { isValidNumberKey } = useInputValidator();
+
+const emit = defineEmits(["update:modelValue", "blur"]);
 
 const input = ref(null);
 const inputLabel = ref('');
@@ -69,18 +77,40 @@ const toggleShow = () => {
     showPassword.value = !showPassword.value;
 };
 
-// Check and allows only the following keypressed
-const isNumber = (e, withDot = true) => {
-    if (props.inputType === 'number') {
-        const keysAllowed = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        if (withDot) {
-            keysAllowed.push('.');
-        }
-        const keyPressed = e.key;
+// // Check and allows only the following keypressed
+// const isNumber = (e, withDot = true) => {
+//     if (props.inputType === 'number') {
+//         const keysAllowed = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+//         if (withDot) {
+//             keysAllowed.push('.');
+//         }
+//         const keyPressed = e.key;
         
-        if (!keysAllowed.includes(keyPressed)) {
-            e.preventDefault();
+//         if (!keysAllowed.includes(keyPressed)) {
+//             e.preventDefault();
+//         }
+//     }
+// };
+
+const handleInput = (e) => {
+    if (props.inputType === 'number') {
+        let value = e.target.value;
+        const regex = props.withDecimal ? /[^0-9.]/g : /[^0-9]/g;
+        value = value.replace(regex, '');
+
+        if (props.withDecimal) {
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = `${parts[0]}.${parts.slice(1).join('')}`;
+            }
+            if (parts[1]?.length > 2) {
+                value = `${parts[0]}.${parts[1].slice(0, 2)}`;
+            }
         }
+
+        emit('update:modelValue', value);
+    } else {
+        emit('update:modelValue', e.target.value);
     }
 };
 
@@ -148,14 +178,15 @@ onMounted(() => {
                 ]"
                 :type="
                     inputType !== 'password'
-                        ? inputType
+                        ? 'text'
                         : showPassword
                         ? 'text'
                         : 'password'
                 "
+                :inputmode="inputType === 'number' ? 'decimal' : 'text'"
                 :value="modelValue"
-                @input="$emit('update:modelValue', $event.target.value)"
-                @keypress="isNumber($event)"
+                @input="handleInput($event)"
+                @keydown="inputType === 'number' ? isValidNumberKey($event, withDecimal) : undefined"
                 @blur="$emit('blur', $event)"
                 ref="input"
                 :autocomplete="inputType === 'password' ? 'current-password' : ''"

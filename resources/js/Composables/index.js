@@ -292,6 +292,16 @@ export function useInputValidator() {
     function isValidNumberKey(e, allowDecimal = true) {
         const { key, target: { value } } = e;
 
+        // Allow navigation and control keys (Backspace, Delete, Arrows, Tab, etc.)
+        const allowedControlKeys = [
+            'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+            'Tab', 'Home', 'End', 'Enter', 'Escape'
+        ];
+
+        if (allowedControlKeys.includes(key)) {
+            return; // Allow these keys without validation
+        }
+
         // Allow digits
         if (/^\d$/.test(key)) {
             //Check decimal places if option is allowed

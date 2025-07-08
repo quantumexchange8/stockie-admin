@@ -99,7 +99,7 @@ const appliedDiscounts = computed(() => {
             : order.value.payment.total_amount * (d.discount_rate / 100);
 
         discountSummary.push({
-            discount_summary: d.name,
+            discount_summary: d.discount_type === 'manual' ? `${d.discount_rate}% Discount` : d.name,
             discount_amount: Number(discountedAmount ?? 0).toFixed(2)
         })
     });

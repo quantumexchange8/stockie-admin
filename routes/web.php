@@ -297,6 +297,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::post('/orders/kickDrawer', [OrderController::class, 'kickDrawer'])->name('orders.kickDrawer');
         Route::post('/orders/printReceipt', [OrderController::class, 'printReceipt'])->name('orders.printReceipt');
         Route::post('/orders/getTestReceipt', [OrderController::class, 'getTestReceipt'])->name('orders.getTestReceipt');
+        Route::post('/orders/getPreviewReceipt', [OrderController::class, 'getPreviewReceipt'])->name('orders.getPreviewReceipt');
 
         // Order tables
         Route::post('/orders/storeOrderTable', [OrderController::class, 'storeOrderTable'])->name('orders.tables.store');
