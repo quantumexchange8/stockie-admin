@@ -39,8 +39,6 @@ const allCustomers = ref([]);
 const notAllowedOverlay = ref(null);
 const collapsedSections = ref({}); // Object to keep track of each section's collapsed state
 
-const { isValidNumberKey } = useInputValidator();
-
 const fetchProducts = async () => {
     isLoading.value = true;
     try {

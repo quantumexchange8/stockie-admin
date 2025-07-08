@@ -5,7 +5,7 @@ import { DeleteIllus } from '@/Components/Icons/illus';
 import { BeerIcon2, CommissionIcon, DeleteIcon, EditIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -21,7 +21,6 @@ const props = defineProps({
 })
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const isEditCommOpen = ref(false);
 const isDeleteCommOpen = ref(false);
@@ -200,12 +199,13 @@ const isFormValid = computed(() => {
                     <TextInput
                         labelText="Rate"
                         :inputName="'rate'"
+                        :inputType="'number'"
+                        withDecimal
                         :dataValue="form.rate"
                         type="'number'"
                         iconPosition="right"
                         v-model="form.rate"
                         v-show="isRate"
-                        @keypress="isValidNumberKey($event, true)"
                     >
                         <template #prefix>%</template>
                     </TextInput>
@@ -213,12 +213,13 @@ const isFormValid = computed(() => {
                     <TextInput
                         labelText="Amount"
                         :inputName="'rate'"
+                        :inputType="'number'"
+                        withDecimal
                         :dataValue="form.rate"
                         type="'number'"
                         iconPosition="left"
                         v-model="form.rate"
                         v-show="!isRate"
-                        @keypress="isValidNumberKey($event, true)"
                     >
                         <template #prefix>RM</template>
                     </TextInput>

@@ -3,15 +3,12 @@ import Button from '@/Components/Button.vue';
 import { CheckWhiteIcon, DeleteIcon, PlusIcon, TimeIcon } from '@/Components/Icons/solid';
 import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
-import { useInputValidator } from '@/Composables';
 import Calendar from 'primevue/calendar';
 import { ref } from 'vue';
 import DateInput from '@/Components/Date.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import Dropdown from "@/Components/Dropdown.vue";
 import InputError from '@/Components/InputError.vue';
-
-const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(["close", "shift-added"]);
 const time = ref();
@@ -167,12 +164,12 @@ const submit = () => {
                 <div class="relative">
                     <TextInput 
                         :inputName="'late'"
+                        :inputType="'number'"
                         :placeholder="'15'"
                         :iconPosition="'right'"
                         :errorMessage="form.errors?.late"
                         v-model="form.late"
                         class="w-full [&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pl-4 [&>div:nth-child(1)>input]:mb-0"
-                        @keypress="isValidNumberKey($event, false)"
                     >
                         <template #prefix>
                             <span class="text-grey-700 text-base font-normal">minute</span>
@@ -225,7 +222,6 @@ const submit = () => {
                                     :placeholder="'1'"
                                     :errorMessage="form.errors ? form.errors['breaks.' + index + '.break_value']  : ''"
                                     v-model="breakItem.break_value"
-                                    @keypress="isValidNumberKey($event, false)"
                                 />
                             </div>
                             <div class="flex flex-col items-start w-full">

@@ -5,7 +5,7 @@ import Tag from '@/Components/Tag.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
-import { useInputValidator, useCustomToast } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
@@ -19,7 +19,6 @@ const props = defineProps({
 const emit = defineEmits(['update:shift-listing', 'update:selected-shift']);
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const shiftTransactionsList = ref(props.shiftTransactions);
 const openShiftFormIsOpen = ref(false);
@@ -183,9 +182,9 @@ watch(() => props.currentSelectedShift, (newValue) => {
                     :iconPosition="'left'"
                     :placeholder="'0.00'"
                     :inputType="'number'"
+                    withDecimal
                     :errorMessage="form.errors?.starting_cash?.[0] ??''"
                     v-model="form.starting_cash"
-                    @keypress="isValidNumberKey($event, true)"
                     class="[&>div>input]:text-left"
                 >
                     <template #prefix>RM</template>

@@ -5,7 +5,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import Modal from '@/Components/Modal.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
@@ -16,7 +16,7 @@ const props = defineProps({
     },
 })
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
+
 const isUnsavedChangesOpen = ref(false);
 const formattedWaiters = computed(() =>
     props.waiters.map(item => ({
@@ -109,10 +109,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <TextInput
                     labelText="Rate"
                     :inputName="'comm_rate'"
+                    :inputType="'number'"
+                    withDecimal
                     :iconPosition="isRate ? 'right' : 'left'"
                     :errorMessage="form.errors?.rate"
                     v-model="form.rate"
-                    @keypress="isValidNumberKey($event, true)"
                 >
                     <template #prefix>{{ isRate ? '%' : 'RM' }}</template>
                 </TextInput>
@@ -131,10 +132,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <TextInput 
                     :labelText="'Monthly sales hits above'"
                     :inputName="'monthly_sale'"
+                    :inputType="'number'"
+                    withDecimal
                     :iconPosition="'left'"
                     :errorMessage="form.errors?.monthly_sale"
                     v-model="form.monthly_sale"
-                    @keypress="isValidNumberKey($event, true)"
                 >
                     <template #prefix>RM</template>
                 </TextInput>

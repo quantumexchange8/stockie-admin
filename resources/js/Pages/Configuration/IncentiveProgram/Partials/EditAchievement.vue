@@ -4,7 +4,7 @@ import Date from '@/Components/Date.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import { computed, ref, watch } from 'vue';
@@ -17,7 +17,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['isDirty', 'closeModal', 'getEmployeeIncent']);
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator()
+
 const closeModal = () => {
     emit('closeModal');
 }
@@ -133,10 +133,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <TextInput
                     labelText="Rate"
                     :inputName="'comm_rate'"
+                    :inputType="'number'"
+                    withDecimal
                     :iconPosition="isRate ? 'right' : 'left'"
                     :errorMessage="form.errors?.rate"
                     v-model="form.rate"
-                    @keypress="isValidNumberKey($event, true)"
                 >
                     <template #prefix>{{ isRate ? '%' : 'RM' }}</template>
                 </TextInput>
@@ -145,6 +146,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <div class="flex items-start content-start gap-4 self-stretch">
                 <Date 
                     :inputName="'effective_date'"
+                    :inputType="'number'"
+                    withDecimal
                     :labelText="'Effective date'"
                     :placeholder="'DD/MM/YYYY'"
                     :range="false"
@@ -159,7 +162,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :iconPosition="'left'"
                     :errorMessage="form.errors?.monthly_sale"
                     v-model="form.monthly_sale"
-                    @keypress="isValidNumberKey($event, true)"
                 >
                     <template #prefix>RM</template>
                 </TextInput>

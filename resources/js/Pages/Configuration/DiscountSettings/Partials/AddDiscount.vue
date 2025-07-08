@@ -4,7 +4,7 @@ import DateInput from '@/Components/Date.vue';
 import { DeleteIcon, PercentageIcon, PlusIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { transactionFormat, useCustomToast, useInputValidator } from '@/Composables';
+import { transactionFormat, useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, onMounted, ref, watch } from 'vue';
 import SelectProduct from './SelectProduct.vue';
@@ -21,7 +21,6 @@ const isLoading = ref(false);
 const invalidDates = ref([]);
 
 const emit = defineEmits(["close", "discountDetails", 'isDirty']);
-const { isValidNumberKey } = useInputValidator();
 const { formatAmount } = transactionFormat();
 const { showMessage } = useCustomToast();
 
@@ -234,13 +233,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             </div>
 
                             <TextInput 
+                                :inputType="'number'"
+                                withDecimal
                                 :inputName="'discount_rate'"
                                 :placeholder="'0'"
                                 :iconPosition="'right'"
                                 :errorMessage="form.errors?.discount_rate"
                                 v-model="form.discount_rate"
                                 class="w-full [&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pl-4 [&>div:nth-child(1)>input]:mb-0"
-                                @keypress="isValidNumberKey($event, true)"
                                 v-if="selectedType === 'percentage'"
                             >
                                 <template #prefix>
@@ -249,12 +249,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             </TextInput>
 
                             <TextInput 
+                                :inputType="'number'"
+                                withDecimal
                                 :inputName="'discount_rate'"
                                 :placeholder="'0'"
                                 :iconPosition="'left'"
                                 v-model="form.discount_rate"
                                 class="w-full [&>div:nth-child(1)>input]:text-right [&>div:nth-child(1)>input]:pr-4 [&>div:nth-child(1)>input]:mb-0"
-                                @keypress="isValidNumberKey($event, true)"
                                 v-if="selectedType === 'fixed'"
                             >
                                 <template #prefix>

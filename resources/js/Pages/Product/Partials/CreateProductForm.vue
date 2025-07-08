@@ -11,7 +11,6 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { redeemOptions, defaultProductItem } from '@/Composables/constants';
-import { useInputValidator } from '@/Composables';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -26,7 +25,6 @@ const props = defineProps({
     },
 });
 const emit = defineEmits(['close', 'isDirty']);
-const { isValidNumberKey } = useInputValidator();
 
 const categoryArr = ref(props.categoryArr);
 const inventoriesArr = ref(props.inventoriesArr);
@@ -208,11 +206,12 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         <div class="w-full flex flex-row items-center justify-around gap-x-4">
                             <TextInput
                                 :inputId="'price'"
+                                :inputType="'number'"
+                                withDecimal
                                 :labelText="'Price'"
                                 :iconPosition="'left'"
                                 :errorMessage="form.errors?.price || ''"
                                 v-model="form.price"
-                                @keypress="isValidNumberKey($event, true)"
                                 class="[&>div>input]:text-center"
                             >
                                 <template #prefix>RM</template>
@@ -233,12 +232,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         <TextInput  
                             v-if="form.is_redeemable"
                             :inputId="'point'"
+                            :inputType="'number'"
+                            withDecimal
                             :labelText="'Redeemed with'"
                             :iconPosition="'right'"
                             class="!w-1/3 [&>div>input]:text-center"
                             :errorMessage="form.errors?.point || ''"
                             v-model="form.point"
-                            @keypress="isValidNumberKey($event, true)"
                         >
                             <template #prefix>pts</template>
                         </TextInput>

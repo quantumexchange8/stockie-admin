@@ -8,7 +8,7 @@ import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import Accordion from '@/Components/Accordion.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { DeleteIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
@@ -28,7 +28,6 @@ const confirmationMessage = ref(``);
 const confirmation = ref(false);
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const form = useForm({
     id: '',
@@ -270,10 +269,10 @@ watch(form, () => {
                     <div class="grid grid-cols-2 md:grid-cols-12 gap-3 self-stretch">
                     <TextInput
                         :inputName="'seat'"
+                        :inputType="'number'"
                         :labelText="'No. of Seats Available'"
                         :placeholder="'number only (eg: 6)'"
                         :errorMessage="form.errors?.seat || ''"
-                        @keypress="isValidNumberKey($event, false)"
                         v-model="form.seat"
                         class="col-span-full md:col-span-6"
                     />

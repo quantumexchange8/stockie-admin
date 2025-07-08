@@ -7,14 +7,13 @@ import MultiSelect from '@/Components/MultiSelect.vue';
 import RadioButton from '@/Components/RadioButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Toggle from '@/Components/Toggle.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { computed, onMounted, ref, watch } from 'vue';
 
 const emit = defineEmits(['isDirty', 'close', 'getBillDiscounts']);
-const { isValidNumberKey } = useInputValidator();
 const { showMessage } = useCustomToast();
 
 const available_on = ref([
@@ -171,12 +170,13 @@ watch(() => form.isDirty, (newValue) => {
                                 </div>
                                 <TextInput 
                                     :inputName="'discount_rate'"
+                                    :inputType="'number'"
+                                    withDecimal
                                     :errorMessage="form.errors?.discount_rate"
                                     :placeholder="'10'"
                                     :iconPosition="!!form.discount_isRate ? 'right' : 'left'"
                                     :class="!form.discount_isRate ? '[&>div:nth-child(1)>input]:text-right [&>div:nth-child(1)>input]:pr-4 [&>div:nth-child(1)>input]:mb-0' : '[&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pl-4 [&>div:nth-child(1)>input]:mb-0'"
                                     v-model="form.discount_rate"
-                                    @keypress="isValidNumberKey($event, true)"
                                 >
                                     <template #prefix>
                                         <span>{{ form.discount_isRate ? '%' : 'RM' }}</span>
@@ -280,11 +280,12 @@ watch(() => form.isDirty, (newValue) => {
                                 </span>
                             </div>
                             <TextInput
+                                :inputType="'number'"
+                                withDecimal
                                 :errorMessage="form.errors?.discount_requirement"
                                 :iconPosition="form.discount_criteria === 'min_spend' ? 'left' : 'right'"
                                 :inputName="'discount_requirement'"
                                 v-model="form.discount_requirement"
-                                @keypress="isValidNumberKey($event, true)"
                             >
                                 <template #prefix>
                                     <span>{{ form.discount_criteria === 'min_spend' ? 'RM' : 'item' }}</span>

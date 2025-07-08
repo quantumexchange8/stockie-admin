@@ -5,7 +5,7 @@ import InputError from "@/Components/InputError.vue";
 import { useForm } from "@inertiajs/vue3";
 import DragDropImage from "@/Components/DragDropImage.vue";
 import { computed, onMounted, ref, watch } from "vue";
-import { useCustomToast, useInputValidator, usePhoneUtils } from "@/Composables";
+import { useCustomToast, usePhoneUtils } from "@/Composables";
 import Modal from "@/Components/Modal.vue";
 import RadioButton from "@/Components/RadioButton.vue";
 import Label from "@/Components/Label.vue";
@@ -19,7 +19,6 @@ const props = defineProps({
 })
 const { showMessage } = useCustomToast();
 const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
-const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(["close", "isDirty"]);
 
@@ -137,13 +136,12 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     <TextInput
                                         labelText="Phone number"
                                         inputId="phone"
-                                        type="'tel'"
+                                        :inputType="'number'"
                                         :errorMessage="form.errors?.phone || ''"
                                         :iconPosition="'left'"
                                         class="[&>div:nth-child(2)>input]:text-left"
                                         required
                                         v-model="form.phone_temp"
-                                        @keypress="isValidNumberKey($event, false)"
                                         @input="formatPhoneInput"
                                     >
                                         <template #prefix>
@@ -181,12 +179,12 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 <TextInput
                                     :label-text="`Salary per ` + (form.employment_type === 'Full-time' ? 'month (basic)' : 'hour')"
                                     inputId="salary"
-                                    type="'text'"
+                                    :inputType="'number'"
+                                    withDecimal
                                     :iconPosition="'left'"
                                     required
                                     :errorMessage="form.errors?.email || ''"
                                     v-model="form.salary"
-                                    @keypress="isValidNumberKey($event, true)"
                                 >
                                     <template #prefix>
                                         <span class="text-grey-900">RM</span>
@@ -247,6 +245,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             
                             <TextInput
                                 inputId="passcode"
+                                :inputType="'number'"
                                 labelText="Clock in passcode"
                                 placeholder="eg: 123456"
                                 class="!w-1/2"
@@ -254,7 +253,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 required
                                 :errorMessage="form.errors?.passcode || ''"
                                 v-model="form.passcode"
-                                @keypress="isValidNumberKey($event, false)"
                             />
                         </div>
                     </div>

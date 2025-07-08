@@ -13,7 +13,7 @@ import Accordion from "@/Components/Accordion.vue";
 import { Calendar, DeleteIcon, UploadLogoIcon } from "@/Components/Icons/solid";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
 import Toast from '@/Components/Toast.vue'
-import { useCustomToast, useInputValidator } from "@/Composables";
+import { useCustomToast } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
 import Modal from "@/Components/Modal.vue";
 import { DeleteIllus } from "@/Components/Icons/illus";
@@ -50,7 +50,6 @@ const selectedReward = ref(null);
 const isDeleteRewardModalOpen = ref(false);
 
 const emit = defineEmits(["close", "isDirty"]);
-const { isValidNumberKey } = useInputValidator();
 const { showMessage } = useCustomToast();
 
 // *DNR*
@@ -281,9 +280,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         inputId="min_amount"
                         :errorMessage="form.errors?.min_amount  ?? ''"
                         :iconPosition="'left'"
-                        type="'Number'"
+                        :inputType="'number'"
                         v-model="form.min_amount"
-                        @keypress="isValidNumberKey($event, false)"
                     >
                         <template #prefix> RM </template>
                     </TextInput>
@@ -366,8 +364,9 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                             :errorMessage="form.errors ? form.errors['items.' + index + '.discount']  : ''"
                                             :labelText="reward.reward_type === 'Discount (Amount)' ? 'Discount Amount' : 'Discount Percentage'"
                                             inputId="discount"
+                                            :inputType="'number'"
+                                            withDecimal
                                             v-model="reward.discount"
-                                            @keypress="isValidNumberKey($event, true)"
                                         >
                                             <template #prefix>{{ reward.reward_type === 'Discount (Amount)' ? 'RM' : '%' }}</template>
                                         </TextInput>
@@ -378,8 +377,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                             :errorMessage="form.errors ? form.errors['items.' + index + '.min_purchase_amount']  : ''"
                                             labelText="Minimum purchase amount"
                                             inputId="min_purchase_amount"
+                                            :inputType="'number'"
                                             v-model="reward.min_purchase_amount"
-                                            @keypress="isValidNumberKey($event, false)"
                                         >
                                             <template #prefix>RM</template>
                                         </TextInput>
@@ -406,8 +405,9 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                         :iconPosition="'right'"
                                         v-model="reward.bonus_point"
                                         :inputName="'bonus_point_' + index"
+                                        :inputType="'number'"
+                                        withDecimal
                                         :errorMessage="form.errors ? form.errors['items.' + index + '.bonus_point']  : ''"
-                                        @keypress="isValidNumberKey($event, true)"
                                     >
                                         <template #prefix>pts</template>
                                     </TextInput>

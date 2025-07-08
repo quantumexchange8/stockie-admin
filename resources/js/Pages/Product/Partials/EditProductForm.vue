@@ -10,7 +10,6 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { DeleteIcon } from '@/Components/Icons/solid';
 import { redeemOptions } from '@/Composables/constants';
-import { useInputValidator } from '@/Composables';
 import DragDropImage from '@/Components/DragDropImage.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -30,7 +29,6 @@ const props = defineProps({
     },
 });
 const emit = defineEmits(['close', 'isDirty']);
-const { isValidNumberKey } = useInputValidator();
 
 const categoryArr = ref(props.categoryArr);
 const inventoriesArr = ref(props.inventoriesArr);
@@ -222,11 +220,12 @@ watch(
                         <div class="w-full flex flex-row items-center justify-around gap-x-4">
                             <TextInput
                                 :inputId="'price'"
+                                :inputType="'number'"
+                                withDecimal
                                 :labelText="'Price'"
                                 :iconPosition="'left'"
                                 :errorMessage="form.errors?.price || ''"
                                 v-model="form.price"
-                                @keypress="isValidNumberKey($event, true)"
                                 class="[&>div>input]:text-center"
                             >
                                 <template #prefix>RM</template>
@@ -248,12 +247,13 @@ watch(
                         <TextInput  
                             v-if="form.is_redeemable"
                             :inputId="'point'"
+                            :inputType="'number'"
+                            withDecimal
                             :labelText="'Redeemed with'"
                             :iconPosition="'right'"
                             class="!w-1/3 [&>div>input]:text-center"
                             :errorMessage="form.errors?.point || ''"
                             v-model="form.point"
-                            @keypress="isValidNumberKey($event, true)"
                         >
                             <template #prefix>pts</template>
                         </TextInput>

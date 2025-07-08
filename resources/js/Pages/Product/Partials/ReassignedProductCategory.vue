@@ -11,7 +11,6 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { redeemOptions, defaultProductItem } from '@/Composables/constants';
-import { useInputValidator } from '@/Composables';
 import Modal from '@/Components/Modal.vue';
 import Message from '@/Components/Message.vue';
 import Tag from '@/Components/Tag.vue';
@@ -24,7 +23,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close', 'isDirty', 'update:categories']);
-const { isValidNumberKey } = useInputValidator();
 const { showMessage } = useCustomToast();
 
 const categories = ref();

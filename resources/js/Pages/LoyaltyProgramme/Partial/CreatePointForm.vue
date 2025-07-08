@@ -11,8 +11,6 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultPointItem } from '@/Composables/constants';
-import Label from '@/Components/Label.vue';
-import { useInputValidator } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -23,7 +21,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
-const { isValidNumberKey } = useInputValidator();
 const inventoriesArr = ref(props.inventoriesArr);
 
 const form = useForm({
@@ -104,11 +101,11 @@ const isFormValid = computed(() => {
                             />
                             <TextInput  
                                 :inputId="'point'"
+                                :inputType="'number'"
                                 :labelText="'Redeemed with'"
                                 :iconPosition="'right'"
                                 :errorMessage="form.errors?.point || ''"
                                 v-model="form.point"
-                                @keypress="isValidNumberKey($event, false)"
                                 class="col-span-full sm:col-span-4 [&>div>input]:text-center"
                             >
                                 <template #prefix>pts</template>

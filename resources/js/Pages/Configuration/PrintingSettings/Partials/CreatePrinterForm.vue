@@ -2,14 +2,13 @@
 import { useForm } from '@inertiajs/vue3';
 import Button from '@/Components/Button.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { computed, ref, watch } from 'vue';
 import Modal from '@/Components/Modal.vue';
 
 const emit = defineEmits(['isDirty', 'closeModal', 'update:printers'])
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const isUnsavedChangesOpen = ref(false);
 
@@ -84,7 +83,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :placeholder="'eg: 9100'"
                 :errorMessage="form.errors.port_number ? form.errors.port_number[0] : ''"
                 v-model="form.temp_port"
-                @keypress="isValidNumberKey($event, false)"
             />
         </div>
         <div class="flex pt-4 justify-center items-end gap-4 self-stretch">

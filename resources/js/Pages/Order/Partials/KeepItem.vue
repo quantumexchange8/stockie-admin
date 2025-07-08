@@ -2,7 +2,7 @@
 import { useForm, usePage } from '@inertiajs/vue3';
 import { onMounted, ref, computed, watch } from 'vue';
 import Button from '@/Components/Button.vue';
-import { useCustomToast, useInputValidator, usePhoneUtils } from '@/Composables/index.js';
+import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import Tag from '@/Components/Tag.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
@@ -39,7 +39,6 @@ const isLoading = ref(false);
 const isMessageShown = ref(true);
 const allCustomers = ref([]);
 const notAllowedOverlay = ref(null);
-const { isValidNumberKey } = useInputValidator();
 
 const fetchProducts = async () => {
     isLoading.value = true;
@@ -700,10 +699,11 @@ onMounted(() => {
         
                                                         <TextInput
                                                             :iconPosition="'right'"
+                                                            :inputType="'number'"
+                                                            withDecimal
                                                             v-model="form.items.find(i => i.order_item_subitem_id === sub_item.id).amount"
                                                             v-if="form.items.find(i => i.order_item_subitem_id === sub_item.id).type === 'cm'"
                                                             :disabled="totalSubItemQty(order_item, sub_item) === (order_item.type === 'Normal' || order_item.type === 'Redemption' || order_item.type === 'Reward' ? getKeptQuantity(sub_item) : getTotalKeptQuantity(order_item))"
-                                                            @keypress="isValidNumberKey($event)"
                                                             @input="checkMaxValue($event, order_item, sub_item.id)"
                                                             class="!w-36"
                                                         />

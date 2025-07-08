@@ -6,7 +6,7 @@ import { NoImageIcon, PercentageIcon } from '@/Components/Icons/solid';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/Table.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast, useInputValidator, usePhoneUtils } from '@/Composables';
+import { useCustomToast, usePhoneUtils } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { onMounted, ref, watch } from 'vue';
@@ -22,7 +22,6 @@ const props = defineProps({
 
 const emit = defineEmits(['refetchMerchant']);
 
-const { isValidNumberKey } = useInputValidator();
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
 
@@ -358,12 +357,12 @@ onMounted(() => {
                             <!-- registration no is fixed 12 digits -->
                             <TextInput 
                                 :inputName="'registration_no'"
+                                :inputType="'number'"
                                 :labelText="'Registration No.'"
                                 :errorMessage="merchantForm.errors.registration_no ? merchantForm.errors.registration_no[0] : ''"
                                 :required="true"
                                 :maxlength="12"
                                 v-model="merchantForm.registration_no"
-                                @keypress="isValidNumberKey($event, false)"
                             />
 
                             <!-- MSIC code is fixed 5 digits -->
@@ -406,10 +405,10 @@ onMounted(() => {
 
                                     <TextInput 
                                         :inputName="'phone_no'"
+                                        :inputType="'number'"
                                         placeholder="12 345 1234"
                                         :errorMessage="merchantForm.errors.phone_no ? merchantForm.errors.phone_no[0] : ''"
                                         v-model="merchantForm.phone_temp"
-                                        @keypress="isValidNumberKey($event, false)"
                                         @input="formatPhoneInput($event, false)"
                                     />
                                 </div>
@@ -527,12 +526,12 @@ onMounted(() => {
                         <div class="flex items-center gap-4 w-full">
                             <TextInput 
                                 :inputName="'postal_code'"
+                                :inputType="'number'"
                                 :labelText="'Postal Code'"
                                 :required="true"
                                 :maxlength="5"
                                 :errorMessage="addressForm.errors.postal_code ? addressForm.errors.postal_code[0] : ''"
                                 v-model="addressForm.postal_code"
-                                @keypress="isValidNumberKey($event, false)"
                             />
 
                             <TextInput 

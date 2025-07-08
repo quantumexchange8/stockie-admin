@@ -3,7 +3,7 @@ import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Toast from '@/Components/Toast.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { router, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
@@ -16,7 +16,6 @@ const timerDurationTypes = ref([
 ]);
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const form = useForm({
     value_type: '',
@@ -128,11 +127,11 @@ onMounted(() => {
             <div class="flex items-end gap-x-1">
                 <TextInput
                     :inputId="'value'"
+                    :inputType="'number'"
                     :errorMessage="form.errors?.value"
                     :labelText="'Unlock Table After'"
                     required
                     :placeholder="'0'"
-                    @keypress="isValidNumberKey($event, false)"
                     v-model="form.value"
                     class="max-w-[120px] [&>div:nth-child(1)>input]:text-left  [&>div:nth-child(1)>input]:pr-4"
                 />

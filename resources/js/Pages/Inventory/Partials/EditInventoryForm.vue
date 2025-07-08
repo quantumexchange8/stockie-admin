@@ -8,7 +8,7 @@ import DragDropImage from '@/Components/DragDropImage.vue'
 import { DeleteIcon, PlusIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
-import { useCustomToast, useInputValidator } from '@/Composables/index.js';
+import { useCustomToast } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 import { DeleteCustomerIllust, DeleteIllus, ProductDeactivationIllust } from '@/Components/Icons/illus';
 import Textarea from '@/Components/Textarea.vue';
@@ -34,7 +34,6 @@ const props = defineProps({
 });
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close', 'isDirty'])
 
@@ -232,20 +231,20 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 />
                                 <TextInput
                                     :inputName="'item_'+ i +'_stock_qty'"
+                                    :inputType="'number'"
                                     :labelText="'Current stock'"
                                     :placeholder="'e.g. 100'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.stock_qty'] : ''"
                                     :disabled="!!item.created_at"
                                     v-model="item.stock_qty"
-                                    @keypress="isValidNumberKey($event, false)"
                                 />
                                 <TextInput
                                     :inputName="'item_'+ i +'_low_stock_qty'"
+                                    :inputType="'number'"
                                     :labelText="'Show low stock at'"
                                     :placeholder="'e.g. 25'"
                                     :errorMessage="(form.errors) ? form.errors['items.' + i + '.low_stock_qty']  : ''"
                                     v-model="item.low_stock_qty"
-                                    @keypress="isValidNumberKey($event, false)"
                                 />
                            </div>
                             <div class="flex items-start gap-10">

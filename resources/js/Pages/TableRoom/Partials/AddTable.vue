@@ -6,7 +6,7 @@ import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
 import RadioButton from '@/Components/RadioButton.vue';
 import { tableType } from '@/Composables/constants';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -17,7 +17,6 @@ const props = defineProps({
     }
 });
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close', 'isDirty']);
 const zones = ref();
@@ -91,10 +90,10 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <div class="grid grid-cols-2 md:grid-cols-12 gap-3 self-stretch">
                     <TextInput
                         :inputName="'seat'"
+                        :inputType="'number'"
                         :labelText="'No. of Seats Available'"
                         :placeholder="'number only (eg: 6)'"
                         :errorMessage="form.errors?.seat || ''"
-                        @keypress="isValidNumberKey($event, false)"
                         v-model="form.seat"
                         class="col-span-full md:col-span-6"
                     />

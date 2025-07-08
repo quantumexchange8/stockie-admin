@@ -3,7 +3,7 @@ import Button from '@/Components/Button.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import { computed, ref, watch } from 'vue';
-import { useInputValidator, useCustomToast } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { ShiftWorkerIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -19,7 +19,6 @@ const props = defineProps({
 const emit = defineEmits(['update:shift-listing']);
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const selectedShift = ref(props.currentSelectedShift);
 const closeShiftFormIsOpen = ref(false);
@@ -279,9 +278,9 @@ watch(form, (newValue) => (isDirty.value = newValue.isDirty));
                     :iconPosition="'left'"
                     :placeholder="'0.00'"
                     :inputType="'number'"
+                    withDecimal
                     :errorMessage="form.errors?.closing_cash?.[0] ??''"
                     v-model="form.closing_cash"
-                    @keypress="isValidNumberKey($event, true)"
                     class="[&>div>input]:text-left"
                 >
                     <template #prefix>RM</template>

@@ -4,7 +4,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
-import { useCustomToast, useInputValidator, usePhoneUtils } from '@/Composables/index.js';
+import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 import Textarea from '@/Components/Textarea.vue';
 import dayjs from 'dayjs';
@@ -16,7 +16,6 @@ const props = defineProps({
 const emit = defineEmits(['close', 'isDirty', 'update:shift-listing']);
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const isUnsavedChangesOpen = ref(false);
 const selectedShift = ref(props.currentSelectedShift);
@@ -86,9 +85,9 @@ watch(() => props.currentSelectedShift, (newValue) => {
                         :iconPosition="'left'"
                         :placeholder="'0.00'"
                         :inputType="'number'"
+                        withDecimal
                         :errorMessage="form.errors?.amount?.[0] ??''"
                         v-model="form.amount"
-                        @keypress="isValidNumberKey($event, true)"
                         class="[&>div>input]:text-left"
                     >
                         <template #prefix>RM</template>

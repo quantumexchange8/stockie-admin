@@ -5,7 +5,7 @@ import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue'
 import TextInput from '@/Components/TextInput.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
-import { useCustomToast, useInputValidator } from '@/Composables/index.js';
+import { useCustomToast } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -19,7 +19,6 @@ const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id);
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close', 'isDirty']);
 
@@ -162,12 +161,12 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     />
                     <TextInput
                         inputName="pax"
+                        :inputType="'number'"
                         labelText="No. of pax"
                         placeholder="No. of pax"
                         disabled
                         :errorMessage="form.errors?.pax || ''"
                         v-model="form.pax"
-                        @keypress="isValidNumberKey($event, false)"
                     />
                     <Dropdown
                         inputName="assigned_waiter"

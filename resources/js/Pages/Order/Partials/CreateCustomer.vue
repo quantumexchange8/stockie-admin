@@ -4,7 +4,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
-import { useCustomToast, useInputValidator, usePhoneUtils } from '@/Composables/index.js';
+import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 import Toast from '@/Components/Toast.vue';
 
@@ -24,7 +24,6 @@ const emit = defineEmits(['close', 'isDirty', 'update:customerListing']);
 
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
-const { isValidNumberKey } = useInputValidator();
 
 const isUnsavedChangesOpen = ref(false);
 
@@ -85,13 +84,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 
                 <TextInput
                     inputName="phone"
+                    :inputType="'number'"
                     labelText="Phone No."
                     placeholder="12 345 1234"
                     :iconPosition="'left'"
                     :errorMessage="form.errors && form.errors.phone ? form.errors.phone[0] : ''"
                     class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
                     v-model="form.phone_temp"
-                    @keypress="isValidNumberKey($event, false)"
                     @input="formatPhoneInput"
                 >
                     <template #prefix> +60 </template>

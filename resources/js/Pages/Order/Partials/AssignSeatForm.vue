@@ -8,7 +8,7 @@ import Dropdown from '@/Components/Dropdown.vue'
 import TextInput from '@/Components/TextInput.vue';
 import { TimesIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
-import { useCustomToast, useInputValidator } from '@/Composables/index.js';
+import { useCustomToast } from '@/Composables/index.js';
 import MultiSelect from '@/Components/MultiSelect.vue';
 
 const props = defineProps({
@@ -24,7 +24,6 @@ const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close', 'fetchZones', 'openDrawer']);
 
@@ -166,7 +165,6 @@ const paxInputValidation = (event) => {
                         :placeholder="'No. of pax'"
                         :errorMessage="form.errors?.pax || ''"
                         v-model="form.pax"
-                        @keypress="isValidNumberKey($event, false)"
                     />
                     <Dropdown
                         imageOption

@@ -10,7 +10,7 @@ import TextInput from "@/Components/TextInput.vue";
 import { Calendar, DeleteIcon, UploadLogoIcon } from "@/Components/Icons/solid";
 import Accordion from "@/Components/Accordion.vue";
 import { periodOption, rewardOption, emptyReward } from "@/Composables/constants";
-import { useCustomToast, useInputValidator } from "@/Composables";
+import { useCustomToast } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
 import Modal from "@/Components/Modal.vue";
 
@@ -38,7 +38,6 @@ const selectedLogo = ref(null);
 const isUnsavedChangesOpen = ref(false);
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const toggleMinPurchase = (index) => {
     const reward = rewardList.value[index];
@@ -215,11 +214,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         <TextInput
                             :labelText="'Amount spend to achieve this tier'"
                             inputId="min_amount"
-                            type="'text'"
+                            :inputType="'number'"
+                            withDecimal
                             v-model="form.min_amount"
                             :iconPosition="'left'"
                             :errorMessage="form.errors.min_amount"
-                            @keypress="isValidNumberKey($event, true)"
                         >
                             <template #prefix> RM </template>
                         </TextInput>
@@ -285,23 +284,25 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                             <TextInput
                                                 :iconPosition="reward.reward_type === 'Discount (Amount)' ? 'left' : 'right'"
                                                 :inputName="'discount_' + index"
+                                                :inputType="'number'"
+                                                withDecimal
                                                 :errorMessage="form.errors ? form.errors['items.' + index + '.discount']  : ''"
                                                 :labelText="reward.reward_type === 'Discount (Amount)' ? 'Discount Amount' : 'Discount Percentage'"
                                                 inputId="discount"
                                                 v-model="reward.discount"
-                                                @keypress="isValidNumberKey($event, true)"
                                             >
                                                 <template #prefix>{{ reward.reward_type === 'Discount (Amount)' ? 'RM' : '%' }}</template>
                                             </TextInput>
                                             <TextInput
                                                 v-if="reward.min_purchase === 'active'"
                                                 :inputName="'min_purchase_amount_' + index"
+                                                :inputType="'number'"
+                                                withDecimal
                                                 :iconPosition="'left'"
                                                 :errorMessage="form.errors ? form.errors['items.' + index + '.min_purchase_amount']  : ''"
                                                 labelText="Minimum purchase amount"
                                                 inputId="min_purchase_amount"
                                                 v-model="reward.min_purchase_amount"
-                                                @keypress="isValidNumberKey($event, true)"
                                             >
                                                 <template #prefix>RM</template>
                                             </TextInput>
@@ -328,8 +329,9 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                             :iconPosition="'right'"
                                             v-model="reward.bonus_point"
                                             :inputName="'bonus_point_' + index"
+                                            :inputType="'number'"
+                                            withDecimal
                                             :errorMessage="form.errors ? form.errors['items.' + index + '.bonus_point']  : ''"
-                                            @keypress="isValidNumberKey($event, true)"
                                         >
                                             <template #prefix>pts</template>
                                         </TextInput>

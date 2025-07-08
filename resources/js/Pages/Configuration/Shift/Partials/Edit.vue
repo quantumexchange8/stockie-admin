@@ -215,12 +215,12 @@ const submit = () => {
                 <div class="relative">
                     <TextInput 
                         :inputName="'late'"
+                        :inputType="'number'"
                         :placeholder="'15'"
                         :iconPosition="'right'"
                         :errorMessage="form.errors?.late"
                         v-model="form.late"
                         class="w-full [&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pl-4 [&>div:nth-child(1)>input]:mb-0"
-                        @keypress="isValidNumberKey($event, false)"
                     >
                         <template #prefix>
                             <span class="text-grey-700 text-base font-normal">minute</span>
@@ -273,7 +273,6 @@ const submit = () => {
                                     :placeholder="'1'"
                                     :errorMessage="form.errors ? form.errors['breaks.' + index + '.break_value']  : ''"
                                     v-model="breakItem.break_value"
-                                    @keypress="isValidNumberKey($event, false)"
                                 />
                             </div>
                             <div class="flex flex-col items-start w-full">

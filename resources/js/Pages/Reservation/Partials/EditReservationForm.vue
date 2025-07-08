@@ -7,7 +7,7 @@ import DateInput from "@/Components/Date.vue";
 import Dropdown from '@/Components/Dropdown.vue';
 import TextInput from '@/Components/TextInput.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
-import { useCustomToast, usePhoneUtils, useInputValidator } from '@/Composables/index.js';
+import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 
 const props = defineProps({
     reservation: Object,
@@ -17,7 +17,6 @@ const props = defineProps({
 
 const { showMessage } = useCustomToast();
 const { formatPhone, transformPhone, formatPhoneInput } = usePhoneUtils();
-const { isValidNumberKey } = useInputValidator();
 
 const emit = defineEmits(['close', 'fetchReservations', 'isDirty', 'update:reservation']);
 
@@ -201,12 +200,12 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 />
                 <TextInput
                     inputName="pax"
+                    :inputType="'number'"
                     labelText="No. of pax"
                     placeholder="Enter here"
                     class="col-span-full sm:col-span-6"
                     :errorMessage="form.errors?.pax || ''"
                     v-model="form.pax"
-                    @keypress="isValidNumberKey($event, false)"
                 />
                 <Dropdown
                     inputName="name"
@@ -222,13 +221,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 />
                 <TextInput
                     inputName="phone"
+                    :inputType="'number'"
                     labelText="Contact no."
                     placeholder="11 1234 5678"
                     iconPosition="left"
                     class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
                     :errorMessage="form.errors?.phone || ''"
                     v-model="form.phone_temp"
-                    @keypress="isValidNumberKey($event, false)"
                     @input="formatPhoneInput"
                 >
                     <template #prefix> +60 </template>
@@ -249,13 +248,12 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     inputName="grace_period"
                     labelText="Grace period"
                     placeholder="1"
-                    type="'number'"
+                    :inputType="'number'"
                     iconPosition="right"
                     class="col-span-full sm:col-span-6"
                     required
                     :errorMessage="form.errors?.grace_period || ''"
                     v-model="form.reserved_limit"
-                    @keypress="isValidNumberKey($event, false)"
                     
                 >
                     <template #prefix>hour</template>

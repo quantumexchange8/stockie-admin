@@ -10,7 +10,7 @@ import NumberCounter from '@/Components/NumberCounter.vue';
 import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultProductItem } from '@/Composables/constants';
-import { useInputValidator, useCustomToast } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
@@ -20,7 +20,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'isDirty']);
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 const categoryArr = ref(props.categoryArr);
 const inventoryToAdd = ref(props.inventoryToAdd);
@@ -190,12 +189,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="w-full flex flex-row items-start gap-x-4 self-stretch">
                                 <TextInput
                                     :inputId="'price_' +  i"
+                                    :inputType="'number'"
+                                    withDecimal
                                     :labelText="'Price'"
                                     :iconPosition="'left'"
                                     :placeholder="'0.00'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.price']  : ''"
                                     v-model="item.price"
-                                    @keypress="isValidNumberKey($event, true)"
                                     class="[&>div>input]:text-left"
                                 >
                                     <template #prefix>RM</template>

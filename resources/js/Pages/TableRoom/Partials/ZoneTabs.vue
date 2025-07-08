@@ -7,7 +7,7 @@ import { useForm } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 
 const props = defineProps({
     zones: {
@@ -27,7 +27,6 @@ const isUnsavedChangesOpen = ref(false);
 const initialData = ref(null);
 const tabs = ref([]);
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
 
 watch(() => props.zones, (newValue) => {
     zonesDetail.value = newValue ? newValue : {};
@@ -219,11 +218,10 @@ watch(form, () => {
                 <div class="grid grid-cols-2 md:grid-cols-12 gap-3 self-stretch">
                 <TextInput
                     :inputName="'seat'"
-                    inputType="number"
+                    :inputType="'number'"
                     :labelText="'No. of Seats Available'"
                     :placeholder="'number only (eg: 6)'"
                     :errorMessage="form.errors?.seat || ''"
-                    @keypress="isValidNumberKey($event, false)"
                     v-model="form.seat"
                     class="col-span-full md:col-span-6"
                 />

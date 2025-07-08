@@ -4,7 +4,7 @@ import Dropdown from "@/Components/Dropdown.vue";
 import Modal from "@/Components/Modal.vue";
 import MultiSelect from "@/Components/MultiSelect.vue";
 import TextInput from "@/Components/TextInput.vue";
-import { useCustomToast, useInputValidator } from "@/Composables";
+import { useCustomToast } from "@/Composables";
 import { useForm } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 
@@ -23,7 +23,7 @@ const props = defineProps({
     }
 })
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator();
+
 const options = props.productToAdd.map(item => ({
     text: item.product_name, 
     value: item.id,
@@ -113,11 +113,12 @@ const isFormValid = computed(() => {
                 <TextInput
                     labelText="Rate"
                     :inputName="'commRate'"
+                    :inputType="'number'"
+                    withDecimal
                     type="'number'"
                     iconPosition="right"
                     v-model="form.commRate"
                     v-show="isRate"
-                    @keypress="isValidNumberKey($event, true)"
                     
                 >
                     <template #prefix>%</template>
@@ -126,11 +127,12 @@ const isFormValid = computed(() => {
                 <TextInput
                     labelText="Amount"
                     :inputName="'commRate'"
+                    :inputType="'number'"
+                    withDecimal
                     type="'number'"
                     iconPosition="left"
                     v-model="form.commRate"
                     v-show="!isRate"
-                    @keypress="isValidNumberKey($event, true)"
                 >
                     <template #prefix>RM</template>
                 </TextInput>

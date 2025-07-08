@@ -4,7 +4,7 @@ import Date from '@/Components/Date.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useCustomToast, useInputValidator } from '@/Composables';
+import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
@@ -15,8 +15,6 @@ const props = defineProps({
 const emit = defineEmits(['isDirty', 'closeModal', 'update:printers']);
 
 const { showMessage } = useCustomToast();
-const { isValidNumberKey } = useInputValidator()
-
 
 const unsaved = (status) => {
     emit('closeModal', status)
@@ -98,7 +96,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :placeholder="'eg: 9100'"
                 :errorMessage="form.errors.port_number ? form.errors.port_number[0] : ''"
                 v-model="form.temp_port"
-                @keypress="isValidNumberKey($event, false)"
             />
         </div>
 
