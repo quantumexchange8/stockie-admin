@@ -22,10 +22,11 @@ const isDirty = ref(false);
 const { showMessage } = useCustomToast();
 
 const columns = ref([
-    { field: 'name', header: 'Printer Name', width: '34', sortable: false},
-    { field: 'ip_address', header: 'IP', width: '25', sortable: false},
-    { field: 'port_number', header: 'Port', width: '20', sortable: false},
-    { field: 'action', header: 'Action', width: '23', sortable: false},
+    { field: 'name', header: 'Printer Name', width: '30', sortable: false},
+    { field: 'ip_address', header: 'IP', width: '15', sortable: false},
+    { field: 'port_number', header: 'Port', width: '10', sortable: false},
+    { field: 'kick_cash_drawer', header: 'Open Cash Drawer', width: '23', sortable: false},
+    { field: 'action', header: 'Action', width: '22', sortable: false},
 ])
 
 const getAllPrinters = async () => {
@@ -221,6 +222,9 @@ onMounted(() => {
             <template #port_number="row">
                 <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ row.port_number }}</span>
             </template>
+            <template #kick_cash_drawer="row">
+                <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ !!row.kick_cash_drawer ? 'Enabled' : 'Disabled' }}</span>
+            </template>
             <template #action="row">
                 <div class="flex justify-end items-center gap-2 size-full">
                     <Button
@@ -246,7 +250,7 @@ onMounted(() => {
 
     <Modal
         :show="isCreatePrinterOpen"
-        :maxWidth="'xs'"
+        :maxWidth="'sm'"
         :closeable="true"
         :title="'Add Printer'"
         @close="closeModal('close')"
@@ -269,7 +273,7 @@ onMounted(() => {
 
     <Modal
         :show="isEditPrinterOpen"
-        :maxWidth="'md'"
+        :maxWidth="'sm'"
         :closeable="true"
         :title="'Edit Printer'"
         @close="closeModal('close')"

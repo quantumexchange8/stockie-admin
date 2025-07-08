@@ -12,7 +12,7 @@ class ConfigPrinterController extends Controller
     {
         $allPrinters = ConfigPrinter::where('status', 'active')
                                     ->orderBy('id')
-                                    ->get(['id', 'name', 'ip_address', 'port_number', 'status']);
+                                    ->get(['id', 'name', 'ip_address', 'port_number', 'kick_cash_drawer', 'status']);
         
         return $allPrinters;
     }
@@ -33,6 +33,7 @@ class ConfigPrinterController extends Controller
                 'name' => 'required|string',
                 'ip_address' => 'required|string|ip',
                 'port_number' => 'required|integer|min:1|max:65535',
+                'kick_cash_drawer' => 'required|boolean',
             ], 
             [
                 'required' => 'This field is required.',
@@ -47,7 +48,6 @@ class ConfigPrinterController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-
         // If validation passes, you can proceed with processing the validated form data
         $validatedData = $validator->validated();
 
@@ -55,6 +55,7 @@ class ConfigPrinterController extends Controller
             'name' => $validatedData['name'],
             'ip_address' => $validatedData['ip_address'],
             'port_number' => $validatedData['port_number'],
+            'kick_cash_drawer' => $validatedData['kick_cash_drawer'],
             'status' => 'active',
         ]);
 
@@ -82,6 +83,7 @@ class ConfigPrinterController extends Controller
                 'name' => 'required|string',
                 'ip_address' => 'required|string|ip',
                 'port_number' => 'required|integer|min:1|max:65535',
+                'kick_cash_drawer' => 'required|boolean',
             ], 
             [
                 'required' => 'This field is required.',
@@ -105,6 +107,7 @@ class ConfigPrinterController extends Controller
             'name' => $validatedData['name'],
             'ip_address' => $validatedData['ip_address'],
             'port_number' => $validatedData['port_number'],
+            'kick_cash_drawer' => $validatedData['kick_cash_drawer'],
         ]);
 
         activity()->useLog('edit-printer')

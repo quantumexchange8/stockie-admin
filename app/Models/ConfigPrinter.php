@@ -18,6 +18,7 @@ class ConfigPrinter extends Model
         'name',
         'ip_address',
         'port_number',
+        'kick_cash_drawer',
         'status',
     ];
 

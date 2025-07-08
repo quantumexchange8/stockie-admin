@@ -5,6 +5,8 @@ import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast } from '@/Composables';
 import { computed, ref, watch } from 'vue';
 import Modal from '@/Components/Modal.vue';
+import RadioButton from '@/Components/RadioButton.vue';
+import { kickCashDrawerOptions } from '@/Composables/constants';
 
 const emit = defineEmits(['isDirty', 'closeModal', 'update:printers'])
 
@@ -17,6 +19,7 @@ const form = useForm({
     ip_address: '',
     port_number: '9100',
     temp_port: '9100',
+    kick_cash_drawer: false,
 });
 
 const submit = async () => { 
@@ -83,6 +86,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :placeholder="'eg: 9100'"
                 :errorMessage="form.errors.port_number ? form.errors.port_number[0] : ''"
                 v-model="form.temp_port"
+            />
+            <RadioButton
+                :optionArr="kickCashDrawerOptions"
+                :checked="form.kick_cash_drawer"
+                v-model:checked="form.kick_cash_drawer"
             />
         </div>
         <div class="flex pt-4 justify-center items-end gap-4 self-stretch">

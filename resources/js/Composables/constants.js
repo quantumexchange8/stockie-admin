@@ -163,3 +163,11 @@ export const permissionList = [
     { text: "Configuration", value: 'configuration' },
     { text: "Free Up Table", value: 'free-up-table' },
 ]
+
+// ----------------------------------------------------------------------------------
+//                                  CONFIG PRINTER
+// ----------------------------------------------------------------------------------
+export const kickCashDrawerOptions = [
+    { text: 'Enable open cash drawer', value: true },
+    { text: 'Disable open cash drawer', value: false },
+];

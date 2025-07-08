@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('ip_address');
             $table->string('port_number');
+            $table->boolean('kick_cash_drawer');
             $table->string('status');
             $table->softDeletes();
             $table->timestamps();

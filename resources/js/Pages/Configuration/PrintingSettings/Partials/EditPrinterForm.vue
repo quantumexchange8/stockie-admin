@@ -7,6 +7,8 @@ import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { kickCashDrawerOptions } from '@/Composables/constants';
+import RadioButton from '@/Components/RadioButton.vue';
 
 const props = defineProps({
     printer: Object,
@@ -28,8 +30,8 @@ const form = useForm({
     ip_address: selectedPrinter.value.ip_address,
     port_number: selectedPrinter.value.port_number,
     temp_port: (selectedPrinter.value.port_number).toString(),
+    kick_cash_drawer: !!selectedPrinter.value.kick_cash_drawer,
 });
-
 
 const submit = async () => {
     form.processing = true;
@@ -96,6 +98,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :placeholder="'eg: 9100'"
                 :errorMessage="form.errors.port_number ? form.errors.port_number[0] : ''"
                 v-model="form.temp_port"
+            />
+            <RadioButton
+                :optionArr="kickCashDrawerOptions"
+                :checked="form.kick_cash_drawer"
+                v-model:checked="form.kick_cash_drawer"
             />
         </div>
 

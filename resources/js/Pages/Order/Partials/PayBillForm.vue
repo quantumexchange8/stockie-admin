@@ -413,6 +413,8 @@ const closeSuccessPaymentModal = () => {
 
 const kickDrawer = (printer, base64) => {
     try {
+        if (printer && !!!printer.kick_cash_drawer) return;
+        
         if (!printer || !printer.ip_address || !printer.port_number) {
             let summary = '';
             let detail = '';
