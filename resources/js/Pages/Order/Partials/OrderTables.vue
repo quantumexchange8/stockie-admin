@@ -145,7 +145,6 @@ lockChannel.onmessage = (event) => {
 
 const openOverlay = async (event, table, autoOpened = false) => {
     if (!table.is_reserved) {
-        sessionStorage.setItem('is_table_selected', true);
         selectedTable.value = table;
     
         if (table.order_tables.length > 0 || autoOpened) {
@@ -185,7 +184,6 @@ const openOverlay = async (event, table, autoOpened = false) => {
 };
 
 const closeOverlay = () => {
-    sessionStorage.setItem('is_table_selected', false);
     selectedTable.value = null;
     op.value.hide();
 };
@@ -212,7 +210,6 @@ const closeDrawer = (unlock = false) => {
     }
 
     setTimeout(() => {
-        sessionStorage.setItem('is_table_selected', false);
         selectedTable.value = null;
     }, 200)
 };
@@ -641,6 +638,11 @@ watch(selectedTable, (newValue, oldValue) => {
         // });
     };
 });
+
+watch(drawerIsVisible, (newValue) => {
+    sessionStorage.setItem('is_drawer_open', newValue);
+    
+}, { immediate: true });
 
 // const showReservationList = (event, table) => {
 //     event.preventDefault();
