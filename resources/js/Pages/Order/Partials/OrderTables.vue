@@ -81,8 +81,6 @@ const updateLockedTables = (type, id, sourceTabUid) => {
 
 // When acquiring lock in any tab:
 const broadcastMessage = (type) => {
-    // console.log(type);
-
     if (type === 'lock-table' || type === 'unlock-table') {
         lockChannel.postMessage({
             type: type,
@@ -92,9 +90,11 @@ const broadcastMessage = (type) => {
 
         const updateType = type === 'lock-table' ? 'lock' : 'unlock';
 
-        selectedTable.value.joined_tables.forEach(table => {
-            updateLockedTables(updateType, table, tabUid.value);
-        });
+        if (selectedTable.value.joined_tables && selectedTable.value.joined_tables.length > 0) {
+            selectedTable.value.joined_tables.forEach(table => {
+                updateLockedTables(updateType, table, tabUid.value);
+            });
+        }
     }
 
     if (type === 'group-unlock') {
@@ -112,29 +112,14 @@ lockChannel.onmessage = (event) => {
     const { type, tableId, sourceTabUid } = event.data;
 
     if (event.data?.tableId) {
-        // console.log(event.data.tableId);
-
         switch (type) {
             case 'lock-table':
                 updateLockedTables('lock', tableId, sourceTabUid);
                 break;
             case 'unlock-table':
-                // console.log('table unlock triggered');
                 updateLockedTables('unlock', tableId, sourceTabUid);
                 break;
             case 'group-unlock':
-                // console.log('group unlock triggered');
-                // console.log(typeof event.data.tableId);
-                // console.log(event.data.tableId);
-                // event.data.tableId.forEach(tid => {
-                //     // console.log(tid);
-
-                //     const index = lockedTables.value.findIndex((t) => t === tid);
-                //     if (index !== -1) {
-                //         lockedTables.value.splice(index, 1);
-                //     }
-                // });
-                
                 // Only remove tables locked by the tab that sent the group-unlock
                 lockedTables.value = lockedTables.value.filter(t => t.lockedByTabUid !== sourceTabUid);
                 sessionStorage.setItem('table_locks', JSON.stringify(lockedTables.value));
@@ -190,6 +175,9 @@ const closeOverlay = () => {
 
 const closeDrawer = (unlock = false) => {
     drawerIsVisible.value = false;
+    setTimeout(() => {
+        selectedTable.value = null;
+    }, 500)
 
     // Cancel pending lock attempt if still in progress
     if (isLocking.value && lockTimeoutId.value) {
@@ -201,17 +189,13 @@ const closeDrawer = (unlock = false) => {
     }
 
     // Unlock only if the lock was successfully applied
-    if (unlock && wasLocked.value && orderInfoDrawer.value?.handleTableLock) {
+    if (unlock && wasLocked.value == true && orderInfoDrawer.value?.handleTableLock) {
         if (!orderInfoDrawer.value?.wasAutoUnlocked) {
             broadcastMessage('unlock-table');
             orderInfoDrawer.value.handleTableLock(); // unlock
         }
         wasLocked.value = false;
     }
-
-    setTimeout(() => {
-        selectedTable.value = null;
-    }, 200)
 };
 
 const getTableClasses = (table) => ({
@@ -626,11 +610,7 @@ watch(() => props.zones, (newValue) => {
 
 watch(selectedTable, (newValue, oldValue) => {
     if (drawerIsVisible.value == true && newValue.is_locked == false && oldValue && oldValue.is_locked == true) {
-        drawerIsVisible.value = false;
-        clearTimeout(lockTimeoutId.value);
-        lockTimeoutId.value = null;
-        isLocking.value = false;
-        wasLocked.value = false;
+        closeDrawer(true);
 
         // showMessage({
         //     severity: 'info',

@@ -1121,12 +1121,16 @@ watch(() => order.value.customer_id, (newValue, oldValue) => {
 // });
 
 const printInvoiceReceipt = () => {
+    form.processing = true;
     showOrderReceipt.value = true;
     setTimeout(() => orderInvoice.value.testPrintReceipt(), 200);
     closeSuccessPaymentModal();
+    form.processing = false;
 }
 
 const printPreviewReceipt = async () => {
+    form.processing = true;
+
     try {
         const params = { 
             order: order.value,
@@ -1186,6 +1190,8 @@ const printPreviewReceipt = async () => {
             summary: 'Print failed',
             detail: err.message
         });
+    } finally {
+        form.processing = false;
     }
 }
 

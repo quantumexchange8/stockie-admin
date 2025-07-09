@@ -67,9 +67,9 @@ const fetchZones = async () => {
 
         let lockedTables = tableLocks;
 
-        if (!isTableSelected) {
+        if (isTableSelected === 'false') {
             const tablesLockedByCurrentTab = tableLocks.filter(t => t.lockedByTabUid === tabUid);
-
+            
             if (tablesLockedByCurrentTab.length > 0) {
                 // Unlock only tables locked by the current tab
                 lockChannel.postMessage({
