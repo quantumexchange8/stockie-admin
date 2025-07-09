@@ -342,7 +342,8 @@ const unlockTableOnLeave = (event) => {
 
     sessionStorage.setItem('clear_lock_tables', true);
     // broadcastMessage('group-unlock');
-    wasLocked.value = false;
+
+    // if (selectedTable.value) (wasLocked.value = false);
 
     if (event.type === 'beforeunload') {
         // Only unlock if the tab is closing, not just losing visibility
