@@ -145,6 +145,7 @@ lockChannel.onmessage = (event) => {
 
 const openOverlay = async (event, table, autoOpened = false) => {
     if (!table.is_reserved) {
+        sessionStorage.setItem('is_table_selected', true);
         selectedTable.value = table;
     
         if (table.order_tables.length > 0 || autoOpened) {
@@ -184,6 +185,7 @@ const openOverlay = async (event, table, autoOpened = false) => {
 };
 
 const closeOverlay = () => {
+    sessionStorage.setItem('is_table_selected', false);
     selectedTable.value = null;
     op.value.hide();
 };
@@ -209,7 +211,10 @@ const closeDrawer = (unlock = false) => {
         wasLocked.value = false;
     }
 
-    // setTimeout(() => emit('fetchZones'), 200)
+    setTimeout(() => {
+        sessionStorage.setItem('is_table_selected', false);
+        selectedTable.value = null;
+    }, 200)
 };
 
 const getTableClasses = (table) => ({

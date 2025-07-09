@@ -406,7 +406,7 @@ const closeSuccessPaymentModal = () => {
         setTimeout(() => {
             emit('close', 'leave');
             emit('closeDrawer');
-        }, 200)
+        }, 500)
     }
 
 };
@@ -1174,8 +1174,6 @@ const printPreviewReceipt = async () => {
             console.error('Failed to open app:', e);
             alert(`Failed to open Stockie app \n ${e}`);
 
-        } finally {
-            emit('close');
         }
 
         // window.location.href = `rawbt:base64,${base64}`;
@@ -1631,7 +1629,7 @@ const printPreviewReceipt = async () => {
 
     <div class="hidden">
         <template v-if="showOrderReceipt">
-            <OrderInvoice ref="orderInvoice" :orderId="order.id" />
+            <OrderInvoice ref="orderInvoice" :orderId="order.id" @close="" />
         </template>
     </div>
 </template>

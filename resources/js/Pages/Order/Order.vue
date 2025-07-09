@@ -54,12 +54,33 @@ const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
 });
 
+const lockChannel = new BroadcastChannel('table-locks');
+
 const fetchZones = async () => {
     if (isFetchingZones.value) return; // prevent if already fetching
 
     isFetchingZones.value = true;
     try {
-        const lockedTables = JSON.parse(sessionStorage.getItem('table_locks'));
+        const tabUid = sessionStorage.getItem('tab_uid');
+        const isTableSelected = sessionStorage.getItem('is_table_selected');
+        const tableLocks = JSON.parse(sessionStorage.getItem('table_locks')) || [];
+
+        let lockedTables = tableLocks;
+
+        if (!isTableSelected) {
+            const tablesLockedByCurrentTab = tableLocks.filter(t => t.lockedByTabUid === tabUid);
+
+            if (tablesLockedByCurrentTab.length > 0) {
+                // Unlock only tables locked by the current tab
+                lockChannel.postMessage({
+                    type: 'group-unlock',
+                    tableIds: tablesLockedByCurrentTab.map(t => t.tableId), // Send only IDs
+                    sourceTabUid: tabUid,
+                });
+            }
+
+            lockedTables = tableLocks.filter(t => t.lockedByTabUid !== tabUid);
+        }
 
         const zonesResponse = await axios.post(route('orders.getAllZones', { locked_tables: lockedTables }));
         zones.value = zonesResponse.data;
