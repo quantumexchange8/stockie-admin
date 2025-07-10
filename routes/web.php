@@ -404,7 +404,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::get('/refetch-admin-users', [AdminUserController::class, 'refetchAdminUsers'])->name('refetch-admin-users');
     });
 
-    /********* Admin User **********/
+    /********* Activity Log **********/
     Route::prefix('activity-log')->middleware([CheckPermission::class . ':activity-logs'])->group(function(){
         Route::get('', [ActivityLogController::class, 'index'])->name('activity-logs');
         Route::get('/filter-logs', [ActivityLogController::class, 'filterLogs'])->name('activity-logs.filter-logs');

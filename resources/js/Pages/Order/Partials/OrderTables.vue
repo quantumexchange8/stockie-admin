@@ -124,6 +124,10 @@ lockChannel.onmessage = (event) => {
                 lockedTables.value = lockedTables.value.filter(t => t.lockedByTabUid !== sourceTabUid);
                 sessionStorage.setItem('table_locks', JSON.stringify(lockedTables.value));
                 break;
+            case 'unlock-all':
+                lockedTables.value = [];
+                sessionStorage.setItem('table_locks', JSON.stringify(lockedTables.value));
+                break;
         }
     }
 };

@@ -1,10 +1,14 @@
 <script setup>
 import Button from '@/Components/Button.vue';
 import { Error404Illust, Error408Illust, Error503Illust, WarningReIllust, NatureFunIllust, ServerDownIllust } from '@/Components/Icons/illus';
-import { Head } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue'
 
 const props = defineProps({ status: Number })
+
+const form = useForm({
+
+});
 
 const header = computed(() => {
     return {
@@ -85,7 +89,17 @@ const refresh = () => {
 }
 
 const homepage = () => {
-    window.location.href = '/dashboard';
+    if (props.status !== 403) {
+        window.location.href = '/dashboard';
+    }
+
+    form.post(route('logout'), {
+        preserveScroll: true,
+        preserveState: 'errors',
+        onError: (error) => {
+            console.error(error);
+        }
+    })
 }
 
 const login = () => {
@@ -150,7 +164,7 @@ const login = () => {
                             props.status === 502"
                     class="!w-fit"
                 >
-                    Go to home page
+                    {{ props.status === 403 ? 'Log out' : 'Go to home page' }}
                 </Button>
 
                 <Button

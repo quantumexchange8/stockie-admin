@@ -40,12 +40,25 @@ const getCurrentAutoUnlockDuration = async () => {
     }
 }
 
+const lockChannel = new BroadcastChannel('table-locks');
+
 const unlockAllTables = async () => {
     isLoading.value = true;
     router.post('/order-management/orders/handleTableLock', { action: 'unlock-all' }, {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
+            const tabUid = sessionStorage.getItem('tab_uid');
+
+            // Unlock all tables from session storage and other tabs' locked tables array
+            lockChannel.postMessage({
+                type: 'unlock-all',
+                tableIds: [],
+                sourceTabUid: tabUid,
+            });
+
+            sessionStorage.setItem('table_locks', JSON.stringify([]));
+
             showMessage({ 
                 severity: 'info',
                 summary: 'All tables have been unlocked'

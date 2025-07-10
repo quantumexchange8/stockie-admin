@@ -40,6 +40,26 @@ const nodes = ref([
                 ]
             }])
 
+const getShiftManagementNodes = () => {
+    const nodeChildren = [];
+
+    if (existingPermissions?.includes('shift-control')) {
+        nodeChildren.push({ key: '1-0', label: 'Shift Control', data: route('shift-management.control'), type: 'url' });
+    }
+
+    if (existingPermissions?.includes('shift-record')) {
+        nodeChildren.push({ key: nodeChildren.length > 0 ? '1-1' : '1-0', label: 'Shift Report', data: route('shift-management.record'), type: 'url' });
+    }
+
+    const nodeTree = [{
+        key: '0',
+        label: 'Shift Management',
+        children: nodeChildren
+    }];
+
+    return nodeTree;
+};
+
 const toggleNode = (node) => {
     if (node.children && node.children.length) {
         // If the node is already expanded, collapse it
@@ -80,6 +100,8 @@ const toggleNode = (node) => {
         <div class="flex flex-col gap-[24px]">
             <p class="text-grey-300 text-xs tracking-[4.32px] uppercase"
                 v-if="existingPermissions?.includes('order-management') || 
+                        existingPermissions?.includes('shift-control') ||
+                        existingPermissions?.includes('shift-record') ||
                         existingPermissions?.includes('menu-management')"
             >
                 General
@@ -96,9 +118,10 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarTree 
-                    :value="nodes" 
+                    :value="getShiftManagementNodes()" 
                     :active="route().current('shift-management.control')"
                     :expandedKeys="expandedKeys"
+                    v-if="existingPermissions?.includes('shift-control') || existingPermissions?.includes('shift-record')" 
                     @expand="toggleNode"
                 >
                     <template #togglericon="slotProps">
