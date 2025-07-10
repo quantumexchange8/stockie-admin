@@ -56,7 +56,7 @@ const editDetails = async () => {
         //     }
         // })
 
-        const response = await axios.put('admin-user/edit-admin-details', editForm);
+        const response = await axios.put('admin-user/edit-admin-details', editForm, { headers: { 'Content-Type': 'multipart/form-data' } });
 
         showMessage({
             severity: 'success',

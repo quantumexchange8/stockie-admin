@@ -114,8 +114,8 @@ class DefaultSettingsSeeder extends Seeder
 
         // Default Config Printers
         $defaultConfigPrinters = [
-            ['name'=> 'Cashier', 'ip_address' => '', 'port_number' => '9100', 'status' => 'active'],
-            ['name'=> 'Bar', 'ip_address' => '', 'port_number' => '9100', 'status' => 'active'],
+            ['name'=> 'Cashier', 'ip_address' => '', 'port_number' => '9100', 'kick_cash_drawer' => false, 'status' => 'active'],
+            ['name'=> 'Bar', 'ip_address' => '', 'port_number' => '9100', 'kick_cash_drawer' => false, 'status' => 'active'],
         ];
 
         foreach ($defaultConfigPrinters as $printer) {

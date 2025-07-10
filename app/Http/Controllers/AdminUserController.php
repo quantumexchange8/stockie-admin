@@ -125,7 +125,7 @@ class AdminUserController extends Controller
 
         if($request->hasfile('image')){
             $targetUser->clearMediaCollection('user');
-            $targetUser->addMedia($request->image)->toMediaCollection('user');
+            $targetUser->addMedia($validatedData['image'])->toMediaCollection('user');
         }
 
         $data = $this->getAdminUsers();
@@ -180,7 +180,7 @@ class AdminUserController extends Controller
                     ->log("Sub-admin '$targetUser->full_name' is added.");
 
         if($request->hasFile('image')){
-            $targetUser->addMedia($request->image)->toMediaCollection('user');
+            $targetUser->addMedia($validatedData['image'])->toMediaCollection('user');
         }
 
         $targetUser->givePermissionTo($request->input('permission'));

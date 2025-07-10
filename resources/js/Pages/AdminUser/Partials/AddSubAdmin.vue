@@ -24,6 +24,8 @@ const isAddAdminClicked = ref(false);
 
 const addAdmin = async () => {
     form.processing = true;
+    form.clearErrors();
+    
     try {
         // form.post('admin-user/add-sub-admin', {
         //     preserveScroll: true,
@@ -40,7 +42,7 @@ const addAdmin = async () => {
         //     }
         // })
 
-        const response = await axios.post('admin-user/add-sub-admin', form);
+        const response = await axios.post('admin-user/add-sub-admin', form, { headers: { 'Content-Type': 'multipart/form-data' } });
 
         showMessage({
             severity: 'success',
@@ -77,8 +79,23 @@ const updatePermission = (permission) => {
     }
 }
 
+const hasPermissionSelected = computed(() => {
+    const permLength = form.permission.length;
+    const hasPerm = permLength > 0;
+    
+    if (!hasPerm) return false;
+
+    if (permLength === 1) {
+        const hasFreeUpTablePerm = form.permission[0] === 'free-up-table';
+
+        if (hasFreeUpTablePerm) return false;
+    }
+
+    return true;
+})
+
 const isFormValid = computed(() => {
-    return ['role_id', 'full_name', 'position', 'email', 'password'].every(field => form[field]);
+    return ['role_id', 'password', 'full_name', 'email', 'position', 'image'].every(field => form[field]);
 })
 
 </script>
@@ -174,6 +191,7 @@ const isFormValid = computed(() => {
                     :type="'button'"
                     :size="'lg'"
                     :iconPosition="'right'"
+                    :disabled="form.processing || !isFormValid"
                     @click="addAdminClicked"
                 >
                     <template #icon>
@@ -227,7 +245,7 @@ const isFormValid = computed(() => {
                         :variant="'primary'"
                         :size="'lg'"
                         :type="'submit'"
-                        :disabled="form.processing || !isFormValid"
+                        :disabled="form.processing || !isFormValid || !hasPermissionSelected"
                     >
                         Add
                     </Button>

@@ -39,27 +39,24 @@ class NotificationController extends Controller
                         $inventoryData['categories'] = [];
             
                         foreach ($productItems as $productItem) {
-                            // Add product images if available
-                            if ($productItem->product) {
-                                $productImage = $productItem->product->getFirstMediaUrl('product');
-                                // if ($productImage) {
-                                //     $inventoryData['product_image'][] = $productImage;
-                                // }
+                            $product = $productItem->product;
+                            if ($product) {
+                                // Add product images if available
+                                $productImage = $product->getFirstMediaUrl('product');
                                 $inventoryData['product_image'][] = $productImage ?? null;
 
             
                                 // Add categories if available
-                                if ($productItem->product->category) {
-                                    $inventoryData['categories'][] = $productItem->product->category->name;
+                                if ($product->category) {
+                                    $inventoryData['categories'][] = $product->category->name;
                                 }
                             }
                             
                             // Add redeem item images
-                            $redeemImage = $productItem->product->getFirstMediaUrl('product');
-                            // if ($redeemImage) {
-                            //     $inventoryData['redeem_item_image'][] = $redeemImage;
-                            // }
-                            $inventoryData['redeem_item_image'][] = $redeemImage ?? null;
+                            if ($product->is_redeemable) {
+                                $redeemImage = $product->getFirstMediaUrl('product');
+                                $inventoryData['redeem_item_image'][] = $redeemImage ?? null;
+                            }
 
                         }
             
