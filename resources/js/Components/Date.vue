@@ -62,8 +62,8 @@ const calendarRef = ref(null);
 const modelValue = computed({
     get: () => props.modelValue,
     set: (value) => {
-        emit("update:modelValue", value);
-        emit("onChange", value);
+        // emit("update:modelValue", value);
+        // emit("onChange", value);
     },
 });
 

@@ -160,8 +160,8 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                     </div>
                     
                     <div class="w-1/2 flex flex-col gap-y-1 items-start">
-                        <p class="text-grey-900 text-base font-normal self-stretch">Reserved by</p>
-                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.reserved_by.full_name }}</p>
+                        <p class="text-grey-900 text-base font-normal self-stretch">Table lock before</p>
+                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.lock_before_minutes }}</p>
                     </div>
                 </div>
                 
@@ -169,6 +169,11 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                     <div class="w-1/2 flex flex-col gap-y-1 items-start">
                         <p class="text-grey-900 text-base font-normal self-stretch">Grace period</p>
                         <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.grace_period}} hour</p>
+                    </div>
+                    
+                    <div class="w-1/2 flex flex-col gap-y-1 items-start">
+                        <p class="text-grey-900 text-base font-normal self-stretch">Reserved by</p>
+                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.reserved_by.full_name }}</p>
                     </div>
                 </div>
 
@@ -178,7 +183,13 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                     <div class="w-full flex gap-x-5 items-start">
                         <div class="w-1/2 flex flex-col gap-y-1 items-start">
                             <p class="text-grey-900 text-base font-normal self-stretch">{{ reservation.status === 'Completed' ? getStatusLabel('Checked in') : getStatusLabel(reservation.status) }}</p>
-                            <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.status === 'Cancelled' ? dayjs(reservation.updated_at).format('DD/MM/YYYY, HH:mm') : dayjs(reservation.action_date).format('DD/MM/YYYY, HH:mm') }}</p>
+                            <p class="text-grey-900 text-base font-bold self-stretch">
+                                {{ reservation.status === 'Cancelled' 
+                                    ? dayjs(reservation.updated_at).format('DD/MM/YYYY, HH:mm') 
+                                    : reservation.action_date
+                                        ? dayjs(reservation.action_date).format('DD/MM/YYYY, HH:mm')
+                                        : '-' }}
+                            </p>
                         </div>
                         
                         <div class="w-1/2 flex flex-col gap-y-1 items-start">

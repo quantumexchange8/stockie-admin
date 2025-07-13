@@ -79,7 +79,7 @@ class AdminUserController extends Controller
                 'email',
                 $subAdminId 
                         ? Rule::unique('users')->ignore($subAdminId)->whereNull('deleted_at')
-                        : 'unique:users,email,NULL,id,deleted_at,NULL'
+                        : 'unique:users,email'
             ],
             'role_id' => [
                 'required',
@@ -87,7 +87,7 @@ class AdminUserController extends Controller
                 'max:255',
                 $subAdminId
                         ? Rule::unique('users')->ignore($subAdminId)->whereNull('deleted_at')
-                        : 'unique:users,role_id,NULL,id,deleted_at,NULL'
+                        : 'unique:users,role_id'
             ]
         ];
 
@@ -123,10 +123,10 @@ class AdminUserController extends Controller
                     ])
                     ->log("Sub-admin $targetUser->name's detail is updated.");
 
-        if($request->hasfile('image')){
-            $targetUser->clearMediaCollection('user');
-            $targetUser->addMedia($validatedData['image'])->toMediaCollection('user');
-        }
+        // if($request->hasfile('image')){
+        //     $targetUser->clearMediaCollection('user');
+        //     $targetUser->addMedia($validatedData['image'])->toMediaCollection('user');
+        // }
 
         $data = $this->getAdminUsers();
 
@@ -140,9 +140,9 @@ class AdminUserController extends Controller
             'full_name' => 'required|string|max:255',
             'role_id' => 'required|string|max:255|unique:users,role_id',
             'position' => 'required|string|max:255',
-            'password' => 'required',
+            'password' => ['required', 'string', Password::defaults()],
             'image' => 'required|max:8000',
-            'email' => 'required|email|unique:users,email,NULL,id,deleted_at,NULL'
+            'email' => 'required|email|unique:users,email'
         ];
 
         $messages = [

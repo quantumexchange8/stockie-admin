@@ -109,6 +109,7 @@ class ReservationController extends Controller
             'cancel_type' => '',
             'remark' => '',
             'status' => 'Pending',
+            'lock_before_minutes' => $request->lock_before_minutes,
             'grace_period' => $request->grace_period,
             'reservation_date' => $request->reservation_date,
             'handled_by' => $request->reserved_by,
@@ -158,6 +159,7 @@ class ReservationController extends Controller
             'cancel_type' => $reservation->cancel_type,
             'remark' => $reservation->remark,
             'status' => $reservation->status,
+            'lock_before_minutes' => $request->lock_before_minutes,
             'grace_period' => $request->grace_period,
             'reservation_date' => $request->reservation_date,
             'handled_by' => $request->reserved_by,
@@ -633,5 +635,143 @@ class ReservationController extends Controller
         $allOccupiedTables = $occupiedTables->merge($reservedTables)->unique('id');
     
         return response()->json($allOccupiedTables);
+    }
+
+    /**
+     * Get selected tables' upcoming reservations.
+     */
+    public function getTableUpcomingReservations(Request $request)
+    {
+        $bookingDate = $request->date ? Carbon::parse($request->date)->timezone('Asia/Kuala_Lumpur') : null;
+        $reservedBeforeLimit = (int)$request->reserved_before_limit ?? 0;
+        $reservedLimit = (int)$request->reserved_limit ?? 0;
+
+        // Get tables that are not 'Empty Seat'
+        $occupiedTables = Table::where('status', '!=', 'Empty Seat')
+                                ->with('order:id,created_at')
+                                ->get(['id', 'order_id', 'table_no']);
+                                // ->pluck('id')
+                                // ->toArray();
+
+        $filteredOccupiedTables = $occupiedTables->filter(function ($table) use ($bookingDate, $reservedBeforeLimit) {
+                                            if (!$bookingDate) {
+                                                return false; // No reservation date provided
+                                            }
+                                            
+                                            if (!$table->order) {
+                                                return false; // Table has no active order
+                                            }
+    
+                                            $estimatedEndTime = Carbon::parse($table->order->created_at)->addMinutes(120);
+                                            $reservationCutoff = $bookingDate->copy()->subMinutes($reservedBeforeLimit);
+                                            
+                                            // dd($estimatedEndTime, $reservationCutoff, $estimatedEndTime->gte($reservationCutoff));
+                                            return $estimatedEndTime->gte($reservationCutoff);
+                                        })
+                                        ->pluck('id')
+                                        ->toArray();
+
+        // dd($filteredOccupiedTables);
+
+        if ($bookingDate) {    
+            // Get the booking window boundaries
+            $bookingStart = $bookingDate->copy()->subMinutes($reservedBeforeLimit);
+            $bookingEnd = $bookingDate->copy()->addMinutes($reservedLimit);
+
+            // Query for conflicting reservations (for table disabling)
+            $conflictingReservations = Reservation::where(function($query) use ($bookingStart, $bookingEnd) {
+                                                    // Reservation active period overlaps with our booking window
+                                                    $query->where(function($q) use ($bookingStart, $bookingEnd) {
+                                                            $q->whereRaw('? BETWEEN DATE_SUB(reservation_date, INTERVAL lock_before_minutes MINUTE) AND DATE_ADD(reservation_date, INTERVAL grace_period MINUTE)', 
+                                                            [$bookingStart])
+                                                            ->orWhereRaw('? BETWEEN DATE_SUB(reservation_date, INTERVAL lock_before_minutes MINUTE) AND DATE_ADD(reservation_date, INTERVAL grace_period MINUTE)', 
+                                                            [$bookingEnd]);
+                                                        })
+                                                        ->orWhere(function($q) use ($bookingStart, $bookingEnd) {
+                                                            $q->whereRaw('DATE_SUB(reservation_date, INTERVAL lock_before_minutes MINUTE) >= ?', [$bookingStart])
+                                                            ->whereRaw('DATE_ADD(reservation_date, INTERVAL grace_period MINUTE) <= ?', [$bookingEnd]);
+                                                        });
+                                                })
+                                                ->whereIn('status', ['Pending', 'Delayed'])
+                                                ->get(['id', 'table_no', 'reservation_date', 'lock_before_minutes', 'grace_period']);
+
+            // Get tables to disable
+            $reservedTables = $conflictingReservations->flatMap(function ($reservation) {
+                                                        return collect($reservation['table_no'])->pluck('id');
+                                                    })
+                                                    ->unique()
+                                                    ->toArray();
+
+            // Query for display of upcoming reservations (after booking date)
+            // $upcomingReservations = Reservation::where('reservation_date', '>', $bookingDate)
+            //                                     ->whereIn('status', ['Pending', 'Delayed'])
+            //                                     ->orderBy('reservation_date')
+            //                                     ->get(['id', 'table_no', 'reservation_date']);
+
+            // 1. First get all unique table IDs that have upcoming reservations
+            $allUpcomingReservations = Reservation::where('reservation_date', '>', $bookingDate)
+                ->whereIn('status', ['Pending', 'Delayed'])
+                ->orderBy('reservation_date')
+                ->get(['id', 'table_no', 'reservation_date']);
+
+            // 2. Process to get 3 reservations per table
+            $reservationsByTable = [];
+
+            foreach ($allUpcomingReservations as $reservation) {
+                foreach ($reservation['table_no'] as $table) {
+                    $tableId = $table['id'];
+                    
+                    if (!isset($reservationsByTable[$tableId])) {
+                        $reservationsByTable[$tableId] = [];
+                    }
+                    
+                    if (count($reservationsByTable[$tableId]) < 1) {
+                        $reservationsByTable[$tableId][] = [
+                            'id' => $reservation->id,
+                            'table_no' => $reservation->table_no,
+                            'reservation_date' => $reservation->reservation_date,
+                        ];
+                    }
+                }
+            }
+
+            // dd($reservationsByTable);
+
+            // 3. Flatten the results while maintaining the limit
+            $upcomingReservations = collect($reservationsByTable)
+                ->flatMap(fn ($reservations) => $reservations)
+                ->unique('id')
+                ->sortBy('reservation_date')
+                ->values()
+                ->toArray();
+
+        } else {
+            $upcomingReservations = [];
+            $reservedTables = [];
+        }
+
+        // dd($upcomingReservations, $bookingDate);
+
+        // $mergedOccupancies = array_merge(...$allOccupiedTables, ...$upcomingReservations);
+    
+        // Get reserved tables
+        // $reservedTableIds = Reservation::whereNotIn('status', ['Cancelled', 'Completed', 'No show']) // Adjust status if needed
+        //                                 ->pluck('table_no') // Get JSON arrays of table_no
+        //                                 ->flatMap(function ($tableNos) {
+        //                                     return array_map(function ($table) {
+        //                                         return $table['id'];
+        //                                     }, $tableNos); // Decode JSON only if it's a string
+        //                                 })
+        //                                 ->unique();
+
+        // // Get table records for reserved tables
+        // $reservedTables = Table::whereIn('id', $reservedTableIds)->get();
+    
+        $data = [
+            'occupied_tables' => array_unique(array_merge($filteredOccupiedTables, $reservedTables)),
+            'upcoming_reservations' => $upcomingReservations,
+        ];
+
+        return response()->json($data);
     }
 }

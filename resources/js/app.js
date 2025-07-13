@@ -99,13 +99,7 @@ axios.interceptors.response.use(
         }
         else if (status >= 500) {
             // Server error - show notification
-            const toast = useToast();
-            toast.add({
-                severity: 'error',
-                summary: 'Server Error',
-                detail: 'Please try again later',
-                life: 5000
-            });
+            alert('Server Error! Please try again later');
         }
         
         return Promise.reject(error);

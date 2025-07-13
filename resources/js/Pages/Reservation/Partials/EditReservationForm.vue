@@ -8,6 +8,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import TextInput from '@/Components/TextInput.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
 import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
+import UpcomingTableReservationsTable from './UpcomingTableReservationsTable.vue';
 
 const props = defineProps({
     reservation: Object,
@@ -25,6 +26,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 const isUnsavedChangesOpen = ref(false);
 const occupiedTables = ref([]);
 const isLoading = ref(false);
+const upcomingReservations = ref([]);
 
 const selectedTable = ref(
     props.tables.filter((table) => 
@@ -41,24 +43,49 @@ const form = useForm({
     phone_temp: formatPhone(props.reservation.phone, true, true),
     table_no: props.reservation.table_no,
     tables: props.reservation.table_no.map((table) => table.id),
+    reserved_before_limit: props.reservation.lock_before_minutes.toString(),
+    lock_before_minutes: props.reservation.lock_before_minutes.toString(),
     reserved_limit: props.reservation.grace_period.toString(),
     grace_period: props.reservation.grace_period.toString(),
 });
 
-const getOccupiedTables = async () => {
-    isLoading.value = true;
-    try {
-        const response = await axios.get('/reservation/getOccupiedTables');
-        occupiedTables.value = response.data.filter((table) => !form.tables.includes(table.id));
+// const getOccupiedTables = async () => {
+//     isLoading.value = true;
+//     try {
+//         const response = await axios.get('/reservation/getOccupiedTables');
+//         occupiedTables.value = response.data.filter((table) => !form.tables.includes(table.id));
 
+//     } catch (error) {
+//         console.error(error);
+//     } finally {
+//         isLoading.value = false;
+//     }
+// };
+
+const getTableUpcomingReservations = async (date = null) => {
+    isLoading.value = true;
+    form.processing = true;
+
+     try {
+        const formData = { 
+            'date': date,
+            'reserved_before_limit': form.reserved_before_limit,
+            'reserved_limit': form.reserved_limit,
+        };
+        const response = await axios.get(route('reservations.getTableUpcomingReservations', formData));
+        occupiedTables.value = response.data.occupied_tables.filter((table) => !form.tables.includes(table));
+        upcomingReservations.value = response.data.upcoming_reservations;
+        
     } catch (error) {
         console.error(error);
+
     } finally {
         isLoading.value = false;
+        form.processing = false;
     }
 };
 
-onMounted(() => getOccupiedTables());
+onMounted(() => getTableUpcomingReservations(form.reservation_date));
 
 const unsaved = (status) => {
     emit('close', status);
@@ -70,6 +97,7 @@ const submit = async () => {
     form.table_no = props.tables
         .filter(table => form.tables.includes(table.id))  // Filter to only selected tables
         .map(table => ({ id: table.id, name: table.table_no }));  // Map to required format
+    form.lock_before_minutes = parseInt(form.reserved_before_limit);
     form.grace_period = parseInt(form.reserved_limit);
 
     // form.put(route('reservations.update', props.reservation.id), {
@@ -100,6 +128,8 @@ const submit = async () => {
         form.phone_temp = formatPhone(updatedReservation.phone, true, true);
         form.table_no = updatedReservation.table_no;
         form.tables = updatedReservation.table_no.map((table) => table.id);
+        form.reserved_before_limit = updatedReservation.lock_before_minutes.toString();
+        form.lock_before_minutes = updatedReservation.lock_before_minutes.toString();
         form.reserved_limit = updatedReservation.grace_period.toString();
         form.grace_period = updatedReservation.grace_period.toString();
 
@@ -135,7 +165,7 @@ const tablesArr = computed(() => {
                             return {
                                 'text': table.table_no,
                                 'value': table.id,
-                                'disabled': occupiedTables.value.some((occupiedTable) => occupiedTable.id === table.id),
+                                'disabled': occupiedTables.value.some((occupiedTable) => occupiedTable === table.id),
                             }
                         });
 });
@@ -177,7 +207,15 @@ const updateSelectedTables = (event) => {
 // }
 
 const isFormValid = computed(() => {
-    return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables', 'reserved_limit'].every(field => form[field]) && !form.processing;
+    return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables', 'reserved_before_limit', 'reserved_limit'].every(field => form[field]) && !form.processing;
+});
+
+watch(() => form.reserved_before_limit, (newValue) => {
+    getTableUpcomingReservations(form.reservation_date);
+});
+
+watch(() => form.reserved_limit, (newValue) => {
+    getTableUpcomingReservations(form.reservation_date);
 });
 
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
@@ -187,6 +225,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 <template>
     <form novalidate @submit.prevent="submit">
         <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-6 max-h-[calc(100dvh-14rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <div class="w-full grid grid-cols-1 sm:grid-cols-12 items-start self-stretch gap-5">
                 <DateInput 
                     inputName="reservation_date"
@@ -197,6 +236,19 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     :minDate="new Date()"
                     :errorMessage="form.errors?.reservation_date || ''"
                     v-model="form.reservation_date"
+                    @onChange="getTableUpcomingReservations($event)"
+                />
+                <MultiSelect 
+                    inputName="table_no"
+                    labelText="Select table/room"
+                    placeholder="Select"
+                    class="col-span-full sm:col-span-6"
+                    :loading="isLoading"
+                    :inputArray="tablesArr"
+                    :errorMessage="form.errors?.table_no || ''"
+                    :dataValue="form.tables"
+                    v-model="form.tables"
+                    @onChange="updateSelectedTables"
                 />
                 <TextInput
                     inputName="pax"
@@ -232,22 +284,24 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 >
                     <template #prefix> +60 </template>
                 </TextInput>
-                <MultiSelect 
-                    inputName="table_no"
-                    labelText="Select table/room"
-                    placeholder="Select"
+                <TextInput
+                    inputName="lock_before_minutes"
+                    labelText="Table lock before"
+                    placeholder="10"
+                    :inputType="'number'"
+                    iconPosition="right"
                     class="col-span-full sm:col-span-6"
-                    :loading="isLoading"
-                    :inputArray="tablesArr"
-                    :errorMessage="form.errors?.table_no || ''"
-                    :dataValue="form.tables"
-                    v-model="form.tables"
-                    @onChange="updateSelectedTables"
-                />
+                    required
+                    :errorMessage="form.errors?.lock_before_minutes || ''"
+                    v-model="form.reserved_before_limit"
+                    
+                >
+                    <template #prefix>minutes</template>
+                </TextInput>
                 <TextInput
                     inputName="grace_period"
                     labelText="Grace period"
-                    placeholder="1"
+                    placeholder="10"
                     :inputType="'number'"
                     iconPosition="right"
                     class="col-span-full sm:col-span-6"
@@ -256,8 +310,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     v-model="form.reserved_limit"
                     
                 >
-                    <template #prefix>hour</template>
+                    <template #prefix>minutes</template>
                 </TextInput>
+            </div>
+
+                <template v-if="upcomingReservations.length > 0">
+                    <UpcomingTableReservationsTable :upcomingReservations="upcomingReservations" />
+                </template>
             </div>
 
             <div class="flex pt-3 justify-center items-end gap-4 self-stretch">

@@ -44,6 +44,8 @@ const editForm = useForm({
 
 const editDetails = async () => {
     editForm.processing = true;
+    editForm.clearErrors();
+
     try {
         // editForm.put('admin-user/edit-admin-details', {
         //     preserveScroll: true,
@@ -56,7 +58,7 @@ const editDetails = async () => {
         //     }
         // })
 
-        const response = await axios.put('admin-user/edit-admin-details', editForm, { headers: { 'Content-Type': 'multipart/form-data' } });
+        const response = await axios.post('admin-user/edit-admin-details', editForm, { headers: { 'Content-Type': 'multipart/form-data' } });
 
         showMessage({
             severity: 'success',

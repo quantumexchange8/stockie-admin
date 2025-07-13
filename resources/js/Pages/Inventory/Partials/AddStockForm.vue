@@ -91,7 +91,7 @@ const isFormValid = computed(() => {
         }
     });
 
-    return staticFields && hasAddValue;
+    return staticFields && hasAddValue && !form.processing;
 });
 
 watch(

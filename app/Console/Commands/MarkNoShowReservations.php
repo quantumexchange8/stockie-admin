@@ -75,7 +75,7 @@ class MarkNoShowReservations extends Command
         foreach ($reservations as $reservation) {
             $reservationDate = Carbon::parse($reservation->reservation_date);
             $gracePeriod = $reservation->grace_period;
-            $cutoffTime = $reservationDate->addHours($gracePeriod);
+            $cutoffTime = $reservationDate->addMinutes($gracePeriod);
 
             if ($now->greaterThanOrEqualTo($cutoffTime)) {
                 $reservation->update(['status' => 'No show']);

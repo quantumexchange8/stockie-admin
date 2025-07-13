@@ -25,6 +25,7 @@ class Reservation extends Model
         'cancel_type',
         'remark',
         'status',
+        'lock_before_minutes',
         'grace_period',
         'reservation_date',
         'action_date',

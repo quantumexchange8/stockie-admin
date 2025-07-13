@@ -384,6 +384,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         // Reservation actions
         Route::get('/getReservations', [ReservationController::class, 'getReservations'])->name('reservations.getReservations');
         Route::get('/getOccupiedTables', [ReservationController::class, 'getOccupiedTables'])->name('reservations.getOccupiedTables');
+        Route::get('/getTableUpcomingReservations', [ReservationController::class, 'getTableUpcomingReservations'])->name('reservations.getTableUpcomingReservations');
         Route::post('/checkInGuest/{id}', [ReservationController::class, 'checkInGuest'])->name('reservations.checkInGuest');
         Route::put('/markAsNoShow/{id}', [ReservationController::class, 'markAsNoShow'])->name('reservations.markAsNoShow');
         Route::put('/delayReservation/{id}', [ReservationController::class, 'delayReservation'])->name('reservations.delayReservation');
@@ -399,7 +400,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::get('', [AdminUserController::class, 'index'])->name('admin-user');
         Route::post('/delete-admin-user/{id}', [AdminUserController::class, 'deleteAdmin'])->name('delete-admin');
         Route::post('/edit-permission', [AdminUserController::class, 'editPermission'])->name('edit-permission');
-        Route::put('/edit-admin-details', [AdminUserController::class, 'editDetails'])->name('edit-admin-details');
+        Route::post('/edit-admin-details', [AdminUserController::class, 'editDetails'])->name('edit-admin-details');
         Route::post('/add-sub-admin', [AdminUserController::class, 'addSubAdmin'])->name('add-sub-admin');
         Route::get('/refetch-admin-users', [AdminUserController::class, 'refetchAdminUsers'])->name('refetch-admin-users');
     });

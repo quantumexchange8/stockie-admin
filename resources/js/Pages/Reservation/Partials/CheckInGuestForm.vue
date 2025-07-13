@@ -28,20 +28,42 @@ const isUnsavedChangesOpen = ref(false);
 const occupiedTables = ref([]);
 const isLoading = ref(false);
 
-const getOccupiedTables = async () => {
-    isLoading.value = true;
-    try {
-        const response = await axios.get('/reservation/getOccupiedTables');
-        occupiedTables.value = response.data;
+// const getOccupiedTables = async () => {
+//     isLoading.value = true;
+//     try {
+//         const response = await axios.get('/reservation/getOccupiedTables');
+//         occupiedTables.value = response.data;
 
+//     } catch (error) {
+//         console.error(error);
+//     } finally {
+//         isLoading.value = false;
+//     }
+// };
+
+const getTableUpcomingReservations = async (date = null) => {
+    isLoading.value = true;
+    form.processing = true;
+
+     try {
+        const formData = { 
+            'date': date,
+            'reserved_before_limit': form.reserved_before_limit,
+            'reserved_limit': form.reserved_limit,
+        };
+        const response = await axios.get(route('reservations.getTableUpcomingReservations', formData));
+        occupiedTables.value = response.data.occupied_tables.filter((table) => !props.reservation.table_no.map((tableNo) => tableNo['id']).includes(table));
+        
     } catch (error) {
         console.error(error);
+
     } finally {
         isLoading.value = false;
+        form.processing = false;
     }
 };
 
-onMounted(() => getOccupiedTables());
+onMounted(() => getTableUpcomingReservations());
 
 const selectedTables = computed(() => {
     return props.reservation.table_no.map((table) => {

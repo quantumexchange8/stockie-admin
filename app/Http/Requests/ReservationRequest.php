@@ -31,6 +31,7 @@ class ReservationRequest extends FormRequest
             }],
             'phone' => 'required|string|max:255',
             'table_no' => 'required',
+            'lock_before_minutes' => 'required|integer',
             'grace_period' => 'required|integer',
         ];
     }
@@ -43,6 +44,7 @@ class ReservationRequest extends FormRequest
             'name' => 'Name',
             'phone' => 'Contact no.',
             'table_no' => 'Table',
+            'lock_before_minutes' => 'Table Lock Before',
             'grace_period' => 'Grace period',
         ];
     }

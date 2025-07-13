@@ -42,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('customers:expire-points')->daily();
         $schedule->command('customers:update-tier')->yearly();
         $schedule->command('tables:reset-locked-tables')->everyFiveSeconds();
+        $schedule->command('sessions:clear-expired')->hourly();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {

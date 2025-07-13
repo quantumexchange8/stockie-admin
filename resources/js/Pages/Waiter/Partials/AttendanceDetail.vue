@@ -65,6 +65,16 @@ const getAttendanceDetail = async () => {
     }
 };
 
+// Calculate the number of days crossed based on the start time and end time
+const calculateDayDifference = (startTime, endTime) => {
+  if (!startTime || !endTime) return 0;
+  
+  const startDate = dayjs(startTime).startOf('day');
+  const endDate = dayjs(endTime).startOf('day');
+  
+  return endDate.diff(startDate, 'day');
+};
+
 // const keptItemFlowRecords = computed(() => {
 //     let filteredStockHistories = stockHistories.value.filter((record) => record.current_stock < 0 || (record.old_stock < 0 && record.current_stock > 0));
 
@@ -116,8 +126,13 @@ watch(() => props.selectedWaiter, (newValue) => {
        <div class="flex flex-col items-start gap-y-4 self-stretch max-h-[calc(100dvh-24rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <!-- Check Out -->
             <div class="flex w-full py-2 gap-x-3 items-center" v-if="attendance.check_out">
-                <p class="w-1/6 text-base font-semibold text-grey-950 truncate line-clamp-1">{{ dayjs(attendance.check_out).format('HH:mm') }}</p>
-                <div class="w-5/6 flex gap-x-3 items-center">
+                <p class="w-3/12 text-base font-semibold text-grey-950 truncate line-clamp-1">
+                    {{ dayjs(attendance.check_out).format('HH:mm') }}
+                    <span v-if="calculateDayDifference(attendance.check_in, attendance.check_out) > 0" class="text-sm">
+                        (+{{ calculateDayDifference(attendance.check_in, attendance.check_out) }})
+                    </span>
+                </p>
+                <div class="w-9/12 flex gap-x-3 items-center">
                     <div class="relative">
                         <CheckInIcon />
                         <div class="absolute inset-x-[50%] w-px h-8 bg-grey-200"></div>
@@ -131,8 +146,13 @@ watch(() => props.selectedWaiter, (newValue) => {
                 <template v-for="(record, index) in attendance.break.sort((a, b) => new Date(b.start) - new Date(a.start))" :key="index">
                     <!-- Break End -->
                     <div class="flex w-full py-2 gap-x-3 items-center" v-if="record.end">
-                        <p class="w-1/6 text-base font-semibold text-grey-950 truncate line-clamp-1">{{ dayjs(record.end).format('HH:mm') }}</p>
-                        <div class="w-5/6 flex gap-x-3 items-center">
+                        <p class="w-3/12 text-base font-semibold text-grey-950 truncate line-clamp-1">
+                            {{ dayjs(record.end).format('HH:mm') }}
+                            <span v-if="calculateDayDifference(attendance.check_in, record.end) > 0" class="text-sm">
+                                (+{{ calculateDayDifference(attendance.check_in, record.end) }})
+                            </span>
+                        </p>
+                        <div class="w-9/12 flex gap-x-3 items-center">
                             <div class="relative">
                                 <BreakIcon />
                                 <div class="absolute inset-x-[50%] w-px h-8 bg-grey-200"></div>
@@ -143,8 +163,13 @@ watch(() => props.selectedWaiter, (newValue) => {
 
                     <!-- Break Start -->
                     <div class="flex w-full py-2 gap-x-3 items-center" v-if="record.start">
-                        <p class="w-1/6 text-base font-semibold text-grey-950 truncate line-clamp-1">{{ dayjs(record.start).format('HH:mm') }}</p>
-                        <div class="w-5/6 flex gap-x-3 items-center">
+                        <p class="w-3/12 text-base font-semibold text-grey-950 truncate line-clamp-1">
+                            {{ dayjs(record.start).format('HH:mm') }}
+                            <span v-if="calculateDayDifference(attendance.check_in, record.start) > 0" class="text-sm">
+                                (+{{ calculateDayDifference(attendance.check_in, record.start) }})
+                            </span>
+                        </p>
+                        <div class="w-9/12 flex gap-x-3 items-center">
                             <div class="relative">
                                 <BreakIcon />
                                 <div class="absolute inset-x-[50%] w-px h-8 bg-grey-200"></div>
@@ -157,8 +182,8 @@ watch(() => props.selectedWaiter, (newValue) => {
             
             <!-- Check In -->
             <div class="flex w-full py-2 gap-x-3 items-center" v-if="attendance.check_in">
-                <p class="w-1/6 text-base font-semibold text-grey-950 truncate line-clamp-1">{{ dayjs(attendance.check_in).format('HH:mm') }}</p>
-                <div class="w-5/6 flex gap-x-3 items-center">
+                <p class="w-3/12 text-base font-semibold text-grey-950 truncate line-clamp-1">{{ dayjs(attendance.check_in).format('HH:mm') }}</p>
+                <div class="w-9/12 flex gap-x-3 items-center">
                     <CheckOutIcon />
                     <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">Clock in</p>
                 </div>
