@@ -149,8 +149,6 @@ const fetchPendingServe = async () => {
 }
 
 const handleTableLock = (action = 'unlock', auto = false) => {
-    // console.log(action === 'unlock' ? 'You have been idle for 10 seconds!' : 'This table will now be locked');
-
     const tableIdArray = order.value?.order_table?.map((ot) => ot.table.id);
 
     if (tableIdArray) {
@@ -177,8 +175,8 @@ const handleTableLock = (action = 'unlock', auto = false) => {
 
                 if (action === 'unlock') {
                     wasAutoUnlocked.value = auto;
-                    emit('fetchZones');
                     emit('close');
+                    emit('fetchZones');
                 }
             },
             onError: (errors) => {
@@ -402,6 +400,7 @@ const submit = (action) => {
                                 summary: 'Selected table is now available for next customers.',
                             });
                             closeDrawer();
+                            emit('close');
                             handleTableLock();
                         }, 200);
                     }
@@ -424,10 +423,11 @@ const submit = (action) => {
                         });
                     }, 200);
                     form.reset();
-                    emit('fetchZones');
                     hideCancelOrderForm();
                     closeDrawer();
+                    emit('close');
                     handleTableLock();
+                    emit('fetchZones');
                 },
             })
         }
