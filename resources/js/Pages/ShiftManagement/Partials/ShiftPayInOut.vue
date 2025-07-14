@@ -8,6 +8,7 @@ import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 import Textarea from '@/Components/Textarea.vue';
 import dayjs from 'dayjs';
+import { UndetectableIllus } from '@/Components/Icons/illus';
 
 const props = defineProps({
     currentSelectedShift: Object,
@@ -67,7 +68,7 @@ watch(() => props.currentSelectedShift, (newValue) => {
 </script>
 
 <template>
-    <form class="flex flex-col gap-8" novalidate @submit.prevent="submit">
+    <form class="flex flex-col gap-8 max-h-[calc(100dvh-10rem)] overflow-y-auto scrollbar-thin scrollbar-webkit" novalidate @submit.prevent="submit">
         <template v-if="selectedShift.status === 'opened'">
             <div class="flex flex-col gap-y-5" >
                 <div class="flex flex-col gap-y-4" >
@@ -135,7 +136,7 @@ watch(() => props.currentSelectedShift, (newValue) => {
         </template>
         
         <div class="flex flex-col gap-y-4" >
-            <div class="flex flex-col gap-1" >
+            <div class="flex flex-col gap-1" v-if="selectedShift.status === 'opened'">
                 <p class="text-grey-950 text-base font-bold">
                     Pay in/out History
                 </p>
@@ -144,34 +145,37 @@ watch(() => props.currentSelectedShift, (newValue) => {
                 </div>
             </div>
 
-            <div 
-                class="flex flex-col items-start self-stretch pr-1 shrink-0 overflow-y-auto scrollbar-thin scrollbar-webkit"
-                :class="selectedShift.status === 'opened' ? 'max-h-[calc(100dvh-38rem)]' : 'max-h-[calc(100dvh-14rem)]'"
-            >
-                <div 
-                    v-for="(history, index) in selectedShift.shift_pay_histories" 
-                    :key="index"
-                    class="flex py-3 flex-col items-end gap-4 self-stretch border-b border-grey-100"
-                >
-                    <div class="flex justify-between items-center self-stretch">
-                        <div class="flex items-center gap-x-8">
-                            <p class="text-grey-950 text-base font-semibold">{{ dayjs(history.created_at).format('HH:mm') }}</p>
-                            <p class="text-grey-950 text-base font-normal">{{ history.reason }}</p>
-                        </div>
+            <div class="flex flex-col items-start self-stretch pr-1 shrink-0">
+                <template v-if="selectedShift.shift_pay_histories.length > 0">
+                    <div 
+                        v-for="(history, index) in selectedShift.shift_pay_histories" 
+                        :key="index"
+                        class="flex py-3 flex-col items-end gap-4 self-stretch border-b border-grey-100"
+                    >
+                        <div class="flex justify-between items-center self-stretch">
+                            <div class="flex items-center gap-x-8">
+                                <p class="text-grey-950 text-base font-semibold">{{ dayjs(history.created_at).format('HH:mm') }}</p>
+                                <p class="text-grey-950 text-base font-normal">{{ history.reason }}</p>
+                            </div>
 
-                        <div class="flex flex-col items-end gap-y-2">
-                            <p class="text-base font-semibold" :class="history.type === 'in' ? 'text-green-500' : 'text-primary-600'">{{ history.type === 'in' ? '+' : '-' }}{{ ` RM ${history.amount}` }}</p>
+                            <div class="flex flex-col items-end gap-y-2">
+                                <p class="text-base font-semibold" :class="history.type === 'in' ? 'text-green-500' : 'text-primary-600'">{{ history.type === 'in' ? '+' : '-' }}{{ ` RM ${history.amount}` }}</p>
 
-                            <div class="flex gap-x-1 self-stretch justify-end items-center">
-                                <p class="truncate font-normal text-xs text-grey-00 text-right">{{ history.handled_by.full_name }}</p>
-                                <img 
-                                    :src="history.handled_by.image ? history.handled_by.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                    alt="UserImage" 
-                                    class="size-3 object-fit rounded-full border borer-grey-100"
-                                />
+                                <div class="flex gap-x-1 self-stretch justify-end items-center">
+                                    <p class="truncate font-normal text-xs text-grey-00 text-right">{{ history.handled_by.full_name }}</p>
+                                    <img 
+                                        :src="history.handled_by.image ? history.handled_by.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                        alt="UserImage" 
+                                        class="size-3 object-fit rounded-full border borer-grey-100"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
+                </template>
+                <div class="w-full flex flex-col items-center" v-else>
+                    <UndetectableIllus class="w-44 h-44" />
+                    <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
                 </div>
             </div>
         </div>

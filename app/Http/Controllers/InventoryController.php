@@ -859,20 +859,20 @@ class InventoryController extends Controller
         }
 
         if ($checkedFilters && is_array($checkedFilters)) {
-            $query->whereHas('keepItem', function ($query) use ($checkedFilters) {
+            // $query->whereHas('keepItem', function ($query) use ($checkedFilters) {
                 
-                // filtering with expire in by getting the largest value of all selection
-                if (!empty($checkedFilters['expiresIn'])) {
-                    $query->whereDate('expired_to', '<=', Carbon::now()->startOfDay()->addDays(max($checkedFilters['expiresIn'])));
-                }
+            //     // filtering with expire in by getting the largest value of all selection
+            //     if (!empty($checkedFilters['expiresIn'])) {
+            //         $query->whereDate('expired_to', '<=', Carbon::now()->startOfDay()->addDays(max($checkedFilters['expiresIn'])));
+            //     }
 
-            });
+            // });
             // filtering with selection in kept in
             if (!empty($checkedFilters['keptIn']) && count($checkedFilters['keptIn']) === 1) {
                 if($checkedFilters['keptIn'][0] === 'cm') {
-                    $query->where('qty', '=', '0');
+                    $query->where('qty', '=', 0);
                 } elseif ($checkedFilters['keptIn'][0] === 'qty') {
-                    $query->where('cm', '=', '0');
+                    $query->where('cm', '=', 0);
                 }
             }
         }
@@ -1005,9 +1005,9 @@ class InventoryController extends Controller
 
             if(!empty($checkedFilters['keptIn']) && count($checkedFilters['keptIn']) === 1) {
                 if($checkedFilters['keptIn'][0] === 'cm') {
-                    $query->where('qty', '=', '0');
+                    $query->where('qty', '=', 0);
                 } elseif ($checkedFilters['keptIn'][0] === 'qty') {
-                    $query->where('cm', '=', '0');
+                    $query->where('cm', '=', 0);
                 }
             }
         }

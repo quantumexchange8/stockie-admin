@@ -34,7 +34,7 @@ const keepHistoryColumns = ref([
     {field: 'keep_item.customer.full_name', header: 'Customer', width: '25', sortable: false},
     {field: 'item_name', header: 'Item Name', width: '38', sortable: false},
     {field: 'qty', header: 'Qty', width: '11.2', sortable: false},
-    {field: 'keep_item.expired_to', header: 'Expire On', width: '12.5', sortable: false},
+    {field: 'keep_item.expired_to', header: 'Expire In', width: '12.5', sortable: false},
 ]);
 
 const { flashMessage } = useCustomToast();

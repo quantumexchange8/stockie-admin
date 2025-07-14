@@ -115,36 +115,43 @@ onMounted(() => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(record, index) in stockHistories" :key="index" class="border-b border-grey-100">
-                                <td class="w-[46%]">
-                                    <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(record.created_at).format('HH:mm, DD/MM/YYYY') }}</span>
-                                </td>
-                                <td class="w-[18%]">
-                                    <div class="flex justify-start items-center gap-3 px-3">
-                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.out }}</span>
-                                    </div>
-                                </td>
-                                <td class="w-[18%]">
-                                    <div class="flex justify-start items-center gap-3 px-3">
-                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.in }}</span>
-                                    </div>
-                                </td>
-                                <td class="w-[18%]">
-                                    <div class="flex justify-start items-start gap-2 px-3">
-                                        <span 
-                                            :class="[
-                                                'text-sm font-medium text-ellipsis overflow-hidden py-4',
-                                                { 'text-grey-900': record.current_stock > 0 },
-                                                { 'text-primary-500': record.current_stock <= 0 }
-                                            ]"
-                                        >
-                                            {{ record.current_stock }}
-                                        </span>
-                                    </div>
-                                </td>
-                            </tr>
+                            <template v-if="stockHistories.length > 0">
+                                <tr v-for="(record, index) in stockHistories" :key="index" class="border-b border-grey-100">
+                                    <td class="w-[46%]">
+                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(record.created_at).format('HH:mm, DD/MM/YYYY') }}</span>
+                                    </td>
+                                    <td class="w-[18%]">
+                                        <div class="flex justify-start items-center gap-3 px-3">
+                                            <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.out }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="w-[18%]">
+                                        <div class="flex justify-start items-center gap-3 px-3">
+                                            <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.in }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="w-[18%]">
+                                        <div class="flex justify-start items-start gap-2 px-3">
+                                            <span 
+                                                :class="[
+                                                    'text-sm font-medium text-ellipsis overflow-hidden py-4',
+                                                    { 'text-grey-900': record.current_stock > 0 },
+                                                    { 'text-primary-500': record.current_stock <= 0 }
+                                                ]"
+                                            >
+                                                {{ record.current_stock }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
                         </tbody>
                     </table>
+                    <template v-if="stockHistories.length == 0">
+                        <div class="flex pt-2 items-center justify-center">
+                            <p class="text-sm text-grey-950">No result</p>
+                        </div>
+                    </template>
                 </div>
             </template>
             <template #kept-item-flow>
@@ -175,37 +182,44 @@ onMounted(() => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(record, index) in mergedHistories" :key="index" class="border-b border-grey-100">
-                                <td class="w-[40%]">
-                                    <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(record.date).format('HH:mm, DD/MM/YYYY') }}</span>
-                                </td>
-                                <td class="w-[15%]">
-                                    <div class="flex justify-start items-center gap-3 px-3">
-                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.kept ?? 0 }}</span>
-                                    </div>
-                                </td>
-                                <td class="w-[20%]">
-                                    <div class="flex justify-start items-start gap-2 px-3">
-                                        <span 
-                                            :class="[
-                                                'text-sm font-medium text-ellipsis overflow-hidden py-4',
-                                                { 'text-grey-900': record.reallocated == 0 },
-                                                { 'text-green-500': record.reallocated > 0 },
-                                                { 'text-primary-500': record.reallocated < 0 }
-                                            ]"
-                                        >
-                                            {{ record.reallocated <= 0 ? record.reallocated : `+${record.reallocated}` }}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td class="w-[25%]">
-                                    <div class="flex justify-start items-center gap-3 px-3">
-                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.kept_balance }}</span>
-                                    </div>
-                                </td>
-                            </tr>
+                            <template v-if="mergedHistories.length > 0">
+                                <tr v-for="(record, index) in mergedHistories" :key="index" class="border-b border-grey-100">
+                                    <td class="w-[40%]">
+                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden px-3 py-4">{{ dayjs(record.date).format('HH:mm, DD/MM/YYYY') }}</span>
+                                    </td>
+                                    <td class="w-[15%]">
+                                        <div class="flex justify-start items-center gap-3 px-3">
+                                            <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.kept ?? 0 }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="w-[20%]">
+                                        <div class="flex justify-start items-start gap-2 px-3">
+                                            <span 
+                                                :class="[
+                                                    'text-sm font-medium text-ellipsis overflow-hidden py-4',
+                                                    { 'text-grey-900': record.reallocated == 0 },
+                                                    { 'text-green-500': record.reallocated > 0 },
+                                                    { 'text-primary-500': record.reallocated < 0 }
+                                                ]"
+                                            >
+                                                {{ record.reallocated <= 0 ? record.reallocated : `+${record.reallocated}` }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="w-[25%]">
+                                        <div class="flex justify-start items-center gap-3 px-3">
+                                            <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden py-4">{{ record.kept_balance }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
                         </tbody>
                     </table>
+                    <template v-if="mergedHistories.length == 0">
+                        <div class="flex pt-2 items-center justify-center">
+                            <p class="text-sm text-grey-950">No result</p>
+                        </div>
+                    </template>
                 </div>
             </template>
         </TabView>

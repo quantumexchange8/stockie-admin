@@ -233,7 +233,7 @@ watch(form, (newValue) => (isDirty.value = newValue.isDirty));
     </div>   
 
     <Modal 
-        :title="'Pay in/out'"
+        :title="selectedShift.status === 'opened' ? 'Pay in/out' : 'Pay in/out history'"
         :show="payInOutShiftFormIsOpen" 
         :maxWidth="'md'" 
         :closeable="true" 

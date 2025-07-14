@@ -41,7 +41,7 @@ const defaultLatest3Months = computed(() => {
 const date_filter = ref(defaultLatest3Months.value);  
 
 // arrays
-const tabs = ref(['Active', 'Served/Returned', 'Expired']);
+const tabs = ref(['Keep', 'Served/Returned', 'Expired']);
 const tranformedTabs = computed(() => {
     return tabs.value.map((tab) => {
         return tab.toLowerCase().replace(/[/\s_]+/g,"-");
@@ -92,7 +92,7 @@ const getKeepHistories = async (filters = {}, checkedFilters = {}) => {
 const getFilteredRows = (tab) => {
     switch(tab) {
         case 'served-returned': return keepHistories.value.filter((history) => history.status == 'Returned' || history.status == 'Served');
-        case 'active': return keepHistories.value.filter((history) => history.status == 'Keep');
+        case 'keep': return keepHistories.value.filter((history) => history.status == 'Keep');
         case 'expired': return keepHistories.value.filter((history) => history.status == 'Expired');
     }
 }
@@ -108,7 +108,7 @@ const csvExport = (action_type) => {
         case 'all':
             rows = initialKeepHistories.value;
             break;
-        case 'active':
+        case 'keep':
             rows = keepHistories.value.filter((history) => history.status == 'Keep');
             break;
         case 'served-returned':
@@ -257,8 +257,8 @@ watch(() => searchQuery.value, (newValue) => {
                                         { 'bg-primary-100': active },
                                         { 'bg-grey-50 pointer-events-none': keepHistories.filter((history) => history.status == 'Keep').length === 0 },
                                         'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
-                                    ]" :disabled="keepHistories.filter((history) => history.status == 'Keep').length === 0" @click="csvExport('active')">
-                                        Active
+                                    ]" :disabled="keepHistories.filter((history) => history.status == 'Keep').length === 0" @click="csvExport('keep')">
+                                        Keep
                                     </button>
                                 </MenuItem>
                                 <MenuItem v-slot="{ active }">
@@ -300,7 +300,7 @@ watch(() => searchQuery.value, (newValue) => {
                                     v-model="searchQuery"
                                 >
                                     <template #default="{ hideOverlay }">
-                                        <div class="flex flex-col self-stretch gap-4 items-start" v-if="selectedTab === 'active'">
+                                        <!-- <div class="flex flex-col self-stretch gap-4 items-start" v-if="selectedTab === 'keep'">
                                             <span class="text-grey-900 text-base font-semibold">Expire in</span>
                                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                                 <div 
@@ -315,7 +315,7 @@ watch(() => searchQuery.value, (newValue) => {
                                                     <span class="text-grey-700 text-sm font-medium">{{ expire.text }}</span>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> -->
                                         <div class="flex flex-col self-stretch gap-4 items-start">
                                             <span class="text-grey-900 text-base font-semibold">Kept in</span>
                                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">

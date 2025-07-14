@@ -229,7 +229,7 @@ watch(sales_type, (newValue) => {
                     </Button>
                 </div>
                 <div class="flex justify-center">
-                    <div class="flex flex-col w-[595px] p-3 items-center h-[710px] gap-5 rounded-[5px] bg-white shadow-[0px_3.361px_13.277px_0px_rgba(13,13,13,0.08)]">
+                    <div class="flex flex-col w-[595px] p-3 items-center h-[calc(100dvh-19.6rem)] gap-5 rounded-[5px] bg-white shadow-[0px_3.361px_13.277px_0px_rgba(13,13,13,0.08)]">
                         <div class="flex flex-col self-stretch items-start gap-1">
                             <p class="text-center text-grey-950 text-base font-bold self-stretch">{{ currentTitle }}</p>
                             <p class="text-center text-grey-950 text-xs font-normal self-stretch">{{ dateRangeDisplay }}</p>

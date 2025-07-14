@@ -298,9 +298,8 @@ onMounted(() => {
 
                 <!-- Page Content -->
                 <main class="w-full flex justify-center shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] p-4">
-                    <div class="xl:max-w-[1440px] max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-webkit flex flex-col w-full self-center gap-[10px] flex-shrink-1 p-1">
+                    <div class="xl:max-w-[1440px] max-h-[calc(100dvh-11.5rem)] overflow-y-auto scrollbar-thin scrollbar-webkit flex flex-col w-full self-center gap-[10px] flex-shrink-1 p-1">
                         <slot />
-                        <!-- <PWAManager /> -->
                     </div>
                 </main>
             </div>

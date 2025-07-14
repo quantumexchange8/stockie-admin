@@ -610,6 +610,7 @@ watch((editForm), (newValue) => {
                         :inputName="'kept_amount'"
                         v-model="editForm.kept_amount"
                         class="!col-span-1"
+                        disabled
                         v-if="parseFloat(selectedItem.qty) > parseFloat(selectedItem.cm)"
                     />
                     <TextInput

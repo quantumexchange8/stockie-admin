@@ -262,7 +262,7 @@ const isLatestRecord = (keep_item_id, id) => {
             :paginator="true"
             :totalPages="totalPages"
             @onRowClick="openDrawer($event.data.keep_item.customer)"
-            v-else-if="props.tab === 'active'"
+            v-else-if="props.tab === 'keep'"
         >
             <template #keep_date="rows">
                 <span class="text-grey-900 text-sm font-medium">{{ dayjs(rows.keep_date).format('DD/MM/YYYY') }}</span>

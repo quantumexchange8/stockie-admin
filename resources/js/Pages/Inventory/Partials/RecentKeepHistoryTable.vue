@@ -40,9 +40,8 @@ const getTimeDifference = (date) => {
     const createdDate = new Date(date);
     const now = new Date();
     
-    let months = now.getMonth() - createdDate.getMonth() + (12 * (now.getFullYear() - createdDate.getFullYear()));
-    let days = now.getDate() - createdDate.getDate();
-    let hours = now.getHours() - createdDate.getHours();
+    let months = createdDate.getMonth() - now.getMonth() + (12 * (createdDate.getFullYear() - now.getFullYear()));
+    let days = createdDate.getDate() - now.getDate();
 
     // Adjust for negative days
     if (days < 0) {
@@ -52,11 +51,11 @@ const getTimeDifference = (date) => {
     }
 
     if (months > 0) {
-        return `${months} m`;
+        return `${months} months`;
     } else if (days > 0) {
-        return `${days} d`;
-    } else if (hours > 0) {
-        return `${hours} h`;
+        return `${days} days`;
+    } else {
+        return `${days} day`;
     }
 };
 

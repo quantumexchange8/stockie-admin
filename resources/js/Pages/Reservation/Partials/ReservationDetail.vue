@@ -116,8 +116,8 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
 </script>
 
 <template>
-    <div class="flex flex-col gap-y-6 items-start max-h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
-        <div class="flex flex-col items-start gap-y-4 self-stretch">
+    <div class="flex flex-col gap-y-6 items-start">
+        <div class="flex flex-col items-start gap-y-4 self-stretch max-h-[calc(100dvh-15rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <Tag :value="reservation.status" :variant="getStatusVariant(reservation.status)" />
             <div class="flex flex-col gap-y-5 items-start self-stretch">
                 <div class="w-full flex gap-x-5 items-start">
@@ -161,14 +161,14 @@ const hideReservationForm = () => deleteReservationFormIsOpen.value = false;
                     
                     <div class="w-1/2 flex flex-col gap-y-1 items-start">
                         <p class="text-grey-900 text-base font-normal self-stretch">Table lock before</p>
-                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.lock_before_minutes }}</p>
+                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.lock_before_minutes }} minutes</p>
                     </div>
                 </div>
                 
                 <div class="w-full flex gap-x-5 items-start">
                     <div class="w-1/2 flex flex-col gap-y-1 items-start">
                         <p class="text-grey-900 text-base font-normal self-stretch">Grace period</p>
-                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.grace_period}} hour</p>
+                        <p class="text-grey-900 text-base font-bold self-stretch">{{ reservation.grace_period}} minutes</p>
                     </div>
                     
                     <div class="w-1/2 flex flex-col gap-y-1 items-start">
