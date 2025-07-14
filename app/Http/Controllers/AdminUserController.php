@@ -123,10 +123,10 @@ class AdminUserController extends Controller
                     ])
                     ->log("Sub-admin $targetUser->name's detail is updated.");
 
-        // if($request->hasfile('image')){
-        //     $targetUser->clearMediaCollection('user');
-        //     $targetUser->addMedia($validatedData['image'])->toMediaCollection('user');
-        // }
+        if($request->hasfile('image')){
+            $targetUser->clearMediaCollection('user');
+            $targetUser->addMedia($validatedData['image'])->toMediaCollection('user');
+        }
 
         $data = $this->getAdminUsers();
 
