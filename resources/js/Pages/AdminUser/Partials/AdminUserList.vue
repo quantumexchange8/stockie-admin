@@ -227,7 +227,7 @@ watch(() => searchQuery.value, (newValue) => {
 
     const query = newValue.toLowerCase();
     
-    users.value = props.userList.filter(user => {
+    users.value = users.value.filter(user => {
         const full_name = user.full_name.toLowerCase();
         const position = user.position.toLowerCase();
         const role_id = user.role_id.toLowerCase();

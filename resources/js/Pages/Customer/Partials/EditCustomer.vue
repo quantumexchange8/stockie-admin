@@ -63,7 +63,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="submit">
-        <div class="flex flex-col gap-6 pl-1 pr-2 py-1">
+        <div class="flex flex-col gap-6 pl-1 pr-2 py-1 max-h-[calc(100dvh-14rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
             <Toast 
                 inline
                 severity="info"

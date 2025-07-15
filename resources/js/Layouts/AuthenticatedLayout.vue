@@ -170,7 +170,7 @@ onMounted(() => {
     <Head :title="title"></Head>
     
     
-    <div class="min-h-screen">
+    <div class="min-h-[100dvh]">
         <!-- Sidebar Menu -->
         <Sidebar />
 

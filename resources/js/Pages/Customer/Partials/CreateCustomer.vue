@@ -70,49 +70,47 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="submit">
-        <div class="flex flex-col gap-6 pl-1 pr-2 py-1">
-            <div class="col-span-full md:col-span-8 flex flex-col items-start gap-8 flex-[1_0_0] self-stretch">
-                <TextInput
-                    required
-                    :inputName="'full_name'"
-                    :labelText="'Name'"
-                    :placeholder="'e.g. Tan Mei Wah'"
-                    :errorMessage="form.errors && form.errors.full_name ? form.errors.full_name[0] : ''"
-                    v-model="form.full_name"
-                />
-                
-                <TextInput
-                    inputName="phone"
-                    :inputType="'number'"
-                    labelText="Phone No."
-                    placeholder="12 345 1234"
-                    :iconPosition="'left'"
-                    :errorMessage="form.errors && form.errors.phone ? form.errors.phone[0] : ''"
-                    class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
-                    v-model="form.phone_temp"
-                    @input="formatPhoneInput"
-                >
-                    <template #prefix> +60 </template>
-                </TextInput>
+        <div class="flex flex-col items-start gap-8 pl-1 pr-2 py-1 self-stretch max-h-[calc(100dvh-14rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+            <TextInput
+                required
+                :inputName="'full_name'"
+                :labelText="'Name'"
+                :placeholder="'e.g. Tan Mei Wah'"
+                :errorMessage="form.errors && form.errors.full_name ? form.errors.full_name[0] : ''"
+                v-model="form.full_name"
+            />
+            
+            <TextInput
+                inputName="phone"
+                :inputType="'number'"
+                labelText="Phone No."
+                placeholder="12 345 1234"
+                :iconPosition="'left'"
+                :errorMessage="form.errors && form.errors.phone ? form.errors.phone[0] : ''"
+                class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
+                v-model="form.phone_temp"
+                @input="formatPhoneInput"
+            >
+                <template #prefix> +60 </template>
+            </TextInput>
 
-                <TextInput
-                    :inputName="'email'"
-                    :labelText="'Email'"
-                    :placeholder="'e.g. meiwah@gmail.com'"
-                    :errorMessage="form.errors && form.errors.email ? form.errors.email[0] : ''"
-                    v-model="form.email"
-                />
+            <TextInput
+                :inputName="'email'"
+                :labelText="'Email'"
+                :placeholder="'e.g. meiwah@gmail.com'"
+                :errorMessage="form.errors && form.errors.email ? form.errors.email[0] : ''"
+                v-model="form.email"
+            />
 
-                <TextInput
-                    required
-                    :inputName="'password'"
-                    :labelText="'Password'"
-                    :placeholder="'Password'"
-                    :inputType="'password'"
-                    :errorMessage="form.errors && form.errors.password ? form.errors.password[0] : ''"
-                    v-model="form.password"
-                />
-            </div>
+            <TextInput
+                required
+                :inputName="'password'"
+                :labelText="'Password'"
+                :placeholder="'Password'"
+                :inputType="'password'"
+                :errorMessage="form.errors && form.errors.password ? form.errors.password[0] : ''"
+                v-model="form.password"
+            />
         </div>
         <div class="flex pt-4 justify-center items-end gap-4 self-stretch">
             <Button
