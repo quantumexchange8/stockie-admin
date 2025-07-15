@@ -102,6 +102,34 @@ class OrderController extends Controller
                                             unset($item->product);
                                         });
                                     });
+                                    
+                                    // Find the first non-pending clearance table
+                                    $currentOrderTable = $table->orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                                                                        ->firstWhere('status', '!=', 'Pending Clearance') 
+                                                        ?? $table->orderTables->first();
+
+                                    // Initialize joined_tables as empty array by default
+                                    $table->joined_tables = [];
+                                                        
+                                    if ($currentOrderTable && $currentOrderTable->order) {
+                                        // Eager load the necessary relationships
+                                        $currentOrderTable->order->load([
+                                            'orderTable' => function ($query) {
+                                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                                                    ->select('id', 'order_id', 'table_id', 'status')
+                                                    ->with('table:id,table_no');
+                                            }
+                                        ]);
+                                        
+                                        // Safely get joined tables
+                                        if ($currentOrderTable->order->orderTable) {
+                                            $table->joined_tables = $currentOrderTable->order->orderTable
+                                                ->pluck('table.id')
+                                                ->filter()
+                                                ->values()
+                                                ->toArray();
+                                        }
+                                    }
 
                                     $table->is_reserved = in_array($table->id, $reservedTablesId);
                                     $table->pending_count = $pendingCount;
@@ -1088,6 +1116,13 @@ class OrderController extends Controller
 
         Table::where([
                     ['locked_by', auth()->user()->id],
+                    ['updated_at', '>', now()->subSeconds($duration)],
+                ])
+                ->whereIn('id', $lockedTables)
+                ->update(['updated_at' => now()]);
+
+        Table::where([
+                    ['locked_by', auth()->user()->id],
                     ['updated_at', '<', now()->subSeconds(5)],
                 ])
                 ->whereNotIn('id', $lockedTables)
@@ -1095,13 +1130,6 @@ class OrderController extends Controller
                     'is_locked' => false,
                     'locked_by' => null,
                 ]);
-
-        Table::where([
-                    ['locked_by', auth()->user()->id],
-                    ['updated_at', '>', now()->subSeconds($duration)],
-                ])
-                ->whereIn('id', $lockedTables)
-                ->update(['updated_at' => now()]);
 
         $reservedTablesId = $this->getReservedTablesId();
 
@@ -1173,7 +1201,12 @@ class OrderController extends Controller
                             ];
                         });
 
-        return response()->json($zones);
+        $data = [
+            'zones' => $zones,
+            'auto_unlock_timer' => $autoUnlockSetting,
+        ];
+
+        return response()->json($data);
     }
 
     /**

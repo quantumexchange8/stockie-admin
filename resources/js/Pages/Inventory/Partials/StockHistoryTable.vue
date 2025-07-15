@@ -115,84 +115,86 @@ const rowGroupedByDates = computed(() => {
             v-slot="{ open }" 
             class="flex flex-col justify-center gap-4" 
         >
-            <DisclosureButton
-                class="flex items-center justify-between gap-2.5 rounded-sm bg-grey-50 border-t border-grey-200 py-1 px-2.5"
-            >
-                <span class="text-grey-900 text-sm font-medium">{{ group.date }}</span>
-                <svg 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 20 20" 
-                    fill="none" 
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="inline-block text-grey-900"
-                    :class="[open ? 'rotate-180 transform' : '']"
+            <template v-if="group.rows.length > 0">
+                <DisclosureButton
+                    class="flex items-center justify-between gap-2.5 rounded-sm bg-grey-50 border-t border-grey-200 py-1 px-2.5"
                 >
-                    <path d="M15.8337 7.08337L10.0003 12.9167L4.16699 7.08337" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-                </svg>
-            </DisclosureButton>
-            <transition
-                enter-active-class="transition duration-100 ease-out"
-                enter-from-class="transform scale-95 opacity-0"
-                enter-to-class="transform scale-100 opacity-100"
-                leave-active-class="transition duration-100 ease-in"
-                leave-from-class="transform scale-100 opacity-100"
-                leave-to-class="transform scale-95 opacity-0"
-            >
-                <DisclosurePanel>
-                    <Table 
-                        :key="index"
-                        ref="stockHistoryTable"
-                        :variant="'list'"
-                        :rows="group.rows"
-                        :paginator="false"
-                        :columns="columns"
-                        :rowType="rowType"
-                        :searchFilter="true"
-                        :filters="filters"
-                        minWidth="min-w-[810px]"
+                    <span class="text-grey-900 text-sm font-medium">{{ group.date }}</span>
+                    <svg 
+                        width="20" 
+                        height="20" 
+                        viewBox="0 0 20 20" 
+                        fill="none" 
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="inline-block text-grey-900"
+                        :class="[open ? 'rotate-180 transform' : '']"
                     >
-                        <!-- v-if="filteredRowsCount > 0"
-                        @updateFilteredRowsCount="updateFilteredRowsCount" -->
-                        <template #empty>
-                            <UndetectableIllus />
-                            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
-                        </template>
-                        <template #groupheader="row">
-                            <div class="flex justify-start items-center w-full">
-                                <div class="flex items-center gap-3">
-                                    <!-- <span class="w-[60px] h-[60px] flex-shrink-0 rounded-full bg-primary-700"></span> -->
-                                    <img 
-                                        :src="row.inventory?.image ? row.inventory.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                        alt=""
-                                        class="w-[60px] h-[60px] flex flex-shrink-0 rounded-full bg-primary-700"
-                                    />
-                                    <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ row.inventory?.name ?? '' }}</span>
+                        <path d="M15.8337 7.08337L10.0003 12.9167L4.16699 7.08337" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                    </svg>
+                </DisclosureButton>
+                <transition
+                    enter-active-class="transition duration-100 ease-out"
+                    enter-from-class="transform scale-95 opacity-0"
+                    enter-to-class="transform scale-100 opacity-100"
+                    leave-active-class="transition duration-100 ease-in"
+                    leave-from-class="transform scale-100 opacity-100"
+                    leave-to-class="transform scale-95 opacity-0"
+                >
+                    <DisclosurePanel>
+                        <Table 
+                            :key="index"
+                            ref="stockHistoryTable"
+                            :variant="'list'"
+                            :rows="group.rows"
+                            :paginator="false"
+                            :columns="columns"
+                            :rowType="rowType"
+                            :searchFilter="true"
+                            :filters="filters"
+                            minWidth="min-w-[810px]"
+                        >
+                            <!-- v-if="filteredRowsCount > 0"
+                            @updateFilteredRowsCount="updateFilteredRowsCount" -->
+                            <template #empty>
+                                <UndetectableIllus />
+                                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                            </template>
+                            <template #groupheader="row">
+                                <div class="flex justify-start items-center w-full">
+                                    <div class="flex items-center gap-3">
+                                        <!-- <span class="w-[60px] h-[60px] flex-shrink-0 rounded-full bg-primary-700"></span> -->
+                                        <img 
+                                            :src="row.inventory?.image ? row.inventory.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="w-[60px] h-[60px] flex flex-shrink-0 rounded-full bg-primary-700"
+                                        />
+                                        <span class="text-grey-900 text-sm font-medium text-ellipsis overflow-hidden">{{ row.inventory?.name ?? '' }}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </template>
-                        <template #groupfooter="row">
-                            <div></div>
-                        </template>
-                        <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
-                        <template #in="row">
-                            <span class="text-green-600 text-sm font-medium whitespace-nowrap" v-if="row.in">+ {{ row.in }}</span>
-                            <span class="text-grey-300 text-sm font-medium" v-else>-</span>
-                        </template>
-                        <template #out="row">
-                            <span class="text-primary-600 text-sm font-medium whitespace-nowrap" v-if="row.out">- {{ row.out }}</span>
-                            <span class="text-grey-300 text-sm font-medium" v-else>-</span>
-                        </template>
-                        <template #current_stock="row">
-                            <span class="text-grey-900 text-sm font-medium">
-                                {{ row.current_stock }}
-                                <span class="text-primary-600 text-sm font-medium" v-if="category === 'In' && row.out > 0"> (- {{ row.out }})</span>
-                                <span class="text-green-600 text-sm font-medium" v-else-if="category === 'Out' && row.in > 0"> (+ {{ row.in }})</span>
-                            </span>
-                        </template>
-                    </Table>
-                </DisclosurePanel>
-            </transition>
+                            </template>
+                            <template #groupfooter="row">
+                                <div></div>
+                            </template>
+                            <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
+                            <template #in="row">
+                                <span class="text-green-600 text-sm font-medium whitespace-nowrap" v-if="row.in">+ {{ row.in }}</span>
+                                <span class="text-grey-300 text-sm font-medium" v-else>-</span>
+                            </template>
+                            <template #out="row">
+                                <span class="text-primary-600 text-sm font-medium whitespace-nowrap" v-if="row.out">- {{ row.out }}</span>
+                                <span class="text-grey-300 text-sm font-medium" v-else>-</span>
+                            </template>
+                            <template #current_stock="row">
+                                <span class="text-grey-900 text-sm font-medium">
+                                    {{ row.current_stock }}
+                                    <span class="text-primary-600 text-sm font-medium" v-if="category === 'In' && row.out > 0"> (- {{ row.out }})</span>
+                                    <span class="text-green-600 text-sm font-medium" v-else-if="category === 'Out' && row.in > 0"> (+ {{ row.in }})</span>
+                                </span>
+                            </template>
+                        </Table>
+                    </DisclosurePanel>
+                </transition>
+            </template>
         </Disclosure>
         <div class="flex items-center justify-center flex-col" v-else>
             <UndetectableIllus/>

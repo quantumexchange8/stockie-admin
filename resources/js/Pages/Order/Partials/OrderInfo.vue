@@ -152,12 +152,12 @@ const handleTableLock = (action = 'unlock', auto = false) => {
     const tableIdArray = order.value?.order_table?.map((ot) => ot.table.id);
 
     if (tableIdArray) {
-        if (hasItemInCart.value) {
-            showUnlockConfirmation();
-            return;
-        }
 
         if (action === 'unlock') {
+            if (hasItemInCart.value) {
+                showUnlockConfirmation();
+                return;
+            }
             emit('update:broadcast-message', 'unlock-table');
         }
 

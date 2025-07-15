@@ -17,6 +17,10 @@ const props = defineProps({
         default: 0,
     },
     maxValue: Number,
+    withDecimal: {
+        type: Boolean,
+        default: true,
+    },
     disabled: {
         type: Boolean,
         default: false,
@@ -48,14 +52,19 @@ watch(() => props.modelValue, (newVal) => {
     inputValue.value = Number(newVal) || props.minValue; // Fallback to minValue if NaN
 });
 
+const emitValue = () => {
+    const numValue = Number(inputValue.value);
+    emit('update:modelValue', numValue);
+    emit("onChange", numValue);
+}
+
 const increment = () => {
     if (!props.disabled) {
         if (props.maxValue !== undefined && inputValue.value >= props.maxValue) return;
         
         inputValue.value += 1;
         updateState();
-        emit('update:modelValue', inputValue.value);
-        emit("onChange", inputValue.value);
+        emitValue();
     }
 }
 
@@ -63,30 +72,45 @@ const decrement = () => {
     if (!props.disabled && inputValue.value > props.minValue) {
         inputValue.value -= 1;
         updateState();
-        emit('update:modelValue', inputValue.value);
-        emit("onChange", inputValue.value);
+        emitValue();
     }
 }
 
 const updateValue = (event) => {
-    let value = Number(event.target.value); // Ensure numeric conversion
+    let value = event.target.value;
+    
+    // Allow empty string temporarily (for better UX when deleting)
+    if (value === '') {
+        inputValue.value = props.minValue;
+        event.target.value = props.minValue;
+        emitValue();
+        return;
+    }
 
-    if (isNaN(value)) value = props.minValue; // Prevent NaN values
+    // First, remove all invalid characters
+    const regex = /[^0-9]/g;
+    value = value.replace(regex, '');
 
-    inputValue.value = value < props.minValue 
-                            ? props.minValue 
-                            : (props.maxValue !== undefined && value >= props.maxValue)
-                                ? props.maxValue 
-                                : value;
+    // Convert to number and apply constraints
+    let numericValue = value === '' ? props.minValue : Number(value);
+    
+    // Apply min/max constraints
+    numericValue = Math.max(numericValue, props.minValue);
 
-    event.target.value = inputValue.value;
-    emit('update:modelValue', inputValue.value);
-    emit("onChange", inputValue.value);
+    if (props.maxValue !== undefined) {
+        numericValue = Math.min(numericValue, props.maxValue);
+    }
+
+    // Update the value
+    inputValue.value = numericValue < 0 ? 0 : numericValue;
+    event.target.value = numericValue < 0 ? 0 : numericValue;
+    emitValue();
 };
 
 const updateState = () => {
     if (inputValue.value === initialInputvalue.value) {
         isTypingState.value = false;
+
     } else {
         isTypingState.value = true;
     }
@@ -138,7 +162,8 @@ const updateState = () => {
                             errorMessage,
                     },
                 ]"
-                :type="'number'"
+                :inputmode="'decimal'"
+                :type="'text'"
                 :value="inputValue"
                 @input="updateValue"
                 @change="updateState"

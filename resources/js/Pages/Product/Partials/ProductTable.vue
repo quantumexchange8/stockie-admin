@@ -554,6 +554,7 @@ const checkAvailability = (row) => {
                                 :disabled="checkAvailability(row)"
                                 v-model="forms[row.id].availability"
                                 @change="toggleAvailability($event, row)"
+                                @click.stop
                             />
                         </template>
                         <template #product_name="row">

@@ -179,7 +179,7 @@ onMounted(() => {
             :class="[
                 'flex flex-col',
                 'flex-shrink-0',
-                'min-h-screen py-8 px-6',
+                'min-h-[100dvh] py-8 px-6',
                 {
                     'lg:ml-[283px]': sidebarState.isOpen,
                     'md:ml-0': !sidebarState.isOpen,

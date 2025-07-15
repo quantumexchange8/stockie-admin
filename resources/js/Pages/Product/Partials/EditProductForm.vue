@@ -71,6 +71,10 @@ initialData.value = ({
 })
 
 const formSubmit = () => { 
+    if (!form.is_redeemable) {
+        form.point = '0.00';
+    }
+
     form.post(route('products.updateProduct', props.product.id), {
         preserveScroll: true,
         preserveState: 'errors',

@@ -56,6 +56,8 @@ const confirmLogin = () => {
     closeModal();
 }
 
+const isFormValid = computed(() => ['role_id', 'password'].every(field => form[field]) && !form.processing && user.value == null);
+
 onMounted(() => {
     flashMessage();
     // console.log(user.value);
@@ -151,8 +153,7 @@ onMounted(() => {
                     <Button
                         variant="primary"
                         :size="'lg'"
-                        :class="{ 'opacity-25': form.processing }"
-                        :disabled="form.processing"
+                        :disabled="!isFormValid"
                     >
                         Log in
                     </Button>

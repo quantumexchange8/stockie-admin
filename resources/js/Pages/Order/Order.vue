@@ -63,7 +63,7 @@ const fetchZones = async () => {
     try {
         const tabUid = sessionStorage.getItem('tab_uid');
         const isTableSelected = sessionStorage.getItem('is_drawer_open');
-        const tableLocks = JSON.parse(sessionStorage.getItem('table_locks')) || [];
+        const tableLocks = JSON.parse(sessionStorage.getItem('table_locks'));
 
         let lockedTables = tableLocks;
 
@@ -82,11 +82,11 @@ const fetchZones = async () => {
             lockedTables = tableLocks.filter(t => t.lockedByTabUid !== tabUid);
         }
 
-        const zonesResponse = await axios.post(route('orders.getAllZones', { locked_tables: lockedTables }));
-        zones.value = zonesResponse.data;
+        const response = await axios.post(route('orders.getAllZones', { locked_tables: lockedTables }));
+        zones.value = response.data.zones;
+        autoUnlockTimer.value = response.data.auto_unlock_timer;
 
-        const auResponse = await axios.get(route('configurations.getAutoUnlockDuration'));
-        autoUnlockTimer.value = auResponse.data;
+        // const auResponse = await axios.get(route('configurations.getAutoUnlockDuration'));
 
     } catch (error) {
         console.error(error);

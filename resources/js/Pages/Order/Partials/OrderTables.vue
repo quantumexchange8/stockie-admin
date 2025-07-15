@@ -151,8 +151,8 @@ const openOverlay = async (event, table, autoOpened = false) => {
                 // Set new timeout to lock table
                 lockTimeoutId.value = setTimeout(() => {
                     if (orderInfoDrawer.value?.handleTableLock) {
-                        orderInfoDrawer.value.handleTableLock('lock');
                         broadcastMessage('lock-table');
+                        orderInfoDrawer.value.handleTableLock('lock');
                         wasLocked.value = true;
                     }
                     lockTimeoutId.value = null;

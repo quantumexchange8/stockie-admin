@@ -38,12 +38,16 @@ const form = useForm({
     product_name: '',
     price: '',
     is_redeemable: false,
-    point: '0',
+    point: '0.00',
     category_id: '',
     items: [{ ...defaultProductItem }],
 });
 
 const formSubmit = () => { 
+    if (!form.is_redeemable) {
+        form.point = '0.00';
+    }
+
     form.post(route('products.store'), {
         preserveScroll: true,
         preserveState: 'errors',

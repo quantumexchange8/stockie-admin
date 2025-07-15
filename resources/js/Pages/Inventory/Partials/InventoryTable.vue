@@ -339,7 +339,7 @@ watch(() => props.rows, (newValue) => {
 const computedRowsPerPage = computed(() => {
     const start = (currentPage.value - 1) * 4;
     const end = start + 4;
-    return rows.value.slice(start, end);
+    return rows.value.sort((a, b) => a.name.localeCompare(b.name)).slice(start, end);
 });
 
 const totalInventoryItemStock = (items) => {
