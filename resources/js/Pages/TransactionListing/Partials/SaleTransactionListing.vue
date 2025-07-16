@@ -349,8 +349,8 @@ const docsType = [
 
 const transactionColumn = ref([
     {field: 'receipt_end_date', header: 'Date', width: '20', sortable: true},
-    {field: 'receipt_no', header: 'Transaction No.', width: '100%', sortable: true},
-    {field: 'total_amount', header: 'Total', width: '10', sortable: true},
+    {field: 'receipt_no', header: 'Transaction No.', width: '50', sortable: true},
+    {field: 'total_amount', header: 'Total', width: '30', sortable: true},
 ])
 
 const submitConsolidate = async () => {
@@ -514,7 +514,7 @@ const printInvoiceReceipt = () => {
                     <div class="text-grey-950 text-base font-bold">Submittable Transaction</div>
                     <div class="text-grey-950 text-sm">Transaction which has not yet been submitted to LHDN’s MyInvois for validation.</div>
                 </div>
-                <div class="max-h-[50vh] overflow-y-auto">
+                <div class="max-h-[calc(100dvh-25rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <Table
                         :columns="transactionColumn"
                         :variant="'list'"

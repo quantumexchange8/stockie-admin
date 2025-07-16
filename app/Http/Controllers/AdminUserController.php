@@ -67,7 +67,7 @@ class AdminUserController extends Controller
         $rules = [
             'id' => 'required',
             'full_name' => 'required|string|max:255',
-            'position' => 'required|string|max:255',
+            'position' => ['required', 'string', 'max:255', 'not_regex:/waiter/i'],
             'image' => 'required|max:8000',
             'password' => [
                 $subAdminId ? 'nullable' : 'required',
@@ -96,6 +96,7 @@ class AdminUserController extends Controller
             'full_name.max' => 'Invalid input.',
             'role_id.max' => 'Invalid input.',
             'position.max' => 'Invalid input.',
+            'position.not_regex' => "This field cannot contain the word 'waiter'.",
             'image.max' => 'The size of the image is too big.',
             'string' => 'Invalid format.',
             'role_id.unique' => 'This id already exists. Please try another one.',
@@ -139,7 +140,7 @@ class AdminUserController extends Controller
         $rules = [
             'full_name' => 'required|string|max:255',
             'role_id' => 'required|string|max:255|unique:users,role_id',
-            'position' => 'required|string|max:255',
+            'position' => ['required', 'string', 'max:255', 'not_regex:/waiter/i'],
             'password' => ['required', 'string', Password::defaults()],
             'image' => 'required|max:8000',
             'email' => 'required|email|unique:users,email'
@@ -150,6 +151,7 @@ class AdminUserController extends Controller
             'full_name.max' => 'Invalid input.',
             'role_id.max' => 'Invalid input.',
             'position.max' => 'Invalid input.',
+            'position.not_regex' => "This field cannot contain the word 'waiter'.",
             'image.max' => 'The size of the image is too big.',
             'string' => 'Invalid format.',
             'role_id.unique' => 'This id already exists. Please try another one.',

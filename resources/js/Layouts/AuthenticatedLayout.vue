@@ -167,10 +167,13 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head :title="title"></Head>
+    <Head :title="title">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    </Head>
     
     
-    <div class="min-h-[100dvh]">
+    <div class="min-h-screen w-screen overflow-x-hidden flex flex-col">
         <!-- Sidebar Menu -->
         <Sidebar />
 
@@ -178,8 +181,8 @@ onMounted(() => {
             style="transition-property: margin; transition-duration: 150ms"
             :class="[
                 'flex flex-col',
-                'flex-shrink-0',
-                'min-h-[100dvh] py-8 px-6',
+                'flex-1',
+                'min-h-[100dvh] py-8 px-4 md:px-6',
                 {
                     'lg:ml-[283px]': sidebarState.isOpen,
                     'md:ml-0': !sidebarState.isOpen,
@@ -187,7 +190,7 @@ onMounted(() => {
             ]"
         >
             <!-- Page Heading -->
-            <div class="flex flex-col shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] rounded-[8px] bg-white">
+            <div class="flex flex-col flex-1 shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] rounded-[8px] bg-white overflow-hidden">
                 <header class="pl-6 flex flex-col items-center gap-[10px]" v-if="$slots.header">
                     <div class="w-full flex flex-col items-end gap-[19px] pt-8">
                         <div class="flex items-center justify-between self-stretch pr-6">
@@ -297,8 +300,8 @@ onMounted(() => {
                 </header>
 
                 <!-- Page Content -->
-                <main class="w-full flex justify-center shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] p-4">
-                    <div class="xl:max-w-[1440px] max-h-[calc(100dvh-11.5rem)] overflow-y-auto scrollbar-thin scrollbar-webkit flex flex-col w-full self-center gap-[10px] flex-shrink-1 p-1">
+                <main class="w-full flex justify-center flex-1 shadow-[-4px_-9px_36.4px_0px_rgba(199,57,42,0.05)] p-2 md:p-4">
+                    <div class="xl:max-w-[1440px] h-[calc(100dvh-11.5rem)] md:h-[calc(100dvh-12rem)] overflow-y-auto scrollbar-thin scrollbar-webkit flex flex-col w-full self-center gap-[10px] p-1">
                         <slot />
                     </div>
                 </main>

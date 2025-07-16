@@ -337,6 +337,23 @@ class ProductController extends Controller
     }
 
     /**
+     * Helper function to format the price value for filtering.
+     */
+    protected function formatPriceValue($value, $index) 
+    {
+        $floatValue = (float)$value;
+        
+        // Only format the first value (index 0)
+        if ($index === 0) {
+            return $floatValue == (int)$floatValue 
+                ? (int)$floatValue 
+                : round($floatValue, 2);
+        }
+        
+        return $floatValue;
+    }
+
+    /**
      * Get products and its items.
      */
     public function getProducts(Request $request)
@@ -367,7 +384,23 @@ class ProductController extends Controller
                 }
 
                 if (isset($request['checkedFilters']['priceRange']) && count($request['checkedFilters']['priceRange']) > 0) {
-                    $query->whereBetween('price', array_map(fn($value) => (int)$value, $request['checkedFilters']['priceRange']));
+                    $query->whereBetween(
+                        'price', 
+                        array_map(
+                            function ($value, $index) {
+                                // Only process the first element (index 0)
+                                if ($index === 0) {
+                                    $floatValue = (float)$value;
+                                    // Check if the value is a whole number
+                                    return $floatValue == (int)$floatValue 
+                                        ? (int)$floatValue 
+                                        : round($floatValue, 2);
+                                }
+                                return (float)$value;
+                            }, 
+                            $request['checkedFilters']['priceRange'],
+                            array_keys($request['checkedFilters']['priceRange'])
+                        ));
                 }
 
                 if (isset($request['checkedFilters']['isRedeemable']) && count($request['checkedFilters']['isRedeemable']) > 0) {
@@ -405,8 +438,7 @@ class ProductController extends Controller
 
                                 foreach ($product_items as $key => $value) {
                                     $inventory_item = IventoryItem::select(['stock_qty', 'item_cat_id'])->find($value['inventory_item_id']);
-                                    $stockQty = $inventory_item->stock_qty;
-                                    $stockCount = (int)bcdiv($stockQty, (int)$value['qty']);
+                                    $stockCount = $inventory_item ? (int)bcdiv($inventory_item->stock_qty, (int)$value['qty']) : 0;
 
                                     array_push($stockCountArr, $stockCount);
                                 }

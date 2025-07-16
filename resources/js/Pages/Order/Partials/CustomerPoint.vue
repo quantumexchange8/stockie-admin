@@ -146,7 +146,7 @@ const getRedeemableMaxQuantity = () => {
 const isFormValid = computed(() => ['redeem_qty'].every(field => form[field]) && !form.processing);
 
 const isNotRedeemable = (customerPoint, item) => {
-    return customerPoint < item.point || item.stock_left == 0 || item.availability === 'Unavailable'
+    return Number(customerPoint) < Number(item.point) || item.stock_left == 0 || item.availability === 'Unavailable'
 }
 
 </script>

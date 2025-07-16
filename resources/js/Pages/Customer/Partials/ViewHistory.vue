@@ -103,7 +103,7 @@ onMounted(() => getKeepHistory());
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">
-                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_date ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}` : '' }}</span>
+                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item?.expired_to ? `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
                                                 <span class="text-primary-900 text-2xs font-normal">By</span>
                                                 <img 

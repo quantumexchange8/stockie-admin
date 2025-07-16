@@ -2966,222 +2966,224 @@ class OrderController extends Controller
      */
     public function redeemItemToOrder(Request $request, string $id)
     {
-        $validatedData = $request->validate(
-            [
-                // 'order_id' => 'required|integer',
-                'user_id' => 'required|integer',
-                'customer_id' => 'required|integer',
-                // 'redeemable_item_id' => 'required|integer',
-                'redeem_qty' => 'required|integer',
-                'selected_item' => 'required|array',
-            ], 
-            ['required' => 'This field is required.']
-        );
+        return DB::transaction(function () use ($request, $id) {
+            $validatedData = $request->validate(
+                [
+                    // 'order_id' => 'required|integer',
+                    'user_id' => 'required|integer',
+                    'customer_id' => 'required|integer',
+                    // 'redeemable_item_id' => 'required|integer',
+                    'redeem_qty' => 'required|integer',
+                    'selected_item' => 'required|array',
+                ], 
+                ['required' => 'This field is required.']
+            );
 
-        $fixedOrderDetails = $request->matching_order_details;
-        $addNewOrder = $fixedOrderDetails['current_order_completed'];
+            $fixedOrderDetails = $request->matching_order_details;
+            $addNewOrder = $fixedOrderDetails['current_order_completed'];
 
-        $tableString = $this->getTableName($fixedOrderDetails['tables']);
-        $pointSpent = 0;
+            $tableString = $this->getTableName($fixedOrderDetails['tables']);
+            $pointSpent = 0;
 
-        $waiter = User::select(['id', 'full_name'])->find($validatedData['user_id']);
-        $waiter->image = $waiter->getFirstMediaUrl('user');
-        $customer = Customer::select(['id', 'full_name'])->find($validatedData['customer_id']);
+            $waiter = User::select(['id', 'full_name'])->find($validatedData['user_id']);
+            $waiter->image = $waiter->getFirstMediaUrl('user');
+            $customer = Customer::select(['id', 'full_name'])->find($validatedData['customer_id']);
 
-        if ($validatedData) {
-            if ($addNewOrder) {
-                $newOrder = Order::create([
-                    'order_no' => RunningNumberService::getID('order'),
-                    'pax' => $fixedOrderDetails['pax'],
-                    'user_id' => $fixedOrderDetails['assigned_waiter'],
-                    'customer_id' => $fixedOrderDetails['customer_id'],
-                    'amount' => 0.00,
-                    'total_amount' => 0.00,
+            if ($validatedData) {
+                if ($addNewOrder) {
+                    $newOrder = Order::create([
+                        'order_no' => RunningNumberService::getID('order'),
+                        'pax' => $fixedOrderDetails['pax'],
+                        'user_id' => $fixedOrderDetails['assigned_waiter'],
+                        'customer_id' => $fixedOrderDetails['customer_id'],
+                        'amount' => 0.00,
+                        'total_amount' => 0.00,
+                        'status' => 'Pending Serve',
+                    ]);
+            
+                    foreach ($fixedOrderDetails['tables'] as $selectedTable) {
+                        $table = Table::find($selectedTable);
+                        $table->update([
+                            'status' => 'Pending Order',
+                            'order_id' => $newOrder->id
+                        ]);
+                
+                        OrderTable::create([
+                            'table_id' => $selectedTable,
+                            'pax' => $fixedOrderDetails['pax'],
+                            'user_id' => $request->user_id,
+                            'status' => 'Pending Order',
+                            'order_id' => $newOrder->id
+                        ]);
+                    }
+                    $newOrder->refresh();
+                }
+
+                $redeemableItem = Product::with([
+                                                'productItems:id,product_id,inventory_item_id,qty',
+                                                'productItems.inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty,current_kept_amt'
+                                            ])
+                                            ->find($validatedData['selected_item']['id']);
+
+                $newOrderItem = OrderItem::create([
+                    'order_id' => $addNewOrder ? $newOrder->id : $id,
+                    'user_id' => $validatedData['user_id'],
+                    'type' => 'Redemption',
+                    'product_id' => $redeemableItem->id,
+                    'item_qty' => $validatedData['redeem_qty'],
+                    'amount_before_discount' => 0.00,
+                    'discount_id' => null,
+                    'discount_amount' => 0.00,
+                    'amount' => 0,
                     'status' => 'Pending Serve',
                 ]);
-        
-                foreach ($fixedOrderDetails['tables'] as $selectedTable) {
-                    $table = Table::find($selectedTable);
-                    $table->update([
-                        'status' => 'Pending Order',
-                        'order_id' => $newOrder->id
-                    ]);
-            
-                    OrderTable::create([
-                        'table_id' => $selectedTable,
-                        'pax' => $fixedOrderDetails['pax'],
-                        'user_id' => $request->user_id,
-                        'status' => 'Pending Order',
-                        'order_id' => $newOrder->id
-                    ]);
-                }
-                $newOrder->refresh();
-            }
 
-            $redeemableItem = Product::with([
-                                            'productItems:id,product_id,inventory_item_id,qty',
-                                            'productItems.inventoryItem:id,item_name,stock_qty,item_cat_id,inventory_id,low_stock_qty,current_kept_amt'
-                                        ])
-                                        ->find($validatedData['selected_item']['id']);
+                activity()->useLog('Order')
+                                ->performedOn($newOrderItem)
+                                ->event('place to order')
+                                ->withProperties([
+                                    'waiter_name' => $waiter->full_name, 
+                                    'table_name' => $tableString,
+                                    'waiter_image' => $waiter->image,
+                                ])
+                                ->log("placed an order for :properties.table_name.");
 
-            $newOrderItem = OrderItem::create([
-                'order_id' => $addNewOrder ? $newOrder->id : $id,
-                'user_id' => $validatedData['user_id'],
-                'type' => 'Redemption',
-                'product_id' => $redeemableItem->id,
-                'item_qty' => $validatedData['redeem_qty'],
-                'amount_before_discount' => 0.00,
-                'discount_id' => null,
-                'discount_amount' => 0.00,
-                'amount' => 0,
-                'status' => 'Pending Serve',
-            ]);
-
-            activity()->useLog('Order')
+                activity()->useLog('redeem-product')
                             ->performedOn($newOrderItem)
-                            ->event('place to order')
+                            ->event('redeemed')
                             ->withProperties([
-                                'waiter_name' => $waiter->full_name, 
-                                'table_name' => $tableString,
-                                'waiter_image' => $waiter->image,
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'customer_name' => $customer->full_name,
+                                'item_name' => $redeemableItem->product_name
                             ])
-                            ->log("placed an order for :properties.table_name.");
+                            ->log("$customer->full_name has redeemed $redeemableItem->product_name.");
+                
+                $redeemableItem->productItems->each(function ($item) use ($newOrderItem) {
+                    $inventoryItem = $item->inventoryItem;
 
-            activity()->useLog('redeem-product')
-                        ->performedOn($newOrderItem)
-                        ->event('redeemed')
-                        ->withProperties([
-                            'edited_by' => auth()->user()->full_name,
-                            'image' => auth()->user()->getFirstMediaUrl('user'),
-                            'customer_name' => $customer->full_name,
-                            'item_name' => $redeemableItem->product_name
-                        ])
-                        ->log("$customer->full_name has redeemed $redeemableItem->product_name.");
-            
-            $redeemableItem->productItems->each(function ($item) use ($newOrderItem) {
-                $inventoryItem = $item->inventoryItem;
+                    // Deduct stock
+                    $stockToBeSold = $newOrderItem->item_qty * $item->qty;
+                    $oldStockQty = $inventoryItem->stock_qty;
+                    $newStockQty = $oldStockQty - $stockToBeSold;
 
-                // Deduct stock
-                $stockToBeSold = $newOrderItem->item_qty * $item->qty;
-                $oldStockQty = $inventoryItem->stock_qty;
-                $newStockQty = $oldStockQty - $stockToBeSold;
+                    $newStatus = match(true) {
+                        $newStockQty == 0 => 'Out of stock',
+                        $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
+                        default => 'In stock'
+                    };
 
-                $newStatus = match(true) {
-                    $newStockQty == 0 => 'Out of stock',
-                    $newStockQty <= $inventoryItem->low_stock_qty => 'Low in stock',
-                    default => 'In stock'
-                };
+                    $inventoryItem->update([
+                        'stock_qty' => $newStockQty,
+                        'status' => $newStatus
+                    ]);
+                    $inventoryItem->refresh();
 
-                $inventoryItem->update([
-                    'stock_qty' => $newStockQty,
-                    'status' => $newStatus
+                    StockHistory::create([
+                        'inventory_id' => $inventoryItem->inventory_id,
+                        'inventory_item' => $inventoryItem->item_name,
+                        'old_stock' => $oldStockQty,
+                        'in' => 0,
+                        'out' => $stockToBeSold,
+                        'current_stock' => $inventoryItem->stock_qty,
+                        'kept_balance' => $inventoryItem->current_kept_amt,
+                    ]);
+
+                    OrderItemSubitem::create([
+                        'order_item_id' => $newOrderItem->id,
+                        'product_item_id' => $item->id,
+                        'item_qty' => $item->qty,
+                        'serve_qty' => 0,
+                    ]);
+                });
+
+                $customer = Customer::select(['id', 'point'])->find($validatedData['customer_id']);
+                $pointSpent = $validatedData['redeem_qty'] * $redeemableItem->point;
+
+                PointHistory::create([
+                    'product_id' => $redeemableItem->id,
+                    'payment_id' => null,
+                    'type' => 'Used',
+                    'point_type' => 'Redeem', 
+                    'qty' => $validatedData['redeem_qty'],
+                    'amount' => $pointSpent,
+                    'old_balance' => $customer->point,
+                    'new_balance' => $customer->point - $pointSpent,
+                    'customer_id' => $customer->id,
+                    'handled_by' => $validatedData['user_id'],
+                    'redemption_date' => now()
                 ]);
-                $inventoryItem->refresh();
 
-                StockHistory::create([
-                    'inventory_id' => $inventoryItem->inventory_id,
-                    'inventory_item' => $inventoryItem->item_name,
-                    'old_stock' => $oldStockQty,
-                    'in' => 0,
-                    'out' => $stockToBeSold,
-                    'current_stock' => $inventoryItem->stock_qty,
-                    'kept_balance' => $inventoryItem->current_kept_amt,
-                ]);
+                $usableHistories = PointHistory::where(function ($query) {
+                                                        $query->where(function ($subQuery) {
+                                                                $subQuery->where([
+                                                                            ['type', 'Earned'],
+                                                                            ['expire_balance', '>', 0],
+                                                                        ])
+                                                                        ->whereNotNull('expired_at')
+                                                                        ->whereDate('expired_at', '>', now());
+                                                            })
+                                                            ->orWhere(function ($subQuery) {
+                                                                $subQuery->where([
+                                                                            ['type', 'Adjusted'],
+                                                                            ['expire_balance', '>', 0]
+                                                                        ])
+                                                                        ->whereNotNull('expired_at')
+                                                                        ->whereColumn('new_balance', '>', 'old_balance')
+                                                                        ->whereDate('expired_at', '>', now());
+                                                            });
+                                                    })
+                                                    ->where('customer_id', $customer->id)
+                                                    ->orderBy('expired_at', 'asc') // earliest expiry first
+                                                    ->get();
 
-                OrderItemSubitem::create([
-                    'order_item_id' => $newOrderItem->id,
-                    'product_item_id' => $item->id,
-                    'item_qty' => $item->qty,
-                    'serve_qty' => 0,
-                ]);
-            });
+                $remainingPoints = $pointSpent;
 
-            $customer = Customer::select(['id', 'point'])->find($validatedData['customer_id']);
-            $pointSpent = $validatedData['redeem_qty'] * $redeemableItem->point;
+                foreach ($usableHistories as $history) {
+                    if ($remainingPoints <= 0) break;
 
-            PointHistory::create([
-                'product_id' => $redeemableItem->id,
-                'payment_id' => null,
-                'type' => 'Used',
-                'point_type' => 'Redeem', 
-                'qty' => $validatedData['redeem_qty'],
-                'amount' => $pointSpent,
-                'old_balance' => $customer->point,
-                'new_balance' => $customer->point - $pointSpent,
-                'customer_id' => $customer->id,
-                'handled_by' => $validatedData['user_id'],
-                'redemption_date' => now()
-            ]);
+                    $deductAmount = min($remainingPoints, $history->expire_balance);
+                    $history->expire_balance -= $deductAmount;
+                    $history->save();
 
-            $usableHistories = PointHistory::where(function ($query) {
-                                                    $query->where(function ($subQuery) {
-                                                            $subQuery->where([
-                                                                        ['type', 'Earned'],
-                                                                        ['expire_balance', '>', 0],
-                                                                    ])
-                                                                    ->whereNotNull('expired_at')
-                                                                    ->whereDate('expired_at', '>', now());
-                                                        })
-                                                        ->orWhere(function ($subQuery) {
-                                                            $subQuery->where([
-                                                                        ['type', 'Adjusted'],
-                                                                        ['expire_balance', '>', 0]
-                                                                    ])
-                                                                    ->whereNotNull('expired_at')
-                                                                    ->whereColumn('new_balance', '>', 'old_balance')
-                                                                    ->whereDate('expired_at', '>', now());
-                                                        });
-                                                })
-                                                ->where('customer_id', $customer->id)
-                                                ->orderBy('expired_at', 'asc') // earliest expiry first
-                                                ->get();
-
-            $remainingPoints = $pointSpent;
-
-            foreach ($usableHistories as $history) {
-                if ($remainingPoints <= 0) break;
-
-                $deductAmount = min($remainingPoints, $history->expire_balance);
-                $history->expire_balance -= $deductAmount;
-                $history->save();
-
-                $remainingPoints -= $deductAmount;
-            }
-
-            $customer->decrement('point', $pointSpent);
-
-            $order = Order::with(['orderTable.table'])->find($addNewOrder ? $newOrder->id : $id);
-            
-            if ($order) {
-                $statusArr = collect($order->orderItems->pluck('status')->unique());
-                $orderStatus = 'Pending Serve';
-                $orderTableStatus = 'Pending Order';
-            
-                if ($statusArr->contains('Pending Serve')) {
-                    $orderStatus = 'Pending Serve';
-                    $orderTableStatus = 'Order Placed';
-                } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
-                    $orderStatus = 'Order Served';
-                    $orderTableStatus = 'All Order Served';
-                } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
-                    $orderStatus = 'Order Served';
-                    $orderTableStatus = 'All Order Served';
+                    $remainingPoints -= $deductAmount;
                 }
 
-                $order->update(['status' => $orderStatus]);
-                
-                // Update all tables associated with this order
-                $order->orderTable->each(function ($tab) use ($orderTableStatus) {
-                    $tab->table->update(['status' => $orderTableStatus]);
-                    $tab->update(['status' => $orderTableStatus]);
-                });
-            };
-        }
+                $customer->decrement('point', $pointSpent);
 
-        return response()->json([
-            'pointSpent' => $pointSpent,
-            'customerPoint' => $customer->point
-        ]);
+                $order = Order::with(['orderTable.table'])->find($addNewOrder ? $newOrder->id : $id);
+                
+                if ($order) {
+                    $statusArr = collect($order->orderItems->pluck('status')->unique());
+                    $orderStatus = 'Pending Serve';
+                    $orderTableStatus = 'Pending Order';
+                
+                    if ($statusArr->contains('Pending Serve')) {
+                        $orderStatus = 'Pending Serve';
+                        $orderTableStatus = 'Order Placed';
+                    } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
+                        $orderStatus = 'Order Served';
+                        $orderTableStatus = 'All Order Served';
+                    } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+                        $orderStatus = 'Order Served';
+                        $orderTableStatus = 'All Order Served';
+                    }
+
+                    $order->update(['status' => $orderStatus]);
+                    
+                    // Update all tables associated with this order
+                    $order->orderTable->each(function ($tab) use ($orderTableStatus) {
+                        $tab->table->update(['status' => $orderTableStatus]);
+                        $tab->update(['status' => $orderTableStatus]);
+                    });
+                };
+            }
+
+            return response()->json([
+                'pointSpent' => $pointSpent,
+                'customerPoint' => $customer->point
+            ]);
+        });
     }
 
     /**
@@ -3640,10 +3642,12 @@ class OrderController extends Controller
         
         $item = KeepItem::find($targetItem->keepItem->id)
                         ->with('orderItemSubitem.productItem.inventoryItem')
-                        ->update([
-                            'expired_to' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
-                            'status' => 'Keep',
-                        ]);
+                        ->first();
+
+        $item->update([
+            'expired_to' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
+            'status' => 'Keep',
+        ]);
 
         activity()->useLog('extend-expiration-date')
                     ->performedOn($item)

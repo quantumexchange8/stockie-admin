@@ -74,28 +74,28 @@ onMounted(() => {
 <template>
     <Head title="Login"></Head>
 
-    <div class="flex w-full min-h-screen max-h-screen overflow-hidden">
-        <div class="w-1/2 md:bg-primary-900 flex flex-col justify-between pt-[99px] pr-12 xl:pr-12 gap-20">
-            <div class="flex flex-col pl-11">
-                <div class="w-full flex flex-col gap-2 max-w-[450px]">
+    <div class="flex flex-col md:flex-row w-full min-h-screen max-h-screen overflow-y-auto scrollbar-thin scrollbar-webkit md:overflow-hidden gap-y-10 md:gap-0 items-center">
+        <div class="w-full md:w-1/2 lg:w-7/12 md:bg-primary-900 flex flex-col pt-12 md:pt-48 lg:pt-96 xl:pt-[550px] 2xl:pt-[650px] pr-6 md:pr-12 xl:pr-12 gap-12">
+            <div class="flex flex-col pl-6 md:pl-11">
+                <div class="w-full flex flex-col gap-2 items-center md:items-start">
                     <div class="text-primary-900 md:text-white font-black text-[40px]">
                         Welcome to
                         <span class="text-white bg-primary-800 pl-2 pr-3">Stockie!</span>
                     </div>
-                    <div class="text-md text-primary-900 md:text-white">
+                    <div class="text-base md:text-md text-primary-900 md:text-white">
                         Experience the ease of a hassle-free inventory
                         management system today.
                     </div>
                 </div>
             </div>
-            <img :src="Main" alt="Stockie" width="1050" height="920" class="hidden md:block flex-shrink w-full"/>
+            <img :src="Main" alt="Stockie" width="925" height="740" class="hidden md:block"/>
             <!-- <div class="">
             </div> -->
         </div>
 
         <Toast />
         
-        <div class="w-1/2 bg-white flex flex-col justify-center items-center">
+        <div class="w-full md:w-1/2 lg:w-5/12 bg-white flex flex-col justify-center items-center">
             <form @submit.prevent="submit" class="max-w-[421px] w-full px-6">
                 <div class="flex flex-col gap-12 w-full">
                     <div class="flex flex-col gap-2">

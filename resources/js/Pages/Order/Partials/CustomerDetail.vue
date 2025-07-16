@@ -383,7 +383,7 @@ watch((editForm), (newValue) => {
 })
 
 const totalPointsExpiringSoon = computed(() => {
-    return expiringPointHistories.value.reduce((total, record) => total + record.expire_balance, 0);
+    return expiringPointHistories.value.reduce((total, record) => total + Number(record.expire_balance), 0);
 });
 
 const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[field]) && !form.processing);
@@ -434,9 +434,9 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                 >
                 <div class="w-full flex flex-col items-center gap-2">
                     <span class="text-primary-900 text-base font-semibold">{{ customer.full_name }}</span>
-                    <div class="flex justify-center items-center gap-2">
+                    <div class="flex justify-center items-center gap-2" v-if="customer.email || customer.phone">
                         <span class="text-primary-950 text-sm font-medium">{{ customer.email }}</span>
-                        <span class="w-1 h-1 rounded-full bg-grey-300"></span>
+                        <span class="w-1 h-1 rounded-full bg-grey-300" v-if="customer.email"></span>
                         <span class="text-primary-950 text-sm font-medium">{{ formatPhone(customer.phone) }}</span>
                     </div>
                 </div>

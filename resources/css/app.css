@@ -40,3 +40,26 @@ h1, h2, h3, h4, h5, p {
     height: 1px;
     background-color: rgb(236 239 242 / var(1)) /* bg-grey-100 / #eceff2 */;
 }
+
+@supports (-webkit-touch-callout: none) {
+  /* Safari/iOS specific fixes */
+  .min-h-screen {
+    min-height: -webkit-fill-available !important;
+  }
+  .h-screen {
+    height: -webkit-fill-available !important;
+  }
+}
+
+/* PWA standalone mode fix */
+@media all and (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: contain;
+  }
+  
+  html, body, #app {
+    height: 100% !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+}

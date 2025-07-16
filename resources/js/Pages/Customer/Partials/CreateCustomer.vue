@@ -60,7 +60,7 @@ const submit = async () => {
     }
 };
 
-const requiredFields = ['full_name', 'phone_temp', 'email', 'password'];
+const requiredFields = ['full_name', 'password'];
 
 const isFormValid = computed(() => requiredFields.every(field => form[field]) && !form.processing);
 

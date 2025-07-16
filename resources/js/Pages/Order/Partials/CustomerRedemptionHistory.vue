@@ -259,8 +259,8 @@ onMounted(() => getRedeemHistory())
                                         </div>
                                     </div>
                                     <div class="flex flex-col justify-center items-end gap-3">
-                                        <span class="text-green-700 text-base font-medium whitespace-nowrap" v-if="item.new_balance >= item.old_balance">+ {{ formatPoints(item.amount) }} pts</span>
-                                        <span class="text-primary-700 text-base font-medium" v-if="item.new_balance < item.old_balance">- {{ formatPoints(item.amount) }} pts</span>
+                                        <span class="text-green-700 text-base font-medium whitespace-nowrap" v-if="Number(item.new_balance) >= Number(item.old_balance)">+ {{ formatPoints(item.amount) }} pts</span>
+                                        <span class="text-primary-700 text-base font-medium" v-if="Number(item.new_balance) < Number(item.old_balance)">- {{ formatPoints(item.amount) }} pts</span>
                                     </div>
                                 </div>
                             </div>

@@ -188,7 +188,7 @@ const updateRangeValues = (values) => {
                 >
                     <div class="relative">
                         <div class="absolute -top-14 left-1/2 -translate-x-1/2 bg-white text-primary-900 text-xs p-2 rounded-[5px] font-bold whitespace-nowrap">
-                            RM {{ value[0] }}
+                            {{ value[0] }}
                         </div>
                         <!-- Downward pointing arrow -->
                         <div class="absolute left-1/2 bottom-3.5 -translate-x-1/2 w-0 h-0 
@@ -206,7 +206,7 @@ const updateRangeValues = (values) => {
                 >
                     <div class="relative">
                         <div class="absolute -top-14 left-1/2 -translate-x-1/2 bg-white text-primary-900 text-xs p-2 rounded-[5px] font-bold whitespace-nowrap">
-                            RM {{ value[1] }}
+                            {{ value[1] }}
                         </div>
                         <!-- Downward pointing arrow -->
                         <div class="absolute left-1/2 bottom-3.5 -translate-x-1/2 w-0 h-0 

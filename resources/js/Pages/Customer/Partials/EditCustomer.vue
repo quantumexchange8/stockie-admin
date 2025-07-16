@@ -53,7 +53,7 @@ const submit = async () => {
     }
 };
 
-const requiredFields = ['full_name', 'phone_temp', 'email'];
+const requiredFields = ['full_name'];
 
 const isFormValid = computed(() => requiredFields.every(field => form[field]) && !form.processing);
 
@@ -64,11 +64,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 <template>
     <form class="flex flex-col gap-6" novalidate @submit.prevent="submit">
         <div class="flex flex-col gap-6 pl-1 pr-2 py-1 max-h-[calc(100dvh-14rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
-            <Toast 
+            <!-- <Toast 
                 inline
                 severity="info"
                 summary="Login password will be generated and sent to customers' email."
-            />
+            /> -->
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-8 flex-[1_0_0] self-stretch">
                 <TextInput
                     required
@@ -80,7 +80,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 />
                 
                 <TextInput
-                    required
                     inputName="phone"
                     :inputType="'number'"
                     labelText="Phone No."
@@ -95,7 +94,6 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 </TextInput>
 
                 <TextInput
-                    required
                     :inputName="'email'"
                     :labelText="'Email'"
                     :placeholder="'e.g. meiwah@gmail.com'"

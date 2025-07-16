@@ -52,6 +52,7 @@ class CustomerController extends Controller
                                     $query->where('status', '!=', 'void')
                                           ->orWhereNull('status'); // Handle NULL cases
                                 })
+                                ->orderBy('full_name')
                                 ->get()
                                 ->map(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
@@ -350,14 +351,14 @@ class CustomerController extends Controller
     
                 // Apply filter for 'points'
                 if (isset($request['checkedFilters']['points']) && count($request['checkedFilters']['points']) === 2) {
-                    $query->whereBetween('point', array_map('intval', $request['checkedFilters']['points']));
+                    $query->whereBetween('point', array_map(fn ($value) => round($value, 2), $request['checkedFilters']['points']));
                 }
             });
 
             // Apply filter for 'keepItems'
             if (!empty($request['checkedFilters']['keepItems'])) {
                 $queries->withCount(['keepItems' => fn ($query) => $query->where('status', 'Keep')])
-                        ->having('keep_items_count', '>',0);
+                        ->having('keep_items_count', '>', 0);
             }
         }
         // dd($queries->toSql());
@@ -396,7 +397,24 @@ class CustomerController extends Controller
 
         // dd($queries->toSql(), $queries->getBindings(), $customers);
 
-        $customers = $queries->get('id')->toArray();
+        $customers = $queries->with([
+                                'rank:id,name',
+                                'keepItems' => function ($query) {
+                                    $query->where('status', 'Keep')
+                                            ->with([
+                                                'orderItemSubitem.productItem:id,inventory_item_id',
+                                                'orderItemSubitem.productItem.inventoryItem:id,item_name',
+                                                'waiter:id,full_name'
+                                            ]);
+                                }
+                            ])
+                            ->where(function ($query) {
+                                $query->where('status', '!=', 'void')
+                                        ->orWhereNull('status'); // Handle NULL cases
+                            })
+                            ->orderBy('full_name')
+                            ->get('id')
+                            ->toArray();
 
         return response()->json($customers);
     }
