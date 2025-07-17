@@ -95,11 +95,11 @@ const actions = {
 };
 
 const commissionTotalPages = computed(() => {
-    return Math.ceil(props.incentiveData.length / commissionRowsPerPage.value);
+    return Math.ceil(props.commissionData.length / commissionRowsPerPage.value);
 })
 
 const incentiveTotalPages = computed(() => {
-    return Math.ceil(props.commissionData.length / incentiveRowsPerPage.value);
+    return Math.ceil(props.incentiveData.length / incentiveRowsPerPage.value);
 })
 
 </script>

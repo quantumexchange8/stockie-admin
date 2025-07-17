@@ -78,8 +78,8 @@ const form = useForm({
     id: selectedIncent.value.id,
     comm_type: comm_type.value.find(item => item.value === selectedIncent.value.type) || comm_type.value[0],
     rate: selectedIncent.value.type === 'fixed'
-        ? selectedIncent.value.rate.toString()
-        : parseFloat((selectedIncent.value.rate * 100).toFixed(2)).toString(),
+        ? Number(selectedIncent.value.rate).toFixed(2).toString()
+        : Number((selectedIncent.value.rate * 100).toFixed(2)).toString(),
     effective_date: dayjs(selectedIncent.value.effective_date).add(1, 'month').date(props.selectedIncent.recurring_on).toDate(),
     // recurring_on: recurringDates.value.find(item => item.value === selectedIncent.value.recurring_on) || recurringDates.value[0],
     monthly_sale: parseFloat(selectedIncent.value.monthly_sale).toFixed(2),
@@ -89,6 +89,8 @@ const form = useForm({
 const submit = () => {
     form.effective_date = form.effective_date ? dayjs(form.effective_date).format('YYYY-MM-DD HH:mm:ss') : '';
     let toastMessage = dayjs(form.effective_date).format('DD/MM/YYYY');
+    form.rate = Number(form.rate).toFixed(2);
+
     form.post(route('configurations.editAchievement'), {
         preserveScroll: true,
         preserveState: true,

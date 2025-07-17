@@ -16,7 +16,12 @@ class ConfigCommissionController extends Controller
     {
         $message = $request->session()->get('message');
 
-        $commission = ConfigEmployeeComm::with('configCommItems.product')->get();        
+        $commission = ConfigEmployeeComm::where('status', 'Active')
+                                        ->with([
+                                            'configCommItems' => fn ($query) => $query->where('status', 'Active')->with('product'),
+                                            // 'configCommItems.product',
+                                        ])
+                                        ->get();        
    
         $commission = $commission->map(function($involved) {
             $products = [];
@@ -66,6 +71,7 @@ class ConfigCommissionController extends Controller
         $newData = ConfigEmployeeComm::create([
             'comm_type' => $validatedData['commType'],
             'rate' => $validatedData['commRate'],
+            'status' => 'Active'
         ]);
     
         $newDataId = $newData->id;
@@ -87,6 +93,7 @@ class ConfigCommissionController extends Controller
                 $newComm = ConfigEmployeeCommItem::create([
                     'comm_id' => $newDataId,
                     'item' => $product->id,
+                    'status' => 'Active'
                 ]);
 
                 activity()->useLog('create-commission-type')
@@ -116,7 +123,7 @@ class ConfigCommissionController extends Controller
         {
             $deleteComm = ConfigEmployeeComm::where('id', $id)->first();
             $deleteCommItem = ConfigEmployeeCommItem::where('comm_id', $id)->get();
-            $productNames = ConfigEmployeeCommItem::where('comm_id', $id)
+            $productNames = ConfigEmployeeCommItem::where([['comm_id', $id], ['status', 'Active']])
                                                     ->with('product')
                                                     ->get()
                                                     ->pluck('product')
@@ -131,9 +138,13 @@ class ConfigCommissionController extends Controller
                             'waiter_name' => $deleteComm->full_name,
                         ])
                         ->log("Commission type for $productNames are deleted.");
-            $deleteComm->delete();
+            
+            // $deleteCommItem->delete();
+            // $deleteComm->delete();
 
-            $deleteCommItem->delete();
+            $deleteCommItem->update(['status' => 'Inactive']);
+            $deleteComm->update(['status' => 'Inactive']);
+
         }
 
         return redirect()->route('configurations')->with(['selectedTab' => 1]);
@@ -143,7 +154,7 @@ class ConfigCommissionController extends Controller
     {
         if ($request->id) {
             //delete first, then re-create
-            ConfigEmployeeCommItem::where('comm_id', $request->id)->delete();
+            ConfigEmployeeCommItem::where([['comm_id', $request->id], ['status', 'Active']])->update(['status' => 'Inactive']);
             $editComm = ConfigEmployeeComm::where('id', $request->id)->first();
             $editComm->update([
                 'comm_type' => $request->commType,
@@ -153,6 +164,7 @@ class ConfigCommissionController extends Controller
                 $newComm = ConfigEmployeeCommItem::with('product')->create([
                     'comm_id' => $request->id,
                     'item' => $products,
+                    'status' => 'Active'
                 ]);
 
                 activity()->useLog('edit-commission-type')
@@ -184,7 +196,7 @@ class ConfigCommissionController extends Controller
         if ($id) {
             $comm = ConfigEmployeeComm::find($id);
 
-            $commItems = ConfigEmployeeCommItem::where('comm_id', $id)
+            $commItems = ConfigEmployeeCommItem::where([['comm_id', $id], ['status', 'Active']])
                                                 ->select('comm_id', 'item')
                                                 ->get();
             $commItemsArray = $commItems->pluck('item')->toArray();
@@ -267,7 +279,8 @@ class ConfigCommissionController extends Controller
                                                     ->where('item', $request->id)
                                                     ->first();
         if ($deletingProduct) {
-            $deletingProduct->delete();
+            // $deletingProduct->delete();
+            $deletingProduct->update(['status' => 'Inactive']);
 
             $message = [
                 'severity' => 'success',
@@ -289,6 +302,7 @@ class ConfigCommissionController extends Controller
         ConfigEmployeeCommItem::create([
             'comm_id' => $request->input('comm_id'),
             'item' => $addingId,
+            'status' => 'Active'
         ]);
 
         $message = [

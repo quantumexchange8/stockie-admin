@@ -60,16 +60,16 @@ const isFormValid = computed(() => {
 
 const form = useForm({
     comm_type: comm_type.value[0],
-    rate: '',
+    rate: '0.00',
     effective_date: '',
-    monthly_sale: '',
+    monthly_sale: '0.00',
     entitled: '',
 })
 
 const submit = () => {
     form.transform((data) => ({
             ...data,
-            rate: parseFloat(data.rate),
+            rate: Number(data.rate).toFixed(2),
         }))
         .post(route('configurations.addAchievement'), {
             preserveScroll: true,

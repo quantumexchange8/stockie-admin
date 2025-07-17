@@ -41,7 +41,7 @@ class UpdateEmployeeIncentives extends Command
         $dates = $this->calculateDateRange($recurringDay);
         
         if ($dates) {
-            $incentives = ConfigIncentive::get();
+            $incentives = ConfigIncentive::where('status', 'Active')->get();
             $incentiveEmployees = $incentives->incentiveEmployees()->where('status', 'Active');
             
             foreach ($incentiveEmployees as $incentiveEmployee) {

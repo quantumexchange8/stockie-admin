@@ -92,6 +92,7 @@ const unsaved = (status) => {
 }
 
 const submit = async () => { 
+    form.processing = true;
     form.reservation_date = form.reservation_date ? dayjs(form.reservation_date).format('YYYY-MM-DD HH:mm:ss') : '';
     form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
     form.table_no = props.tables
@@ -146,7 +147,7 @@ const submit = async () => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        form.processing = false;
     }
 };
 

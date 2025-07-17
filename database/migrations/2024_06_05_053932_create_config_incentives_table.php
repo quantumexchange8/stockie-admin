@@ -18,6 +18,7 @@ return new class extends Migration
             $table->dateTime('effective_date');
             $table->string('recurring_on');
             $table->decimal('monthly_sale', 13, 2)->default(0.00);
+            $table->string('status');
             $table->softDeletes();
             $table->timestamps();
         });

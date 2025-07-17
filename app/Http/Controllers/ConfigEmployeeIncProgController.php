@@ -43,6 +43,7 @@ class ConfigEmployeeIncProgController extends Controller
         $incentiveProg = ConfigIncentive::with(['incentiveEmployees' => function ($query) {
                                             $query->where('status', 'Active')->with('waiter:id,full_name');
                                         }])
+                                        ->where('status', 'Active')
                                         ->orderBy('monthly_sale')
                                         ->get()
                                         ->map(function ($incentive) {
@@ -87,6 +88,7 @@ class ConfigEmployeeIncProgController extends Controller
             'effective_date' => Carbon::parse($validatedData['effective_date'])->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
             'recurring_on' => $this->incentiveRecurringDay['value'],
             'monthly_sale' => round($validatedData['monthly_sale'], 2),
+            'status' => 'Active',
         ]);
 
         foreach ($request->entitled as $entitledWaiters) {
@@ -105,10 +107,9 @@ class ConfigEmployeeIncProgController extends Controller
 
         foreach ($incentive->incentiveEmployees as $key => $employee) {
             $employee->update(['status' => 'Inactive']);
-            $employee->delete();
         }
 
-        $incentive->delete();
+        $incentive->update(['status' => 'Inactive']);
 
         return redirect()->route('configurations');
     }
@@ -117,7 +118,7 @@ class ConfigEmployeeIncProgController extends Controller
     {
         $validatedData = $request->validate([
             'comm_type' => 'required',
-            'rate' => 'required|decimal:0.2',
+            'rate' => 'required|decimal:0,2',
             'effective_date' => 'required|date',
             'monthly_sale' => 'required',
         ], ['required' => 'This field is required.']);

@@ -56,17 +56,55 @@ class OrderController extends Controller
 
     private function getReservedTablesId()
     {
-        $reservedTableIds = Reservation::whereNotIn('status', ['Cancelled', 'Completed', 'No show']) // Adjust status if needed
-                                        ->pluck('table_no') // Get JSON arrays of table_no
-                                        ->flatMap(function ($tableNos) {
-                                            return array_map(function ($table) {
-                                                return $table['id'];
-                                            }, $tableNos); // Decode JSON only if it's a string
-                                        })
-                                        ->unique()
-                                        ->toArray();
+        $now = now();
+    
+        $reservations = Reservation::whereNotIn('status', ['Cancelled', 'Completed', 'No show', 'Checked in'])->get(); // Get all active reservations
+        
+        $reservedTableIds = [];
+        
+        foreach ($reservations as $reservation) {
+            $reservationTime = Carbon::parse($reservation->reservation_date);
+            $lockBeforeMinutes = $reservation->lock_before_minutes;
+            $gracePeriod = $reservation->grace_period;
+
+            $reservedTables = $this->extractTables($reservation->table_no);
+            
+            foreach ($reservedTables as $table) {
+                if ($table->status === 'Empty Seat') {
+                    // Case 1: Within pre-lock window (before reservation time)
+                    $preLockStart = $reservationTime->copy()->subMinutes($lockBeforeMinutes);
+                    // dd($preLockStart, $now >= $preLockStart, $now < $reservationTime, $now, $reservationTime);
+                    if ($now >= $preLockStart && $now < $reservationTime) {
+                        array_push($reservedTableIds, $table->id);
+                        continue;
+                    }
                     
-        return $reservedTableIds;
+                    // Case 2: Within grace period (after reservation time)
+                    $gracePeriodEnd = $reservationTime->copy()->addMinutes($gracePeriod);
+                    if ($now >= $reservationTime && $now <= $gracePeriodEnd) {
+                        array_push($reservedTableIds, $table->id);
+                    }
+                } 
+            };
+        }
+
+        
+        return array_unique($reservedTableIds);
+    }
+    
+    /**
+     * Extract table IDs from reservation's table_no JSON.
+     */
+    private function extractTables($tableNos)
+    {
+        $tableIdArr = array_map(
+            fn ($table) => $table['id'], 
+            $tableNos
+        );
+
+        return Table::whereIn('id', $tableIdArr)
+                    ->where('state', 'active')
+                    ->get(['id', 'status', 'is_locked']);
     }
     
     /**

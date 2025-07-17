@@ -160,7 +160,8 @@ class WaiterController extends Controller
         // $severity = 'error';  
         // $summary = 'Error deleting selected waiter.';
 
-        $deleteWaiter = User::with('configIncentEmployee')->find($id);
+        $deleteWaiter = User::with(['configIncentEmployee' => fn ($query) => $query->where('status', 'Active')])
+                            ->find($id);
 
         // activity()->useLog('delete-waiter')
         //             ->performedOn($deleteWaiter)
@@ -176,7 +177,6 @@ class WaiterController extends Controller
 
         foreach ($deleteWaiter->configIncentEmployee as $key => $employee) {
             $employee->update(['status' => 'Inactive']);
-            $employee->delete();
         }
 
         // $severity = 'success';
@@ -300,7 +300,7 @@ class WaiterController extends Controller
         //                                 });
 
         //existing incentive thresholds
-        $configIncentive = ConfigIncentiveEmployee::where('user_id', $id)
+        $configIncentive = ConfigIncentiveEmployee::where([['user_id', $id], ['status', 'Active']])
                                                 ->with('configIncentive')    
                                                 ->select('incentive_id') 
                                                 ->distinct() 
