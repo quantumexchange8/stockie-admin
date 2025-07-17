@@ -65,6 +65,7 @@ const hideDeleteModal = () => {
 const removeSelectProduct = (productId) => {
     isDeleteModalOpen.value = false;
     selectedProducts.value = selectedProducts.value.filter(product => product.id !== productId);
+    form.discount_product = selectedProducts.value;
     dateFilter(selectedProducts.value);
 }
 

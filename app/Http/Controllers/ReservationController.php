@@ -136,12 +136,12 @@ class ReservationController extends Controller
     public function update(ReservationRequest $request, string $id)
     {   
         $reservation = Reservation::with([
-                                        'reservedFor:id', 
-                                        'reservedFor.reservations:id', 
+                                        'reservedFor', 
+                                        'reservedFor.reservations', 
                                         'reservedFor.reservationCancelled', 
                                         'reservedFor.reservationAbandoned', 
-                                        'reservedBy:id,full_name', 
-                                        'handledBy:id,full_name'
+                                        'reservedBy', 
+                                        'handledBy'
                                     ])->find($id);
 
         if($reservation->reservedFor){
@@ -209,6 +209,21 @@ class ReservationController extends Controller
                 return redirect()->back()->withErrors([
                     'summary' => 'No shift has been opened yet',
                     'detail' => "You'll need to open a shift before you can place order"
+                ]);
+            }
+
+            $hasCheckedIn = false;
+            foreach ($validatedData['tables'] as $table) {
+                $tableData = Table::where([['id', '=', $table['id']]])->first();
+                if ($tableData->status != 'Empty Seat') {
+                    $hasCheckedIn = true;
+                }
+            }
+
+            if ($hasCheckedIn) {
+                return redirect()->back()->withErrors([
+                    'summary' => 'Table in use',
+                    'detail' => "The selected tables for the reservation are currently in use"
                 ]);
             }
 
