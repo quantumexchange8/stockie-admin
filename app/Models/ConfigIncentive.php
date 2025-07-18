@@ -19,6 +19,7 @@ class ConfigIncentive extends Model
         'effective_date',
         'recurring_on',
         'monthly_sale',
+        'status'
     ];
 
     public function getActivitylogOptions(): LogOptions

@@ -49,7 +49,7 @@ const getRecordTitle = (item) => {
 }
 
 const showOrderInvoiceModal = (item) => {
-    selectedOrderId.value = item.id;
+    selectedOrderId.value = item.payment.order_id;
     orderInvoiceModalIsOpen.value = true;
 };
 

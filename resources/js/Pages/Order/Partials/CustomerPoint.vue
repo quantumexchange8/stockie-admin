@@ -1,5 +1,5 @@
 <script setup>
-import { PointsIllust } from '@/Components/Icons/illus';
+import { PointsIllust, UndetectableIllus } from '@/Components/Icons/illus';
 import { HistoryIcon, TimesIcon } from '@/Components/Icons/solid';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -152,7 +152,7 @@ const isNotRedeemable = (customerPoint, item) => {
 </script>
 
 <template>
-    <div class="flex flex-col p-6 items-center gap-6 shrink-0 max-h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <div class="flex flex-col p-6 items-center shrink-0 max-h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <!-- Current points -->
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
@@ -166,7 +166,7 @@ const isNotRedeemable = (customerPoint, item) => {
         </div>
 
         <!-- Redeem product -->
-         <div class="flex flex-col items-center gap-3 self-stretch">
+         <div class="flex flex-col items-center self-stretch">
             <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
                 <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Redeem Product</span>
                 <div class="flex items-center gap-2 cursor-pointer" @click="openHistoryDrawer(customer.id)">
@@ -175,33 +175,39 @@ const isNotRedeemable = (customerPoint, item) => {
                 </div>
             </div>
 
-            <div class="flex flex-col items-center self-stretch divide-y-[0.5px] divide-grey-200 max-h-[calc(100dvh-22.5rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pb-6">
-                <div class="flex flex-col justify-end items-start self-stretch" v-for="item in redeemables" :key="item.id">
-                    <div class="flex items-center justify-between p-3 gap-3 self-stretch">
-                        <div class="flex items-center gap-3">
-                            <img 
-                                :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                alt="RedeemableItemImage"
-                                class="size-[60px] bg-primary-25 rounded-[1.5px] border-[0.3px] border-solid border-grey-100"
-                                :class="{ 'opacity-30': item.stock_left == 0 }"
-                            >
-                            <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] self-stretch">
-                                <span class="line-clamp-1 overflow-hidden ellipsis text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-grey-900'">{{ item.product_name }}</span>
-                                <span class="overflow-hidden text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-primary-950'">{{ formatPoints(item.point) }} pts</span>
+            <div class="flex flex-col items-center self-stretch divide-y-[0.5px] divide-grey-200 max-h-[calc(100dvh-21.8rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                <template  v-if="redeemables.length > 0">
+                    <div class="flex flex-col justify-end items-start self-stretch" v-for="item in redeemables" :key="item.id">
+                        <div class="flex items-center justify-between p-3 gap-3 self-stretch">
+                            <div class="flex items-center gap-3">
+                                <img 
+                                    :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                    alt="RedeemableItemImage"
+                                    class="size-[60px] bg-primary-25 rounded-[1.5px] border-[0.3px] border-solid border-grey-100"
+                                    :class="{ 'opacity-30': item.stock_left == 0 }"
+                                >
+                                <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] self-stretch">
+                                    <span class="line-clamp-1 overflow-hidden ellipsis text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-grey-900'">{{ item.product_name }}</span>
+                                    <span class="overflow-hidden text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-primary-950'">{{ formatPoints(item.point) }} pts</span>
+                                </div>
                             </div>
+                            <!-- tableStatus === 'Pending Clearance' -->
+                            <Button 
+                                :type="'button'" 
+                                :size="'md'" 
+                                :disabled="isNotRedeemable(customer.point, item)"
+                                class="!w-fit"
+                                @click="openOverlay($event, item)"
+                            >
+                                Redeem Now
+                            </Button>
                         </div>
-                        <!-- tableStatus === 'Pending Clearance' -->
-                        <Button 
-                            :type="'button'" 
-                            :size="'md'" 
-                            :disabled="isNotRedeemable(customer.point, item)"
-                            class="!w-fit"
-                            @click="openOverlay($event, item)"
-                        >
-                            Redeem Now
-                        </Button>
                     </div>
-                </div>
+                </template>
+                <template v-else>
+                    <UndetectableIllus class="flex-shrink-0" />
+                    <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                </template>
             </div>
          </div>
     </div>

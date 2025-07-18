@@ -15,7 +15,8 @@ class ConfigEmployeeComm extends Model
 
     protected $fillable = [
         'comm_type',
-        'rate'
+        'rate',
+        'status'
     ];
 
     public function getActivitylogOptions(): LogOptions

@@ -110,18 +110,18 @@ class OrderController extends Controller
     /**
      * Get all the zones and its tables.
      */
-    public function getAllTables(Request $request)
+    public function getAllTables()
     {
-        $autoUnlockSetting = Setting::where('name', 'Table Auto Unlock')
-                                    ->first(['name', 'value_type', 'value']);
+        // $autoUnlockSetting = Setting::where('name', 'Table Auto Unlock')
+        //                             ->first(['name', 'value_type', 'value']);
 
-        $duration = $autoUnlockSetting->value_type === 'minutes'
-            ? ((int)floor($autoUnlockSetting->value ?? 0)) * 60
-            : ((int)floor($autoUnlockSetting->value ?? 0));
+        // $duration = $autoUnlockSetting->value_type === 'minutes'
+        //     ? ((int)floor($autoUnlockSetting->value ?? 0)) * 60
+        //     : ((int)floor($autoUnlockSetting->value ?? 0));
 
-        Table::where('updated_at', '>', now()->subSeconds($duration))
-                ->whereIn('id', $request->locked_tables)
-                ->update(['updated_at' => now()]);
+        // Table::where('updated_at', '>', now()->subSeconds($duration))
+        //         ->whereIn('id', $request->locked_tables)
+        //         ->update(['updated_at' => now()]);
 
         $reservedTablesId = $this->getReservedTablesId();
 

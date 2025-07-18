@@ -43,7 +43,7 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
 </script>
 
 <template>
-    <div class="flex flex-col p-6 items-center gap-y-9 shrink-0 max-h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <div class="flex flex-col p-6 items-center shrink-0 max-h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
                 <span class="self-stretch text-grey-900 text-base font-medium">Current Tier</span>
@@ -64,11 +64,11 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
             </div>
         </div>
 
-        <div class="flex flex-col items-start gap-y-3 self-stretch">
+        <div class="flex flex-col items-start self-stretch">
             <span class="flex-[1_0_0] text-primary-900 text-md font-semibold py-3">Tier Rewards</span>
             <TabView :tabs="tabs">
                 <template #active>
-                    <div class="flex flex-col items-center self-stretch max-h-[calc(100dvh-24.7rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pr-1 gap-y-4">
+                    <div class="flex flex-col items-center self-stretch max-h-[calc(100dvh-24rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pr-1 gap-y-4">
                         <Toast 
                             inline
                             severity="info"
@@ -108,7 +108,7 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
                 </template>
 
                 <template #redeemed>
-                    <div class="flex flex-col items-center self-stretch max-h-[calc(100dvh-24.7rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pr-1 gap-y-4">
+                    <div class="flex flex-col items-center self-stretch max-h-[calc(100dvh-24rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pr-1 gap-y-4">
                         <template v-if="redeemedTierRewards.length > 0">
                             <div class="grid grid-cols-12 p-6 items-center justify-between self-stretch rounded-[5px] bg-white" v-for="reward in redeemedTierRewards">
                                 <div class="flex items-start gap-x-3 self-stretch col-span-8 border-r-[0.5px] border-grey-200">

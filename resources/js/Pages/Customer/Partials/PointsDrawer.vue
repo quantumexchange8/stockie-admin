@@ -114,7 +114,7 @@ onMounted(() => getRedeemables());
 </script>
 
 <template>
-    <div class="flex flex-col max-h-[calc(100dvh-4rem)] p-6 items-center gap-6 shrink-0 overflow-y-auto scrollbar-thin scrollbar-webkit">
+    <div class="flex flex-col max-h-[calc(100dvh-4rem)] p-6 items-center shrink-0 overflow-y-auto scrollbar-thin scrollbar-webkit">
         <!-- current points -->
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
@@ -139,7 +139,7 @@ onMounted(() => getRedeemables());
         </div>
 
         <!-- Redeem product -->
-         <div class="flex flex-col items-center gap-3 self-stretch">
+         <div class="flex flex-col items-center self-stretch">
             <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
                 <span class="flex-[1_0_0] text-primary-900 text-md font-semibold ">Redeem Product</span>
                 <div class="flex items-center gap-2 cursor-pointer" @click="openHistoryDrawer(customer.id)">
@@ -155,7 +155,7 @@ onMounted(() => getRedeemables());
                 :closable="false"
             />
 
-            <div class="flex flex-col items-center self-stretch divide-y-[0.5px] divide-grey-200">
+            <div class="flex flex-col items-center self-stretch divide-y-[0.5px] divide-grey-200 max-h-[calc(100dvh-26.8rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                 <div class="flex flex-col justify-end items-start self-stretch" v-for="item in redeemables" :key="item.id">
                     <div class="flex items-center p-3 gap-3 self-stretch">
                         <div class="flex items-center gap-3">

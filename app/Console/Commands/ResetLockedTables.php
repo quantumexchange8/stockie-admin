@@ -29,10 +29,10 @@ class ResetLockedTables extends Command
     public function handle()
     {
         $activeUsers = DB::table('sessions')
-                            ->whereNotNull('user_id')
-                            ->where('last_activity', '>=', now()->subMinutes(config('session.lifetime')))
-                            ->pluck('user_id')
-                            ->toArray();
+                        ->whereNotNull('user_id')
+                        ->where('last_activity', '>=', now()->subMinutes(config('session.lifetime')))
+                        ->pluck('user_id')
+                        ->toArray();
 
         $autoUnlockSetting = Setting::where('name', 'Table Auto Unlock')
                                     ->first(['name', 'value_type', 'value']);
@@ -41,16 +41,19 @@ class ResetLockedTables extends Command
             ? ((int)floor($autoUnlockSetting->value ?? 0)) * 60
             : ((int)floor($autoUnlockSetting->value ?? 0));
 
-        Table::where(function($query) use ($activeUsers, $duration) {
-                    // Tables locked by inactive users
-                    $query->whereNotIn('locked_by', $activeUsers)
-                        ->whereNotNull('locked_by');
-                })
-                ->orWhere(function($query) use ($duration) {
-                    // Tables locked longer than duration
-                    $query->where('updated_at', '<=', now()->subSeconds($duration))
-                        ->where('is_locked', true);
-                })
+        // Only unlock tables that:
+        // 1. Have a locked_by value (website locks)
+        // AND
+        // 2. Either:
+        //    a) The locking user is no longer active
+        //    OR
+        //    b) The lock is older than the duration
+        Table::whereNotNull('locked_by')
+            ->where(function($query) use ($activeUsers, $duration) {
+                $query->whereNotIn('locked_by', $activeUsers)
+                      ->orWhere('updated_at', '<=', now()->subSeconds($duration));
+            })
+            ->where('is_locked', true)
                 ->update([
                     'is_locked' => false,
                     'locked_by' => null,
