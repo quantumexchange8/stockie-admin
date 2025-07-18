@@ -132,6 +132,15 @@ watch(() => form.week, (newWeek) => {
     }
 });
 
+watch(() => form.days, (newDays) => {
+    // Remove unselected days from assign_shift
+    Object.keys(form.assign_shift).forEach(day => {
+        if (!newDays.includes(day)) {
+            delete form.assign_shift[day];
+        }
+    });
+});
+
 const submit = () => {
     form.post('/configurations/assign-shift', {
         preserveScroll: true,
@@ -247,6 +256,7 @@ const submit = () => {
                                             :dynamic="false"
                                             :name="selectedDay" 
                                             :value="shift.id" 
+                                            :disabled="!shift.apply_days.find((availableDay) => availableDay === selectedDay)"
                                         />
                                     </div>
                                 </div>

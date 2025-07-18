@@ -107,7 +107,7 @@ class CustomerController extends Controller
             'ranking' => $defaultRank->id,
             'point' => 0,
             'total_spending' => 0.00,
-            'first_login' => '1',
+            'first_login' => '0',
             'status' => 'verified',
         ]);
     
@@ -778,7 +778,7 @@ class CustomerController extends Controller
                         'ranking' => $defaultRank->id,
                         'point' => 0,
                         'total_spending' => 0.00,
-                        'first_login' => '1',
+                        'first_login' => '0',
                         'status' => 'verified',
                     ]);
                 }

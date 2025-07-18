@@ -143,6 +143,7 @@ const updateShift = async () => {
                                             :dynamic="false"
                                             :name="`shift-${Waitershift.id}`" 
                                             :value="shift.id" 
+                                            :disabled="!shift.apply_days.find((availableDay) => availableDay === Waitershift.days)"
                                         />
                                     </div>
                                 </div>

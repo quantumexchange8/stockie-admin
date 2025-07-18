@@ -262,14 +262,16 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                 <template v-if="filteredProducts.length > 0">
                                     <div class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3" v-for="product in filteredProducts">
                                         <div class="col-span-full sm:col-span-8 flex items-center gap-3">
-                                            <img 
-                                                :src="product.image ? product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                                alt="ProductImage"
-                                                :class="[
-                                                    'size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain',
-                                                    { 'opacity-30': getCurrentProductKeptAmount(product) + product.stock_left == 0 }
-                                                ]"
-                                            >
+                                            <!-- <div class="!w-[60px] !h-[60px]"> -->
+                                                <img 
+                                                    :src="product.image ? product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                                    alt="ProductImage"
+                                                    :class="[
+                                                        'w-[60px] h-[60px] min-w-[60px] min-h-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain',
+                                                        { 'opacity-30': getCurrentProductKeptAmount(product) + product.stock_left == 0 }
+                                                    ]"
+                                                >
+                                            <!-- </div> -->
                                             <div class="flex flex-col justify-center items-start self-stretch gap-2">
                                                 <div class="flex flex-nowrap gap-2 items-center">
                                                     <Tag value="Set" v-if="product.bucket === 'set'"/>
@@ -282,14 +284,14 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                                         {{ product.product_name }}
                                                     </p>
                                                 </div>
-                                                <div class="flex items-center gap-2">
+                                                <div class="flex flex-col gap-2 items-start">
                                                     <template v-if="product.stock_left > 0">
                                                         <div v-if="product.discount_id && product.discount_item" class="flex items-center gap-x-1.5">
                                                             <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ product.discount_item.price_after }}</span>
                                                             <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ product.discount_item.price_before }}</span>
                                                         </div>
                                                         <span class="text-primary-950 text-base font-medium" v-else>RM {{ parseFloat(product.price).toFixed(2) }}</span>
-                                                        <span class="text-grey-200">&#x2022;</span>
+                                                        <!-- <span class="text-grey-200">&#x2022;</span> -->
                                                     </template>
                                                     <p class="text-green-700 text-sm font-normal cursor-pointer" @click="openStockDetailItemModal(product)">
                                                         {{ getCurrentProductKeptAmount(product) + product.stock_left > 0
@@ -344,8 +346,10 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                             <img 
                                                 :src="product.image ? product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                 alt="ProductImage"
+                                                :width="'60'"
+                                                :height="'60'"
                                                 :class="[
-                                                    'size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100',
+                                                    'w-[60px] h-[60px] min-w-[60px] min-h-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain',
                                                     { 'opacity-30': getCurrentProductKeptAmount(product) + product.stock_left == 0 }
                                                 ]"
                                             >
@@ -360,9 +364,9 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                                 </p>
                                                 <div class="flex items-center gap-2">
                                                     <template v-if="product.stock_left > 0">
-                                                        <div v-if="product.discount_id && product.discount_item" class="flex items-center gap-x-1.5">
-                                                            <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">{{ product.discount_item.price_after }}</span>
-                                                            <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">{{ product.discount_item.price_before }}</span>
+                                                        <div v-if="product.discount_id && product.discount_item" class="flex flex-col items-center gap-x-1.5">
+                                                            <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ product.discount_item.price_after }}</span>
+                                                            <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ product.discount_item.price_before }}</span>
                                                         </div>
                                                         <span class="text-primary-950 text-base font-medium" v-else>RM {{ parseFloat(product.price).toFixed(2) }}</span>
                                                         <span class="text-grey-200">&#x2022;</span>

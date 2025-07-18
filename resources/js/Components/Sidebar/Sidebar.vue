@@ -41,7 +41,7 @@ watch(screenWidth, (newValue) => {
         :class="[
             'fixed inset-y-0 p-8 flex flex-col w-[251px] backdrop-blur-[25px] bg-white overflow-auto scrollbar-thin scrollbar-webkit',
             {
-                'translate-x-0 w-[283px] z-20':
+                'translate-x-0 w-[315px] z-20':
                     sidebarState.isOpen,
                 '-translate-x-full w-0 md:translate-x-0 z-0 !hidden':
                     !sidebarState.isOpen,

@@ -63,7 +63,7 @@ const fetchZones = async () => {
     try {
         const tabUid = sessionStorage.getItem('tab_uid');
         const isTableSelected = sessionStorage.getItem('is_drawer_open');
-        const tableLocks = JSON.parse(sessionStorage.getItem('table_locks'));
+        const tableLocks = JSON.parse(sessionStorage.getItem('table_locks')) || [];
 
         let lockedTables = tableLocks;
 

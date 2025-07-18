@@ -4165,7 +4165,8 @@ class OrderController extends Controller
                 $currentTable->update([
                     'order_id' => $designatedOrderId,
                     'status' => $orderTableStatus,
-                    'is_locked' => true
+                    'is_locked' => true,
+                    'locked_by' => auth()->user()->id,
                 ]);
 
                 // Find the latest order_table without creating intermediate collections
@@ -4530,7 +4531,7 @@ class OrderController extends Controller
             'ranking' => $defaultRank->id,
             'point' => 0,
             'total_spending' => 0.00,
-            'first_login' => '1',
+            'first_login' => '0',
             'status' => 'verified',
         ]);
 

@@ -46,8 +46,8 @@ const getAllZones = async() => {
         const lockedTables = JSON.parse(sessionStorage.getItem('table_locks'));
 
         const response = await axios.post(route('orders.getAllZones', { locked_tables: lockedTables }));
-        initialZones.value = response.data;
-        zones.value = response.data;
+        initialZones.value = response.data.zones;
+        zones.value = response.data.zones;
 
     } catch(error) {
         console.error(error)

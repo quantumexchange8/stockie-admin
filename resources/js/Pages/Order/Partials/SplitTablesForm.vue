@@ -51,7 +51,7 @@ const getAllZones = async() => {
         const lockedTables = JSON.parse(sessionStorage.getItem('table_locks'));
 
         const response = await axios.post(route('orders.getAllZones', { locked_tables: lockedTables }));
-        zones.value = response.data;
+        zones.value = response.data.zones;
 
         form.tables.tables_to_remain = zones.value
                 ?.flatMap((zone) => zone.tables)

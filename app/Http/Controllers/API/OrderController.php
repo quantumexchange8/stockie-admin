@@ -110,8 +110,19 @@ class OrderController extends Controller
     /**
      * Get all the zones and its tables.
      */
-    public function getAllTables()
+    public function getAllTables(Request $request)
     {
+        $autoUnlockSetting = Setting::where('name', 'Table Auto Unlock')
+                                    ->first(['name', 'value_type', 'value']);
+
+        $duration = $autoUnlockSetting->value_type === 'minutes'
+            ? ((int)floor($autoUnlockSetting->value ?? 0)) * 60
+            : ((int)floor($autoUnlockSetting->value ?? 0));
+
+        Table::where('updated_at', '>', now()->subSeconds($duration))
+                ->whereIn('id', $request->locked_tables)
+                ->update(['updated_at' => now()]);
+
         $reservedTablesId = $this->getReservedTablesId();
 
         $zones = Zone::with([
@@ -1985,7 +1996,7 @@ class OrderController extends Controller
                 'ranking' => $defaultRank->id,
                 'point' => 0,
                 'total_spending' => 0.00,
-                'first_login' => '1',
+                'first_login' => '0',
                 'status' => 'verified',
             ]);
 
