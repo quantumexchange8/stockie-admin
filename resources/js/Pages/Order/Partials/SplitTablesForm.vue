@@ -1,7 +1,7 @@
 <script setup>
 import Button from '@/Components/Button.vue';
 import Checkbox from '@/Components/Checkbox.vue';
-import { FileBundleIllust } from '@/Components/Icons/illus';
+import { FileBundleIllust, UndetectableIllus } from '@/Components/Icons/illus';
 import { CheckedIcon, DefaultIcon, MergedIcon, WarningIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import TabView from '@/Components/TabView.vue';
@@ -297,19 +297,27 @@ onMounted(() => {
     <div class="h-full flex flex-col justify-between">
         <div class="flex flex-col h-full px-6 pb-6 items-start gap-6 self-stretch max-h-[calc(100dvh-15.5rem)] overflow-auto scrollbar-webkit scrollbar-thin">
             <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch">
-                <template v-for="table in mergedTables">
-                    <!-- <template v-if=""></template> -->
-                    <div class="col-span-1 flex flex-col p-6 justify-center items-center gap-1 rounded-[5px] relative border border-solid bg-white border-grey-100" 
-                        :class="table.id === props.currentOrderTable.id ? 'cursor-not-allowed' : 'cursor-pointer'"
-                        @click="table.id === props.currentOrderTable.id ? '' : updateTable(table)"
-                    >
-                        <span class="text-xl font-bold self-stretch text-center text-primary-900">{{ table.table_no }}</span>
-                        <div class="text-base text-primary-900 font-normal text-center">{{ table.id === props.currentOrderTable.id ? 'Main table' : 'Merged' }}</div>
-                        <Checkbox 
-                            :checked="!!form.tables.tables_to_remain.find((formTable) => formTable.id === table.id)"
-                            :disabled="table.id === props.currentOrderTable.id"
-                            class="absolute top-[11px] right-[12px]"
-                        />
+                <template v-if="mergedTables.length > 0">
+                    <template v-for="table in mergedTables">
+                        <!-- <template v-if=""></template> -->
+                        <div class="col-span-1 flex flex-col p-6 justify-center items-center gap-1 rounded-[5px] relative border border-solid bg-white border-grey-100" 
+                            :class="table.id === props.currentOrderTable.id ? 'cursor-not-allowed' : 'cursor-pointer'"
+                            @click="table.id === props.currentOrderTable.id ? '' : updateTable(table)"
+                        >
+                            <span class="text-xl font-bold self-stretch text-center text-primary-900">{{ table.table_no }}</span>
+                            <div class="text-base text-primary-900 font-normal text-center">{{ table.id === props.currentOrderTable.id ? 'Main table' : 'Merged' }}</div>
+                            <Checkbox 
+                                :checked="!!form.tables.tables_to_remain.find((formTable) => formTable.id === table.id)"
+                                :disabled="table.id === props.currentOrderTable.id"
+                                class="absolute top-[11px] right-[12px]"
+                            />
+                        </div>
+                    </template>
+                </template>
+                <template v-else>
+                    <div class="flex col-span-full flex-col items-center justify-center gap-5">
+                        <UndetectableIllus />
+                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
                     </div>
                 </template>
             </div>

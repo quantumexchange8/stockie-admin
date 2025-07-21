@@ -245,6 +245,7 @@ const closeAll = () => {
     emit('fetchZones');
     emit('close');
 };
+
 const submit = () => {
     const selectedCustomer = isSelectedCustomer.value?.id ?? form.customer_id;
     form.customer_id = selectedCustomer;
@@ -493,6 +494,12 @@ const hasTables = computed(() => {
                     </div>
                 </template> 
             </TabView>
+            <template v-else>
+                <div class="flex w-full flex-col items-center justify-center gap-5">
+                    <UndetectableIllus />
+                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                </div>
+            </template>
         </div>
         <div class="flex flex-col px-6 pt-6 pb-2 items-center gap-4 self-stretch rounded-b-[5px] bg-white shadow-[0_-8px_16.6px_0_rgba(0,0,0,0.04)] mx-[-20px]">
             <div class="flex h-[25px] items-end gap-2.5 self-stretch">

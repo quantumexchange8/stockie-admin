@@ -2268,7 +2268,22 @@ class OrderController extends Controller
                                 'orderTable.table', 
                                 'customer:id,point,total_spending,ranking', 
                                 'customer.rewards:id,customer_id,ranking_reward_id,status',
-                                'orderItems' => fn($query) => $query->with('product.commItem.configComms')->where('status', 'Served')
+                                'orderItems' => fn($query) => 
+                                    // $query->where('product.commItem.configComms')->where('status', 'Served')
+                                    $query->whereHas('product', fn ($subQuery) =>
+                                        $subQuery->whereHas('commItem', fn ($innerQuery) =>
+                                            $innerQuery->whereHas('configComms')
+                                                    ->where('status', 'Active')
+                                        )
+                                    )->with([
+                                        'product' => fn ($orderItemQuery) =>
+                                            $orderItemQuery->whereHas('commItem', fn ($orderQuery) =>
+                                                $orderQuery->where('status', 'Active')
+                                                        ->whereHas('configComms')
+                                            )->with([
+                                                'commItem.configComms',
+                                            ])
+                                    ])->where('status', 'Served'),
                             ])
                             ->where('id', $request->order_id)
                             ->first();

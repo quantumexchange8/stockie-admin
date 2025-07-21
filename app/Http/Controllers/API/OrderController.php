@@ -503,7 +503,11 @@ class OrderController extends Controller
         $products = Product::with([
                                 'productItems.inventoryItem', 
                                 'category:id,name', 
-                                'commItem.configComms'
+                                'commItem' => fn($query) => 
+                                    // $query->where('product.commItem.configComms')->where('status', 'Served')
+                                    $query->whereHas('configComms')
+                                        ->where('status', 'Active')
+                                        ->with('configComms'),
                             ])
                             ->where('availability', 'Available')
                             ->orderBy('product_name')

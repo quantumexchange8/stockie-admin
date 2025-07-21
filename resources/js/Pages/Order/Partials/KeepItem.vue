@@ -641,13 +641,15 @@ onMounted(() => {
                                                 >
                                                 <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0]">
                                                     <div class="flex items-center gap-2 self-stretch">
-                                                        <Tag 
-                                                            :variant="'default'"
-                                                            :value="'Set'"
-                                                            v-if="order_item.product.bucket === 'set'"
-                                                        />
+                                                        <template v-if="order_item.type === 'Normal'">
+                                                            <Tag 
+                                                                :variant="'default'"
+                                                                :value="'Set'"
+                                                                v-if="order_item.product.bucket === 'set'"
+                                                            />
+                                                        </template>
                                                         <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium gap-2">
-                                                            {{ order_item.product.product_name }}
+                                                            {{ order_item.type === 'Keep' ? order_item.item_name : order_item.product.product_name }}
                                                         </span>
                                                     </div>
                                                     <div class="flex items-center gap-2 self-stretch">
