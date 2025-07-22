@@ -431,7 +431,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                     >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
-                                            <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Normal' ? item.product.product_name : getKeepItemName(item) }}
+                                            <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Keep' ? getKeepItemName(item) : item.product.product_name }}
                                         </p>
                                         <div class="flex flex-nowrap gap-2 items-center">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>

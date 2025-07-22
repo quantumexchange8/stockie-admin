@@ -11,9 +11,14 @@ import TabView from '@/Components/TabView.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import Order from '../Order.vue';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import isBetween from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -208,13 +213,14 @@ const isBillDiscountApplicable = (discount) => {
     // Early exit for inactive discounts
     if (discount.status === 'inactive') return false;
 
-    const now = dayjs();
+    const now = dayjs(order.value.created_at).tz("Asia/Kuala_Lumpur");
+    const nowWithoutTime = dayjs(order.value.created_at).set('hour', 0).set('minute', 0).set('second', 0);
     const currentOrderTotal = Number(order.value.total_amount);
     const discountRequirement = Number(discount.requirement);
     const currentCustomerRanking = Number(order.value.customer?.ranking);
     
     // 1. Date Range Check
-    if (!now.isSameOrAfter(discount.discount_from) || !now.isSameOrBefore(discount.discount_to)) {
+    if (!nowWithoutTime.isSameOrAfter(discount.discount_from) || !nowWithoutTime.isSameOrBefore(discount.discount_to)) {
         return false;
     }
 

@@ -219,6 +219,9 @@ const mergeTable = async () => {
             }
         }
     })
+    
+    const tabUid = sessionStorage.getItem('tab_uid');
+    let tableLocks = JSON.parse(sessionStorage.getItem('table_locks')) || [];
 
     try {
         const response = await axios.post('/order-management/orders/mergeTable', form);
@@ -229,6 +232,16 @@ const mergeTable = async () => {
                 summary: `Selected table has been successfully merged with '${props.currentOrderTable.table_no}'.`
             })
         }, 200);
+
+        tableLocks = tableLocks.filter((table) => {
+            return !newlyMergedTablesId.value.find((mt) => mt == table.tableId);
+        })
+
+        newlyMergedTablesId.value.forEach(id => {
+            tableLocks.push({ tableId: id, lockedByTabUid: tabUid });
+        });
+
+        sessionStorage.setItem('table_locks', JSON.stringify(tableLocks));
 
         form.reset();
         emit('closeOrderDetails');
@@ -284,6 +297,16 @@ const closeConfirm = () => {
     currentHasVoucher.value = false;
     targetHasVoucher.value = false;
 }
+
+const newlyMergedTablesId = computed(() => {
+    const combinedTables = [props.currentOrderTable.id];
+
+    form.tables.forEach((table) => {
+        combinedTables.push(...table.joined_tables)
+    });
+
+    return [...new Set(combinedTables)];
+});
 
 watch(() => zones.value, populateTabs, { immediate: true });
 

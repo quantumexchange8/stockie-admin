@@ -135,7 +135,7 @@ const editBillDiscount = () => {
 const isFormValid = computed(() => {
     return ['discount_name', 'discount_rate', 'discount_period', 'available_on', 'discount_requirement'].every(field => form[field]) && 
             form.total_usage >= (discount.value.total_usage - form.remaining_usage) &&
-            form.customer_usage >= discount.value.highest_customer_used_count;
+            (form.customer_usage > 0 ? form.customer_usage >= discount.value.highest_customer_used_count : true);
 })
 
 const customerUsageErrorMsg = computed(() => {

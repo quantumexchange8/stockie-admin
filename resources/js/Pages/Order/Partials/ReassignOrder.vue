@@ -157,6 +157,8 @@ const reset = () => {
 };
 
 const submit = () => {
+    let tableLocks = JSON.parse(sessionStorage.getItem('table_locks')) || [];
+
     form.post(route('orders.splitTable'), {
         preserveScroll: true,
         onSuccess: () => {
@@ -164,6 +166,13 @@ const submit = () => {
                 severity: 'success',
                 summary: `You’ve successfully re-assigned the order(s) to other table.   `
             });
+
+            tableLocks = tableLocks.filter((table) => {
+                return !tableToBeSplit.value.find((tts) => tts == table.tableId);
+            })
+
+            sessionStorage.setItem('table_locks', JSON.stringify(tableLocks));
+            
             emit('isDirty', false);
             emit('closeModal', 'leave');
             emit('closeAll');
@@ -210,10 +219,15 @@ const currentTableNames = computed(() => {
             .join(", ");
 })
 
+const tableToBeSplit = computed(() => {
+    return form.targetTables.flatMap((table) => table.id);
+});
+
 const isValidated = computed(() => {
     return !form.processing 
             && !selectedItems.value.length > 0
             && form.targetTables.every((table) => table.order_items.length > 0);
+            // && form.targetTables.every((table) => table.new_customer != null);
             
 });
 

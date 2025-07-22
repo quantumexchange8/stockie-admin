@@ -39,7 +39,7 @@ const selectedItems = ref([]);
 const isCustomerModalOpen = ref(false);
 const customerList = ref(props.customers);
 const searchQuery = ref('');
-const selectedCustomer = ref('');
+const selectedCustomer = ref(props.targetTable.order_tables.sort((a, b) => b.id - a.id)[0].order.customer_id);
 
 // Process and initialize order items with transfer properties
 const processOrderItems = (orderTables) => {
@@ -98,7 +98,7 @@ const form = useForm({
         status: props.targetTable.status,
         pax: props.targetTable.order_tables.length > 0 ? props.targetTable.order_tables[0].pax : props.currentTable.order_tables[0].pax,
         tables: props.targetTables,
-        customer_id: '',
+        customer_id: props.targetTable.order_tables.sort((a, b) => b.id - a.id)[0].order.customer_id,
         order_items: [],
         transferred_items: []
     }
@@ -321,7 +321,7 @@ const isValidated = computed(() => {
                                 class="size-5 rounded-full"
                                 v-if="form.targetTable.customer"
                             >
-                            <p :class="['text-base font-normal cursor-pointer', form.targetTable.customer ? 'text-grey-700' : 'text-grey-300']">{{ form.targetTable.customer?.full_name ?? 'Select' }}</p>
+                            <p :class="['text-base font-normal cursor-pointer', form.targetTable.customer_id ? 'text-grey-700' : 'text-grey-300']">{{ form.targetTable.customer_id ? customers.find((cust) => cust.id == form.targetTable.customer_id).full_name : 'Select' }}</p>
                         </div>
                         <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <g clip-path="url(#clip0_4705_26673)">

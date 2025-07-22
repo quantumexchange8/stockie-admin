@@ -159,6 +159,8 @@ const populateTabs = () => {
 };
 
 const unmergeTables = () => {
+    let tableLocks = JSON.parse(sessionStorage.getItem('table_locks')) || [];
+
     form.post(route('orders.splitTable'), {
         preserveScroll: true,
         onSuccess: () => {
@@ -166,6 +168,13 @@ const unmergeTables = () => {
                 severity: 'success',
                 summary: "You’ve successfully unmerged the selected table(s)."
             });
+
+            tableLocks = tableLocks.filter((table) => {
+                return !tableToBeSplit.value.find((tts) => tts == table.tableId);
+            })
+
+            sessionStorage.setItem('table_locks', JSON.stringify(tableLocks));
+
             isDirty.value = false;
             closeModal('leave');
             closeAll();
@@ -273,6 +282,10 @@ const toRemainTableNames = computed(() => {
             .map((table) => table.table_no)
             .join(", ");
 })
+
+const tableToBeSplit = computed(() => {
+    return form.tables_to_split.flatMap((table) => table.id);
+});
 
 // const toReassignTableNames = computed(() => {
 //     return form.tables.tables_to_split.length === 1

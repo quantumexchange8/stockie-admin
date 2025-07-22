@@ -1010,6 +1010,7 @@ onUnmounted(stop);
             :transferType="transferType"
             @close="hideTransferTableForm"
             @fetchZones="$emit('fetchZones')"
+            @closeOrderDetails="closeOrderDetails"
         />
     </Modal>
 
