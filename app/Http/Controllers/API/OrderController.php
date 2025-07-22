@@ -128,12 +128,12 @@ class OrderController extends Controller
         $zones = Zone::with([
                             'tables:id,table_no,seat,zone_id,status,order_id,is_locked',
                             'tables.orderTables' => function ($query) {
-                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
                                     ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at');
                             },
                             'tables.orderTables.order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
                             'tables.orderTables.order.orderTable' => function ($query) {
-                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
                                         ->select('id', 'order_id', 'table_id');
                             },
                             'tables.orderTables.order.orderTable.table:id,table_no',
@@ -160,8 +160,9 @@ class OrderController extends Controller
                             });
                 });
     
-                $currentOrderTable = $table->orderTables->firstWhere('status', '!=', 'Pending Clearance')
-                    ?? $table->orderTables->first();
+                $currentOrderTable = $table->orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                                                        ->firstWhere('status', '!=', 'Pending Clearance') 
+                                    ?? $table->orderTables->first();
     
                 // if ($currentOrderTable && $currentOrderTable->order && $currentOrderTable->order->customer) {
                 //     $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
@@ -173,10 +174,10 @@ class OrderController extends Controller
     
                 // Determine if the table is merged
                 $table->is_merged = $zones->some(fn ($z) => 
-                    $z['tables']->some(fn ($t) => 
-                        $t->id !== $table->id 
-                        && $t->order_id === $table->order_id 
-                        && $t->status !== 'Empty Seat'
+                    $z->tables->some(fn ($t) => 
+                        $t->id != $table->id &&
+                        ($table->order_id ? $t->order_id == $table->order_id : false) &&
+                        $t->status !== 'Empty Seat'
                     )
                 );
 
