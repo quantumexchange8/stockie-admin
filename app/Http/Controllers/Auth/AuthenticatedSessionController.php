@@ -63,7 +63,7 @@ class AuthenticatedSessionController extends Controller
         
         $message = [ 
             'severity' => 'success', 
-            'summary' => "You've logged in to Stockie."
+            'summary' => "You've logged in to STOXPOS."
         ];
 
         return redirect()->intended('dashboard')->with([
@@ -94,7 +94,7 @@ class AuthenticatedSessionController extends Controller
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => "You've logged out your Stockie account."
+            'summary' => "You've logged out your STOXPOS account."
         ];
 
         return redirect('login')->with(['message' => $message]);

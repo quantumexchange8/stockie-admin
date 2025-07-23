@@ -125,6 +125,10 @@ const saleTotalPages = computed(() => {
     return Math.ceil(saleTransaction.value.length / saleRowsPerPage.value);
 })
 
+const lastMonthSaleTotalPages = computed(() => {
+    return Math.ceil(lastMonthSalesTransaction.value.length / rowsPerPage.value);
+})
+
 const action = (event, item) => {
     detailIsOpen.value = true;
     selectedVal.value = item;
@@ -413,7 +417,7 @@ const printInvoiceReceipt = () => {
                         v-model="date_filter"
                     />
                 </div>
-                <div class="">
+                <!-- <div class="">
                     <Button
                         type="button"
                         variant="primary"
@@ -426,7 +430,7 @@ const printInvoiceReceipt = () => {
                         </template>
                         Consolidate
                     </Button>
-                </div>
+                </div> -->
             </div>
         </div>
         <div class="">
@@ -518,6 +522,7 @@ const printInvoiceReceipt = () => {
                     <Table
                         :columns="transactionColumn"
                         :variant="'list'"
+                        :totalPages="lastMonthSaleTotalPages"
                         :rows="lastMonthSalesTransaction"
                         :rowType="rowType"
                         :rowsPerPage="rowsPerPage"
@@ -532,7 +537,7 @@ const printInvoiceReceipt = () => {
                 </div>
                 <div class="w-full flex gap-4">
                     <Button variant="tertiary">Cancel</Button>
-                    <Button @click="submitConsolidate">Submit</Button>
+                    <Button :disabled="!lastMonthSalesTransaction.length > 0" @click="submitConsolidate">Submit</Button>
                 </div>
             </div>
         </div>

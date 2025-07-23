@@ -134,10 +134,10 @@ axios.interceptors.response.use(
 //         },
 //     });
 
-const appName = import.meta.env.VITE_APP_NAME || "Stockie Admin";
+const appName = import.meta.env.VITE_APP_NAME || "STOXPOS Admin";
 
 createInertiaApp({
-    // title: (title) => `${title} - Stockie Admin`,
+    // title: (title) => `${title} - STOXPOS Admin`,
     title: (title) => `${title} - ${appName}`,
     resolve: (name) =>
         resolvePageComponent(

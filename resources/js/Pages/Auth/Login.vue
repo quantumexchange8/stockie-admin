@@ -80,7 +80,7 @@ onMounted(() => {
                 <div class="w-full flex flex-col gap-2 items-center md:items-start">
                     <div class="text-primary-900 md:text-white font-black text-[40px]">
                         Welcome to
-                        <span class="text-white bg-primary-800 pl-2 pr-3">Stockie!</span>
+                        <span class="text-white bg-primary-800 pl-2 pr-3">STOXPOS!</span>
                     </div>
                     <div class="text-base md:text-md text-primary-900 md:text-white">
                         Experience the ease of a hassle-free inventory
@@ -88,7 +88,7 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
-            <img :src="Main" alt="Stockie" width="925" height="740" class="hidden md:block"/>
+            <img :src="Main" alt="STOXPOS" width="925" height="740" class="hidden md:block"/>
             <!-- <div class="">
             </div> -->
         </div>
@@ -101,12 +101,12 @@ onMounted(() => {
                     <div class="flex flex-col gap-2">
                         <img
                             :src="StockieLogo"
-                            alt="Stockie"
+                            alt="STOXPOS"
                             class="size-20"
                         />
                         <div class="flex flex-col gap-1">
                             <div class="font-black text-xl text-primary-900">
-                                stockie
+                                STOXPOS
                             </div>
                             <div class="font-medium text-base text-grey-900">
                                 Your Inventory, Perfectly Managed

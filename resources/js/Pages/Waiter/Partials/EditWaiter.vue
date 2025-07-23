@@ -225,7 +225,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="flex gap-4">
                                 <TextInput
                                     label-text="Email address"
-                                    :placeholder="'for Stockie account log-in'"
+                                    :placeholder="'for STOXPOS account log-in'"
                                     inputId="stockie_email"
                                     type="'email'"
                                     required
@@ -234,7 +234,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 />
                                 <TextInput
                                     label-text="Password"
-                                    :placeholder="'for Stockie account log-in'"
+                                    :placeholder="'for STOXPOS account log-in'"
                                     inputId="password"
                                     :inputType="'password'"
                                     required

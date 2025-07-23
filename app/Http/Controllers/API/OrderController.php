@@ -112,66 +112,64 @@ class OrderController extends Controller
      */
     public function getAllTables()
     {
-        // $autoUnlockSetting = Setting::where('name', 'Table Auto Unlock')
-        //                             ->first(['name', 'value_type', 'value']);
-
-        // $duration = $autoUnlockSetting->value_type === 'minutes'
-        //     ? ((int)floor($autoUnlockSetting->value ?? 0)) * 60
-        //     : ((int)floor($autoUnlockSetting->value ?? 0));
-
-        // Table::where('updated_at', '>', now()->subSeconds($duration))
-        //         ->whereIn('id', $request->locked_tables)
-        //         ->update(['updated_at' => now()]);
-
+        // Load reserved tables IDs once (assuming this doesn't change during request)
         $reservedTablesId = $this->getReservedTablesId();
 
+        // Eager load all necessary relationships with optimized queries
         $zones = Zone::with([
-                            'tables:id,table_no,seat,zone_id,status,order_id,is_locked',
-                            'tables.orderTables' => function ($query) {
-                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
-                                    ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at');
-                            },
-                            'tables.orderTables.order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
-                            'tables.orderTables.order.orderTable' => function ($query) {
-                                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
-                                        ->select('id', 'order_id', 'table_id');
-                            },
-                            'tables.orderTables.order.orderTable.table:id,table_no',
-                            // 'tables.orderTables.order.customer.rewards' => function ($query) {
-                            //     $query->where('status', 'Active')->select('id','customer_id', 'ranking_reward_id', 'status');
-                            // },
-                            // 'tables.orderTables.order.customer.rewards.rankingReward',
-                            'tables.orderTables.order.voucher:id,reward_type,discount'
-                        ])->get(['id', 'name']);
-    
+            'tables:id,table_no,seat,zone_id,status,order_id,is_locked',
+            'tables.orderTables' => function ($query) {
+                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
+                    ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at')
+                    ->with(['order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
+                        'order.orderTable' => function ($q) {
+                            $q->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
+                                ->select('id', 'order_id', 'table_id')
+                                ->with('table:id,table_no');
+                        },
+                        'order.voucher:id,reward_type,discount']);
+            }
+        ])->get(['id', 'name']);
+
         if ($zones->isEmpty()) {
             return response()->json([]);
         }
-    
-        $zones = $zones->map(function ($zone) use ($zones, $reservedTablesId){
-            $tablesArray = $zone->tables?->map(function ($table) use ($zones, $reservedTablesId) {
-                $table->pending_count = $table->orderTables->sum(function ($orderTable) {
-                    return $orderTable->order
-                            ->orderItems
-                            ->where('status', 'Pending Serve')
-                            ->sum(function ($orderItem) {
-                                return $orderItem->subItems
-                                    ->sum(fn ($subItem) => $subItem->item_qty * $orderItem->item_qty - $subItem->serve_qty);
-                            });
+
+        // Preload all pending order items in a single query
+        $orderIds = collect();
+        $zones->each(function ($zone) use (&$orderIds) {
+            $zone->tables->each(function ($table) use (&$orderIds) {
+                $orderIds = $orderIds->merge($table->orderTables->pluck('order_id'));
+            });
+        });
+        
+        $pendingItems = DB::table('order_items')
+            ->select('order_id', DB::raw('SUM(item_qty * (SELECT COALESCE(SUM(item_qty), 0) FROM order_item_subitems WHERE order_item_subitems.order_item_id = order_items.id AND order_item_subitems.serve_qty = 0)) as pending_count'))
+            ->whereIn('order_id', $orderIds->unique()->filter())
+            ->where('status', 'Pending Serve')
+            ->groupBy('order_id')
+            ->get()
+            ->keyBy('order_id');
+
+        // Process zones and tables
+        $zones = $zones->map(function ($zone) use ($zones, $reservedTablesId, $pendingItems) {
+            $tablesArray = $zone->tables?->map(function ($table) use ($zones, $reservedTablesId, $pendingItems) {
+                // Calculate pending count from preloaded data
+                $table->pending_count = $table->orderTables->sum(function ($orderTable) use ($pendingItems) {
+                    return $pendingItems[$orderTable->order_id]->pending_count ?? 0;
                 });
-    
-                $currentOrderTable = $table->orderTables->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
-                                                        ->firstWhere('status', '!=', 'Pending Clearance') 
-                                    ?? $table->orderTables->first();
-    
-                // if ($currentOrderTable && $currentOrderTable->order && $currentOrderTable->order->customer) {
-                //     $currentOrderTable->order->customer->image = $currentOrderTable->order->customer->getFirstMediaUrl('customer');
-                // }
-                
-                if ($currentOrderTable && $currentOrderTable->order) unset($currentOrderTable->order->orderItems);
+
+                $currentOrderTable = $table->orderTables
+                    ->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided'])
+                    ->firstWhere('status', '!=', 'Pending Clearance') 
+                    ?? $table->orderTables->first();
+
+                if ($currentOrderTable && $currentOrderTable->order) {
+                    unset($currentOrderTable->order->orderItems);
+                }
 
                 $table->order = $currentOrderTable->order ?? null;
-    
+
                 // Determine if the table is merged
                 $table->is_merged = $zones->some(fn ($z) => 
                     $z->tables->some(fn ($t) => 
@@ -183,37 +181,37 @@ class OrderController extends Controller
 
                 $table->is_reserved = in_array($table->id, $reservedTablesId);
 
+                // Use preloaded reservations
                 $table->reservation = Reservation::whereJsonContains('table_no', ['id' => $table->id])
-                                                    ->whereIn('status', ['Pending', 'Checked in'])
-                                                    ->first();
+                                                ->whereIn('status', ['Pending', 'Checked in'])
+                                                ->first();
 
                 $table->order_table_names = $table->table_no;
 
                 // Find the first non-pending clearance table
                 if ($table->orderTables) {
                     $orderTable = $table->orderTables->firstWhere('status', '!=', 'Pending Clearance') ?? $table->orderTables->first();
-                    Log::info("orderTable: " . $orderTable);
                     $table->order_table_names = $orderTable?->order_id
-                            ? collect($orderTable->order->orderTable)
-                                ->map(fn($ot) => $ot['table']['table_no'] ?? null)
-                                ->filter() // remove nulls
-                                ->sort() // lexicographic sort
-                                ->implode(', ')
-                            : $table->table_no;
+                        ? collect($orderTable->order->orderTable)
+                            ->map(fn($ot) => $ot['table']['table_no'] ?? null)
+                            ->filter()
+                            ->sort()
+                            ->implode(', ')
+                        : $table->table_no;
                 }
 
-                // Unset the orderTables property to clean up the response
+                // Clean up
                 $table->unsetRelation('orderTables');
-    
+
                 return $table;
             });
-    
+
             return [
                 'name' => $zone->name,
                 'tables' => $tablesArray
             ];
         })->filter(fn ($zone) => $zone['tables'] != null);
-    
+        
         return response()->json([
             'zones' => $zones,
             'hasOpenedShift' => ShiftTransaction::hasOpenedShift(),

@@ -580,7 +580,7 @@ const kickDrawer = async () => {
 
         } catch (e) {
             console.error('Failed to open app:', e);
-            alert(`Failed to open Stockie app \n ${e}`);
+            alert(`Failed to open STOXPOS app \n ${e}`);
 
         }
         

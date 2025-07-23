@@ -1,10 +1,10 @@
 <?php
 
 return [
-    'name' => 'Stockie Admin PWA',
+    'name' => 'STOXPOS Admin PWA',
     'manifest' => [
-        'name' => env('APP_NAME', 'Stockie Admin'),
-        'short_name' => 'Stockie Admin',
+        'name' => env('APP_NAME', 'STOXPOS Admin'),
+        'short_name' => 'STOXPOS Admin',
         'start_url' => '/',
         'background_color' => '#ffffff',
         'theme_color' => '#ffffff',
@@ -59,8 +59,8 @@ return [
         ],
         'shortcuts' => [
             [
-                'name' => 'Stockie Admin',
-                'description' => 'Stockie Admin',
+                'name' => 'STOXPOS Admin',
+                'description' => 'STOXPOS Admin',
                 'url' => '/',
                 'icons' => [
                     "src" => "/images/icons/icon-72x72.png",

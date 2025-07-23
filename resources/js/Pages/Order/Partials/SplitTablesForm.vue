@@ -284,7 +284,13 @@ const toRemainTableNames = computed(() => {
 })
 
 const tableToBeSplit = computed(() => {
-    return form.tables_to_split.flatMap((table) => table.id);
+    const splitTables = [];
+
+    form.tables_to_split.forEach((table) => {
+        splitTables.push(table.id)
+    });
+
+    return splitTables;
 });
 
 // const toReassignTableNames = computed(() => {

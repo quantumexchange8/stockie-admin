@@ -8,6 +8,7 @@ use App\Models\IventoryItem;
 use App\Models\Product;
 use App\Models\ProductItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ConfigCommissionController extends Controller
@@ -46,7 +47,20 @@ class ConfigCommissionController extends Controller
 
         $productNames = Product::select('id', 'product_name')->get();
 
-        $products = Product::whereDoesntHave('commItem')->pluck('id');
+        $products = Product::where(function($query) {
+                                // Products without any commItem
+                                $query->whereDoesntHave('commItem')
+                                    // OR products with commItem where the latest one is inactive
+                                    ->orWhereHas('commItem', function($q) {
+                                        $q->where('status', 'Inactive')
+                                            // Ensure we're only checking the latest record
+                                            ->whereIn('id', function($subQuery) {
+                                                $subQuery->select(DB::raw('MAX(id)'))
+                                                        ->from('config_employee_comm_items')
+                                                        ->groupBy('item');
+                                            });
+                                    });
+                            })->pluck('id');
         $productsToAdd = Product::whereIn('id', $products)->where('availability', 'Available')->get(['id', 'product_name']);
         $productsToAdd->each(function ($product){
             $product->image = $product->getFirstMediaUrl('product');
@@ -259,7 +273,20 @@ class ConfigCommissionController extends Controller
             ];
         }
 
-        $products = Product::whereDoesntHave('commItem')->pluck('id');
+        $products = Product::where(function($query) {
+                                // Products without any commItem
+                                $query->whereDoesntHave('commItem')
+                                    // OR products with commItem where the latest one is inactive
+                                    ->orWhereHas('commItem', function($q) {
+                                        $q->where('status', 'Inactive')
+                                            // Ensure we're only checking the latest record
+                                            ->whereIn('id', function($subQuery) {
+                                                $subQuery->select(DB::raw('MAX(id)'))
+                                                        ->from('config_employee_comm_items')
+                                                        ->groupBy('item');
+                                            });
+                                    });
+                            })->pluck('id');
         $productsToAdd = Product::whereIn('id', $products)->get(['id', 'product_name']);
         $productsToAdd->each(function($productToAdd){
             $productToAdd->image = $productToAdd->getFirstMediaUrl('product');
@@ -275,9 +302,14 @@ class ConfigCommissionController extends Controller
 
     public function deleteProduct (Request $request)
     {
-        $deletingProduct = ConfigEmployeeCommItem::where('comm_id', $request->commissionId)
-                                                    ->where('item', $request->id)
-                                                    ->first();
+        $deletingProduct = ConfigEmployeeCommItem::where([
+                                                    ['comm_id', $request->commissionId],
+                                                    ['item', $request->id],
+                                                    ['status', 'Active']
+                                                ])
+                                                ->latest()
+                                                ->first();
+                                                
         if ($deletingProduct) {
             // $deletingProduct->delete();
             $deletingProduct->update(['status' => 'Inactive']);

@@ -172,7 +172,7 @@ const submit = () => {
             })
 
             sessionStorage.setItem('table_locks', JSON.stringify(tableLocks));
-            
+
             emit('isDirty', false);
             emit('closeModal', 'leave');
             emit('closeAll');
@@ -220,7 +220,13 @@ const currentTableNames = computed(() => {
 })
 
 const tableToBeSplit = computed(() => {
-    return form.targetTables.flatMap((table) => table.id);
+    const splitTables = [];
+
+    form.targetTables.forEach((table) => {
+        splitTables.push(table.id)
+    });
+
+    return splitTables;
 });
 
 const isValidated = computed(() => {
