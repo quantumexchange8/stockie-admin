@@ -289,10 +289,12 @@ class ConfigPromotionController extends Controller
 
         if($request->hasFile('image')){
             // Overwrite into public path merchant folder
-            $request->image->move(public_path('merchant'), 'logo.jpg');
+            // $request->image->move(public_path('merchant'), 'logo.jpg');
 
             $config_merchant->clearMediaCollection('merchant_settings');
-            $config_merchant->addMedia($request->image)->toMediaCollection('merchant_settings');
+            $media = $config_merchant->addMedia($request->image)->toMediaCollection('merchant_settings');
+
+            copy($media->getPath(), public_path('merchant/logo.jpg'));
         }
 
         $config_merchant->save();
