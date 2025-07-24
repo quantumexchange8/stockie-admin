@@ -41,14 +41,18 @@ class OrderItem extends Model
     
     public function scopeItemSales($query)
     {
-        return $query->join('orders', 'order_items.order_id', '=', 'orders.id')
-                        ->join('payments', 'orders.id', '=', 'payments.order_id')
-                        ->where([
-                            ['order_items.status', 'Served'],
-                            ['order_items.type', 'Normal'],
-                            ['orders.status', 'Order Completed'],
-                            ['payments.status', 'Successful']
-                        ]);
+        return $query->join('orders', function($join) {
+                        $join->on('order_items.order_id', '=', 'orders.id')
+                            ->where('orders.status', 'Order Completed');
+                    })
+                    ->join('payments', function($join) {
+                        $join->on('orders.id', '=', 'payments.order_id')
+                            ->where('payments.status', 'Successful');
+                    })
+                    ->where([
+                        ['order_items.status', 'Served'],
+                        ['order_items.type', 'Normal']
+                    ]);
     }
 
     /**

@@ -38,7 +38,8 @@ class ReportController extends Controller
         $this->salesCommissions = $this->sales
                                         ->clone()
                                         ->join('products', 'order_items.product_id', '=', 'products.id')
-                                        ->join('config_employee_comm_items as comm_items', 'products.id', '=', 'comm_items.item')
+                                        ->join('employee_commissions as emp_comms', 'order_items.id', '=', 'emp_comms.order_item_id')
+                                        ->join('config_employee_comm_items as comm_items', 'emp_comms.comm_item_id', '=', 'comm_items.id')
                                         ->join('config_employee_comms as comms', 'comm_items.comm_id', '=', 'comms.id')
                                         ->whereColumn('comm_items.created_at', '<=', 'order_items.created_at')
                                         ->whereNull('comm_items.deleted_at')
@@ -270,7 +271,11 @@ class ReportController extends Controller
                                             $query->whereDate('orders.created_at', '>=', $dateFilter[0])
                                                     ->whereDate('orders.created_at', '<=', $dateFilter[1])
                                         )
-                                        ->selectRaw('DATE(orders.created_at) as order_date, COUNT(DISTINCT orders.id) as total_orders, SUM(order_items.amount) as total_sales')
+                                        ->selectRaw('
+                                            DATE(orders.created_at) as order_date, 
+                                            COUNT(DISTINCT orders.id) as total_orders, 
+                                            SUM(order_items.amount) as total_sales
+                                        ')
                                         ->groupBy('order_date')
                                         ->orderByDesc('order_date')
                                         ->get();

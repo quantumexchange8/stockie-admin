@@ -15,6 +15,8 @@ class ConfigEmployeeCommItem extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
 
+    protected $table = "config_employee_comm_items";
+
     protected $fillable = [
         'comm_id',
         'item',

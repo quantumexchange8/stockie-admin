@@ -13,6 +13,8 @@ class ConfigEmployeeComm extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
 
+    protected $table = "config_employee_comms";
+
     protected $fillable = [
         'comm_type',
         'rate',
