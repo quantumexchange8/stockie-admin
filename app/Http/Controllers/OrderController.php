@@ -2340,12 +2340,13 @@ class OrderController extends Controller
             foreach ($splitBill['order_items'] as $item) {
                 $balanceQty = $item['balance_qty'];
                 $originalQty = $item['original_qty'];
-                $originalItem = OrderItem::find($item['id']);
+                $originalItem = OrderItem::with('product')->find($item['id']);
 
                 // $balancePercentage = round($balanceQty / $originalQty * 100, 2);// Calculate per-unit amounts
-                $amountPerUnit = $originalItem->amount / $originalItem->item_qty;
-                $discountPerUnit = $originalItem->discount_amount / $originalItem->item_qty;
-                $amountBeforeDiscountPerUnit = $originalItem->amount_before_discount / $originalItem->item_qty;
+                $amountBeforeDiscountPerUnit = $originalItem->product->price;
+                $currentProductDiscount = $originalItem->product->discountSummary($originalItem->product->discount_id)?->first();
+                $amountPerUnit = round($currentProductDiscount ? $currentProductDiscount['price_after'] : $amountBeforeDiscountPerUnit, 2);
+                $discountPerUnit = $amountBeforeDiscountPerUnit - $amountPerUnit;
 
                 if ($balanceQty === $originalQty) {
                     $originalItem->update(['order_id' => $newOrder->id]);
@@ -2419,9 +2420,9 @@ class OrderController extends Controller
             // Update the original order
             $originalOrder->refresh();
             $originalOrder->update([
-                'amount' => $originalOrder->orderItems->sum('amount'),
-                'total_amount' => $originalOrder->orderItems->sum('amount'),
-                'discount_amount' => $originalOrder->orderItems->sum('discount_amount'),
+                'amount' => $originalOrder->orderItems->where('status', 'Served')->sum('amount'),
+                'total_amount' => $originalOrder->orderItems->where('status', 'Served')->sum('amount'),
+                'discount_amount' => $originalOrder->orderItems->where('status', 'Served')->sum('discount_amount'),
             ]);
 
             // Process payment for the split order
@@ -4309,14 +4310,15 @@ class OrderController extends Controller
                     $balanceQty = $item['balance_qty'];
                     $originalQty = $item['original_qty'];
                     $remainingQty = $originalQty - $balanceQty;
-                    $orderItem = OrderItem::find($item['id']);
+                    $orderItem = OrderItem::with('product')->find($item['id']);
                     
                     // $transferPercentage = round(($originalQty - $balanceQty) / $originalQty * 100, 2);
                     // $balancePercentage = round($balanceQty / $originalQty * 100, 2);
                     // Calculate per-unit amounts
-                    $amountPerUnit = $item['amount'] / $orderItem->item_qty;
-                    $discountPerUnit = $item['discount_amount'] / $orderItem->item_qty;
-                    $amountBeforeDiscountPerUnit = $item['amount_before_discount'] / $orderItem->item_qty;
+                    $amountBeforeDiscountPerUnit = $orderItem->product->price;
+                    $currentProductDiscount = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+                    $amountPerUnit = round($currentProductDiscount ? $currentProductDiscount['price_after'] : $amountBeforeDiscountPerUnit, 2);
+                    $discountPerUnit = $amountBeforeDiscountPerUnit - $amountPerUnit;
                     
                     if ($balanceQty == 0) {
                         $totalCurrentOrderAmount -= $item['amount'];
@@ -4394,13 +4396,14 @@ class OrderController extends Controller
                     {
                         $balanceQty = $item['balance_qty'];
                         $originalQty = $item['original_qty'];
-                        $orderItem = OrderItem::find($item['id']);
+                        $orderItem = OrderItem::with('product')->find($item['id']);
 
                         // $balancePercentage = round($balanceQty / $originalQty * 100, 2);
                         // Calculate per-unit amounts
-                        $amountPerUnit = $item['amount'] / $orderItem->item_qty;
-                        $discountPerUnit = $item['discount_amount'] / $orderItem->item_qty;
-                        $amountBeforeDiscountPerUnit = $item['amount_before_discount'] / $orderItem->item_qty;
+                        $amountBeforeDiscountPerUnit = $orderItem->product->price;
+                        $currentProductDiscount = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+                        $amountPerUnit = round($currentProductDiscount ? $currentProductDiscount['price_after'] : $amountBeforeDiscountPerUnit, 2);
+                        $discountPerUnit = $amountBeforeDiscountPerUnit - $amountPerUnit;
         
                         if ($balanceQty === $originalQty) {
                             $orderItem->update(['order_id' => $newOrder->id]);
@@ -4428,20 +4431,21 @@ class OrderController extends Controller
                             $newStatusArr = collect();
                             $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem, &$newStatusArr) {
                                 $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
-                                $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
+                                // $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
         
                                 if ($balanceQty > 0) {
-                                    $newStatusArr->push($newQtyServed < $newSubItemServeQty ? 'Pending Serve' : 'Served');
+                                    $newStatusArr->push('Served');
+                                    // $newStatusArr->push($newQtyServed < $newSubItemServeQty ? 'Pending Serve' : 'Served');
                                 }
         
                                 OrderItemSubitem::create([
                                     'order_item_id' => $newOrderItem->id,
                                     'product_item_id' => $subItem['product_item_id'],
                                     'item_qty' => $subItem['item_qty'],
-                                    'serve_qty' => $newQtyServed,
+                                    'serve_qty' => $newSubItemServeQty,
                                 ]);
         
-                                $subItem->decrement('serve_qty', $newQtyServed);
+                                // $subItem->decrement('serve_qty', $newQtyServed);
                             });
         
                             if ($newStatusArr->contains('Pending Serve')) {
@@ -4605,14 +4609,15 @@ class OrderController extends Controller
                 $balanceQty = $item['balance_qty'];
                 $originalQty = $item['original_qty'];
                 $remainingQty = $originalQty - $balanceQty;
-                $orderItem = OrderItem::find($item['id']);
+                $orderItem = OrderItem::with('product')->find($item['id']);
 
                 // $transferPercentage = round($balanceQty / $originalQty, 2);
                 // $balancePercentage = round(($originalQty - $balanceQty) / $originalQty, 2);
                 // Calculate per-unit amounts
-                $amountPerUnit = $item['amount'] / $orderItem->item_qty;
-                $discountPerUnit = $item['discount_amount'] / $orderItem->item_qty;
-                $amountBeforeDiscountPerUnit = $item['amount_before_discount'] / $orderItem->item_qty;
+                $amountBeforeDiscountPerUnit = $orderItem->product->price;
+                $currentProductDiscount = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+                $amountPerUnit = round($currentProductDiscount ? $currentProductDiscount['price_after'] : $amountBeforeDiscountPerUnit, 2);
+                $discountPerUnit = $amountBeforeDiscountPerUnit - $amountPerUnit;
 
                 if (in_array($currentTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']) || $currentTable['status'] === 'Empty Seat') {
                     $newOrder = Order::create([
@@ -4729,14 +4734,15 @@ class OrderController extends Controller
                 $balanceQty = $item['balance_qty'];
                 $originalQty = $item['original_qty'];
                 $remainingQty = $originalQty - $balanceQty;
-                $orderItem = OrderItem::find($item['id']);
+                $orderItem = OrderItem::with('product')->find($item['id']);
 
                 // $transferPercentage = round($balanceQty / $originalQty, 2);
                 // $balancePercentage = round(($originalQty - $balanceQty) / $originalQty, 2);
                 // Calculate per-unit amounts
-                $amountPerUnit = $item['amount'] / $orderItem->item_qty;
-                $discountPerUnit = $item['discount_amount'] / $orderItem->item_qty;
-                $amountBeforeDiscountPerUnit = $item['amount_before_discount'] / $orderItem->item_qty;
+                $amountBeforeDiscountPerUnit = $orderItem->product->price;
+                $currentProductDiscount = $orderItem->product->discountSummary($orderItem->product->discount_id)?->first();
+                $amountPerUnit = round($currentProductDiscount ? $currentProductDiscount['price_after'] : $amountBeforeDiscountPerUnit, 2);
+                $discountPerUnit = $amountBeforeDiscountPerUnit - $amountPerUnit;
 
                 if (in_array($targetTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']) || $targetTable['status'] === 'Empty Seat') {
                     $newOrder = Order::create([
@@ -4807,13 +4813,13 @@ class OrderController extends Controller
 
                         $orderItem->subItems->each(function ($subItem) use (&$balanceQty, &$newOrderItem) {
                             $newSubItemServeQty = $balanceQty * $subItem['item_qty'];
-                            $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
+                            // $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
 
                             OrderItemSubitem::create([
                                 'order_item_id' => $newOrderItem->id,
                                 'product_item_id' => $subItem['product_item_id'],
                                 'item_qty' => $subItem['item_qty'],
-                                'serve_qty' => $newQtyServed,
+                                'serve_qty' => $newSubItemServeQty,
                             ]);
 
                             // $subItem->decrement('serve_qty', $newQtyServed);
@@ -4837,7 +4843,7 @@ class OrderController extends Controller
                             $newSubItemServeQty = ($originalQty - $balanceQty) * $subItem['item_qty'];
                             $newQtyServed = $newSubItemServeQty < $subItem['serve_qty'] ? $newSubItemServeQty : $subItem['serve_qty'];
 
-                            $subItem->decrement('serve_qty', (int)$newQtyServed);
+                            // $subItem->decrement('serve_qty', (int)$newQtyServed);
                         });
                     }
                 }

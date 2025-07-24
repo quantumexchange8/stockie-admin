@@ -404,7 +404,8 @@ const closeSuccessPaymentModal = () => {
 
         order.value.amount = 0.00;
 
-        showSplitBillModal();
+        isSplitBillModalOpen.value = true;
+        isDirty.value = false;
 
     } else {
         // For normal bills, close everything

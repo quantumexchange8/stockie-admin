@@ -243,7 +243,7 @@ const isValidated = computed(() => {
     <form class="h-full flex flex-col justify-between" @submit.prevent="submit">
         <div class="flex items-start size-full gap-x-5 self-stretch py-6 bg-grey-50 overflow-x-auto scrollbar-thin scrollbar-webkit">
             <!-- Current Table -->
-            <div class="min-w-[378px] max-w-[378px] flex flex-col items-start gap-6 self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
+            <div class="min-w-[378px] max-w-[378px] flex flex-col items-start self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
                 <div class="flex p-4 gap-x-2 justify-start items-center self-stretch border-b border-grey-100">
                     <span class="w-1.5 h-[22px] bg-primary-800"></span>
                     <p class="text-grey-950 text-md font-semibold">{{ currentTableNames }} (Current)</p>

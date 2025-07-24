@@ -431,7 +431,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         <template v-for="item in form.currentBill.order_items" :key="item.id">
                             <div
                                 v-if="item.balance_qty > 0"
-                                class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-5 gap-x-3 border-b border-grey-100"
+                                class="grid grid-cols-1 sm:grid-cols-12 items-center self-stretch py-3 gap-x-3 border-b border-grey-100"
                             >
                                 <Checkbox 
                                     class="col-span-full sm:col-span-1"

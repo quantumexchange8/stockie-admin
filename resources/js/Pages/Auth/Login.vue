@@ -1,6 +1,7 @@
 <script setup>
 import Main from "../../../assets/images/login/Main.svg";
 import StockieLogo from "../../../assets/images/login/stockie-logo.svg";
+import STOXPOSLogo from "../../../assets/images/login/stoxpos-logo.png";
 import Button from "@/Components/Button.vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import InputError from "@/Components/InputError.vue";
@@ -100,7 +101,7 @@ onMounted(() => {
                 <div class="flex flex-col gap-12 w-full">
                     <div class="flex flex-col gap-2">
                         <img
-                            :src="StockieLogo"
+                            :src="STOXPOSLogo"
                             alt="STOXPOS"
                             class="size-20"
                         />
