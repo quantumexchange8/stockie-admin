@@ -2,6 +2,7 @@
 import Main from "../../../assets/images/login/Main.svg";
 import StockieLogo from "../../../assets/images/login/stockie-logo.svg";
 import STOXPOSLogo from "../../../assets/images/login/stoxpos-logo.png";
+import STOXPOSLogo2 from "../../../assets/images/login/STOXPOS-logo-wht.png";
 import Button from "@/Components/Button.vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import InputError from "@/Components/InputError.vue";
@@ -79,9 +80,16 @@ onMounted(() => {
         <div class="w-full md:w-1/2 lg:w-7/12 md:bg-primary-900 flex flex-col pt-12 md:pt-48 lg:pt-96 xl:pt-[550px] 2xl:pt-[650px] pr-6 md:pr-12 xl:pr-12 gap-12">
             <div class="flex flex-col pl-6 md:pl-11">
                 <div class="w-full flex flex-col gap-2 items-center md:items-start">
-                    <div class="text-primary-900 md:text-white font-black text-[40px]">
-                        Welcome to
-                        <span class="text-white bg-primary-800 pl-2 pr-3">STOXPOS!</span>
+                    <div class="flex flex-col xl:flex-row gap-x-3 text-primary-900 md:text-white font-black text-[40px]">
+                        <span class="text-nowrap">Welcome to</span>
+                        <div class="flex items-center px-3 py-1 bg-primary-800 rounded-md">
+                            <img
+                                :src="STOXPOSLogo2"
+                                alt="STOXPOSLogo2"
+                                class="w-[356px] h-[50px]"
+                            />
+                        </div>
+                        <!-- <span class="text-white bg-primary-800 px-3">STOXPOS!</span> -->
                     </div>
                     <div class="text-base md:text-md text-primary-900 md:text-white">
                         Experience the ease of a hassle-free inventory
@@ -102,7 +110,7 @@ onMounted(() => {
                     <div class="flex flex-col gap-2">
                         <img
                             :src="STOXPOSLogo"
-                            alt="STOXPOS"
+                            alt="STOXPOSLogo"
                             class="size-20"
                         />
                         <div class="flex flex-col gap-1">

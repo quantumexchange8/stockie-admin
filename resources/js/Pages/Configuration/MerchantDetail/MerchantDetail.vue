@@ -106,6 +106,7 @@ const merchantForm = useForm({
     id: merchant_detail.value?.id ?? '',
     merchant_image: merchant_detail.value?.merchant_image ?? '',
     image: '',
+    duplicated_image: '',
     name: merchant_detail.value?.merchant_name ?? '',
     tin_no: merchant_detail.value?.tin_no ?? '',
     prefix: phonePrefixes.value[0]?.value,
@@ -152,6 +153,7 @@ const handleFileSelect = (event) => {
     
     if (file && file.type.startsWith('image/')) { 
         merchantForm.image = file;
+        merchantForm.duplicated_image = file;
         merchantForm.merchant_image = getObjectURL(file);
     }
 }

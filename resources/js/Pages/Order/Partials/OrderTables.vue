@@ -13,7 +13,7 @@ import Modal from "@/Components/Modal.vue";
 import ReservationListTable from './ReservationListTable.vue';
 import RightDrawer from '@/Components/RightDrawer/RightDrawer.vue';
 import OrderInfo from './OrderInfo.vue';
-import { MergedIcon, ShiftWorkerIcon } from '@/Components/Icons/solid';
+import { EyeIcon2, MergedIcon, ShiftWorkerIcon } from '@/Components/Icons/solid';
 import { useCustomToast } from '@/Composables';
 import { router } from '@inertiajs/vue3';
 
@@ -727,7 +727,14 @@ watch(drawerIsVisible, (newValue) => {
                                 @click="openOverlay($event, table)"
                             >
                                 <div class="flex flex-col justify-center items-center gap-y-1">
-                                    <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                    <div class="flex items-center justify-center gap-x-1">
+                                        <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                        <EyeIcon2
+                                            v-if="table.is_locked"
+                                            class="flex-shrink-0 w-5 h-5"
+                                            aria-hidden="true" 
+                                        />
+                                    </div>
                                     <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
                                     <template v-if="table.status === 'Empty Seat'">
                                         <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
@@ -787,7 +794,14 @@ watch(drawerIsVisible, (newValue) => {
                                     @click="openOverlay($event, table)"
                                 >
                                     <div class="flex flex-col justify-center items-center gap-y-1">
-                                        <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                        <div class="flex items-center justify-center gap-x-1">
+                                            <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                            <EyeIcon2
+                                                v-if="table.is_locked"
+                                                class="flex-shrink-0 w-5 h-5"
+                                                aria-hidden="true" 
+                                            />
+                                        </div>
                                         <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
                                         <template v-if="table.status === 'Empty Seat'">
                                             <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
@@ -846,7 +860,14 @@ watch(drawerIsVisible, (newValue) => {
                             @click="openOverlay($event, table)"
                         >
                             <div class="flex flex-col justify-center items-center gap-y-1">
-                                <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                <div class="flex items-center justify-center gap-x-1">
+                                    <span :class="getTableClasses(table).text.value">{{ table.table_no }}</span>
+                                    <EyeIcon2
+                                        v-if="table.is_locked"
+                                        class="flex-shrink-0 w-5 h-5"
+                                        aria-hidden="true" 
+                                    />
+                                </div>
                                 <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
                                 <template v-if="table.status === 'Empty Seat'">
                                     <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
