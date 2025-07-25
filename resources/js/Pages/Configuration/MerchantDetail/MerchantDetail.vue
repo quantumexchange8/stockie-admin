@@ -106,7 +106,6 @@ const merchantForm = useForm({
     id: merchant_detail.value?.id ?? '',
     merchant_image: merchant_detail.value?.merchant_image ?? '',
     image: '',
-    duplicated_image: '',
     name: merchant_detail.value?.merchant_name ?? '',
     tin_no: merchant_detail.value?.tin_no ?? '',
     prefix: phonePrefixes.value[0]?.value,
@@ -153,8 +152,7 @@ const handleFileSelect = (event) => {
     
     if (file && file.type.startsWith('image/')) { 
         merchantForm.image = file;
-        merchantForm.duplicated_image = file;
-        merchantForm.merchant_image = getObjectURL(file);
+        merchantForm.merchant_image = file;
     }
 }
 
@@ -261,7 +259,10 @@ const editTaxes = async () => {
     // taxForm.reset();
 };
 
-
+const removeImage = () => {
+    merchantForm.image = '';
+    merchantForm.merchant_image = '';
+};
 
 watch(() => props.merchant, (newValue) => {
     merchant_detail.value = newValue;
@@ -295,26 +296,34 @@ onMounted(() => {
                     <!-- Change merchant logo -->
                     <div class="flex items-center gap-6">
                         <div class="flex flex-col justify-center items-start rounded-[5px] bg-white">
-                            <div class="size-[120px] shrink-0 rounded-[5px] bg-white relative group" v-if="merchantForm.merchant_image">
-                                <img
-                                    :src="merchantForm.merchant_image"
+                            <div class="size-[120px] shrink-0 rounded-[5px] bg-white relative group">
+                                <img 
+                                    v-if="merchantForm.image" 
+                                    :src="getObjectURL(merchantForm.image)"
                                     alt="MerchantLogo"
                                     class="object-contain rounded-[5px]"
                                 >
-                                <div class="size-full shrink-0 items-center justify-center rounded-[5px] opacity-[.68] bg-grey-25 hidden absolute group-hover:flex inset-0">
+                                <img
+                                    v-else-if="merchantForm.merchant_image" 
+                                    :src="merchantForm.merchant_image"
+                                    alt="NewMerchantLogo"
+                                    class="object-contain rounded-[5px]"
+                                >
+                                <div v-else class="flex size-[120px] justify-center items-center shrink-0 rounded-[5px] bg-grey-100">
+                                    <NoImageIcon />
+                                </div>
+                                <div v-if="merchantForm.merchant_image || merchantForm.image" class="size-full shrink-0 items-center justify-center rounded-[5px] opacity-[.68] bg-grey-25 hidden absolute group-hover:flex inset-0">
                                 </div>
                                 <Button
+                                    v-if="merchantForm.merchant_image || merchantForm.image"
                                     :variant="'primary'"
                                     :type="'button'"
                                     :size="'md'"
                                     class="!w-fit !h-fit inset-0 absolute hidden justify-self-center self-center group-hover:flex"
-                                    @click="merchantForm.merchant_image = ''"
+                                    @click="removeImage"
                                 >
                                     Remove
                                 </Button>
-                            </div>
-                            <div class="flex size-[120px] justify-center items-center shrink-0 rounded-[5px] bg-grey-100" v-else>
-                                <NoImageIcon />
                             </div>
                             <InputError class="text-nowrap" :message="merchantForm.errors.merchant_image ? merchantForm.errors.merchant_image[0] : ''" />
                         </div>
