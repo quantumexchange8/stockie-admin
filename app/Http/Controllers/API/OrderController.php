@@ -1278,6 +1278,7 @@ class OrderController extends Controller
                             ->find($request->id);
 
         $customer->image = $customer->getFirstMediaUrl('customer');
+        $customer->rank['image'] = $customer->rank->getFirstMediaUrl('ranking');
         
         $customer->keep_items_count = $customer->keepItems->reduce(function ($total, $item) {
             $itemQty = $item->qty > $item->cm ? $item->qty : 1;
