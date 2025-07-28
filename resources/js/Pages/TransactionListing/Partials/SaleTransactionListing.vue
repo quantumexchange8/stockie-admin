@@ -417,7 +417,7 @@ const printInvoiceReceipt = () => {
                         v-model="date_filter"
                     />
                 </div>
-                <!-- <div class="">
+                <div class="">
                     <Button
                         type="button"
                         variant="primary"
@@ -430,7 +430,7 @@ const printInvoiceReceipt = () => {
                         </template>
                         Consolidate
                     </Button>
-                </div> -->
+                </div>
             </div>
         </div>
         <div class="">
