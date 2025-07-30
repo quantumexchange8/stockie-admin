@@ -31,6 +31,21 @@ class LoginRequest extends FormRequest
             'password' => ['required', 'string'],
         ];
     }
+    
+    public function attributes(): array
+    {
+        return [
+            'role_id' => trans('public.field.id'),
+            'password' => trans('public.field.password'),
+        ];
+    }
+    
+    public function messages(): array
+    {
+        return [
+            'role_id.exists' => trans('auth.id_not_exist'),
+        ];
+    }
 
     /**
      * Attempt to authenticate the request's credentials.
@@ -46,8 +61,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'role_id' => trans('auth.failed'),
-                'password' => 'Incorrect password, please try again.',
+                'password' => trans('auth.failed'),
             ]);
         }
 
@@ -84,13 +98,4 @@ class LoginRequest extends FormRequest
     {
         return Str::transliterate(Str::lower($this->string('role_id')).'|'.$this->ip());
     }
-
-
-    public function messages(): array
-    {
-        return [
-            'role_id.exists' => 'ID does not exist, please try with another ID.',
-        ];
-    }
-
 }

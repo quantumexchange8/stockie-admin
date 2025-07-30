@@ -11,6 +11,7 @@ import preset from "../presets/primevue";
 import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
 import { vClickOutside } from './Composables/index.js';
+import { i18nVue } from 'laravel-vue-i18n'
 
 // import { registerSW } from 'virtual:pwa-register';
 // import PWAManager from '@/Components/PWAInstallManager.vue';
@@ -148,6 +149,13 @@ createInertiaApp({
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
+            .use(i18nVue, {
+                resolve: async lang => {
+                    const langs = import.meta.glob('../../lang/*.json');
+                    if (typeof langs[`../../lang/${lang}.json`] == "undefined") return; //Temporary workaround
+                    return await langs[`../../lang/${lang}.json`]();
+                }
+            })
             .use(PrimeVue, {
                 unstyled: true,
                 pt: preset,

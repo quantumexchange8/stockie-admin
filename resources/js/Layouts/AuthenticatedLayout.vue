@@ -1,8 +1,8 @@
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import Sidebar from '@/Components/Sidebar/Sidebar.vue'
-import { sidebarState, rightSidebarState } from '@/Composables'
+import { sidebarState, rightSidebarState, useLangObserver } from '@/Composables'
 import { NumberedNotificationIcon, LanguageIcon, LogOutIcon, CheckIcon } from '@/Components/Icons/solid';
 import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
@@ -11,11 +11,15 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import NotificationsOverlay from './NotificationsOverlay.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import axios from 'axios';
-import { onBeforeUnmount } from 'vue';
+import { loadLanguageAsync } from "laravel-vue-i18n";
 
 defineProps({
     title: String
 })
+
+const page = usePage();
+const userId = computed(() => page.props);
+const { locale } = useLangObserver();
 
 const form = useForm({
 
@@ -73,23 +77,31 @@ const markAllAsRead = async () => {
     }
 };
 
-const languages = [ 
-    { name: 'Bahasa Melayu', language: 'ms' },
-    { name: 'English', language: 'en' },
-    { name: '中文', language: 'zh' },
-];
-
-const selected = ref(languages.find(language => language.language === localStorage.getItem('selectedLanguage')) || languages[1]);
-const op = ref(null);
-
-const changeLanguage = (lang) => {
-    selected.value = languages.find(language => language.language === lang);
-    localStorage.setItem('selectedLanguage', lang);
-    // console.log(lang);
+const languages = {
+    en: 'English',
+    'zh-Hans': '中文',
 };
 
-const isSelected = (language) => {
-    return selected.value && language.language === selected.value.language;
+const currentLocale = ref(locale);
+const op = ref(null);
+
+const changeLanguage = async (locale) => {
+    // currentLocale.value = languages.find(language => language.language === locale);
+    // localStorage.setItem('selectedLanguage', locale);
+    // console.log(locale);
+    
+    try {
+        currentLocale.value = locale;
+        await loadLanguageAsync(locale);
+        await axios.get(`/locale/${locale}`);
+
+    } catch (error) {
+        console.error('Error changing locale:', error);
+    }
+};
+
+const isSelected = (locale) => {
+    return currentLocale.value && locale === currentLocale.value;
 };
 
 
@@ -159,10 +171,10 @@ onMounted(() => {
     rightSidebarState.isOpen = false;
     sidebarState.isOpen = false;
     getNotifications();
-    const savedLanguage = localStorage.getItem('selectedLanguage');
-    if(savedLanguage){
-        selected.value = languages.find(language => language.language === savedLanguage);
-    }
+    // const savedLanguage = localStorage.getItem('selectedLanguage');
+    // if(savedLanguage){
+    //     currentLocale.value = languages.find(language => language.language === savedLanguage);
+    // }
 })
 </script>
 
@@ -257,30 +269,30 @@ onMounted(() => {
                                         <MenuItems
                                             class="absolute z-20 right-0 min-w-[370px] p-6 flex flex-col origin-top-right whitespace-nowrap rounded-md bg-white shadow-lg"
                                         >
-                                            <span class="text-primary-950 text-start text-md font-medium pb-6">Change Language</span>
+                                            <span class="text-primary-950 text-start text-md font-medium pb-6">{{ $t('public.navbar.change_language') }}</span>
                                             <MenuItem
                                                 v-slot="{ active }"
-                                                v-for="language in languages"
-                                                :key="language.language"
+                                                v-for="(languageName, locale) in languages"
+                                                :key="locale"
                                             >
                                                 <button
                                                     type="button"
                                                     :class="[
-                                                        { 'bg-primary-25 flex justify-between': isSelected(language) },
-                                                        { 'bg-white hover:bg-[#fff9f980]': !isSelected(language) },
+                                                        { 'bg-primary-50 flex justify-between': isSelected(locale) },
+                                                        { 'bg-white hover:bg-[#fff9f980]': !isSelected(locale) },
                                                         'group flex w-full items-center rounded-md px-6 py-3 text-base text-gray-900',
                                                     ]"
-                                                    @click="changeLanguage(language.language)"
+                                                    @click="changeLanguage(locale)"
                                                 >
                                                     <span
                                                         :class="[
-                                                            { 'text-primary-900 text-center text-base font-medium': isSelected(language) },
-                                                            { 'text-grey-900 text-center text-base font-medium group-hover:text-primary-800': !isSelected(language) },
+                                                            { 'text-primary-900 text-center text-base font-medium': isSelected(locale) },
+                                                            { 'text-grey-900 text-center text-base font-medium group-hover:text-primary-800': !isSelected(locale) },
                                                         ]"
                                                     >
-                                                        {{ language.name }}
+                                                        {{ languageName }}
                                                     </span>
-                                                    <div v-show="isSelected(language)" class="shrink-0 text-white">
+                                                    <div v-show="isSelected(locale)" class="shrink-0 text-white">
                                                         <CheckIcon />
                                                     </div>
                                                 </button>
@@ -326,8 +338,8 @@ onMounted(() => {
                 </div>
                 <div class="flex flex-col gap-5 pt-6">
                     <div class="flex flex-col gap-1 text-center self-stretch">
-                        <span class="text-primary-900 text-lg font-medium self-stretch">You’re leaving...</span>
-                        <span class="text-grey-900 text-base font-medium self-stretch">Are you sure you want to log out this account?</span>
+                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ $t('public.navbar.logout_message_title') }}</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">{{ $t('public.navbar.logout_message_desc') }}</span>
                     </div>
                 </div>
 
@@ -338,14 +350,14 @@ onMounted(() => {
                         type="button"
                         @click="closeModal"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         variant="primary"
                         size="lg"
                         type="submit"
                     >
-                        Log out
+                        {{ $t('public.action.logout') }}
                     </Button>
                 </div>
             </div>

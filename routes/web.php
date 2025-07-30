@@ -41,6 +41,8 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('locale/{locale}', [GlobalController::class, 'setLocale']);
+
 Route::middleware(['auth', 'single.session'])->group(function () {
     // Route::get('/phpinfo', function () {
     //     phpinfo();
