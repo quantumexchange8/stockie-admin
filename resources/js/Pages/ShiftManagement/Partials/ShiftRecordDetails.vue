@@ -18,8 +18,8 @@ const { showMessage } = useCustomToast();
 
 const selectedShift = ref(props.currentSelectedShift);
 const tabs = ref([
-    { title: 'Shift Overview', disabled: false },
-    { title: 'Pay In/Out History', disabled: false }
+    { key: 'Shift Overview', title: 'Shift Overview', disabled: false },
+    { key: 'Pay In/Out History', title: 'Pay In/Out History', disabled: false }
 ]);
 
 const printShfitReportReceipt = async () => {
@@ -89,10 +89,7 @@ watch(() => props.currentSelectedShift, (newValue) => {
 
 <template>
     <div class="flex flex-col gap-8">
-        <TabView 
-            :withDisabled="true"
-            :tabs="tabs" 
-        >
+        <TabView :tabs="tabs">
             <template #shift-overview>
                 <div class="flex flex-col gap-y-8 items-start self-stretch pr-1 max-h-[calc(100dvh-20rem)] shrink-0 overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <div class="flex flex-col items-start gap-y-4 self-stretch">

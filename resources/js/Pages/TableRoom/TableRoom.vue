@@ -46,10 +46,10 @@ const filters = ref({
 });
 
 const populateTabs = () => {
-    tabs.value = ['All'];
+    tabs.value = [{ key: 'All', title: 'All', disabled: false }];
     for (const zone of zones.value) {
         if (zone.text) { 
-            tabs.value.push(zone.text);
+            tabs.value.push({ key: zone.text, title: zone.text, disabled: false });
         }
     }
 };

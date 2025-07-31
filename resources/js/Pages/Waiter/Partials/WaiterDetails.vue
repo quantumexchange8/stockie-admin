@@ -52,7 +52,12 @@ const waiter = ref(props.waiter);
 // const attendance = ref(props.attendance);
 const commissionRowsPerPage = ref(11);
 const incentiveRowsPerPage = ref(11);
-const tabs = ref(['Sales', 'Commission', 'Incentive', 'Attendance']);
+const tabs = ref([
+    { key: 'Sales', title: 'Sales', disabled: false },
+    { key: 'Commission', title: 'Commission', disabled: false },
+    { key: 'Incentive', title: 'Incentive', disabled: false },
+    { key: 'Attendance', title: 'Attendance', disabled: false },
+]);
 
 const salesColumn = ref([
     {field: 'created_at', header: 'Date', sortable: true},

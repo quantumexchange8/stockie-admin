@@ -17,8 +17,8 @@ const props = defineProps({
 })
 
 const tabs = ref([
-    "Sales Transaction", 
-    // "Refund Transaction"
+    { key: 'Sales Transaction', title: 'Sales Transaction', disabled: false },
+    // { key: 'Refund Transaction', title: 'Refund Transaction', disabled: false },
 ]);
 
 

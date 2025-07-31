@@ -21,7 +21,11 @@ const props = defineProps({
 // const { formatPhone } = usePhoneUtils();
 
 // const zones = ref('');
-const tabs = ref(['Stock Flow', 'Kept Item Flow']);
+// const tabs = ref(['Stock Flow', 'Kept Item Flow']);
+const tabs = ref([
+    { key: 'Stock Flow', title: 'Stock Flow', disabled: false },
+    { key: 'Kept Item Flow', title: 'Kept Item Flow', disabled: false },
+]);
 const isLoading = ref(false);
 // const tableNames = ref('--');
 // const tables = ref([]);
@@ -29,8 +33,8 @@ const isLoading = ref(false);
 // const isConfirmShow = ref(false);
 // const isSelectedCustomer = ref();
 // const selectedTable = ref('');
-const mergedHistories = ref();
-const stockHistories = ref();
+const mergedHistories = ref([]);
+const stockHistories = ref([]);
 // const checkedIn = ref([]);
 // const isTransferItemModalOpen = ref(false);
 // const isUnsavedChangesOpen = ref(false);

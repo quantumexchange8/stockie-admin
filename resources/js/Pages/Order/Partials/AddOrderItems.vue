@@ -37,7 +37,9 @@ const { showMessage } = useCustomToast();
 const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails','fetchPendingServe', 'update:hasItemInCart']);
 
 const query = ref('');
-const tabs = ref(['All']);
+const tabs = ref([
+    { key: 'All', title: 'All', disabled: false },
+]);
 const products = ref([]);
 const newOrderId = ref({});
 const categories = ref([]);
@@ -113,7 +115,7 @@ onMounted(async() => {
             }
         })
         
-        categories.value.forEach(category => tabs.value.push(category.text));
+        categories.value.forEach(category => tabs.value.push({ key: category.text, title: category.text, disabled: false }));
 
         const productsResponse = await axios.get(route('orders.getAllProducts'));
         products.value = productsResponse.data;        

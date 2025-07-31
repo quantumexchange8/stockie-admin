@@ -26,6 +26,7 @@ import {
 import { usePage } from "@inertiajs/vue3";
 import SidebarTree from "./SidebarTree.vue";
 import { ref } from "vue";
+import { wTrans } from "laravel-vue-i18n";
 
 const page = usePage();
 const existingPermissions = page.props.auth.user.data.permission;
@@ -44,16 +45,16 @@ const getShiftManagementNodes = () => {
     const nodeChildren = [];
 
     if (existingPermissions?.includes('shift-control')) {
-        nodeChildren.push({ key: '1-0', label: 'Shift Control', data: route('shift-management.control'), type: 'url' });
+        nodeChildren.push({ key: '1-0', label: wTrans('public.shift_control_header'), data: route('shift-management.control'), type: 'url' });
     }
 
     if (existingPermissions?.includes('shift-record')) {
-        nodeChildren.push({ key: nodeChildren.length > 0 ? '1-1' : '1-0', label: 'Shift Report', data: route('shift-management.record'), type: 'url' });
+        nodeChildren.push({ key: nodeChildren.length > 0 ? '1-1' : '1-0', label: wTrans('public.shift_record_header'), data: route('shift-management.record'), type: 'url' });
     }
 
     const nodeTree = [{
         key: '0',
-        label: 'Shift Management',
+        label: wTrans('public.shift_management_header'),
         children: nodeChildren
     }];
 
@@ -86,7 +87,7 @@ const toggleNode = (node) => {
         class="flex flex-col gap-[32px] overflow-auto"
     >
         <SidebarLink
-            title="Dashboard"
+            :title="$t('public.dashboard_header')"
             :href="route('dashboard')"
             :active="route().current('dashboard')"
             v-if="existingPermissions?.includes('dashboard')" 
@@ -104,11 +105,11 @@ const toggleNode = (node) => {
                         existingPermissions?.includes('shift-record') ||
                         existingPermissions?.includes('menu-management')"
             >
-                General
+                {{ $t('public.general_header') }}
             </p>
             <div class="flex flex-col">
                 <SidebarLink
-                    title="Order Management"
+                    :title="$t('public.order_management_header')"
                     :href="route('orders')"
                     :active="route().current('orders')"
                     v-if="existingPermissions?.includes('order-management')" 
@@ -130,7 +131,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarTree>
                 <SidebarLink 
-                    title="Menu Management" 
+                    :title="$t('public.menu_management_header')" 
                     :href="route('products')"
                     :active="route().current('products') || route().current('products.showProductDetails')"
                     v-if="existingPermissions?.includes('menu-management')" 
@@ -141,7 +142,7 @@ const toggleNode = (node) => {
                 </SidebarLink>
                 <!-- Work In Progress -->
                 <SidebarLink 
-                    title="All Report" 
+                    :title="$t('public.all_report_header')" 
                     :href="route('report')"
                     :active="route().current('report')"
                     v-if="existingPermissions?.includes('all-report')" 
@@ -161,11 +162,11 @@ const toggleNode = (node) => {
                     existingPermissions?.includes('table-room') || 
                     existingPermissions?.includes('reservation')"
             >
-                Operation
+                {{ $t('public.operation_header') }}
             </p>
             <div class="flex flex-col">
                 <SidebarLink 
-                    title="Inventory" 
+                    :title="$t('public.inventory_header')" 
                     :href="route('inventory')"
                     :active="route().current('inventory') || route().current('inventory.viewStockHistories') || 
                     route().current('inventory.viewKeepHistories') || route().current('activeKeptItem')"
@@ -176,7 +177,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink 
-                    title="Waiter" 
+                    :title="$t('public.waiter_header')" 
                     :href="route('waiter')"
                     :active="route().current('waiter') || route().current('waiter.waiter-details')"
                     v-if="existingPermissions?.includes('waiter')" 
@@ -186,7 +187,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink 
-                    title="Customer" 
+                    :title="$t('public.customer_header')" 
                     :href="route('customer')"
                     :active="route().current('customer')"
                     v-if="existingPermissions?.includes('customer')" 
@@ -196,7 +197,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink 
-                    title="Table & Room" 
+                    :title="$t('public.table_room_header')" 
                     :href="route('table-room')"
                     :active="route().current('table-room')"
                     v-if="existingPermissions?.includes('table-room')" 
@@ -206,7 +207,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink 
-                    title="Reservation" 
+                    :title="$t('public.reservation_header')" 
                     :href="route('reservations')"
                     :active="route().current('reservations') || route().current('reservations.viewReservationHistory')"
                     v-if="existingPermissions?.includes('reservation')" 
@@ -223,11 +224,11 @@ const toggleNode = (node) => {
                 v-if="existingPermissions?.includes('transaction-listing') || existingPermissions?.includes('admin-user') ||
                 existingPermissions?.includes('einvoice-submission') || existingPermissions?.includes('configuration')"
             >
-                SALES MANAGEMENT
+                {{ $t('public.sales_management_header') }}
             </p>
             <div class="flex flex-col">
                 <SidebarLink
-                    title="Transaction Listing"
+                    :title="$t('public.transaction_listing_header')"
                     :href="route('transactions.transaction-listing')"
                     :active="route().current('transactions.transaction-listing')"
                     v-if="existingPermissions?.includes('transaction-listing')" 
@@ -237,7 +238,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink
-                    title="e-Invoice Submission"
+                    :title="$t('public.einvoice_submission_header')"
                     :href="route('e-invoice.einvoice-listing')"
                     :active="route().current('e-invoice.einvoice-listing')"
                     v-if="existingPermissions?.includes('einvoice-submission')" 
@@ -254,11 +255,11 @@ const toggleNode = (node) => {
                 v-if="existingPermissions?.includes('loyalty-programme') || existingPermissions?.includes('admin-user') ||
                 existingPermissions?.includes('sales-analysis') || existingPermissions?.includes('configuration')"
             >
-                Others
+                {{ $t('public.others_header') }}
             </p>
             <div class="flex flex-col">
                 <SidebarLink
-                    title="Loyalty Programme"
+                    :title="$t('public.loyalty_programme_header')"
                     :href="route('loyalty-programme')"
                     :active="route().current('loyalty-programme') || route().current('loyalty-programme.tiers.show') || route().current('loyalty-programme.points.show')"
                     v-if="existingPermissions?.includes('loyalty-programme')" 
@@ -268,7 +269,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink
-                    title="Admin User"
+                    :title="$t('public.admin_user_header')"
                     :href="route('admin-user')"
                     :active="route().current('admin-user')"
                     v-if="existingPermissions?.includes('admin-user')" 
@@ -278,7 +279,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink 
-                    title="Sales Analysis" 
+                    :title="$t('public.sales_analysis_header')" 
                     :href="route('summary.report')" 
                     :active="route().current('summary.report')"
                     v-if="existingPermissions?.includes('sales-analysis')" 
@@ -288,7 +289,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink 
-                    title="Activity Logs" 
+                    :title="$t('public.activity_logs_header')" 
                     :href="route('activity-logs')" 
                     :active="route().current('activity-logs')"
                     v-if="existingPermissions?.includes('activity-logs')" 
@@ -298,7 +299,7 @@ const toggleNode = (node) => {
                     </template>
                 </SidebarLink>
                 <SidebarLink
-                    title="Configuration"
+                    :title="$t('public.configuration_header')"
                     :href="route('configurations')"
                     :active="route().current('configurations') || route().current('configurations.productDetails') || route().current('configuration.incentCommDetail')"
                     v-if="existingPermissions?.includes('configuration')" 

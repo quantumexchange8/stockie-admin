@@ -39,8 +39,9 @@ return [
     "is_no_stock" => "已经售罄.",
     "product_affected" => "受影响的产品:",
     "view_stock" => "查看库存量",
-    "check_in" => "已签到",
-    "check_out" => "已签退",
+    "checked_in" => "已签到",
+    "checked_out" => "已签退",
+    "no_record_yet" => "暂无记录",
     "checked_in_at" => "签到在",
     "checked_out_at" => "签退在",
     "table_room_activity" => "桌台 / 厢房活动",
@@ -55,9 +56,15 @@ return [
     "merge_table" => "桌台合并",
     "transfer_table" => "桌台转移",
     "status" => "状态",
-    "cat" => [
-        "category" => "类别",
-    ],
+    "na" => "N/A",
+    "sales" => "销售",
+    "left" => "剩余",
+    "left_header" => "剩余",
+    "category" => "类别",
+    "week" => "周",
+    "month" => "月",
+    "year" => "年",
+    "product_name" => "产品名称",
 
     // Input fields label name
     "field" => [
@@ -94,13 +101,16 @@ return [
         "take_me_back" => "带我回去",
         "refresh" => "刷新",
         "go_to_homepage" => "前往主页",
+        "check_in_customer" => "办理顾客签到",
     ],
 
     // Empty states' messages
     "empty" => [
-        "no_data" => "No data to show",
+        "no_data" => "尚无数据可显示...",
         "no_notification" => "尚未有通知...",
         "no_result_found" => "我们找不到任何结果...",
+        "no_activity" => "尚无活动可显示...",
+        "no_reservation" => "You haven't added any reservation yet...",
     ],
 
     // Error pages' error messages
@@ -157,7 +167,15 @@ return [
         "waiter_attendance" => "服务员签到 / 签退",
     ],
     "dashboard" => [
-        "cryptocurrency_market_price" => "Cryptocurrency Market Price",
+        "sales_today" => "今日业绩",
+        "products_sold_today" => "今日销售的产品",
+        "orders_today" => "今日的订购",
+        "low_in" => "低库存",
+        "active_table_room" => "使用中的桌台和厢房: ",
+        "on_duty_today" => "今天值班",
+        "product_low_stock" => "产品库存不足",
+        "today_reservation" => "今日预订",
+        "at_today" => "在今天",
     ],
     "order" => [
         "cryptocurrency_market_price" => "Cryptocurrency Market Price",

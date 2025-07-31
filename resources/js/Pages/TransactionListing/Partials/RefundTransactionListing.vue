@@ -51,7 +51,11 @@ const saleTransaction = ref([]);
 const { formatAmount, formatDateTime } = transactionFormat();
 const detailIsOpen = ref(false);
 const selectedVal = ref(null);
-const tabs = ref(["Refund Detail", "Refund Product", "Refund Method"]);
+const tabs = ref([
+    { key: 'Refund Detail', title: 'Refund Detail', disabled: false },
+    { key: 'Refund Product', title: 'Refund Product', disabled: false },
+    { key: 'Refund Method', title: 'Refund Method', disabled: false },
+]);
 const op = ref(null);
 const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);

@@ -29,15 +29,15 @@ const props = defineProps({
 })
 
 const tabs = ref([
-    "Discount Settings", 
-    "Employee Commission", 
-    "Employee Incentive Programme", 
-    "Employee Shift Settings", 
-    "Promotion", 
-    "Invoice Setting", 
-    "Points Settings",
-    "Security Settings",
-    "Printing Settings"
+    { key: 'Discount Settings', title: 'Discount Settings', disabled: false },
+    { key: 'Employee Commission', title: 'Employee Commission', disabled: false },
+    { key: 'Employee Incentive Programme', title: 'Employee Incentive Programme', disabled: false }, 
+    { key: 'Employee Shift Settings', title: 'Employee Shift Settings', disabled: false },
+    { key: 'Promotion', title: 'Promotion', disabled: false },
+    { key: 'Invoice Setting', title: 'Invoice Setting', disabled: false },
+    { key: 'Points Settings', title: 'Points Settings', disabled: false }, 
+    { key: 'Security Settings', title: 'Security Settings', disabled: false }, 
+    { key: 'Printing Settings', title: 'Printing Settings', disabled: false }
 ]);
 
 const merchant = ref(props.merchant);

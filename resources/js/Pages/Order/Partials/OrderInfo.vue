@@ -41,10 +41,10 @@ const { showMessage } = useCustomToast();
 const emit = defineEmits(['update:broadcast-message', 'fetchZones', 'close']);
 
 const tabs = ref([
-    { title: 'Order Detail', disabled: false },
-    { title: 'Pending Serve', disabled: false },
-    { title: 'Customer Detail', disabled: true }, 
-    { title: 'Payment History', disabled: false }
+    { key: 'Order Detail', title: 'Order Detail', disabled: false },
+    { key: 'Pending Serve', title: 'Pending Serve', disabled: false },
+    { key: 'Customer Detail', title: 'Customer Detail', disabled: true }, 
+    { key: 'Payment History', title: 'Payment History', disabled: false }
 ]);
 const currentTable = ref(props.selectedTable);
 const order = ref({});
@@ -693,7 +693,6 @@ onUnmounted(stop);
             ]"
         >
             <TabView 
-                :withDisabled="true"
                 :tabs="tabs" 
                 :selectedTab="selectedTab" 
                 :tabFooter="tabs[1]"

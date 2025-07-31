@@ -11,10 +11,10 @@ const props = defineProps({
         type: Number,
         default: 0
     },
-    withDisabled: {
-        type: Boolean,
-        default: false
-    },
+    // withDisabled: {
+    //     type: Boolean,
+    //     default: false
+    // },
     tabFooter: {
         type: [Object, Array],
         default: () => {}
@@ -40,15 +40,20 @@ watch(() => props.selectedTab, (newValue) => selectedTab.value = newValue);
 // Remove leading or trailing '-'
 const tranformedTabs = computed(() => {
     return props.tabs.map((tab) => 
-        props.withDisabled 
-            ?   tab.title.toLowerCase()
-                    .replace(/[/\s_]+/g, "-") // Replace spaces and '/' with '-'
-                    .replace(/[^a-z0-9-]+/g, "") // Remove any characters other than alphanumeric and '-'
-                    .replace(/^-+|-+$/g, "") // Remove leading or trailing '-'
-            :   tab.toLowerCase()
-                    .replace(/[/\s_]+/g, "-") // Replace spaces and '/' with '-'
-                    .replace(/[^a-z0-9-]+/g, "") // Remove any characters other than alphanumeric and '-'
-                    .replace(/^-+|-+$/g, "") // Remove leading or trailing '-'
+        tab.key.toLowerCase()
+            .replace(/[/\s_]+/g, "-") // Replace spaces and '/' with '-'
+            .replace(/[^a-z0-9-]+/g, "") // Remove any characters other than alphanumeric and '-'
+            .replace(/^-+|-+$/g, "") // Remove leading or trailing '-'
+
+        // props.withDisabled 
+        //     ?   tab.title.toLowerCase()
+        //             .replace(/[/\s_]+/g, "-") // Replace spaces and '/' with '-'
+        //             .replace(/[^a-z0-9-]+/g, "") // Remove any characters other than alphanumeric and '-'
+        //             .replace(/^-+|-+$/g, "") // Remove leading or trailing '-'
+        //     :   tab.toLowerCase()
+        //             .replace(/[/\s_]+/g, "-") // Replace spaces and '/' with '-'
+        //             .replace(/[^a-z0-9-]+/g, "") // Remove any characters other than alphanumeric and '-'
+        //             .replace(/^-+|-+$/g, "") // Remove leading or trailing '-'
     )
 });
 </script>
@@ -62,20 +67,20 @@ const tranformedTabs = computed(() => {
                     as="template" 
                     v-slot="{ selected }" 
                     class="border-b border-grey-200"
-                    :disabled="withDisabled ? tab.disabled : false"
+                    :disabled="tab.disabled"
                 >
                     <button
                         :class="[
                             'p-3 text-sm font-medium leading-none focus:outline-none whitespace-nowrap group',
                             { 'text-grey-200': !selected },
                             { 'text-primary-900 border-b-2 border-primary-900': selected },
-                            { 'hover:bg-white/[0.12] hover:text-primary-800': withDisabled ? !tab.disabled : true },
+                            { 'hover:bg-white/[0.12] hover:text-primary-800': !tab.disabled },
                             { 'flex gap-2.5 justify-center items-center': props.tabFooter }
                         ]"
                     >
-                        {{ withDisabled ? tab.title : tab }}
-                        <slot name="tabFooter" v-if="props.tabFooter === tab"></slot>
-                        <slot name="count" :tabs="tab" :selected="selected"></slot>
+                        {{ tab.title }}
+                        <slot name="tabFooter" v-if="props.tabFooter === tab.key"></slot>
+                        <slot name="count" :tabs="tab.key" :selected="selected"></slot>
                     </button>
                 </Tab>
             </template>

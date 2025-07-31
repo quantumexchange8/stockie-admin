@@ -40,7 +40,10 @@ const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
 const selectedVal = ref(null);
 const { formatAmount, formatDate } = transactionFormat();
-const tabs = ref(["Transaction List", "MyInvois"]);
+const tabs = ref([
+    { key: 'Transaction List', title: 'Transaction List', disabled: false },
+    { key: 'MyInvois', title: 'MyInvois', disabled: false },
+]);
 const op = ref(null);
 const cancelSubmitFormIsOpen = ref(false);
 const reason = ref('');

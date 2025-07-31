@@ -9,7 +9,7 @@ import InputError from "@/Components/InputError.vue";
 import TextInput from "@/Components/TextInput.vue";
 import Toast from "@/Components/Toast.vue";
 import Modal from "@/Components/Modal.vue";
-import { useCustomToast } from "@/Composables";
+import { useCustomToast, useLangObserver } from "@/Composables";
 import { LogoutIllust } from '@/Components/Icons/illus';
 import { Head, useForm, usePage } from "@inertiajs/vue3";
 import { onMounted, ref, computed } from "vue";
@@ -25,6 +25,7 @@ defineProps({
 
 const { flashMessage } = useCustomToast();
 const page = usePage();
+const {locale} = useLangObserver();
 
 const user = computed(() => page.props.auth.user);
 const isConfirmLoginModalOpen = ref(false);
@@ -34,6 +35,7 @@ const form = useForm({
     password: "",
     confirm_login: false,
     remember: false,
+    locale: locale
 });
 
 const submit = () => {
@@ -91,10 +93,7 @@ onMounted(() => {
                         </div>
                         <!-- <span class="text-white bg-primary-800 px-3">STOXPOS!</span> -->
                     </div>
-                    <div class="text-base md:text-md text-primary-900 md:text-white">
-                        Experience the ease of a hassle-free inventory
-                        management system today.
-                    </div>
+                    <div class="text-base md:text-md text-primary-900 md:text-white">{{ $t('public.login.description1') }}</div>
                 </div>
             </div>
             <img :src="Main" alt="STOXPOS" width="925" height="740" class="hidden md:block"/>
@@ -114,21 +113,17 @@ onMounted(() => {
                             class="size-20"
                         />
                         <div class="flex flex-col gap-1">
-                            <div class="font-black text-xl text-primary-900">
-                                STOXPOS
-                            </div>
-                            <div class="font-medium text-base text-grey-900">
-                                Your Inventory, Perfectly Managed
-                            </div>
+                            <div class="font-black text-xl text-primary-900">STOXPOS</div>
+                            <div class="font-medium text-base text-grey-900">{{ $t('public.login.description2') }}</div>
                         </div>
                     </div>
 
                     <div class="w-full flex flex-col gap-6">
                         <div class="flex flex-col">
                             <TextInput
-                                label-text="ID"
+                                :label-text="$t('public.field.id')"
                                 :inputType="'text'"
-                                :placeholder="'Enter your ID here'"
+                                :placeholder="$t('public.login.id_placeholder')"
                                 v-model="form.role_id"
                                 required
                                 autofocus
@@ -139,8 +134,8 @@ onMounted(() => {
                         <div class="flex flex-col gap-2">
                             <div>
                                 <TextInput
-                                    label-text="Password"
-                                    :placeholder="'Enter your password here'"
+                                    :label-text="$t('public.field.password')"
+                                    :placeholder="$t('public.login.password_placeholder')"
                                     id="password"
                                     :inputType="'password'"
                                     v-model="form.password"
@@ -164,7 +159,7 @@ onMounted(() => {
                         :size="'lg'"
                         :disabled="!isFormValid"
                     >
-                        Log in
+                        {{ $t('public.action.login') }}
                     </Button>
                 </div>
             </form>

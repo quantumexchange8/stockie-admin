@@ -134,10 +134,10 @@ const getAllCustomer = async() => {
 }
  
 const populateTabs = () => {
-    tabs.value = ['All'];
+    tabs.value = [{ key: 'All', title: 'All', disabled: false }];
     for (const zone of zones.value) {
         if (zone.text) { 
-            tabs.value.push(zone.text);
+            tabs.value.push({ key: zone.text, title: zone.text, disabled: false });
         }
     }
 };
@@ -445,7 +445,7 @@ const hasTables = computed(() => {
                 </template>
 
                 <template
-                    v-for="tab in tabs.filter(tab => tab !== 'All').map((tab) => tab.toLowerCase().replace(/[/\s_]+/g, '-'))"
+                    v-for="tab in tabs.filter(tab => tab.key !== 'All').map((tab) => tab.key.toLowerCase().replace(/[/\s_]+/g, '-'))"
                     :key="tab"
                     v-slot:[tab]
                 >

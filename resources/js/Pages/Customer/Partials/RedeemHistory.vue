@@ -13,7 +13,13 @@ const props = defineProps({
 })
 const customerId = ref(props.customerId);
 const redeemHistory = ref([]);
-const tabs = ref(['All', 'Earned', 'Used', 'Adjusted', 'Expired']);
+const tabs = ref([
+    { key: 'All', title: 'All', disabled: false },
+    { key: 'Earned', title: 'Earned', disabled: false },
+    { key: 'Used', title: 'Used', disabled: false }, 
+    { key: 'Adjusted', title: 'Adjusted', disabled: false }, 
+    { key: 'Expired', title: 'Expired', disabled: false }
+]);
 const isLoading = ref(false);
 const selectedOrderId = ref(null);
 const orderInvoiceModalIsOpen = ref(false);

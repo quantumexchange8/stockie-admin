@@ -23,7 +23,11 @@ const items = ref([
     { label: 'Stock History' },
 ]);
 
-const tabs = ref(['All', 'In', 'Out']);
+const tabs = ref([
+    { key: 'All', title: 'All', disabled: false },
+    { key: 'In', title: 'In', disabled: false },
+    { key: 'Out', title: 'Out', disabled: false },
+]);
 
 // only for 'list' variant of table component
 const allStockHistoryColumns = ref([

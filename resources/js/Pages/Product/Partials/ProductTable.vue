@@ -268,7 +268,7 @@ watch(() => props.categoryArr, (newValue) => {
         value: 0
     });
 
-    tabCategories.value = categories.value.map((item) => item.text);
+    tabCategories.value = categories.value.map((item) => ({ key: item.text, title: item.text, disabled: false }));
 }, { immediate: true });
 
 watch([() => props.rows, searchQuery], ([newRows, newValue]) => {
@@ -300,7 +300,7 @@ onMounted(() => {
         value: 0
     });
 
-    tabCategories.value = categories.value.map((item) => item.text);
+    tabCategories.value = categories.value.map((item) => ({ key: item.text, title: item.text, disabled: false }));
 });
 
 const getCategoryFilteredRows = (category) => {
@@ -475,7 +475,7 @@ const checkAvailability = (row) => {
                     </Modal>
                 </template>
                 <template
-                    v-for="tab in tabCategories.map((item) => item.toLowerCase().replace(/[/\s_]+/g, '-'))"
+                    v-for="tab in tabCategories.map((item) => item.key.toLowerCase().replace(/[/\s_]+/g, '-'))"
                     :key="tab"
                     v-slot:[tab]
                 >

@@ -12,7 +12,10 @@ const props = defineProps ({
 })
 
 const rewards = ref([]);
-const tabs = ref(['Active', 'Redeemed']);
+const tabs = ref([
+    { key: 'Active', title: 'Active', disabled: false },
+    { key: 'Redeemed', title: 'Redeemed', disabled: false },
+]);
 
 const getTierRewards = async () => {
     try {

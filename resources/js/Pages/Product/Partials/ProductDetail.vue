@@ -62,7 +62,10 @@ const productItemsColumns = ref([
 const { flashMessage } = useCustomToast();
 const { exportToCSV } = useFileExport();
 
-const tabs = ref(["Sale Histories", "Redemption Histories"]);
+const tabs = ref([
+    { key: 'Sale Histories', title: 'Sale Histories', disabled: false },
+    { key: 'Redemption Histories', title: 'Redemption Histories', disabled: false },
+]);
 const product = ref(props.product);
 const saleHistories = ref(props.saleHistories);
 const saleHistoriesRowsPerPage = ref(16);

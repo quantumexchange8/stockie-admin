@@ -19,7 +19,11 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 const bill_discounts = ref([]);
-const tabs = ref(['Active', 'Inactive'])
+
+const tabs = ref([
+    { key: 'Active', title: 'Active', disabled: false },
+    { key: 'Inactive', title: 'Inactive', disabled: false }
+]);
 const isAddBillOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
@@ -168,7 +172,7 @@ onMounted(() => {
                 </span>
             </template>
             <template
-                v-for="tab in tabs.map((tab) => tab.toLowerCase())"
+                v-for="tab in tabs.map((tab) => tab.key.toLowerCase())"
                 :key="tab"
                 v-slot:[tab]
             >

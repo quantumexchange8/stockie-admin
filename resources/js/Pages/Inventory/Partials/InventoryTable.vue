@@ -64,7 +64,7 @@ const openStockFlowDetailItemModal = (product) => {
 
 const closeStockFlowDetailItemModal = () => {
     isStockFlowDetailModalOpen.value = false;
-    setTimeout(()=> selectedItem.value = '', 200);
+    setTimeout(()=> selectedItem.value = '', 400);
 }
 
 const checkedFilters = ref({

@@ -18,7 +18,14 @@ const props = defineProps({
 
 const historyDetailIsOpen = ref(false);
 const selectedRecord = ref(null);
-const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired', 'Extended', 'Deleted']);
+const tabs = ref([
+    { key: 'All', title: 'All', disabled: false },
+    { key: 'Keep', title: 'Keep', disabled: false },
+    { key: 'Served/Returned', title: 'Served/Returned', disabled: false },
+    { key: 'Expired', title: 'Expired', disabled: false },
+    { key: 'Extended', title: 'Extended', disabled: false },
+    { key: 'Deleted', title: 'Deleted', disabled: false },
+]);
 
 const formatHistoryStatus = (status) => {
     return status.toLowerCase().replace(/[/_]+/g, "-").replace(/^-+|-+$/g, " "); 
@@ -26,7 +33,7 @@ const formatHistoryStatus = (status) => {
 
 const tabsSlug = ref(
   tabs.value
-    .map((tab) => formatHistoryStatus(tab))
+    .map((tab) => formatHistoryStatus(tab.key))
     .filter((slug) => slug !== 'all')
 );
 

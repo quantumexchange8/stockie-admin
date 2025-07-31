@@ -41,10 +41,14 @@ const defaultLatest3Months = computed(() => {
 const date_filter = ref(defaultLatest3Months.value);  
 
 // arrays
-const tabs = ref(['Keep', 'Served/Returned', 'Expired']);
+const tabs = ref([
+    { key: 'Keep', title: 'Keep', disabled: false },
+    { key: 'Served/Returned', title: 'Served/Returned', disabled: false },
+    { key: 'Expired', title: 'Expired', disabled: false },
+]);
 const tranformedTabs = computed(() => {
     return tabs.value.map((tab) => {
-        return tab.toLowerCase().replace(/[/\s_]+/g,"-");
+        return tab.key.toLowerCase().replace(/[/\s_]+/g,"-");
     });
 });
 const selectedTab = ref(tranformedTabs.value[0]);

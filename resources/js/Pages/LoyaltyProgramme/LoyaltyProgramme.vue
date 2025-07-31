@@ -22,7 +22,10 @@ const home = ref({
 
 const { flashMessage } = useCustomToast();
 
-const tabs = ref(["Points", "Tier"]);
+const tabs = ref([
+    { key: 'Points', title: 'Points', disabled: false },
+    { key: 'Tier', title: 'Tier', disabled: false },
+]);
 const tiersRowsPerPage = ref(8);
 const redeemableItemsRowsPerPage = ref(8);
 

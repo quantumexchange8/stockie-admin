@@ -15,8 +15,10 @@ const props = defineProps({
     selectedTab: Number,
 })
 
-const tabs = ref(["Sales Transaction", "Refund Transaction"]);
-
+const tabs = ref([
+    { key: 'Sales Transaction', title: 'Sales Transaction', disabled: false },
+    { key: 'Refund Transaction', title: 'Refund Transaction', disabled: false },
+]);
 
 </script>
 

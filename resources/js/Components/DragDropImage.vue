@@ -92,7 +92,7 @@ const imageClasses = computed(() => [
                             class="!w-fit absolute top-[calc(50%)] group-hover:!z-10 hidden group-hover:flex"
                             v-else
                         >
-                            Change image
+                            {{ $t('public.action.change_image') }}
                         </Button>
                     </div>
                 </template>

@@ -56,7 +56,11 @@ const confirmRefundIsOpen = ref(false);
 const consolidateIsOpen = ref(false);
 const selectedVal = ref(null);
 const { formatAmount, formatDate } = transactionFormat();
-const tabs = ref(["Sales Detail", "Product Sold", "Payment Method"]);
+const tabs = ref([
+    { key: 'Sales Detail', title: 'Sales Detail', disabled: false },
+    { key: 'Product Sold', title: 'Product Sold', disabled: false },
+    { key: 'Payment Method', title: 'Payment Method', disabled: false },
+]);
 const op = ref(null);
 const docs_type = ref('sales_tranaction');
 const rowsPerPage = ref(5);

@@ -7,6 +7,7 @@ import DragDropImage from '../DragDropImage.vue';
 import { EditIcon } from '../Icons/solid';
 import TextInput from '../TextInput.vue';
 import Button from '../Button.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const emit = defineEmits(['close']);
 const isAccountDetailOpen = ref(false);
@@ -82,7 +83,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: 'Changes saved.',
+                    summary: wTrans('public.toast.changes_saved'),
                 });
             }, 200);
         },
@@ -102,7 +103,7 @@ const changeProfilePic = () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: 'You’ve successfully changed your profile picture.',
+                    summary: wTrans('public.toast.update_profile_image'),
                 });
             }, 200);
         },
@@ -130,7 +131,7 @@ const changeProfilePic = () => {
             <!-- </div> -->
             <div class="flex flex-col">
                 <p class="self-stretch text-primary-900 text-md font-medium  group-hover:text-primary-700">{{ userName }}</p>
-                <p class="self-stretch text-primary-950 text-xs font-normal  group-hover:text-primary-800">ID: {{ userRoleId }}</p>
+                <p class="self-stretch text-primary-950 text-xs font-normal  group-hover:text-primary-800">{{ $t('public.field.id') }}:  {{ userRoleId }}</p>
             </div>
         </div>
     </div>
@@ -141,7 +142,7 @@ const changeProfilePic = () => {
         :maxWidth="'md'"
         :closeable="true"
         :show="isAccountDetailOpen"
-        :title="'Account Detail'"
+        :title="$t('public.profile.account_detail')"
         @close="closeModal"
     >
         <form class="flex items-start gap-6 self-stretch" @submit.prevent="changeProfilePic">
@@ -154,11 +155,11 @@ const changeProfilePic = () => {
             />
             <div class="flex flex-col items-start flex-[1_0_0] divide-y divide-grey-100">
                 <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
-                    <span class="text-grey-600 items-center text-sm font-medium">ID</span>
+                    <span class="text-grey-600 items-center text-sm font-medium">{{ $t('public.field.id') }}</span>
                     <span class="text-grey-900 items-center text-md font-medium">{{ userRoleId }}</span>
                 </div>
                 <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
-                    <span class="text-grey-600 items-center text-sm font-medium">Password</span>
+                    <span class="text-grey-600 items-center text-sm font-medium">{{ $t('public.field.password') }}</span>
                     <div class="flex items-center gap-[5px]">
                         <template v-for="n in 8" :key="n">
                             <div class="size-2 bg-grey-900 rounded-full"></div>
@@ -167,7 +168,7 @@ const changeProfilePic = () => {
                 </div>
                 <div class="flex items-center gap-6 self-stretch">
                     <div class="w-full flex flex-col items-start gap-1 flex-[1_0_0] py-4">
-                        <span class="text-grey-600 items-center text-sm font-medium">Display name</span>
+                        <span class="text-grey-600 items-center text-sm font-medium">{{ $t('public.field.display_name') }}</span>
                         <span class="text-grey-900 items-center text-md font-medium">{{ userName }}</span>
                     </div>
                     <EditIcon 
@@ -180,7 +181,7 @@ const changeProfilePic = () => {
     </Modal>
 
     <Modal
-        :title="'Edit display name'"
+        :title="$t('public.profile.edit_display_name')"
         :show="isEditModalOpen"
         :maxWidth="'xs'"
         @close="closeEditModal('close')"
@@ -188,7 +189,7 @@ const changeProfilePic = () => {
         <form class="flex flex-col gap-6" @submit.prevent="submit">
             <TextInput
                 :inputName="'name'"
-                :labelText="'Display name'"
+                :labelText="$t('public.field.display_name')"
                 :errorMessage="form.errors?.name || ''"
                 v-model="form.name"
             />
@@ -199,13 +200,13 @@ const changeProfilePic = () => {
                     :size="'lg'"
                     @click="closeEditModal('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :size="'lg'"
                     :type="'submit'"
                 >
-                    Save
+                    {{ $t('public.action.save') }}
                 </Button>
             </div>
         </form>

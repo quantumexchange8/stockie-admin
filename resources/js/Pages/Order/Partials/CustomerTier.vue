@@ -31,7 +31,10 @@ const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close', 'fetchZones']);
 
-const tabs = ref(['Active', 'Redeemed']);
+const tabs = ref([
+    { key: 'Active', title: 'Active', disabled: false },
+    { key: 'Redeemed', title: 'Redeemed', disabled: false },
+]);
 const customer = ref(props.customer);
 const selectedCustomer = ref(null);
 const rewards = ref([]);

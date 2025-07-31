@@ -19,7 +19,14 @@ const props = defineProps({
     },
 });
 
-const tabs = ref(['All', 'Keep', 'Served/Returned', 'Expired', 'Edited', 'Extended', 'Deleted']);
+const tabs = ref([
+    { key: 'All', title: 'All', disabled: false },
+    { key: 'Keep', title: 'Keep', disabled: false },
+    { key: 'Served/Returned', title: 'Served/Returned', disabled: false },
+    { key: 'Expired', title: 'Expired', disabled: false },
+    { key: 'Extended', title: 'Extended', disabled: false },
+    { key: 'Deleted', title: 'Deleted', disabled: false },
+]);
 const keepHistory = ref([]);
 const isReactivateOpen = ref(false);
 const selectedItem = ref('');
@@ -89,7 +96,7 @@ const reactivateExpiredItems = () => {
 
 const tabsSlug = ref(
   tabs.value
-    .map((tab) => formatHistoryStatus(tab))
+    .map((tab) => formatHistoryStatus(tab.key))
     .filter((slug) => slug !== 'all')
 );
 

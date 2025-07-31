@@ -44,7 +44,10 @@ const billAmountKeyed = ref('0.00');
 const paymentMethodsUsed = ref(props.paymentTransactions);
 const appliedDiscounts = ref(props.billAppliedDiscounts);
 const hoveredDiscount = ref('');
-const tabs = ref(['Bill Discount', 'Tier Rewards']);
+const tabs = ref([
+    { key: 'Bill Discount', title: 'Bill Discount', disabled: false },
+    { key: 'Tier Rewards', title: 'Tier Rewards', disabled: false },
+]);
 
 const fetchBillDiscounts = async () => {
     try {

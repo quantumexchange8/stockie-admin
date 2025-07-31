@@ -39,8 +39,9 @@ return [
     "is_no_stock" => "is out of stock.",
     "product_affected" => "Product affected:",
     "view_stock" => "View Stock",
-    "check_in" => "Check-in",
-    "check_out" => "Check-out",
+    "checked_in" => "Checked in",
+    "checked_out" => "Checked out",
+    "no_record_yet" => "No Record Yet",
     "checked_in_at" => "Checked-in at",
     "checked_out_at" => "Checked-out at",
     "table_room_activity" => "Table / Room Activity",
@@ -55,9 +56,15 @@ return [
     "merge_table" => "Merge table",
     "transfer_table" => "Transfer table",
     "status" => "Status",
-    "cat" => [
-        "category" => "Category",
-    ],
+    "na" => "N/A",
+    "sales" => "Sales",
+    "left" => "left",
+    "left_header" => "Left",
+    "category" => "Category",
+    "week" => "Week",
+    "month" => "Month",
+    "year" => "Year",
+    "product_name" => "Product Name",
 
     // Input fields label name
     "field" => [
@@ -94,13 +101,16 @@ return [
         "take_me_back" => "Take me back",
         "refresh" => "Refresh",
         "go_to_homepage" => "Go to homepage",
+        "check_in_customer" => "Check-in customer",
     ],
 
     // Empty states' messages
     "empty" => [
-        "no_data" => "No data to show",
+        "no_data" => "No data can be shown yet...",
         "no_notification" => "No notification yet...",
         "no_result_found" => "We couldn't find any result...",
+        "no_activity" => "No activity can be shown yet...",
+        "no_reservation" => "You haven't added any reservation yet...",
     ],
 
     // Error pages' error messages
@@ -157,7 +167,15 @@ return [
         "waiter_attendance" => "Waiter Check in / out",
     ],
     "dashboard" => [
-        "cryptocurrency_market_price" => "Cryptocurrency",
+        "sales_today" => "Sales Today",
+        "products_sold_today" => "Products Sold Today",
+        "orders_today" => "Orders Today",
+        "low_in" => "Low in",
+        "active_table_room" => "Active Table / Room",
+        "on_duty_today" => "On Duty Today",
+        "product_low_stock" => "Product Low at Stock",
+        "today_reservation" => "Today's Reservation",
+        "at_today" => "at Today",
     ],
     "order" => [
         "cryptocurrency_market_price" => "Cryptocurrency",
