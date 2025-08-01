@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\WaiterAttendance;
 use App\Models\WaiterShift;
+use App\Notifications\WaiterCheckIn;
+use App\Notifications\WaiterCheckOut;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\RateLimiter;
@@ -593,6 +596,10 @@ class AttendanceController extends Controller
         RateLimiter::clear($this->throttleKey($user->passcode));
         $attendance = $this->createAttendance($user, $checkInTime);
 
+        $toBeNotified = User::where('position', 'admin')->get();
+
+        Notification::send($toBeNotified, new WaiterCheckIn($user->id, $checkInTime));
+
         return response()->json([
             'status' => 'success',
             'message' => "Are you ready to tackle the day? Let's make it a great one!",
@@ -741,6 +748,10 @@ class AttendanceController extends Controller
             $hoursWorked = sprintf('%02d', $shiftDuration->h);
             $surplasMinsWorked = sprintf('%02d', $shiftDuration->i);
             
+            $toBeNotified = User::where('position', 'admin')->get();
+
+            Notification::send($toBeNotified, new WaiterCheckOut($waiter->id, $checkOutAt));
+
             return response()->json([
                 'status' => 'success',
                 'message' => "You've worked {$hoursWorked} hrs {$surplasMinsWorked} mins today. Time to relax and recharge—you've earned it!",

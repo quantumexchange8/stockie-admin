@@ -11,15 +11,15 @@ class WaiterCheckOut extends Notification
 {
     use Queueable;
 
-    private $waiter;
+    private $waiterId;
     private $checkOut;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($waiter, $checkOut)
+    public function __construct($waiterId, $checkOut)
     {
-        $this->waiter = $waiter;
+        $this->waiterId = $waiterId;
         $this->checkOut = $checkOut;
     }
 
@@ -38,10 +38,11 @@ class WaiterCheckOut extends Notification
      *
      * @return array<string, mixed>
      */
-    public function toDatabase(object $notifiable): array
+    public function toArray(object $notifiable): array
     {
         return [
-            'data' => 'Checked out at ' . $this->checkOut . '.'
+            'waiter_id' => $this->waiterId,
+            'check_out' => $this->checkOut,
         ];
     }
     

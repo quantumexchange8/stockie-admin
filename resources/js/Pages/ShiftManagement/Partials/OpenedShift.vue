@@ -101,10 +101,14 @@ const closeModal = (action, status) => {
 }
 
 const showPayInfo = computed(() => {
-    return selectedShift.value 
-        && (selectedShift.value.shift_pay_histories.length > 0 
-            || selectedShift.value.net_sales > 0 
-            || selectedShift.value.status === 'closed');
+    return selectedShift.value
+        ? selectedShift.value && 
+            (
+                selectedShift.value.shift_pay_histories.length > 0 || 
+                selectedShift.value.net_sales > 0 || 
+                selectedShift.value.status === 'closed'
+            )
+        : false;
 });
 
 watch(() => props.currentSelectedShift, (newValue) => {
@@ -233,7 +237,7 @@ watch(form, (newValue) => (isDirty.value = newValue.isDirty));
     </div>   
 
     <Modal 
-        :title="selectedShift.status === 'opened' ? 'Pay in/out' : 'Pay in/out history'"
+        :title="selectedShift?.status === 'opened' ? 'Pay in/out' : 'Pay in/out history'"
         :show="payInOutShiftFormIsOpen" 
         :maxWidth="'md'" 
         :closeable="true" 

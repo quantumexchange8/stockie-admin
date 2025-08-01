@@ -21,6 +21,7 @@ import MergeTableForm from './MergeTableForm.vue';
 import TransferTableForm from './TransferTableForm.vue';
 import SplitTablesForm from './SplitTablesForm.vue';
 import TableKeepHistory from './TableKeepHistory.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -41,10 +42,10 @@ const { showMessage } = useCustomToast();
 const emit = defineEmits(['update:broadcast-message', 'fetchZones', 'close']);
 
 const tabs = ref([
-    { key: 'Order Detail', title: 'Order Detail', disabled: false },
-    { key: 'Pending Serve', title: 'Pending Serve', disabled: false },
-    { key: 'Customer Detail', title: 'Customer Detail', disabled: true }, 
-    { key: 'Payment History', title: 'Payment History', disabled: false }
+    { key: 'Order Detail', title: wTrans('public.order.order_detail'), disabled: false },
+    { key: 'Pending Serve', title: wTrans('public.order.pending_serve'), disabled: false },
+    { key: 'Customer Detail', title: wTrans('public.customer_detail'), disabled: true }, 
+    { key: 'Payment History', title: wTrans('public.order.payment_history'), disabled: false }
 ]);
 const currentTable = ref(props.selectedTable);
 const order = ref({});
@@ -657,7 +658,7 @@ onUnmounted(stop);
 
     <div class="flex flex-col gap-4 items-start rounded-[5px]">
         <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
-            <span class="text-primary-950 text-center text-md font-medium">Detail - {{ orderTableNames }}</span>
+            <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.order.detail') }} - {{ orderTableNames }}</span>
             <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer;handleTableLock()" />
         </div>
 
@@ -753,7 +754,7 @@ onUnmounted(stop);
                 <div class="flex justify-end px-3 gap-x-2.5 self-stretch">
                     <p class="self-stretch text-grey-900 text-md font-medium">
                         <!-- Total (excl. tax): RM  -->
-                        Total (excl. tax): RM 
+                        {{ $t('public.order.total_exclude_tax')  }}: RM 
                         {{ currentOrderTable.status === 'Pending Clearance' ?  '0.00' : order.amount }}
                         <!-- <span class="text-primary-800">{{ currentOrderTable.status !== 'Pending Clearance' && order.voucher ? ` > RM ${getVoucherDiscountedPrice(order.amount, order.voucher)}` : '' }}</span> -->
                     </p>
@@ -775,7 +776,7 @@ onUnmounted(stop);
                             :disabled="cancelOrderIsDisabled"
                             @click="showCancelOrderForm"
                         >
-                            Cancel Order
+                            {{ $t('public.action.cancel_order') }}
                         </Button>
                         <Button
                             size="lg"
@@ -784,7 +785,7 @@ onUnmounted(stop);
                             :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0 || !existingPermissions?.includes('free-up-table')"
                             @click="form.action_type = 'clear'"
                         >
-                            Free Up Table
+                            {{ $t('public.action.free_up_table') }}
                         </Button>
                     </div>
                     <Button
@@ -794,7 +795,7 @@ onUnmounted(stop);
                         class="w-full"
                         @click="openPaymentDrawer"
                     >
-                        Make Payment
+                        {{ $t('public.action.make_payment') }}
                     </Button>
                     <!-- <Button
                         type="button"

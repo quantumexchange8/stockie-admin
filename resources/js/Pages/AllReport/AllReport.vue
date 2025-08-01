@@ -16,11 +16,12 @@ import EmployeeEarning from './Partials/EmployeeEarning.vue';
 import { transactionFormat } from '@/Composables/index.js';
 import ProductSales from './Partials/ProductSales.vue';
 import CategorySales from './Partials/CategorySales.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const { formatAmount } = transactionFormat();
 
 const home = ref({
-    label: 'Report',
+    label: wTrans('public.all_report_header'),
 });
 
 const salesTypes = ref([

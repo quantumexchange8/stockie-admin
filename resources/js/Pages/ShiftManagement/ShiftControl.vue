@@ -18,9 +18,10 @@ const home = ref({
 const shiftTransactionsList = ref(props.shiftTransactions);
 const selectedShift = ref(null);
 
-watch(shiftTransactionsList, (newValue) => {
+watch(() => props.shiftTransactions, (newValue) => {
+    shiftTransactionsList.value = newValue;
     selectedShift.value = newValue.find((shift) => shift.status === 'opened') ?? null;
-}, { immediate: true })
+}, { immediate: true });
 
 </script>
 

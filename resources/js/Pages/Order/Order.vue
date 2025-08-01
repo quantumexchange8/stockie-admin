@@ -14,9 +14,10 @@ import OrderTables from './Partials/OrderTables.vue';
 import OrderHistory from './Partials/OrderHistory.vue';
 import { sidebarState } from '@/Composables';
 import { TransitionChild, TransitionRoot } from '@headlessui/vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const home = ref({
-    label: 'Order Management',
+    label: wTrans('public.order_management_header'),
 });
 
 const props = defineProps({
@@ -137,7 +138,7 @@ const filteredZones = computed(() => {
 </script>
 
 <template>
-    <Head title="Order Management" />
+    <Head :title="$t('public.order_management_header')" />
 
     <Toast />
 
@@ -149,7 +150,7 @@ const filteredZones = computed(() => {
         <div class="flex flex-col gap-6 justify-center p-1">
             <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 rounded-[5px]">
                 <SearchBar 
-                    :placeholder="'Search'"
+                    :placeholder="$t('public.search')"
                     :inputName="'searchbar'" 
                     :showFilter="false"
                     v-model="filters['global'].value"
@@ -165,7 +166,7 @@ const filteredZones = computed(() => {
                     <template #icon>
                         <SquareStickerIcon class="w-6 h-6" />
                     </template>
-                    View Order History
+                    {{ $t('public.order.view_order_history') }}
                 </Button>
                 <Button
                     :type="'button'"
@@ -177,7 +178,7 @@ const filteredZones = computed(() => {
                     <template #icon>
                         <ExpandIcon />
                     </template>
-                    Enter Full Screen
+                    {{ $t('public.order.enter_full_screen') }}
                 </Button>
             </div>
 
@@ -244,7 +245,7 @@ const filteredZones = computed(() => {
                                     <FlipBackwardIcon class="size-6 text-primary-900 " />
                                 </template>
                             </Button>
-                            <span class="text-primary-900 text-lg font-medium whitespace-nowrap">Order Management</span>
+                            <span class="text-primary-900 text-lg font-medium whitespace-nowrap">{{ $t('public.order_management_header') }}</span>
                         </div>
                         <div class="flex items-center gap-3 w-full min-[651px]:!w-fit">
                             <Button
@@ -258,7 +259,7 @@ const filteredZones = computed(() => {
                                 <template #icon>
                                     <SquareStickerIcon class="w-6 h-6" />
                                 </template>
-                                View Order History
+                                {{ $t('public.order.view_order_history') }}
                             </Button>
                         </div>
                     </div>
@@ -376,7 +377,7 @@ const filteredZones = computed(() => {
     <Modal 
         :maxWidth="'lg'" 
         :closeable="true"
-        :title="'Order History'"
+        :title="$t('public.order.order_history')"
         :show="orderHistoryIsOpen"
         @close="hideOrderHistory"
     >

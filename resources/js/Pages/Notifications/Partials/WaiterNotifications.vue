@@ -4,20 +4,43 @@ import Checkbox from '@/Components/Checkbox.vue';
 import DateInput from '@/Components/Date.vue';
 import { EmptyIllus, UndrawFreshIllust } from '@/Components/Icons/illus';
 import SearchBar from '@/Components/SearchBar.vue';
-import { ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
+import { wTrans } from 'laravel-vue-i18n';
+import dayjs from 'dayjs';
 
-const props = defineProps({
-    notifications: Object,
-})
-const notifications = ref(props.notifications);
-const originalData = ref(props.notifications);
-const tabs = ref(['Check-in', 'Check-out'])
+// const props = defineProps({
+//     notifications: Object,
+// })
+const originalData = ref([]);
+const notifications = ref([]);
+
+const tabs = ref([
+    { key: 'Checked in', title: wTrans('public.checked_in')},
+    { key: 'Checked out', title: wTrans('public.checked_out')},
+])
+
 const date_filter = ref('');
 const searchQuery = ref('');
 const checkedFilters = ref({
     date: '',
     category: [],
 })
+
+const getNotification = async (filters = []) => {
+    try {
+        const response = await axios.get('/notifications/filterNotification', {
+            method: 'GET',
+            params: {
+                checkedFilters: filters,
+            }
+        });
+        originalData.value = response.data;
+        notifications.value = response.data;
+
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 const toggleDateFilter = (date) => {
     checkedFilters.value.date.push(date)
@@ -74,9 +97,9 @@ const applyCheckedFilters = (close) => {
     if (checkedFilters.value.status.length > 0) {
         const statusKeywords = checkedFilters.value.status.map(status => {
             switch (status) {
-                case 'Check-in':
+                case 'Checked in':
                     return 'CheckIn';
-                case 'Check-out':
+                case 'Checked out':
                     return 'CheckOut';
                 default:
                     return null; // Handle unexpected status values
@@ -111,19 +134,23 @@ const calcTimeDiff = (created_at) => {
     }
 };
 
+onMounted(() => {
+    getNotification({ category: ['Waiter Check in / out'] });
+});
+
 watch(() => date_filter.value, () => toggleDateFilter(date_filter.value));
 
 watch(
     () => searchQuery.value,
     (newValue) => {
         if (newValue === '') {
-            notifications.value = [...props.notifications];
+            notifications.value = [...originalData.value];
             return;
         }
 
         const query = newValue.toLowerCase();
 
-        notifications.value = props.notifications.filter(notification => {
+        notifications.value = originalData.value.filter(notification => {
             const waiterName = notification.waiter_name?.toLowerCase() || '';
 
             return (
@@ -139,13 +166,13 @@ watch(
     <div class="flex flex-col p-6 w-full items-start gap-4 rounded-[5px] border border-solid border-primary-100">
         <SearchBar
             :showFilter="true"
-            :placeholder="'Search'"
+            :placeholder="$t('public.search')"
             v-model="searchQuery"
         >
             <template #default="{ hideOverlay }">
                 <div class="flex flex-col self-stretch gap-6 items-center">
                     <div class="flex flex-col items-center gap-4 self-stretch">
-                        <span class="text-grey-900 text-base font-semibold self-stretch">Date</span>
+                        <span class="text-grey-900 text-base font-semibold self-stretch">{{ $t('public.date') }}</span>
                         <DateInput
                             :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                             :range="true"
@@ -156,16 +183,16 @@ watch(
                     </div>
 
                     <div class="flex flex-col items-center gap-4 self-stretch">
-                        <span class="text-grey-900 text-base font-semibold self-stretch">Category</span>
+                        <span class="text-grey-900 text-base font-semibold self-stretch">{{ $t('public.category') }}</span>
                         <div class="flex justify-center items-start content-start gap-3 self-stretch flex-wrap">
                             <div v-for="(tab, index) in tabs" :key="index"
                                 class="flex py-2 px-3 gap-2 items-center border border-white rounded-[5px]"
                             >
                                 <Checkbox 
-                                    :checked="checkedFilters.category.includes(tab)"
-                                    @click="toggleCategory(tab)"
+                                    :checked="checkedFilters.category.includes(tab.key)"
+                                    @click="toggleCategory(tab.key)"
                                 />
-                                <span class="text-grey-700 text-sm font-medium">{{ tab }}</span>
+                                <span class="text-grey-700 text-sm font-medium">{{ tab.title }}</span>
                             </div>
                         </div>
                     </div>
@@ -178,20 +205,20 @@ watch(
                         :size="'lg'"
                         @click="clearFilters(hideOverlay)"
                     >
-                        Clear All
+                        {{ $t('public.action.clear_all') }}
                     </Button>
 
                     <Button
                         :size="'lg'"
                         @click="applyCheckedFilters(hideOverlay)"
                     >
-                        Apply
+                        {{ $t('public.action.apply') }}
                     </Button>
                 </div>
             </template>
         </SearchBar>
 
-        <div class="flex flex-col w-full items-start flex-[1_0_0 self-stretch] divide-y divide-grey-100" v-if="props.notifications">
+        <div class="flex flex-col w-full items-start flex-[1_0_0 self-stretch] divide-y divide-grey-100" v-if="originalData">
             <template v-for="notification in notifications">
                 <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                     <template v-if="notification.type.includes('Waiter')">
@@ -213,14 +240,14 @@ watch(
                                                     <span class="size-2 bg-green-600 rounded-full"></span>
                                                     <span class="line-clamp-1 text-primary-900 text-ellipsis text-xs font-medium">{{ notification.data.waiter_name }}</span>
                                                 </div>
-                                                <span class="text-grey-900 text-sm font-normal">Checked-in at
-                                                    <span class="text-grey-900 text-sm font-semibold">{{ notification.data.check_in }}.</span>
+                                                <span class="text-grey-900 text-sm font-normal">
+                                                    {{ $t('public.checked_in_at') }} <span class="text-grey-900 text-sm font-semibold">{{ dayjs(notification.data.check_in).format('hh:mmA') }}.</span>
                                                 </span>
                                             </div>
                                             <span class="text-grey-300 text-2xs font-normal whitespace-nowrap">{{ calcTimeDiff(notification.created_at) }}</span>
                                         </div>
 
-                                        <div class="flex items-start gap-[13px] self-stretch" v-if="notification.type.includes('CheckIn')">
+                                        <div class="flex items-start gap-[13px] self-stretch" v-if="notification.type.includes('CheckOut')">
                                             <div class="flex relative size-9">
                                                 <img 
                                                     :src="notification.data.waiter_image ? notification.data.waiter_image
@@ -234,8 +261,8 @@ watch(
                                                     <span class="size-2 bg-green-600 rounded-full"></span>
                                                     <span class="line-clamp-1 text-primary-900 text-ellipsis text-xs font-medium">{{ notification.data.waiter_name }}</span>
                                                 </div>
-                                                <span class="text-grey-900 text-sm font-normal">Checked-out at
-                                                    <span class="text-grey-900 text-sm font-semibold">{{ notification.data.check_out }}.</span>
+                                                <span class="text-grey-900 text-sm font-normal">
+                                                    {{ $t('public.checked_out_at') }} <span class="text-grey-900 text-sm font-semibold">{{ dayjs(notification.data.check_out).format('hh:mmA') }}.</span>
                                                 </span>
                                             </div>
                                             <span class="text-grey-300 text-2xs font-normal whitespace-nowrap">{{ calcTimeDiff(notification.created_at) }}</span>
@@ -252,11 +279,11 @@ watch(
         <div class="flex justify-center items-center gap-2.5 flex-[1_0_0] self-stretch h-dvh" v-if="!notifications.length">
             <div class="flex flex-col justify-center items-center gap-5" v-if="!checkedFilters.category.length && !checkedFilters.date && !searchQuery">
                 <UndrawFreshIllust />
-                <span class="text-primary-900 text-center text-sm font-medium">No notification yet...</span>
+                <span class="text-primary-900 text-center text-sm font-medium">{{ $t('public.empty.no_notification') }}</span>
             </div>
             <div class="flex flex-col justify-center items-center gap-5" v-else>
                 <EmptyIllus />
-                <span class="text-primary-900 text-center text-sm font-medium">We couldn't find any result...</span>
+                <span class="text-primary-900 text-center text-sm font-medium">{{ $t('public.empty.no_result_found') }}</span>
             </div>
         </div>
     </div>        

@@ -22,7 +22,7 @@ const props = defineProps({
     <div class="flex flex-col py-6 gap-6 items-end shrink-0 rounded-[5px] border border-solid border-primary-100">
         <div class="flex flex-col pl-3 items-start gap-[10px] self-stretch">
             <div class="flex pl-3 pr-6 justify-between items-center self-stretch">
-                <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Product Low at Stock</span>
+                <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.dashboard.product_low_stock') }}</span>
                 <Link :href="route('products')">
                     <CircledArrowHeadRightIcon2  
                         class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
@@ -42,7 +42,7 @@ const props = defineProps({
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </template>
                 <template #product_name="rows">
                     <div class="flex items-start gap-4 overflow-hidden">
@@ -68,7 +68,7 @@ const props = defineProps({
         <template v-else>
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </div>
         </template>
     </div>

@@ -15,7 +15,7 @@ const props = defineProps ({
     <div class="w-full h-full flex flex-col items-end gap-6 py-6 rounded-[5px] bg-gradient-to-br from-primary-900 from-[2.42%] to-[#5E0A0E] to-[102.62%] ">
         <div class="flex flex-col pl-4 items-start gap-[10px] self-stretch">
             <div class="flex pl-3 pr-6 justify-between items-center self-stretch rounded-tl-[5px] rounded-bl-[5px]">
-                <span class="flex flex-col justify-center flex-[1_0_0] text-primary-25 text-md font-medium">On Duty Today</span>
+                <span class="flex flex-col justify-center flex-[1_0_0] text-primary-25 text-md font-medium">{{ $t('public.dashboard.on_duty_today') }}</span>
             </div>
         </div>
         <div class="flex pl-6 justify-end items-center gap-[10px] self-stretch">
@@ -33,16 +33,20 @@ const props = defineProps ({
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
                                         <span class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ waiter.waiter_name }}</span>
                                         <template v-if="waiter.status !== 'No Record'">
-                                            <span class="text-grey-500 text-xs font-medium">at Today, {{ waiter.time }}</span>
+                                            <span class="text-grey-500 text-xs font-medium">{{ $t('public.dashboard.at_today') }}, {{ waiter.time }}</span>
                                         </template>
                                         <template v-else>
-                                            <span class="text-grey-500 text-xs font-medium">N/A</span>
+                                            <span class="text-grey-500 text-xs font-medium">{{ $t('public.na') }}</span>
                                         </template>
                                     </div>
                                 </div>
                                 <Tag
                                     :variant="waiter.status === 'Checked in' ? 'green' : waiter.status === 'Checked out' ? 'red' : 'grey'"
-                                    :value= waiter.status 
+                                    :value="waiter.status === 'Checked in' 
+                                            ? $t('public.checked_in') 
+                                            : waiter.status === 'Checked out' 
+                                                ? $t('public.checked_out') 
+                                                : $t('public.no_record_yet')"
                                 ></Tag>
                             </div>
                         </template>
@@ -50,7 +54,7 @@ const props = defineProps ({
                     <template v-else>
                         <div class="flex w-full flex-col items-center justify-center gap-5">
                             <UndetectableIllus />
-                            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                         </div>
                     </template>
                 </div>

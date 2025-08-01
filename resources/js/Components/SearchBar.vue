@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import Label from "@/Components/Label.vue";
 import HintText from "@/Components/HintText.vue";
 import InputError from "@/Components/InputError.vue";
@@ -39,7 +39,6 @@ const {
     errorMessage,
     inputType,
     hintText,
-    placeholder,
     disabled,
     showFilter,
 
@@ -48,6 +47,7 @@ const {
 
 
 const input = ref(null);
+const placeholderText = ref(props.placeholder);
 
 const focus = () => input.value?.focus();
 
@@ -68,6 +68,10 @@ onMounted(() => {
         input.value.focus();
     }
 });
+
+watch(() => props.placeholder, (newValue) => {
+    placeholderText.value = newValue;
+}, {immediate: true});
 
 </script>
 
@@ -133,7 +137,7 @@ onMounted(() => {
                     @input="$emit('update:modelValue', $event.target.value)"
                     ref="input"
                     :disabled="disabled"
-                    :placeholder="placeholder"
+                    :placeholder="placeholderText"
                 >
                     <button
                         type="button"

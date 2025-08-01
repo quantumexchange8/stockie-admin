@@ -251,7 +251,7 @@ onMounted(() => {
                                         aria-hidden="true" 
                                     />
                                 </button>
-                                <Menu as="div" class="relative inline-block text-left">
+                                <!-- <Menu as="div" class="relative inline-block text-left">
                                     <div>
                                         <MenuButton>
                                             <LanguageIcon class="text-primary-900 hover:text-primary-800"/>
@@ -299,7 +299,7 @@ onMounted(() => {
                                             </MenuItem>
                                         </MenuItems>
                                     </transition>
-                                </Menu>
+                                </Menu> -->
                                 <LogOutIcon 
                                     class="text-primary-900 cursor-pointer hover:text-primary-800"
                                     aria-hidden="true" 

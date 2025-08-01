@@ -3,13 +3,16 @@ import { EmptyActivityIllust, TableRoomActivityIllust } from '@/Components/Icons
 import { CircledArrowHeadRightIcon2 } from '@/Components/Icons/solid';
 import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, ref } from 'vue';
+import { useLangObserver } from '@/Composables';
 
 const props = defineProps({
     activeTables: {
         type: Array,
         required: true,
     }
-})
+});
+
+const { locale } = useLangObserver();
 const isLoading = ref(false);
 const activities = ref([]);
 
@@ -58,7 +61,7 @@ onMounted (() => {
     <div class="w-full h-full flex flex-col py-6 item-center rounded-[5px] border border-solid border-primary-100">
         <div class="w-full flex flex-col items-start gap-[10px] self-stretch">
             <div class="w-full flex justify-between px-6 items-center self-stretch ">
-                <span class="flex flex-col justify-between flex-[1_0_0] text-md font-medium text-primary-900 w-full">Table / Room Activity</span>
+                <span class="flex flex-col justify-between flex-[1_0_0] text-md font-medium text-primary-900 w-full">{{ $t('public.table_room_activity') }}</span>
                 <Link :href="route('orders')">
                         <CircledArrowHeadRightIcon2  
                             class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
@@ -78,7 +81,7 @@ onMounted (() => {
                 <div class="flex p-3 items-center gap-1 flex-[1_0_0] w-[270px] z-10">
                     <TableRoomActivityIllust class="flex-shrink-0"/>
                     <div class="flex flex-col justify-center items-start gap-[5px] flex-[1_0_0]">
-                        <span class="text-primary-950 text-xs font-normal text-nowrap">Active Table / Room: </span>
+                        <span class="text-primary-950 text-xs font-normal text-nowrap">{{ $t('public.dashboard.active_table_room') }} </span>
                         <div class="flex items-center gap-3 self-stretch">
                             <template v-for="(table, index) in props.activeTables" :key="index">
                                 <Link :href="route('orders')">
@@ -142,21 +145,22 @@ onMounted (() => {
                                         <span class="text-grey-300 text-2xs font-normal whitespace-nowrap">{{ calcTimeDiff(activity.created_at) }}</span>
                                     </div>
                                     <span class="text-grey-900 text-sm font-normal">
-                                        <template v-if= "activity.event === 'check in'">
-                                            New customer check-in by <span class="text-grey-900 text-sm font-semibold">{{ activity.properties.waiter_name }}</span>.    
+                                        <template v-if="activity.event === 'check in'">
+                                            <template v-if="locale === 'zh-Hans'">
+                                                <span class="text-grey-900 text-sm font-semibold">{{ activity.properties.waiter_name }}</span> {{ $t('public.customer_checked_in_by') }}.    
+                                            </template>
+                                            <template v-else>
+                                                {{ $t('public.customer_checked_in_by') }} <span class="text-grey-900 text-sm font-semibold">{{ activity.properties.waiter_name }}</span>.    
+                                            </template>
                                         </template>
                                         <template v-else-if="activity.event === 'assign to serve'">
-                                            Assigned 
-                                                <span class="text-grey-900 text-sm font-semibold">
-                                                    {{ activity.properties.waiter_name }}
-                                                </span>
-                                            to serve 
-                                                <span class="text-grey-900 text-sm font-semibold">
-                                                    {{ activity.properties.table_name }}
-                                                </span>.
+                                            {{ $t('public.assigned') }}
+                                            <span class="text-grey-900 text-sm font-semibold">{{ activity.properties.waiter_name }}</span>
+                                            {{ $t('public.to_serve') }}
+                                            <span class="text-grey-900 text-sm font-semibold">{{ activity.properties.table_name }}</span>.
                                         </template>
                                         <template v-else-if="activity.event === 'place to order'">
-                                            placed an order for <span class="text-grey-900 text-sm font-semibold">{{ activity.properties.table_name }}</span>.
+                                            {{ $t('public.placed_order_for') }} <span class="text-grey-900 text-sm font-semibold">{{ activity.properties.table_name }}</span>.
                                         </template>
                                         <template v-else>
                                             {{ activity.description }}
@@ -173,7 +177,7 @@ onMounted (() => {
         <template v-else>
             <div class="flex flex-col px-6 justify-center items-center gap-2.5 flex-[1_0_0] self-stretch md:overflow-hidden">
                 <EmptyActivityIllust class="flex-shrink-0" />
-                <span class="text-primary-900 text-sm font-medium text-center">No activity can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium text-center">{{ $t('public.empty.no_activity') }}</span>
             </div>
         </template>
     </div>

@@ -11,9 +11,10 @@ import OnDutyToday from './Partials/OnDutyToday.vue';
 import Toast from '@/Components/Toast.vue';
 import { useCustomToast } from '@/Composables';
 import TodayReservation from './Partials/TodayReservation.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const home = ref({
-    label: 'Dashboard',
+    label: wTrans('public.dashboard_header'),
 });
 
 const props = defineProps({
@@ -71,10 +72,10 @@ const reservationRowsPerPage = ref(10);
 const isLoading = ref(false);
 
 const stockColumn = ref([
-    { field: 'product_name', header: 'Product Name', width: '33', sortable: false},    
-    { field: 'category', header: 'Category', width: '25', sortable: false},
-    { field: 'item_name', header: 'Low in', width: '27', sortable: false},
-    { field: 'stock_qty', header: 'Left', width: '15', sortable: false},
+    { field: 'product_name', header: wTrans('public.product_name'), width: '33', sortable: false},    
+    { field: 'category', header: wTrans('public.category'), width: '25', sortable: false},
+    { field: 'item_name', header: wTrans('public.dashboard.low_in'), width: '27', sortable: false},
+    { field: 'stock_qty', header: wTrans('public.left_header'), width: '15', sortable: false},
 ])
 
 const reservationColumns = ref([
@@ -143,7 +144,7 @@ onMounted(async()=> {
 
 <template>
 
-    <Head title="Dashboard" />
+    <Head :title="$t('public.dashboard_header')" />
 
     <AuthenticatedLayout>
         <template #header>

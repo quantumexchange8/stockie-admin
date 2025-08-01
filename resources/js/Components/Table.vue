@@ -383,7 +383,7 @@ watch(paginatedRows, (newValue) => {
             <template #empty>
                 <slot name="empty">
                     <UndetectableIllus/>
-                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium pb-5">{{ $t('public.empty.no_data') }}</span>
                 </slot>
             </template>
 
@@ -519,12 +519,12 @@ watch(paginatedRows, (newValue) => {
 
             <template #paginatorstart>
                 <div class="text-xs font-medium text-grey-500">
-                    Showing: <span class="text-grey-900">{{ props.totalPages === 0 ? 0 : currentPage }} of {{ props.totalPages }}</span>
+                    {{ $t('public.showing') }}: <span class="text-grey-900">{{ props.totalPages === 0 ? 0 : currentPage }} of {{ props.totalPages }}</span>
                 </div>
             </template>
             <template #paginatorend>
                 <div class="flex justify-center items-center gap-2 text-xs font-medium text-grey-900 whitespace-nowrap">
-                    Go to Page: 
+                    {{ $t('public.go_to_page') }}: 
                     <TextInput
                         :inputName="'go_to_page'"
                         :placeholder="'eg: 12'"
@@ -703,7 +703,7 @@ watch(paginatedRows, (newValue) => {
                 <div v-if="$slots.empty && paginatedRows.length === 0" class="col-span-full">
                     <slot name="empty">
                         <UndetectableIllus/>
-                        <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium pb-5">{{ $t('public.empty.no_data') }}</span>
                     </slot>
                 </div>
             </div>
@@ -785,12 +785,12 @@ watch(paginatedRows, (newValue) => {
         >
             <template #start>
                 <div class="text-xs font-medium text-grey-500">
-                    Showing: <span class="text-grey-900">{{ props.totalPages === 0 ? 0 : currentPage }} of {{ props.totalPages }}</span>
+                    {{ $t('public.showing') }}: <span class="text-grey-900">{{ props.totalPages === 0 ? 0 : currentPage }} of {{ props.totalPages }}</span>
                 </div>
             </template>
             <template #end>
                 <div class="flex justify-center items-center gap-2 text-xs font-medium text-grey-900 whitespace-nowrap">
-                    Go to Page: 
+                    {{ $t('public.go_to_page') }}: 
                     <TextInput
                         :inputName="'go_to_page'"
                         :placeholder="'eg: 12'"

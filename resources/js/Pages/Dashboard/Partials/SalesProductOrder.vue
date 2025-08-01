@@ -35,7 +35,7 @@ const props = defineProps({
         <div class="w-full h-full flex flex-col p-6 items-start gap-3 rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-gradient-to-br from-primary-900 from-[2.42%] to-[#5E0A0E] to-[102.62%]">
             <SalesTodayIcon class="flex-shrink-0 size-[60px]" />
             <div class="flex flex-col items-start gap-1.5 self-stretch">
-                <span class="text-primary-200 text-xs font-normal">Sales Today</span>
+                <span class="text-primary-200 text-xs font-normal">{{ $t('public.dashboard.sales_today') }}</span>
                 <div class="flex justify-center items-center">
                     <span class="text-primary-25 text-base font-semibold whitespace-nowrap">RM {{ parseFloat(props.sales).toFixed(2) }}</span>
                 </div>
@@ -56,7 +56,7 @@ const props = defineProps({
         <div class="w-full h-full flex flex-col p-6 items-start gap-3 rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
             <ProductSoldToday class="flex-shrink-0 size-[60px]" />
             <div class="flex flex-col items-start gap-1.5 self-stretch">
-                <span class="text-grey-900 text-xs font-medium">Products Sold Today</span>
+                <span class="text-grey-900 text-xs font-medium">{{ $t('public.dashboard.products_sold_today') }}</span>
                 <div class="flex justify-center items-center gap-[13.333px]">
                     <span class="text-primary-900 text-base font-semibold">{{ props.productSold }}</span>
                 </div>
@@ -77,7 +77,7 @@ const props = defineProps({
         <div class="w-full h-full flex flex-col p-6 items-start gap-3 rounded-[5px] border-[1.333px] border-solid border-primary-100 bg-[rgba(255,255,255,0.60)]">
             <OrderToday class="flex-shrink-0 size-[60px]" />
             <div class="flex flex-col items-start gap-1.5 self-stretch">
-                <span class="text-grey-900 text-xs font-medium">Order Today</span>
+                <span class="text-grey-900 text-xs font-medium">{{ $t('public.dashboard.orders_today') }}</span>
                 <div class="flex justify-center items-center gap-[13.333px]">
                     <span class="text-primary-900 text-base font-semibold">{{ props.order }}</span>
                 </div>

@@ -125,7 +125,7 @@ const paxInputValidation = (event) => {
     <form novalidate @submit.prevent="formSubmit">
         <div class="flex flex-col gap-9 w-[370px]">
             <div class="flex items-center justify-between">
-                <span class="text-primary-950 text-center text-md font-medium">Assign Seat</span>
+                <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.assign_seat') }}</span>
                 <TimesIcon
                     class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                     @click="$emit('close')"
@@ -136,7 +136,7 @@ const paxInputValidation = (event) => {
                 <div class="flex flex-nowrap justify-between gap-6">
                     <p class="text-xl font-bold text-primary-900">{{ selectedTableName }}</p>
                     <div class="flex items-center justify-end gap-3">
-                        <p class="text-base text-grey-900 font-normal">Merge table</p>
+                        <p class="text-base text-grey-900 font-normal">{{ $t('public.merge_table') }}</p>
                         <Toggle
                             :inputName="'merge_table'"
                             :checked="form.merge_table"
@@ -149,7 +149,7 @@ const paxInputValidation = (event) => {
                     <MultiSelect 
                         v-if="form.merge_table"
                         inputName="table_no"
-                        labelText="Table Merged"
+                        :labelText="$t('public.field.table_merged')"
                         placeholder="Select"
                         class="col-span-full sm:col-span-6"
                         :inputArray="tablesArr"
@@ -161,15 +161,15 @@ const paxInputValidation = (event) => {
                     <TextInput
                         :inputType="'number'"
                         :inputName="'pax'"
-                        :labelText="'No. of pax'"
-                        :placeholder="'No. of pax'"
+                        :labelText="$t('public.no_of_pax')"
+                        :placeholder="$t('public.no_of_pax')"
                         :errorMessage="form.errors?.pax || ''"
                         v-model="form.pax"
                     />
                     <Dropdown
                         imageOption
                         :inputName="'assigned_waiter'"
-                        :labelText="'Assign Waiter'"
+                        :labelText="$t('public.field.assign_waiter')"
                         :inputArray="waiters"
                         :errorMessage="form.errors?.assigned_waiter || ''"
                         v-model="form.assigned_waiter"
@@ -184,13 +184,13 @@ const paxInputValidation = (event) => {
                     :size="'lg'"
                     @click="$emit('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :size="'lg'"
                     :disabled="!isFormValid"
                 >
-                    Done
+                    {{ $t('public.action.done') }}
                 </Button>
             </div>
         </div>

@@ -152,7 +152,7 @@ const getOptionData = (value) => {
             v-model="localValue" 
             :options="options" 
             :filter="props.filter"
-            :placeholder="placeholder" 
+            :placeholder="placeholder === 'Select' ? $t('public.select') : placeholder" 
             :ariaLabelledby="inputName"
             :disabled="disabled"
             :optionGroupLabel="grouped ? 'group_name' : null"

@@ -14,92 +14,92 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        $notifications = auth()->user()->notifications;
+        // $notifications = auth()->user()->notifications;
 
-        $processedNotifications = $notifications->map(function ($notification) {
-            $type = $notification->type;
+        // $processedNotifications = $notifications->map(function ($notification) {
+        //     $type = $notification->type;
     
-            //type contains Inventory = Inventory type notification
-            if (str_contains($type, 'Inventory')) {
+        //     //type contains Inventory = Inventory type notification
+        //     if (str_contains($type, 'Inventory')) {
 
-                $inventoryData = $notification->data;
-                if (str_contains($type, 'Inventory')) {
-                    $inventoryData = $notification->data;
+        //         $inventoryData = $notification->data;
+        //         if (str_contains($type, 'Inventory')) {
+        //             $inventoryData = $notification->data;
             
-                    if (isset($inventoryData['inventory_id'])) {
-                        $inventoryId = $inventoryData['inventory_id'];
+        //             if (isset($inventoryData['inventory_id'])) {
+        //                 $inventoryId = $inventoryData['inventory_id'];
             
-                        // Fetch all product items related to the inventory item
-                        $productItems = ProductItem::with('product.category')
-                            ->where('inventory_item_id', $inventoryId)
-                            ->get();
+        //                 // Fetch all product items related to the inventory item
+        //                 $productItems = ProductItem::with('product.category')
+        //                     ->where('inventory_item_id', $inventoryId)
+        //                     ->get();
             
-                        $inventoryData['product_image'] = [];
-                        $inventoryData['redeem_item_image'] = [];
-                        $inventoryData['categories'] = [];
+        //                 $inventoryData['product_image'] = [];
+        //                 $inventoryData['redeem_item_image'] = [];
+        //                 $inventoryData['categories'] = [];
             
-                        foreach ($productItems as $productItem) {
-                            $product = $productItem->product;
-                            if ($product) {
-                                // Add product images if available
-                                $productImage = $product->getFirstMediaUrl('product');
-                                $inventoryData['product_image'][] = $productImage ?? null;
+        //                 foreach ($productItems as $productItem) {
+        //                     $product = $productItem->product;
+        //                     if ($product) {
+        //                         // Add product images if available
+        //                         $productImage = $product->getFirstMediaUrl('product');
+        //                         $inventoryData['product_image'][] = $productImage ?? null;
 
             
-                                // Add categories if available
-                                if ($product->category) {
-                                    $inventoryData['categories'][] = $product->category->name;
-                                }
-                            }
+        //                         // Add categories if available
+        //                         if ($product->category) {
+        //                             $inventoryData['categories'][] = $product->category->name;
+        //                         }
+        //                     }
                             
-                            // Add redeem item images
-                            if ($product->is_redeemable) {
-                                $redeemImage = $product->getFirstMediaUrl('product');
-                                $inventoryData['redeem_item_image'][] = $redeemImage ?? null;
-                            }
+        //                     // Add redeem item images
+        //                     if ($product->is_redeemable) {
+        //                         $redeemImage = $product->getFirstMediaUrl('product');
+        //                         $inventoryData['redeem_item_image'][] = $redeemImage ?? null;
+        //                     }
 
-                        }
+        //                 }
             
-                        // Assign back to notification
-                        $notification->data = $inventoryData;
-                    }
-                }
+        //                 // Assign back to notification
+        //                 $notification->data = $inventoryData;
+        //             }
+        //         }
 
-            //type contains Waiter = Waiter check in check out notification
-            } elseif (str_contains($type, 'Waiter')) {
-                $notification->extra = 'This is waiter check in check out notification';
+        //     //type contains Waiter = Waiter check in check out notification
+        //     } elseif (str_contains($type, 'Waiter')) {
+        //         $notification->extra = 'This is waiter check in check out notification';
 
-            //type contains Order = Table / Room Activities notification
-            } elseif (str_contains($type, 'Order')) {
-                $orderData = $notification->data;
+        //     //type contains Order = Table / Room Activities notification
+        //     } elseif (str_contains($type, 'Order')) {
+        //         $orderData = $notification->data;
 
-                if(isset($orderData['waiter_id'])){
-                    $waiter = User::find($orderData['waiter_id']);
-                    if($waiter){
-                        $orderData['waiter_image'] = $waiter->getFirstMediaUrl('user');
-                        $orderData['waiter_name'] = $waiter->full_name;
-                    }
-                }
-                if(isset($orderData['assigner_id'])){
-                    $assigner = User::find($orderData['assigner_id']);
-                    if($assigner){
-                        $orderData['assigner_image'] = $assigner->getFirstMediaUrl('user');
-                        $orderData['assigner_name'] = $assigner->full_name;
-                    }
-                }
+        //         if(isset($orderData['waiter_id'])){
+        //             $waiter = User::find($orderData['waiter_id']);
+        //             if($waiter){
+        //                 $orderData['waiter_image'] = $waiter->getFirstMediaUrl('user');
+        //                 $orderData['waiter_name'] = $waiter->full_name;
+        //             }
+        //         }
+        //         if(isset($orderData['assigner_id'])){
+        //             $assigner = User::find($orderData['assigner_id']);
+        //             if($assigner){
+        //                 $orderData['assigner_image'] = $assigner->getFirstMediaUrl('user');
+        //                 $orderData['assigner_name'] = $assigner->full_name;
+        //             }
+        //         }
 
-                $notification->data = $orderData;
-            } else {
-                // Default action for unrecognized types
-                $notification->extra = 'Unknown type';
-            }
+        //         $notification->data = $orderData;
+        //     } else {
+        //         // Default action for unrecognized types
+        //         $notification->extra = 'Unknown type';
+        //     }
     
-            return $notification; 
-        });
+        //     return $notification; 
+        // });
 
 
         return Inertia::render("Notifications/Notifications", [
-            'notifications' => $processedNotifications,
+            // 'notifications' => $processedNotifications,
         ]);
     }
 
@@ -151,7 +151,7 @@ class NotificationController extends Controller
         }
         
         // Retrieve filtered notifications
-        $filteredNotifications = $query->get();
+        $filteredNotifications = $query->orderBy('created_at')->get();
 
         $processedNotifications = $filteredNotifications->map(function ($notification) {
             $type = $notification->type;
@@ -207,7 +207,15 @@ class NotificationController extends Controller
 
             //type contains Waiter = Waiter check in check out notification
             } elseif (str_contains($type, 'Waiter')) {
-                $notification->extra = 'This is waiter check in check out notification';
+                $attendanceData = $notification->data;
+
+                $waiter = User::find($attendanceData['waiter_id']);
+                if($waiter){
+                    $attendanceData['waiter_image'] = $waiter->getFirstMediaUrl('user');
+                    $attendanceData['waiter_name'] = $waiter->full_name;
+                }
+
+                $notification->data = $attendanceData;
 
             //type contains Order = Table / Room Activities notification
             } elseif (str_contains($type, 'Order')) {
@@ -305,6 +313,18 @@ class NotificationController extends Controller
         $waiterNotifications = $notifications->filter(function ($notification) {
             return str_contains($notification->type, 'Waiter');
         })->take(10);
+
+        foreach ($waiterNotifications as $waiterNotification) {
+            $attendanceData = $waiterNotification->data;
+
+            $waiter = User::find($attendanceData['waiter_id']);
+            if($waiter){
+                $attendanceData['waiter_image'] = $waiter->getFirstMediaUrl('user');
+                $attendanceData['waiter_name'] = $waiter->full_name;
+            }
+
+            $waiterNotification->data = $attendanceData;
+        }
 
         // auth()->user()->unreadNotifications->markAsRead();
         $allNotifications = $orderNotifications->count() + $inventoryNotifications->count() + $waiterNotifications->count();

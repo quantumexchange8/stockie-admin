@@ -282,18 +282,18 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
             <div class="flex flex-col items-start gap-y-4 py-4 self-stretch">
                 <div class="w-full flex flex-row gap-x-3 items-start">
                     <div class="basis-1/2 flex flex-col gap-2 items-start">
-                        <p class="text-grey-900 text-sm font-medium">Order No.</p>
+                        <p class="text-grey-900 text-sm font-medium">{{ $t('public.order_no') }}</p>
                         <p class="text-grey-800 text-md font-semibold" v-if="tableStatus !== 'Pending Clearance'">#{{ order.order_no }}</p>
                         <p class="text-grey-800 text-md font-semibold" v-else>--</p>
                     </div>
                     <div class="basis-1/2 flex flex-col gap-2 items-start">
-                        <p class="text-grey-900 text-sm font-medium">No. of pax</p>
+                        <p class="text-grey-900 text-sm font-medium">{{ $t('public.no_of_pax') }}</p>
                         <p class="text-grey-800 text-md font-semibold">{{ order.pax }}</p>
                     </div>
                 </div>
                 <div class="w-full flex flex-row gap-x-3 items-start">
                     <div class="basis-1/2 flex flex-col gap-2 items-start">
-                        <p class="text-grey-900 text-sm font-medium">Ordered by</p>
+                        <p class="text-grey-900 text-sm font-medium">{{ $t('public.order.ordered_by') }}</p>
                         <div class="flex whitespace-nowrap items-center gap-2">
                             <!-- <div class="size-6 bg-primary-100 rounded-full" v-for="user in orderedBy"></div> -->
                              <template v-for="user in orderedBy" >
@@ -308,7 +308,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         </div>
                     </div>
                     <div class="basis-1/2 flex flex-col gap-2 items-start">
-                        <p class="text-grey-900 text-sm font-medium">Customer</p>
+                        <p class="text-grey-900 text-sm font-medium">{{ $t('public.customer_header') }}</p>
                         <!-- <Dropdown
                             inputName="customer_id"
                             imageOption
@@ -341,7 +341,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                         tableStatus !== 'Pending Clearance' ? 'cursor-pointer' : 'cursor-not-allowed'
                                     ]"
                                 >
-                                    {{ orderCustomer?.full_name ?? 'Select' }}
+                                    {{ orderCustomer?.full_name ?? $t('public.select') }}
                                 </p>
                             </div>
                             <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -363,78 +363,83 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
             <div class="flex flex-col gap-3 items-center self-stretch">
                 <div class="flex flex-col gap-2 justify-start self-stretch">
                     <div class="flex items-center justify-between">
-                        <p class="text-primary-950 text-md font-medium">Pending Serve</p>
+                        <p class="text-primary-950 text-md font-medium">{{ $t('public.order.pending_serve') }}</p>
                         <button @click="showDeleteOrderItemOverlay($event, 'pending')">
                             <DeleteIcon class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"/>
                         </button>
                     </div>
                     <template v-if="pendingServeItems.length > 0">
                         <div class="flex flex-col divide-y-[0.5px] divide-grey-200">
-                            <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in pendingServeItems" :key="index">
+                            <div class="grid grid-cols-12 gap-3 items-start py-3" v-for="(item, index) in pendingServeItems" :key="index">
                                 <div class="col-span-1"><div class="size-[30px] flex items-center justify-center bg-primary-900 rounded-[5px] text-primary-25 text-2xs font-semibold">x{{ item.item_qty }}</div></div>
-                                <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
+                                <div class="col-span-8 grid grid-cols-12 gap-3 items-start">
                                     <!-- <div class="col-span-3 p-2 size-[60px] bg-primary-100 rounded-[1.5px] border-[0.3px] border-grey-100"></div> -->
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt="OrderItemImage"
-                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
+                                        class="col-span-3 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
                                     >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
-                                            <span class="text-primary-800">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Keep' ? getKeepItemName(item) : item.product.product_name }}
+                                            <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/> {{ item.type === 'Keep' ? getKeepItemName(item) : item.product.product_name }}
                                         </p>
-                                        <div class="flex flex-nowrap gap-2 items-center">
-                                            <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
-                                            <template v-if="item.type === 'Normal'">
+                                        <template v-if="item.type === 'Normal'">
+                                            <div class="flex flex-nowrap gap-2 items-center">
                                                 <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
                                                     <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
                                                     <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
                                                 </div>
                                                 <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
-                                            </template>
-                                            <Tag :value="getItemTypeName(item.type)" variant="blue" v-else/>
+                                            </div>
+                                        </template>
+                                        <div class="flex flex-nowrap gap-2 items-center">
+                                            <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
+                                                <span class="text-primary-800">({{ item.total_served_qty }}/{{ item.total_qty }})</span>
+                                            </p>
+                                            <Tag :value="getItemTypeName(item.type)" variant="blue" v-if="item.type !== 'Normal'"/>
                                         </div>
                                     </div>
                                 </div>
-                                <Button
-                                    type="button"
-                                    class="!w-fit col-span-3"
-                                    :disabled="form.processing"
-                                    @click="openOverlay($event, item)"
-                                >
-                                    Serve Now
-                                </Button>
+                                <div class="col-span-3 flex items-center h-full">
+                                    <Button
+                                        type="button"
+                                        class="!w-fit"
+                                        :disabled="form.processing"
+                                        @click="openOverlay($event, item)"
+                                    >
+                                        {{ $t('public.order.serve_now') }}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </template>
                     <template v-else>
-                        <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">No pending item to be served.</p>
+                        <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">{{ $t('public.empty.no_pending_item') }}</p>
                     </template>
                 </div>
 
                 <div class="flex flex-col gap-2 justify-start self-stretch">
                     <div class="flex items-center justify-between">
-                        <p class="text-primary-950 text-md font-medium">Served</p>
+                        <p class="text-primary-950 text-md font-medium">{{ $t('public.order_header') }}</p>
                         <button @click="showDeleteOrderItemOverlay($event, 'served')">
                             <DeleteIcon class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"/>
                         </button>
                     </div>
                     <template v-if="servedItems.length > 0">
                         <div class="flex flex-col divide-y-[0.5px] divide-grey-200">
-                            <div class="grid grid-cols-12 gap-3 items-center py-3" v-for="(item, index) in servedItems" :key="index">
+                            <div class="grid grid-cols-12 gap-3 items-start py-3" v-for="(item, index) in servedItems" :key="index">
                                 <div class="col-span-1"><div class="size-[30px] flex items-center justify-center bg-primary-900 rounded-[5px] text-primary-25 text-2xs font-semibold">x{{ item.item_qty }}</div></div>
-                                <div class="col-span-8 grid grid-cols-12 gap-3 items-center">
+                                <div class="col-span-8 grid grid-cols-12 gap-3 items-start">
                                     <img 
                                         :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt="OrderItemImage"
-                                        class="col-span-3 p-2 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
+                                        class="col-span-3 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
                                     >
                                     <div class="col-span-8 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
-                                            <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span> {{ item.type === 'Keep' ? getKeepItemName(item) : item.product.product_name }}
+                                            <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/> {{ item.type === 'Keep' ? getKeepItemName(item) : item.product.product_name }}
                                         </p>
                                         <div class="flex flex-nowrap gap-2 items-center">
-                                            <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/>
                                             <template v-if="item.type === 'Normal'">
                                                 <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
                                                     <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
@@ -442,7 +447,12 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                                 </div>
                                                 <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
                                             </template>
-                                            <Tag :value="getItemTypeName(item.type)" variant="blue" v-else/>
+                                            <template v-else>
+                                                <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
+                                                    <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span>
+                                                </p>
+                                                <Tag :value="getItemTypeName(item.type)" variant="blue"/>
+                                            </template>
                                         </div>
                                     </div>
                                 </div>
@@ -460,7 +470,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         </div>
                     </template>
                     <template v-else>
-                        <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">No item served.</p>
+                        <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">{{ $t('public.empty.no_item_added') }}</p>
                     </template>
                 </div>
 
@@ -518,7 +528,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
             <form novalidate @submit.prevent="formSubmit">
                 <div class="flex flex-col gap-6 w-[300px]">
                     <div class="flex items-center justify-between">
-                        <span class="text-primary-950 text-center text-md font-medium">Serve Now</span>
+                        <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.order.serve_now') }}</span>
                         <TimesIcon
                             class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                             @click="closeOverlay"
@@ -537,14 +547,14 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                                 {{ productItem.inventory_item.item_name }}
                                             </p>
                                             <div class="flex items-center gap-2 self-stretch text-primary-900 text-xs font-medium">
-                                                <p>Served:</p>
+                                                <p>{{ $t('public.order.served') }}:</p>
                                                 <p>{{ subItem.serve_qty }}/{{ totalSubItemQty(subItem) }}</p>
                                             </div>
                                         </div>
 
                                         <div class="grid grid-cols-12 items-center self-stretch">
                                             <p class="col-span-6 text-xs text-grey-900 font-medium">
-                                                Serve Now Quantity
+                                                {{ $t('public.order.serve_now_qty') }}
                                             </p>
                                             <NumberCounter
                                                 :inputName="`subItem_${subItem.id}.serving_qty`"
@@ -566,13 +576,13 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             :size="'lg'"
                             @click="closeOverlay"
                         >
-                            Cancel
+                            {{ $t('public.action.cancel') }}
                         </Button>
                         <Button
                             :size="'lg'"
                             :disabled="!isFormValid"
                         >
-                            Serve
+                            {{ $t('public.action.serve') }}
                         </Button>
                     </div>
                 </div>

@@ -14,6 +14,7 @@ import SearchBar from '@/Components/SearchBar.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import OrderReceipt from './OrderReceipt.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
 });
@@ -33,21 +34,21 @@ const receiptImage = ref(null);
 const searchQuery = ref('');
 
 const columns = ref([
-    {field: 'updated_at', header: 'Date & Time', width: '15', sortable: false},
-    {field: 'table_no', header: 'Table / Room', width: '14', sortable: false},
-    {field: 'order_no', header: 'Order No.', width: '11', sortable: false},
-    {field: 'total_amount', header: 'Total', width: '14', sortable: false},
-    {field: 'waiter.full_name', header: 'Order Completed By', width: '21', sortable: false},
-    {field: 'status', header: 'Order Status', width: '14', sortable: false},
+    {field: 'updated_at', header: wTrans('public.date_time'), width: '15', sortable: false},
+    {field: 'table_no', header: wTrans('public.order.table_room'), width: '14', sortable: false},
+    {field: 'order_no', header: wTrans('public.order_no'), width: '11', sortable: false},
+    {field: 'total_amount', header: wTrans('public.total'), width: '14', sortable: false},
+    {field: 'waiter.full_name', header: wTrans('public.order.order_completed_by'), width: '21', sortable: false},
+    {field: 'status', header: wTrans('public.order.order_status'), width: '14', sortable: false},
     {field: 'action', header: '', width: '11', sortable: false},
 ]);
 
 const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
 
 const orderStatuses = ref([
-    { text: 'All Orders', value: 'All Orders' },
-    { text: 'Order Completed', value: 'Order Completed' },
-    { text: 'Order Cancelled', value: 'Order Cancelled' }
+    { text: wTrans('public.order.all_orders'), value: 'All Orders' },
+    { text: wTrans('public.order.order_completed'), value: 'Order Completed' },
+    { text: wTrans('public.order.order_cancelled'), value: 'Order Cancelled' }
 ]);
 
 const statusfilter = (statusText) => {
@@ -151,7 +152,7 @@ const printInvoiceReceipt = () => {
     <div class="flex flex-col items-centers gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit h-full !max-h-[calc(100dvh-9rem)]">
         <div class="flex flex-wrap sm:flex-nowrap justify-between items-start gap-x-7 gap-y-6">
             <SearchBar
-                placeholder="Search"
+                :placeholder="$t('public.order.search_by_order')"
                 :showFilter="false"
                 v-model="searchQuery"
                 class="sm:max-w-[309px]"
@@ -217,7 +218,11 @@ const printInvoiceReceipt = () => {
                                 : row.status === 'Order Cancelled' 
                                     ? 'red'
                                     : 'blue'"
-                        :value="row.status"
+                        :value="row.status === 'Order Completed' 
+                                ? $t('public.order.order_completed') 
+                                : row.status === 'Order Cancelled' 
+                                    ? $t('public.order.order_cancelled')
+                                    : $t('public.order.order_merged')"
                     />
                 </template>
                 <template #action="row">
@@ -228,7 +233,7 @@ const printInvoiceReceipt = () => {
                         class="!w-fit col-span-3 hover:bg-primary-50"
                         @click="openOverlay($event, row)"
                     >
-                        Invoice
+                        {{ $t('public.order.invoice') }}
                     </Button>
                 </template>
             </Table>
@@ -253,7 +258,7 @@ const printInvoiceReceipt = () => {
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
                     @click="showOrderInvoiceModal"
                 >
-                    <span class="text-grey-700 font-normal">View</span>
+                    <span class="text-grey-700 font-normal">{{ $t('public.order.view') }}</span>
                 </Button>
                 <Button
                     type="button"
@@ -261,7 +266,7 @@ const printInvoiceReceipt = () => {
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
                     @click="printInvoiceReceipt"
                 >
-                    <span class="text-grey-700 font-normal">Print receipt</span>
+                    <span class="text-grey-700 font-normal">{{ $t('public.print_receipt') }}</span>
                 </Button>
             </div>
         </template>

@@ -3,6 +3,7 @@ import Button from '@/Components/Button.vue';
 import { Error404Illust, Error408Illust, Error503Illust, WarningReIllust, NatureFunIllust, ServerDownIllust } from '@/Components/Icons/illus';
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue'
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({ status: Number })
 
@@ -40,29 +41,29 @@ const title = computed(() => {
 
 const subtitle = computed(() => {
     return {
-        404: 'Page does not exist',
-        408: 'Connection lost.',
-        400: 'That’s not quite right',
-        401: 'Access denied',
-        403: 'No peeking allowed',
-        429: 'slow down there!',
-        503: 'Caught us tidying up🔧',
-        500: 'Something went wrong',
-        502: 'Trouble on the bridge',
+        404: wTrans('public.error.error_404'),
+        408: wTrans('public.error.error_408'),
+        400: wTrans('public.error.error_400'),
+        401: wTrans('public.error.error_401'),
+        403: wTrans('public.error.error_403'),
+        429: wTrans('public.error.error_429'),
+        503: wTrans('public.error.error_503'),
+        500: wTrans('public.error.error_500'),
+        502: wTrans('public.error.error_502'),
     }[props.status]
 })
 
 const description = computed(() => {
     return {
-        404: `We can’t seem to find the page you’re looking for. <br> Meanwhile, please try again or go back to the previous page.`,
-        408: 'It seems like your internet is on a vacation⛱️. Please try to reconnect your Wi-Fi or refresh the page to see if it helps.',
-        400: 'It seems like your request got tangled up on its way here. Double-check the URL or try again.',
-        401: 'Looks like you’re trying to sneak in without a pass. Log in or provide the right credentials, and we’ll gladly open the gates for you.',
-        403: 'Seems like this area is off-limits. Check with your administrator if you think you should have access.',
-        429: 'You’ve been sending requests faster than we can keep up! We’ve temporarily paused to catch our breath. Please give it a moment, and try again soon. ',
-        503: 'Our developers are working hard to improve your experience with us. Sit back and have a sip of coffee ☕️, your journey will resume shortly.',
-        500: 'Our server ran into a hiccup while trying to process your request. We’re on it! In the meantime, feel free to refresh or come back later.',
-        502: 'We’re having a bit of trouble communicating with another server. It’s not you—it’s us. Hang tight, and we’ll get it fixed ASAP.',
+        404: wTrans('public.error.error_404_message'),
+        408: wTrans('public.error.error_408_message'),
+        400: wTrans('public.error.error_400_message'),
+        401: wTrans('public.error.error_401_message'),
+        403: wTrans('public.error.error_403_message'),
+        429: wTrans('public.error.error_429_message'),
+        503: wTrans('public.error.error_503_message'),
+        500: wTrans('public.error.error_500_message'),
+        502: wTrans('public.error.error_502_message'),
     }[props.status]
 })
 
@@ -110,21 +111,17 @@ const login = () => {
 <template>
     <Head :title=header />
 
-    <div class="w-full h-screen inline-flex justify-center pr-[87.36px] items-center gap-[110px]">
+    <div class="w-full h-screen inline-flex justify-center pr-16 lg:pr-[87.36px] items-center gap-20 lg:gap-28">
         
         <component :is="errorIllust" />
 
         <div class="flex flex-col items-start gap-[61px]">
             <div class="flex flex-col items-start gap-[33px]">
                 <div class="flex flex-col items-start self-stretch">
-                    <span class="text-primary-900 text-center max-h-[120px] text-[96px] not-italic font-extrabold tracking-[-1.92px] ">
-                        {{ title }}
-                    </span>
-                    <span class="self-stretch text-primary-900 text-[36px] not-italic font-medium">
-                        {{ subtitle }}
-                    </span>
+                    <span class="text-primary-900 text-center max-h-[120px] text-[48px] sm:text-[60px] md:text-[72px] lg:text-[96px] not-italic font-extrabold tracking-[-1.92px] ">{{ title }}</span>
+                    <span class="self-stretch text-primary-900 text-md sm:text-xl md:text-[36px] not-italic font-medium">{{ subtitle }}</span>
                 </div>
-                <span v-html="description" class="text-grey-900 text-base font-normal max-w-[440px]"></span>
+                <span class="text-grey-900 text-base font-normal max-w-[440px]">{{ description }}</span>
             </div>
 
             <div class="flex items-start gap-4">
@@ -135,7 +132,7 @@ const login = () => {
                     v-if="props.status === 404"
                     class="!w-fit"
                 >
-                    Take me back
+                    {{ $t('public.action.take_me_back') }}
                 </Button>
 
                 <Button
@@ -149,7 +146,7 @@ const login = () => {
                             props.status === 502"
                     class="!w-fit"
                 >
-                    Refresh
+                    {{ $t('public.action.refresh') }}
                 </Button>
 
                 <Button
@@ -164,7 +161,7 @@ const login = () => {
                             props.status === 502"
                     class="!w-fit"
                 >
-                    {{ props.status === 403 ? 'Log out' : 'Go to home page' }}
+                    {{ props.status === 403 ? $t('public.action.logout') : $t('public.action.go_to_homepage') }}
                 </Button>
 
                 <Button
@@ -174,7 +171,7 @@ const login = () => {
                     v-if="props.status === 401"
                     class="!w-fit"
                 >
-                    Log in now
+                    {{ $t('public.action.login') }}
                 </Button>
             </div>
         </div>

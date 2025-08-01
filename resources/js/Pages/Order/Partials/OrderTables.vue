@@ -675,7 +675,7 @@ watch(drawerIsVisible, (newValue) => {
                 <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-grey-100 bg-white">
                     <span class="text-xs font-medium text-center text-primary-900">{{ getStatusCount('Empty Seat') }}</span>
                 </div>
-                <span class="text-grey-700 text-center text-sm font-normal">Empty</span>
+                <span class="text-grey-700 text-center text-sm font-normal">{{ $t('public.order.empty') }}</span>
             </div>
 
             <!-- Pending Order -->
@@ -691,7 +691,7 @@ watch(drawerIsVisible, (newValue) => {
                 <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-green-400 bg-green-500">
                     <span class="text-xs font-medium text-center text-white">{{ getStatusCount('Pending Order') + (getStatusCount('Order Placed')) + (getStatusCount('All Order Served')) }}</span>
                 </div>
-                <span class="text-grey-700 text-center text-sm font-normal">In use</span>
+                <span class="text-grey-700 text-center text-sm font-normal">{{ $t('public.order.in_use') }}</span>
             </div>
 
             <!-- Pending Clearance -->
@@ -699,7 +699,7 @@ watch(drawerIsVisible, (newValue) => {
                 <div class="flex size-7 justify-center items-center rounded-[3.889px] border border-solid border-orange-400 bg-orange-500">
                     <span class="text-xs font-medium text-center text-white">{{ getStatusCount('Pending Clearance') }}</span>
                 </div>
-                <span class="text-grey-700 text-center text-sm font-normal">Pending Clearance</span>
+                <span class="text-grey-700 text-center text-sm font-normal">{{ $t('public.order.pending_clearance') }}</span>
             </div>
 
             <!-- <Button
@@ -738,9 +738,9 @@ watch(drawerIsVisible, (newValue) => {
                                     <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
                                     <template v-if="table.status === 'Empty Seat'">
                                         <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                            <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                            <p class="text-white text-center font-semibold text-2xs">{{ $t('public.order.reserved') }}</p>
                                         </div>
-                                        <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                        <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                     </template>
                                 </div>
                                 <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
@@ -772,7 +772,7 @@ watch(drawerIsVisible, (newValue) => {
                                             <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
                                                 {{ getCurrentOrderTableDuration(table) }}
                                             </div>
-                                            <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
+                                            <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                         </div>
                                     </template>
                                     <template #footer>
@@ -805,9 +805,9 @@ watch(drawerIsVisible, (newValue) => {
                                         <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
                                         <template v-if="table.status === 'Empty Seat'">
                                             <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                                <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                                <p class="text-white text-center font-semibold text-2xs">{{ $t('public.order.reserved') }}</p>
                                             </div>
-                                            <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                            <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                         </template>
                                     </div>
                                     <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
@@ -838,7 +838,7 @@ watch(drawerIsVisible, (newValue) => {
                                     <div class="text-base text-grey-900 font-medium" v-if="table.status !== 'Empty Seat'">
                                         {{ getCurrentOrderTableDuration(table) }}
                                     </div>
-                                    <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} seats</div>
+                                    <div class="text-base text-grey-900 font-medium" v-else>{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                 </div>
                             </template>
                             <template #footer>
@@ -871,9 +871,9 @@ watch(drawerIsVisible, (newValue) => {
                                 <span v-if="table.order && table.status !== 'Pending Clearance'" :class="getTableClasses(table).amount">RM {{ table.order.amount }}</span>
                                 <template v-if="table.status === 'Empty Seat'">
                                     <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                        <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                        <p class="text-white text-center font-semibold text-2xs">{{ $t('public.order.reserved') }}</p>
                                     </div>
-                                    <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                    <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                 </template>
                             </div>
                             <div :class="getTableClasses(table).duration.value" v-if="table.status !== 'Empty Seat'">
@@ -892,7 +892,7 @@ watch(drawerIsVisible, (newValue) => {
                 <div class="flex flex-col items-center text-center gap-5" v-else>
                     <EmptyTableIllus />
                     <span class="text-primary-900 text-sm font-medium">
-                        You've to add a table/room before you can manage your order
+                        {{ $t('public.empty.add_table_room') }}
                     </span>
                     <Button
                         :href="route('table-room')"
@@ -900,7 +900,7 @@ watch(drawerIsVisible, (newValue) => {
                         size="lg"
                         class="!w-fit"
                     >
-                        Go to add
+                        {{ $t('public.action.go_to_add') }}
                     </Button>
                 </div>
             </template>
@@ -927,8 +927,8 @@ watch(drawerIsVisible, (newValue) => {
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <ShiftWorkerIcon />
                 <div class="flex flex-col gap-y-1 items-center">
-                    <span class="text-grey-950 text-md font-semibold">No shift has been opened yet</span>
-                    <span class="text-grey-950 text-sm font-normal">You’ll need to open a shift before you can place order.</span>
+                    <span class="text-grey-950 text-md font-semibold">{{ $t('public.empty.no_shift_opened') }}</span>
+                    <span class="text-grey-950 text-sm font-normal">{{ $t('public.empty.need_open_shift') }}</span>
                 </div>
                 <Button
                     :href="route('shift-management.control')"
@@ -936,7 +936,7 @@ watch(drawerIsVisible, (newValue) => {
                     :size="'lg'"
                     class="!w-fit"
                 >
-                    Open shift
+                    {{ $t('public.action.open_shift') }}
                 </Button>
             </div>
         </template>

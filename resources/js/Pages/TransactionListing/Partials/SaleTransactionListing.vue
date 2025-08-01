@@ -421,7 +421,7 @@ const printInvoiceReceipt = () => {
                         v-model="date_filter"
                     />
                 </div>
-                <div class="">
+                <!-- <div class="">
                     <Button
                         type="button"
                         variant="primary"
@@ -434,7 +434,7 @@ const printInvoiceReceipt = () => {
                         </template>
                         Consolidate
                     </Button>
-                </div>
+                </div> -->
             </div>
         </div>
         <div class="">
@@ -563,7 +563,7 @@ const printInvoiceReceipt = () => {
                                 :value="selectedVal.status === 'Successful' ? 'Completed' : 'Voided'" 
                             />
                         </div>
-                        <div @click="actionOption($event, row)"><DotVerticleIcon /></div>
+                        <div class="cursor-pointer" @click="actionOption($event, row)"><DotVerticleIcon /></div>
                     </div>
                     <div class="grid grid-cols-2 gap-5">
                         <div class="flex flex-col gap-1">

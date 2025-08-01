@@ -74,9 +74,9 @@ const Tag = external ? "a" : Link;
         :type="type"
         @click="handleClick"
         :disabled="disabled"
-        style="width: 103px; height: 44px"
+        style="width: 123px; height: 44px"
         :class="[
-            'w-[103px] max-h-[44px] px-4 py-3 flex justify-between items-center',
+            'w-[123px] max-h-[44px] px-4 py-3 flex justify-between items-center',
             ' text-primary-900 hover:!text-primary-800 active:text-primary-800 focus:text-primary-800',
             'bg-white hover:bg-[#FFF9F9] focus:bg-[#FFF1F2] active:bg-white',
             'rounded-tr-[5px] rounded-br-[5px] active:ring-0 border border-primary-900',
@@ -93,7 +93,7 @@ const Tag = external ? "a" : Link;
     >
         <div class="flex justify-center items-center gap-3">
             <FilterIcon class="w-5 h-5"/>
-            <span>Filter</span>
+            <span class="text-nowrap">{{ $t('public.filter') }}</span>
         </div>
     </button>
 
@@ -101,7 +101,7 @@ const Tag = external ? "a" : Link;
     <OverlayPanel ref="op" withArrow bgColor="bg-grey-100">
         <div class="flex flex-col gap-6 max-w-80">
             <div class="flex items-center justify-between">
-                <span class="text-primary-950 text-center text-md font-medium">Filter by</span>
+                <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.filter_by') }}</span>
                 <TimesIcon
                     class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                     @click="closeOverlay"

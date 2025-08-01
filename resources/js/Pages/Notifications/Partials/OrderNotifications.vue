@@ -4,20 +4,47 @@ import Checkbox from '@/Components/Checkbox.vue';
 import DateInput from '@/Components/Date.vue';
 import { EmptyIllus, UndrawFreshIllust } from '@/Components/Icons/illus';
 import SearchBar from '@/Components/SearchBar.vue';
-import { ref, watch } from 'vue';
+import { wTrans } from 'laravel-vue-i18n';
+import { onMounted, ref, watch } from 'vue';
+import { useLangObserver } from '@/Composables';
 
 const props = defineProps({
     notifications: Object,
 })
-const notifications = ref(props.notifications);
-const originalData = ref(props.notifications);
-const tabs = ref(['Customer check-in', 'Place order', 'Waiter Assignment'])
+const { locale } = useLangObserver();
+const originalData = ref([]);
+const notifications = ref([]);
+
+const tabs = ref([
+    { key: 'Customer check-in', title: wTrans('public.customer_check_in')},
+    { key: 'Place order', title: wTrans('public.place_order')},
+    { key: 'Waiter Assignment', title: wTrans('public.waiter_assignment')},
+    // { key: 'Merge table', title: wTrans('public.merge_table')},
+    // { key: 'Transfer table', title: wTrans('public.transfer_table')},
+])
+
 const date_filter = ref('');
 const searchQuery = ref('');
 const checkedFilters = ref({
     date: '',
     status: [],
 })
+
+const getNotification = async (filters = []) => {
+    try {
+        const response = await axios.get('/notifications/filterNotification', {
+            method: 'GET',
+            params: {
+                checkedFilters: filters,
+            }
+        });
+        originalData.value = response.data;
+        notifications.value = response.data;
+
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 const toggleDateFilter = (date) => {
     checkedFilters.value.date.push(date)
@@ -113,19 +140,23 @@ const calcTimeDiff = (created_at) => {
     }
 };
 
+onMounted(() => {
+    getNotification({ category: ['Table / Room Activity'] });
+});
+
 watch(() => date_filter.value, () => toggleDateFilter(date_filter.value));
 
 watch(
     () => searchQuery.value,
     (newValue) => {
         if (newValue === '') {
-            notifications.value = [...props.notifications];
+            notifications.value = [...originalData.value];
             return;
         }
 
         const query = newValue.toLowerCase();
 
-        notifications.value = props.notifications.filter(notification => {
+        notifications.value = originalData.value.filter(notification => {
             const notificationType = notification.type?.toLowerCase() || '';
             const waiterName = notification.data.waiter_name?.toLowerCase() || '';
             const tableNo = notification.data.table_no?.toString().toLowerCase() || '';
@@ -147,13 +178,13 @@ watch(
     <div class="flex flex-col p-6 w-full items-start gap-4 rounded-[5px] border border-solid border-primary-100">
         <SearchBar
             :showFilter="true"
-            :placeholder="'Search'"
+            :placeholder="$t('public.search')"
             v-model="searchQuery"
         >
             <template #default="{ hideOverlay }">
                 <div class="flex flex-col self-stretch gap-6 items-center">
                     <div class="flex flex-col items-center gap-4 self-stretch">
-                        <span class="text-grey-900 text-base font-semibold self-stretch">Date</span>
+                        <span class="text-grey-900 text-base font-semibold self-stretch">{{ $t('public.date') }}</span>
                         <DateInput
                             :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                             :range="true"
@@ -164,16 +195,16 @@ watch(
                     </div>
 
                     <div class="flex flex-col items-center gap-4 self-stretch">
-                        <span class="text-grey-900 text-base font-semibold self-stretch">Category</span>
+                        <span class="text-grey-900 text-base font-semibold self-stretch">{{ $t('public.status') }}</span>
                         <div class="flex justify-center items-start content-start gap-3 self-stretch flex-wrap">
                             <div v-for="(tab, index) in tabs" :key="index"
                                 class="flex py-2 px-3 gap-2 items-center border border-white rounded-[5px]"
                             >
                                 <Checkbox 
-                                    :checked="checkedFilters.status.includes(tab)"
-                                    @click="toggleStatus(tab)"
+                                    :checked="checkedFilters.status.includes(tab.key)"
+                                    @click="toggleStatus(tab.key)"
                                 />
-                                <span class="text-grey-700 text-sm font-medium">{{ tab }}</span>
+                                <span class="text-grey-700 text-sm font-medium">{{ tab.title }}</span>
                             </div>
                         </div>
                     </div>
@@ -186,20 +217,20 @@ watch(
                         :size="'lg'"
                         @click="clearFilters(hideOverlay)"
                     >
-                        Clear All
+                        {{ $t('public.action.clear_all') }}
                     </Button>
 
                     <Button
                         :size="'lg'"
                         @click="applyCheckedFilters(hideOverlay)"
                     >
-                        Apply
+                        {{ $t('public.action.apply') }}
                     </Button>
                 </div>
             </template>
         </SearchBar>
 
-        <div class="flex flex-col w-full items-start flex-[1_0_0 self-stretch] divide-y divide-grey-100" v-if="props.notifications">
+        <div class="flex flex-col w-full items-start flex-[1_0_0 self-stretch] divide-y divide-grey-100" v-if="originalData">
             <template v-for="notification in notifications">
                 <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                     <template v-if="notification.type.includes('Order')">
@@ -228,8 +259,13 @@ watch(
                                                     <span class="line-clamp-1 flex-[1_0_0] text-primary-900 text-ellipsis text-xs font-medium">{{ notification.data.table_no }}</span>
                                                     <span class="text-grey-300 text-2xs font-normal whitespace-nowrap">{{ calcTimeDiff(notification.created_at) }}</span>
                                                 </div>
-                                                <span class="text-grey-900 text-sm font-normal">New customer check-in by 
-                                                    <span class="text-grey-900 text-sm font-semibold">{{ notification.data.waiter_name }}.</span>
+                                                <span class="text-grey-900 text-sm font-normal">
+                                                    <template v-if="locale === 'zh-Hans'">
+                                                        <span class="text-grey-900 text-sm font-semibold">{{ notification.data.waiter_name }}</span> {{ $t('public.customer_checked_in_by') }}.
+                                                    </template>
+                                                    <template v-else>
+                                                        {{ $t('public.customer_checked_in_by') }} <span class="text-grey-900 text-sm font-semibold">{{ notification.data.waiter_name }}.</span>
+                                                    </template>
                                                 </span>
                                             </div>
                                         </div>
@@ -248,8 +284,8 @@ watch(
                                                     <span class="size-2 bg-green-600 rounded-full"></span>
                                                     <span class="line-clamp-1 text-primary-900 text-ellipsis text-xs font-medium">{{ notification.data.waiter_name }}</span>
                                                 </div>
-                                                <span class="text-grey-900 text-sm font-normal">placed an order for
-                                                    <span class="text-grey-900 text-sm font-semibold">{{ notification.data.table_no }}.</span>
+                                                <span class="text-grey-900 text-sm font-normal">
+                                                    {{ $t('public.placed_order_for') }} <span class="text-grey-900 text-sm font-semibold">{{ notification.data.table_no }}.</span>
                                                 </span>
                                             </div>
                                             <span class="text-grey-300 text-2xs font-normal whitespace-nowrap">{{ calcTimeDiff(notification.created_at) }}</span>
@@ -274,9 +310,10 @@ watch(
                                                 <div class="flex items-center gap-1 self-stretch">
                                                     <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-xs font-medium text-primary-900">{{ notification.data.assigner_name }}</span>
                                                 </div>
-                                                <span class="text-grey-900 text-sm font-normal">Assigned
+                                                <span class="text-grey-900 text-sm font-normal">
+                                                    {{ $t('public.assigned') }}
                                                     <span class="text-grey-900 text-sm font-semibold">{{ notification.data.waiter_name }}</span>
-                                                    to serve
+                                                    {{ $t('public.to_serve') }}
                                                     <span class="text-grey-900 text-sm font-semibold">{{ notification.data.table_no }}.</span>
                                                 </span>
                                             </div>
@@ -294,11 +331,11 @@ watch(
         <div class="flex justify-center items-center gap-2.5 flex-[1_0_0] self-stretch h-dvh" v-if="!notifications.length">
             <div class="flex flex-col justify-center items-center gap-5" v-if="!checkedFilters.status.length && !checkedFilters.date && !searchQuery">
                 <UndrawFreshIllust />
-                <span class="text-primary-900 text-center text-sm font-medium">No notification yet...</span>
+                <span class="text-primary-900 text-center text-sm font-medium">{{ $t('public.empty.no_notification') }}</span>
             </div>
             <div class="flex flex-col justify-center items-center gap-5" v-else>
                 <EmptyIllus />
-                <span class="text-primary-900 text-center text-sm font-medium">We couldn't find any result...</span>
+                <span class="text-primary-900 text-center text-sm font-medium">{{ $t('public.empty.no_result_found') }}</span>
             </div>
         </div>
     </div>        

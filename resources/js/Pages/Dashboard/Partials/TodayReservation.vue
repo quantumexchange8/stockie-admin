@@ -155,7 +155,7 @@ const closeOverlay = () => {
 <template>
     <div class="flex flex-col p-6 gap-y-6 items-center shrink-0 rounded-[5px] border border-solid border-primary-100">
         <div class="flex justify-between items-center self-stretch">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Today's Reservation</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.dashboard.today_reservation') }}</span>
             <Link :href="route('reservations')">
                 <CircledArrowHeadRightIcon2  
                     class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
@@ -257,7 +257,7 @@ const closeOverlay = () => {
                             :disabled="reservation.status === 'Checked in'"
                             @click.stop="openForm('check-in', reservation)"
                         >
-                            {{ reservation.status === 'Checked in' ?  'Customer checked-in' : 'Check-in customer' }}
+                            {{ reservation.status === 'Checked in' ?  'Customer checked-in' : $t('public.action.check_in_customer') }}
                         </Button>
                     </div>
                 </div>
@@ -265,7 +265,7 @@ const closeOverlay = () => {
 
             <div class="flex flex-col gap-5 items-center"  v-else>
                 <EmptyIllus />
-                <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_reservation') }}</span>
             </div>
         </div>
     

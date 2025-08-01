@@ -247,7 +247,7 @@ onMounted(() => {
 <template>
     <div class="flex flex-col p-6 items-start gap-8 rounded-[5px] border border-red-100 overflow-hidden min-h-[350px]">
         <div class="w-full flex justify-center items-center">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Sales</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.sales') }}</span>
             <div class="card flex flex-row flex-start gap-3">
                 <Button
                     :type="'button'"
@@ -261,7 +261,7 @@ onMounted(() => {
                         "
                     @click="setActive('week')"
                 >
-                    Week
+                    {{ $t('public.week') }}
                 </Button>
                 <Button
                     :type="'button'"
@@ -275,7 +275,7 @@ onMounted(() => {
                         "
                     @click="setActive('month')"
                 >
-                    Month
+                    {{ $t('public.month') }}
                 </Button>
                 <Button
                     :type="'button'"
@@ -289,7 +289,7 @@ onMounted(() => {
                         "
                     @click="setActive('year')"
                 >
-                    Year
+                    {{ $t('public.year') }}
                 </Button>
             </div>
         </div>
@@ -304,7 +304,7 @@ onMounted(() => {
         </div>
         <div class="flex flex-col w-full h-full justify-center items-center" v-else>
             <UndetectableIllus class="w-44 h-44"/>
-            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
         </div>
     </div>
 </template>
