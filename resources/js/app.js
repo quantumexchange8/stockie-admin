@@ -98,10 +98,10 @@ axios.interceptors.response.use(
             // CSRF token mismatch - refresh page
             window.location.reload();
         }
-        else if (status >= 500) {
-            // Server error - show notification
-            alert('Server Error! Please try again later');
-        }
+        // else if (status >= 500) {
+        //     // Server error - show notification
+        //     alert('Server Error! Please try again later');
+        // }
         
         return Promise.reject(error);
     }
