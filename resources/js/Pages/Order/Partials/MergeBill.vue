@@ -37,7 +37,7 @@ const hasVoucher = ref(props.currentHasVoucher);
 
 const form = useForm({
     id: props.currentTable.id,
-    customer_id: '',
+    customer_id: props.currentOrder?.customer_id ?? null,
     tables: [],
 });
 
@@ -84,7 +84,8 @@ const closeConfirm = () => {
 }
 
 const mergeTable = async () => {
-    form.customer_id = isSelectedCustomer.value?.id;
+    const selectedCustomer = isSelectedCustomer.value?.id ?? form.customer_id;
+    form.customer_id = selectedCustomer;
     
     const tables = zones.value.flatMap((zone) => zone.tables);
 

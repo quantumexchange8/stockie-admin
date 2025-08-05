@@ -373,6 +373,7 @@ const isValidated = computed(() => {
                 type="button"
                 size="lg"
                 class="!w-fit"
+                :disabled="form.processing"
                 @click="$emit('closeModal', 'leave')"
             >
                 Cancel & Exit
@@ -382,6 +383,7 @@ const isValidated = computed(() => {
                 type="button"
                 size="lg"
                 class="!w-fit"
+                :disabled="form.processing"
                 @click="reset"
             >
                 Reset

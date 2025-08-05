@@ -222,7 +222,7 @@ class TransactionController extends Controller
             $existingOrder = $transaction->order;
 
             if ($existingOrder) {
-                foreach ($existingOrder->orderItems as $item) {
+                foreach ($existingOrder['orderItems'] as $item) {
                     if ($item['type'] === 'Normal') {
                         foreach ($item->subItems as $subItem) {
                             $totalQtyReturned = 0;
@@ -239,7 +239,7 @@ class TransactionController extends Controller
 
                             if ($keepItems && $keepItems->count() > 0) {
                                 $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty) {
-                                    $ki->update(['status' => 'Deleted']); 
+                                    $inventoryItem = $ki->orderItemSubitem->productItem->inventoryItem;
     
                                     activity()->useLog('delete-kept-item')
                                                 ->performedOn($ki)
@@ -247,7 +247,7 @@ class TransactionController extends Controller
                                                 ->withProperties([
                                                     'edited_by' => auth()->user()->full_name,
                                                     'image' => auth()->user()->getFirstMediaUrl('user'),
-                                                    'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                    'item_name' => $inventoryItem->item_name,
                                                 ])
                                                 ->log(":properties.item_name is deleted.");
                                                 
@@ -256,11 +256,21 @@ class TransactionController extends Controller
                                         'qty' => $ki->qty,
                                         'cm' => number_format((float) $ki->cm, 2, '.', ''),
                                         'keep_date' => $ki->created_at,
+                                        'kept_balance' => $ki->qty > $ki->cm ? $inventoryItem->current_kept_amt - $ki->qty : $inventoryItem->current_kept_amt,
                                         'remark' => 'void',
                                         'user_id' => auth()->user()->id,
                                         'kept_from_table' => $ki->kept_from_table,
                                         'redeemed_to_table' => 'void',
                                         'status' => 'Deleted',
+                                    ]);
+
+                                    if ($ki->qty > $ki->cm) {
+                                        $inventoryItem->decrement('total_kept', $ki->qty);
+                                        $inventoryItem->decrement('current_kept_amt', $ki->qty);
+                                    }
+
+                                    $ki->update([
+                                        'status' => 'Deleted'
                                     ]);
 
                                     $totalQtyReturned += $ki->qty;
@@ -324,7 +334,7 @@ class TransactionController extends Controller
 
                             if ($keepItems && $keepItems->count() > 0) {
                                 $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty) {
-                                    $ki->update(['status' => 'Deleted']); 
+                                    $inventoryItem = $ki->orderItemSubitem->productItem->inventoryItem;
     
                                     activity()->useLog('delete-kept-item')
                                                 ->performedOn($ki)
@@ -332,7 +342,7 @@ class TransactionController extends Controller
                                                 ->withProperties([
                                                     'edited_by' => auth()->user()->full_name,
                                                     'image' => auth()->user()->getFirstMediaUrl('user'),
-                                                    'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                    'item_name' => $inventoryItem->item_name,
                                                 ])
                                                 ->log(":properties.item_name is deleted.");
                                                 
@@ -341,11 +351,21 @@ class TransactionController extends Controller
                                         'qty' => $ki->qty,
                                         'cm' => number_format((float) $ki->cm, 2, '.', ''),
                                         'keep_date' => $ki->created_at,
+                                        'kept_balance' => $ki->qty > $ki->cm ? $inventoryItem->current_kept_amt - $ki->qty : $inventoryItem->current_kept_amt,
                                         'remark' => 'void',
                                         'user_id' => auth()->user()->id,
                                         'kept_from_table' => $ki->kept_from_table,
                                         'redeemed_to_table' => 'void',
                                         'status' => 'Deleted',
+                                    ]);
+                                    
+                                    if ($ki->qty > $ki->cm) {
+                                        $inventoryItem->decrement('total_kept', $ki->qty);
+                                        $inventoryItem->decrement('current_kept_amt', $ki->qty);
+                                    }
+
+                                    $ki->update([
+                                        'status' => 'Deleted'
                                     ]);
 
                                     $totalQtyReturned += $ki->qty;

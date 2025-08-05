@@ -79,7 +79,7 @@ const tranformedTabs = computed(() => {
                         ]"
                     >
                         {{ tab.title }}
-                        <slot name="tabFooter" v-if="props.tabFooter === tab.key"></slot>
+                        <slot name="tabFooter" v-if="props.tabFooter?.key === tab.key"></slot>
                         <slot name="count" :tabs="tab.key" :selected="selected"></slot>
                     </button>
                 </Tab>

@@ -210,6 +210,7 @@ watch(
                         :type="'button'"
                         :variant="'tertiary'"
                         :size="'lg'"
+                        :disabled="form.processing"
                         @click="clearSelection"
                     >
                         Clear
@@ -220,6 +221,7 @@ watch(
                         :type="'button'"
                         :variant="'secondary'"
                         :size="'lg'"
+                        :disabled="form.processing"
                         @click="openModal"
                     >
                         Create New

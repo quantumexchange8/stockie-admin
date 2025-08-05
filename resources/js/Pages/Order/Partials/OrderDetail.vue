@@ -439,21 +439,21 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                         <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
                                             <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/> {{ item.type === 'Keep' ? getKeepItemName(item) : item.product.product_name }}
                                         </p>
-                                        <div class="flex flex-nowrap gap-2 items-center">
                                             <template v-if="item.type === 'Normal'">
-                                                <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
-                                                    <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
-                                                    <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                                <div class="flex flex-nowrap gap-2 items-center">
+                                                    <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
+                                                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-xs font-medium line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
+                                                        <span class="line-clamp-1 text-ellipsis text-primary-950 text-base font-medium ">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                                    </div>
+                                                    <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
                                                 </div>
-                                                <span class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink" v-else>RM {{ parseFloat(item.amount).toFixed(2) }}</span>
                                             </template>
-                                            <template v-else>
+                                            <div class="flex flex-nowrap gap-2 items-center">
                                                 <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
                                                     <span class="text-grey-600">({{ item.total_served_qty }}/{{ item.total_qty }})</span>
                                                 </p>
-                                                <Tag :value="getItemTypeName(item.type)" variant="blue"/>
-                                            </template>
-                                        </div>
+                                                <Tag :value="getItemTypeName(item.type)" variant="blue" v-if="item.type !== 'Normal'"/>
+                                            </div>
                                     </div>
                                 </div>
                                 <div class="col-span-3 flex flex-col justify-center items-end gap-2 self-stretch">

@@ -207,6 +207,7 @@ const isMerged = (targetTable) => {
 };
 
 const mergeTable = async () => {
+    form.processing = true;
     const selectedCustomer = isSelectedCustomer.value?.id ?? form.customer_id;
     form.customer_id = selectedCustomer;
     
@@ -250,7 +251,7 @@ const mergeTable = async () => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        form.processing = false;
     }
 }
 
@@ -271,8 +272,8 @@ const openConfirm = () => {
     });
 
     const isCheckedIn = form.tables.flatMap((table) => table.order_tables)
-                                    .filter((order_table) => !!order_table.order.customer_id)
-                                    .map((order_table) => order_table.order.customer_id);
+                                    .filter((order_table) => !!order_table.order?.customer_id)
+                                    .map((order_table) => order_table.order?.customer_id);
 
     isCheckedIn.push(props.currentOrderCustomer?.id);
     checkedIn.value = customers.value.filter((customer) =>
@@ -425,6 +426,7 @@ onMounted(() => {
                     :variant="'tertiary'"
                     :type="'button'"
                     :size="'lg'"
+                    :disabled="form.processing"
                     @click="emit('close')"
                 >
                     Cancel
@@ -433,6 +435,7 @@ onMounted(() => {
                     :variant="'primary'"
                     :type="'button'"
                     :size="'lg'"
+                    :disabled="form.processing"
                     @click="openConfirm()"
                 >
                     Confirm

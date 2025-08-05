@@ -1062,7 +1062,7 @@ class InventoryController extends Controller
                                         'keepItem.customer:id,full_name', 
                                         'keepItem.waiter:id,full_name'
                                     ])
-                                    ->whereIn('status', ['Keep', 'Served', 'Returned'])
+                                    ->whereIn('status', ['Keep', 'Served', 'Returned', 'Deleted'])
                                     ->whereColumn('qty', '>', 'cm')
                                     ->orderBy('created_at', 'desc')
                                     ->get()
@@ -1072,7 +1072,7 @@ class InventoryController extends Controller
                                             'keep_item' => $record->keepItem,
                                             'date' => $record->created_at,
                                             'kept' => $record->status === 'Keep' ? $record->qty : 0,
-                                            'reallocated' => in_array($record->status, ['Served', 'Returned']) ? $record->qty * -1 : 0,
+                                            'reallocated' => in_array($record->status, ['Served', 'Returned', 'Deleted']) ? $record->qty * -1 : 0,
                                             'kept_balance' => $record->kept_balance
                                         ];
                                     });

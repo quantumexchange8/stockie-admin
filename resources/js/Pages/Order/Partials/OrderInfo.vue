@@ -167,7 +167,7 @@ const handleTableLock = (action = 'unlock', auto = false) => {
             table_id_array: tableIdArray
         }, {
             preserveScroll: true,
-            preserveState: action === 'unlock' ? 'errors' : true,
+            preserveState: true,
             onSuccess: () => {
                 // showMessage({ 
                 //     severity: 'info',
@@ -537,7 +537,7 @@ const getVoucherDiscountedPrice = (subtotal, voucher) => {
 
 const cancelOrderIsDisabled = computed(() => {
 //    return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || currentTable.value.status === 'Pending Clearance';
-   return currentTable.value.status === 'Pending Clearance';
+   return currentTable.value.status === 'Pending Clearance' || form.processing;
 });
 
 const tableIsMerged = computed(() => {
@@ -782,7 +782,7 @@ onUnmounted(stop);
                             size="lg"
                             variant="tertiary"
                             class="col-span-1"
-                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0 || !existingPermissions?.includes('free-up-table')"
+                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0 || !existingPermissions?.includes('free-up-table') || form.processing"
                             @click="form.action_type = 'clear'"
                         >
                             {{ $t('public.action.free_up_table') }}
@@ -875,6 +875,7 @@ onUnmounted(stop);
                         variant="tertiary"
                         size="lg"
                         type="button"
+                        :disabled="form.processing"
                         @click="hideCancelOrderForm"
                     >
                         Keep

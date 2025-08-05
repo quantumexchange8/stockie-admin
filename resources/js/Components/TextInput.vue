@@ -52,7 +52,7 @@ const {
     errorMessage,
     inputType,
     hintText,
-    placeholder,
+    // placeholder,
     disabled,
     required
 } = props;
@@ -63,6 +63,7 @@ const emit = defineEmits(["update:modelValue", "blur"]);
 
 const input = ref(null);
 const inputLabel = ref('');
+const placeholderText = ref(props.placeholder);
 
 const focus = () => input.value?.focus();
 
@@ -132,6 +133,14 @@ watch(
     () => props.labelText,
     (newValue) => {
         inputLabel.value = newValue;
+    },
+    { immediate: true }
+);
+
+watch(
+    () => props.placeholder,
+    (newValue) => {
+        placeholderText.value = newValue;
     },
     { immediate: true }
 );
@@ -206,7 +215,7 @@ onMounted(() => {
                 :autocomplete="inputType === 'password' ? 'current-password' : ''"
                 :disabled="disabled"
                 :maxlength="maxlength"
-                :placeholder="placeholder"
+                :placeholder="placeholderText"
             />
             <span
                 v-if="inputType === 'password'"

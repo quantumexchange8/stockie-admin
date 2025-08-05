@@ -230,8 +230,8 @@ const closeModal = (status) => {
 }
 
 const closeAll = () => {
-    emit('close');
     emit('closeOrderDetails');
+    emit('close');
 };
 
 const mergeTable = async () => {
@@ -286,7 +286,7 @@ const toRemainTableNames = computed(() => {
 const tableToBeSplit = computed(() => {
     const splitTables = [];
 
-    form.tables_to_split.forEach((table) => {
+    form.tables_to_split?.forEach((table) => {
         splitTables.push(table.id)
     });
 
@@ -356,6 +356,7 @@ onMounted(() => {
                     :variant="'tertiary'"
                     :type="'button'"
                     :size="'lg'"
+                    :disabled="form.processing"
                     @click="emit('close')"
                 >
                     Cancel
@@ -364,7 +365,7 @@ onMounted(() => {
                     :variant="'primary'"
                     :type="'button'"
                     :size="'lg'"
-                    :disabled="form.tables.tables_to_split.length == 0"
+                    :disabled="form.tables.tables_to_split.length == 0 || form.processing"
                     @click="openConfirm()"
                 >
                     Confirm

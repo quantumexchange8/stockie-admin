@@ -255,39 +255,36 @@ class CustomerController extends Controller
             ]);
 
             foreach ($customer->keepItems as $key => $item) {
-                $item->update([
-                    'qty' => 0.00,
-                    'status' => 'Deleted'
-                ]);
+                $inventoryItem = $item->orderItemSubitem->productItem->inventoryItem;
+                $deletedKeepQty = $item->qty;
+                $isQtyType = $deletedKeepQty > $item->cm;
+                $newKeptBalance = $isQtyType ? $inventoryItem->current_kept_amt - $deletedKeepQty : $inventoryItem->current_kept_amt;
 
                 activity()->useLog('delete-kept-item')
                             ->performedOn($item)
                             ->event('deleted')
                             ->withProperties([
                                 'edited_by' => auth()->user()->full_name,
-                                'image' => auth()->user()->getFirstMediaUrl('user'),
-                                'item_name' => $item->orderItemSubitem->productItem->inventoryItem->item_name,
+                                'image' => auth()->user()->getFirstMediaUrl(collectionName: 'user'),
+                                'item_name' => $inventoryItem->item_name,
                             ])
                             ->log(":properties.item_name is deleted.");
 
                 KeepHistory::create([
                     'keep_item_id' => $item->id,
-                    'qty' => $item->qty,
+                    'qty' => $deletedKeepQty,
                     'cm' => number_format((float) $item->cm, 2, '.', ''),
                     'keep_date' => $item->created_at,
+                    'kept_balance' => $newKeptBalance,
                     'user_id' => auth()->user()->id,
                     'kept_from_table' => $item->kept_from_table,
                     'remark' => $request->remark,
                     'status' => 'Deleted',
                 ]);
 
-                if ($item->qty > $item->cm) {
-                    $inventoryItem = $item->orderItemSubitem->productItem->inventoryItem;
-                    $deletedKeepQty = $item->qty;
+                if ($isQtyType) {
                     $oldStock = $inventoryItem->stock_qty;
-
                     $newStock = $oldStock + $deletedKeepQty;
-                    $newKeptBalance = $inventoryItem->current_kept_amt - $deletedKeepQty;
                     $newTotalKept = $inventoryItem->total_kept - $deletedKeepQty;
                     
                     $newStatus = match(true) {
@@ -321,6 +318,12 @@ class CustomerController extends Controller
                         Notification::send(User::where('position', 'admin')->get(), new InventoryRunningOutOfStock($inventoryItem->item_name, $inventoryItem->id));
                     }
                 }
+
+                $item->update([
+                    'qty' => 0.00,
+                    'cm' => 0.00,
+                    'status' => 'Deleted'
+                ]);
             }
 
             $message = [
@@ -421,9 +424,18 @@ class CustomerController extends Controller
 
     public function returnKeepItem (Request $request, string $id) 
     {
-        $selectedItem = KeepItem::findOrFail($id);
+        $selectedItem = KeepItem::with(['orderItemSubitem:id,order_item_id,product_item_id', 
+                                                        'orderItemSubitem.productItem:id,product_id,inventory_item_id',
+                                                        'orderItemSubitem.productItem.inventoryItem', 
+                                                        'orderItemSubitem.orderItem:id'])
+                                    ->find($id);
+
+        $inventoryItem = $selectedItem->orderItemSubitem->productItem->inventoryItem;
 
         if ($request->type === 'qty') {
+            $inventoryItem->decrement('total_kept', $request->return_qty);
+            $inventoryItem->decrement('current_kept_amt', $request->return_qty);
+
             $selectedItem->update([
                 'qty' => ($selectedItem->qty - $request->return_qty) > 0 ? $selectedItem->qty - $request->return_qty : 0.00,
                 'status' => ($selectedItem->qty - $request->return_qty) > 0 ? 'Keep' : 'Returned'
@@ -440,6 +452,7 @@ class CustomerController extends Controller
             'qty' => $request->type === 'qty' ? round($request->return_qty, 2) : 0.00,
             'cm' => $request->type === 'cm' ? round($selectedItem->cm, 2) : 0.00,
             'keep_date' => $selectedItem->created_at,
+            'kept_balance' => $request->type === 'qty' ? $inventoryItem->current_kept_amt - $request->return_qty : $inventoryItem->current_kept_amt,
             'user_id' => auth()->user()->id,
             'kept_from_table' => $selectedItem->kept_from_table,
             'status' => 'Returned',

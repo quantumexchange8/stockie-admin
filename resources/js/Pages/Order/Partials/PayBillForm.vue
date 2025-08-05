@@ -1033,6 +1033,9 @@ const displayExceedBalanceToast = () => {
 
 const updateOrder = (updatedOrder) => {
     order.value = updatedOrder;
+    form.order_id = order.value.id;
+    form.tables = order.value.order_table.filter(table => ['Pending Order', 'Order Placed', 'All Order Served'].includes(table.status));
+
     emit('update:order', updatedOrder);
 };
 

@@ -175,7 +175,8 @@ const handleNumberInput = (value) => {
     }
 
     // Append the new value
-    billAmountKeyed.value += value;
+    billAmountKeyed.value = Number(billAmountKeyed.value + value) > 100 ? '100.00' : billAmountKeyed.value + value;
+
 };
 
 // Function to handle decimal point
@@ -203,7 +204,7 @@ const deleteLastCharacter = () => {
 const addPredefinedAmount = (amount) => {
     const currentAmount = Number(billAmountKeyed.value);
     const newAmount = currentAmount + amount;
-    billAmountKeyed.value = newAmount.toFixed(2);
+    billAmountKeyed.value = newAmount > 100 ? '100.00' : newAmount.toFixed(2);
 };
 
 const totalItemQuantityOrdered = computed(() => {

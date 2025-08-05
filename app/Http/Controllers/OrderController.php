@@ -821,7 +821,7 @@ class OrderController extends Controller
 
                             if ($keepItems && $keepItems->count() > 0) {
                                 $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty) {
-                                    $ki->update(['status' => 'Deleted']); 
+                                    $inventoryItem = $ki->orderItemSubitem->productItem->inventoryItem;
     
                                     activity()->useLog('delete-kept-item')
                                                 ->performedOn($ki)
@@ -829,7 +829,7 @@ class OrderController extends Controller
                                                 ->withProperties([
                                                     'edited_by' => auth()->user()->full_name,
                                                     'image' => auth()->user()->getFirstMediaUrl('user'),
-                                                    'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                    'item_name' => $inventoryItem->item_name,
                                                 ])
                                                 ->log(":properties.item_name is deleted.");
                                                 
@@ -838,11 +838,19 @@ class OrderController extends Controller
                                         'qty' => $ki->qty,
                                         'cm' => number_format((float) $ki->cm, 2, '.', ''),
                                         'keep_date' => $ki->created_at,
+                                        'kept_balance' => $ki->qty > $ki->cm ? $inventoryItem->current_kept_amt - $ki->qty : $inventoryItem->current_kept_amt,
                                         'remark' => 'Cancelled order',
                                         'user_id' => auth()->user()->id,
                                         'kept_from_table' => $ki->kept_from_table,
                                         'status' => 'Deleted',
                                     ]);
+
+                                    if ($ki->qty > $ki->cm) {
+                                        $inventoryItem->decrement('total_kept', $ki->qty);
+                                        $inventoryItem->decrement('current_kept_amt', $ki->qty);
+                                    }
+
+                                    $ki->update(['status' => 'Deleted']); 
 
                                     $totalQtyReturned += $ki->qty;
                                     $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
@@ -907,7 +915,7 @@ class OrderController extends Controller
 
                             if ($keepItems && $keepItems->count() > 0) {
                                 $keepItems->each(function ($ki) use ($totalQtyReturned, $totalInitialKeptQty) {
-                                    $ki->update(['status' => 'Deleted']); 
+                                    $inventoryItem = $ki->orderItemSubitem->productItem->inventoryItem;
     
                                     activity()->useLog('delete-kept-item')
                                                 ->performedOn($ki)
@@ -915,7 +923,7 @@ class OrderController extends Controller
                                                 ->withProperties([
                                                     'edited_by' => auth()->user()->full_name,
                                                     'image' => auth()->user()->getFirstMediaUrl('user'),
-                                                    'item_name' => $ki->orderItemSubitem->productItem->inventoryItem->item_name,
+                                                    'item_name' => $inventoryItem->item_name,
                                                 ])
                                                 ->log(":properties.item_name is deleted.");
                                                 
@@ -924,11 +932,19 @@ class OrderController extends Controller
                                         'qty' => $ki->qty,
                                         'cm' => number_format((float) $ki->cm, 2, '.', ''),
                                         'keep_date' => $ki->created_at,
+                                        'kept_balance' => $ki->qty > $ki->cm ? $inventoryItem->current_kept_amt - $ki->qty : $inventoryItem->current_kept_amt,
                                         'remark' => 'Cancelled order',
                                         'user_id' => auth()->user()->id,
                                         'kept_from_table' => $ki->kept_from_table,
                                         'status' => 'Deleted',
                                     ]);
+
+                                    if ($ki->qty > $ki->cm) {
+                                        $inventoryItem->decrement('total_kept', $ki->qty);
+                                        $inventoryItem->decrement('current_kept_amt', $ki->qty);
+                                    }
+
+                                    $ki->update(['status' => 'Deleted']); 
 
                                     $totalQtyReturned += $ki->qty;
                                     $totalInitialKeptQty += (int)$ki->oldestKeepHistory['qty'];
@@ -1033,7 +1049,8 @@ class OrderController extends Controller
             $orderTableNames = implode(", ", $order->orderTable->map(fn ($order_table) => $order_table['table']['table_no'])->toArray());
 
             if ($orderItem->status === 'Served' && $orderItem->type === 'Keep' && $orderItem->keep_item_id) {
-                $keepItem = KeepItem::find($orderItem->keep_item_id);
+                $keepItem = KeepItem::with('orderItemSubitem.productItem.inventoryItem')->find($orderItem->keep_item_id);
+                $inventoryItem = $keepItem->orderItemSubitem->productItem->inventoryItem;
                 $keepHistory = $orderItem->keepHistory;
 
                 $keepItem->update(['status' => 'Served']);
@@ -1044,6 +1061,7 @@ class OrderController extends Controller
                     'qty' => $keepHistory->qty,
                     'cm' => number_format((float) $keepHistory->cm, 2, '.', ''),
                     'keep_date' => $keepItem->created_at,
+                    'kept_balance' => $inventoryItem->current_kept_amt,
                     'user_id' => auth()->user()->id,
                     'kept_from_table' => $keepItem->kept_from_table,
                     'redeemed_to_table' => $orderTableNames,
@@ -1719,7 +1737,7 @@ class OrderController extends Controller
                                             'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
                                             'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
                                             'keep_date' => $newKeep->created_at,
-                                            'kept_balance' => $tempOrderItem->current_kept_amt + $item['amount'],
+                                            'kept_balance' => $reqItem['type'] === 'qty' ? $tempOrderItem->current_kept_amt + $item['amount'] : $tempOrderItem->current_kept_amt,
                                             'user_id' => auth()->user()->id,
                                             'kept_from_table' => $orderTableNames,
                                             'status' => 'Keep',
@@ -3650,20 +3668,26 @@ class OrderController extends Controller
     public function reactivateExpiredItems(Request $request)
     {
         $targetItem = KeepHistory::with('keepItem')->find($request->input('id'))->first();
+        
+        $item = KeepItem::find($targetItem->keepItem->id)
+                        ->with('orderItemSubitem.productItem.inventoryItem')
+                        ->first();
+
+        $inventoryItem = $item->orderItemSubitem->productItem->inventoryItem;
+        $expiredKeepQty = $item->qty;
+        $isQtyType = $expiredKeepQty > $item->cm;
+        $newKeptBalance = $isQtyType ? $inventoryItem->current_kept_amt + $expiredKeepQty : $inventoryItem->current_kept_amt;
 
         KeepHistory::create([
             'keep_item_id' => $targetItem->keepItem->id,
             'qty' => $targetItem->keepItem->qty,
             'cm' => number_format((float) $targetItem->keepItem->cm, 2, '.', ''),
             'keep_date' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
+            'kept_balance' => $newKeptBalance,
             'user_id' => auth()->user()->id,
             'kept_from_table' => $targetItem->keepItem->kept_from_table,
             'status' => 'Extended'
         ]);
-        
-        $item = KeepItem::find($targetItem->keepItem->id)
-                        ->with('orderItemSubitem.productItem.inventoryItem')
-                        ->first();
 
         $item->update([
             'expired_to' => Carbon::parse($request->input('expiry_date'))->timezone('Asia/Kuala_Lumpur')->startOfDay()->format('Y-m-d H:i:s'),
@@ -3676,19 +3700,15 @@ class OrderController extends Controller
                     ->withProperties([
                         'edited_by' => auth()->user()->full_name,
                         'image' => auth()->user()->getFirstMediaUrl('user'),
-                        'item' => $item->orderItemSubitem->productItem->inventoryItem->item_name,
+                        'item' => $inventoryItem->item_name,
                     ])
                     ->log("Kept item ':properties.item''s expiration date is updated.");
 
         
         // Deduct qty from inventory item stock based on kept item qty (only for kept items with qty)
-        if ($item->qty > $item->cm) {
-            $inventoryItem = $item->orderItemSubitem->productItem->inventoryItem;
-            $expiredKeepQty = $item->qty;
+        if ($isQtyType) {
             $oldStock = $inventoryItem->stock_qty;
-
             $newStock = $oldStock - $expiredKeepQty;
-            $newKeptBalance = $inventoryItem->current_kept_amt + $expiredKeepQty;
             $newTotalKept = $inventoryItem->total_kept + $expiredKeepQty;
 
             $newStatus = match(true) {
@@ -3733,6 +3753,11 @@ class OrderController extends Controller
                                 ->where('id', $request->id)
                                 ->first(); 
 
+            $inventoryItem = $keepItem->orderItemSubitem->productItem->inventoryItem;
+            $expiredKeepItem = $keepItem->qty;
+            $isQtyType = $expiredKeepItem > $keepItem->cm;
+            $newKeptBalance = $isQtyType ? $inventoryItem->current_kept_amt - $expiredKeepItem : $inventoryItem->current_kept_amt;
+
             // if (now()->greaterThanOrEqualTo(Carbon::parse($keepItem->expired_to)->endOfDay())) { 
                 $keepItem->update(['status' => 'Expired']); 
 
@@ -3742,27 +3767,24 @@ class OrderController extends Controller
                             ->withProperties([
                                 'edited_by' => auth()->user()->full_name,
                                 'image' => auth()->user()->getFirstMediaUrl('user'),
-                                'item_name' => $keepItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                                'item_name' => $inventoryItem->item_name,
                             ])
                             ->log(":properties.item_name is expired.");
 
                 KeepHistory::create([
                     'keep_item_id' => $keepItem->id,
-                    'qty' => $keepItem->qty,
+                    'qty' => $expiredKeepItem,
                     'cm' => $keepItem->cm,
                     'keep_date' => $keepItem->created_at,
+                    'kept_balance' => $newKeptBalance,
                     'user_id' => auth()->user()->id,
                     'kept_from_table' => $keepItem->kept_from_table,
                     'status' => 'Expired',
                 ]);
-
-                $inventoryItem = $keepItem->orderItemSubitem->productItem->inventoryItem;
-                if ($keepItem->qty > $keepItem->cm) {
-                    $expiredKeepItem = $keepItem->qty;
+                
+                if ($isQtyType) {
                     $oldStock = $inventoryItem->stock_qty;
-
                     $newStock = $oldStock + $expiredKeepItem;
-                    $newKeptBalance = $inventoryItem->current_kept_amt - $expiredKeepItem;
                     $newTotalKept = $inventoryItem->total_kept - $expiredKeepItem;
 
                     $newStatus = match(true) {
@@ -3845,9 +3867,14 @@ class OrderController extends Controller
                                 ->with([
                                     'orderItemSubitem:id,product_item_id',
                                     'orderItemSubitem.productItem:id,inventory_item_id',
-                                    'orderItemSubitem.productItem.inventoryItem:id,item_name'
+                                    'orderItemSubitem.productItem.inventoryItem'
                                 ])
                                 ->first();
+
+        $inventoryItem = $targetItem->orderItemSubitem->productItem->inventoryItem;
+        $deletedKeepQty = $targetItem->qty;
+        $isQtyType = $deletedKeepQty > $targetItem->cm;
+        $newKeptBalance = $isQtyType ? $inventoryItem->current_kept_amt - $deletedKeepQty : $inventoryItem->current_kept_amt;
 
         $targetItem->update([
             // 'qty' => 0.00,
@@ -3860,15 +3887,16 @@ class OrderController extends Controller
                     ->withProperties([
                         'edited_by' => auth()->user()->full_name,
                         'image' => auth()->user()->getFirstMediaUrl('user'),
-                        'item_name' => $targetItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                        'item_name' => $inventoryItem->item_name,
                     ])
                     ->log(":properties.item_name is deleted.");
 
         KeepHistory::create([
             'keep_item_id' => $targetItem->id,
-            'qty' => $targetItem->qty,
+            'qty' => $deletedKeepQty,
             'cm' => number_format((float) $targetItem->cm, 2, '.', ''),
             'keep_date' => $targetItem->created_at,
+            'kept_balance' => $newKeptBalance,
             'remark' => $validatedData['remark'] . $remarkDesc,
             'user_id' => auth()->user()->id,
             'kept_from_table' => $targetItem->kept_from_table,
@@ -3876,13 +3904,9 @@ class OrderController extends Controller
         ]);
         
         // Deduct kept item qty and insert back into inventory item stock (only for kept items with qty)
-        if ($targetItem->qty > $targetItem->cm) {
-            $inventoryItem = $targetItem->orderItemSubitem->productItem->inventoryItem;
-            $deletedKeepQty = $targetItem->qty;
+        if ($isQtyType) {
             $oldStock = $inventoryItem->stock_qty;
-
             $newStock = $oldStock + $deletedKeepQty;
-            $newKeptBalance = $inventoryItem->current_kept_amt - $deletedKeepQty;
             $newTotalKept = $inventoryItem->total_kept - $deletedKeepQty;
 
             $newStatus = match(true) {
@@ -4004,10 +4028,12 @@ class OrderController extends Controller
         $targetItem = KeepItem::with([
                                     'orderItemSubitem:id,product_item_id',
                                     'orderItemSubitem.productItem:id,inventory_item_id',
-                                    'orderItemSubitem.productItem.inventoryItem:id,item_name'
+                                    'orderItemSubitem.productItem.inventoryItem'
                                 ])
                                 ->where('id', $validatedData['id'])
                                 ->first();
+                                
+        $inventoryItem = $targetItem->orderItemSubitem->productItem->inventoryItem;
 
         $targetItem->update([
             'qty' => $request->input('keptIn') === 'qty' ? round($validatedData['kept_amount'], 2) : 0.00,
@@ -4021,6 +4047,7 @@ class OrderController extends Controller
             'qty' => $request->input('keptIn') === 'qty' ? round($validatedData['kept_amount'], 2) : 0.00,
             'cm' => $request->input('keptIn') === 'cm' ? number_format((float) $validatedData['kept_amount'], 2, '.', '') : '0.00',
             'keep_date' => $targetItem->expired_to,
+            'kept_balance' => $inventoryItem->current_kept_amt,
             'user_id' => auth()->user()->id,
             'kept_from_table' => $targetItem->kept_from_table,
             'remark' => $targetItem->remark,
@@ -4033,7 +4060,7 @@ class OrderController extends Controller
                     ->withProperties([
                         'edited_by' => auth()->user()->full_name,
                         'image' => auth()->user()->getFirstMediaUrl('user'),
-                        'item' => $targetItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                        'item' => $inventoryItem->item_name,
                     ])
                     ->log("Kept item ':properties.item''s details has been updated.");
 
@@ -4140,7 +4167,7 @@ class OrderController extends Controller
             } elseif ($statusArr->count() === 1 && in_array($statusArr->first(), ['Served', 'Cancelled'])) {
                 $orderStatus = 'Order Served';
                 $orderTableStatus = 'All Order Served';
-            } elseif ($statusArr->count() === 2 && $statusArr->contains('Served') && $statusArr->contains('Cancelled')) {
+            } elseif ($statusArr->count() === 2 && ($statusArr->contains('Served') || $statusArr->contains('Cancelled'))) {
                 $orderStatus = 'Order Served';
                 $orderTableStatus = 'All Order Served';
             }
@@ -4724,7 +4751,7 @@ class OrderController extends Controller
                 }
             });
         
-            $filteredTargetTableItems->each(function ($item) use (&$totalCurrentOrderAmount, 
+            $filteredTargetTableItems->each(function ($item, $index) use (&$totalCurrentOrderAmount, 
                 &$totalCurrentOrderDiscountedAmount, 
                 &$totalTargetOrderAmount, 
                 &$totalTargetOrderDiscountedAmount, 
@@ -4744,7 +4771,13 @@ class OrderController extends Controller
                 $amountPerUnit = round($currentProductDiscount ? $currentProductDiscount['price_after'] : $amountBeforeDiscountPerUnit, 2);
                 $discountPerUnit = $amountBeforeDiscountPerUnit - $amountPerUnit;
 
-                if (in_array($targetTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']) || $targetTable['status'] === 'Empty Seat') {
+                if (
+                    (
+                        in_array($targetTable['status'], ['Pending Clearance', 'Order Completed', 'Order Cancelled', 'Order Voided']) || 
+                        $targetTable['status'] === 'Empty Seat'
+                    ) &&
+                    $index === 0
+                ) {
                     $newOrder = Order::create([
                         'order_no' => RunningNumberService::getID('order'),
                         'pax' => $targetTable['pax'],

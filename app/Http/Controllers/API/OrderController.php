@@ -731,7 +731,8 @@ class OrderController extends Controller
         $orderTableNames = implode(", ", $order->orderTable->map(fn ($order_table) => $order_table['table']['table_no'])->toArray());
 
         if ($orderItem->status === 'Served' && $orderItem->type === 'Keep' && $orderItem->keep_item_id) {
-            $keepItem = KeepItem::find($orderItem->keep_item_id);
+            $keepItem = KeepItem::with('orderItemSubitem.productItem.inventoryItem')->find($orderItem->keep_item_id);
+            $inventoryItem = $keepItem->orderItemSubitem->productItem->inventoryItem;
             $keepHistory = $orderItem->keepHistory;
 
             $keepItem->update(['status' => 'Served']);
@@ -742,6 +743,7 @@ class OrderController extends Controller
                 'qty' => $keepHistory->qty,
                 'cm' => number_format((float) $keepHistory->cm, 2, '.', ''),
                 'keep_date' => $keepItem->created_at,
+                'kept_balance' => $inventoryItem->current_kept_amt,
                 'user_id' => $this->authUser->id,
                 'kept_from_table' => $keepItem->kept_from_table,
                 'redeemed_to_table' => $orderTableNames,
@@ -994,15 +996,18 @@ class OrderController extends Controller
                 } else if ($item['item_type'] === 'keep') {
                     $keepItem = KeepItem::with(['orderItemSubitem:id,order_item_id,product_item_id', 
                                                             'orderItemSubitem.productItem:id,product_id,inventory_item_id',
-                                                            'orderItemSubitem.productItem.inventoryItem:id,item_name', 
+                                                            'orderItemSubitem.productItem.inventoryItem', 
                                                             'orderItemSubitem.orderItem:id'])
                                         ->find($item['id']);
+
+                    $productItem = $keepItem->orderItemSubitem->productItem;
+                    $inventoryItem = $productItem->inventoryItem;
 
                     $newOrderItem = OrderItem::create([
                         'order_id' => $addNewOrder ? $newOrder->id : $request->order_id,
                         'user_id' => $waiter->id,
                         'type' => 'Keep',
-                        'product_id' => $keepItem->orderItemSubitem->productItem->product_id,
+                        'product_id' => $productItem->product_id,
                         'keep_item_id' => $item['id'],
                         'item_qty' => $item['return_qty'],
                         'amount_before_discount' => 0.00,
@@ -1014,7 +1019,7 @@ class OrderController extends Controller
                     
                     OrderItemSubitem::create([
                         'order_item_id' => $newOrderItem->id,
-                        'product_item_id' => $keepItem->orderItemSubitem->productItem->id,
+                        'product_item_id' => $productItem->id,
                         'item_qty' => 1,
                         'serve_qty' => $item['return_qty'],
                     ]);
@@ -1028,6 +1033,7 @@ class OrderController extends Controller
                         'qty' => $item['type'] === 'qty' ? round($item['return_qty'], 2) : 0.00,
                         'cm' => $item['type'] === 'cm' ? number_format((float) $keepItem->cm, 2, '.', '') : '0.00',
                         'keep_date' => $keepItem->created_at,
+                        'kept_balance' => $item['type'] === 'qty' ? $inventoryItem->current_kept_amt - $item['return_qty'] : $inventoryItem->current_kept_amt,
                         'user_id' => $this->authUser->id,
                         'kept_from_table' => $keepItem->kept_from_table,
                         'redeemed_to_table' => $orderTableNames,
@@ -1040,12 +1046,15 @@ class OrderController extends Controller
                                 ->withProperties([
                                     'edited_by' => auth()->user()->full_name,
                                     'image' => auth()->user()->getFirstMediaUrl('user'),
-                                    'item_name' => $keepItem->orderItemSubitem->productItem->inventoryItem->item_name,
+                                    'item_name' => $inventoryItem->item_name,
                                     'customer_name' => $currOrder->customer->full_name
                                 ])
                                 ->log(":properties.item_name is returned to :properties.customer_name.");
         
                     if ($item['type'] === 'qty') {
+                        $inventoryItem->decrement('total_kept', $item['return_qty']);
+                        $inventoryItem->decrement('current_kept_amt', $item['return_qty']);
+
                         $keepItem->update([
                             'qty' => ($keepItem->qty - $item['return_qty']) > 0 ? $keepItem->qty - $item['return_qty'] : 0.00,
                             'status' => ($keepItem->qty - $item['return_qty']) > 0 ? 'Keep' : 'Returned'
