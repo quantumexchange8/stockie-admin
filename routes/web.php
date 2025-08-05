@@ -289,8 +289,8 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders');
         // Route::get('/orders/getOrderPaymentDetails{id}', [OrderController::class, 'getOrderPaymentDetails'])->name('orders.getOrderPaymentDetails');
         Route::get('/orders/getOccupiedTablePayments', [OrderController::class, 'getOccupiedTablePayments'])->name('orders.getOccupiedTablePayments');
-        Route::put('/orders/cancelOrder/{id}', [OrderController::class, 'cancelOrder'])->name('orders.cancel');
-        Route::put('/orders/updateOrderStatus/{id}', [OrderController::class, 'updateOrderStatus'])->name('orders.complete');
+        Route::post('/orders/cancelOrder/{id}', [OrderController::class, 'cancelOrder'])->name('orders.cancel');
+        Route::post('/orders/updateOrderStatus/{id}', [OrderController::class, 'updateOrderStatus'])->name('orders.complete');
         Route::put('/orders/updateOrderCustomer/{data}', [OrderController::class, 'updateOrderCustomer'])->name('orders.updateOrderCustomer');
         Route::post('/orders/updateOrderPayment', [OrderController::class, 'updateOrderPayment'])->name('orders.updateOrderPayment');
         Route::put('/orders/removeOrderVoucher/{id}', [OrderController::class, 'removeOrderVoucher'])->name('orders.removeOrderVoucher');

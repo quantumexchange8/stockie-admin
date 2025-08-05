@@ -387,7 +387,7 @@ const submit = (action) => {
             // if (form.action_type === 'complete' && order.value.payment)  {
             //     openPaymentDrawer();
             // } else {
-            form.put(route('orders.complete', order.value.id), {
+            form.post(route('orders.complete', order.value.id), {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
@@ -413,7 +413,7 @@ const submit = (action) => {
         //     removeReward();
         // } 
         else {
-            form.put(route('orders.cancel', order.value.id), {
+            form.post(route('orders.cancel', order.value.id), {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
@@ -424,7 +424,7 @@ const submit = (action) => {
                         });
                     }, 200);
                     form.reset();
-                    hideCancelOrderForm();
+                    cancelOrderFormIsOpen.value = false
                     closeDrawer();
                     emit('close');
                     handleTableLock();
@@ -537,7 +537,7 @@ const getVoucherDiscountedPrice = (subtotal, voucher) => {
 
 const cancelOrderIsDisabled = computed(() => {
 //    return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || currentTable.value.status === 'Pending Clearance';
-   return currentTable.value.status === 'Pending Clearance' || form.processing;
+   return currentTable.value.status === 'Pending Clearance' || form.processing || !!!currentTable.value?.is_locked;
 });
 
 const tableIsMerged = computed(() => {
@@ -782,7 +782,7 @@ onUnmounted(stop);
                             size="lg"
                             variant="tertiary"
                             class="col-span-1"
-                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0 || !existingPermissions?.includes('free-up-table') || form.processing"
+                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0 || !existingPermissions?.includes('free-up-table') || form.processing || !!!currentTable?.is_locked"
                             @click="form.action_type = 'clear'"
                         >
                             {{ $t('public.action.free_up_table') }}
