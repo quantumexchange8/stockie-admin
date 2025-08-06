@@ -282,7 +282,7 @@ const closeOverlay = () => {
                 :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
                 @click="selectedReservation.status !== 'Checked in' ? markReservationAsNoShow(selectedReservation.id) : ''"
             >
-                <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
+                <p class="text-grey-900 text-base font-medium ">{{ $t('public.action.mark_no_show') }} </p>
                 <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
             </div>
 
@@ -291,7 +291,7 @@ const closeOverlay = () => {
                 :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
                 @click="selectedReservation.status !== 'Checked in' ? openForm('delay', selectedReservation) : ''"
             >
-                <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
+                <p class="text-grey-900 text-base font-medium ">{{ $t('public.action.delay_reservation') }} </p>
                 <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
             </div>
 
@@ -300,7 +300,7 @@ const closeOverlay = () => {
                 :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
                 @click="selectedReservation.status !== 'Checked in' ? openForm('cancel', selectedReservation) : ''"
             >
-                <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
+                <p class="text-primary-800 text-base font-medium ">{{ $t('public.action.cancel_reservation') }} </p>
                 <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
             </div>
         </div>

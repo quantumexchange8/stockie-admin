@@ -7,6 +7,7 @@ import Button from '@/Components/Button.vue'
 import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 import Toast from '@/Components/Toast.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     // errors: Object,
@@ -20,7 +21,7 @@ const props = defineProps({
     // },
 });
 
-const emit = defineEmits(['close', 'isDirty', 'update:customerListing']);
+const emit = defineEmits(['close', 'closeAll', 'isDirty', 'update:customerListing']);
 
 const { showMessage } = useCustomToast();
 const { transformPhone, formatPhoneInput } = usePhoneUtils();
@@ -37,16 +38,18 @@ const form = useForm({
 
 const unsaved = (status) => {
     emit('close', status);
+    emit('closeAll');
 }
 
 const submit = async () => { 
+    form.processing = true;
     form.phone = form.phone_temp ? transformPhone(form.phone_temp) : '';
     try {
         const response = await axios.post('/customer/', form);
 
         showMessage({
             severity: 'success',
-            summary: 'Customer added successfully.',
+            summary: wTrans('public.toast.customer_added'),
         });
 
         emit('update:customerListing', response.data);
@@ -57,6 +60,8 @@ const submit = async () => {
             form.setError(error.response.data.errors);
             console.error('An unexpected error occurred:', error);
         }
+    } finally {
+        form.processing = false;
     }
 };
 
@@ -74,7 +79,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <TextInput
                 required
                 :inputName="'full_name'"
-                :labelText="'Name'"
+                :labelText="$t('public.field.name')"
                 :placeholder="'e.g. Tan Mei Wah'"
                 :errorMessage="form.errors && form.errors.full_name ? form.errors.full_name[0] : ''"
                 v-model="form.full_name"
@@ -83,7 +88,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <TextInput
                 inputName="phone"
                 :inputType="'number'"
-                labelText="Phone No."
+                :labelText="$t('public.field.phone_no')"
                 placeholder="12 345 1234"
                 :iconPosition="'left'"
                 :errorMessage="form.errors && form.errors.phone ? form.errors.phone[0] : ''"
@@ -96,7 +101,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
             <TextInput
                 :inputName="'email'"
-                :labelText="'Email'"
+                :labelText="$t('public.field.email')"
                 :placeholder="'e.g. meiwah@gmail.com'"
                 :errorMessage="form.errors && form.errors.email ? form.errors.email[0] : ''"
                 v-model="form.email"
@@ -105,8 +110,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <TextInput
                 required
                 :inputName="'password'"
-                :labelText="'Password'"
-                :placeholder="'Password'"
+                :labelText="$t('public.field.password')"
+                :placeholder="$t('public.field.password')"
                 :inputType="'password'"
                 :errorMessage="form.errors && form.errors.password ? form.errors.password[0] : ''"
                 v-model="form.password"
@@ -117,15 +122,16 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :type="'button'"
                 :variant="'tertiary'"
                 :size="'lg'"
+                :disabled="form.processing"
                 @click="unsaved('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Add
+                {{ $t('public.action.add') }}
             </Button>
         </div>
         <Modal

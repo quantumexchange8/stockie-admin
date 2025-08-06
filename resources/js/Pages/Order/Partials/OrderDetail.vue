@@ -303,7 +303,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                     class="size-6 rounded-full object-contain"
                                 >
                              </template>
-                            <p class="text-grey-900 text-base font-medium" :class="{'!text-grey-300': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0].full_name : 'No order yet' }}</p>
+                            <p class="text-grey-900 text-base font-medium" :class="{'!text-grey-300': orderedBy.length === 0}" v-if="orderedBy.length <= 1">{{ orderedBy && orderedBy.length > 0 ? orderedBy[0].full_name : $t('public.order.no_order_yet') }}</p>
                             <!-- <p class="text-grey-800 text-sm font-semibold">{{ order.waiter?.full_name ?? '' }}</p> -->
                         </div>
                     </div>
@@ -591,7 +591,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
     </OverlayPanel>
     
     <Modal
-        :title="'Checked-in customer'"
+        :title="$t('public.checked_in_customer')"
         :maxWidth="'xs'"
         :closeable="true"
         :show="isCustomerModalOpen"

@@ -78,6 +78,9 @@ return [
     "order_header" => "订单",
     "points" => "积分",
     "pts" => "积分",
+    "checked_in_customer" => "已签到的顾客",
+    "cancel_order" => "取消订单",
+    "create_new_customer" => "新增顾客",
 
     // Input fields label name
     "field" => [
@@ -86,6 +89,9 @@ return [
         "display_name" => "显示名称",
         "table_merged" => "选择合并桌台",
         "assign_waiter" => "指派服务员",
+        "name" => "姓名",
+        "phone_no" => "电话号码",
+        "email" => "邮件",
     ],
 
     // Toast messages
@@ -94,6 +100,10 @@ return [
         "logout" => "您已成功退出管理员后台",
         "changes_saved" => "更改已保存.",
         "update_profile_image" => "您已成功更改个人资料图片.",
+        "selected_order_deleted" => "选定的订单已被删除.",
+        "table_available_now" => "所选桌台可供下一位顾客使用.",
+        "order_cancelled" => "选定的订单已成功取消.",
+        "customer_added" => "客户添加成功.",
     ],
 
     // Action buttons' label
@@ -102,9 +112,9 @@ return [
         "apply" => "引用",
         "cancel" => "取消",
         "change_image" => "更换图像",
-        "clear" => "Clear",
+        "clear" => "清除",
         "clear_all" => "清除所有",
-        "confirm" => "Confirm",
+        "confirm" => "确定",
         "export" => "Export",
         "leave" => "离开",
         "login" => "立即登录",
@@ -121,12 +131,14 @@ return [
         "open_shift" => "开启班次",
         "go_to_add" => "前往添加",
         "serve" => "上桌",
-        "cancel_order" => "取消订单",
         "free_up_table" => "释放桌台",
         "make_payment" => "付款",
         "mark_no_show" => "Mark as no show",
         "delay_reservation" => "Delay reservation",
         "cancel_reservation" => "Cancel reservation",
+        "delete" => "删除",
+        "keep" => "保留",
+        "create_new" => "新增",
     ],
 
     // Empty states' messages
@@ -141,6 +153,7 @@ return [
         "add_table_room" => "您必须先添加桌台 / 厢房, 然后才能管理订单.",
         "no_pending_item" => "无待处理的项目",
         "no_item_added" => "未添加商品至订单",
+        "no_pending_remove" => "没有待删除的待处理项目.",
     ],
 
     // Error pages' error messages
@@ -235,6 +248,11 @@ return [
         "ordered_by" => "建立订单者",
         "serve_now" => "立即上桌",
         "serve_now_qty" => "立即上桌数量",
+        "no_order_yet" => "尚未下单",
+        "delete_order" => "删除订单",
+        "delete_order_message_desc" => "您确定要删除所选订单吗? 一旦操作将无法撤回.",
+        "delete_qty" => "删除数量",
+        "cancel_order_message_desc" => "您确定要取消此订单吗? 所有商品将返回库存, 不会影响销售.",
     ],
     "shift" => [
         "cryptocurrency_market_price" => "Cryptocurrency Market Price",

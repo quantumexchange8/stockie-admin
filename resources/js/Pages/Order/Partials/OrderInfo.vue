@@ -398,7 +398,7 @@ const submit = (action) => {
                         setTimeout(() => {
                             showMessage({ 
                                 severity: 'success',
-                                summary: 'Selected table is now available for next customers.',
+                                summary: wTrans('public.toast.table_available_now'),
                             });
                             closeDrawer();
                             emit('close');
@@ -420,7 +420,7 @@ const submit = (action) => {
                     setTimeout(() => {
                         showMessage({ 
                             severity: 'success',
-                            summary: 'Selected order has been cancelled successfully.',
+                            summary: wTrans('public.toast.order_cancelled'),
                         });
                     }, 200);
                     form.reset();
@@ -776,7 +776,7 @@ onUnmounted(stop);
                             :disabled="cancelOrderIsDisabled"
                             @click="showCancelOrderForm"
                         >
-                            {{ $t('public.action.cancel_order') }}
+                            {{ $t('public.cancel_order') }}
                         </Button>
                         <Button
                             size="lg"
@@ -864,10 +864,10 @@ onUnmounted(stop);
                 </div>
                 <div class="flex flex-col gap-1" >
                     <div class="text-primary-900 text-lg font-medium text-center">
-                        Cancel Order
+                        {{ $t('public.cancel_order') }}
                     </div>
                     <div class="text-gray-900 text-base font-medium text-center leading-tight" >
-                        Are you sure you want to cancel this order? All items will return to inventory and won't affect sales.
+                        {{ $t('public.order.cancel_order_message_desc') }}
                     </div>
                 </div>
                 <div class="flex item-center gap-3">
@@ -878,14 +878,14 @@ onUnmounted(stop);
                         :disabled="form.processing"
                         @click="hideCancelOrderForm"
                     >
-                        Keep
+                        {{ $t('public.action.keep') }}
                     </Button>
                     <Button
                         variant="red"
                         size="lg"
                         :disabled="form.processing"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                 </div>
             </div>

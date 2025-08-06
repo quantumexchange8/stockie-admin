@@ -57,6 +57,11 @@ const getAllCustomers = async () => {
 
 onMounted(() => getAllCustomers());
 
+const closeAll = () => {
+    emit('closeOrderDetails');
+    emit('closeModal', 'leave');
+};
+
 const submit = () => {
     if (props.origin === 'pay-bill' && props.isSplitBillMode) {
         const updatedCustomer = initialCustomerList.value.find((customer) => customer.id === selectedCustomer.value);
@@ -75,8 +80,7 @@ const submit = () => {
                 }
     
                 form.reset();
-                emit('closeOrderDetails');
-                emit('closeModal', 'leave');
+                closeAll();
             },
         })
     }
@@ -165,7 +169,7 @@ watch(
     <form @submit.prevent="submit">
         <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
             <SearchBar 
-                :placeholder="'Search'"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
             />
@@ -200,7 +204,7 @@ watch(
                 </template>
                 <div class="flex flex-col items-center justify-center" v-else>
                     <UndetectableIllus/>
-                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium pb-5">{{ $t('public.empty.no_data') }}</span>
                 </div>
             </div>
 
@@ -213,7 +217,7 @@ watch(
                         :disabled="form.processing"
                         @click="clearSelection"
                     >
-                        Clear
+                        {{ $t('public.action.clear') }}
                     </Button>
 
                     <Button
@@ -224,7 +228,7 @@ watch(
                         :disabled="form.processing"
                         @click="openModal"
                     >
-                        Create New
+                        {{ $t('public.action.create_new') }}
                     </Button>
 
                     <Button
@@ -235,7 +239,7 @@ watch(
                         :disabled="!selectedCustomer || form.processing"
                         @click="checkOrderVoucher"
                     >
-                        Confirm
+                        {{ $t('public.action.confirm') }}
                     </Button>
                 </div>
 
@@ -247,7 +251,7 @@ watch(
                     :disabled="!selectedCustomer || form.processing"
                     @click="checkOrderVoucher"
                 >
-                    Confirm
+                    {{ $t('public.action.confirm') }}
                 </Button>
             </div>
         </div>
@@ -263,7 +267,7 @@ watch(
     </Modal>
 
     <Modal 
-        :title="'Create New Customer'"
+        :title="$t('public.create_new_customer')"
         :show="isCreateCustomerOpen" 
         :maxWidth="'xs'" 
         :closeable="true" 
@@ -272,6 +276,7 @@ watch(
         <CreateCustomer
             @update:customerListing="customerList = $event"
             @close="closeModal('leave')" 
+            @closeAll="closeAll" 
             @isDirty="isDirty=$event"
         />
 

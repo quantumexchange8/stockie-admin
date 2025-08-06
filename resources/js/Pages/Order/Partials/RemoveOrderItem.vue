@@ -13,6 +13,7 @@ import Modal from '@/Components/Modal.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import { DeleteIllus } from '@/Components/Icons/illus';
 import { useCustomToast } from '@/Composables/index.js';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     order: {
@@ -108,7 +109,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: 'The selected order item has been deleted.',
+                    summary: wTrans('public.toast.selected_order_deleted'),
                 });
             }, 200);
             form.reset();
@@ -130,7 +131,7 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
 <template>
     <div class="flex flex-col gap-6 w-[526px]">
         <div class="flex items-center justify-between">
-            <span class="text-primary-950 text-center text-md font-medium">Delete order</span>
+            <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.order.delete_order') }}</span>
             <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="close()" />
         </div>
 
@@ -169,7 +170,7 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                         </div>
 
                         <div class="flex justify-between items-center self-stretch py-3 pl-3" v-if="form.items.find(i => i.order_item_id === item.id)">
-                            <p class="text-base text-grey-900 font-normal">Delete Quantity</p>
+                            <p class="text-base text-grey-900 font-normal">{{ $t('public.order.delete_qty') }}</p>
                             <NumberCounter
                                 :inputName="`item_${item.id}.remove_qty`"
                                 :maxValue="getLeftoverQuantity(item)"
@@ -183,7 +184,7 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
         </template>
 
         <template v-else>
-            <p class="text-base font-medium text-grey-900">No pending item to be removed.</p>
+            <p class="text-base font-medium text-grey-900">{{ $t('public.empty.no_pending_remove') }}</p>
         </template>
 
         <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
@@ -193,7 +194,7 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                 size="lg"
                 @click="close()"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 type="button"
@@ -201,7 +202,7 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                 :disabled="!isFormValid"
                 @click="showRemoveOrderItemForm"
             >
-                Delete
+                {{ $t('public.action.delete') }}
             </Button>
         </div>
     </div>
@@ -222,8 +223,8 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                     </slot>
                 </div>
                 <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6">
-                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">Delete order?</p>
-                    <p class="text-center text-grey-900 text-base font-medium self-stretch">Are you sure you want to delete the selected order? This action cannot be undone.</p>
+                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">{{ $t('public.order.delete_order') }}?</p>
+                    <p class="text-center text-grey-900 text-base font-medium self-stretch">{{ $t('public.order.delete_order_message_desc') }}</p>
                 </div>
                 <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                     <Button
@@ -232,14 +233,14 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                         size="lg"
                         @click="hideRemoveOrderItemModal"
                     >
-                        Keep
+                        {{ $t('public.action.keep') }}
                     </Button>
                     <Button
                         variant="red"
                         size="lg"
                         :disabled="form.processing"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                 </div>
             </div>

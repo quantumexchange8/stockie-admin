@@ -78,6 +78,9 @@ return [
     "order_header" => "Order",
     "points" => "Points",
     "pts" => "pts",
+    "checked_in_customer" => "Checked-in customer",
+    "cancel_order" => "Cancel Order",
+    "create_new_customer" => "Create New Customer",
 
     // Input fields label name
     "field" => [
@@ -86,6 +89,9 @@ return [
         "display_name" => "Display Name",
         "table_merged" => "Table merged",
         "assign_waiter" => "Assign waiter",
+        "name" => "Name",
+        "phone_no" => "Phone No.",
+        "email" => "Email",
     ],
 
     // Toast messages
@@ -94,6 +100,10 @@ return [
         "logout" => "You've logged out your STOXPOS account.",
         "changes_saved" => "Changes saved.",
         "update_profile_image" => "You've successfully changed your profile picture.",
+        "selected_order_deleted" => "The selected order has been deleted.",
+        "table_available_now" => "Selected table is now available for the next customer.",
+        "order_cancelled" => "Selected order has been cancelled successfully.",
+        "customer_added" => "Customer added successfully.",
     ],
 
     // Action buttons' label
@@ -121,12 +131,14 @@ return [
         "open_shift" => "Open Shift",
         "go_to_add" => "Go to add",
         "serve" => "Serve",
-        "cancel_order" => "Cancel Order",
         "free_up_table" => "Free Up Table",
         "make_payment" => "Make Payment",
         "mark_no_show" => "Mark as no show",
         "delay_reservation" => "Delay reservation",
         "cancel_reservation" => "Cancel reservation",
+        "delete" => "Delete",
+        "keep" => "Keep",
+        "create_new" => "Create New",
     ],
 
     // Empty states' messages
@@ -141,6 +153,7 @@ return [
         "add_table_room" => "You’ve to add a table/room before you can manage your order",
         "no_pending_item" => "No pending item to be served",
         "no_item_added" => "No item has been added to order",
+        "no_pending_remove" => "No pending item to be removed",
     ],
 
     // Error pages' error messages
@@ -235,6 +248,11 @@ return [
         "ordered_by" => "Ordered by",
         "serve_now" => "Serve Now",
         "serve_now_qty" => "Serve Now Quantity",
+        "no_order_yet" => "No order yet",
+        "delete_order" => "Delete order",
+        "delete_order_message_desc" => "Are you sure you want to delete the selected order? This action cannot be undone.",
+        "delete_qty" => "Delete Quantity",
+        "cancel_order_message_desc" => "Are you sure you want to cancel this order? All items will return to inventory and won't affect sales.",
     ],
     "shift" => [
         "cryptocurrency_market_price" => "Cryptocurrency",
