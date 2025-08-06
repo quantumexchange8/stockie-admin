@@ -87,7 +87,7 @@ const applyCheckedFilters = (close) => {
 const getLogAuthor = (log) => {
     if (log.properties.created_by) return log.properties.created_by;
 
-    if (log.properties.edited_by) return log.properties.created_by;
+    if (log.properties.edited_by) return log.properties.edited_by;
 
     return log.properties.deleted_by;
 }

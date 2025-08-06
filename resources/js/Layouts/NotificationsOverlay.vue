@@ -5,6 +5,7 @@ import { CircledArrowHeadRightIcon, TableRoomIcon, WaiterIcon } from '@/Componen
 import { Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { useLangObserver } from '@/Composables'
+import dayjs from 'dayjs';
 
 const props = defineProps({
     order_notifications: Object,
@@ -169,7 +170,7 @@ const calcTimeDiff = (created_at) => {
                                                 <span class="line-clamp-1 flex-[1_0_0] text-primary-900 text-ellipsis textxs font-medium">{{ firstWaiter.data.waiter_name }}</span>
                                             </div>
                                             <span class="self-stretch text-grey-900 text-sm font-normal">
-                                                {{ $t('public.checked_in_at') }} <span class="self-stretch text-grey-900 text-sm font-semibold">{{ firstWaiter.data.check_in }}</span>
+                                                {{ $t('public.checked_in_at') }} <span class="self-stretch text-grey-900 text-sm font-semibold">{{ dayjs(firstWaiter.data.check_in).format('hh:mmA') }}</span>
                                             </span>
                                         </template>
                                         <template v-else>
@@ -178,7 +179,7 @@ const calcTimeDiff = (created_at) => {
                                                 <span class="line-clamp-1 flex-[1_0_0] text-primary-900 text-ellipsis textxs font-medium">{{ firstWaiter.data.waiter_name }}</span>
                                             </div>
                                             <span class="self-stretch text-grey-900 text-sm font-normal">
-                                                {{ $t('public.checked_out_at') }} <span class="self-stretch text-grey-900 text-sm font-semibold">{{ firstWaiter.data.check_out }}</span>
+                                                {{ $t('public.checked_out_at') }} <span class="self-stretch text-grey-900 text-sm font-semibold">{{ dayjs(firstWaiter.data.check_out).format('hh:mmA') }}</span>
                                             </span>
                                         </template>
                                     </div>
@@ -206,7 +207,7 @@ const calcTimeDiff = (created_at) => {
                                                     <span class="line-clamp-1 flex-[1_0_0] text-primary-900 text-ellipsis textxs font-medium">{{ waiters.data.waiter_name }}</span>
                                                 </div>
                                                 <span class="self-stretch text-grey-900 text-sm font-normal">
-                                                    {{ $t('public.checked_in_at') }} <span class="self-stretch text-grey-900 text-sm font-semibold">{{ waiters.data.checked_in }}</span>
+                                                    {{ $t('public.checked_in_at') }} <span class="self-stretch text-grey-900 text-sm font-semibold">{{ dayjs(waiters.data.check_in).format('hh:mmA') }}</span>
                                                 </span>
                                             </template>
                                             <template v-else>
@@ -215,7 +216,7 @@ const calcTimeDiff = (created_at) => {
                                                     <span class="line-clamp-1 flex-[1_0_0] text-primary-900 text-ellipsis textxs font-medium">{{ waiters.data.waiter_name }}</span>
                                                 </div>
                                                 <span class="self-stretch text-grey-900 text-sm font-normal">
-                                                    {{ $t('public.checked_out_at') }} <span class="self-stretch text-grey-900 text-sm font-semibold">{{ waiters.data.checked_out }}</span>
+                                                    {{ $t('public.checked_out_at') }} <span class="self-stretch text-grey-900 text-sm font-semibold">{{ dayjs(waiters.data.check_out).format('hh:mmA') }}</span>
                                                 </span>
                                             </template>
                                         </div>

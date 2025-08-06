@@ -702,7 +702,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
             <span class="text-primary-800 text-base font-medium">Mark as expired</span>
         </div>
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('delete')">
-            <span class="text-primary-800 text-base font-medium">Delete kept itemd</span>
+            <span class="text-primary-800 text-base font-medium">Delete kept item</span>
         </div>
     </OverlayPanel>
 

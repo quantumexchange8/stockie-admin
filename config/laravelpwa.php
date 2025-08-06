@@ -57,22 +57,28 @@ return [
             '1668x2388' => '/images/icons/splash-1668x2388.png',
             '2048x2732' => '/images/icons/splash-2048x2732.png',
         ],
-        'shortcuts' => [
-            [
-                'name' => 'STOXPOS Admin',
-                'description' => 'STOXPOS Admin',
-                'url' => '/',
-                'icons' => [
-                    "src" => "/images/icons/icon-72x72.png",
-                    "purpose" => "any"
-                ]
-            ],
+        // 'shortcuts' => [
+        //     [
+        //         'name' => 'STOXPOS Admin',
+        //         'description' => 'STOXPOS Admin',
+        //         'url' => '/',
+        //         'icons' => [
+        //             '72x72' => [
+        //                 'src' => '/images/icons/icon-72x72.png',
+        //                 'purpose' => 'any'
+        //             ],
+        //             '96x96' => [
+        //                 'src' => '/images/icons/icon-96x96.png',
+        //                 'purpose' => 'any'
+        //             ],
+        //         ]
+        //     ],
             // [
             //     'name' => 'Shortcut Link 2',
             //     'description' => 'Shortcut Link 2 Description',
             //     'url' => '/shortcutlink2'
             // ]
-        ],
+        // ],
         'custom' => []
     ]
 ];

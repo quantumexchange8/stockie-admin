@@ -348,6 +348,7 @@ onMounted(() => {
                         variant="tertiary"
                         size="lg"
                         type="button"
+                        :disabled="form.processing"
                         @click="closeModal"
                     >
                         {{ $t('public.action.cancel') }}
@@ -356,6 +357,7 @@ onMounted(() => {
                         variant="primary"
                         size="lg"
                         type="submit"
+                        :disabled="form.processing"
                     >
                         {{ $t('public.action.logout') }}
                     </Button>

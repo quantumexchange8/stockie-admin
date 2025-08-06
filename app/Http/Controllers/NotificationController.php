@@ -97,6 +97,9 @@ class NotificationController extends Controller
         //     return $notification; 
         // });
 
+        // Mark all unread notifications as read when redirected to notification page from overlay as the read function does not trigger
+        auth()->user()->unreadNotifications()->update(['read_at' => now()]);
+
 
         return Inertia::render("Notifications/Notifications", [
             // 'notifications' => $processedNotifications,

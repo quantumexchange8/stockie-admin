@@ -831,7 +831,7 @@ class OrderController extends Controller
                                                     'image' => auth()->user()->getFirstMediaUrl('user'),
                                                     'item_name' => $inventoryItem->item_name,
                                                 ])
-                                                ->log(":properties.item_name is deleted.");
+                                                ->log("':properties.item_name' is deleted.");
                                                 
                                     KeepHistory::create([
                                         'keep_item_id' => $ki->id,
@@ -925,7 +925,7 @@ class OrderController extends Controller
                                                     'image' => auth()->user()->getFirstMediaUrl('user'),
                                                     'item_name' => $inventoryItem->item_name,
                                                 ])
-                                                ->log(":properties.item_name is deleted.");
+                                                ->log("':properties.item_name' is deleted.");
                                                 
                                     KeepHistory::create([
                                         'keep_item_id' => $ki->id,
@@ -2160,10 +2160,10 @@ class OrderController extends Controller
                             ->withProperties([
                                 'edited_by' => auth()->user()->full_name,
                                 'image' => auth()->user()->getFirstMediaUrl('user'),
-                                'item_name' => $keepItem->item_name,
+                                'item_name' => $keepItem->orderItemSubitem->productItem->inventoryItem->item_name,
                                 'customer_name' => $order->customer->full_name
                             ])
-                            ->log(":properties.item_name is returned to :properties.customer_name.");
+                            ->log("':properties.item_name' is returned to :properties.customer_name.");
 
                 if ($request->type === 'qty') {
                     $inventoryItem->decrement('total_kept', $request->return_qty);
@@ -3889,7 +3889,7 @@ class OrderController extends Controller
                         'image' => auth()->user()->getFirstMediaUrl('user'),
                         'item_name' => $inventoryItem->item_name,
                     ])
-                    ->log(":properties.item_name is deleted.");
+                    ->log("':properties.item_name' is deleted.");
 
         KeepHistory::create([
             'keep_item_id' => $targetItem->id,
@@ -4032,7 +4032,7 @@ class OrderController extends Controller
                                 ])
                                 ->where('id', $validatedData['id'])
                                 ->first();
-                                
+
         $inventoryItem = $targetItem->orderItemSubitem->productItem->inventoryItem;
 
         $targetItem->update([
