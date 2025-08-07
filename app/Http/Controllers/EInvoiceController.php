@@ -138,14 +138,14 @@ class EInvoiceController extends Controller
             'receiptNo' => $receiptNo,
         ];
 
-        $updateConsoCt = Http::withHeaders([
-            'CT-API-KEY' => $payout->api_key,
-            'MERCHANT-ID' => $payout->merchant_id,
-        ])->post($payout->url . 'api/update-consolidate-invoice', $params);
+        // $updateConsoCt = Http::withHeaders([
+        //     'CT-API-KEY' => $payout->api_key,
+        //     'MERCHANT-ID' => $payout->merchant_id,
+        // ])->post($payout->url . 'api/update-consolidate-invoice', $params);
 
-        Log::info('updateConsoCt', [
-            'status' => $updateConsoCt->status()
-        ]);
+        // Log::info('updateConsoCt', [
+        //     'status' => $updateConsoCt->status()
+        // ]);
 
         $consoParent->c_amount = $payment_amount;
         $consoParent->c_total_amount = $payment_total_amount;
@@ -431,142 +431,113 @@ class EInvoiceController extends Controller
                     ]
                 ],
                 "InvoiceLine" => $invoiceLines,
-                "UBLExtensions" => [[
-                    "UBLExtension" => [[
-                        "ExtensionURI" => [[
-                            "_" => "urn:oasis:names:specification:ubl:dsig:enveloped:xades"
-                        ]],
-                        "ExtensionContent" => [[
-                            "UBLDocumentSignatures" => [[
-                                "SignatureInformation" => [[
-                                    "ID" => [[
-                                        "_" => "urn:oasis:names:specification:ubl:signature:1",
-                                    ]],
-                                    "ReferencedSignatureID" => [[
-                                        "_" => "urn:oasis:names:specification:ubl:signature:Invoice"
-                                    ]],
-                                    "Signature" => [[
-                                        "Id" => "signature",
-                                        "Object" => [[
-                                            "QualifyingProperties" => [[
-                                                "Target" => "signature",
-                                                "SignedProperties" => [[
-                                                    "Id" => "id-xades-signed-props",
-                                                    "SignedSignatureProperties" => [[
-                                                        "SigningTime" => [[
-                                                            "_" => "2024-07-23T15:14:54Z"
-                                                        ]],
-                                                        "SigningCertificate" => [[
-                                                            "Cert" => [[
-                                                                "CertDigest" => [[
-                                                                    "DigestMethod" => [[
-                                                                        "_" => "",
-                                                                        "Algorithm" => "http://www.w3.org/2001/04/xmlenc#sha256",
-                                                                    ]],
-                                                                    "DigestValue" => [[
-                                                                        "_" => "KKBSTyiPKGkGl1AFqcPziKCEIDYGtnYUTQN4ukO7G40",
-                                                                    ]],
-                                                                ]],
-                                                                "IssuerSerial" => [[
-                                                                    "X509IssuerName" => [[
-                                                                        "_" => "CN=Trial LHDNM Sub CA V1, OU=Terms of use at http://www.posdigicert.com.my, O=LHDNM, C=MY"
-                                                                    ]],
-                                                                    "X509SerialNumber" => [[
-                                                                        "_" => "162880276254639189035871514749820882117"
-                                                                    ]],
-                                                                ]],
-                                                            ]]
-                                                        ]],
-                                                    ]]
-                                                ]]
-                                            ]]
-                                        ]],
-                                        "KeyInfo" => [[
-                                            "X509Certificate" => [[
-                                                "_" => "MIIFlDCCA3ygAwIBAgIQeomZorO+0AwmW2BRdWJMxTANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJNWTEOMAwGA1UEChMFTEhETk0xNjA0BgNVBAsTLVRlcm1zIG9mIHVzZSBhdCBodHRwOi8vd3d3LnBvc2RpZ2ljZXJ0LmNvbS5teTEeMBwGA1UEAxMVVHJpYWwgTEhETk0gU3ViIENBIFYxMB4XDTI0MDYwNjAyNTIzNloXDTI0MDkwNjAyNTIzNlowgZwxCzAJBgNVBAYTAk1ZMQ4wDAYDVQQKEwVEdW1teTEVMBMGA1UEYRMMQzI5NzAyNjM1MDYwMRswGQYDVQQLExJUZXN0IFVuaXQgZUludm9pY2UxDjAMBgNVBAMTBUR1bW15MRIwEAYDVQQFEwlEMTIzNDU2NzgxJTAjBgkqhkiG9w0BCQEWFmFuYXMuYUBmZ3Zob2xkaW5ncy5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQChvfOzAofnU60xFO7NcmF2WRi+dgor1D7ccISgRVfZC30Fdxnt1S6ZNf78Lbrz8TbWMicS8plh/pHy96OJvEBplsAgcZTd6WvaMUB2oInC86D3YShlthR6EzhwXgBmg/g9xprwlRqXMT2p4+K8zmyJZ9pIb8Y+tQNjm/uYNudtwGVm8A4hEhlRHbgfUXRzT19QZml6V2Ea0wQI8VyWWa8phCIkBD2w4F8jG4eP5/0XSQkTfBHHf+GV/YDJx5KiiYfmB1nGfwoPHix6Gey+wRjIq87on8Dm5+8ei8/bOhcuuSlpxgwphAP3rZrNbRN9LNVLSQ5md41asoBHfaDIVPVpAgMBAAGjgfcwgfQwHwYDVR0lBBgwFgYIKwYBBQUHAwQGCisGAQQBgjcKAwwwEQYDVR0OBAoECEDwms66hrpiMFMGA1UdIARMMEowSAYJKwYBBAGDikUBMDswOQYIKwYBBQUHAgEWLWh0dHBzOi8vd3d3LnBvc2RpZ2ljZXJ0LmNvbS5teS9yZXBvc2l0b3J5L2NwczATBgNVHSMEDDAKgAhNf9lrtsUI0DAOBgNVHQ8BAf8EBAMCBkAwRAYDVR0fBD0wOzA5oDegNYYzaHR0cDovL3RyaWFsY3JsLnBvc2RpZ2ljZXJ0LmNvbS5teS9UcmlhbExIRE5NVjEuY3JsMA0GCSqGSIb3DQEBCwUAA4ICAQBwptnIb1OA8NNVotgVIjOnpQtowew87Y0EBWAnVhOsMDlWXD/s+BL7vIEbX/BYa0TjakQ7qo4riSHyUkQ+X+pNsPEqolC4uFOp0pDsIdjsNB+WG15itnghkI99c6YZmbXcSFw9E160c7vG25gIL6zBPculHx5+laE59YkmDLdxx27e0TltUbFmuq3diYBOOf7NswFcDXCo+kXOwFfgmpbzYS0qfSoh3eZZtVHg0r6uga1UsMGb90+IRsk4st99EOVENvo0290lWhPBVK2G34+2TzbbYnVkoxnq6uDMw3cRpXX/oSfya+tyF51kT3iXvpmQ9OMF3wMlfKwCS7BZB2+iRja/1WHkAP7QW7/+0zRBcGQzY7AYsdZUllwYapsLEtbZBrTiH12X4XnZjny9rLfQLzJsFGT7Q+e02GiCsBrK7ZHNTindLRnJYAo4U2at5+SjqBiXSmz0DG+juOyFkwiWyD0xeheg4tMMO2pZ7clQzKflYnvFTEFnt+d+tvVwNjTboxfVxEv2qWF6qcMJeMvXwKTXuwVI2iUqmJSzJbUY+w3OeG7fvrhUfMJPM9XZBOp7CEI1QHfHrtyjlKNhYzG3IgHcfAZUURO16gFmWgzAZLkJSmCIxaIty/EmvG5N3ZePolBOa7lNEH/eSBMGAQteH+Twtiu0Y2xSwmmsxnfJyw=="
-                                            ]],
-                                            "X509SubjectName" => [[
-                                                "_" => "CN=Trial LHDNM Sub CA V1, OU=Terms of use at http://www.posdigicert.com.my, O=LHDNM, C=MY",
-                                            ]],
-                                            "X509IssuerSerial" => [[
-                                                "X509IssuerName" => [[
-                                                    "_" => "CN=Trial LHDNM Sub CA V1, OU=Terms of use at http://www.posdigicert.com.my, O=LHDNM, C=MY",
-                                                ]],
-                                                "X509SerialNumber" => [[
-                                                    "_" => "162880276254639189035871514749820882117",
-                                                ]],
-                                            ]]
-                                        ]],
-                                        "SignatureValue" => [[
-                                            "_" => "QTvntg4opuS7ZYWmly/iAO2OnLVJcKylYuF+QJKZdx9BkFVglmVuFtEtwoqgNsbsKaaEDinTSUAVStRJs2tiU1Jdryd4hoZ/Hc5TAvFnThpauVOLsc3j07cUB1+zhNjENmFeI9yzTGjr8XfNi4mNPspnhFAT4QGbRpxkWiIsKj762p3dhCwUNAuNLjunVaosYQ5lvSzGt4B9TF/1xJ7Z6kdcJTmBeltTWErSRA2EOMzWsGWGZVvyPLnXfnlIBQItTvARXveafxFdS1iw91g7mSEEYeqEviI0b4FUmkwH8ed0boFc6EHl1VF+2uVxBtHeKf31FqTQl/6/pF4Qgpn6Hg=="
-                                        ]],
-                                        "SignedInfo" => [[
-                                            "SignatureMethod" => [[
-                                                "_" => "",
-                                                "Algorithm" => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
-                                            ]],
-                                            "Reference" => [
-                                                [
-                                                    "Type" => "http://uri.etsi.org/01903/v1.3.2#SignedProperties",
-                                                    "URI" => "#id-xades-signed-props",
-                                                    "DigestMethod" => [
-                                                        [
-                                                            "_" => "",
-                                                            "Algorithm" => "http://www.w3.org/2001/04/xmlenc#sha256"
-                                                        ]
-                                                    ],
-                                                    "DigestValue" => [
-                                                        [
-                                                            "_" => "Rzuzz+70GSnGBF1YxhHnjSzFpQ1MW4vyX/Q9bTHkE2c="
-                                                        ]
-                                                    ]
-                                                ],
-                                                [
-                                                    "Type" => "",
-                                                    "URI" => "",
-                                                    "DigestMethod" => [
-                                                        [
-                                                            "_" => "",
-                                                            "Algorithm" => "http://www.w3.org/2001/04/xmlenc#sha256"
-                                                        ]
-                                                    ],
-                                                    "DigestValue" => [
-                                                        [
-                                                            "_" => "vMs/IdnS7isftqrBDr4F1LK/CkvBkW5Gb3Wn6OVzAxo="
-                                                        ]
-                                                    ]
-                                                ]
-                                            ]
-                                        ]]
-                                    ]]
-                                ]]
-                            ]]
-                        ]],
-                    ]]
-                ]],
-                "Signature" => [[
-                    "ID" => [[
-                        "_" => "urn:oasis:names:specification:ubl:signature:Invoice",
-                    ]],
-                    "SignatureMethod" => [[
-                        "_" => "urn:oasis:names:specification:ubl:dsig:enveloped:xades"
-                    ]]
-                ]],
             ]]
         ];
 
-        $jsonDocument = json_encode($invoiceData);
-        $base64Document = base64_encode($jsonDocument);
+        function canonicalizeJson($data) {
+            if (is_array($data)) {
+                if (array_keys($data) !== range(0, count($data) - 1)) {
+                    ksort($data); // sort keys if associative
+                }
+                foreach ($data as &$value) {
+                    $value = canonicalizeJson($value);
+                }
+            }
+            return $data;
+        }
 
-        $documentHash = hash('sha256', $jsonDocument);
+        // Canonicalize the data (ensure deterministic structure)
+        $canonicalData = canonicalizeJson($invoiceData);
+        $canonicalJson = json_encode($canonicalData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        // Generate the document hash (binary format for signing)
+        $documentHash = hash('sha256', $canonicalJson, true);
+
+        // Load PFX file from storage
+        $pfxFile = storage_path('certs/signing.pfx');
+        $pfxPassword = env('PRIVATE_KEY_PASS');
+
+        $pkcs12 = file_get_contents($pfxFile);
+
+        // Extract private key and certificate
+        if (!openssl_pkcs12_read($pkcs12, $certs, $pfxPassword)) {
+            throw new \Exception("Unable to read PFX file or incorrect password.");
+        }
+        
+        // Sign the hash with private key using RSA-SHA256
+        $signature = null;
+        if (!openssl_sign($documentHash, $signature, $certs['pkey'], OPENSSL_ALGO_SHA256)) {
+            throw new \Exception("Signing failed.");
+        }
+
+        $signatureBase64  = base64_encode($signature);
+
+        // Step 5: Generate the certificate hash (SHA-256 + Base64)
+        $certDer = openssl_x509_read($certs['cert']);
+        $certInfo = openssl_x509_export($certDer, $certPem);
+
+        // Remove the PEM headers to get raw certificate
+        $certClean = str_replace(
+            ["-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----", "\r", "\n"],
+            '',
+            $certPem
+        );
+
+        // Decode from Base64 to binary (DER format)
+        $certBinary = base64_decode($certClean);
+
+        // Hash with SHA-256
+        $certHash = hash('sha256', $certBinary, true);
+
+        // Base64-encode the result
+        $certHashBase64 = base64_encode($certHash);
+
+        // Step 6: Populate the signed properties section
+        // Assuming $certs['cert'] is the loaded certificate
+        $parsedCert = openssl_x509_parse($certs['cert']);
+
+        // 1. CertDigest (already done as $certHashBase64 in Step 5)
+
+        // 2. SigningTime
+        $signingTime = Carbon::now('UTC')->toIso8601String();
+
+        // 3. X509IssuerName
+        $issuerName = $parsedCert['issuer']['CN'] ?? '';
+        if (!empty($parsedCert['issuer'])) {
+            // Reconstruct full issuer DN like: CN=Pos Digicert, O=Pos Malaysia, C=MY
+            $issuerParts = [];
+            foreach ($parsedCert['issuer'] as $key => $value) {
+                $issuerParts[] = "$key=$value";
+            }
+            $issuerName = implode(', ', $issuerParts);
+        }
+
+        // 4. X509SerialNumber
+        $serialNumber = $parsedCert['serialNumberHex'] ?? $parsedCert['serialNumber'];
 
         $document = [
             'documents' => [
                 [
                     'format' => 'JSON',
-                    'document' => $base64Document,
-                    'documentHash' => $documentHash,
+                    'document' => base64_encode($canonicalJson),
+                    'documentHash' => hash('sha256', $canonicalJson),
                     'codeNumber' => $invoice->c_invoice_no,
+                    "digitalSignature" => [
+                        "sig" => $signatureBase64,
+                        'signedProperties' => [
+                            'signingTime' => $signingTime,
+                            'signingCertificate' => [
+                                'certDigest' => [
+                                    'digestMethod' => 'http://www.w3.org/2001/04/xmlenc#sha256',
+                                    'digestValue' => $certHashBase64
+                                ],
+                                'issuerSerial' => [
+                                    'issuerName' => $issuerName,
+                                    'serialNumber' => $serialNumber
+                                ]
+                            ]
+                        ]
+                    ]
                 ]
             ]
         ];
