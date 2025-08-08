@@ -233,7 +233,7 @@ const isFormValid = computed(() => form.items.some(item => item.remove_qty > 0))
                         size="lg"
                         @click="hideRemoveOrderItemModal"
                     >
-                        {{ $t('public.action.keep') }}
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="red"

@@ -23,7 +23,7 @@ const tabs = ref([
     { key: 'Keep', title: 'Keep', disabled: false },
     { key: 'Served/Returned', title: 'Served/Returned', disabled: false },
     { key: 'Expired', title: 'Expired', disabled: false },
-    { key: 'Extended', title: 'Extended', disabled: false },
+    { key: 'Edited', title: 'Edited', disabled: false },
     { key: 'Deleted', title: 'Deleted', disabled: false },
 ]);
 
@@ -67,7 +67,7 @@ const getStatusVariant = (status) => {
         case 'Keep': return 'default';
         case 'Returned':
         case 'Served': return 'green'
-        case 'Extended': return 'blue'
+        case 'Edited': return 'blue'
         case 'Deleted': return 'red'
         default: return 'grey'
     }

@@ -878,7 +878,7 @@ onUnmounted(stop);
                         :disabled="form.processing"
                         @click="hideCancelOrderForm"
                     >
-                        {{ $t('public.action.keep') }}
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="red"

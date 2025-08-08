@@ -81,6 +81,38 @@ return [
     "checked_in_customer" => "已签到的顾客",
     "cancel_order" => "取消订单",
     "create_new_customer" => "新增顾客",
+    "guest" => "客人",
+    "current_points" => "当前积分",
+    "current_tier" => "当前等级",
+    "keep_item" => "已保留产品",
+    "view_history" => "查看历史",
+    "kept_from" => "保留桌台",
+    "expire_on" => "截止日期",
+    "kept_by" => "处理保留",
+    "remark" => "备注",
+    "edit_kept_detail" => "编辑保留详情",
+    "mark_expired" => "标记为过期",
+    "mark_expired_message" => "此保留商品将被标记为已过期, 顾客将无法再兑换此商品. 您确定要继续吗?",
+    "delete_kept_item" => "删除保留产品",
+    "confirmation" => "确认操作",
+    "edit_kept_item_detail" => "编辑保留详情",
+    "from_order" => "原订单",
+    "kept" => "保留",
+    "expiry_date" => "截止日期",
+    "enter_here" => "输入文字",
+    "history" => "历史记录",
+    "served" => "已送达",
+    "returned" => "已返回",
+    "served_returned" => "上桌 / 退回",
+    "expired" => "过期",
+    "edited" => "编辑",
+    "deleted" => "删除",
+    "keep" => "保留",
+
+    // "incorrect_info" => "信息不正确",
+    // "duplicate_entry" => "重复的输入",
+    // "customer_asked_delete" => "客户要求删除",
+    // "others_specify_remark" => "其他 (请在备注中注明)",
 
     // Input fields label name
     "field" => [
@@ -92,6 +124,7 @@ return [
         "name" => "姓名",
         "phone_no" => "电话号码",
         "email" => "邮件",
+        "deletion_reason" => "选择删除原因",
     ],
 
     // Toast messages
@@ -104,6 +137,13 @@ return [
         "table_available_now" => "所选桌台可供下一位顾客使用.",
         "order_cancelled" => "选定的订单已成功取消.",
         "customer_added" => "客户添加成功.",
+        "edit_success" => "編輯成功.",
+        "kept_item_expiry_extended_summary" => "到期日期已成功延长",
+        "kept_item_expiry_extended_detail" => "您已延长所选保留产品的有效期.",
+        "kept_item_expired_summary" => "保留的产品已成功过期",
+        "kept_item_expired_detail" => "所选商品已过期并已退回库存量.",
+        "kept_item_deleted_summary" => "已成功删除保留的产品",
+        "kept_item_deleted_detail" => "所选的产品已从该客户帐户中删除.",
     ],
 
     // Action buttons' label
@@ -137,8 +177,9 @@ return [
         "delay_reservation" => "Delay reservation",
         "cancel_reservation" => "Cancel reservation",
         "delete" => "删除",
-        "keep" => "保留",
         "create_new" => "新增",
+        "more_action" => "更多操作",
+        "add_to_room" => "添加到房间",
     ],
 
     // Empty states' messages
@@ -154,6 +195,7 @@ return [
         "no_pending_item" => "无待处理的项目",
         "no_item_added" => "未添加商品至订单",
         "no_pending_remove" => "没有待删除的待处理项目.",
+        "no_bills" => "尚未支付任何账单...",
     ],
 
     // Error pages' error messages
@@ -243,7 +285,6 @@ return [
         "order_detail" => "订单详情",
         "pending_serve" => "等待服务",
         "payment_history" => "付款历史",
-        "served" => "已送达",
         "total_exclude_tax" => "总额 (不含税)",
         "ordered_by" => "建立订单者",
         "serve_now" => "立即上桌",
@@ -253,6 +294,7 @@ return [
         "delete_order_message_desc" => "您确定要删除所选订单吗? 一旦操作将无法撤回.",
         "delete_qty" => "删除数量",
         "cancel_order_message_desc" => "您确定要取消此订单吗? 所有商品将返回库存, 不会影响销售.",
+        "view_price_breakdown" => "查看价格明细",
     ],
     "shift" => [
         "cryptocurrency_market_price" => "Cryptocurrency Market Price",

@@ -21,6 +21,7 @@ import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import { deleteReason, expiryDates } from '@/Composables/constants';
 import { MovingIllus } from '@/Components/Icons/illus';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     customer: {
@@ -52,7 +53,7 @@ const isExtendExpirationOpen = ref(false);
 const isExpireKeptItemOpen = ref(false);
 const isDeleteKeptItemOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
-const selectedItem = ref();
+const selectedItem = ref(null);
 const initialEditForm = ref();
 const isLoading = ref(false);
 const expiringPointHistories = ref([]);
@@ -128,8 +129,6 @@ const openOverlay = (event, item) => {
 };
 
 const closeOverlay = () => {
-    selectedItem.value = null;
-    
     if (op.value) {
         op.value.hide();
     }
@@ -268,7 +267,7 @@ const editKeptItem = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Successfully edited.',
+                summary: wTrans('public.toast.edit_success'),
             });
         }, 200)
         editForm.reset();
@@ -287,8 +286,8 @@ const extendKeptItem = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Expiration date extended successfully',
-                detail: 'You’ve extended the expiration date for selected kept item.'
+                summary: wTrans('public.toast.kept_item_expiry_extended_summary'),
+                detail: wTrans('public.toast.kept_item_expiry_extended_detail')
             });
         }, 200)
         extendForm.reset();
@@ -312,8 +311,8 @@ const expireKeptItem = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Kept item successfully expired',
-                detail: 'Selected item has been expired and returned to inventory.'
+                summary: wTrans('public.toast.kept_item_expired_summary'),
+                detail: wTrans('public.toast.kept_item_expired_detail')
             });
         }, 200)
     } catch (error) {
@@ -331,8 +330,8 @@ const deleteKeptItem = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Kept item successfully deleted',
-                detail: 'Selected item has been deleted from this customer’s account.'
+                summary: wTrans('public.toast.kept_item_deleted_summary'),
+                detail: wTrans('public.toast.kept_item_deleted_detail')
             });
         }, 200)
         deleteForm.reset();
@@ -463,7 +462,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
             <div class="w-full flex justify-center items-start gap-6 self-stretch">
                 <div class="flex flex-col p-4 items-start gap-3 flex-[1_0_0] rounded-[5px] bg-gradient-to-br from-primary-900 to-[#5E0A0E] relative">
                     <div class="w-full flex justify-between items-center">
-                        <span class="text-base font-semibold text-primary-25 whitespace-nowrap w-full">Current Points</span>
+                        <span class="text-base font-semibold text-primary-25 whitespace-nowrap w-full">{{ $t('public.current_points') }}</span>
                         <CircledArrowHeadRightIcon2
                             class="size-6 text-primary-900 [&>rect]:fill-primary-25 [&>rect]:hover:fill-primary-800 cursor-pointer z-10"
                             @click="openDrawer('currentPoints')" 
@@ -471,7 +470,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     </div>
                     <div class="flex flex-col items-start gap-1">
                         <span class="text-white text-[36px] leading-normal font-light tracking-[-0.72px]">{{ formatPoints(customer.point) }}</span>
-                        <span class="text-white text-lg font-normal">pts</span>
+                        <span class="text-white text-lg font-normal">{{ $t('public.pts') }}</span>
                     </div>
                     <div class="absolute bottom-0 right-0">
                         <GiftImage />
@@ -480,7 +479,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                 <div class="flex flex-col p-4 items-start gap-3 flex-[1_0_0] self-stretch rounded-[5px] border border-solid border-primary-50 
                             bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#FFFAFA] to-[#FFFFFF] relative">
                     <div class="w-full flex justify-between items-center">
-                        <span class="text-base font-semibold text-primary-900 whitespace-nowrap w-full">Current Tier</span>
+                        <span class="text-base font-semibold text-primary-900 whitespace-nowrap w-full">{{ $t('public.current_tier') }}</span>
                         <CircledArrowHeadRightIcon2
                             class="size-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer z-10"
                             @click="openDrawer('currentTier')" 
@@ -513,10 +512,10 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
         <!-- Keep item -->
         <div class="w-full flex flex-col items-center gap-3 self-stretch">
             <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
-                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Keep Item ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
+                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">{{ $t('public.keep_item') }} ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
                 <div class="flex items-center gap-2 cursor-pointer" @click="openDrawer('keepHistory')">
                     <HistoryIcon class="w-4 h-4" />
-                    <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">View History</div>
+                    <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">{{ $t('public.view_history') }}</div>
                 </div>
             </div>
             <div class="flex flex-col justify-end items-start gap-2 self-stretch">
@@ -590,11 +589,11 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                             >
                         </div>
                         <div class="grid grid-cols-10 w-full items-start">
-                            <span class="col-span-2 text-grey-500 text-sm font-normal">Kept from</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.kept_from') }}</span>
                             <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.kept_from_table }}</span>
-                            <span class="col-span-2 text-grey-500 text-sm font-normal">Expire on</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.expire_on') }}</span>
                             <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.expired_to ? dayjs(item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
-                            <span class="col-span-2 text-grey-500 text-sm font-normal">Kept by</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.kept_by') }}</span>
                             <div class="col-span-8 flex items-center gap-1.5 flex-[1_0_0]">
                                 <img
                                     :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
@@ -603,7 +602,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                                 >
                                 <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.waiter.full_name }}</span>
                             </div>
-                            <span class="col-span-2 text-grey-500 text-sm font-normal">Remark</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.remark') }}</span>
                             <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.remark ? item.remark : '-' }}</span>
                         </div>
                     </div>
@@ -614,7 +613,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                             :size="'md'"
                             @click="openActionsOverlay($event, item)"
                         >
-                            More Action
+                            {{ $t('public.action.more_action') }}
                         </Button>
                         <Button
                             :variant="'primary'"
@@ -623,7 +622,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                             :disabled="tableStatus === 'Pending Clearance'"
                             @click="openOverlay($event, item)"
                         >
-                            Add to room
+                            {{ $t('public.action.add_to_room') }}
                         </Button>
                     </div>
                 </div>
@@ -637,7 +636,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
             <form novalidate @submit.prevent="submit">
                 <div class="flex flex-col gap-6 w-96">
                     <div class="flex items-center justify-between">
-                        <span class="text-primary-950 text-center text-md font-medium">Select Quantity</span>
+                        <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.confirmation') }}</span>
                         <TimesIcon
                             class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                             @click="closeOverlay"
@@ -673,13 +672,13 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                             :size="'lg'"
                             @click="closeOverlay"
                         >
-                            Cancel
+                            {{ $t('public.action.cancel') }}
                         </Button>
                         <Button
                             :size="'lg'"
                             :disabled="!isFormValid"
                         >
-                            Add
+                            {{ $t('public.action.add') }}
                         </Button>
                     </div>
                 </div>
@@ -690,7 +689,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
     <!-- More Actions -->
     <OverlayPanel ref="isMoreActionOpen" @close="closeActionsOverlay" class="[&>div]:!p-1 [&>div]:!gap-0.5">
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('edit')">
-            <span class="text-grey-900 text-base font-medium">Edit kept detail</span>
+            <span class="text-grey-900 text-base font-medium">{{ $t('public.edit_kept_detail') }}</span>
         </div>
         <!-- <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('extend')" v-if="selectedItem.expired_to">
             <span class="text-grey-900 text-base font-medium">Extend expiration date</span>
@@ -699,17 +698,17 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
             <span class="text-grey-300 text-base font-medium">Extend expiration date</span>
         </div> -->
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" v-if="getKeepItemExpiryStatus(selectedItem) === 'now'" @click="openModal('expire')">
-            <span class="text-primary-800 text-base font-medium">Mark as expired</span>
+            <span class="text-primary-800 text-base font-medium">{{ $t('public.mark_expired') }}</span>
         </div>
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('delete')">
-            <span class="text-primary-800 text-base font-medium">Delete kept item</span>
+            <span class="text-primary-800 text-base font-medium">{{ $t('public.delete_kept_item') }}</span>
         </div>
     </OverlayPanel>
 
     <!-- Edit Kept Detail -->
     <Modal
         :show="isEditKeptItemOpen"
-        :title="'Edit Kept Item Detail'"
+        :title="$t('public.edit_kept_item_detail')"
         :maxWidth="'sm'"
         @close="closeModal('close')"
     >  
@@ -720,7 +719,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         <span class="self-stretch text-md font-medium">{{ selectedItem.item_name }}</span>
                         <div class="flex flex-col items-start gap-1 self-stretch">
                             <div class="flex items-center gap-3 self-stretch">
-                                <span class="text-grey-500 text-sm font-normal">From order</span>
+                                <span class="text-grey-500 text-sm font-normal">{{ $t('public.from_order') }}</span>
                                 <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ selectedItem.order_no }}</span>
                             </div>
                         </div>
@@ -732,7 +731,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     >
                 </div>
                 <div class="grid grid-cols-3 items-center self-stretch">
-                    <span class="text-grey-900 text-base font-bold">Kept</span>
+                    <span class="text-grey-900 text-base font-bold">{{ $t('public.kept') }}</span>
                     <NumberCounter
                         :errorMessage="editForm.errors?.kept_amount"
                         :minValue="1"
@@ -758,7 +757,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     </TextInput>
                 </div>
                 <div class="grid grid-cols-3  items-center self-stretch">
-                    <span class="text-grey-900 text-base font-bold">Remark</span>
+                    <span class="text-grey-900 text-base font-bold">{{ $t('public.remark') }}</span>
                     <Textarea 
                         :rows="3"
                         :errorMessage="editForm.errors?.remark"
@@ -768,7 +767,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     />
                 </div>
                 <div class="grid grid-cols-3 items-center self-stretch">
-                    <span class="text-grey-900 text-base font-bold">Expiration date</span>
+                    <span class="text-grey-900 text-base font-bold">{{ $t('public.expiry_date') }}</span>
                     <DateInput 
                         :errorMessage="editForm.errors?.expired_to"
                         :range="false"
@@ -786,7 +785,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :size="'lg'"
                         @click="closeModal('close')"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         :variant="'primary'"
@@ -794,7 +793,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :size="'lg'"
                         :disabled="isLoading"
                     >
-                        Save
+                        {{ $t('public.action.save') }}
                     </Button>
                 </div>
             </div>
@@ -810,7 +809,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
     </Modal>
 
      <!-- Extend expiration date -->
-    <Modal
+    <!-- <Modal
         :title="'Extend Expiration Date'"
         :maxWidth="'xs'"
         :show="isExtendExpirationOpen"
@@ -858,11 +857,11 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
             @close="closeModal('stay')"
             @leave="closeModal('leave')"
         />
-    </Modal>
+    </Modal> -->
 
     <!-- Delete kept item -->
     <Modal
-        :title="'Delete Kept Item'"
+        :title="$t('public.delete_kept_item')"
         :show="isDeleteKeptItemOpen"
         :maxWidth="'sm'"
         @close="closeModal('close')"
@@ -870,20 +869,20 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
         <form @submit.prevent="deleteKeptItem">
             <div class="flex flex-col items-start gap-4 self-stretch">
                 <Dropdown
-                    :labelText="'Select Deletion Reason'"
+                    :labelText="$t('public.field.deletion_reason')"
                     :errorMessage="deleteForm.errors.remark ? deleteForm.errors.remark[0] : ''"
                     :inputName="'remark'"
                     :inputArray="deleteReason"
-                    :placeholder="'Select'"
+                    :placeholder="$t('public.select')"
                     v-model="deleteForm.remark"
                 />
 
                 <Textarea
-                    :labelText="'Remarks'"
+                    :labelText="$t('public.remark')"
                     :errorMessage="deleteForm.errors.remark_description ? deleteForm.errors.remark_description[0] : ''"
                     :inputName="'remark_description'"
                     :rows="5"
-                    :placeholder="'Enter here'"
+                    :placeholder="$t('public.enter_here')"
                     v-model="deleteForm.remark_description"
                 />
             </div>
@@ -894,14 +893,14 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     :type="'button'"
                     @click="closeModal('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :variant="'primary'"
                     :size="'lg'"
                     :type="'submit'"
                 >
-                    Delete
+                    {{ $t('public.action.delete') }}
                 </Button>
             </div>
         </form>
@@ -930,10 +929,10 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                 </div>
                 <div class="flex flex-col gap-1" >
                     <div class="text-primary-900 text-lg font-medium text-center">
-                        Mark as Expired?
+                        {{ $t('public.mark_expired') }}?
                     </div>
                     <div class="text-gray-900 text-base font-medium text-center leading-tight" >
-                        This kept item will be marked as expired and customer can no longer redeem back this item. Are you sure you want to proceed?
+                        {{ $t('public.mark_expired_message') }}
                     </div>
                 </div>
                 <div class="flex item-center gap-3">
@@ -943,13 +942,13 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         @click="closeModal('close')"
                         type="button"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         size="lg"
                         :disabled="isLoading"
                     >
-                        Confirm
+                        {{ $t('public.action.confirm') }}
                     </Button>
                 </div>
             </div>

@@ -10,6 +10,7 @@ import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 import { onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
@@ -20,12 +21,12 @@ const props = defineProps({
 });
 
 const tabs = ref([
-    { key: 'All', title: 'All', disabled: false },
-    { key: 'Keep', title: 'Keep', disabled: false },
-    { key: 'Served/Returned', title: 'Served/Returned', disabled: false },
-    { key: 'Expired', title: 'Expired', disabled: false },
-    { key: 'Extended', title: 'Extended', disabled: false },
-    { key: 'Deleted', title: 'Deleted', disabled: false },
+    { key: 'All', title: wTrans('public.all'), disabled: false },
+    { key: 'Keep', title: wTrans('public.keep'), disabled: false },
+    { key: 'Served/Returned', title: wTrans('public.served_returned'), disabled: false },
+    { key: 'Expired', title: wTrans('public.expired'), disabled: false },
+    { key: 'Edited', title: wTrans('public.edited'), disabled: false },
+    { key: 'Deleted', title: wTrans('public.deleted'), disabled: false },
 ]);
 const keepHistory = ref([]);
 const isReactivateOpen = ref(false);
@@ -129,7 +130,7 @@ const getStatusVariant = (status) => {
         case 'Keep': return 'default';
         case 'Returned':
         case 'Served': return 'green'
-        case 'Extended': return 'blue'
+        case 'Edited': return 'blue'
         case 'Deleted': return 'red'
         default: return 'grey'
     }
@@ -244,7 +245,7 @@ onMounted(() => {
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">
                                                 <!-- <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span> -->
-                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? item.status === 'Extended' || item.status === 'Expired' 
+                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? item.status === 'Edited' || item.status === 'Expired' 
                                                                                                                                     ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}`
                                                                                                                                     : `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` 
                                                                                                                                 : '' }}</span>

@@ -547,7 +547,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                                 {{ productItem.inventory_item.item_name }}
                                             </p>
                                             <div class="flex items-center gap-2 self-stretch text-primary-900 text-xs font-medium">
-                                                <p>{{ $t('public.order.served') }}:</p>
+                                                <p>{{ $t('public.served') }}:</p>
                                                 <p>{{ subItem.serve_qty }}/{{ totalSubItemQty(subItem) }}</p>
                                             </div>
                                         </div>

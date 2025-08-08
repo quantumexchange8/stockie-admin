@@ -95,7 +95,7 @@ watch(() => props.currentOrder, (newValue) => {
                     <div class="flex flex-col items-center gap-y-5 p-4 w-full self-stretch rounded bg-grey-50 shadow-[0px_4px_15.8px_0px_rgba(13,13,13,0.08)] !z-[1020]" >
                         <div class="flex flex-row items-center self-stretch justify-between pl-2 border-l-[6px] border-primary-800">
                             <div class="flex flex-col gap-y-2 items-start justify-center">
-                                <p class="text-grey-950 text-md font-normal">{{ order.payment ? `Bill #${order.payment.receipt_no}` : 'Order Cancelled' }}</p>
+                                <p class="text-grey-950 text-md font-normal">{{ order.payment ? `Bill #${order.payment.receipt_no}` : $t('public.order.order_cancelled') }}</p>
                                 <div class="flex flex-row gap-x-3 items-center">
                                     <p class="text-grey-900 text-base font-normal">#{{ order.order_no }}</p>
                                     <span class="text-grey-200">&#x2022;</span>
@@ -106,39 +106,44 @@ watch(() => props.currentOrder, (newValue) => {
                                             class="size-6 rounded-full"
                                             v-if="order.customer"
                                         >
-                                        <p class="text-grey-900 text-base font-normal">{{ order.customer?.full_name ?? 'Guest' }}</p>
+                                        <p class="text-grey-900 text-base font-normal">{{ order.customer?.full_name ?? $t('public.guest') }}</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="flex flex-col justify-center items-end gap-y-1">
                                 <p class="text-grey-950 text-md font-bold truncate">RM {{ Number(order.payment?.grand_total ?? order.total_amount).toFixed(2) }}</p>
-                                <p class="text-primary-800 text-base font-normal truncate" v-if="order.payment">(+{{ order.payment?.point_earned ?? 0 }} pts)</p>
+                                <p class="text-primary-800 text-base font-normal truncate" v-if="order.payment">(+{{ order.payment?.point_earned ?? 0 }} {{ $t('public.pts') }})</p>
                             </div>
                         </div>
                         <div class="w-full flex flex-col gap-y-2 items-start self-stretch">
-                            <div class="w-full grid grid-cols-12 justify-between gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
-                                <div class="col-span-9 grid grid-cols-12 gap-3 items-center">
-                                    <img 
-                                        :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
-                                        alt=""
-                                        class="col-span-3 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
-                                    >
-                                    <div class="col-span-9 flex flex-col gap-2 items-start justify-center self-stretch w-full">
-                                        <div class="flex flex-row gap-x-2 self-stretch items-center">
-                                            <Tag :value="getItemTypeName(item.type)" variant="blue" v-if="item.type !== 'Normal'"/>
-                                            <p class="text-sm font-medium text-grey-900 truncate flex-shrink">{{ item.type === 'Normal' || item.type === 'Redemption' ? item.product.product_name : item.item_name }}</p>
+                            <template v-if="order.order_items.length > 0">
+                                <div class="w-full grid grid-cols-12 justify-between gap-3 items-center py-3" v-for="(item, index) in order.order_items" :key="index">
+                                    <div class="col-span-9 grid grid-cols-12 gap-3 items-center">
+                                        <img 
+                                            :src="item.product.image ? item.product.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                                            alt=""
+                                            class="col-span-3 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
+                                        >
+                                        <div class="col-span-9 flex flex-col gap-2 items-start justify-center self-stretch w-full">
+                                            <div class="flex flex-row gap-x-2 self-stretch items-center">
+                                                <Tag :value="getItemTypeName(item.type)" variant="blue" v-if="item.type !== 'Normal'"/>
+                                                <p class="text-sm font-medium text-grey-900 truncate flex-shrink">{{ item.type === 'Normal' || item.type === 'Redemption' ? item.product.product_name : item.item_name }}</p>
+                                            </div>
+
+                                            <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink">x{{ item.item_qty }}</p>
                                         </div>
-
-                                        <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink">x{{ item.item_qty }}</p>
                                     </div>
-                                </div>
 
-                                <div v-if="item.discount_id" class="col-span-3 flex flex-col items-center">
-                                    <span class="line-clamp-1 text-ellipsis text-grey-900 text-base font-normal leading-normal text-right self-stretch">RM {{ Number(item.amount).toFixed(2) }}</span>
-                                    <span class="line-clamp-1 text-ellipsis text-grey-500 text-xs font-normal leading-normal text-right self-stretch line-through">RM {{ Number(item.amount_before_discount).toFixed(2) }}</span>
+                                    <div v-if="item.discount_id" class="col-span-3 flex flex-col items-center">
+                                        <span class="line-clamp-1 text-ellipsis text-grey-900 text-base font-normal leading-normal text-right self-stretch">RM {{ Number(item.amount).toFixed(2) }}</span>
+                                        <span class="line-clamp-1 text-ellipsis text-grey-500 text-xs font-normal leading-normal text-right self-stretch line-through">RM {{ Number(item.amount_before_discount).toFixed(2) }}</span>
+                                    </div>
+                                    <span class="col-span-3 text-grey-900 text-base font-normal leading-normal text-right" v-else>RM {{ Number(item.amount).toFixed(2) }}</span>
                                 </div>
-                                <span class="col-span-3 text-grey-900 text-base font-normal leading-normal text-right" v-else>RM {{ Number(item.amount).toFixed(2) }}</span>
-                            </div>
+                            </template>
+                            <template v-else>
+                                <p class="text-base font-medium text-grey-300 py-6 self-stretch truncate">{{ $t('public.empty.no_item_added') }}</p>
+                            </template>
                         </div>
 
                         <transition
@@ -183,7 +188,7 @@ watch(() => props.currentOrder, (newValue) => {
                             <div class="flex flex-row gap-x-2 cursor-pointer" @click="toggleCollapse(order.order_no)">
                                 <CircledArrowHeadDownIcon :class="{ 'rotate-180': !collapsedSections[order.order_no] }" class="text-primary-700 transition-transform duration-300" />
                                 <p class="text-primary-900 text-sm font-normal cursor-pointer">
-                                    {{ collapsedSections[order.order_no] ? 'View Price Breakdown' : 'Hide Price Breakdown' }}
+                                    {{ $t('public.order.view_price_breakdown') }}
                                 </p>
                             </div>
                         </div>
@@ -191,8 +196,8 @@ watch(() => props.currentOrder, (newValue) => {
                 </template>
             </template>
 
-            <div v-else>
-                <p class="text-grey-900 text-base font-medium">No bills have been paid yet.</p>
+            <div class="flex items-center justify-center w-full" v-else>
+                <p class="text-grey-900 text-base font-medium">{{ $t('public.empty.no_bills') }}</p>
             </div>
         </div>
     </div>

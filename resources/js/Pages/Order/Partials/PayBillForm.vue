@@ -388,6 +388,7 @@ const openSuccessPaymentModal = () => {
 };
 
 const closeSuccessPaymentModal = () => {
+    form.processing = true;
     isSuccessPaymentShow.value = false;
     setTimeout(() => showOrderReceipt.value = false, 3000);
     form.reset();
@@ -415,6 +416,7 @@ const closeSuccessPaymentModal = () => {
         }, 500)
     }
 
+    form.processing = false;
 };
 
 const kickDrawer = (printer, base64) => {
@@ -1632,10 +1634,18 @@ const printPreviewReceipt = async () => {
             </div>
 
             <div class="flex flex-col items-start gap-4 self-stretch">
-                <div @click="printInvoiceReceipt" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] border border-grey-200 h-36 cursor-pointer">
+                <div 
+                    class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] border border-grey-200 h-36"
+                    :class="form.processing ? 'cursor-not-allowed pointer-events-none bg-grey-100' : 'cursor-pointer'"
+                    @click="printInvoiceReceipt"
+                >
                     <p class="text-grey-950 text-md font-medium">Print receipt</p>
                 </div>
-                <div @click="closeSuccessPaymentModal" class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] h-36 border border-grey-200 cursor-pointer">
+                <div 
+                    class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] h-36 border border-grey-200"
+                    :class="form.processing ? 'cursor-not-allowed pointer-events-none bg-grey-100' : 'cursor-pointer'"
+                    @click="closeSuccessPaymentModal"
+                >
                     <p class="text-grey-950 text-md font-medium">No receipt</p>
                 </div>
             </div>

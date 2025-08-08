@@ -81,6 +81,38 @@ return [
     "checked_in_customer" => "Checked-in customer",
     "cancel_order" => "Cancel Order",
     "create_new_customer" => "Create New Customer",
+    "guest" => "Guest",
+    "current_points" => "Current Points",
+    "current_tier" => "Current Tier",
+    "keep_item" => "Keep Item",
+    "view_history" => "View History",
+    "kept_from" => "Kept from",
+    "expire_on" => "Expire on",
+    "kept_by" => "Kept by",
+    "remark" => "Remark",
+    "edit_kept_detail" => "Edit kept detail",
+    "mark_expired" => "Mark as expired",
+    "mark_expired_message" => "This kept item will be marked as expired and customer can no longer redeem back this item. Are you sure you want to proceed?",
+    "delete_kept_item" => "Delete kept item",
+    "confirmation" => "Confirmation",
+    "edit_kept_item_detail" => "Edit Kept Item Detail",
+    "from_order" => "From order",
+    "kept" => "Kept",
+    "expiry_date" => "Expiry date",
+    "enter_here" => "Enter here",
+    "history" => "History",
+    "served" => "Served",
+    "returned" => "Returned",
+    "served_returned" => "Served/Returned",
+    "expired" => "Expired",
+    "edited" => "Edited",
+    "deleted" => "Deleted",
+    "keep" => "Keep",
+
+    // "incorrect_info" => "Incorrect information",
+    // "duplicate_entry" => "Duplicate entry",
+    // "customer_asked_delete" => "Customer asked to delete",
+    // "others_specify_remark" => "Others (specify under Remarks)",
 
     // Input fields label name
     "field" => [
@@ -92,6 +124,7 @@ return [
         "name" => "Name",
         "phone_no" => "Phone No.",
         "email" => "Email",
+        "deletion_reason" => "Select Deletion Reason",
     ],
 
     // Toast messages
@@ -104,6 +137,13 @@ return [
         "table_available_now" => "Selected table is now available for the next customer.",
         "order_cancelled" => "Selected order has been cancelled successfully.",
         "customer_added" => "Customer added successfully.",
+        "edit_success" => "Successfully edited.",
+        "kept_item_expiry_extended_summary" => "Expiration date extended successfully",
+        "kept_item_expiry_extended_detail" => "You’ve extended the expiration date for selected kept item.",
+        "kept_item_expired_summary" => "Kept item successfully expired",
+        "kept_item_expired_detail" => "Selected item has been expired and returned to inventory.",
+        "kept_item_deleted_summary" => "Kept item successfully deleted",
+        "kept_item_deleted_detail" => "Selected item has been deleted from this customer’s account.",
     ],
 
     // Action buttons' label
@@ -137,8 +177,9 @@ return [
         "delay_reservation" => "Delay reservation",
         "cancel_reservation" => "Cancel reservation",
         "delete" => "Delete",
-        "keep" => "Keep",
         "create_new" => "Create New",
+        "more_action" => "More Action",
+        "add_to_room" => "Add to room",
     ],
 
     // Empty states' messages
@@ -154,6 +195,7 @@ return [
         "no_pending_item" => "No pending item to be served",
         "no_item_added" => "No item has been added to order",
         "no_pending_remove" => "No pending item to be removed",
+        "no_bills" => "No bills have been paid yet...",
     ],
 
     // Error pages' error messages
@@ -243,7 +285,6 @@ return [
         "order_detail" => "Order Detail",
         "pending_serve" => "Pending Serve",
         "payment_history" => "Payment History",
-        "served" => "Served",
         "total_exclude_tax" => "Total (excl. tax)",
         "ordered_by" => "Ordered by",
         "serve_now" => "Serve Now",
@@ -253,6 +294,7 @@ return [
         "delete_order_message_desc" => "Are you sure you want to delete the selected order? This action cannot be undone.",
         "delete_qty" => "Delete Quantity",
         "cancel_order_message_desc" => "Are you sure you want to cancel this order? All items will return to inventory and won't affect sales.",
+        "view_price_breakdown" => "View Price Breakdown",
     ],
     "shift" => [
         "cryptocurrency_market_price" => "Cryptocurrency",

@@ -284,7 +284,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                                 v-if="table.customer && table.customer.image"
                             >
                             <DefaultIcon class="size-5" v-else />
-                            <span class="text-grey-900 text-base font-normal">{{ table.customer ? table.customer.full_name : 'Guest' }}</span>
+                            <span class="text-grey-900 text-base font-normal">{{ table.customer ? table.customer.full_name : $t('public.guest') }}</span>
                         </div>
                         <p class="text-grey-200">&#x2022;</p>
                         <span class="text-grey-900 text-base font-normal">{{ dayjs(table.order.created_at).format('DD/MM/YYYY, HH:mm') }}</span>
@@ -323,7 +323,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         :disabled="form.processing"
                         @click="openOverlay($event, item)"
                     >
-                        Serve Now
+                        {{ $t('public.order.serve_now') }}
                     </Button>
                 </div>
             </div>
@@ -331,7 +331,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
     </div>
     <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
         <UndetectableIllus />
-        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
     </div>
 
     <!-- Remove order item -->
@@ -352,7 +352,7 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
             <form novalidate @submit.prevent="formSubmit">
                 <div class="flex flex-col gap-6 w-[300px]">
                     <div class="flex items-center justify-between">
-                        <span class="text-primary-950 text-center text-md font-medium">Serve Now</span>
+                        <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.order.serve_now') }}</span>
                         <TimesIcon
                             class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                             @click="closeOverlay"
@@ -396,12 +396,14 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                         <div class="flex justify-between items-center self-stretch">
                             <span class="text-grey-900 text-base font-medium">{{ item.product_item.inventory_item.item_name }}</span>
                             <div class="flex items-start gap-2">
-                                <span class="text-primary-900 text-xs font-medium">Served:</span>
+                                <span class="text-primary-900 text-xs font-medium">{{ $t('public.served') }}:</span>
                                 <span class="text-primary-900 text-xs font-medium">({{ item.serve_qty }}/{{ item.item_qty * selectedItem.item_qty }})</span>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 justify-between items-center self-stretch ">
-                            <span class="text-grey-900 text-xs font-medium">Serve Now Quantity</span>
+                            <span class="text-grey-900 text-xs font-medium">
+                                {{ $t('public.order.serve_now_qty') }}
+                            </span>
                             <NumberCounter
                                 :inputName="`subItem_${item.id}.serving_qty`"
                                 :maxValue="item.item_qty - item.serve_qty"
@@ -417,13 +419,13 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             :size="'lg'"
                             @click="closeOverlay"
                         >
-                            Cancel
+                            {{ $t('public.action.cancel') }}
                         </Button>
                         <Button
                             :size="'lg'"
                             :disabled="!isFormValid"
                         >
-                            Serve
+                            {{ $t('public.action.serve') }}
                         </Button>
                     </div>
                 </div>

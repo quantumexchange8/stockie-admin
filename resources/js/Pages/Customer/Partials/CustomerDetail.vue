@@ -97,7 +97,6 @@ const openItemOverlay = (event, item) => {
 };
 
 const closeItemOverlay = () => {
-    selectedItem.value = null;
     returnItemOverlay.value.hide();
 };
 
@@ -679,7 +678,7 @@ watch((editForm), (newValue) => {
     </Modal>
 
      <!-- Extend expiration date -->
-    <Modal
+    <!-- <Modal
         :title="'Extend Expiration Date'"
         :maxWidth="'xs'"
         :show="isExtendExpirationOpen"
@@ -727,7 +726,7 @@ watch((editForm), (newValue) => {
             @close="closeModal('stay')"
             @leave="closeModal('leave')"
         />
-    </Modal>
+    </Modal> -->
 
     <!-- Delete kept item -->
     <Modal
