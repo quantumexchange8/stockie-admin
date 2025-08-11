@@ -2783,7 +2783,7 @@ class OrderController extends Controller
             $response = array_merge($response, $this->kickDrawer());
 
             // POST CT Einvoice
-            // $this->storeAtCtInvoice($payment, $order->orderItems);
+            $this->storeAtCtInvoice($payment, $order->orderItems);
         }
 
         return $response ?? 'Payment Unsuccessfull.';

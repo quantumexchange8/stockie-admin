@@ -555,22 +555,6 @@ class EInvoiceController extends Controller
         return redirect()->back();
     }
 
-    // public function submitInvoice(Request $request) 
-    // {
-    //     $payout = PayoutConfig::first();
-    //     $period = $request->input('period');
-    //     list($startDate, $endDate) = explode(' - ', $period);
-    //     $c_period_start = Carbon::createFromFormat('d/m/Y', trim($startDate))->startOfDay();
-    //     $c_period_end = Carbon::createFromFormat('d/m/Y', trim($endDate))->endOfDay();
-        
-    //     $invoice = Payment::where('invoice_no', $request->receipt_no)
-    //             ->where('merchant_id', $request->merchant_id)
-    //             ->with(['invoice_lines', 'invoice_lines.classification'])
-    //             ->first();
-
-                
-    // }
-
     public function refundConsolidate(Request $request)
     {
 
