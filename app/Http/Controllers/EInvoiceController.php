@@ -451,6 +451,8 @@ class EInvoiceController extends Controller
         $canonicalData = canonicalizeJson($invoiceData);
         $canonicalJson = json_encode($canonicalData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
+        Log::debug('canonicalJson ', ['canonicalJson' => $canonicalJson]);
+
         // SHA-256 binary hash
         $documentHashBinary = hash('sha256', $canonicalJson, true);
         $documentHashHex = hash('sha256', $canonicalJson); // for API
@@ -488,7 +490,7 @@ class EInvoiceController extends Controller
         $serialNumber = $parsedCert['serialNumberHex'] ?? $parsedCert['serialNumber'];
         
         // Signing time
-        $signingTime = Carbon::now('UTC')->toIso8601String();
+        $signingTime = gmdate('Y-m-d\TH:i:s\Z');
 
         $document = [
             'documents' => [
@@ -506,7 +508,6 @@ class EInvoiceController extends Controller
                         ],
                         'issuerSerial' => [
                             'issuerName' => $issuerName,
-                            // "issuerName" => "CN=Pos Digicert, O=Pos Malaysia, C=MY",
                             'serialNumber' => $serialNumber
                         ],
                         'signingTime' => $signingTime
