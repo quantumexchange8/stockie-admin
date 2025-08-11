@@ -90,6 +90,7 @@ class EInvoiceController extends Controller
         return response()->json($consolidateInvoice);
     }
 
+    // Consolidate invoice
     public function submitConsolidate(Request $request)
     {
         // dd($request->all());
@@ -450,13 +451,13 @@ class EInvoiceController extends Controller
         $canonicalData = canonicalizeJson($invoiceData);
         $canonicalJson = json_encode($canonicalData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        // Generate the document hash (binary format for signing)
-        $documentHash = hash('sha256', $canonicalJson, true);
+        // SHA-256 binary hash
+        $documentHashBinary = hash('sha256', $canonicalJson, true);
+        $documentHashHex = hash('sha256', $canonicalJson); // for API
 
         // Load PFX file from storage
         $pfxFile = storage_path('certs/signing.pfx');
         $pfxPassword = env('PRIVATE_KEY_PASS');
-
         $pkcs12 = file_get_contents($pfxFile);
 
         // Extract private key and certificate
@@ -464,83 +465,57 @@ class EInvoiceController extends Controller
             throw new \Exception("Unable to read PFX file or incorrect password.");
         }
         
-        // Sign the hash with private key using RSA-SHA256
-        $signature = null;
-        if (!openssl_sign($documentHash, $signature, $certs['pkey'], OPENSSL_ALGO_SHA256)) {
+        // Sign
+        if (!openssl_sign($documentHashBinary, $signature, $certs['pkey'], OPENSSL_ALGO_SHA256)) {
             throw new \Exception("Signing failed.");
         }
+        $signatureBase64 = base64_encode($signature);
 
-        $signatureBase64  = base64_encode($signature);
-
-        // Step 5: Generate the certificate hash (SHA-256 + Base64)
-        $certDer = openssl_x509_read($certs['cert']);
-        $certInfo = openssl_x509_export($certDer, $certPem);
-
-        // Remove the PEM headers to get raw certificate
-        $certClean = str_replace(
-            ["-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----", "\r", "\n"],
-            '',
-            $certPem
-        );
-
-        // Decode from Base64 to binary (DER format)
+        $certPem = '';
+        openssl_x509_export($certs['cert'], $certPem);
+        $certClean = str_replace(["-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----", "\r", "\n"], '', $certPem);
         $certBinary = base64_decode($certClean);
-
-        // Hash with SHA-256
         $certHash = hash('sha256', $certBinary, true);
-
-        // Base64-encode the result
         $certHashBase64 = base64_encode($certHash);
 
-        // Step 6: Populate the signed properties section
-        // Assuming $certs['cert'] is the loaded certificate
+        // Parse cert
         $parsedCert = openssl_x509_parse($certs['cert']);
-
-        // 1. CertDigest (already done as $certHashBase64 in Step 5)
-
-        // 2. SigningTime
-        $signingTime = Carbon::now('UTC')->toIso8601String();
-
-        // 3. X509IssuerName
-        $issuerName = $parsedCert['issuer']['CN'] ?? '';
-        if (!empty($parsedCert['issuer'])) {
-            // Reconstruct full issuer DN like: CN=Pos Digicert, O=Pos Malaysia, C=MY
-            $issuerParts = [];
-            foreach ($parsedCert['issuer'] as $key => $value) {
-                $issuerParts[] = "$key=$value";
-            }
-            $issuerName = implode(', ', $issuerParts);
+        $issuerParts = [];
+        foreach ($parsedCert['issuer'] as $key => $value) {
+            $issuerParts[] = "$key=$value";
         }
-
-        // 4. X509SerialNumber
+        $issuerName = implode(', ', $issuerParts);
         $serialNumber = $parsedCert['serialNumberHex'] ?? $parsedCert['serialNumber'];
+        
+        // Signing time
+        $signingTime = Carbon::now('UTC')->toIso8601String();
 
         $document = [
             'documents' => [
                 [
                     'format' => 'JSON',
                     'document' => base64_encode($canonicalJson),
-                    'documentHash' => hash('sha256', $canonicalJson),
+                    'documentHash' => $documentHashHex,
                     'codeNumber' => $invoice->c_invoice_no,
-                    "digitalSignature" => [
-                        "sig" => $signatureBase64,
-                        'signedProperties' => [
-                            'signingTime' => $signingTime,
-                            'signingCertificate' => [
-                                'certDigest' => [
-                                    'digestMethod' => 'http://www.w3.org/2001/04/xmlenc#sha256',
-                                    'digestValue' => $certHashBase64
-                                ],
-                                'issuerSerial' => [
-                                    'issuerName' => $issuerName,
-                                    'serialNumber' => $serialNumber
-                                ]
-                            ]
-                        ]
+                    'signature' => [
+                        'type' => 'urn:oasis:names:specification:ubl:signature:Invoice',
+                        'value' => $signatureBase64,
+                        'signingCertificate' => [
+                            'digestMethod' => 'http://www.w3.org/2001/04/xmlenc#sha256',
+                            'digestValue' => $certHashBase64
+                        ],
+                        'issuerSerial' => [
+                            'issuerName' => $issuerName,
+                            // "issuerName" => "CN=Pos Digicert, O=Pos Malaysia, C=MY",
+                            'serialNumber' => $serialNumber
+                        ],
+                        'signingTime' => $signingTime
                     ]
                 ]
             ]
         ];
+
+        Log::debug('document ', ['document' => $document]);
 
         if ($this->env === 'production') {
             $docsSubmitApi = 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
@@ -578,6 +553,22 @@ class EInvoiceController extends Controller
 
         return redirect()->back();
     }
+
+    // public function submitInvoice(Request $request) 
+    // {
+    //     $payout = PayoutConfig::first();
+    //     $period = $request->input('period');
+    //     list($startDate, $endDate) = explode(' - ', $period);
+    //     $c_period_start = Carbon::createFromFormat('d/m/Y', trim($startDate))->startOfDay();
+    //     $c_period_end = Carbon::createFromFormat('d/m/Y', trim($endDate))->endOfDay();
+        
+    //     $invoice = Payment::where('invoice_no', $request->receipt_no)
+    //             ->where('merchant_id', $request->merchant_id)
+    //             ->with(['invoice_lines', 'invoice_lines.classification'])
+    //             ->first();
+
+                
+    // }
 
     public function refundConsolidate(Request $request)
     {
