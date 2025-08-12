@@ -517,6 +517,21 @@ const isOrderCompleted = computed(() => {
 //     return pendingServeItems.value.some((item) => item.order.id === currentTable.value.order_id)
 // });
 
+const cancelOrderMessages = computed(() => {
+    const hasEntryReward = order.value.voucher_id || order.value.order_items.some((item) => item.type === 'Reward');
+    const hasPointRedeemedProduct = order.value.order_items.some((item) => item.type === 'Redemption');
+
+    const titleText = wTrans('public.cancel_order');
+    const descText = hasEntryReward || hasPointRedeemedProduct
+        ? wTrans('public.order.cancel_order_redeemed_message_desc')
+        : wTrans('public.order.cancel_order_message_desc');
+    
+    return {
+        title: titleText,
+        desc: descText,
+    };
+});
+
 const orderTableNames = computed(() => {
     return order.value.order_table
             ?.map((orderTable) => orderTable.table.table_no)
@@ -867,10 +882,10 @@ onUnmounted(stop);
                 </div>
                 <div class="flex flex-col gap-1" >
                     <div class="text-primary-900 text-lg font-medium text-center">
-                        {{ $t('public.cancel_order') }}
+                        {{ cancelOrderMessages['title'] }}
                     </div>
                     <div class="text-gray-900 text-base font-medium text-center leading-tight" >
-                        {{ $t('public.order.cancel_order_message_desc') }}
+                        {{ cancelOrderMessages['desc'] }}
                     </div>
                 </div>
                 <div class="flex item-center gap-3">

@@ -334,6 +334,7 @@ return [
         "delete_order_message_desc" => "Are you sure you want to delete the selected order? This action cannot be undone.",
         "delete_qty" => "Delete Quantity",
         "cancel_order_message_desc" => "Are you sure you want to cancel this order? All items will return to inventory and won't affect sales.",
+        "cancel_order_redeemed_message_desc" => "Are you sure you want to cancel this order? Redeemed products/rewards won't be returned. Normal items will return to inventory and won't affect sales.",
         "view_price_breakdown" => "View Price Breakdown",
         "select_redeem_qty" => "Select Redeem Quantity",
         "redeem_reward" => "Redeem Reward",

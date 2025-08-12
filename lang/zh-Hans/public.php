@@ -334,6 +334,7 @@ return [
         "delete_order_message_desc" => "您确定要删除所选订单吗? 一旦操作将无法撤回.",
         "delete_qty" => "删除数量",
         "cancel_order_message_desc" => "您确定要取消此订单吗? 所有商品将返回库存, 不会影响销售.",
+        "cancel_order_redeemed_message_desc" => "您确定要取消此订单吗? 已兑换的商品/奖励将不予退还. 普通商品将返回库存, 不会影响销售.",
         "view_price_breakdown" => "查看价格明细",
         "select_redeem_qty" => "选择兑换数量",
         "redeem_reward" => "兑换奖励",

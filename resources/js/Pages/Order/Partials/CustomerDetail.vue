@@ -410,6 +410,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                 :matchingOrderDetails="matchingOrderDetails"
                 @fetchZones="$emit('fetchZones')"
                 @update:customerPoint="$emit('update:customerPoint', $event)"
+                @fetchOrderDetails="$emit('fetchOrderDetails')"
                 @close="closeDrawer"
             />
         </template>

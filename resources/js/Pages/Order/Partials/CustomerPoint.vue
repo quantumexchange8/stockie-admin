@@ -31,7 +31,7 @@ const userId = computed(() => page.props.auth.user.data.id)
 const { locale } = useLangObserver();
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones', 'update:customerPoint']);
+const emit = defineEmits(['close', 'fetchZones', 'update:customerPoint', 'fetchOrderDetails']);
 
 const customer = ref(props.customer);
 const selectedCustomer = ref(null);
@@ -70,6 +70,7 @@ const submit = async () => {
 
         emit('fetchZones');
         emit('update:customerPoint', customerNewPoint.value);
+        emit('fetchOrderDetails');
         emit('close');
         form.reset();
     } catch (error) {
