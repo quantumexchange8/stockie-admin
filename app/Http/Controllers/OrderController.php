@@ -680,9 +680,9 @@ class OrderController extends Controller
     {
         // Fetch only the main order tables first, selecting only necessary columns
         $orderTables = OrderTable::select('id', 'table_id', 'status', 'updated_at', 'order_id')
-                                    ->with('table:id,table_no,status')
+                                    ->with('table:id,table_no,status,order_id')
                                     ->where('table_id', $id)
-                                    ->orderByDesc('updated_at')
+                                    ->orderByDesc('id')
                                     ->get();
 
         // Find the first non-pending clearance table
@@ -2288,19 +2288,19 @@ class OrderController extends Controller
                                 'customer.rewards:id,customer_id,ranking_reward_id,status',
                                 'orderItems' => fn($query) => 
                                     // $query->where('product.commItem.configComms')->where('status', 'Served')
-                                    $query->whereHas('product', fn ($subQuery) =>
-                                        $subQuery->whereHas('commItem', fn ($innerQuery) =>
-                                            $innerQuery->whereHas('configComms')
-                                                    ->where('status', 'Active')
-                                        )
-                                    )->with([
+                                    $query->where(function ($q) {
+                                            $q->whereHas('product', function ($subQuery) {
+                                                $subQuery->whereHas('commItem', function ($innerQuery) {
+                                                    $innerQuery->where('status', 'Active')
+                                                            ->whereHas('configComms');
+                                                });
+                                            })
+                                            ->orWhereHas('product', function ($subQuery) {
+                                                $subQuery->doesntHave('commItem');
+                                            });
+                                        })->with([
                                         'product' => fn ($orderItemQuery) =>
-                                            $orderItemQuery->whereHas('commItem', fn ($orderQuery) =>
-                                                $orderQuery->where('status', 'Active')
-                                                        ->whereHas('configComms')
-                                            )->with([
-                                                'commItem.configComms',
-                                            ])
+                                            $orderItemQuery->with(['commItem.configComms'])
                                     ])->where('status', 'Served'),
                             ])
                             ->where('id', $request->order_id)
@@ -2324,9 +2324,24 @@ class OrderController extends Controller
                                         'orderTable.table',
                                         'customer:id,point,total_spending,ranking', 
                                         'customer.rewards:id,customer_id,ranking_reward_id,status',
-                                        'orderItems' => fn($query) => $query->where('status', 'Served')
+                                        'orderItems' => fn($query) =>
+                                            $query->where(function ($q) {
+                                                    $q->whereHas('product', function ($subQuery) {
+                                                        $subQuery->whereHas('commItem', function ($innerQuery) {
+                                                            $innerQuery->where('status', 'Active')
+                                                                    ->whereHas('configComms');
+                                                        });
+                                                    })
+                                                    ->orWhereHas('product', function ($subQuery) {
+                                                        $subQuery->doesntHave('commItem');
+                                                    });
+                                                })->with([
+                                                'product' => fn ($orderItemQuery) =>
+                                                    $orderItemQuery->with(['commItem.configComms'])
+                                            ])->where('status', 'Served'),
                                     ])
-                                    ->find($request->order_id);
+                                    ->where('id', $request->order_id)
+                                    ->first();
 
             $splitBill = $request->split_bill;
             $totalSplitOrderAmount = 0.00;
@@ -3302,7 +3317,7 @@ class OrderController extends Controller
                     $newOrderItem = OrderItem::create([
                         'order_id' => $addNewOrder ? $newOrder->id : $id,
                         'user_id' => $validatedData['user_id'],
-                        'type' => 'Redemption',
+                        'type' => 'Reward',
                         'product_id' => $freeProduct->id,
                         'item_qty' => $tierReward->item_qty,
                         'amount_before_discount' => 0.00,
@@ -3421,18 +3436,21 @@ class OrderController extends Controller
                     }
                 };
 
+                $discountRate = [ 'discount_rate' =>  $tierReward->discount ];
+                $productName = [ 'product_name' =>  $freeProduct?->product_name ];
+
                 $amountDiscountSummary = $isVoucherReplaced 
-                        ? "The currently applied reward has been replaced with 'RM $tierReward->discount Discount' for this order."
-                        : "'RM $tierReward->discount Discount' has been applied to this order.";
+                        ? trans('public.order.replaced_amount_discount_message', $discountRate)
+                        : trans('public.order.redeem_amount_discount_message', $discountRate);
 
                 $percentageDiscountSummary = $isVoucherReplaced 
-                        ? "The currently applied reward has been replaced with '$tierReward->discount% Discount' for this order."
-                        : "'$tierReward->discount% Discount' has been applied to this order.";
+                        ? trans('public.order.replaced_percent_discount_message', $discountRate)
+                        : trans('public.order.redeem_percent_discount_message', $discountRate);
 
                 $summary = match ($tierReward->reward_type) {
                     'Discount (Amount)' => $amountDiscountSummary,
                     'Discount (Percentage)' => $percentageDiscountSummary,
-                    'Free Item' => "'$freeProduct?->product_name' has been added to this customer's order.",
+                    'Free Item' => trans('public.order.redeem_free_item_message', $productName),
                 };
             }
             

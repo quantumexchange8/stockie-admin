@@ -8,10 +8,11 @@ import Button from '@/Components/Button.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import { useCustomToast } from '@/Composables/index.js';
+import { useCustomToast, useLangObserver } from '@/Composables/index.js';
 import TabView from '@/Components/TabView.vue';
 import Modal from '@/Components/Modal.vue';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 
 // *DNR*
 // Calculates difference in month
@@ -27,13 +28,14 @@ const props = defineProps({
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
 
+const { locale } = useLangObserver();
 const { showMessage } = useCustomToast();
 
-const emit = defineEmits(['close', 'fetchZones']);
+const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails']);
 
 const tabs = ref([
-    { key: 'Active', title: 'Active', disabled: false },
-    { key: 'Redeemed', title: 'Redeemed', disabled: false },
+    { key: 'Active', title: wTrans('public.active'), disabled: false },
+    { key: 'Redeemed', title: wTrans('public.redeemed'), disabled: false },
 ]);
 const customer = ref(props.customer);
 const selectedCustomer = ref(null);
@@ -79,6 +81,7 @@ const submit = async () => {
         }, 200);
 
         emit('fetchZones');
+        emit('fetchOrderDetails');
         emit('close', true);
         form.reset();
     } catch (error) {
@@ -112,9 +115,9 @@ const closeOverlay = () => {
 
 const getRewardTitle = (reward) => {
     switch (reward.ranking_reward.reward_type) {
-        case 'Discount (Amount)': return `RM ${reward.ranking_reward.discount}  Discount`;
-        case 'Discount (Percentage)': return `${reward.ranking_reward.discount} % Discount`;
-        case 'Bonus Point': return `${reward.ranking_reward.bonus_point}  Bonus Point`;
+        case 'Discount (Amount)': return `RM ${reward.ranking_reward.discount} ${wTrans('public.discount').value}`;
+        case 'Discount (Percentage)': return `${reward.ranking_reward.discount} % ${wTrans('public.discount').value}`;
+        case 'Bonus Point': return `${reward.ranking_reward.bonus_point} ${wTrans('public.bonus_point').value}`;
         case 'Free Item': return `${reward.ranking_reward.item_qty} x ${reward.ranking_reward.product.product_name}`;
     }
 };
@@ -192,7 +195,7 @@ const isNotRedeemable = (reward) => {
     <div class="flex flex-col max-h-[calc(100dvh-4rem)] p-6 items-center shrink-0 overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
-                <span class="self-stretch text-grey-900 text-base font-medium">Current Tier</span>
+                <span class="self-stretch text-grey-900 text-base font-medium text-center">{{ $t('public.current_tier') }}</span>
                 <div class="flex flex-col justify-center items-center gap-2">
                     <template v-if="customer.rank">
                         <div class="flex flex-col justify-center items-center gap-[10px]">
@@ -212,9 +215,9 @@ const isNotRedeemable = (reward) => {
             </div>
         </div>
 
-        <!-- Redeem product -->
+        <!-- Tier Rewards -->
         <div class="flex flex-col items-start self-stretch">
-            <span class="flex-[1_0_0] text-primary-900 text-md font-semibold py-3">Redeem Product</span>
+            <span class="flex-[1_0_0] text-primary-900 text-md font-semibold py-3">{{ $t('public.tier_rewards') }}</span>
 
             <TabView :tabs="tabs">
                 <template #active>
@@ -228,14 +231,21 @@ const isNotRedeemable = (reward) => {
                                         <ProductQualityIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
                                     </div>
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ reward.ranking_reward.ranking.name }}</span>
+                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">
+                                            <template v-if="locale === 'zh-Hans'">
+                                                {{ reward.ranking_reward.ranking.name }} {{ $t('public.entry_reward_for') }}
+                                            </template>
+                                            <template v-else>
+                                                {{ $t('public.entry_reward_for') }} {{ reward.ranking_reward.ranking.name }}
+                                            </template>
+                                        </span>
                                         <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
                                         <div class="flex items-center gap-1 self-stretch">
                                             <template v-if="reward.ranking_reward.min_purchase === 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)')">
-                                                <span class="text-primary-900 text-2xs font-normal">Min spend: RM {{ reward.ranking_reward.min_purchase_amount }}</span>
+                                                <span class="text-primary-900 text-2xs font-normal">{{ $t('public.min_spend') }}: RM {{ reward.ranking_reward.min_purchase_amount }}</span>
                                             </template>
                                             <template v-if="reward.ranking_reward.min_purchase !== 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)'|| reward.ranking_reward.reward_type === 'Discount (Percentage)')">
-                                                <span class="text-primary-900 text-2xs font-normal">No min. spend</span>
+                                                <span class="text-primary-900 text-2xs font-normal">{{ $t('public.no_min_spend') }}</span>
                                             </template>
                                         </div>
                                         <!-- *DNR* -->
@@ -252,13 +262,13 @@ const isNotRedeemable = (reward) => {
                                     ]" 
                                     @click="isNotRedeemable(reward) ? '' : openModal(reward)"
                                 >
-                                    Redeem Now
+                                    {{ $t('public.action.redeem_now') }}
                                 </p>
                             </div>
                         </template>
                         <template v-else>
                             <UndetectableIllus class="flex-shrink-0" />
-                            <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                            <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.no_data') }}</span>
                         </template>
                     </div>
                 </template>
@@ -274,9 +284,16 @@ const isNotRedeemable = (reward) => {
                                         <ProductQualityIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
                                     </div>
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ reward.ranking_reward.ranking.name }}</span>
+                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">
+                                            <template v-if="locale === 'zh-Hans'">
+                                                {{ reward.ranking_reward.ranking.name }} {{ $t('public.entry_reward_for') }}
+                                            </template>
+                                            <template v-else>
+                                                {{ $t('public.entry_reward_for') }} {{ reward.ranking_reward.ranking.name }}
+                                            </template>
+                                        </span>
                                         <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
-                                        <span class="text-grey-600 text-2xs font-normal">Redeemed on {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>
+                                        <span class="text-grey-600 text-2xs font-normal">{{ $t('public.redeemed_on') }} {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>
                                         <!-- *DNR*
                                         <template v-if="reward.reward_type !== 'Bonus Point'">
                                             <span class="self-stretch text-grey-400 text-2xs font-normal">Valid Period: {{ calculateValidPeriod(reward.valid_period_from, reward.valid_period_to) }}</span>
@@ -284,12 +301,12 @@ const isNotRedeemable = (reward) => {
                                     </div>
                                 </div>
 
-                                <p class="text-grey-300 text-base font-semibold col-span-4 text-center">Redeemed</p>
+                                <p class="text-grey-300 text-base font-semibold col-span-4 text-center">{{ $t('public.redeemed') }}</p>
                             </div>
                         </template>
                         <template v-else>
                             <UndetectableIllus class="flex-shrink-0" />
-                            <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                            <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.no_data') }}</span>
                         </template>
                     </div>
                 </template>
@@ -327,15 +344,15 @@ const isNotRedeemable = (reward) => {
                         <p class="text-center text-primary-900 text-lg font-medium self-stretch">
                             {{ 
                                 matchingOrderDetails.voucher_id && ['Discount (Percentage)', 'Discount (Amount)'].includes(selectedReward.ranking_reward.reward_type)
-                                    ? 'Existing Applied Reward Found' 
-                                    : 'Redeem Reward' 
+                                    ? $t('public.order.existing_applied_reward')  
+                                    : $t('public.order.redeem_reward') 
                             }}
                         </p>
                         <p class="text-center text-grey-900 text-base font-medium self-stretch">
                             {{ 
                                 matchingOrderDetails.voucher_id && ['Discount (Percentage)', 'Discount (Amount)'].includes(selectedReward.ranking_reward.reward_type)
-                                    ? `Are you sure you want to redeem and replace the currently applied reward with the selected reward [${getRewardTitle(selectedReward)}] for this customer?`
-                                    : `Are you sure you want to redeem the selected reward [${getRewardTitle(selectedReward)}] for this customer?`
+                                    ? `${$t('public.order.replace_redeem_reward_message1')} [${getRewardTitle(selectedReward)}] ${$t('public.order.redeem_reward_message2')}?`
+                                    : `${$t('public.order.redeem_reward_message1')} [${getRewardTitle(selectedReward)}] ${$t('public.order.redeem_reward_message2')}?`
                             }}
                         </p>
                     </div>
@@ -346,13 +363,13 @@ const isNotRedeemable = (reward) => {
                             :size="'lg'"
                             @click="closeModal"
                         >
-                            Cancel
+                            {{ $t('public.action.cancel') }}
                         </Button>
                         <Button 
                             :size="'lg'"
                             :disabled="form.processing"
                         >
-                            Yes, I'm sure
+                            {{ $t('public.action.yes_sure') }}
                         </Button>
                     </div>
                 </div>

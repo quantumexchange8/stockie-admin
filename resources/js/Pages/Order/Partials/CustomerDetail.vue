@@ -361,15 +361,17 @@ const formatPoints = (points) => {
 };
 
 const getKeepItemExpiryStatus = (keepItem) => {
-  const daysDiff = dayjs(keepItem.expired_to).diff(dayjs(), 'day');
+    const expiredDate = dayjs(keepItem.expired_to).startOf('day');
+    const today = dayjs().startOf('day');
+    const daysDiff = expiredDate.diff(today, 'day');
 
-  const expiredStatus = daysDiff <= 0
-        ? 'now'
-        : daysDiff <= 7 
-            ? 'soon'
-            : 'normal';
+    const expiredStatus = daysDiff <= 0
+            ? 'now'
+            : daysDiff <= 7 
+                ? 'soon'
+                : 'normal';
 
-  return expiredStatus;
+    return expiredStatus;
 };
 
 onMounted(() => fetchExpiringPointHistories());
@@ -382,7 +384,7 @@ watch((editForm), (newValue) => {
 })
 
 const totalPointsExpiringSoon = computed(() => {
-    return expiringPointHistories.value.reduce((total, record) => total + Number(record.expire_balance), 0);
+    return expiringPointHistories.value.reduce((total, record) => total + Number(record.expire_balance), 0).toFixed(2);
 });
 
 const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[field]) && !form.processing);
@@ -391,7 +393,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
 
 <template>
     <RightDrawer 
-        :header="viewType === 'keepHistory' ? 'History' : viewType === 'currentPoints' ? 'Points' : 'Tier'" 
+        :header="viewType === 'keepHistory' ? $t('public.history') : viewType === 'currentPoints' ? $t('public.points') : $t('public.tier')" 
         previousTab
         v-model:show="drawerIsVisible"
         @close="closeDrawer"
@@ -418,6 +420,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                 :tableStatus="tableStatus" 
                 :matchingOrderDetails="matchingOrderDetails"
                 @fetchZones="$emit('fetchZones')"
+                @fetchOrderDetails="$emit('fetchOrderDetails')"
                 @close="closeDrawer"
             />
         </template>
@@ -448,10 +451,10 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
             >
                 <WarningIcon />
                 <div class="flex flex-col items-start gap-3 flex-[1_0_0]">
-                    <span class="self-stretch text-[#A35F1A] text-base font-bold">{{`${totalPointsExpiringSoon} points expiring soon:` }}</span>
+                    <span class="self-stretch text-[#A35F1A] text-base font-bold">{{`${totalPointsExpiringSoon} ${$t('public.point_expiring_soon')}:` }}</span>
                     <ul class="list-disc pl-6">
                         <template v-for="record in expiringPointHistories" :key="record.id">
-                            <li class="text-sm text-grey-950 font-normal"><span class="!font-bold">{{ `${record.expire_balance} points` }}</span> on {{ dayjs(record.expired_at).format('MMM D, YYYY') }}</li>
+                            <li class="text-sm text-grey-950 font-normal"><span class="!font-bold">{{ `${record.expire_balance} ${$t('public.points')},` }}</span> {{ dayjs(record.expired_at).format('MMM D, YYYY') }}</li>
                         </template>
                     </ul>
                 </div>
@@ -512,7 +515,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
         <!-- Keep item -->
         <div class="w-full flex flex-col items-center gap-3 self-stretch">
             <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
-                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">{{ $t('public.keep_item') }} ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
+                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">{{ $t('public.keep_item_header') }} ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
                 <div class="flex items-center gap-2 cursor-pointer" @click="openDrawer('keepHistory')">
                     <HistoryIcon class="w-4 h-4" />
                     <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">{{ $t('public.view_history') }}</div>
@@ -572,8 +575,8 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         <!-- message header -->
                         <WarningIcon />
                         <div class="flex flex-col justify-between items-start flex-[1_0_0]">
-                            <span class="self-stretch text-[#A35F1A] text-base font-bold">{{ getKeepItemExpiryStatus(item) === 'soon' ? 'Expiring Soon' : 'Pending Action'  }}</span>
-                            <span class="self-stretch text-[#3E200A] text-sm font-normal">{{ getKeepItemExpiryStatus(item) === 'soon' ? `This kept item will be expired on ${dayjs(item.expired_to).format('DD/MM/YYYY')}.` : 'This item is expired. Please choose to expire it or extend the expiration date.'  }}</span>
+                            <span class="self-stretch text-[#A35F1A] text-base font-bold">{{ getKeepItemExpiryStatus(item) === 'soon' ? $t('public.expiring_soon') : $t('public.pending_action')  }}</span>
+                            <span class="self-stretch text-[#3E200A] text-sm font-normal">{{ getKeepItemExpiryStatus(item) === 'soon' ? $t('public.expired_soon_message', { expired_on: dayjs(item.expired_to).format('DD/MM/YYYY') }) : $t('public.expired_keep_message')  }}</span>
                         </div>
                     </div>
                     <div class="flex flex-col items-start gap-3 self-stretch">

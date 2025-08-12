@@ -11,6 +11,7 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import { useCustomToast } from '@/Composables/index.js';
 import { ArrowLeftIcon } from '@/Components/Icons/solid';
 import Tag from '@/Components/Tag.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -68,7 +69,7 @@ const submit = async () => {
         const addItemResponse = await axios.post(route('orders.items.store'), form);
         newOrderId.value = addItemResponse.data;
 
-        const summary = `Product has been added to ${orderTableNames.value} order` + (form.action_type === 'now' ? ' and served.' : '.');
+        const summary = wTrans('public.toast.order_item_placed_message', { table_no: orderTableNames.value });
 
         setTimeout(() => {
             showMessage({ 
@@ -245,13 +246,13 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                     @click="$emit('close')" 
                 />
                 <div class="flex items-center justify-center w-full">
-                    <span class="text-primary-950 text-center text-md font-medium">Order for {{ orderTableNames  }}</span>
+                    <span class="text-primary-950 text-center text-md font-medium"> {{ $t('public.order.order_for', { table_no: orderTableNames }) }}</span>
                 </div>
             </div>
 
             <div class="flex flex-col justify-center items-start gap-3 px-6 py-3 w-full">
                 <SearchBar 
-                    :placeholder="'Search'"
+                    :placeholder="$t('public.search')"
                     :inputName="'searchbar'" 
                     :showFilter="false"
                     v-model="query"
@@ -276,7 +277,7 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                             >
                                             <div class="flex flex-col justify-center items-start self-stretch gap-0.5">
                                                 <div class="flex flex-nowrap gap-2 items-start">
-                                                    <Tag value="Set" v-if="product.bucket === 'set'"/>
+                                                    <Tag :value="$t('public.set_header')" v-if="product.bucket === 'set'"/>
                                                     <p 
                                                         :class="[
                                                             'text-ellipsis overflow-hidden text-base font-medium',
@@ -298,8 +299,8 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                                     <p class="text-green-700 text-sm font-normal cursor-pointer" @click="openStockDetailItemModal(product)">
                                                         {{ getCurrentProductKeptAmount(product) + product.stock_left > 0
                                                                 ? getCurrentProductKeptAmount(product) > 0
-                                                                    ? `${getTotalQtyAvailable(product)} (+${getCurrentProductKeptAmount(product)}) left`
-                                                                    : `${getTotalQtyAvailable(product)} left`
+                                                                    ? `${getTotalQtyAvailable(product)} (+${getCurrentProductKeptAmount(product)}) ${$t('public.left')}`
+                                                                    : `${getTotalQtyAvailable(product)} ${$t('public.left')}`
                                                                 : product.status }}
                                                     </p>
                                                 </div>
@@ -326,7 +327,7 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                 <template v-else>
                                     <div class="flex flex-col items-center justify-center gap-5">
                                         <UndetectableIllus />
-                                        <span class="text-primary-900 text-sm font-medium">No product in this category yet...</span>
+                                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_product_in_category') }}</span>
                                     </div>
                                 </template>
                             </div>
@@ -357,7 +358,7 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                             >
                                             <div class="flex flex-col justify-center items-start self-stretch gap-0.5">
                                                 <div class="flex flex-nowrap gap-2 items-start">
-                                                    <Tag value="Set" v-if="product.bucket === 'set'"/>
+                                                    <Tag :value="$t('public.set_header')" v-if="product.bucket === 'set'"/>
                                                     <p 
                                                         :class="[
                                                             'text-ellipsis overflow-hidden text-base font-medium',
@@ -379,8 +380,8 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                                     <p class="text-green-700 text-sm font-normal cursor-pointer" @click="openStockDetailItemModal(product)">
                                                         {{ getCurrentProductKeptAmount(product) + product.stock_left > 0
                                                                 ? getCurrentProductKeptAmount(product) > 0
-                                                                    ? `${product.stock_left} (+${getCurrentProductKeptAmount(product)}) left`
-                                                                    : `${product.stock_left} left`
+                                                                    ? `${product.stock_left} (+${getCurrentProductKeptAmount(product)}) ${$t('public.left')}`
+                                                                    : `${product.stock_left} ${$t('public.left')}`
                                                                 : product.status }}
                                                     </p>
                                                 </div>
@@ -407,7 +408,7 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                 <template v-else>
                                     <div class="flex flex-col items-center justify-center gap-5">
                                         <UndetectableIllus />
-                                        <span class="text-primary-900 text-sm font-medium">No product in this category yet...</span>
+                                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_product_in_category') }}</span>
                                     </div>
                                 </template>
                             </div>
@@ -417,7 +418,7 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
             </div>
 
             <div class="fixed bottom-0 w-full flex flex-col px-6 pt-6 pb-12 justify-center gap-6 self-stretch bg-white">
-                <p class="self-stretch text-grey-900 text-right text-md font-medium">Total: RM{{ calculatedTotalAmount }}</p>
+                <p class="self-stretch text-grey-900 text-right text-md font-medium">{{ $t('public.order.total_exclude_tax') }}: RM{{ calculatedTotalAmount }}</p>
                 <div class="flex gap-3">
                     <Button
                         size="lg"
@@ -425,14 +426,14 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                         :disabled="!isFormValid"
                         @click="form.action_type = 'later'"
                     >
-                        Serve Later
+                        {{ $t('public.order.serve_later') }}
                     </Button>
                     <Button
                         size="lg"
                         :disabled="!isFormValid"
                         @click="form.action_type = 'now'"
                     >
-                        Serve Now
+                        {{ $t('public.order.serve_now') }}
                     </Button>
                 </div>
             </div>
@@ -461,11 +462,11 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                     <div class="flex flex-col gap-y-2 w-full">
                         <div class="flex justify-between self-stretch items-center">
                             <p class="text-grey-900 font-normal text-base">Available stock</p>
-                            <p class="text-grey-900 font-semibold text-base">{{ item.qty * selectedProduct.stock_left }} left</p>
+                            <p class="text-grey-900 font-semibold text-base">{{ item.qty * selectedProduct.stock_left }} {{ $t('public.left') }}</p>
                         </div>
                         <div class="flex justify-between self-stretch items-center">
                             <p class="text-grey-900 font-normal text-base">Kept item</p>
-                            <p class="text-grey-900 font-semibold text-base">{{ item.inventory_item.current_kept_amt }} left</p>
+                            <p class="text-grey-900 font-semibold text-base">{{ item.inventory_item.current_kept_amt }} {{ $t('public.left') }}</p>
                         </div>
                     </div>
                 </div>

@@ -136,6 +136,18 @@ const getStatusVariant = (status) => {
     }
 }; 
 
+const getStatusTranslatedText = (status) => {
+    let text = '';
+    switch (status) {
+        case 'Keep': return wTrans('public.keep').value;
+        case 'Returned': return wTrans('public.returned').value;
+        case 'Served': return wTrans('public.served').value;
+        case 'Edited': return wTrans('public.edited').value;
+        case 'Expired': return wTrans('public.expired').value;
+        case 'Deleted': return wTrans('public.deleted').value;
+    }    return text;
+}; 
+
 const openForm = (record) => {
     selectedRecord.value = record;
     historyDetailIsOpen.value = true;
@@ -175,23 +187,23 @@ onMounted(() => {
                                         </div>
                                         <div class="flex flex-col items-start flex-[1_0_0] self-stretch">
                                             <div class="flex items-center gap-1 self-stretch">
-                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item?.expired_to ? `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
+                                                <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item?.expired_to ? `${$t('public.expire_on')} ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
-                                                <span class="text-primary-900 text-2xs font-normal">By</span>
+                                                <span class="text-primary-900 text-2xs font-normal">{{ $t('public.keep_handled_by') }}</span>
                                                 <img 
                                                     :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                     alt="KeepItemImage"
                                                     class="size-4 rounded-full object-contain"
                                                 >
                                                 <span class="text-primary-900 text-2xs font-normal">
-                                                    {{ item.waiter.full_name }} at 
+                                                    {{ item.waiter.full_name }} {{ $t('public.at') }} 
                                                     <span class="font-bold">{{ item.status === 'Served' ? item.redeemed_to_table : item.kept_from_table }}</span>
                                                 </span>
                                             </div>
                                             <div class="flex items-center gap-2 self-stretch">
                                                 <Tag 
                                                     :variant="getStatusVariant(item.status)"
-                                                    :value="item.status"
+                                                    :value="getStatusTranslatedText(item.status)"
                                                     class="flex px-2.5 py-1.5 justify-center items-center gap-2.5"
                                                 />
                                                 <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
@@ -216,7 +228,7 @@ onMounted(() => {
                     <template v-else>
                         <div class="flex w-full flex-col items-center justify-center gap-5">
                             <UndetectableIllus />
-                            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                         </div>
                     </template>
                 </div>
@@ -246,25 +258,25 @@ onMounted(() => {
                                             <div class="flex items-center gap-1 self-stretch">
                                                 <!-- <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` : '' }}</span> -->
                                                 <span class="text-grey-400 text-2xs font-normal">{{ item.keep_item.expired_to ? item.status === 'Edited' || item.status === 'Expired' 
-                                                                                                                                    ? `Expire on ${dayjs(item.keep_date).format('DD/MM/YYYY')}`
-                                                                                                                                    : `Expire on ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` 
+                                                                                                                                    ? `${$t('public.expire_on')} ${dayjs(item.keep_date).format('DD/MM/YYYY')}`
+                                                                                                                                    : `${$t('public.expire_on')} ${dayjs(item.keep_item.expired_to).format('DD/MM/YYYY')}` 
                                                                                                                                 : '' }}</span>
                                                 <span class="w-1 h-1 bg-grey-900 rounded-full"></span>
-                                                <span class="text-primary-900 text-2xs font-normal">By</span>
+                                                <span class="text-primary-900 text-2xs font-normal">{{ $t('public.keep_handled_by') }}</span>
                                                 <img 
                                                     :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                                     alt="KeepItemImage"
                                                     class="size-4 rounded-full"
                                                 >
                                                 <span class="text-primary-900 text-2xs font-normal">
-                                                    {{ item.waiter.full_name }} at 
+                                                    {{ item.waiter.full_name }} {{ $t('public.at') }}  
                                                     <span class="font-bold">{{ item.status === 'Served' ? item.redeemed_to_table : item.kept_from_table }}</span>
                                                 </span>
                                             </div>
                                             <div class="flex items-center gap-2 self-stretch">
                                                 <Tag 
                                                     :variant="getStatusVariant(item.status)"
-                                                    :value="item.status"
+                                                    :value="getStatusTranslatedText(item.status)"
                                                     class="flex px-2.5 py-1.5 justify-center items-center gap-2.5"
                                                 />
                                                 <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-sm font-medium">{{ item.keep_item.item_name }}</div>
@@ -299,7 +311,7 @@ onMounted(() => {
                     <template v-else>
                         <div class="flex w-full flex-col items-center justify-center gap-5">
                             <UndetectableIllus />
-                            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                         </div>
                     </template>
                 </div>
@@ -310,7 +322,7 @@ onMounted(() => {
 
     <!-- View keep history details -->
     <Modal
-        :title="'Detail'"
+        :title="$t('public.detail')"
         :show="historyDetailIsOpen" 
         :maxWidth="'2xs'" 
         @close="closeForm"
@@ -320,17 +332,17 @@ onMounted(() => {
                 <div class="flex flex-col items-start gap-y-4 self-stretch">
                     <div class="flex flex-col gap-y-5 items-start self-stretch">
                         <div class="flex flex-col gap-y-1 items-start">
-                            <p class="text-grey-900 text-base font-normal self-stretch">Current status</p>
-                            <Tag :value="selectedRecord.status" :variant="getStatusVariant(selectedRecord.status)" />
+                            <p class="text-grey-900 text-base font-normal self-stretch">{{ $t('public.current_status') }}</p>
+                            <Tag :value="getStatusTranslatedText(selectedRecord.status)" :variant="getStatusVariant(selectedRecord.status)" />
                         </div>
                         
                         <div class="flex flex-col gap-y-1 items-start">
-                            <p class="text-grey-900 text-base font-normal self-stretch">Kept item</p>
+                            <p class="text-grey-900 text-base font-normal self-stretch">{{ $t('public.kept_item') }}</p>
                             <p class="text-grey-900 text-base font-bold self-stretch">{{ selectedRecord.keep_item.item_name }}</p>
                         </div>
                     
                         <div class="flex flex-col gap-y-1 items-start">
-                            <p class="text-grey-900 text-base font-normal self-stretch">Quantity/cm</p>
+                            <p class="text-grey-900 text-base font-normal self-stretch">{{ $t('public.quantity_cm') }}</p>
                             <p class="text-grey-900 text-base font-bold self-stretch">
                                 <template v-if="selectedRecord.qty > selectedRecord.cm">{{ `x${selectedRecord.qty}` }}</template>
                                 <template v-else>{{ `${selectedRecord.cm} cm` }}</template>
@@ -338,12 +350,12 @@ onMounted(() => {
                         </div>
                     
                         <div class="flex flex-col gap-y-1 items-start">
-                            <p class="text-grey-900 text-base font-normal self-stretch">Expire on</p>
+                            <p class="text-grey-900 text-base font-normal self-stretch">{{ $t('public.expire_on') }}</p>
                             <p class="text-grey-900 text-base font-bold self-stretch">{{ dayjs(selectedRecord.keep_item.expired_to).format('DD/MM/YYYY') }}</p>
                         </div>
                     
                         <div class="flex flex-col gap-y-1 items-start">
-                            <p class="text-grey-900 text-base font-normal self-stretch">Remark</p>
+                            <p class="text-grey-900 text-base font-normal self-stretch">{{ $t('public.remark') }}</p>
                             <p class="text-grey-900 text-base font-bold self-stretch">{{ selectedRecord.remark ?? '-' }}</p>
                         </div>
                     </div>
@@ -351,10 +363,10 @@ onMounted(() => {
                     <div class="flex flex-col gap-y-4 p-2 items-start self-stretch bg-grey-50">
                         <div class="flex flex-col items-start gap-y-1 self-stretch">
                             <p class="text-black text-sm font-semibold">
-                                {{ `${selectedRecord.kept_from_table}, at ${dayjs(selectedRecord.keep_date).format('DD/MM/YYYY, HH:mm')}` }}
+                                {{ `${selectedRecord.kept_from_table}, ${$t('public.at')} ${dayjs(selectedRecord.keep_date).format('DD/MM/YYYY, HH:mm')}` }}
                             </p>
                             <div class="flex items-center gap-1 self-stretch">
-                                <p class="text-grey-700 text-xs font-normal">Kept by: {{ selectedRecord.keep_item.waiter.full_name }}</p>
+                                <p class="text-grey-700 text-xs font-normal">{{ $t('public.kept_by') }}: {{ selectedRecord.keep_item.waiter.full_name }}</p>
                                 <img 
                                     :src="selectedRecord.keep_item.waiter.image ? selectedRecord.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt="WaiterProfileImage"
@@ -365,10 +377,10 @@ onMounted(() => {
 
                         <div v-if="selectedRecord.status === 'Served'" class="flex flex-col items-start gap-y-1 self-stretch">
                             <p class="text-black text-sm font-semibold">
-                                {{ `${selectedRecord.redeemed_to_table}, at ${dayjs(selectedRecord.created_at).format('DD/MM/YYYY, HH:mm')}` }}
+                                {{ `${selectedRecord.redeemed_to_table}, ${$t('public.at')} ${dayjs(selectedRecord.created_at).format('DD/MM/YYYY, HH:mm')}` }}
                             </p>
                             <div class="flex items-center gap-1 self-stretch">
-                                <p class="text-grey-700 text-xs font-normal">Served by: {{ selectedRecord.waiter.full_name }}</p>
+                                <p class="text-grey-700 text-xs font-normal">{{ $t('public.served_by') }}: {{ selectedRecord.waiter.full_name }}</p>
                                 <img 
                                     :src="selectedRecord.waiter.image ? selectedRecord.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt="WaiterProfileImage"

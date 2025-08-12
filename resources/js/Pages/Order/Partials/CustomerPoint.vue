@@ -8,7 +8,8 @@ import Button from '@/Components/Button.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import { useCustomToast } from '@/Composables/index.js';
+import { useCustomToast, useLangObserver } from '@/Composables/index.js';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     customer:{
@@ -27,6 +28,7 @@ const props = defineProps({
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
 
+const { locale } = useLangObserver();
 const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close', 'fetchZones', 'update:customerPoint']);
@@ -59,8 +61,10 @@ const submit = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Product redeemed successfully.',
-                detail: `${pointsUsed} pts has been deducted from customer's point wallet.`,
+                summary: wTrans('public.toast.product_redeem_sucess_summary'),
+                detail: locale.value === 'zh-Hans'
+                    ? `${wTrans('public.toast.product_redeem_sucess_detail').value} ${pointsUsed} ${wTrans('public.pts').value}.`
+                    : `${pointsUsed} ${wTrans('public.toast.product_redeem_sucess_detail').value}.`,
             });
         }, 200);
 
@@ -156,10 +160,10 @@ const isNotRedeemable = (customerPoint, item) => {
         <!-- Current points -->
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
-                <span class="self-stretch text-grey-900 text-base font-medium">Current Points</span>
+                <span class="self-stretch text-grey-900 text-base font-medium text-center">{{ $t('public.current_points') }}</span>
                 <div class="flex flex-col justify-center items-center gap-2">
                     <span class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-[40px] font-normal">{{ formatPoints(customer.point ?? 0) }}</span>
-                    <span class="text-primary-950 text-base font-medium">pts</span>
+                    <span class="text-primary-950 text-base font-medium">{{ $t('public.pts') }}</span>
                 </div>
                 <PointsIllust class="absolute"/>
             </div>
@@ -168,10 +172,10 @@ const isNotRedeemable = (customerPoint, item) => {
         <!-- Redeem product -->
          <div class="flex flex-col items-center self-stretch">
             <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
-                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Redeem Product</span>
+                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">{{ $t('public.redeem_product') }}</span>
                 <div class="flex items-center gap-2 cursor-pointer" @click="openHistoryDrawer(customer.id)">
                     <HistoryIcon class="w-4 h-4" />
-                    <div class="text-primary-900 text-sm font-medium">View History</div>
+                    <div class="text-primary-900 text-sm font-medium">{{ $t('public.view_history') }}</div>
                 </div>
             </div>
 
@@ -188,7 +192,7 @@ const isNotRedeemable = (customerPoint, item) => {
                                 >
                                 <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] self-stretch">
                                     <span class="line-clamp-1 overflow-hidden ellipsis text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-grey-900'">{{ item.product_name }}</span>
-                                    <span class="overflow-hidden text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-primary-950'">{{ formatPoints(item.point) }} pts</span>
+                                    <span class="overflow-hidden text-base font-medium" :class="item.stock_left == 0 ? 'text-grey-300' : 'text-primary-950'">{{ formatPoints(item.point) }} {{ $t('public.pts') }}</span>
                                 </div>
                             </div>
                             <!-- tableStatus === 'Pending Clearance' -->
@@ -199,14 +203,14 @@ const isNotRedeemable = (customerPoint, item) => {
                                 class="!w-fit"
                                 @click="openOverlay($event, item)"
                             >
-                                Redeem Now
+                                {{ $t('public.action.redeem_now') }}
                             </Button>
                         </div>
                     </div>
                 </template>
                 <template v-else>
                     <UndetectableIllus class="flex-shrink-0" />
-                    <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                    <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.no_data') }}</span>
                 </template>
             </div>
          </div>
@@ -214,7 +218,7 @@ const isNotRedeemable = (customerPoint, item) => {
 
     <!-- history drawer -->
      <RightDrawer
-        :header="'History'"
+        :header="$t('public.history')"
         :previousTab='true'
         :show="isPointHistoryDrawerOpen"
         @close="closeDrawer"
@@ -230,7 +234,7 @@ const isNotRedeemable = (customerPoint, item) => {
             <form novalidate @submit.prevent="submit">
                 <div class="flex flex-col gap-6 w-96">
                     <div class="flex items-center justify-between">
-                        <span class="text-primary-950 text-center text-md font-medium">Select Redeem Quantity</span>
+                        <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.order.select_redeem_qty') }}</span>
                         <TimesIcon
                             class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                             @click="closeOverlay"
@@ -248,7 +252,7 @@ const isNotRedeemable = (customerPoint, item) => {
                                     {{ selectedItem.product_name }}
                                 </p>
                             </div>
-                            <p class="text-primary-800 text-md font-medium pr-3">{{ selectedItem.point }} pts</p>
+                            <p class="text-primary-800 text-md font-medium pr-3">{{ selectedItem.point }} {{ $t('public.pts') }}</p>
                         </div>
 
                         <NumberCounter
@@ -265,13 +269,13 @@ const isNotRedeemable = (customerPoint, item) => {
                             :size="'lg'"
                             @click="closeOverlay"
                         >
-                            Cancel
+                            {{ $t('public.action.cancel') }}
                         </Button>
                         <Button
                             :size="'lg'"
                             :disabled="!isFormValid || !matchingOrderDetails.tables"
                         >
-                            Redeem Now
+                            {{ $t('public.action.redeem_now') }}
                         </Button>
                     </div>
                 </div>

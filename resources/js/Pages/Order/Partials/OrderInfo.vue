@@ -71,6 +71,7 @@ const autoUnlockTimer = ref(props.autoUnlockSetting);
 const hasItemInCart = ref(false);
 const unlockConfirmationIsOpen = ref(false);
 const unlockTableConfirmationTimer = ref(300);
+const isLoading = ref(false);
 
 const computedOrder = computed(() => {
     if (!order.value || !order.value.order_items || props.tableStatus === 'Pending Clearance') return [];
@@ -92,6 +93,7 @@ const computedOrder = computed(() => {
 });
 
 const fetchOrderDetails = async () => {
+    isLoading.value = true;
     try {
         const currentOrderTableResponse = await axios.get(route('orders.getCurrentTableOrder', currentTable.value.id));
         currentOrderTable.value = currentOrderTableResponse.data.currentOrderTable;
@@ -115,7 +117,7 @@ const fetchOrderDetails = async () => {
     } catch (error) {
         console.error(error);
     } finally {
-
+        isLoading.value = false;
     }
 };
 
@@ -126,7 +128,6 @@ const fetchCustomerDetails = async () => {
     } catch (error) {
         console.error(error);
     } finally {
-
     }
 };
 
@@ -145,7 +146,6 @@ const fetchPendingServe = async () => {
     } catch (error) {
         console.error(error);
     } finally {
-
     }
 }
 
@@ -153,7 +153,8 @@ const handleTableLock = (action = 'unlock', auto = false) => {
     const tableIdArray = order.value?.order_table?.map((ot) => ot.table.id);
 
     if (tableIdArray) {
-
+        if (form.processing) return;
+        
         if (action === 'unlock') {
             if (hasItemInCart.value) {
                 showUnlockConfirmation();
@@ -469,6 +470,8 @@ const submit = (action) => {
 // };
 
 const isOrderCompleted = computed(() => {
+    if (isLoading.value) return false;
+
     if (
         !order.value || 
         !order.value.order_items || 
@@ -476,16 +479,16 @@ const isOrderCompleted = computed(() => {
         order.value.order_items.filter((item) => item.status !== 'Cancelled').length === 0
     ) return false;
 
-    const mappedOrder = order.value.order_items 
-                            ? order.value.order_items
-                                    .map((item) => {
-                                        return {
-                                            ...item,
-                                            total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
-                                            total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
-                                        };
-                                    })
-                            : [];
+    // const mappedOrder = order.value.order_items 
+    //                         ? order.value.order_items
+    //                                 .map((item) => {
+    //                                     return {
+    //                                         ...item,
+    //                                         total_qty: item.sub_items.reduce((total_qty, sub_item) => total_qty + (item.item_qty * sub_item.item_qty), 0 ),
+    //                                         total_served_qty: item.sub_items.reduce((total_served_qty, sub_item) => total_served_qty + sub_item.serve_qty, 0 )
+    //                                     };
+    //                                 })
+    //                         : [];
 
     return !form.processing && currentOrderTable.value.status !== 'Pending Clearance';
 });
@@ -504,15 +507,15 @@ const isOrderCompleted = computed(() => {
 //     return order.value;
 // });
 
-const hasServedItem = computed(() => {
-    return !order.value.id 
-        || order.value?.order_items?.some(item => item.sub_items.some((subItem) => subItem.serve_qty > 0))
-        || order.value?.order_items?.some(item => item.type === 'Keep' || item.type === 'Expired');
-});
+// const hasServedItem = computed(() => {
+//     return !order.value.id 
+//         || order.value?.order_items?.some(item => item.sub_items.some((subItem) => subItem.serve_qty > 0))
+//         || order.value?.order_items?.some(item => item.type === 'Keep' || item.type === 'Expired');
+// });
 
-const hasPreviousPending = computed(() => {
-    return pendingServeItems.value.some((item) => item.order.id === currentTable.value.order_id)
-});
+// const hasPreviousPending = computed(() => {
+//     return pendingServeItems.value.some((item) => item.order.id === currentTable.value.order_id)
+// });
 
 const orderTableNames = computed(() => {
     return order.value.order_table
@@ -523,21 +526,21 @@ const orderTableNames = computed(() => {
 
 const currentViewedTab = computed(() => tabs.value[selectedTab.value]);
 
-const getVoucherDiscountedPrice = (subtotal, voucher) => {
-    if (['Discount (Amount)', 'Discount (Percentage)'].includes(voucher.reward_type)) {
-        const discountedAmount = (voucher.reward_type === 'Discount (Amount)'
-                ? subtotal - voucher.discount
-                : subtotal - (subtotal * (voucher.discount / 100)));
+// const getVoucherDiscountedPrice = (subtotal, voucher) => {
+//     if (['Discount (Amount)', 'Discount (Percentage)'].includes(voucher.reward_type)) {
+//         const discountedAmount = (voucher.reward_type === 'Discount (Amount)'
+//                 ? subtotal - voucher.discount
+//                 : subtotal - (subtotal * (voucher.discount / 100)));
 
-        return discountedAmount <= 0 ? '0.00' : discountedAmount.toFixed(2);
-    }
+//         return discountedAmount <= 0 ? '0.00' : discountedAmount.toFixed(2);
+//     }
 
-    return subtotal.toFixed(2);
-}
+//     return subtotal.toFixed(2);
+// }
 
 const cancelOrderIsDisabled = computed(() => {
 //    return (order.value.order_items?.some((item) => item.type !== 'Keep') && (hasServedItem.value || hasPreviousPending.value)) || currentTable.value.status === 'Pending Clearance';
-   return currentTable.value.status === 'Pending Clearance' || form.processing || !!!currentTable.value?.is_locked;
+   return currentTable.value.status === 'Pending Clearance' || form.processing || isLoading.value;
 });
 
 const tableIsMerged = computed(() => {
@@ -658,7 +661,7 @@ onUnmounted(stop);
 
     <div class="flex flex-col gap-4 items-start rounded-[5px]">
         <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
-            <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.order.detail') }} - {{ orderTableNames }}</span>
+            <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.detail') }} - {{ orderTableNames }}</span>
             <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer;handleTableLock()" />
         </div>
 
@@ -782,7 +785,7 @@ onUnmounted(stop);
                             size="lg"
                             variant="tertiary"
                             class="col-span-1"
-                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0 || !existingPermissions?.includes('free-up-table') || form.processing || !!!currentTable?.is_locked"
+                            :disabled="currentOrderTable.status !== 'Pending Clearance' || pending > 0 || !existingPermissions?.includes('free-up-table') || form.processing || isLoading"
                             @click="form.action_type = 'clear'"
                         >
                             {{ $t('public.action.free_up_table') }}

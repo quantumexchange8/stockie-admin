@@ -294,19 +294,21 @@ const formatPoints = (points) => {
 };
 
 const getKeepItemExpiryStatus = (keepItem) => {
-  const daysDiff = dayjs(keepItem.expired_to).diff(dayjs(), 'day');
+    const expiredDate = dayjs(keepItem.expired_to).startOf('day');
+    const today = dayjs().startOf('day');
+    const daysDiff = expiredDate.diff(today, 'day');
 
-  const expiredStatus = daysDiff <= 0
-        ? 'now'
-        : daysDiff <= 7 
-            ? 'soon'
-            : 'normal';
+    const expiredStatus = daysDiff <= 0
+            ? 'now'
+            : daysDiff <= 7 
+                ? 'soon'
+                : 'normal';
 
-  return expiredStatus;
+    return expiredStatus;
 };
 
 const totalPointsExpiringSoon = computed(() => {
-    return expiringPointHistories.value.reduce((total, record) => total + Number(record.expire_balance), 0);
+    return expiringPointHistories.value.reduce((total, record) => total + Number(record.expire_balance), 0).toFixed(2);
 });
 
 onMounted(() => fetchExpiringPointHistories());
