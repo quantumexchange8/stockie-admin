@@ -247,7 +247,7 @@ class EInvoiceController extends Controller
             ];
         }
 
-        // STEP 1: Build raw invoice data without UBLExtensions / Signature
+        // STEP 1: Build raw invoice data without UBLExtensions / Signature (WIthout ublextension & signature)
         $invoiceData = [
             "_D" => "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
             "_A" => "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2",
@@ -436,7 +436,7 @@ class EInvoiceController extends Controller
         function canonicalizeJson($data) {
             if (is_array($data)) {
                 if (array_keys($data) !== range(0, count($data) - 1)) {
-                    ksort($data); // sort keys if associative
+                    ksort($data); // Sort keys alphabetically
                 }
                 foreach ($data as &$value) {
                     $value = canonicalizeJson($value);
@@ -446,75 +446,206 @@ class EInvoiceController extends Controller
         }
         // Canonicalize the data (ensure deterministic structure)
         $canonicalData = canonicalizeJson($invoiceData);
-        // Hash the canonicalized document invoice body using SHA-256.
-        // DocDigest.
+
+        // Minify & ensure no unnecessary escapes
         $canonicalJson = json_encode($canonicalData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         Log::debug('canonicalJson: ' . $canonicalJson);
 
-        // SHA-256 binary hash 
-        $documentHashBinary = hash('sha256', $canonicalJson, true);
-        $documentHashHex = hash('sha256', $canonicalJson); // for API
+        // SHA-256 binary hash
+        $binaryHash = hash('sha256', $canonicalJson, true);
+
+        // Convert binary hash → HEX string
+        $hexHash = bin2hex($binaryHash);
+
+        // Convert HEX string → Base64
+        $docDigest = base64_encode(hex2bin($hexHash));
+        // Debug
+        Log::debug('canonicalJson: ' . $canonicalJson);
+        Log::debug('DocDigest: ' . $docDigest);
 
         // Load PFX file from storage
         $pfxFile = storage_path('certs/signing.pfx');
-        $pfxPassword = env('PRIVATE_KEY_PASS');
-        $pkcs12 = file_get_contents($pfxFile);
+        $p12Password = env('PRIVATE_KEY_PASS');
+        $p12Content = file_get_contents($pfxFile);
 
-        // Extract private key and certificate
-        if (!openssl_pkcs12_read($pkcs12, $certs, $pfxPassword)) {
+        // Extract the certificate and private key from the .p12 file
+        $certs = [];
+        if (!openssl_pkcs12_read($p12Content, $certs, $p12Password)) {
+            if ($error = openssl_error_string()) {
+                Log::error('Detailed error message', ['error' => $error]);
+            }
             throw new \Exception("Unable to read PFX file or incorrect password.");
         }
-        
-        // Sign
-        if (!openssl_sign($canonicalJson, $signature, $certs['pkey'], OPENSSL_ALGO_SHA256)) {
-            throw new \Exception("Signing failed.");
-        }
-        $signatureBase64 = base64_encode($signature);
 
-        $certPem = '';
-        openssl_x509_export($certs['cert'], $certPem);
-        $certClean = str_replace(["-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----", "\r", "\n"], '', $certPem);
-        $certBinary = base64_decode($certClean);
-        $certHash = hash('sha256', $certBinary, true);
-        $certHashBase64 = base64_encode($certHash);
+        // The private key
+        $privateKey = openssl_pkey_get_private($certs['pkey']);
+        Log::info('private key', ['private key' => $privateKey]);
 
-        // Parse cert
-        $parsedCert = openssl_x509_parse($certs['cert']);
-        $issuerParts = [];
-        foreach ($parsedCert['issuer'] as $key => $value) {
-            $issuerParts[] = "$key=$value";
+        // Data to sign
+        $dataToSign = $binaryHash;
+
+        // Sign the data
+        $signature = '';
+        if (!openssl_sign($dataToSign, $signature, $privateKey, OPENSSL_ALGO_SHA256)) {
+            throw new \Exception("Unable to read PFX file or incorrect password.");
         }
-        $issuerName = implode(', ', $issuerParts);
-        $serialNumber = $parsedCert['serialNumberHex'] ?? $parsedCert['serialNumber'];
-        
-        // Signing time
-        $signingTime = gmdate('Y-m-d\TH:i:s\Z');
+
+        // Convert binary signature to Base64 (Sig)
+        $sig = base64_encode($signature);
+        Log::debug('Sig: ' . $sig);
+
+        $signatureBase64 = $sig;
+
+        // 1. Clean & decode the certificate (PEM → DER)
+        $cleanCert = str_replace(
+            ["-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----", "\r", "\n"],
+            '',
+            $certs['cert']
+        );
+        $derCert = base64_decode($cleanCert);
+
+        // 2. CertDigest (Step 5's DigestValue)
+        $certHashBase64 = base64_encode(hash('sha256', $derCert, true));
+
+        // 3. SigningTime (UTC ISO 8601 format)
+        $signingTime = Carbon::now('UTC')->format('Y-m-d\TH:i:s\Z');
+
+        // 4. Parse issuer & serial
+        $certInfo = openssl_x509_parse($certs['cert']);
+        $issuerName = '';
+        foreach ($certInfo['issuer'] as $key => $value) {
+            $issuerName .= strtoupper($key) . '=' . $value . ',';
+        }
+
+        $serialNumber = $certInfo['serialNumber']; // decimal
+
+        // Build the signature block according to Step 8 mapping
+        $signatureBlock = [
+            "UBLExtensions" => [[
+                "UBLExtension" => [[
+                    "ExtensionContent" => [[
+                        "UBLDocumentSignatures" => [[
+                            "SignatureInformation" => [[
+                                "Signature" => [[
+                                    "ID" => "urn:oasis:names:specification:ubl:signature:Invoice",
+                                    "Object" => [[
+                                        "QualifyingProperties" => [[
+                                            "Target" => "signature",
+                                            "SignedProperties" => [[
+                                                "ID" => "id-xades-signed-props",
+                                                "SignedSignatureProperties" => [[
+                                                    "SigningTime" => [[
+                                                        "_" => $signingTime,
+                                                    ]],
+                                                    "SigningCertificate" => [[
+                                                        "Cert" => [[
+                                                            "CertDigest" => [[
+                                                                "DigestMethod" => [[
+                                                                    "_" => "",
+                                                                    "Algorithm" => "http://www.w3.org/2001/04/xmlenc#sha256"
+                                                                ]],
+                                                                "DigestValue" => [[
+                                                                    "_" => $certHashBase64,
+                                                                ]],
+                                                            ]],
+                                                            "IssuerSerial" => [[
+                                                                "X509IssuerName" => [[
+                                                                    "_" => $issuerName,
+                                                                ]],
+                                                                "X509SerialNumber" => [[
+                                                                    "_" => $serialNumber,
+                                                                ]]
+                                                             ]]
+                                                        ]]
+                                                    ]]
+                                                ]]
+                                            ]]
+                                        ]]
+                                    ]],
+                                    "SignedInfo" => [[
+                                        "CanonicalizationMethod" => [[
+                                            "@Algorithm" => "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
+                                        ]],
+                                        "SignatureMethod" => [[
+                                            "_" => "",
+                                            "@Algorithm" => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+                                        ]],
+                                        "Reference" => [
+                                            [
+                                                "@Id" => "id-doc-signed-data",
+                                                "@URI" => "",
+                                                "DigestMethod" => [[
+                                                    "@Algorithm" => "http://www.w3.org/2001/04/xmlenc#sha256"
+                                                ]],
+                                                "DigestValue" => [["_"=> $docDigest]]
+                                            ],
+                                            [
+                                                "@URI" => "#id-xades-signed-props",
+                                                "DigestMethod" => [[
+                                                    "@Algorithm" => "http://www.w3.org/2001/04/xmlenc#sha256"
+                                                ]],
+                                                "DigestValue" => [["_"=> $docDigest]] // From your SignedProperties
+                                            ]
+                                        ]
+                                    ]],
+                                    "SignatureValue" => [["_"=> $sig]],
+                                    "KeyInfo" => [[
+                                        "X509Data" => [[
+                                            "X509Certificate" => [["_"=> $cleanCert]],
+                                            "X509SubjectName" => [["_"=> $issuerName]],
+                                            "X509IssuerSerial" => [[
+                                                "X509IssuerName" => [[
+                                                    "_" => $issuerName,
+                                                ]],
+                                                "X509SerialNumber" => [[
+                                                    "_" => $serialNumber
+                                                ]]
+                                            ]],
+                                        ]]
+                                    ]]
+                                ]]
+                            ]]
+                        ]]
+                    ]]
+                ]]
+            ]],
+            "Signature" => [[
+                "ID" => [[
+                    "_" => "urn:oasis:names:specification:ubl:signature:Invoice"
+                ]],
+                "SignatureMethod" => [[
+                    "_" => "urn:oasis:names:specification:ubl:dsig:enveloped:xades",
+                ]]
+            ]]
+        ];
+
+        // Merge signature block at the top of Invoice
+        $invoiceData['Invoice'][0] = array_merge(
+            $invoiceData['Invoice'][0],
+            $signatureBlock
+        );
+
+        // Convert to JSON for debugging
+        $finalJson = json_encode($invoiceData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        Log::debug("cleanCert: " . $cleanCert);
+        Log::debug("Final Invoice JSON: " . $finalJson);
+
+        Log::debug('final document ', ['final document' => $finalJson]);
 
         $document = [
             'documents' => [
                 [
                     'format' => 'JSON',
-                    'document' => base64_encode($canonicalJson),
-                    'documentHash' => $documentHashHex,
+                    'document' => base64_encode($finalJson), // base64 of invoice JSON
+                    'documentHash' => $hexHash,          // HEX hash of JSON
                     'codeNumber' => $invoice->c_invoice_no,
-                    'signature' => [
-                        'type' => 'urn:oasis:names:specification:ubl:signature:Invoice',
-                        'value' => $signatureBase64,
-                        'signingCertificate' => [
-                            'digestMethod' => 'http://www.w3.org/2001/04/xmlenc#sha256',
-                            'digestValue' => $certHashBase64
-                        ],
-                        'issuerSerial' => [
-                            'issuerName' => $issuerName,
-                            'serialNumber' => $serialNumber
-                        ],
-                        'signingTime' => $signingTime
-                    ]
                 ]
             ]
         ];
 
         Log::debug('document ', ['document' => $document]);
+        // Output full JSON before submission
+        Log::debug('Full signed document JSON: ' . json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         if ($this->env === 'production') {
             $docsSubmitApi = 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documentsubmissions';
