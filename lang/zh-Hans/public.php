@@ -351,6 +351,7 @@ return [
         "stock_detail" => "库存详情",
         "available_for_sale" => "可供出售",
         "available_stock" => "现有库存",
+        "check_in_guest" => "您已成功将顾客登记至 ':table_no'.",
     ],
     "shift" => [
         "cryptocurrency_market_price" => "Cryptocurrency Market Price",

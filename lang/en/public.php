@@ -351,6 +351,7 @@ return [
         "stock_detail" => "Stock detail",
         "available_for_sale" => "Available for sale",
         "available_stock" => "Available stock",
+        "check_in_guest" => "You've successfully check in customer to ':table_no'.",
     ],
     "shift" => [
         "cryptocurrency_market_price" => "Cryptocurrency",

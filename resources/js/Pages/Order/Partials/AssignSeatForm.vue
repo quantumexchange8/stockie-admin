@@ -10,6 +10,7 @@ import { TimesIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
 import { useCustomToast } from '@/Composables/index.js';
 import MultiSelect from '@/Components/MultiSelect.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     waiters: {
@@ -49,7 +50,7 @@ const formSubmit = () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: `You've successfully check in customer to '${selectedTableName.value}'.`,
+                    summary: wTrans('public.order.check_in_guest', { table_no: selectedTableName.value }),
                 });
                 form.reset();
             }, 200);

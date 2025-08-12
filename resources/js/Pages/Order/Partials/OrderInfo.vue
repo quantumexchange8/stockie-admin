@@ -518,8 +518,8 @@ const isOrderCompleted = computed(() => {
 // });
 
 const cancelOrderMessages = computed(() => {
-    const hasEntryReward = order.value.voucher_id || order.value.order_items.some((item) => item.type === 'Reward');
-    const hasPointRedeemedProduct = order.value.order_items.some((item) => item.type === 'Redemption');
+    const hasEntryReward = !!order.value.voucher_id || order.value.order_items.some((item) => item.type === 'Reward');
+    const hasPointRedeemedProduct = order.value.order_items.some((item) => item.type === 'Redemption') ;
 
     const titleText = wTrans('public.cancel_order');
     const descText = hasEntryReward || hasPointRedeemedProduct
