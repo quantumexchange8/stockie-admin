@@ -2783,16 +2783,19 @@ class OrderController extends Controller
             $response = array_merge($response, $this->kickDrawer());
 
             // POST CT Einvoice
-            $this->storeAtCtInvoice($payment, $order->orderItems);
+            Log::debug('order', ['order' => $order['id']]);
+
+            $this->storeAtCtInvoice($payment, collect($order['id']));
         }
 
         return $response ?? 'Payment Unsuccessfull.';
     }    
 
-    protected function storeAtCtInvoice(Payment $payment, Collection $order_items)
+    protected function storeAtCtInvoice(Payment $payment, Collection $order)
     {
-
+        $order_items = OrderItem::where('order_id', $order)->get();
         $payout = PayoutConfig::first();
+        Log::debug('ct order_items', ['order_items' => $order_items]);
 
         // in json
         $items = [];

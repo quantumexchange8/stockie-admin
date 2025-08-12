@@ -212,15 +212,12 @@ class EInvoiceController extends Controller
             $start = $i * $chunkSize + 1;
             $end = min(($i + 1) * $chunkSize, $totalPayments);
 
-            // Get payments in this chunk
             $chunkPayments = $payments->slice($start - 1, $chunkSize);
             $totalAmount = $chunkPayments->sum('total_amount');
             $totalSst = $chunkPayments->sum('sst_amount');
             $totalService = $chunkPayments->sum('service_tax_amount');
             $totalTax = $totalSst + $totalService;
 
-
-            // Create InvoiceLine array
             $invoiceLines[] = [
                 "ID" => [["_" => (string)($i + 1)]],
                 "InvoicedQuantity" => [["_" => 1, "unitCode" => "C62"]],
@@ -229,7 +226,7 @@ class EInvoiceController extends Controller
                 "Item" => [[
                     "CommodityClassification" => [[
                         "ItemClassificationCode" => [[
-                            "_" => '004', // consolidate
+                            "_" => '004', 
                             "listID" => "CLASS"
                         ]]
                     ]],
@@ -250,6 +247,7 @@ class EInvoiceController extends Controller
             ];
         }
 
+        // STEP 1: Build raw invoice data without UBLExtensions / Signature
         $invoiceData = [
             "_D" => "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
             "_A" => "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2",
@@ -295,8 +293,8 @@ class EInvoiceController extends Controller
                             ]
                         ],
                         "IndustryClassificationCode" => [[
-                            "name" => $msic->Description, // Business Activity Description
-                            "_" => $msic->Code            // MSIC Code (if applicable)
+                            "name" => $msic->Description, 
+                            "_" => $msic->Code            
                         ]],
                         "PostalAddress" => [[
                             "AddressLine" => [
@@ -388,18 +386,17 @@ class EInvoiceController extends Controller
                 ]],
                 "LegalMonetaryTotal" => [
                     [
-                        // Required
                         "TaxExclusiveAmount" => [[
                             "_" => $invoice->c_amount,
-                            "currencyID" => "MYR"  // Currency Code
+                            "currencyID" => "MYR"  
                         ]],
                         "TaxInclusiveAmount" => [[
                             "_" => $invoice->c_total_amount,
-                            "currencyID" => "MYR"  // Currency Code
+                            "currencyID" => "MYR"
                         ]],
                         "PayableAmount" => [[
                             "_" => $invoice->c_total_amount,
-                            "currencyID" => "MYR"  // Currency Code
+                            "currencyID" => "MYR"
                         ]],
                     ]
                 ],
@@ -435,6 +432,7 @@ class EInvoiceController extends Controller
             ]]
         ];
 
+        // STEP 2 & 3: Canonicalize
         function canonicalizeJson($data) {
             if (is_array($data)) {
                 if (array_keys($data) !== range(0, count($data) - 1)) {
@@ -446,14 +444,14 @@ class EInvoiceController extends Controller
             }
             return $data;
         }
-
         // Canonicalize the data (ensure deterministic structure)
         $canonicalData = canonicalizeJson($invoiceData);
+        // Hash the canonicalized document invoice body using SHA-256.
+        // DocDigest.
         $canonicalJson = json_encode($canonicalData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        Log::debug('canonicalJson: ' . $canonicalJson);
 
-        Log::debug('canonicalJson ', ['canonicalJson' => $canonicalJson]);
-
-        // SHA-256 binary hash
+        // SHA-256 binary hash 
         $documentHashBinary = hash('sha256', $canonicalJson, true);
         $documentHashHex = hash('sha256', $canonicalJson); // for API
 
@@ -468,7 +466,7 @@ class EInvoiceController extends Controller
         }
         
         // Sign
-        if (!openssl_sign($documentHashBinary, $signature, $certs['pkey'], OPENSSL_ALGO_SHA256)) {
+        if (!openssl_sign($canonicalJson, $signature, $certs['pkey'], OPENSSL_ALGO_SHA256)) {
             throw new \Exception("Signing failed.");
         }
         $signatureBase64 = base64_encode($signature);
