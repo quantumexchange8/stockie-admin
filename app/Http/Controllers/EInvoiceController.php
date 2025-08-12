@@ -637,7 +637,7 @@ class EInvoiceController extends Controller
                 [
                     'format' => 'JSON',
                     'document' => base64_encode($finalJson), // base64 of invoice JSON
-                    'documentHash' => $hexHash,          // HEX hash of JSON
+                    'documentHash' => $binaryHash,          // HEX hash of JSON
                     'codeNumber' => $invoice->c_invoice_no,
                 ]
             ]
