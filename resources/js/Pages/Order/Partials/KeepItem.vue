@@ -18,6 +18,7 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NotAllowedToKeep from './NotAllowedToKeep.vue';
 import InputError from '@/Components/InputError.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -92,18 +93,18 @@ const { formatPhone } = usePhoneUtils();
 const emit = defineEmits(['close', 'update:customerKeepItems']);
 
 const keepTypes = [
-    { text: 'in quantity', value: 'qty' },
-    { text: 'in cm', value: 'cm' },
+    { text: wTrans('public.in_qty'), value: 'qty' },
+    { text: wTrans('public.in_cm'), value: 'cm' },
 ];
 
 const expiryPeriodOptions = [
-    { text: "1 month starting from today", value: 1 },
-    { text: "2 months starting from today", value: 2 },
-    { text: "3 months starting from today", value: 3 },
-    { text: "4 months starting from today", value: 4 },
-    { text: "5 months starting from today", value: 5 },
-    { text: "6 months starting from today", value: 6 },
-    { text: "Customise range...", value: 0 },
+    { text: wTransChoice('public.months_from_today', 1, { count: 1 }), value: 1 },
+    { text: wTransChoice('public.months_from_today', 2, { count: 2 }), value: 2 },
+    { text: wTransChoice('public.months_from_today', 3, { count: 3 }), value: 3 },
+    { text: wTransChoice('public.months_from_today', 4, { count: 4 }), value: 4 },
+    { text: wTransChoice('public.months_from_today', 5, { count: 5 }), value: 5 },
+    { text: wTransChoice('public.months_from_today', 6, { count: 6 }), value: 6 },
+    { text: wTrans('public.customise_range'), value: 0 },
 ];
 
 const form = useForm({
@@ -122,8 +123,8 @@ const submit = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Item kept successfully.',
-                detail: "You can always refer back the keep item in 'Customer detail'.",
+                summary: wTrans('public.toast.item_kept_success_summary'),
+                detail: wTrans('public.toast.item_kept_success_detail'),
             });
         }, 200);
 
@@ -577,8 +578,8 @@ onMounted(() => {
                     <div class="flex items-start gap-3 flex-[1_0_0]">
                         <WarningIcon />
                         <div class="flex flex-col justify-between items-start flex-[1_0_0]">
-                            <span class="self-stretch text-[#A35F1A] text-base font-bold">Item(s) not allowed to keep.</span>
-                            <span class="self-stretch text-[#3E200A] text-sm font-normal"><span class="!font-bold">{{ notAllowToKeep.length }} items</span> will be removed from keep item listing.</span>
+                            <span class="self-stretch text-[#A35F1A] text-base font-bold">{{ $t('public.order.not_allowed_keep_title1') }}</span>
+                            <span class="self-stretch text-[#3E200A] text-sm font-normal" v-html="$t('public.order.not_allowed_keep_desc', { count: notAllowToKeep.length })"></span>
                         </div>
                     </div>
                     <TimesIcon class="!text-[#6E3E19] cursor-pointer" @click.prevent.stop="isMessageShown = false"/>
@@ -618,7 +619,7 @@ onMounted(() => {
                                         v-if="item.customer"
                                     >
                                     <DefaultIcon class="size-5" v-else />
-                                    <span class="text-grey-900 text-base font-normal">{{ item.customer ? item.customer.full_name : 'Guest' }}</span>
+                                    <span class="text-grey-900 text-base font-normal">{{ item.customer ? item.customer.full_name : $t('public.guest') }}</span>
                                     <span class="text-grey-200">&#x2022;</span>
                                     <span class="text-grey-900 text-base font-normal">{{ item.order_time }}</span>
                                 </div>
@@ -644,7 +645,7 @@ onMounted(() => {
                                                         <template v-if="order_item.type === 'Normal'">
                                                             <Tag 
                                                                 :variant="'default'"
-                                                                :value="'Set'"
+                                                                :value="$t('public.set_header')"
                                                                 v-if="order_item.product.bucket === 'set'"
                                                             />
                                                         </template>
@@ -671,7 +672,7 @@ onMounted(() => {
                                             /> -->
                                             <Checkbox 
                                                 :checked="form.items.find(i => i.order_item_id === order_item.id) !== undefined"
-                                                v-tooltip.left="{ value: getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ?  'You’ve reached the max keep quantity.' : '' }"
+                                                v-tooltip.left="{ value: getTotalKeptQuantity(order_item) === getTotalServedQty(order_item) ?  $t('public.order.max_keep_qty') : '' }"
                                                 :disabled="getTotalKeptQuantity(order_item) === getTotalServedQty(order_item)"
                                                 @change="addItemToList(order_item)"
                                             />
@@ -719,7 +720,7 @@ onMounted(() => {
                                             withDescription
                                             filter
                                             :inputArray="allCustomers"
-                                            :labelText="'Keep for'"
+                                            :labelText="$t('public.field.keep_for')"
                                             :dataValue="props.order.customer_id"
                                             :errorMessage="form.errors?.customer_id?.[0] ?? ''"
                                             v-model="form.customer_id"
@@ -735,7 +736,7 @@ onMounted(() => {
         
                                         <Textarea
                                             inputName="remark"
-                                            labelText="Remark"
+                                            :labelText="$t('public.remark')"
                                             v-model="form.items.find(i => i.order_item_id === order_item.id).remark"
                                             :rows="5"
                                             :maxCharacters="60" 
@@ -761,17 +762,17 @@ onMounted(() => {
                                         <!-- <template v-if="form.items.find(i => i.order_item_id === order_item.id).expiration"> -->
                                             <div class="flex flex-col gap-3 w-full">
                                                 <Dropdown
-                                                    :placeholder="'Select'"
+                                                    :placeholder="$t('public.select')"
                                                     :inputArray="expiryPeriodOptions"
                                                     :dataValue="form.items.find(i => i.order_item_id === order_item.id).expired_period"
                                                     :inputName="'expired_period_' + index"
-                                                    labelText="Expire Date Range"
+                                                    :labelText="$t('public.expiry_date')"
                                                     inputId="expired_period"
                                                     :errorMessage="form.errors?.['items.0.expired_from']?.[0]  ?? ''"
                                                     v-model="form.items.find(i => i.order_item_id === order_item.id).expired_period"
                                                     @onChange="updateValidPeriod(order_item.id, $event)"
                                                     :iconOptions="{
-                                                        'Customise range...': Calendar,
+                                                        [$t('public.expiry_date')]: Calendar,
                                                     }"
                                                 />
                                                 <!-- :disabled="order_item.type === 'Keep'" -->
@@ -796,7 +797,7 @@ onMounted(() => {
                                         :disabled="form.processing || form.items.find(i => i.order_item_id === order_item.id).amount == 0"
                                         v-if="form.items.find(i => i.order_item_id === order_item.id)"
                                     >
-                                        Keep
+                                        {{ $t('public.keep') }}
                                     </Button>
                                 </template>
                             </div>
@@ -807,7 +808,7 @@ onMounted(() => {
         </div>
         <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
             <UndetectableIllus />
-            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
         </div>
     </form>
 

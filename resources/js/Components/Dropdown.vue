@@ -247,7 +247,7 @@ const getOptionData = (value) => {
                     ]
                 },
                 filterInput: {
-                    placeholder: 'Search',
+                    placeholder: $t('public.search'),
                     class: [
                         '!w-full max-h-[44px] flex relative justify-between items-center hover:text-primary-900 active:text-primary-900 focus:text-primary-900',
                         'rounded-[5px] text-primary-900 active:ring-0 border-y border-l border-primary-900 bg-transparent',

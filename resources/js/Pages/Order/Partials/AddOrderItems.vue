@@ -39,7 +39,7 @@ const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails','fetchPendi
 
 const query = ref('');
 const tabs = ref([
-    { key: 'All', title: 'All', disabled: false },
+    { key: 'All', title: wTrans('public.all'), disabled: false },
 ]);
 const products = ref([]);
 const newOrderId = ref({});
@@ -195,11 +195,35 @@ const quantityComputed = (productId) => {
 
 const isFormValid = computed(() => (form.items.length > 0 && !form.processing));
 
-const getCurrentProductKeptAmount = (product) => {
+const getProductTotalKeptQty = (product) => {
     return product.product_items.reduce((total, item) => {
         return total + item.inventory_item.current_kept_amt;
     }, 0);
 }
+
+const getCurrentProductKeptAmount = (product) => {
+    const productType = product.bucket;
+
+    if (productType === 'set') {
+        let temp = [];
+        product.product_items.forEach((item) => {
+            const qty = item.qty;
+            const keptAmt = item.inventory_item.current_kept_amt;
+
+            let availableStockToSell = Math.floor(keptAmt / qty);
+            temp.push(availableStockToSell);
+        });
+        
+        return Math.min(...temp);
+    }
+
+    if (productType === 'single') {
+        return product.product_items.reduce((total, item) => {
+            return total + item.inventory_item.current_kept_amt;
+        }, 0);
+    }
+}
+
 const getAvailableForSaleQty = (product) => {
     let temp = [];
     product.product_items.forEach((item) => {
@@ -227,7 +251,7 @@ const openStockDetailItemModal = (product) => {
 
 const closeStockDetailItemModal = () => {
     isStockDetailModalOpen.value = false;
-    setTimeout(()=> selectedProduct.value = '', 200);
+    setTimeout(()=> selectedProduct.value = '', 500);
 }
 
 watch(() => form.items.map(i => i.item_qty), (newValue) => {
@@ -298,9 +322,9 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                                     </template>
                                                     <p class="text-green-700 text-sm font-normal cursor-pointer" @click="openStockDetailItemModal(product)">
                                                         {{ getCurrentProductKeptAmount(product) + product.stock_left > 0
-                                                                ? getCurrentProductKeptAmount(product) > 0
-                                                                    ? `${getTotalQtyAvailable(product)} (+${getCurrentProductKeptAmount(product)}) ${$t('public.left')}`
-                                                                    : `${getTotalQtyAvailable(product)} ${$t('public.left')}`
+                                                                ? getProductTotalKeptQty(product) > 0
+                                                                    ? `${product.stock_left} (+${getCurrentProductKeptAmount(product)}) ${$t('public.left')}`
+                                                                    : `${product.stock_left} ${$t('public.left')}`
                                                                 : product.status }}
                                                     </p>
                                                 </div>
@@ -379,7 +403,7 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                                                     </template>
                                                     <p class="text-green-700 text-sm font-normal cursor-pointer" @click="openStockDetailItemModal(product)">
                                                         {{ getCurrentProductKeptAmount(product) + product.stock_left > 0
-                                                                ? getCurrentProductKeptAmount(product) > 0
+                                                                ? getProductTotalKeptQty(product) > 0
                                                                     ? `${product.stock_left} (+${getCurrentProductKeptAmount(product)}) ${$t('public.left')}`
                                                                     : `${product.stock_left} ${$t('public.left')}`
                                                                 : product.status }}
@@ -441,7 +465,7 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
     </form>
 
     <Modal
-        :title="'Stock detail'"
+        :title="$t('public.order.stock_detail')"
         :maxWidth="'xs'"
         :closeable="true"
         :show="isStockDetailModalOpen"
@@ -451,8 +475,8 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
         <div class="flex flex-col gap-y-4">
             <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
                 <div class="flex py-3 justify-between self-stretch items-start bg-blue-50 w-full">
-                    <p class="text-blue-600 font-normal text-base">Available for sale</p>
-                    <p class="text-blue-600 font-semibold text-base">{{ selectedProduct.bucket === 'set' ? getAvailableForSaleQty(selectedProduct) : getCurrentProductKeptAmount(selectedProduct) + selectedProduct.stock_left }} {{ selectedProduct.bucket === 'set' ? 'set' : '' }}</p>
+                    <p class="text-blue-600 font-normal text-base">{{ $t('public.order.available_for_sale') }}</p>
+                    <p class="text-blue-600 font-semibold text-base">{{ selectedProduct.bucket === 'set' ? getAvailableForSaleQty(selectedProduct) : getCurrentProductKeptAmount(selectedProduct) + selectedProduct.stock_left }} {{ selectedProduct.bucket === 'set' ? $t('public.set') : '' }}</p>
                 </div>
             </div>
 
@@ -461,11 +485,11 @@ watch(() => form.items.map(i => i.item_qty), (newValue) => {
                     <p class="text-grey-900 font-semibold text-medium">{{ item.inventory_item.item_name }}</p>
                     <div class="flex flex-col gap-y-2 w-full">
                         <div class="flex justify-between self-stretch items-center">
-                            <p class="text-grey-900 font-normal text-base">Available stock</p>
+                            <p class="text-grey-900 font-normal text-base">{{ $t('public.order.available_stock') }}</p>
                             <p class="text-grey-900 font-semibold text-base">{{ item.qty * selectedProduct.stock_left }} {{ $t('public.left') }}</p>
                         </div>
                         <div class="flex justify-between self-stretch items-center">
-                            <p class="text-grey-900 font-normal text-base">Kept item</p>
+                            <p class="text-grey-900 font-normal text-base">{{ $t('public.kept_item') }}</p>
                             <p class="text-grey-900 font-semibold text-base">{{ item.inventory_item.current_kept_amt }} {{ $t('public.left') }}</p>
                         </div>
                     </div>

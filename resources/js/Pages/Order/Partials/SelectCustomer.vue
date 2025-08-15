@@ -303,8 +303,8 @@ watch(
                 <MovingIllus />
             </div>
             <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
-                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Proceed with changing customer?</div>
-                <div class="text-center text-grey-900 text-base font-medium self-stretch" >Switching the checked-in customer will remove the tier reward you've applied. Are you sure you want to proceed?</div>
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">{{ $t("public.proceed_change_customer") }}</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >{{ $t("public.proceed_change_customer_message") }}</div>
             </div>
             <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                 <Button
@@ -313,13 +313,13 @@ watch(
                     type="button"
                     @click="hideRemoveRewardForm"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     size="lg"
                     @click="submit"
                 >
-                    Proceed
+                    {{ $t('public.action.proceed') }}
                 </Button>
             </div>
         </div>

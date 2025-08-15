@@ -396,7 +396,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                     <div class="flex justify-between items-center w-full p-4 border-b border-grey-100">
                         <div class="w-full flex gap-x-2 justify-start items-center self-stretch">
                             <span class="w-1.5 h-[22px] bg-primary-800"></span>
-                            <p class="text-grey-950 text-md font-semibold">Bill 1 (Current)</p>
+                            <p class="text-grey-950 text-md font-semibold">{{ $t('public.order.bill') }} 1 ({{ $t('public.order.current') }})</p>
                         </div>
                         <div 
                             class="flex items-center gap-x-2 cursor-pointer" 
@@ -410,7 +410,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                                     v-if="form.currentBill.customer"
                                 >
                                 <p :class="['text-base font-normal cursor-pointer', form.currentBill.customer ? 'text-grey-700' : 'text-grey-300']">
-                                    {{ form.currentBill.customer?.full_name ?? 'Select' }}
+                                    {{ form.currentBill.customer?.full_name ?? $t('public.select') }}
                                 </p>
                             </div>
                             <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -439,7 +439,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                                     @update:checked="selectItem(item, 'current')"
                                 />
                                 <div class="col-span-full sm:col-span-6 flex flex-col items-center gap-3" :class="item.bucket === 'set' ? '!line-clamp-3' : '!line-clamp-2'">
-                                    <Tag value="Set" v-if="item.bucket === 'set'"/>
+                                    <Tag :value="$t('public.set_header')" v-if="item.bucket === 'set'"/>
                                     <p>{{ item.product_name }}</p>
                                 </div>
                                 <NumberCounter
@@ -461,7 +461,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         :disabled="form.currentBill.order_items.length === 0 || selectedItems.length > 0 || form.splitBills.length > 0"
                         @click="!isSplitBillMode && hasVoucher ? showRemoveRewardForm(form.currentBill) : payThisBill(form.currentBill)"
                     >
-                        Pay this bill
+                        {{ $t('public.order.pay_this_bill') }}
                     </Button>
                 </div>
 
@@ -477,7 +477,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         class="!w-fit"
                         @click="moveItems('current')"
                     >
-                        Move to Bill 1
+                        {{ $t('public.order.move_to') }} {{ $t('public.order.bill') }} 1
                     </Button>
                 </div>
             </div>
@@ -489,7 +489,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         <div class="flex justify-between items-center w-full p-4 border-b border-grey-100">
                             <div class="w-full flex gap-x-2 justify-start items-center self-stretch">
                                 <span class="w-1.5 h-[22px] bg-primary-800"></span>
-                                <p class="text-grey-950 text-md font-semibold">Bill {{ index + 2 }}</p>
+                                <p class="text-grey-950 text-md font-semibold">{{ $t('public.order.bill') }} {{ index + 2 }}</p>
                             </div>
                             <div 
                                 class="flex items-center gap-x-2 cursor-pointer" 
@@ -503,7 +503,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                                         v-if="bill.customer"
                                     >
                                     <p :class="['text-base font-normal cursor-pointer', bill.customer ? 'text-grey-700' : 'text-grey-300']">
-                                        {{ bill.customer?.full_name ?? 'Select' }}
+                                        {{ bill.customer?.full_name ?? $t('public.select') }}
                                     </p>
                                 </div>
                                 <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -532,7 +532,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                                         @update:checked="selectItem(item, bill.id)"
                                     />
                                     <div class="col-span-full sm:col-span-6 flex flex-col items-center gap-3" :class="item.bucket === 'set' ? '!line-clamp-3' : '!line-clamp-2'">
-                                        <Tag value="Set" v-if="item.bucket === 'set'"/>
+                                        <Tag :value="$t('public.set_header')" v-if="item.bucket === 'set'"/>
                                         <p>{{ item.product_name }}</p>
                                     </div>
                                     <NumberCounter
@@ -555,7 +555,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                             :disabled="selectedItems.length > 0"
                             @click="removeBill(index)"
                         >
-                            Delete
+                            {{ $t('public.action.delete') }}
                         </Button>
                         <Button
                             type="button"
@@ -563,7 +563,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                             :disabled="bill.order_items.length === 0 || selectedItems.length > 0"
                             @click="!isSplitBillMode && hasVoucher ? showRemoveRewardForm(bill) : payThisBill(bill)"
                         >
-                            Pay this bill
+                            {{ $t('public.order.pay_this_bill') }}
                         </Button>
                     </div>
                     
@@ -579,7 +579,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                             class="!w-fit"
                             @click="moveItems(bill.id)"
                         >
-                            Move to Bill {{ index + 2 }}
+                            {{ $t('public.order.move_to') }} {{ $t('public.order.bill') }} {{ index + 2 }}
                         </Button>
                     </div>
                 </div>
@@ -594,7 +594,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                     <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M19.9987 8.33203V31.6654M8.33203 19.9987H31.6654" stroke="#B2BEC7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <p class="text-base font-normal text-center">Add another bill</p>
+                    <p class="text-base font-normal text-center">{{ $t('public.order.add_bill') }}</p>
                 </div>
             </div>
         </div>
@@ -632,7 +632,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
     
     <!-- Customer Selection Modal -->
     <Modal
-        :title="'Select Customer'"
+        :title="$t('public.order.select_customer')"
         :maxWidth="'xs'"
         :closeable="true"
         :show="isCustomerModalOpen"
@@ -640,7 +640,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
     >
         <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
             <SearchBar 
-                :placeholder="'Search'"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
             />
@@ -675,7 +675,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
 
                 <div class="flex flex-col items-center justify-center" v-else>
                     <UndetectableIllus />
-                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium pb-5">{{ $t('public.empty.no_data') }}</span>
                 </div>
             </div>
 
@@ -687,7 +687,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         :size="'lg'"
                         @click="clearSelection"
                     >
-                        Clear
+                        {{ $t('public.action.clear') }}
                     </Button>
 
                     <Button
@@ -697,7 +697,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         :disabled="!selectedCustomer || form.processing"
                         @click="selectCustomer"
                     >
-                        Confirm
+                        {{ $t('public.action.confirm') }}
                     </Button>
                 </div>
             </div>
@@ -717,8 +717,8 @@ watch(() => props.currentHasVoucher, (newValue) => {
                 <MovingIllus />
             </div>
             <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
-                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Remove Reward</div>
-                <div class="text-center text-grey-900 text-base font-medium self-stretch" >Please note that splitting the bill will void any applied rewards, as rewards cannot be used with split bills.</div>
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">{{ $t('public.order.remove_reward') }}</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >{{ $t('public.order.splt_applied_rewards_removed') }}</div>
             </div>
             <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                 <Button
@@ -727,13 +727,13 @@ watch(() => props.currentHasVoucher, (newValue) => {
                     type="button"
                     @click="hideRemoveRewardForm"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     size="lg"
                     @click="payThisBill(selectedBill)"
                 >
-                    Remove
+                    {{ $t('public.action.remove') }}
                 </Button>
             </div>
         </div>

@@ -14,7 +14,7 @@ const emit = defineEmits(['close']);
 <template>
     <!-- header -->
     <div class="flex justify-between items-start self-stretch min-w-[370px]">
-        <span class="text-primary-950 text-center text-md font-medium">Item not allowed to keep</span>
+        <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.order.not_allowed_keep_title2') }}</span>
         <TimesIcon class="text-primary-900 cursor-pointer" @click="emit('close')"/>
     </div>
 
@@ -34,7 +34,7 @@ const emit = defineEmits(['close']);
                     <div class="flex items-center gap-2 self-stretch">
                         <Tag 
                             :variant="'default'"
-                            :value="'Set'"
+                            :value="$t('public.set')"
                             v-if="item.product.bucket === 'set'"
                         />
                         <span class="line-clamp-1 self-stretch text-ellipsis text-grey-900 text-base font-medium">{{ item.product.product_name }}</span>

@@ -16,6 +16,7 @@ import OrderInfo from './OrderInfo.vue';
 import { EyeIcon2, MergedIcon, ShiftWorkerIcon } from '@/Components/Icons/solid';
 import { useCustomToast } from '@/Composables';
 import { router } from '@inertiajs/vue3';
+import { wTrans } from 'laravel-vue-i18n';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -162,8 +163,8 @@ const openOverlay = async (event, table, autoOpened = false) => {
             } else if (table.is_locked) {
                 showMessage({
                     severity: 'warn',
-                    summary: 'Table is currently locked',
-                    detail: 'This table is being viewed by another user. It will be unlocked after inactivity or by the user.',
+                    summary: wTrans('public.toast.table_locked_summary'),
+                    detail: wTrans('public.toast.table_locked_detail'),
                 });
             }
         } else {

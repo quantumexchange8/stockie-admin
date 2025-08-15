@@ -189,8 +189,8 @@ const deleteRecord = () => {
                                     :as="'div'"
                                     class="flex flex-col justify-center items-center self-stretch gap-1 px-6"
                                 >
-                                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">You’ve unsaved changes</p>
-                                    <p class="text-center text-grey-900 text-base font-medium self-stretch">Are you sure you want to leave this page? The changes you made will not be saved.</p>
+                                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">{{ $t('public.unsaved_changes') }}</p>
+                                    <p class="text-center text-grey-900 text-base font-medium self-stretch">{{ $t('public.unsaved_changes_message') }}</p>
                                 </DialogTitle>
                                 <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                                     <Button
@@ -199,7 +199,7 @@ const deleteRecord = () => {
                                         :size="'lg'"
                                         @click="close"
                                     >
-                                        Stay
+                                        {{ $t('public.action.stay') }}
                                     </Button>
                                     <Button
                                         :type="'button'"
@@ -207,7 +207,7 @@ const deleteRecord = () => {
                                         :size="'lg'"
                                         @click="leave"
                                     >
-                                        Leave
+                                        {{ $t('public.action.leave') }}
                                     </Button>
                                 </div>
                             </template>
@@ -231,7 +231,7 @@ const deleteRecord = () => {
                                         :size="'lg'"
                                         @click="close"
                                     >
-                                        Keep
+                                        {{ $t('public.keep') }}
                                     </Button>
                                     <Button
                                         :type="'button'"
@@ -239,7 +239,7 @@ const deleteRecord = () => {
                                         :size="'lg'"
                                         @click="deleteRecord"
                                     >
-                                        Delete
+                                        {{ $t('public.action.delete') }}
                                     </Button>
                                 </div>
                             </template>

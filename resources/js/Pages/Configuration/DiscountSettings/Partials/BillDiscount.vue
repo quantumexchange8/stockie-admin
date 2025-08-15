@@ -126,12 +126,12 @@ const deleteBill = (id) => {
 }
 
 const isDiscountDisabled = (discount) => {
-    const now = dayjs();
+    // const now = dayjs();
     
-    // Check date range validity
-    if (!now.isSameOrAfter(discount.discount_from) || !now.isSameOrBefore(discount.discount_to)) {
-        return false;
-    }
+    // // Check date range validity
+    // if (!now.isSameOrAfter(discount.discount_from) || !now.isSameOrBefore(discount.discount_to)) {
+    //     return false;
+    // }
     
     return true;
 };

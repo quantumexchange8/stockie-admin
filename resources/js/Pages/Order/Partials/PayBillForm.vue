@@ -25,6 +25,7 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { MovingIllus } from '@/Components/Icons/illus';
 import OrderReceipt from './OrderReceipt.vue';
 import OrderInvoice from './OrderInvoice.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -128,23 +129,23 @@ const isBillDiscountApplicable = (discount, asToastMsg = false) => {
     
     // 1. Date Range Check
     if (!nowWithoutTime.isSameOrAfter(discount.discount_from) || !nowWithoutTime.isSameOrBefore(discount.discount_to)) {
-        return asToastMsg ? 'This discount cannot be applied as currently, it is not within the applicable period.' : false;
+        return asToastMsg ? wTrans('public.toast.date_range_check') : false;
     }
 
     // 2. Day of Week Check
     const dayOfWeek = now.get('day');
     if (discount.available_on === 'weekday' && ![1,2,3,4,5].includes(dayOfWeek)) {
-        return asToastMsg ? 'This discount cannot be applied as it is only available during weekdays.' : false;
+        return asToastMsg ? wTransChoice('public.toast.day_of_week_check', 0) : false;
     }
     
     if (discount.available_on === 'weekend' && ![0,6].includes(dayOfWeek)) {
-        return asToastMsg ? 'This discount cannot be applied as it is only available during weekends.' : false;
+        return asToastMsg ? wTransChoice('public.toast.day_of_week_check', 1) : false;
     }
 
     // 3. Time Window Check
     if (discount.start_time && discount.end_time) {
         if (now.isBefore(discount.start_time) || now.isSameOrAfter(discount.end_time)) {
-            return asToastMsg ? 'This discount cannot be applied as currently, it is not within the applicable time period.' : false;
+            return asToastMsg ? wTrans('public.toast.time_window_check') : false;
         }
     }
 
@@ -170,21 +171,21 @@ const isBillDiscountApplicable = (discount, asToastMsg = false) => {
             : discount.criteria === 'min_quantity' && totalItemQuantityOrdered.value < discountRequirement;
 
     if (discountCriteriaReq) {
-        const criteriaName = discount.criteria === 'min_spend' ? 'min. spend of RM' : 'min. quantity of';
+        // const criteriaName = discount.criteria === 'min_spend' ? 'min. spend of RM' : 'min. quantity of';
 
         return asToastMsg 
-                ? `To be eligible to this discount, a ${criteriaName} ${discountRequirement} is required.`
+                ? wTransChoice('public.toast.criteria_check', discount.criteria === 'min_spend' ? 0 : 1, { discount_req: discountRequirement })
                 : false;
     }
     
     // 6. Tier Check
     if (discount.tier?.length > 0 && !discount.tier.includes(currentCustomerRanking)) {
-        return asToastMsg ? "This discount cannot be applied as the currently checked-in customer has not yet reached the required tier." : false;
+        return asToastMsg ? wTrans('public.toast.tier_check') : false;
     }
     
     // 7. Payment Method Check
-    if (discount.payment_method?.length > 0) {
-        return false;
+    // if (discount.payment_method?.length > 0) {
+        // return false;
     //     const requiredMethods = discount.payment_method.map(method => {
     //         switch (method) {
     //             case 'cash': return 'Cash';
@@ -198,13 +199,13 @@ const isBillDiscountApplicable = (discount, asToastMsg = false) => {
     //     if (!paymentTransactions.value.some(pmu => requiredMethods.includes(pmu.method))) {
     //         if (!asToastMsg) return false;
     //     }
-    }
+    // }
 
     // 8. Usage Limits Check
     const matchingDiscountUsage = props.currentOrder.customer?.bill_discount_usages?.find((d) => d.bill_discount_id === discount.id);
     
     if (discount.total_usage > 0 && discount.remaining_usage <= 0) {
-        return asToastMsg ? "This discount's maximum number of usage has been exhausted thus, is currently unable to be applied." : false;
+        return asToastMsg ? wTrans('public.toast.total_remaining_usage_limit_check') : false;
     };
     
     if (
@@ -213,7 +214,7 @@ const isBillDiscountApplicable = (discount, asToastMsg = false) => {
         matchingDiscountUsage &&
         matchingDiscountUsage.customer_usage >= discount.customer_usage
     ) {
-        return asToastMsg ? "This discount's maximum number of usage for this customer has been exhausted thus, is currently unable to be applied." : false;
+        return asToastMsg ? wTrans('public.toast.customer_usage_limit_check') : false;
     };
 
     // if (discount.customer_usage > 0 && discount.total_usage > 0) {
@@ -265,7 +266,7 @@ const processBillDiscounts = (billDiscounts) => {
                 if (toastDetails) {
                     showMessage({ 
                         severity: 'warn',
-                        summary: `'${discount.name}' cannot be applied.`,
+                        summary: wTrans('public.toast.non_applicable_check', { discount_name: discount.name }),
                         detail: toastDetails,
                     });
                 }
@@ -311,8 +312,8 @@ const processBillDiscounts = (billDiscounts) => {
     if (conflict === 'keep') {
         showMessage({ 
             severity: 'warn',
-            summary: `'${name}' cannot be applied.`,
-            detail: `Discount '${name}' cannot be applied since it is not stackable with other discount.`,
+            summary: wTrans('public.toast.non_applicable_check', { discount_name: name }),
+            detail: wTrans('public.toast.conflict_keep_detail', { discount_name: name }),
         });
         return;
     }
@@ -332,8 +333,8 @@ const processBillDiscounts = (billDiscounts) => {
             form.discounts = [selectedBillDiscount];
             showMessage({ 
                 severity: 'warn',
-                summary: `'${existingVoucher?.ranking?.name ?? 'Voucher'} Entry reward' is replaced with '${name}' `,
-                detail: `As one of the discounts is not stackable, we've applied the discount with the highest value to maximise customer savings.`,
+                summary: wTrans('public.toast.conflict_max_summary', { old_discount: `'${existingVoucher?.ranking?.name ?? wTrans('public.voucher')} ${wTrans('public.entry_reward')}'`, new_discount: name }),
+                detail: wTrans('public.toast.conflict_max_detail'),
             });
         }
     }
@@ -511,7 +512,7 @@ const submit = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Payment Completed.',
+                summary: wTrans('public.toast.payment_completed'),
             });
         }, 200);
 
@@ -527,7 +528,7 @@ const submit = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'error',
-                summary: 'Payment Unsuccessful.',
+                summary: wTrans('public.toast.payment_unsuccessful'),
             });
         }, 200);
     } finally {
@@ -785,8 +786,8 @@ const handlePaymentMethod = (method) => {
     if (hasConflictingMethods) {
         showMessage({ 
             severity: 'warn',
-            summary: 'Conflicting payment method requirements',
-            detail: "The applied discounts' payment method requirements are conflicting with one another. Please resolve the conflict by choosing either one.",
+            summary: wTrans('public.toast.conflict_methods_summary'),
+            detail: wTrans('public.toast.conflict_methods_detail'),
         });
         return;
     }
@@ -795,11 +796,11 @@ const handlePaymentMethod = (method) => {
     const requiredMethods = discountsWithMethodsReq[0].payment_method.map(mapMethodFormat);
     
     if (!requiredMethods.includes(method)) {
-        const readableMethods = requiredMethods.join(', ');
+        const readableMethods = requiredMethods.map((method) => getTranslatedMethod(method, true)).join(', ');
         showMessage({ 
             severity: 'warn',
-            summary: 'Payment method requirements not met.',
-            detail: `Please use one of the required payment methods: ${readableMethods}`,
+            summary: wTrans('public.toast.required_methods_summary'),
+            detail: wTrans('public.toast.required_methods_detail', { methods: readableMethods }),
         });
         return;
     }
@@ -838,7 +839,7 @@ const proceedWithPayment = (method) => {
                         setTimeout(() => {
                             showMessage({ 
                                 severity: 'warn',
-                                summary: 'Entered amount exceeded grand total amount.',
+                                summary: wTrans('public.toast.total_amount_exceeded'),
                             });
                         }, 200);
                     }
@@ -863,7 +864,7 @@ const proceedWithPayment = (method) => {
                         setTimeout(() => {
                             showMessage({ 
                                 severity: 'warn',
-                                summary: 'Entered amount exceeded grand total amount.',
+                                summary: wTrans('public.toast.total_amount_exceeded'),
                             });
                         }, 200);
                     }
@@ -889,7 +890,7 @@ const proceedWithPayment = (method) => {
                     setTimeout(() => {
                         showMessage({ 
                             severity: 'warn',
-                            summary: 'Entered amount exceeded grand total amount.',
+                            summary: wTrans('public.toast.total_amount_exceeded'),
                         });
                     }, 200);
                 }
@@ -948,7 +949,7 @@ const selectMethod = (transaction) => {
                 setTimeout(() => {
                     showMessage({ 
                         severity: 'warn',
-                        summary: 'Entered amount exceeded grand total amount.',
+                        summary: wTrans('public.toast.total_amount_exceeded'),
                     });
                 }, 200);
             }
@@ -1027,7 +1028,7 @@ const displayExceedBalanceToast = () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'warn',
-                summary: `Entered amount exceeded grand total amount.`,
+                summary: wTrans('public.toast.total_amount_exceeded'),
             });
         }, 200);
     }
@@ -1077,6 +1078,14 @@ const isMethodDisabled = (method) => {
             .map((d) => d.payment_method);
 
 }
+
+const getTranslatedMethod = (method, value = false) => {
+    switch (method) {
+        case 'Cash': return value ? wTrans('public.cash').value : wTrans('public.cash')
+        case 'Card': return value ? wTrans('public.card').value : wTrans('public.card')
+        case 'E-Wallet': return value ? wTrans('public.e_wallet').value : wTrans('public.e_wallet')
+    }
+};
 
 // watch(voucherDiscountedAmount, (newValue) => {
 //     billAmountKeyed.value = newValue;
@@ -1219,7 +1228,7 @@ const printPreviewReceipt = async () => {
                     @click="showCustomerModal"
                 >
                     <CustomerIcon2 />
-                    <p class="text-base font-medium">{{ selectedCustomer?.full_name ?? 'Customer' }}</p>
+                    <p class="text-base font-medium">{{ selectedCustomer?.full_name ?? $t('public.customer_header') }}</p>
                 </div>
                 <div 
                     class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] cursor-pointer border"
@@ -1227,7 +1236,7 @@ const printPreviewReceipt = async () => {
                     @click="showAddDiscountModal"
                 >
                     <DiscountIcon />
-                    <p class="text-base font-medium">{{ form.discounts.length > 0 ? `${form.discounts.length} discount(s)` : 'Add Discount'}}</p>
+                    <p class="text-base font-medium">{{ form.discounts.length > 0 ? $t('public.order.discount_count', { count: form.discounts.length }) : $t('public.add_discount')}}</p>
                 </div>
                 <div 
                     class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border"
@@ -1235,7 +1244,7 @@ const printPreviewReceipt = async () => {
                     @click="showSplitBillModal"
                 >
                     <SplitBillIcon />
-                    <p class="text-base font-medium">Split Bill</p>
+                    <p class="text-base font-medium">{{ $tChoice('public.order.split_bill', 1) }}</p>
                 </div>
                 <div 
                     class="flex w-1/4 items-center gap-x-3 p-4 rounded-[5px] border"
@@ -1252,7 +1261,7 @@ const printPreviewReceipt = async () => {
                     </template>
                     <template v-else>
                         <MergedIcon />
-                        <p class="text-base font-medium">Merge Bill</p>
+                        <p class="text-base font-medium">{{ $tChoice('public.order.merge_bill', 1) }}</p>
                     </template>
                 </div>
             </div>
@@ -1263,21 +1272,21 @@ const printPreviewReceipt = async () => {
                 <div class="flex w-1/3 flex-col items-start gap-y-8 self-stretch">
                     <div class="flex flex-col items-start gap-y-8 self-stretch">
                         <div class="flex flex-col py-2 px-3 gap-y-1 items-center self-stretch">
-                            <p class="text-grey-900 text-md font-normal">Balance Due</p>
+                            <p class="text-grey-900 text-md font-normal">{{ $t('public.order.balance_due') }}</p>
                             <p class="text-grey-900 text-[40px] font-bold">RM {{ remainingBalanceDue >= 0 ? remainingBalanceDue : '0.00' }}</p>
                         </div>
 
                         <div class="flex flex-col gap-y-1 items-start self-stretch">
                             <div class="flex flex-row justify-between items-start self-stretch">
-                                <p class="text-grey-900 text-base font-normal">Sub-total</p>
+                                <p class="text-grey-900 text-base font-normal">{{ $t('public.sub_total') }}</p>
                                 <p class="text-grey-900 text-base font-bold">RM {{ Number(order.amount ?? 0).toFixed(2) }}</p>
                             </div>
                             <div class="flex flex-row justify-between items-start self-stretch" v-if="voucherDiscountedAmount > 0">
-                                <p class="text-grey-900 text-base font-normal">Voucher Discount {{ form.discounts.find((discount) => discount.type === 'voucher').reward_type === 'Discount (Percentage)' ? `(${form.discounts.find((discount) => discount.type === 'voucher').discount}%)` : `` }}</p>
+                                <p class="text-grey-900 text-base font-normal">{{ $t('public.voucher_discount') }} {{ form.discounts.find((discount) => discount.type === 'voucher').reward_type === 'Discount (Percentage)' ? `(${form.discounts.find((discount) => discount.type === 'voucher').discount}%)` : `` }}</p>
                                 <p class="text-grey-900 text-base font-bold">- RM {{ voucherDiscountedAmount }}</p>
                             </div>
                             <div class="flex flex-row justify-between items-start self-stretch" v-if="billDiscountedAmount > 0">
-                                <p class="text-grey-900 text-base font-normal">Bill Discount</p>
+                                <p class="text-grey-900 text-base font-normal">{{ $t('public.bill_discount') }}</p>
                                 <p class="text-grey-900 text-base font-bold">- RM {{ billDiscountedAmount }}</p>
                             </div>
                             <div class="flex flex-row justify-between items-start self-stretch" v-if="taxes['SST'] && taxes['SST'] > 0">
@@ -1289,7 +1298,7 @@ const printPreviewReceipt = async () => {
                                 <p class="text-grey-900 text-base font-bold">RM {{ serviceTaxAmount }}</p>
                             </div>
                             <div class="flex flex-row justify-between items-start self-stretch">
-                                <p class="text-grey-900 text-base font-normal">Rounding</p>
+                                <p class="text-grey-900 text-base font-normal">{{ $t('public.rounding') }}</p>
                                 <p class="text-grey-900 text-base font-bold">{{ Math.sign(roundingAmount) === -1 ? '-' : '' }} RM {{ Math.abs(roundingAmount).toFixed(2) }}</p>
                             </div>
                         </div>
@@ -1308,7 +1317,7 @@ const printPreviewReceipt = async () => {
                                         <CashIcon v-if="transaction.method === 'Cash'" />
                                         <CardIcon v-if="transaction.method === 'Card'" />
                                         <EWalletIcon v-if="transaction.method === 'E-Wallet'" />
-                                        <p class="text-grey-500 text-sm font-normal">{{ transaction.method }}</p>
+                                        <p class="text-grey-500 text-sm font-normal">{{ getTranslatedMethod(transaction.method) }}</p>
                                     </div>
                                     <TimesIcon @click.stop="removeMethod(transaction)" class="text-primary-900 hover:text-primary-800 hover:cursor-pointer" />
                                 </div>
@@ -1332,7 +1341,7 @@ const printPreviewReceipt = async () => {
                                 class="!w-fit"
                                 @click="exactBillAmount"
                             >
-                                Exact
+                                {{ $t('public.order.exact') }}
                             </Button>
                         </div>
 
@@ -1418,7 +1427,7 @@ const printPreviewReceipt = async () => {
                             ]"
                         >
                             <CashIcon />
-                            <p class="text-grey-950 font-medium text-base">Cash</p>
+                            <p class="text-grey-950 font-medium text-base">{{ $t('public.cash') }}</p>
                             <CheckCircleIcon v-if="selectedMethod === 'Cash'" class="absolute -top-[6px] -right-[6px] text-primary-900" />
                         </div>
                         <div
@@ -1433,7 +1442,7 @@ const printPreviewReceipt = async () => {
                             ]"
                         >
                             <CardIcon />
-                            <p class="text-grey-950 font-medium text-base">Card</p>
+                            <p class="text-grey-950 font-medium text-base">{{ $t('public.card') }}</p>
                             <CheckCircleIcon v-if="selectedMethod === 'Card'" class="absolute -top-[6px] -right-[6px] text-primary-900" />
                         </div>
                         <div
@@ -1448,7 +1457,7 @@ const printPreviewReceipt = async () => {
                             ]"
                         >
                             <EWalletIcon />
-                            <p class="text-grey-950 font-medium text-base">E-Wallet</p>
+                            <p class="text-grey-950 font-medium text-base">{{ $t('public.e_wallet') }}</p>
                             <CheckCircleIcon v-if="selectedMethod === 'E-Wallet'" class="absolute -top-[6px] -right-[6px] text-primary-900" />
                         </div>
                     </div>
@@ -1482,7 +1491,7 @@ const printPreviewReceipt = async () => {
                 class="col-span-1"
                 @click="printPreviewReceipt"
             >
-                Print
+                    {{ $t('public.action.print') }}
             </Button>
             <div class="relative col-span-1 flex items-center justify-center rounded-b-[5px]">
                 <Button
@@ -1490,7 +1499,7 @@ const printPreviewReceipt = async () => {
                     size="lg"
                     :disabled="!isValidated"
                 >
-                    Confirm
+                    {{ $t('public.action.confirm') }}
                 </Button>
                 <div v-if="!isValidated" class="absolute inset-0 ">
                     <div class="h-full cursor-not-allowed" @click="displayExceedBalanceToast"></div>
@@ -1500,7 +1509,7 @@ const printPreviewReceipt = async () => {
     </form>
    
     <Modal
-        :title="'Checked-in customer'"
+        :title="$t('public.checked_in_customer')"
         :maxWidth="'xs'"
         :closeable="true"
         :show="isCustomerModalOpen"
@@ -1527,7 +1536,7 @@ const printPreviewReceipt = async () => {
     </Modal>
    
     <Modal
-        :title="'Merge bill'"
+        :title="$tChoice('public.order.merge_bill', 0)"
         :maxWidth="'sm'"
         :closeable="true"
         :show="isMergeBillModalOpen"
@@ -1555,7 +1564,7 @@ const printPreviewReceipt = async () => {
     </Modal>
    
     <Modal
-        :title="'Split bill'"
+        :title="$tChoice('public.order.split_bill', 0)"
         :maxWidth="'full'"
         :closeable="true"
         :show="isSplitBillModalOpen"
@@ -1584,7 +1593,7 @@ const printPreviewReceipt = async () => {
     </Modal>
    
     <Modal
-        :title="'Discount'"
+        :title="$t('public.discount')"
         :maxWidth="'md'"
         :closeable="true"
         :show="isAddDiscountModalOpen"
@@ -1620,16 +1629,16 @@ const printPreviewReceipt = async () => {
         <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
             <div class="flex flex-col items-center gap-y-2 self-stretch">
                 <p class="self-stretch text-grey-900 text-base text-center font-medium">
-                    Paid by {{ form.payment_methods.map((transaction) => transaction.method === 'Card' ? 'Credit/Debit Card' : transaction.method).join(" & ") }}
+                    {{ $t('public.order.paid_by', { method: form.payment_methods.map((transaction) => transaction.method === 'Card' ? $t('public.order.credit_debit_card') : getTranslatedMethod(transaction.method)).join(" & ") }) }}
                 </p>
                 <div class="flex items-center justify-center gap-x-3 self-stretch">
                     <div class="flex items-center gap-x-3 self-stretch">
                         <CashIcon v-if="hasCashMethod" />
                         <ToastSuccessIcon class="flex-shrink-0 size-8" v-else />
-                        <p class="text-grey-950 text-xl font-normal" v-if="hasCashMethod" >Change: </p>
+                        <p class="text-grey-950 text-xl font-normal" v-if="hasCashMethod" >{{ $t('public.order.change') }}: </p>
                     </div>
                     <p v-if="hasCashMethod" class="text-grey-950 text-xl font-semibold">{{ `RM ${form.change > 0 ? form.change.toFixed(2) : form.change}` }}</p>
-                    <p v-else class="text-grey-950 text-xl font-semibold">{{ 'Payment Successful' }}</p>
+                    <p v-else class="text-grey-950 text-xl font-semibold">{{ $t('public.order.payment_success') }}</p>
                 </div>
             </div>
 
@@ -1639,14 +1648,14 @@ const printPreviewReceipt = async () => {
                     :class="form.processing ? 'cursor-not-allowed pointer-events-none bg-grey-100' : 'cursor-pointer'"
                     @click="printInvoiceReceipt"
                 >
-                    <p class="text-grey-950 text-md font-medium">Print receipt</p>
+                    <p class="text-grey-950 text-md font-medium">{{ $t('public.print_receipt') }}<</p>
                 </div>
                 <div 
                     class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] h-36 border border-grey-200"
                     :class="form.processing ? 'cursor-not-allowed pointer-events-none bg-grey-100' : 'cursor-pointer'"
                     @click="closeSuccessPaymentModal"
                 >
-                    <p class="text-grey-950 text-md font-medium">No receipt</p>
+                    <p class="text-grey-950 text-md font-medium">{{ $t('public.order.no_receipt') }}</p>
                 </div>
             </div>
         </div>

@@ -77,6 +77,8 @@ const form = useForm({
 
 const toggleTimePeriod = () => {
     isTimePeriod.value = !isTimePeriod.value;
+    form.time_period_from = '';
+    form.time_period_to = '';
 }
 
 const getAllTiers = async() => {

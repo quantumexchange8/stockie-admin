@@ -11,6 +11,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { onMounted, onUnmounted, ref, watch, computed } from 'vue';
 import ReassignOrder from './ReassignOrder.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     currentOrderTable: {
@@ -150,7 +151,7 @@ const updateTable = (targetTable) => {
 };
 
 const populateTabs = () => {
-    tabs.value = [{ key: 'All', title: 'All', disabled: false }];
+    tabs.value = [{ key: 'All', title: wTrans('public.all'), disabled: false }];
     for (const zone of zones.value) {
         if (zone.text) { 
             tabs.value.push({ key: zone.text, title: zone.text, disabled: false });
@@ -166,7 +167,7 @@ const unmergeTables = () => {
         onSuccess: () => {
             showMessage({
                 severity: 'success',
-                summary: "You’ve successfully unmerged the selected table(s)."
+                summary: wTrans('public.toast.unmerged_table_success')
             });
 
             tableLocks = tableLocks.filter((table) => {
@@ -274,6 +275,7 @@ const mergeTable = async () => {
     //     }
     // })
 }
+
 const toRemainTableNames = computed(() => {
     return form.tables.tables_to_remain.length === 1
         ?  "--"
@@ -281,6 +283,10 @@ const toRemainTableNames = computed(() => {
             .filter((table) => table.id !== props.currentOrderTable.id)
             .map((table) => table.table_no)
             .join(", ");
+})
+
+const mainTable = computed(() => {
+    return mergedTables.value?.find((table) => table.id === props.currentOrderTable.id)?.table_no ?? '';
 })
 
 const tableToBeSplit = computed(() => {
@@ -324,7 +330,7 @@ onMounted(() => {
                             @click="table.id === props.currentOrderTable.id ? '' : updateTable(table)"
                         >
                             <span class="text-xl font-bold self-stretch text-center text-primary-900">{{ table.table_no }}</span>
-                            <div class="text-base text-primary-900 font-normal text-center">{{ table.id === props.currentOrderTable.id ? 'Main table' : 'Merged' }}</div>
+                            <div class="text-base text-primary-900 font-normal text-center">{{ table.id === props.currentOrderTable.id ? $t('public.order.main_table') : $t('public.order.merged') }}</div>
                             <Checkbox 
                                 :checked="!!form.tables.tables_to_remain.find((formTable) => formTable.id === table.id)"
                                 :disabled="table.id === props.currentOrderTable.id"
@@ -336,7 +342,7 @@ onMounted(() => {
                 <template v-else>
                     <div class="flex col-span-full flex-col items-center justify-center gap-5">
                         <UndetectableIllus />
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </div>
                 </template>
             </div>
@@ -345,7 +351,7 @@ onMounted(() => {
         <div class="flex flex-col px-6 pt-6 pb-2 items-center gap-4 self-stretch rounded-b-[5px] bg-white shadow-[0_-8px_16.6px_0_rgba(0,0,0,0.04)] mx-[-20px]">
             <div class="flex h-[25px] items-end gap-2.5 self-stretch">
                 <span class="flex-[1_0_0] self-stretch text-grey-950 text-base font-normal">
-                    Table merged with:
+                    {{ $t('public.order.table_merged_with', { table_no: mainTable }) }}:
                 </span>
                 <span>
                     {{ toRemainTableNames }}
@@ -359,7 +365,7 @@ onMounted(() => {
                     :disabled="form.processing"
                     @click="emit('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :variant="'primary'"
@@ -368,7 +374,7 @@ onMounted(() => {
                     :disabled="form.tables.tables_to_split.length == 0 || form.processing"
                     @click="openConfirm()"
                 >
-                    Confirm
+                    {{ $t('public.action.confirm') }}
                 </Button>
             </div>
         </div>
@@ -452,8 +458,8 @@ onMounted(() => {
             </div>
             <div class="flex flex-col gap-5">
                 <div class="flex flex-col gap-1 text-center">
-                    <span class="text-primary-900 text-lg font-medium self-stretch">Reassign order?</span>
-                    <span class="text-grey-900 text-base font-medium self-stretch">Would you like to reassign the order from the main table to the unmerged table?</span>
+                    <span class="text-primary-900 text-lg font-medium self-stretch">{{ $tChoice('public.order.reassign_order', 0) }}?</span>
+                    <span class="text-grey-900 text-base font-medium self-stretch">{{ $t('public.order.reassign_message') }}</span>
                 </div>
             </div>
 
@@ -464,21 +470,21 @@ onMounted(() => {
                     type="button"
                     @click="closeConfirm(true)"
                 >
-                    No
+                    {{ $t('public.action.no') }}
                 </Button>
                 <Button
                     size="lg"
                     type="button"
                     @click="openReassignOrderModal"
                 >
-                    Reassign
+                    {{ $t('public.action.reassign') }}
                 </Button>
             </div>
         </div>
     </Modal>
     
     <Modal
-        :title="'Reassign Order'"
+        :title="$tChoice('public.order.reassign_order', 1)"
         :maxWidth="'full'"
         :closeable="true"
         :show="isReassignOrderModalOpen"

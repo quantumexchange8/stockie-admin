@@ -11,6 +11,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import { MovingIllus, UndetectableIllus } from '@/Components/Icons/illus';
 import { CheckedIcon, DefaultIcon } from '@/Components/Icons/solid';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     currentOrder: Object,
@@ -103,7 +104,7 @@ const mergeTable = async () => {
         setTimeout(() => {
             showMessage({
                 severity: 'success',
-                summary: `Selected table has been successfully merged with '${props.currentTable.table_no}'.`
+                summary: wTrans('public.toast.merged_bill_success')
             })
         }, 200);
 
@@ -229,7 +230,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
     <form @submit.prevent="submit">
         <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
             <SearchBar 
-                :placeholder="'Search'"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
             />
@@ -261,7 +262,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                 </template>
                 <div class="flex flex-col items-center justify-center" v-else>
                     <UndetectableIllus/>
-                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium pb-5">{{ $t('public.empty.no_data') }}</span>
                 </div>
             </div>
 
@@ -273,7 +274,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         :size="'lg'"
                         @click="clearSelection"
                     >
-                        Clear
+                        {{ $t('public.action.clear') }}
                     </Button>
 
                     <Button
@@ -283,7 +284,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                         :disabled="form.processing"
                         @click="openConfirm"
                     >
-                        Apply
+                        {{ $t('public.action.apply') }}
                     </Button>
                 </div>
             </div>
@@ -302,17 +303,17 @@ watch(() => props.currentHasVoucher, (newValue) => {
 
     <Modal
         :show="isConfirmShow"
-        :title="'Select a customer'"
+        :title="$t('public.order.select_customer')"
         :maxWidth="'xs'"
         @close="closeConfirm"
     >
         <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
             <div class="flex flex-col items-start gap-1 self-stretch">
                 <span class="self-stretch text-grey-950 text-base font-bold">
-                    The table you’re merging with already has an existing customer
+                    {{ $t('public.order.existing_customer') }}
                 </span>
                 <span class="self-stretch text-grey-950 text-sm font-normal">
-                    Please choose who will stay checked in after the table are merged.
+                    {{ $t('public.order.choose_customer_stay') }}
                 </span>
             </div>
 
@@ -351,7 +352,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                     :size="'lg'"
                     @click="closeConfirm"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :type="'button'"
@@ -359,7 +360,7 @@ watch(() => props.currentHasVoucher, (newValue) => {
                     :size="'lg'"
                     @click="hasVoucher ? showRemoveRewardForm() : removeOrderRewards()"
                 >
-                    Confirm
+                    {{ $t('public.action.confirm') }}
                 </Button>
             </div>
         </div>
@@ -378,8 +379,8 @@ watch(() => props.currentHasVoucher, (newValue) => {
                 <MovingIllus />
             </div>
             <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
-                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Remove Reward</div>
-                <div class="text-center text-grey-900 text-base font-medium self-stretch" >The applied reward for both orders will be removed, but you can always reapply it during payment.</div>
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">{{ $t('public.order.remove_reward') }}</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >{{ $t('public.order.both_applied_rewards_removed') }}</div>
             </div>
             <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                 <Button
@@ -388,13 +389,13 @@ watch(() => props.currentHasVoucher, (newValue) => {
                     type="button"
                     @click="hideRemoveRewardForm"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     size="lg"
                     @click="removeOrderRewards"
                 >
-                    Remove
+                    {{ $t('public.action.remove') }}
                 </Button>
             </div>
         </div>

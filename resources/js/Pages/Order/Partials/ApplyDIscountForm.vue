@@ -16,6 +16,7 @@ import timezone from 'dayjs/plugin/timezone';
 import isBetween from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { wTrans } from 'laravel-vue-i18n';
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -45,8 +46,8 @@ const paymentMethodsUsed = ref(props.paymentTransactions);
 const appliedDiscounts = ref(props.billAppliedDiscounts);
 const hoveredDiscount = ref('');
 const tabs = ref([
-    { key: 'Bill Discount', title: 'Bill Discount', disabled: false },
-    { key: 'Tier Rewards', title: 'Tier Rewards', disabled: false },
+    { key: 'Bill Discount', title: wTrans('public.bill_discount'), disabled: false },
+    { key: 'Tier Rewards', title: wTrans('public.tier_rewards'), disabled: false },
 ]);
 
 const fetchBillDiscounts = async () => {
@@ -308,6 +309,12 @@ const isBillDiscountApplicable = (discount) => {
 };
 
 const isVoucherApplicable = (discount) => {
+    if (
+        appliedDiscounts.value.some((selectedDiscount) => selectedDiscount.is_stackable != null && 
+        selectedDiscount.is_stackable != undefined && 
+        selectedDiscount.is_stackable === false
+    )) return false;
+
     // If min purchase is not active, it's always applicable
     if (discount.min_purchase !== 'active') return true;
     
@@ -334,19 +341,19 @@ const formatPaymentMethodReq = (methods) => {
         if (paymentMethods.length > 0) {
             const formattedMethods = paymentMethods.map(method => {
                 switch (method) {
-                    case 'cash': return 'Cash';
-                    case 'card': return 'Card';
-                    case 'e-wallets': return 'E-Wallet';
+                    case 'cash': return wTrans('public.cash').value;
+                    case 'card': return wTrans('public.card').value;
+                    case 'e-wallets': return wTrans('public.e_wallet').value;
                 }
             });
             // console.log(formattedMethods);
     
             if (formattedMethods.length === 1) {
-                return `${formattedMethods[0]} only`;
+                return wTrans('public.order.only_methods', { method: formattedMethods[0] });
             } else if (formattedMethods.length === 2) {
-                return `${formattedMethods.join('/')} only`;
+                return wTrans('public.order.only_methods', { method: formattedMethods.join('/') });
             } else {
-                return 'All methods';
+                return wTrans('public.order.all_methods');
             }
         }
     }
@@ -368,7 +375,7 @@ watch(() => props.currentOrder, (newValue) => {
     <div class="flex flex-col h-[calc(100dvh-10rem)] items-start gap-y-6 self-stretch">
         <!-- Actions -->
         <div class="flex w-full items-center gap-4 py-3 self-stretch">
-            <p>Applied:</p>
+            <p class="whitespace-nowrap">{{ $t('public.order.applied') }}:</p>
             <div class="flex w-full items-center self-stretch py-1 gap-x-3 overflow-x-auto scrollbar-thin scrollbar-webkit min-h-10">
                 <template v-for="(discount, index) in appliedDiscounts" :key="index">
                     <div 
@@ -391,7 +398,7 @@ watch(() => props.currentOrder, (newValue) => {
                                 <template v-if="discount.reward_type === 'Discount (Percentage)'">
                                         {{ `${discount.discount}%` }}
                                 </template>
-                                {{ `(${discount.ranking.name} ENTRY REWARD)` }}
+                                {{ `(${discount.ranking.name} ${$t('public.entry_reward')})` }}
                             </template>
 
                             <template v-else>
@@ -453,11 +460,11 @@ watch(() => props.currentOrder, (newValue) => {
 
                                             <div class="flex items-center gap-x-1 self-stretch">
                                                 <span class="text-2xs font-normal" :class="isBillDiscountApplicable(discount) ? 'text-grey-800' : 'text-grey-300'">
-                                                    Min. {{ discount.criteria === 'min_spend' ? `spend RM ${discount.requirement}` : `${discount.requirement} item purchased` }}
+                                                    {{ discount.criteria === 'min_spend' ? `${$t('public.min_spend')} RM ${discount.requirement}` : $t('public.min_item_purchase', { count: discount.requirement }) }}
                                                 </span>
                                                 <span :class="isBillDiscountApplicable(discount) ? 'text-grey-200' : 'text-grey-100'">&#x2022;</span>
                                                 <span class="text-2xs font-normal" :class="isBillDiscountApplicable(discount) ? 'text-grey-800' : 'text-grey-300'">
-                                                    {{ discount.is_stackable ? 'Stackable' : 'Not Stackable' }}
+                                                    {{ discount.is_stackable ? $t('public.stackable') : $t('public.non_stackable') }}
                                                 </span>
                                                 <span v-if="formatPaymentMethodReq(discount.payment_method) !== ''" :class="isBillDiscountApplicable(discount) ? 'text-grey-200' : 'text-grey-100'">&#x2022;</span>
                                                 <span class="text-2xs font-normal" :class="isBillDiscountApplicable(discount) ? 'text-grey-800' : 'text-grey-300'">
@@ -470,7 +477,7 @@ watch(() => props.currentOrder, (newValue) => {
                                 
                                 <div class="flex flex-col items-center justify-center" v-else>
                                     <UndetectableIllus />
-                                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                                    <span class="text-primary-900 text-sm font-medium pb-5">{{ $t('public.empty.no_data') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -493,7 +500,7 @@ watch(() => props.currentOrder, (newValue) => {
                                             <div class="flex gap-x-5 justify-between items-start self-stretch">
                                                 <div class="flex flex-col items-start gap-y-1">
                                                     <p class="text-base font-bold self-stretch" :class="isVoucherApplicable(voucher) ? 'text-grey-950' : 'text-grey-500'">
-                                                        {{ voucher.ranking.name }} Entry Rewards
+                                                        {{ voucher.ranking.name }} {{ $t('public.entry_reward') }}
                                                     </p>
                                                     <p class="text-sm font-normal self-stretch" :class="isVoucherApplicable(voucher) ? 'text-grey-900' : 'text-grey-400'">
                                                         <!-- {{ voucher.discount_type === 'percentage' ? `${voucher.discount_rate}%` : `RM ${voucher.discount_rate}` }} off -->
@@ -525,10 +532,10 @@ watch(() => props.currentOrder, (newValue) => {
                                             <div class="flex items-center gap-x-2 self-stretch">
                                                 <span class="text-2xs font-normal" :class="isVoucherApplicable(voucher) ? 'text-grey-800' : 'text-grey-300'">
                                                     <template v-if="voucher.min_purchase === 'active' && (voucher.reward_type === 'Discount (Amount)' || voucher.reward_type === 'Discount (Percentage)')">
-                                                        Min spend: RM {{ voucher.min_purchase_amount }}
+                                                        {{ $t('public.min_spend') }}: RM {{ voucher.min_purchase_amount }}
                                                     </template>
                                                     <template v-if="voucher.min_purchase !== 'active' && (voucher.reward_type === 'Discount (Amount)'|| voucher.reward_type === 'Discount (Percentage)')">
-                                                        No min. spend
+                                                        {{ $t('public.no_min_spend') }}
                                                     </template>
                                                 </span>
                                             </div>
@@ -538,7 +545,7 @@ watch(() => props.currentOrder, (newValue) => {
                                 
                                 <div class="flex flex-col items-center justify-center" v-else>
                                     <UndetectableIllus />
-                                    <span class="text-primary-900 text-sm font-medium pb-5">No data can be shown yet...</span>
+                                    <span class="text-primary-900 text-sm font-medium pb-5">{{ $t('public.empty.no_data') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -633,7 +640,7 @@ watch(() => props.currentOrder, (newValue) => {
                     :disabled="billAmountKeyed == 0"
                     @click="applyManualDiscount"
                 >
-                    Apply discount
+                    {{ $t('public.action.apply_discount') }}
                 </Button>
             </div>
         </div>

@@ -12,6 +12,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { onMounted, onUnmounted, ref, watch, computed } from 'vue';
 import TransferItemTableForm from './TransferItemTableForm.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     currentOrderTable: {
@@ -134,7 +135,7 @@ const getAllCustomer = async() => {
 }
  
 const populateTabs = () => {
-    tabs.value = [{ key: 'All', title: 'All', disabled: false }];
+    tabs.value = [{ key: 'All', title: wTrans('public.all'), disabled: false }];
     for (const zone of zones.value) {
         if (zone.text) { 
             tabs.value.push({ key: zone.text, title: zone.text, disabled: false });
@@ -267,7 +268,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({
                     severity: 'success',
-                    summary: `This table's order has been successfully transferred to '${tableNames.value}'.`
+                    summary: wTrans('public.toast.transfer_all_success', { table_no: tableNames.value })
                 })
             }, 200);
             form.reset();
@@ -401,8 +402,8 @@ const hasTables = computed(() => {
             <TabView :tabs="tabs" v-if="zones.length">
                 <template #all>
                     <div class="flex flex-col px-6 items-start gap-6 self-stretch">
-                        <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch max-h-[calc(100dvh-20rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
-                            <template v-if="hasTables">
+                        <template v-if="hasTables">
+                            <div class="grid min-[528px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 items-start content-start gap-6 self-stretch max-h-[calc(100dvh-20rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
                                 <template v-for="zone in zones">
                                     <template v-for="table in zone.tables">
                                         <div class="col-span-1 flex flex-col p-6 justify-center items-center gap-2 rounded-[5px] border border-solid border-grey-100 min-h-[137px] w-full relative" 
@@ -415,9 +416,9 @@ const hasTables = computed(() => {
                                             </div>
                                             <template v-else>
                                                 <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                                    <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                                    <p class="text-white text-center font-semibold text-2xs">{{ $t('public.order.reserved') }}</p>
                                                 </div>
-                                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                             </template>
                                             <RadioButton 
                                                 :name="'table'"
@@ -433,14 +434,14 @@ const hasTables = computed(() => {
                                         </div>
                                     </template>
                                 </template>
-                            </template>
-                            <template v-else>
-                                <div class="flex flex-col items-center justify-center gap-5">
-                                    <UndetectableIllus />
-                                    <span class="text-primary-900 text-sm font-medium">No table in this zone..</span>
-                                </div>
-                            </template>
-                        </div>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="flex flex-col items-center justify-center gap-5">
+                                <UndetectableIllus />
+                                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_table_in_zone') }}</span>
+                            </div>
+                        </template>
                     </div>
                 </template>
 
@@ -464,9 +465,9 @@ const hasTables = computed(() => {
                                             </div>
                                             <template v-else>
                                                 <div class="flex py-1 px-3 justify-center items-center gap-2.5 rounded-lg bg-primary-600" v-if="table.is_reserved">
-                                                    <p class="text-white text-center font-semibold text-2xs">RESERVED</p>
+                                                    <p class="text-white text-center font-semibold text-2xs">{{ $t('public.order.reserved') }}</p>
                                                 </div>
-                                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} seats</div>
+                                                <div class="text-base font-normal text-center" :class="table.is_reserved ? 'text-grey-200' : 'text-primary-900'" v-else>{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                             </template>
                                             <RadioButton 
                                                 :name="'table'"
@@ -483,9 +484,9 @@ const hasTables = computed(() => {
                                     </template>
                                 </template>
                                 <template v-else>
-                                    <div class="flex flex-col items-center justify-center gap-5">
+                                    <div class="col-span-full flex flex-col items-center justify-center gap-5">
                                         <UndetectableIllus />
-                                        <span class="text-primary-900 text-sm font-medium">No table in this zone..</span>
+                                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_table_in_zone') }}</span>
                                     </div>
                                 </template>
                             </template>
@@ -496,14 +497,14 @@ const hasTables = computed(() => {
             <template v-else>
                 <div class="flex w-full flex-col items-center justify-center gap-5">
                     <UndetectableIllus />
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </div>
             </template>
         </div>
         <div class="flex flex-col px-6 pt-6 pb-2 items-center gap-4 self-stretch rounded-b-[5px] bg-white shadow-[0_-8px_16.6px_0_rgba(0,0,0,0.04)] mx-[-20px]">
             <div class="flex h-[25px] items-end gap-2.5 self-stretch">
                 <span class="flex-[1_0_0] self-stretch text-grey-950 text-base font-normal">
-                    Transfer to
+                    {{ $t('public.order.transfer_to') }}
                 </span>
                 <span>
                     {{ tableNames }}
@@ -516,7 +517,7 @@ const hasTables = computed(() => {
                     :size="'lg'"
                     @click="emit('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :variant="'primary'"
@@ -525,7 +526,7 @@ const hasTables = computed(() => {
                     :disabled="form.processing || !selectedTable"
                     @click="transferType === 'all' ? openConfirm() : openTransferItemModal()"
                 >
-                    Confirm
+                    {{ $t('public.action.confirm') }}
                 </Button>
             </div>
         </div>
@@ -533,17 +534,17 @@ const hasTables = computed(() => {
 
     <Modal
         :show="isConfirmShow"
-        :title="'Select a customer'"
+        :title="$t('public.order.select_customer')"
         :maxWidth="'xs'"
         @close="closeConfirm"
     >
         <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
             <div class="flex flex-col items-start gap-1 self-stretch">
                 <span class="self-stretch text-grey-950 text-base font-bold">
-                    The table you're merging with already has an existing customer
+                    {{ $t('public.order.existing_customer') }}
                 </span>
                 <span class="self-stretch text-grey-950 text-sm font-normal">
-                    Please choose who will stay checked in after the table are merged.
+                    {{ $t('public.order.choose_customer_stay') }}
                 </span>
             </div>
 
@@ -582,7 +583,7 @@ const hasTables = computed(() => {
                     :size="'lg'"
                     @click="closeConfirm"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :type="'button'"
@@ -590,14 +591,14 @@ const hasTables = computed(() => {
                     :size="'lg'"
                     @click="currentHasVoucher || targetHasVoucher ? showRemoveRewardForm() : submit()"
                 >
-                    Confirm
+                    {{ $t('public.action.confirm') }}
                 </Button>
             </div>
         </div>
     </Modal>
     
     <Modal
-        :title="'Transfer item to new table'"
+        :title="$t('public.order.transfer_items_title')"
         :maxWidth="'full'"
         :closeable="true"
         :show="isTransferItemModalOpen"
@@ -639,8 +640,8 @@ const hasTables = computed(() => {
                 <MovingIllus />
             </div>
             <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
-                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Remove Reward</div>
-                <div class="text-center text-grey-900 text-base font-medium self-stretch" >The applied reward for both orders will be removed, but you can always reapply it during payment.</div>
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">{{ $t('public.order.remove_reward') }}</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >{{ $t('public.order.both_applied_rewards_removed') }}</div>
             </div>
             <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                 <Button
@@ -649,13 +650,13 @@ const hasTables = computed(() => {
                     type="button"
                     @click="hideRemoveRewardForm"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     size="lg"
                     @click="submit"
                 >
-                    Remove
+                    {{ $t('public.action.remove') }}
                 </Button>
             </div>
         </div>

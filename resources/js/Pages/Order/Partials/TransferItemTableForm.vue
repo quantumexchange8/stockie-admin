@@ -9,6 +9,7 @@ import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     currentTable: {
@@ -207,7 +208,7 @@ const submit = () => {
         onSuccess: () => {
             showMessage({
                 severity: 'success',
-                summary: `You've successfully transfer the selected item from ${props.currentTableName} to ${props.targetTableName}.`
+                summary: wTrans('public.toast.transfer_items_success', { from_table: props.currentTableName, to_table: props.targetTableName })
             });
             emit('isDirty', false);
             emit('closeModal', 'success');
@@ -261,7 +262,7 @@ const isValidated = computed(() => {
             <div class="w-1/3 flex flex-col items-start gap-6 self-stretch bg-white relative rounded-[5px] border border-grey-100 shadow-md">
                 <div class="flex p-4 gap-x-2 justify-start items-center self-stretch border-b border-grey-100">
                     <span class="w-1.5 h-[22px] bg-primary-800"></span>
-                    <p class="text-grey-950 text-md font-semibold">{{ currentTableName }} (Current)</p>
+                    <p class="text-grey-950 text-md font-semibold">{{ currentTableName }} ({{ $t('public.order.current') }})</p>
                 </div>
                 <div class="flex flex-col p-3 items-start self-stretch max-h-[calc(100dvh-19.8rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <div
@@ -275,7 +276,7 @@ const isValidated = computed(() => {
                             @update:checked="selectItem(item)"
                         />
                         <div class="col-span-full sm:col-span-6 flex flex-col items-center gap-3" :class="item.bucket === 'set' ? '!line-clamp-3' : '!line-clamp-2'">
-                            <Tag value="Set" v-if="item.bucket === 'set'"/>
+                            <Tag :value="$t('public.set_header')" v-if="item.bucket === 'set'"/>
                             <p>{{ item.product_name }}</p>
                         </div>
                         <NumberCounter
@@ -298,7 +299,7 @@ const isValidated = computed(() => {
                         class="!w-fit"
                         @click="moveItems('current')"
                     >
-                        Move to {{ currentTableName }}
+                        {{ $t('public.order.move_to') }} {{ currentTableName }}
                     </Button>
                 </div>
             </div>
@@ -321,7 +322,7 @@ const isValidated = computed(() => {
                                 class="size-5 rounded-full"
                                 v-if="form.targetTable.customer"
                             >
-                            <p :class="['text-base font-normal cursor-pointer', form.targetTable.customer_id ? 'text-grey-700' : 'text-grey-300']">{{ form.targetTable.customer_id ? customers.find((cust) => cust.id == form.targetTable.customer_id).full_name : 'Select' }}</p>
+                            <p :class="['text-base font-normal cursor-pointer', form.targetTable.customer_id ? 'text-grey-700' : 'text-grey-300']">{{ form.targetTable.customer_id ? customers.find((cust) => cust.id == form.targetTable.customer_id).full_name : $t('public.select') }}</p>
                         </div>
                         <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <g clip-path="url(#clip0_4705_26673)">
@@ -349,7 +350,7 @@ const isValidated = computed(() => {
                             @update:checked="selectItem(item)"
                         />
                         <div class="col-span-full sm:col-span-6 flex flex-col items-center gap-3" :class="item.bucket === 'set' ? '!line-clamp-3' : '!line-clamp-2'">
-                            <Tag value="Set" v-if="item.bucket === 'set'"/>
+                            <Tag :value="$t('public.set_header')" v-if="item.bucket === 'set'"/>
                             <p>{{ item.product_name }}</p>
                         </div>
                         <NumberCounter
@@ -372,7 +373,7 @@ const isValidated = computed(() => {
                         class="!w-fit"
                         @click="moveItems('target')"
                     >
-                        Move to {{ targetTableName }}
+                        {{ $t('public.order.move_to') }} {{ targetTableName }}
                     </Button>
                 </div>
             </div>
@@ -386,7 +387,7 @@ const isValidated = computed(() => {
                 class="!w-fit"
                 @click="$emit('closeModal', 'leave')"
             >
-                Cancel & Exit
+                {{ $t('public.action.cancel_exit') }}
             </Button>
             <Button
                 variant="tertiary"
@@ -395,7 +396,7 @@ const isValidated = computed(() => {
                 class="!w-fit"
                 @click="reset"
             >
-                Reset
+                {{ $t('public.action.reset') }}
             </Button>
             <Button
                 variant="primary"
@@ -404,13 +405,13 @@ const isValidated = computed(() => {
                 class="!w-fit"
                 :disabled="!isValidated"
             >
-                Confirm
+                {{ $t('public.action.confirm') }}
             </Button>
         </div>
     </form>
     
     <Modal
-        :title="'Checked-in customer'"
+        :title="$t('public.checked_in_customer')"
         :maxWidth="'xs'"
         :closeable="true"
         :show="isCustomerModalOpen"
@@ -418,7 +419,7 @@ const isValidated = computed(() => {
     >
         <div class="flex flex-col items-start gap-6 rounded-[5px] bg-white">
             <SearchBar 
-                :placeholder="'Search'"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
             />
@@ -459,7 +460,7 @@ const isValidated = computed(() => {
                         :size="'lg'"
                         @click="clearSelection"
                     >
-                        Clear
+                        {{ $t('public.action.clear') }}
                     </Button>
 
                     <Button
@@ -469,7 +470,7 @@ const isValidated = computed(() => {
                         :disabled="!selectedCustomer || form.processing"
                         @click="closeCustomerModal"
                     >
-                        Confirm
+                        {{ $t('public.action.confirm') }}
                     </Button>
                 </div>
             </div>

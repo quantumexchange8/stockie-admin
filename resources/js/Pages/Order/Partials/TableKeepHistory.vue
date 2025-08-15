@@ -140,7 +140,7 @@ onMounted(() => {
                                         v-if="item.customer"
                                     >
                                     <DefaultIcon class="size-5" v-else />
-                                    <span class="text-grey-900 text-base font-normal">{{ item.customer ? item.customer.full_name : 'Guest' }}</span>
+                                    <span class="text-grey-900 text-base font-normal">{{ item.customer ? item.customer.full_name : $t('public.guest') }}</span>
                                     <span class="text-grey-200">&#x2022;</span>
                                     <span class="text-grey-900 text-base font-normal">{{ item.order_time }}</span>
                                 </div>
@@ -177,7 +177,7 @@ onMounted(() => {
                                     leave-to-class="transform scale-95 opacity-0"
                                 >
                                     <div class="grid grid-cols-10 w-full items-start" v-show="collapsedSections[record.id]">
-                                        <span class="col-span-2 text-grey-500 text-sm font-normal">Kept for</span>
+                                        <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.order.kept_for') }}</span>
                                         <div class="col-span-8 flex items-center gap-1.5 flex-[1_0_0]">
                                             <img
                                                 :src="record.keep_item.customer?.image ? record.keep_item.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
@@ -186,14 +186,14 @@ onMounted(() => {
                                             >
                                             <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ record.keep_item.customer?.full_name ?? '-' }}</span>
                                         </div>
-                                        <span class="col-span-2 text-grey-500 text-sm font-normal">Expire on</span>
+                                        <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.expire_on') }}</span>
                                         <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ record.keep_item.expired_to ? dayjs(record.keep_item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
-                                        <span class="col-span-2 text-grey-500 text-sm font-normal">Remark</span>
+                                        <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.remark') }}</span>
                                         <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ record.keep_item.remark ? record.keep_item.remark : '-' }}</span>
                                         <div class="col-span-full flex items-center py-2">
                                             <hr class="w-full border-grey-100"></hr>
                                         </div>
-                                        <span class="col-span-2 text-grey-500 text-sm font-normal">Kept by</span>
+                                        <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.kept_by') }}</span>
                                         <div class="col-span-8 flex items-center gap-1.5 flex-[1_0_0]">
                                             <img
                                                 :src="record.keep_item.waiter.image ? record.keep_item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
@@ -202,7 +202,7 @@ onMounted(() => {
                                             >
                                             <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ record.keep_item.waiter.full_name }}</span>
                                         </div>
-                                        <span class="col-span-2 text-grey-500 text-sm font-normal">Kept on</span>
+                                        <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.order.kept_on') }}</span>
                                         <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ record.keep_date ? dayjs(record.keep_date).format('DD/MM/YYYY') : '-' }}</span>
                                     </div>
                                 </transition>
@@ -215,12 +215,12 @@ onMounted(() => {
         
         <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
             <UndetectableIllus />
-            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
         </div>
     </div>
     <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
         <UndetectableIllus />
-        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
     </div>
 </template>
     

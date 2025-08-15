@@ -215,39 +215,39 @@ const updateOrderCustomer = (event) => {
             <div class="flex flex-col items-start gap-10 px-6 py-3 w-full self-stretch max-h-[calc(100dvh-11.5rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                 <div class="flex flex-col gap-y-4 items-start self-stretch">
                     <div class="flex flex-col py-2 gap-y-1 items-center self-stretch">
-                        <p class="text-primary-900 text-md font-normal">Total Due</p>
+                        <p class="text-primary-900 text-md font-normal">{{ $t('public.order.total_due') }}</p>
                         <p class="text-primary-900 text-[40px] font-bold">RM {{ grandTotalAmount }}</p>
                     </div>
 
                     <div class="flex flex-col gap-x-2 items-start self-stretch">
                         <div class="flex flex-row justify-between items-start self-stretch">
-                            <p class="text-grey-900 text-base font-normal">Order No.</p>
+                            <p class="text-grey-900 text-base font-normal">{{ $t('public.order_no') }}</p>
                             <p class="text-grey-900 text-base font-bold">#{{ order.order_no }}</p>
                         </div>
                         <div class="flex flex-row justify-between items-start self-stretch">
-                            <p class="text-grey-900 text-base font-normal">No. of pax</p>
+                            <p class="text-grey-900 text-base font-normal">{{ $t('public.no_of_pax') }}</p>
                             <p class="text-grey-900 text-base font-bold">{{ order.pax }}</p>
                         </div>
                         <div class="flex flex-row justify-between items-start self-stretch">
-                            <p class="text-grey-900 text-base font-normal">Customer Name</p>
+                            <p class="text-grey-900 text-base font-normal">{{ $t('public.customer_name') }}</p>
                             <div class="flex flex-row gap-x-2 items-center">
                                 <img 
                                     :src="order.customer && order.customer.image ? order.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt="CustomerProfilePic"
                                     class="size-6"
                                 >
-                                <p class="text-grey-900 text-base font-bold">{{ order.customer?.full_name ?? 'Guest' }}</p>
+                                <p class="text-grey-900 text-base font-bold">{{ order.customer?.full_name ?? $t('public.guest') }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="w-full flex flex-col gap-y-3">
-                    <p class="text-grey-950 text-md font-bold">Bill </p>
+                    <p class="text-grey-950 text-md font-bold">{{ $t('public.order.bill') }} </p>
                     <div class="flex flex-col gap-y-3 items-start self-stretch">
                         <div class="flex flex-row items-center self-stretch gap-x-3">
-                            <p class="w-8/12 text-grey-950 text-sm font-normal">Product Name & Quantity </p>
-                            <p class="w-1/12 text-grey-950 text-sm font-normal">Qty</p>
-                            <p class="w-3/12 text-grey-950 text-sm font-normal text-right">Price</p>
+                            <p class="w-8/12 text-grey-950 text-sm font-normal">{{ $t('public.product_name') }}</p>
+                            <p class="w-1/12 text-grey-950 text-sm font-normal">{{ $t('public.qty') }}</p>
+                            <p class="w-3/12 text-grey-950 text-sm font-normal text-right">{{ $t('public.price') }}</p>
                         </div>
 
                         <div class="flex flex-col gap-y-6 items-start self-stretch">
@@ -261,7 +261,7 @@ const updateOrderCustomer = (event) => {
                                                 <p class="w-3/12 text-grey-950 text-base font-medium text-right">RM {{ parseFloat(row.type === 'Normal' ? row.amount_before_discount : 0).toFixed(2) }}</p>
                                             </div>
                                             <div class="flex flex-row items-center self-stretch gap-x-3 pl-16" v-if="row.discount_id">
-                                                <ul class="w-8/12 list-disc"><li class="text-grey-950 text-base font-medium self-stretch">{{ `${row.product_discount.discount.name} Discount` }}</li></ul>
+                                                <ul class="w-8/12 list-disc"><li class="text-grey-950 text-base font-medium self-stretch">{{ `${row.product_discount.discount.name} ${$t('public.discount')}` }}</li></ul>
                                                 <p class="w-4/12 text-grey-950 text-base font-medium text-right">- RM {{ parseFloat(row.discount_amount).toFixed(2) }}</p>
                                             </div>
                                         </div>
@@ -271,11 +271,11 @@ const updateOrderCustomer = (event) => {
 
                             <div class="flex flex-col gap-y-1 items-start self-stretch">
                                 <div class="flex flex-row justify-between items-start self-stretch">
-                                    <p class="text-grey-900 text-base font-normal">Sub-total</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.sub_total') }}</p>
                                     <p class="text-grey-900 text-base font-bold">RM {{ parseFloat(order.amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="order.voucher">
-                                    <p class="text-grey-900 text-base font-normal">Voucher Discount {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.voucher_discount') }} {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
                                     <p class="text-grey-900 text-base font-bold">- RM {{ voucherDiscountedAmount }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="taxes['SST'] && taxes['SST'] > 0">
@@ -287,7 +287,7 @@ const updateOrderCustomer = (event) => {
                                     <p class="text-grey-900 text-base font-bold">RM {{ serviceTaxAmount }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch">
-                                    <p class="text-grey-900 text-base font-normal">Rounding</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.rounding') }}</p>
                                     <p class="text-grey-900 text-base font-bold">{{ Math.sign(roundingAmount) === -1 ? '-' : '' }} RM {{ Math.abs(roundingAmount).toFixed(2) }}</p>
                                 </div>
                             </div>
@@ -302,14 +302,14 @@ const updateOrderCustomer = (event) => {
                     size="lg"
                     @click="openModal"
                 >
-                    Pay this Bill
+                    {{ $t('public.order.pay_this_bill') }}
                 </Button>
             </div>
         </div>
     </form>
 
     <Modal
-        :title="'Pay Bill'"
+        :title="$t('public.order.pay_bill')"
         :maxWidth="'full'" 
         :closeable="true"
         :show="payBillFormIsOpen"

@@ -571,7 +571,7 @@ watch(
     async (newCustomerId) => {
         if (newCustomerId) {
             await fetchCustomerDetails();
-            tabs.value[2].disabled = !newCustomerId && currentOrderTable.status === 'Pending Clearance';
+            tabs.value[2].disabled = !newCustomerId && currentOrderTable.value.status === 'Pending Clearance';
         }
     },
     { immediate: true } // Run the watcher immediately on mount
@@ -580,10 +580,10 @@ watch(
 // watch(paymentInfo, (newValue) => tabs.value[2].disabled = newValue);
 
 watch(selectedTab, (newValue) => {
-    if (tabs.value[newValue].title === 'Order Detail') fetchOrderDetails();
+    if (tabs.value[newValue].key === 'Order Detail') fetchOrderDetails();
 });
 
-watch(order.value, () => {
+watch(order, () => {
     fetchPendingServe();
 });
 
@@ -601,7 +601,7 @@ onUnmounted(stop);
 
 <template>
     <RightDrawer 
-        :header="actionType === 'keep' ? 'Keep Item' : actionType === 'add' ? '' : 'Make Payment'" 
+        :header="actionType === 'keep' ? $t('public.keep_item') : actionType === 'add' ? '' : $t('public.action.make_payment')" 
         :withHeader="actionType !== 'add'"
         previousTab
         :withHistory="actionType === 'keep'"
@@ -644,7 +644,7 @@ onUnmounted(stop);
     </RightDrawer>
 
     <RightDrawer 
-        :header="'Table Keep History'" 
+        :header="$t('public.order.table_keep_history')" 
         :withHeader="true"
         previousTab
         v-model:show="drawerIsVisible2"
@@ -677,7 +677,7 @@ onUnmounted(stop);
     <div class="flex flex-col gap-4 items-start rounded-[5px]">
         <div class="w-full flex items-center px-6 pt-6 pb-3 justify-between">
             <span class="text-primary-950 text-center text-md font-medium">{{ $t('public.detail') }} - {{ orderTableNames }}</span>
-            <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer;handleTableLock()" />
+            <TimesIcon class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer" @click="closeDrawer();handleTableLock()" />
         </div>
 
         <div class="flex px-5 items-start gap-4 self-stretch">
@@ -964,7 +964,7 @@ onUnmounted(stop);
     </Modal> -->
 
     <Modal
-        :title="splitTablesMode ? 'Merged table' : 'Merge with'"
+        :title="splitTablesMode ? $tChoice('public.merged_table', 1) : $t('public.order.merge_with')"
         :maxWidth="'full'" 
         :closeable="true"
         :show="mergeTableIsOpen"
@@ -996,27 +996,27 @@ onUnmounted(stop);
         @close="hideTransferOptionForm"
     >
         <div class="flex flex-col gap-6">
-            <p class="text-center text-primary-950 text-xl font-normal">How would you like to transfer this table's order?</p>
+            <p class="text-center text-primary-950 text-xl font-normal">{{ $t('public.order.transfer_option_message') }}</p>
             <div class="flex flex-col gap-y-4 items-start h-[338px] w-[526px]">
                 <!-- showTransferTableForm('all') -->
                 <div 
                     @click="showTransferTableForm('all')" 
                     class="size-full max-h-[161px] max-w-[526px] flex justify-center items-center self-stretch gap-2.5 py-3 px-4 rounded-[5px] border border-grey-200 cursor-pointer"
                 >
-                    <p class="text-center text-primary-950 text-md font-medium">Transfer all order</p>
+                    <p class="text-center text-primary-950 text-md font-medium">{{ $t('public.order.transfer_all') }}</p>
                 </div>
                 <div 
                     @click="showTransferTableForm('item')" 
                     class="size-full max-h-[161px] max-w-[526px] flex justify-center items-center self-stretch gap-2.5 py-3 px-4 rounded-[5px] border border-grey-200 cursor-pointer"
                 >
-                    <p class="text-center text-primary-950 text-md font-medium">Transfer item only</p>
+                    <p class="text-center text-primary-950 text-md font-medium">{{ $t('public.order.transfer_items') }}</p>
                 </div>
             </div>
         </div>
     </Modal>
 
     <Modal
-        :title="'Transfer to'"
+        :title="$t('public.order.transfer_to')"
         :maxWidth="'full'" 
         :closeable="true"
         :show="transferTableIsOpen"
@@ -1046,8 +1046,8 @@ onUnmounted(stop);
                 <MovingIllus/>
             </div>
             <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6" >
-                <div class="text-center text-primary-900 text-lg font-medium self-stretch">Unlock table?</div>
-                <div class="text-center text-grey-900 text-base font-medium self-stretch" >You still have items in your cart! Would you like to unlock table or stay?</div>
+                <div class="text-center text-primary-900 text-lg font-medium self-stretch">{{ $t('public.order.unlock_table') }}</div>
+                <div class="text-center text-grey-900 text-base font-medium self-stretch" >{{ $t('public.order.unlock_table_message') }}</div>
             </div>
             <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                 <Button
@@ -1056,14 +1056,14 @@ onUnmounted(stop);
                     type="button"
                     @click="hideUnlockConfirmation"
                 >
-                    Stay
+                    {{ $t('public.action.stay') }}
                 </Button>
                 <Button
                     variant="red"
                     size="lg"
                     @click.once="manualClose"
                 >
-                    Unlock
+                    {{ $t('public.action.unlock') }}
                 </Button>
             </div>
         </div>
