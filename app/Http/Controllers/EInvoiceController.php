@@ -1142,7 +1142,7 @@ class EInvoiceController extends Controller
         // Reindex the array to return a clean structure
         // $transactions = array_values($grouped);
 
-        $transactions = ConsolidatedInvoice::with(['invoice_child', 'invoice_no'])->get();
+        $transactions = ConsolidatedInvoice::with(['invoice_child', 'invoice_no'])->latest()->get();
 
         return response()->json($transactions);
     }

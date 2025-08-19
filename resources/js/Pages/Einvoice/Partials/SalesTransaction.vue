@@ -274,7 +274,7 @@ const submit = async () => {
                 </template>
                 <template #status="row">
                     <Tag
-                        :variant="row.status === 'Submitted' 
+                        :variant="row.status === 'submitted' 
                                     ? 'green' 
                                 : row.status === 'Cancelled' 
                                     ? 'grey'
