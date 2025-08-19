@@ -9,6 +9,7 @@ import { useForm } from '@inertiajs/vue3';
 import RemoveOrderItem from './RemoveOrderItem.vue';
 import dayjs from 'dayjs';
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     order: {
@@ -192,9 +193,9 @@ const updateOrderCustomer = (customerItem) => {
 
 const getItemTypeName = (type) => {
     switch (type) {
-        case 'Keep': return 'Keep Item';
-        case 'Redemption': return 'Redeemed Product'
-        case 'Reward': return 'Entry Reward'
+        case 'Keep': return wTrans('public.keep_item').value;
+        case 'Redemption': return wTrans('public.redeemed_product').value;
+        case 'Reward': return wTrans('public.entry_reward').value;
     }
 }
 
@@ -302,18 +303,23 @@ const isFormValid = computed(() => form.items.some(item => item.serving_qty > 0)
                             class="size-[60px] object-contain"
                         >
                         <div class="flex flex-col justify-center items-start gap-2 flex-[1_0_0] self-stretch">
-                            <span class="text-primary-800 line-clamp-1 self-stretch text-ellipsis text-base font-medium flex gap-1">
-                                ({{ getServedQty(item) }}/{{ getTotalQty(item) }}) 
-                                <span class="line-clamp-1 text-grey-900 text-ellipsis text-base font-medium">{{ item.product.product_name }}</span>
-                            </span>
-                            <div class="flex items-center gap-2">
-                                <Tag 
-                                    :value="'Set'"
-                                    :variant="'default'"
-                                    v-if="item.product.bucket === 'set'"
-                                />
-                                <span class="line-clamp-1 text-ellipsis text-xs font-medium text-grey-900 line-through" v-if="item.amount_before_discount !== item.amount">RM {{ item.amount_before_discount }}</span>
-                                <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium text-primary-950">RM {{ item.amount }}</span>
+                            <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
+                                <Tag value="Set" v-if="item.product.bucket === 'set' && item.type === 'Normal'"/> {{ item.type === 'Keep' ? getKeepItemName(item) : item.product.product_name }}
+                            </p>
+                            <template v-if="item.type === 'Normal'">
+                                <div class="flex flex-nowrap items-center gap-2">
+                                    <div v-if="item.discount_id" class="flex items-center gap-x-1.5">
+                                        <span class="line-clamp-1 text-ellipsis text-xs font-medium text-grey-900 line-through">RM {{ parseFloat(item.amount_before_discount).toFixed(2) }}</span>
+                                        <span class="line-clamp-1 self-stretch text-ellipsis text-base font-medium text-primary-950">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                    </div>
+                                    <span v-else class="line-clamp-1 self-stretch text-ellipsis text-base font-medium text-primary-950">RM {{ parseFloat(item.amount).toFixed(2) }}</span>
+                                </div>
+                            </template>
+                            <div class="flex flex-nowrap gap-2 items-center">
+                                <p class="text-base font-medium text-grey-900 self-stretch truncate flex-shrink">
+                                    <span class="text-primary-800">({{ getServedQty(item) }}/{{ getTotalQty(item) }})</span>
+                                </p>
+                                <Tag :value="getItemTypeName(item.type)" variant="blue" v-if="item.type !== 'Normal'"/>
                             </div>
                         </div>
                     </div>

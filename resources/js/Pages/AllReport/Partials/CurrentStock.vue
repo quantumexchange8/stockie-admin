@@ -1,6 +1,7 @@
 <script setup>
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: Array,
@@ -51,14 +52,14 @@ const exportToCSV = (mappedData, fileNamePrefix) => {
 }
 
 const csvExport = () => {
-    const title = 'Current Stock Report';
+    const title = wTrans('public.current_stock').value;
     const currentDate = dayjs().format('DD/MM/YYYY HH:mm:ss');
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Item: title, 'Stock Qty': '', 'Unit': '', 'Kept Qty': ''},
         { Item: currentDate, 'Stock Qty': '', 'Unit': '', 'Kept Qty': ''},
-        { Item: 'Item', 'Stock Qty': 'Stock Qty', 'Unit': 'Unit', 'Kept Qty': 'Kept Qty' },
+        { Item: wTrans('public.item').value, 'Stock Qty': wTrans('public.report.stock_qty').value, 'Unit': wTrans('public.unit').value, 'Kept Qty': wTrans('public.report.kept_qty').value },
     ];
     props.rows.forEach((row) => {
         formattedRows.push({});
@@ -73,9 +74,9 @@ const csvExport = () => {
             });
         });
 
-        formattedRows.push({ Item: 'Total', 'Stock Qty': formatAmount(getGroupTotalStockQty(row), 0), 'Unit': 'NA', 'Kept Qty': formatAmount(getGroupTotalKeepQty(row), 0)});
+        formattedRows.push({ Item: wTrans('public.total').value, 'Stock Qty': formatAmount(getGroupTotalStockQty(row), 0), 'Unit': 'NA', 'Kept Qty': formatAmount(getGroupTotalKeepQty(row), 0)});
     });
-    exportToCSV(formattedRows, 'Current Stock Report');
+    exportToCSV(formattedRows, wTrans('public.report.current_stock_report').value);
 }
 
 defineExpose({
@@ -124,7 +125,7 @@ defineExpose({
                         </template>
                         <tr class="!border-y-2 border-grey-190">
                             <td class="w-[43%]">
-                                <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">Total</span>
+                                <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">{{ $t('public.total') }}</span>
                             </td>
                             <td class="w-[19%]">
                                 <div class="flex justify-start items-center gap-3 px-3">
@@ -148,7 +149,7 @@ defineExpose({
         </template>
         <template v-else>
             <div class="flex w-full pt-2 items-center justify-center">
-                <p class="text-2xs text-grey-950">No result</p>
+                <p class="text-2xs text-grey-950">{{ $t('public.empty.no_result_found') }}</p>
             </div>
         </template>
     </div>

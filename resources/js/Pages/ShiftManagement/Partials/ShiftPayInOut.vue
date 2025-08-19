@@ -9,6 +9,7 @@ import Modal from '@/Components/Modal.vue';
 import Textarea from '@/Components/Textarea.vue';
 import dayjs from 'dayjs';
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     currentSelectedShift: Object,
@@ -40,7 +41,7 @@ const submit = async () => {
 
         showMessage({
             severity: 'success',
-            summary: form.type === 'in' ? 'Pay in history for this shift has been updated.' : 'Pay out history for this shift has been updated.',
+            summary: form.type === 'in' ? wTrans('public.toast.shift_pay_in_success') : wTrans('public.toast.shift_pay_out_success'),
         });
 
         emit('update:shift-listing', response.data);
@@ -74,10 +75,10 @@ watch(() => props.currentSelectedShift, (newValue) => {
                 <div class="flex flex-col gap-y-4" >
                     <div class="flex flex-col gap-1" >
                         <p class="text-grey-950 text-base font-bold">
-                            Enter Amount
+                            {{ $t('public.field.enter_amount') }}
                         </p>
                         <div class="text-grey-950 text-sm font-normal self-stretch" >
-                            The amount for pay in/out.
+                            {{ $t('public.shift.pay_amount') }}
                         </div>
                     </div>
 
@@ -98,17 +99,17 @@ watch(() => props.currentSelectedShift, (newValue) => {
                 <div class="flex flex-col gap-y-4" >
                     <div class="flex flex-col gap-1" >
                         <p class="text-grey-950 text-base font-bold">
-                            Reason
+                            {{ $t('public.reason') }}
                         </p>
                         <div class="text-grey-950 text-sm font-normal self-stretch" >
-                            Enter the reason you pay in/out.
+                            {{ $t('public.shift.pay_reason') }}
                         </div>
                     </div>
 
                     <Textarea 
                         :inputName="'reason'"
                         :errorMessage="form.errors.reason ? form.errors.reason[0] : ''"
-                        :placeholder="'Enter the reason'"
+                        :placeholder="$t('public.enter_reason')"
                         :rows="3"
                         v-model="form.reason"
                     />
@@ -122,7 +123,7 @@ watch(() => props.currentSelectedShift, (newValue) => {
                     :disabled="!isFormValid"
                     @click="form.type = 'in'"
                 >
-                    Pay in
+                    {{ $t('public.action.pay_in') }}
                 </Button>
                 <Button
                     :variant="'red'"
@@ -130,7 +131,7 @@ watch(() => props.currentSelectedShift, (newValue) => {
                     :disabled="!isFormValid"
                     @click="form.type = 'out'"
                 >
-                    Pay out
+                    {{ $t('public.action.pay_out') }}
                 </Button>
             </div>
         </template>
@@ -138,10 +139,10 @@ watch(() => props.currentSelectedShift, (newValue) => {
         <div class="flex flex-col gap-y-4" >
             <div class="flex flex-col gap-1" v-if="selectedShift.status === 'opened'">
                 <p class="text-grey-950 text-base font-bold">
-                    Pay in/out History
+                    {{ $t('public.shift.pay_in_out_history') }}
                 </p>
                 <div class="text-grey-950 text-sm font-normal self-stretch" >
-                    Your pay in/out history for this shift.
+                    {{ $t('public.shift.shift_pay_history') }}
                 </div>
             </div>
 
@@ -175,7 +176,7 @@ watch(() => props.currentSelectedShift, (newValue) => {
                 </template>
                 <div class="w-full flex flex-col items-center" v-else>
                     <UndetectableIllus class="w-44 h-44" />
-                    <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                    <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.no_data') }}</span>
                 </div>
             </div>
         </div>

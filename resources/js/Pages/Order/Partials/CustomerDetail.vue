@@ -648,7 +648,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     </div>
                     <div class="flex flex-col gap-y-6">
                         <div class="w-full flex gap-x-2 items-center justify-between">
-                            <div class="flex gap-x-3 items-center">
+                            <div class="w-10/12 flex gap-x-3 items-center">
                                 <img 
                                     :src="selectedItem.image ? selectedItem.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                     alt="KeepItemImage"
@@ -658,7 +658,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                                     {{ selectedItem.item_name }}
                                 </p>
                             </div>
-                            <p class="text-primary-800 text-md font-medium pr-3">{{ selectedItem.qty > selectedItem.cm ? `x ${selectedItem.qty}` : `${selectedItem.cm} cm`  }}</p>
+                            <p class="2/12 text-primary-800 text-md font-medium pr-3">{{ selectedItem.qty > selectedItem.cm ? `x ${selectedItem.qty}` : `${selectedItem.cm} cm`  }}</p>
                         </div>
 
                         <NumberCounter

@@ -219,7 +219,7 @@ const isBillDiscountApplicable = (discount) => {
     if (discount.status === 'inactive') return false;
 
     const now = dayjs(order.value.created_at).tz("Asia/Kuala_Lumpur");
-    const nowWithoutTime = dayjs(order.value.created_at).set('hour', 0).set('minute', 0).set('second', 0);
+    const nowWithoutTime = dayjs(order.value.created_at).tz("Asia/Kuala_Lumpur").startOf("day");
     const currentOrderTotal = Number(order.value.total_amount);
     const discountRequirement = Number(discount.requirement);
     const currentCustomerRanking = Number(order.value.customer?.ranking);

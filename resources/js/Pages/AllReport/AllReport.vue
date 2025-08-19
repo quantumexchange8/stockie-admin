@@ -13,86 +13,87 @@ import PaymentMethod from './Partials/PaymentMethod.vue';
 import MemberPurchase from './Partials/MemberPurchase.vue';
 import CurrentStock from './Partials/CurrentStock.vue';
 import EmployeeEarning from './Partials/EmployeeEarning.vue';
-import { transactionFormat } from '@/Composables/index.js';
+import { transactionFormat, useCustomToast } from '@/Composables/index.js';
 import ProductSales from './Partials/ProductSales.vue';
 import CategorySales from './Partials/CategorySales.vue';
 import { wTrans } from 'laravel-vue-i18n';
 
+const { showMessage } = useCustomToast();
 const { formatAmount } = transactionFormat();
 
 const home = ref({
-    label: wTrans('public.all_report_header'),
+    label: wTrans('public.report_header'),
 });
 
-const salesTypes = ref([
-    { text: 'Sales Summary', value: 'sales_summary'},
-    { text: 'Payment Method', value: 'payment_method'},
-    { text: 'Product Sales', value: 'product_sales'},
-    { text: 'Category Sales', value: 'category_sales'},
-    { text: 'Employee Earnings', value: 'employee_earning'},
-    { text: 'Member Purchase', value: 'member_purchase'},
-    { text: 'Current Stock', value: 'current_stock'},
+const salesTypes = computed(() => [
+    { text: wTrans('public.report.sales_summary'), value: 'sales_summary'},
+    { text: wTrans('public.payment_method'), value: 'payment_method'},
+    { text: wTrans('public.report.product_sales'), value: 'product_sales'},
+    { text: wTrans('public.report.category_sales'), value: 'category_sales'},
+    { text: wTrans('public.report.employee_earnings'), value: 'employee_earning'},
+    { text: wTrans('public.report.member_purchase'), value: 'member_purchase'},
+    { text: wTrans('public.current_stock'), value: 'current_stock'},
 ]);
 
-const salesSummaryHeader = ref([
-    { title: 'Date', width: '14' },
-    { title: 'Gross (RM)', width: '14' },
-    { title: 'Tax (RM)', width: '14' },
-    { title: 'Refunds (RM)', width: '16' },
-    { title: 'Voids (RM)', width: '14' },
-    { title: 'Disc. (RM)', width: '14' },
-    { title: 'Net (RM)', width: '14' },
+const salesSummaryHeader = computed(() => [
+    { title: wTrans('public.date'), width: '14' },
+    { title: `${wTrans('public.report.gross').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.report.tax').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.refunds').value} (RM)`, width: '16' },
+    { title: `${wTrans('public.voids').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.report.disc').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.report.net').value} (RM)`, width: '14' },
 ]);
 
-const paymentMethodHeader = ref([
-    { title: 'Method', width: '20' },
-    { title: 'No.of Sales', width: '16' },
-    { title: 'Sales (RM)', width: '16' },
-    { title: 'No.of Refund', width: '16' },
-    { title: 'Refund (RM)', width: '16' },
-    { title: 'Balance (RM)', width: '16' },
+const paymentMethodHeader = computed(() => [
+    { title: wTrans('public.method'), width: '20' },
+    { title: wTrans('public.report.no_of_sales'), width: '16' },
+    { title: `${wTrans('public.sales').value} (RM)`, width: '16' },
+    { title: wTrans('public.report.no_of_refund'), width: '16' },
+    { title: `${wTrans('public.refunds').value} (RM)`, width: '16' },
+    { title: `${wTrans('public.balance').value} (RM)`, width: '16' },
 ]);
 
-const productSalesHeader = ref([
-    { title: 'Product', width: '22' },
-    { title: 'Sold', width: '7' },
-    { title: 'Gross (RM)', width: '14' },
-    { title: 'Disc. (RM)', width: '14' },
-    { title: 'Tax (RM)', width: '14' },
-    { title: 'Refund (RM)', width: '15' },
-    { title: 'Net (RM)', width: '14' },
+const productSalesHeader = computed(() => [
+    { title: wTrans('public.product'), width: '21' },
+    { title: wTrans('public.sold'), width: '8' },
+    { title: `${wTrans('public.report.gross').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.report.disc').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.report.tax').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.refunds').value} (RM)`, width: '15' },
+    { title: `${wTrans('public.report.net').value} (RM)`, width: '14' },
 ]);
 
-const categorySalesHeader = ref([
-    { title: 'Category', width: '22' },
-    { title: 'Sold', width: '7' },
-    { title: 'Gross (RM)', width: '14' },
-    { title: 'Disc. (RM)', width: '14' },
-    { title: 'Tax (RM)', width: '14' },
-    { title: 'Refund (RM)', width: '15' },
-    { title: 'Net (RM)', width: '14' },
+const categorySalesHeader = computed(() => [
+    { title: wTrans('public.category'), width: '21' },
+    { title: wTrans('public.sold'), width: '8' },
+    { title: `${wTrans('public.report.gross').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.report.disc').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.report.tax').value} (RM)`, width: '14' },
+    { title: `${wTrans('public.refunds').value} (RM)`, width: '15' },
+    { title: `${wTrans('public.report.net').value} (RM)`, width: '14' },
 ]);
 
-const employeeEarningsHeader = ref([
-    { title: 'Employee', width: '43' },
-    { title: 'Sales (RM)', width: '19' },
-    { title: 'Incentive (RM)', width: '19' },
-    { title: 'Commission (RM)', width: '19' },
+const employeeEarningsHeader = computed(() => [
+    { title: wTrans('public.report.employee'), width: '43' },
+    { title: `${wTrans('public.sales').value} (RM)`, width: '19' },
+    { title: `${wTrans('public.incentive').value} (RM)`, width: '19' },
+    { title: `${wTrans('public.commission').value} (RM)`, width: '19' },
 ]);
 
-const memberPurchaseHeader = ref([
-    { title: 'Customer', width: '25' },
-    { title: 'Total Purchase (RM)', width: '22' },
-    { title: 'No.of Purchase', width: '18' },
-    { title: 'Avg. Spent (RM)', width: '18' },
-    { title: 'Points Earned', width: '17' },
+const memberPurchaseHeader = computed(() => [
+    { title: wTrans('public.customer_header'), width: '25' },
+    { title: `${wTrans('public.report.total_purchase').value} (RM)`, width: '22' },
+    { title: wTrans('public.report.no_of_purchase'), width: '18' },
+    { title: `${wTrans('public.report.avg_spent').value} (RM)`, width: '18' },
+    { title: wTrans('public.points_earned'), width: '17' },
 ]);
 
-const currentStockHeader = ref([
-    { title: 'Item', width: '43' },
-    { title: 'Stock Qty', width: '19' },
-    { title: 'Unit', width: '19' },
-    { title: 'Kept Qty', width: '19' },
+const currentStockHeader = computed(() => [
+    { title: wTrans('public.item'), width: '43' },
+    { title: wTrans('public.report.stock_qty'), width: '19' },
+    { title: wTrans('public.unit'), width: '19' },
+    { title: wTrans('public.report.kept_qty'), width: '19' },
 ]);
 
 const reportComponents = {
@@ -158,7 +159,10 @@ const exportCsv = () => {
     if (reportComponentRef.value?.csvExport) {
         reportComponentRef.value.csvExport();
     } else {
-        console.warn('csvExport not available on current report component.');
+        showMessage({
+            severity: 'error',
+            summary: wTrans('public.toast.report_export_error'),
+        });
     }
 };
 
@@ -185,7 +189,7 @@ watch(sales_type, (newValue) => {
 
 <template>
 
-    <Head title="Report" />
+    <Head :title="$t('public.report_header')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -226,7 +230,7 @@ watch(sales_type, (newValue) => {
                         <template #icon >
                             <UploadIcon class="size-6" />
                         </template>
-                        Export
+                        {{ $t('public.action.export') }}
                     </Button>
                 </div>
                 <div class="flex justify-center">

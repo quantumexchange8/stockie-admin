@@ -6,27 +6,27 @@ import { Head } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import OpenedShift from './Partials/OpenedShift.vue';
 import ShiftControlListing from './Partials/ShiftControlListing.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     shiftTransactions: Array,
 });
 
 const home = ref({
-    label: 'Shift Control',
+    label: wTrans('public.shift_control_header'),
 })
 
 const shiftTransactionsList = ref(props.shiftTransactions);
 const selectedShift = ref(null);
 
-watch(() => props.shiftTransactions, (newValue) => {
-    shiftTransactionsList.value = newValue;
+watch(shiftTransactionsList, (newValue) => {
     selectedShift.value = newValue.find((shift) => shift.status === 'opened') ?? null;
 }, { immediate: true });
 
 </script>
 
 <template>
-    <Head title="Shift Control" />
+    <Head :title="$t('public.shift_control_header')" />
 
     <AuthenticatedLayout>
         <template #header>

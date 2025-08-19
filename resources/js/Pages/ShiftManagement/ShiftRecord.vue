@@ -13,13 +13,14 @@ import ShiftRecordDetails from './Partials/ShiftRecordDetails.vue';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { UploadIcon } from '@/Components/Icons/solid';
 import { transactionFormat, useFileExport } from '@/Composables/index.js';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     shiftTransactions: Array,
 })
 
 const home = ref({
-    label: 'Shift Record',
+    label: wTrans('public.shift_record_header'),
 })
 
 const { exportToCSV } = useFileExport();
@@ -40,10 +41,10 @@ const defaultLatest2Months = computed(() => {
 const date_filter = ref(defaultLatest2Months.value); 
 
 const columns = ref([
-    {field: 'shift_no', header: 'Shift No.', width: '20', sortable: true},
-    {field: 'shift_opened', header: 'Opening Time', width: '26', sortable: true},
-    {field: 'shift_closed', header: 'Closing Time', width: '26', sortable: true},
-    {field: 'net_sales', header: 'Net Sales', width: '28', sortable: true},
+    {field: 'shift_no', header: wTrans('public.shift.shift_no'), width: '20', sortable: true},
+    {field: 'shift_opened', header: wTrans('public.shift.open_time'), width: '26', sortable: true},
+    {field: 'shift_closed', header: wTrans('public.shift.close_time'), width: '26', sortable: true},
+    {field: 'net_sales', header: wTrans('public.shift.net_sales'), width: '28', sortable: true},
     {field: 'action', header: '', width: '5', sortable: false},
 ]);
 
@@ -92,16 +93,16 @@ const closeModal = () => {
 };
 
 const csvExport = () => { 
-    const title = 'Shift Transaction List';
+    const title = wTrans('public.shift.shift_listing').value;
     const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
     const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { 'Shift No.': title, 'Shift Opened': '', 'Shift Closed': '', 'Net Sales': '' },
         { 'Shift No.': dateRange, 'Shift Opened': '', 'Shift Closed': '', 'Net Sales': '' },
-        { 'Shift No.': 'Shift No.', 'Shift Opened': 'Shift Opened', 'Shift Closed': 'Shift Closed', 'Net Sales': 'Net Sales' },
+        { 'Shift No.': wTrans('public.shift.shift_no').value, 'Shift Opened': wTrans('public.shift.open_time').value, 'Shift Closed': wTrans('public.shift.close_time').value, 'Net Sales': wTrans('public.shift.net_sales').value },
         ...shiftTransactionsList.value.map(row => ({
             'Shift No.': row.shift_no,
             'Shift Opened': dayjs(row.shift_opened).format('DD/MM/YYYY, HH:mm'),
@@ -110,13 +111,13 @@ const csvExport = () => {
         })),
     ];
 
-    exportToCSV(formattedRows, 'Shift Transaction List');
+    exportToCSV(formattedRows, wTrans('public.shift.shift_listing').value);
 }
 
 </script>
 
 <template>
-    <Head title="Shift Record" />
+    <Head :title="$t('public.shift_record_header')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -124,7 +125,7 @@ const csvExport = () => {
         </template>
 
         <div class="flex flex-col p-6 gap-6 justify-center rounded-[5px] border border-primary-100">
-            <span class="flex flex-col justify-center text-primary-900 text-md font-medium">Shift Listing</span>
+            <span class="flex flex-col justify-center text-primary-900 text-md font-medium">{{ $t('public.shift.shift_listing') }}</span>
             <div class="flex lg:flex-col xl:flex-row items-center gap-5">
                 <div class="flex items-center flex-wrap justify-between gap-5 w-full">
                     <DateInput
@@ -147,7 +148,7 @@ const csvExport = () => {
                         <template #icon >
                             <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                         </template>
-                        Export
+                        {{ $t('public.action.export') }}
                     </Button>
 
                     <!-- <Menu as="div" class="relative inline-block text-left">
@@ -221,7 +222,7 @@ const csvExport = () => {
         </div>
 
         <Modal 
-            :title="'Shift Record'"
+            :title="$t('public.shift_record_header')"
             :show="shiftRecordModalIsOpen"
             :maxWidth="'sm'" 
             :closeable="true"

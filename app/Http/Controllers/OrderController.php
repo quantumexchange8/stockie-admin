@@ -3999,8 +3999,8 @@ class OrderController extends Controller
                                     ->with([
                                         'order:id,order_no,created_at,customer_id',
                                         'order.orderItems' => function ($query) {
-                                            $query->where('status', 'Pending Serve')
-                                                ->select('id', 'amount_before_discount', 'amount', 'product_id', 'item_qty', 'order_id', 'status');
+                                            $query->where('status', 'Pending Serve');
+                                                // ->select('id', 'amount_before_discount', 'amount', 'product_id', 'item_qty', 'order_id', 'status');
                                         },
                                         'order.orderItems.product:bucket,id,price,product_name,point',
                                         'order.orderItems.subItems:id,item_qty,product_item_id,serve_qty,order_item_id',
@@ -6023,19 +6023,19 @@ class OrderController extends Controller
         
         // ===== FOOTER SECTION =====
         $addCommand("\x1B\x61\x01"); // Center alignment
-        // $addText("Scan QR below to request your e-Invoice");
-        // $addText(""); // Empty line
+        $addText("Scan QR below to request your e-Invoice");
+        $addText(""); // Empty line
         
-        // // Generate QR code
-        // $qrData = $url;
-        // $qrLen = strlen($qrData) + 3;
-        // $pL = $qrLen % 256;
-        // $pH = intval($qrLen / 256);
+        // Generate QR code
+        $qrData = $url;
+        $qrLen = strlen($qrData) + 3;
+        $pL = $qrLen % 256;
+        $pH = intval($qrLen / 256);
 
-        // $buffer .= "\x1D\x28\x6B\x03\x00\x31\x43\x05"; // Module size (5)
-        // $buffer .= "\x1D\x28\x6B\x03\x00\x31\x45\x31"; // Error correction level L
-        // $buffer .= "\x1D\x28\x6B" . chr($pL) . chr($pH) . "\x31\x50\x30" . $qrData; // Store data
-        // $buffer .= "\x1D\x28\x6B\x03\x00\x31\x51\x30"; // Print the QR
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x43\x05"; // Module size (5)
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x45\x31"; // Error correction level L
+        $buffer .= "\x1D\x28\x6B" . chr($pL) . chr($pH) . "\x31\x50\x30" . $qrData; // Store data
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x51\x30"; // Print the QR
         
         $addText(""); // Empty line
         $addText("Thank you for your visit!");

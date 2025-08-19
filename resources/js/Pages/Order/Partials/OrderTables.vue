@@ -937,7 +937,7 @@ watch(drawerIsVisible, (newValue) => {
                     :size="'lg'"
                     class="!w-fit"
                 >
-                    {{ $t('public.action.open_shift') }}
+                    {{ $tChoice('public.action.open_shift', 0) }}
                 </Button>
             </div>
         </template>

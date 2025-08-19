@@ -7,6 +7,7 @@ import { useCustomToast } from '@/Composables/index.js';
 import { EmptyProfilePic } from '@/Components/Icons/solid';
 import PayBillForm from './PayBillForm.vue';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     selectedTable: Object,
@@ -196,9 +197,9 @@ const roundingAmount = computed(() => {
 
 const getItemTypeName = (type) => {
     switch (type) {
-        case 'Keep': return 'Keep item';
-        case 'Redemption': return 'Redeemed product'
-        case 'Reward': return 'Entry reward'
+        case 'Keep': return wTrans('public.keep_item').value;
+        case 'Redemption': return wTrans('public.redeemed_product').value;
+        case 'Reward': return wTrans('public.entry_reward').value;
     };
 };
 
@@ -283,7 +284,7 @@ const updateOrderCustomer = (event) => {
                                     <p class="text-grey-900 text-base font-bold">RM {{ sstAmount }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="taxes['Service Tax']  && taxes['Service Tax'] > 0">
-                                    <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax']) }}%)</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.service_tax') }} ({{ Math.round(taxes['Service Tax']) }}%)</p>
                                     <p class="text-grey-900 text-base font-bold">RM {{ serviceTaxAmount }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch">

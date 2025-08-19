@@ -665,7 +665,7 @@ class EInvoiceController extends Controller
             if (!empty($submiturl['acceptedDocuments'])) {
                 $submission_uuid = $submiturl['submissionUid'] ?? null;
                 $uuid = $submiturl['acceptedDocuments'][0]['uuid'] ?? null;
-                $status = 'submitted';
+                $status = 'Submitted';
                 $remark = null;
             }
 

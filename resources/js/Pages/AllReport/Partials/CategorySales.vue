@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: Array,
@@ -131,16 +132,16 @@ const exportToCSV = (mappedData, fileNamePrefix) => {
 }
 
 const csvExport = () => {
-    const title = 'Category Sales';
+    const title = wTrans('public.report.category_sales').value;
     const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
     const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Category: title, 'Sold': '', 'Gross (RM)': '', 'Disc. (RM)': '', 'Tax (RM)': '', 'Refund (RM)': '', 'Net (RM)': '' },
         { Category: dateRange, 'Sold': '', 'Gross (RM)': '', 'Disc. (RM)': '', 'Tax (RM)': '', 'Refund (RM)': '', 'Net (RM)': '' },
-        { Category: 'Category', 'Sold': 'Sold', 'Gross (RM)': 'Gross (RM)', 'Disc. (RM)': 'Disc. (RM)', 'Tax (RM)': 'Tax (RM)', 'Refund (RM)': 'Refund (RM)', 'Net (RM)': 'Net (RM)' },
+        { Category: wTrans('public.category').value, 'Sold': wTrans('public.sold').value, 'Gross (RM)': `${wTrans('public.report.gross').value} (RM)`, 'Disc. (RM)': `${wTrans('public.report.disc').value} (RM)`, 'Tax (RM)': `${wTrans('public.report.tax').value} (RM)`, 'Refund (RM)': `${wTrans('public.refunds').value} (RM)`, 'Net (RM)': `${wTrans('public.report.net').value} (RM)` },
         ...props.rows.map(row => ({
             'Category': row.name,
             'Sold': getCategoryTotalQtySold(row),
@@ -151,7 +152,7 @@ const csvExport = () => {
             'Net (RM)': formatAmount(getCategoryNetTotal(row)),
         })),
         {
-            'Category': 'Total',
+            'Category': wTrans('public.total').value,
             'Sold': totalQtySold.value,
             'Gross (RM)': totalGrossAmount.value,
             'Disc. (RM)': totalDiscAmount.value,
@@ -161,7 +162,7 @@ const csvExport = () => {
         }
     ];
 
-    exportToCSV(formattedRows, 'Category Sales Report');
+    exportToCSV(formattedRows, wTrans('public.report.category_sales_report').value);
 }
 
 defineExpose({
@@ -223,7 +224,7 @@ defineExpose({
         <tfoot>
             <tr class="!border-y-2 border-grey-200">
                 <td class="w-[22%]">
-                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">Total</span>
+                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">{{ $t('public.total') }}</span>
                 </td>
                 <td class="w-[7%]">
                     <div class="flex justify-start items-center gap-3 px-3">

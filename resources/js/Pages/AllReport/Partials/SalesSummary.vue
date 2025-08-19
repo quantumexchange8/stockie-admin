@@ -1,6 +1,7 @@
 <script setup>
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: Array,
@@ -59,16 +60,16 @@ const exportToCSV = (mappedData, fileNamePrefix) => {
 }
 
 const csvExport = () => {
-    const title = 'Sales Summary';
+    const title = wTrans('public.report.sales_summary').value;
     const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
     const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Date: title, 'Gross (RM)': '', 'Tax (RM)': '', 'Refunds (RM)': '', 'Voids (RM)': '', 'Disc. (RM)': '', 'Net (RM)' : ''},
         { Date: dateRange, 'Gross (RM)': '', 'Tax (RM)': '', 'Refunds (RM)': '', 'Voids (RM)': '', 'Disc. (RM)': '', 'Net (RM)' : ''},
-        { Date: 'Date', 'Gross (RM)': 'Gross (RM)', 'Tax (RM)': 'Tax (RM)', 'Refunds (RM)': 'Refunds (RM)', 'Voids (RM)': 'Voids (RM)', 'Disc. (RM)': 'Disc. (RM)', 'Net (RM)': 'Net (RM)' },
+        { Date: wTrans('public.date').value, 'Gross (RM)': `${wTrans('public.report.gross').value} (RM)`, 'Tax (RM)': `${wTrans('public.report.tax').value} (RM)`, 'Refunds (RM)': `${wTrans('public.refunds').value} (RM)`, 'Voids (RM)': `${wTrans('public.voids').value} (RM)`, 'Disc. (RM)': `${wTrans('public.report.disc').value} (RM)`, 'Net (RM)': `${wTrans('public.report.net').value} (RM)` },
         ...props.rows.map(row => ({
             'Date': dayjs(row.receipt_start_date).format('DD/MM/YYYY'),
             'Gross (RM)': formatAmount(row.grand_total),
@@ -81,7 +82,7 @@ const csvExport = () => {
     ];
 
 
-    exportToCSV(formattedRows, 'Sales Summary Report');
+    exportToCSV(formattedRows, wTrans('public.report.sales_summary_report').value);
 }
 
 defineExpose({
@@ -143,7 +144,7 @@ defineExpose({
     </table>
     <template v-if="props.rows.length == 0">
         <div class="flex pt-2 items-center justify-center">
-            <p class="text-2xs text-grey-950">No result</p>
+            <p class="text-2xs text-grey-950">{{ $t('public.empty.no_result_found') }}</p>
         </div>
     </template>
 </template>

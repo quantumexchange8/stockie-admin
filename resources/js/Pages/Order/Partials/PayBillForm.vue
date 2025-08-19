@@ -122,7 +122,7 @@ const isBillDiscountApplicable = (discount, asToastMsg = false) => {
     if (discount.status === 'inactive') return false;
 
     const now = dayjs(order.value.created_at).tz("Asia/Kuala_Lumpur");
-    const nowWithoutTime = dayjs(order.value.created_at).set('hour', 0).set('minute', 0).set('second', 0);
+    const nowWithoutTime = dayjs(order.value.created_at).tz("Asia/Kuala_Lumpur").startOf("day");
     const currentOrderTotal = Number(order.value.total_amount);
     const discountRequirement = Number(discount.requirement);
     const currentCustomerRanking = Number(order.value.customer?.ranking);
@@ -282,7 +282,7 @@ const processBillDiscounts = (billDiscounts) => {
     }
     
     // Handle non-stackable discounts
-    const nonStackableDiscounts = autoAppliedDiscounts.filter(d => !d.is_stackable);
+    const nonStackableDiscounts = autoAppliedDiscounts.filter(d => !d.is_stackable && isBillDiscountApplicable(d));
     if (!nonStackableDiscounts.length) return;
     
     let selectedBillDiscount = nonStackableDiscounts[0];
@@ -1294,7 +1294,7 @@ const printPreviewReceipt = async () => {
                                 <p class="text-grey-900 text-base font-bold">RM {{ sstAmount }}</p>
                             </div>
                             <div class="flex flex-row justify-between items-start self-stretch" v-if="taxes['Service Tax']  && taxes['Service Tax'] > 0">
-                                <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax']) }}%)</p>
+                                <p class="text-grey-900 text-base font-normal">{{ $t('public.service_tax') }} ({{ Math.round(taxes['Service Tax']) }}%)</p>
                                 <p class="text-grey-900 text-base font-bold">RM {{ serviceTaxAmount }}</p>
                             </div>
                             <div class="flex flex-row justify-between items-start self-stretch">

@@ -14,6 +14,7 @@ import RemoveOrderItem from './RemoveOrderItem.vue';
 import KeepItem from './KeepItem.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import SelectCustomer from './SelectCustomer.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -212,9 +213,9 @@ const updateOrderCustomer = (customerItem) => {
 
 const getItemTypeName = (type) => {
     switch (type) {
-        case 'Keep': return 'Keep Item';
-        case 'Redemption': return 'Redeemed Product'
-        case 'Reward': return 'Entry Reward'
+        case 'Keep': return wTrans('public.keep_item').value;
+        case 'Redemption': return wTrans('public.redeemed_product').value;
+        case 'Reward': return wTrans('public.entry_reward').value;
     }
 }
 

@@ -4,6 +4,7 @@ import { onMounted, ref, computed, watch } from 'vue';
 import Button from '@/Components/Button.vue';
 import Tag from '@/Components/Tag.vue';
 import { ArrowUpIcon, CircledArrowHeadDownIcon, CircledArrowHeadUpIcon } from '@/Components/Icons/solid';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     selectedTable: Object,
@@ -67,9 +68,9 @@ const toggleCollapse = (orderNo) => collapsedSections.value[orderNo] = !collapse
 
 const getItemTypeName = (type) => {
     switch (type) {
-        case 'Keep': return 'Keep item';
-        case 'Redemption': return 'Redeemed product'
-        case 'Reward': return 'Entry reward'
+        case 'Keep': return wTrans('public.keep_item').value;
+        case 'Redemption': return wTrans('public.redeemed_product').value;
+        case 'Reward': return wTrans('public.entry_reward').value;
     };
 };
 
@@ -127,7 +128,7 @@ watch(() => props.currentOrder, (newValue) => {
                                         <div class="col-span-9 flex flex-col gap-2 items-start justify-center self-stretch w-full">
                                             <div class="flex flex-row gap-x-2 self-stretch items-center">
                                                 <Tag :value="getItemTypeName(item.type)" variant="blue" v-if="item.type !== 'Normal'"/>
-                                                <p class="text-sm font-medium text-grey-900 truncate flex-shrink">{{ item.type === 'Normal' || item.type === 'Redemption' ? item.product.product_name : item.item_name }}</p>
+                                                <p class="text-sm font-medium text-grey-900 truncate flex-shrink">{{ item.type === 'Keep' ? item.item_name : item.product.product_name }}</p>
                                             </div>
 
                                             <p class="text-base font-medium text-primary-950 self-stretch truncate flex-shrink">x{{ item.item_qty }}</p>
@@ -156,15 +157,15 @@ watch(() => props.currentOrder, (newValue) => {
                         >
                             <div class="flex flex-col gap-y-1 items-start self-stretch" v-show="!collapsedSections[order.order_no]">
                                 <div class="flex flex-row justify-between items-start self-stretch">
-                                    <p class="text-grey-900 text-base font-normal">Sub-total</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.sub_total') }}</p>
                                     <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment?.total_amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="(order.payment?.bill_discounts ?? 0) && (order.payment?.bill_discount_total ?? 0) > 0">
-                                    <p class="text-grey-900 text-base font-normal">Bill Discount</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.bill_discount') }}</p>
                                     <p class="text-grey-900 text-base font-medium">- RM {{ Number(order.payment?.bill_discount_total ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="order.voucher">
-                                    <p class="text-grey-900 text-base font-normal">Voucher Discount {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.voucher_discount') }} {{ order.voucher.reward_type === 'Discount (Percentage)' ? `(${order.voucher.discount}%)` : `` }}</p>
                                     <p class="text-grey-900 text-base font-medium">- RM {{ Number(order.payment?.discount_amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="(order.payment?.sst_amount ?? 0) > 0">
@@ -174,11 +175,11 @@ watch(() => props.currentOrder, (newValue) => {
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch" v-if="(order.payment?.service_tax_amount ?? 0) > 0">
                                     <!-- <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(taxes['Service Tax'] ?? 0) }}%)</p> -->
-                                    <p class="text-grey-900 text-base font-normal">Service Tax ({{ Math.round(((order.payment?.service_tax_amount ?? 0) / (order.payment?.total_amount ?? 0)) * 100) }}%)</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.service_tax') }} ({{ Math.round(((order.payment?.service_tax_amount ?? 0) / (order.payment?.total_amount ?? 0)) * 100) }}%)</p>
                                     <p class="text-grey-900 text-base font-medium">RM {{ Number(order.payment?.service_tax_amount ?? 0).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex flex-row justify-between items-start self-stretch">
-                                    <p class="text-grey-900 text-base font-normal">Rounding</p>
+                                    <p class="text-grey-900 text-base font-normal">{{ $t('public.rounding') }}</p>
                                     <p class="text-grey-900 text-base font-medium">{{ Math.sign(order.payment?.rounding ?? 0) === -1 ? '-' : '' }} RM {{ Number(Math.abs(order.payment?.rounding ?? 0)).toFixed(2) }}</p>
                                 </div>
                             </div>

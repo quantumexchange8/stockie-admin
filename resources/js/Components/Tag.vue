@@ -6,7 +6,7 @@ const props = defineProps({
         type: String,
         default: 'default',
         validator(value) {
-            return ['default', 'red', 'green', 'blue', 'grey', 'yellow'].includes(value)
+            return ['default', 'red', 'green', 'blue', 'grey', 'yellow', 'orange'].includes(value)
         },
     },
     value: String,
@@ -23,6 +23,7 @@ const variantClasses = (variant) => ({
     'bg-blue-50 border-blue-100 text-blue-700': variant == 'blue',
     'bg-grey-50 border-grey-100 text-grey-700': variant == 'grey',
     'bg-yellow-50 border-yellow-100 text-yellow-600': variant == 'yellow',
+    'bg-orange-50 border-orange-100 text-orange-600': variant == 'orange',
 })
 
 const classes = computed(() => [

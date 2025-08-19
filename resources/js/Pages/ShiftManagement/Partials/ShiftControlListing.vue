@@ -7,6 +7,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { useCustomToast } from '@/Composables';
 import { UndetectableIllus } from '@/Components/Icons/illus';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     shiftTransactions: Array,
@@ -41,7 +42,7 @@ const submit = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success', 
-                summary: "Shift successfully opened. You're all set to start the day!", 
+                summary: wTrans('public.toast.shift_opened_success'), 
             }); 
         }, 200); 
 
@@ -58,8 +59,8 @@ const openModal = () => {
     if (currentOpenedShift) {
         showMessage({ 
             severity: 'error', 
-            summary: "You can't open more than one shift at the same time.", 
-            detail: "To proceed, please close the current shift first.", 
+            summary: wTrans('public.toast.double_shift_error_summary'), 
+            detail: wTrans('public.toast.double_shift_error_detail'), 
         }); 
 
     } else {
@@ -108,15 +109,15 @@ watch(() => props.currentSelectedShift, (newValue) => {
                 >
                     <div class="flex w-full flex-col gap-y-3 items-start">
                         <div class="flex w-full items-center justify-between gap-x-3 self-stretch">
-                            <p class="truncate text-sm font-bold text-grey-950">{{ `Shift #${shift.shift_no}` }}</p>
-                            <Tag :value="shift.status === 'opened' ? 'Active' : 'Closed'" />
+                            <p class="truncate text-sm font-bold text-grey-950">{{ `${$t('public.shift.shift')} #${shift.shift_no}` }}</p>
+                            <Tag :value="shift.status === 'opened' ? $t('public.active') : $t('public.shift.closed')" />
                         </div>        
 
                         <p class="truncate font-bold text-md text-grey-950 self-stretch">{{ shift.shift_opened }}</p>
                     </div>
 
                     <div class="flex gap-x-3 items-start self-stretch">
-                        <p class="truncate font-normal text-xs text-grey-500">by</p>
+                        <p class="truncate font-normal text-xs text-grey-500">{{ $t('public.shift.by') }}</p>
 
                         <div class="flex gap-x-1 items-center">
                             <p class="truncate font-bold text-xs text-grey-950">{{ shift.opened_by.full_name }}</p>
@@ -135,7 +136,7 @@ watch(() => props.currentSelectedShift, (newValue) => {
                 :size="'lg'"
                 @click="openModal"
             >
-                Open new shift
+                {{ $t('public.action.open_new_shift') }}
             </Button>
         </template>
 
@@ -143,8 +144,8 @@ watch(() => props.currentSelectedShift, (newValue) => {
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
                 <div class="flex flex-col gap-y-1 items-center">
-                    <span class="text-grey-950 text-md font-semibold">No data yet</span>
-                    <span class="text-grey-950 text-sm font-normal">Your shift record will show up here.</span>
+                    <span class="text-grey-950 text-md font-semibold">{{ $t('public.shift.no_shift') }}</span>
+                    <span class="text-grey-950 text-sm font-normal">{{ $t('public.shift.no_shift_message') }}</span>
                 </div>
 
                 <Button
@@ -153,14 +154,14 @@ watch(() => props.currentSelectedShift, (newValue) => {
                     class="!w-fit"
                     @click="openModal"
                 >
-                    Open Shift
+                    {{ $tChoice('public.action.open_shift', 1) }}
                 </Button>
             </div>
         </template>
     </div>     
 
     <Modal 
-        :title="'Open shift'"
+        :title="$tChoice('public.action.open_shift', 0)"
         :show="openShiftFormIsOpen"
         :maxWidth="'2xs'" 
         :closeable="true"
@@ -170,10 +171,10 @@ watch(() => props.currentSelectedShift, (newValue) => {
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-1" >
                     <p class="text-grey-950 text-base font-bold">
-                        Starting cash amount
+                        {{ $t('public.shift.starting_cash_amount') }}
                     </p>
                     <div class="text-grey-950 text-sm font-normal self-stretch" >
-                        Please enter the initial cash amount in the register to begin your shift
+                        {{ $t('public.shift.enter_initial_cash') }}
                     </div>
                 </div>
 
@@ -197,13 +198,13 @@ watch(() => props.currentSelectedShift, (newValue) => {
                         type="button"
                         @click="closeModal"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         size="lg"
                         :disabled="form.processing || form.starting_cash == ''"
                     >
-                        Open
+                        {{ $t('public.action.open') }}
                     </Button>
                 </div>
             </div>

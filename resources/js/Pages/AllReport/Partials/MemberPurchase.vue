@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: Array,
@@ -70,33 +71,33 @@ const exportToCSV = (mappedData, fileNamePrefix) => {
 }
 
 const csvExport = () => {
-    const title = 'Member Purchase';
+    const title = wTrans('public.report.member_purchase').value;
     const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
     const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Customer: title, 'Total Purchase (RM)': '', 'No.of Purchase': '', 'Avg. Spent (RM)': '', 'Points Earned': '' },
         { Customer: dateRange, 'Total Purchase (RM)': '', 'No.of Purchase': '', 'Avg. Spent (RM)': '', 'Points Earned': '' },
-        { Customer: 'Customer', 'Total Purchase (RM)': 'Total Purchase (RM)', 'No.of Purchase': 'No.of Purchase', 'Avg. Spent (RM)': 'Avg. Spent (RM)', 'Points Earned': 'Points Earned' },
+        { Customer: wTrans('public.customer_header').value, 'Total Purchase (RM)': `${wTrans('public.report.total_purchase').value} (RM)`, 'No.of Purchase': wTrans('public.report.no_of_purchase').value, 'Avg. Spent (RM)': `${wTrans('public.report.avg_spent').value} (RM)`, 'Points Earned': wTrans('public.points_earned').value },
         ...props.rows.map(row => ({
             'Customer': row.full_name,
             'Total Purchase (RM)': formatAmount(getTotalPurchaseAmount(row)),
             'No.of Purchase': getTotalPurchaseCount(row),
             'Avg. Spent (RM)': formatAmount(getTotalPurchaseAmount(row) / getTotalPurchaseCount(row)),
-            'Points Earned': `${formatAmount(getTotalPointsEarned(row), 0)} pts`,
+            'Points Earned': `${formatAmount(getTotalPointsEarned(row), 0)} ${wTrans('public.pts').value}`,
         })),
         {
-            'Customer': 'Total',
+            'Customer': wTrans('public.total').value,
             'Total Purchase (RM)': formatAmount(combinedTotalPurchaseAmount.value),
             'No.of Purchase': combinedTotalPurchaseCount.value,
             'Avg. Spent (RM)': formatAmount(isNaN(combinedTotalPurchaseAmount.value / combinedTotalPurchaseCount.value) ? 0.00 : combinedTotalPurchaseAmount.value / combinedTotalPurchaseCount.value),
-            'Points Earned': `${formatAmount(combinedTotalPointsEarned.value, 0)} pts`,
+            'Points Earned': `${formatAmount(combinedTotalPointsEarned.value, 0)} ${wTrans('public.pts').value}`,
         }
     ];
 
-    exportToCSV(formattedRows, 'Member Purchase Report');
+    exportToCSV(formattedRows, wTrans('public.report.member_purchase_report').value);
 }
 
 defineExpose({
@@ -139,14 +140,14 @@ defineExpose({
                     </td>
                     <td class="w-[17%]">
                         <div class="flex justify-start items-center gap-3 px-3">
-                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getTotalPointsEarned(row), 0) }} pts</span>
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getTotalPointsEarned(row), 0) }} {{ $t('public.pts') }}</span>
                         </div>
                     </td>
                 </tr>
             </template>
             <tr class="!border-y-2 border-grey-200">
                 <td class="w-[25%]">
-                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">Total</span>
+                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">{{ $t('public.total') }}</span>
                 </td>
                 <td class="w-[22%]">
                     <div class="flex justify-start items-center gap-3 px-3">
@@ -165,7 +166,7 @@ defineExpose({
                 </td>
                 <td class="w-[17%]">
                     <div class="flex justify-start items-center gap-3 px-3">
-                        <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ formatAmount(combinedTotalPointsEarned, 0) }} pts</span>
+                        <span class="text-grey-900 text-2xs font-semibold text-ellipsis overflow-hidden py-4">{{ formatAmount(combinedTotalPointsEarned, 0) }} {{ $t('public.pts') }}</span>
                     </div>
                 </td>
             </tr>

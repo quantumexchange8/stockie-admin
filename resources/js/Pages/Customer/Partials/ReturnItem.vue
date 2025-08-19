@@ -68,7 +68,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
 
             <div class="flex flex-col items-center gap-5 self-stretch">
                 <div class="flex items-center justify-between gap-3 self-stretch">
-                    <div class="flex gap-x-3 items-center justify-between">
+                    <div class="w-10/12 flex gap-x-3 items-center justify-between">
                         <img 
                             :src="props.item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                             alt="KeepItemImage"
@@ -76,7 +76,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         >
                         <p class="text-base text-grey-900 font-medium"> {{ item.item_name }}</p>
                     </div>
-                    <p class="text-primary-800 text-md font-medium pr-3">{{ item.qty > item.cm ? `x ${item.qty}` : `${item.cm} cm`  }}</p>
+                    <p class="2/12 text-primary-800 text-md font-medium pr-3">{{ item.qty > item.cm ? `x ${item.qty}` : `${item.cm} cm`  }}</p>
                     <!-- <div class="flex justify-between pr-3 items-center gap-2 flex-[1_0_0]">
                         <div class="line-clamp-1 overflow-hidden text-grey-900 text-ellipsis text-base font-medium">{{ item.item_name }}</div>
                         <div class="flex flex-col justify-center self-stretch text-primary-800 text-right text-md font-medium">x{{ initialAmount }}</div>

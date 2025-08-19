@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: Array,
@@ -11,7 +12,11 @@ const props = defineProps({
 
 const { formatAmount } = transactionFormat();
 
-const paymentMethods = ref(['Cash', 'Credit/Debit Card', 'E-Wallets']);
+const paymentMethods = computed(() => [
+    { text: wTrans('public.cash'), value: 'Cash'},
+    { text: wTrans('public.card'), value: 'Credit/Debit Card'},
+    { text: wTrans('public.e_wallet'), value: 'E-Wallets'},
+]);
 
 const getTotalSalesCount = (type) => {
     return props.rows.filter((p) => {
@@ -182,28 +187,28 @@ const exportToCSV = (mappedData, fileNamePrefix) => {
 }
 
 const csvExport = () => {
-    const title = 'Payment Method';
+    const title = wTrans('public.payment_method').value;
     const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
     const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Method: title, 'No.of Sales': '', 'Sales (RM)': '', 'No.of Refund': '', 'Refund (RM)': '', 'Balance (RM)': '' },
         { Method: dateRange, 'No.of Sales': '', 'Sales (RM)': '', 'No.of Refund': '', 'Refund (RM)': '', 'Balance (RM)': '' },
-        { Method: 'Method', 'No.of Sales': 'No.of Sales', 'Sales (RM)': 'Sales (RM)', 'No.of Refund': 'No.of Refund', 'Refund (RM)': 'Refund (RM)', 'Balance (RM)': 'Balance (RM)' },
+        { Method: wTrans('public.method').value, 'No.of Sales': wTrans('public.report.no_of_sales').value, 'Sales (RM)': `${wTrans('public.sales').value} (RM)`, 'No.of Refund': wTrans('public.report.no_of_refund').value, 'Refund (RM)': `${wTrans('public.refunds').value} (RM)`, 'Balance (RM)': `${wTrans('public.balance').value} (RM)` },
         ...paymentMethods.value.map(method => ({
-            'Method': method,
-            'No.of Sales': getTotalSalesCount(method),
-            'Sales (RM)': formatAmount(getTotalSalesAmount(method)),
-            'No.of Refund': getTotalRefundCount(method),
-            'Refund (RM)': formatAmount(getTotalRefundAomunt(method)),
-            'Balance (RM)': formatAmount(Number(getTotalSalesAmount(method)) - Number(getTotalRefundAomunt(method))),
+            'Method': method.text.value,
+            'No.of Sales': getTotalSalesCount(method.value),
+            'Sales (RM)': formatAmount(getTotalSalesAmount(method.value)),
+            'No.of Refund': getTotalRefundCount(method.value),
+            'Refund (RM)': formatAmount(getTotalRefundAomunt(method.value)),
+            'Balance (RM)': formatAmount(Number(getTotalSalesAmount(method.value)) - Number(getTotalRefundAomunt(method.value))),
         })),
     ];
 
 
-    exportToCSV(formattedRows, 'Payment Method Report');
+    exportToCSV(formattedRows, wTrans('public.report.payment_method_report').value);
 }
 
 defineExpose({
@@ -227,31 +232,31 @@ defineExpose({
             <template v-for="method in paymentMethods">
                 <tr class="border-b border-grey-100">
                     <td class="w-[20%]">
-                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">{{ method }}</span>
+                        <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">{{ method.text }}</span>
                     </td>
                     <td class="w-[16%]">
                         <div class="flex justify-start items-center gap-3 px-3">
-                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ getTotalSalesCount(method) }}</span>
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ getTotalSalesCount(method.value) }}</span>
                         </div>
                     </td>
                     <td class="w-[16%]">
                         <div class="flex justify-start items-center gap-3 px-3">
-                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getTotalSalesAmount(method)) }}</span>
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getTotalSalesAmount(method.value)) }}</span>
                         </div>
                     </td>
                     <td class="w-[16%]">
                         <div class="flex justify-start items-center gap-3 px-3">
-                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ getTotalRefundCount(method) }}</span>
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ getTotalRefundCount(method.value) }}</span>
                         </div>
                     </td>
                     <td class="w-[16%]">
                         <div class="flex justify-start items-center gap-3 px-3">
-                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getTotalRefundAomunt(method)) }}</span>
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(getTotalRefundAomunt(method.value)) }}</span>
                         </div>
                     </td>
                     <td class="w-[16%]">
                         <div class="flex justify-start items-center gap-3 px-3">
-                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(Number(getTotalSalesAmount(method)) - Number(getTotalRefundAomunt(method))) }}</span>
+                            <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden py-4">{{ formatAmount(Number(getTotalSalesAmount(method.value)) - Number(getTotalRefundAomunt(method.value))) }}</span>
                         </div>
                     </td>
                 </tr>

@@ -226,6 +226,24 @@ const submit = async () => {
     }
 }
 
+const getStatusVariant = (status) => {
+    if (!status) return 'red';
+
+    const loweredStatus = status.toLowerCase();
+    
+    return loweredStatus === 'submitted' 
+        ? 'green' 
+        : loweredStatus === 'cancelled' 
+            ? 'grey'
+            : loweredStatus === 'pending'
+                ? 'orange' 
+                : 'red';
+};
+
+const capFirstLetter = (status) => {
+    return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Invalid';
+};
+
 </script>
 
 
@@ -274,14 +292,8 @@ const submit = async () => {
                 </template>
                 <template #status="row">
                     <Tag
-                        :variant="row.status === 'submitted' 
-                                    ? 'green' 
-                                : row.status === 'Cancelled' 
-                                    ? 'grey'
-                                : row.status === 'Pending'
-                                    ? 'red' 
-                                : 'red'"
-                        :value="row.status"
+                        :variant="getStatusVariant(row.status)"
+                        :value="capFirstLetter(row.status)"
                     />
                 </template>
                 <template #action="row">
@@ -299,13 +311,13 @@ const submit = async () => {
         :title="'Submission detail'"
         :maxWidth="'sm'"
     >
-        <div class="flex flex-col gap-6 ">
+        <div class="flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit max-h-[calc(100dvh-8rem)]">
             <div class="flex flex-col gap-4">
                 <div class="flex items-center justify-between">
                     <div>
                         <Tag 
-                            :variant="selectedVal.status === 'Submitted' ? 'green' : selectedVal.status === 'Valid' ? 'green' : selectedVal.status === 'Valid' ? 'red' : 'grey' "  
-                            :value="selectedVal.status" 
+                            :variant="getStatusVariant(selectedVal.status)"  
+                            :value="capFirstLetter(selectedVal.status)" 
                         />
                     </div>
                     <div @click="actionOption($event, row)"><DotVerticleIcon /></div>
@@ -365,6 +377,7 @@ const submit = async () => {
                 <Button
                     type="button"
                     variant="tertiary"
+                    disabled
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
                 >
                     <span class="text-grey-700 font-normal">Print Receipt</span>

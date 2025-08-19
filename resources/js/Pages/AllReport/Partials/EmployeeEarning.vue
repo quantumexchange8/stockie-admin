@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: Array,
@@ -54,16 +55,16 @@ const exportToCSV = (mappedData, fileNamePrefix) => {
 }
 
 const csvExport = () => {
-    const title = 'Employee Earning';
+    const title = wTrans('public.report.employee_earnings').value;
     const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
     const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Employee: title, 'Sales (RM)': '', 'Incentive (RM)': '', 'Commission (RM)': '' },
         { Employee: dateRange, 'Sales (RM)': '', 'Incentive (RM)': '', 'Commission (RM)': '' },
-        { Employee: 'Employee', 'Sales (RM)': 'Sales (RM)', 'Incentive (RM)': 'Incentive (RM)', 'Commission (RM)': 'Commission (RM)' },
+        { Employee: wTrans('public.report.employee').value, 'Sales (RM)': `${wTrans('public.sales').value} (RM)`, 'Incentive (RM)': `${wTrans('public.incentive').value} (RM)`, 'Commission (RM)': `${wTrans('public.commission').value} (RM)` },
         ...props.rows.map(row => ({
             'Employee': row.full_name,
             'Sales (RM)': formatAmount(row.sales),
@@ -71,14 +72,14 @@ const csvExport = () => {
             'Commission (RM)': formatAmount(row.commission),
         })),
         {
-            'Employee': 'Total',
+            'Employee': wTrans('public.total').value,
             'Sales (RM)': totalEmployeeSalesAmount.value,
             'Incentive (RM)': totalEmployeeIncentiveAmount.value,
             'Commission (RM)': totalEmployeeCommissionAmount.value,
         }
     ];
 
-    exportToCSV(formattedRows, 'Employee Earning Report');
+    exportToCSV(formattedRows, wTrans('public.report.employee_earn_report').value);
 }
 
 defineExpose({
@@ -123,7 +124,7 @@ defineExpose({
             </template>
             <tr class="!border-y-2 border-grey-200">
                 <td class="w-[43%]">
-                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">Total</span>
+                    <span class="text-grey-900 text-2xs font-medium text-ellipsis overflow-hidden px-3 py-4">{{ $t('public.total') }}</span>
                 </td>
                 <td class="w-[19%]">
                     <div class="flex justify-start items-center gap-3 px-3">
