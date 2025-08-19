@@ -469,10 +469,10 @@ defineExpose({
                         </Table>
                     </template>
         
-                    <!-- <div class="border-y-2 border-dashed border-primary-100 h-2"></div>
+                    <div class="border-y-2 border-dashed border-primary-100 h-2"></div>
                     <div v-if="payout && order.payment" class="flex items-center justify-center">
-                        <-- <img :src="QRCodeImage" alt="QRCodeImage" width="200" height="200"/> ->
-                        <-- generate qr ->
+                        <!-- <-- <img :src="QRCodeImage" alt="QRCodeImage" width="200" height="200"/> ->
+                        <-- generate qr -> -->
                         <QRCodeVue3 
                             :width="200"
                             :height="200"
@@ -493,7 +493,7 @@ defineExpose({
                     <div class="flex flex-col items-center">
                         <p class="text-primary-950 text-md font-medium">Scan QR below to request your</p>
                         <p class="text-primary-950 text-md font-semibold">e-Invoice</p>
-                    </div> -->
+                    </div>
         
                 </div>
             </div>
