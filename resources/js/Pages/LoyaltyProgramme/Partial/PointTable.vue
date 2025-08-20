@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { EmptyIllus } from "@/Components/Icons/illus.jsx";
 import Modal from "@/Components/Modal.vue";
 import Table from "@/Components/Table.vue";
@@ -31,10 +31,6 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
-    totalPages: {
-        type: Number,
-        required: true,
-    },
     rowsPerPage: {
         type: Number,
         required: true,
@@ -45,10 +41,7 @@ const isPointFormOpen = ref(false);
 const editPointFormIsOpen = ref(false);
 const deletePointFormIsOpen = ref(false);
 const selectedPoint = ref(null);
-
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
+const searchQuery = ref('');
 
 const handleDefaultClick = (event) => {
     event.stopPropagation();
@@ -88,6 +81,23 @@ const hideDeletePointForm = () => {
         selectedPoint.value = null;
     }, 300);
 }
+
+const filteredRows = computed(() => {
+    if (!searchQuery.value) return props.rows;
+
+    const query = searchQuery.value.toLowerCase();
+    
+    return props.rows.filter(row =>
+        row.product_name.toLowerCase().includes(query) ||
+        row.point.toLowerCase().includes(query) ||
+        row.stock_left.toString().toLowerCase().includes(query)
+    );
+});
+
+const redeemableItemsTotalPages = computed(() => {
+    return Math.ceil(filteredRows.value.length / props.rowsPerPage);
+})
+
 </script>
 
 <template>
@@ -98,7 +108,7 @@ const hideDeletePointForm = () => {
                 <SearchBar 
                     placeholder="Search"
                     :showFilter="false"
-                    v-model="filters['global'].value"
+                    v-model="searchQuery"
                 />
 
                 <!-- <Button
@@ -117,14 +127,12 @@ const hideDeletePointForm = () => {
             <!--CurrentTierTable-->
             <Table
                 :variant="'list'"
-                :searchFilter="true"
-                :rows="rows"
-                :totalPages="totalPages"
+                :rows="filteredRows"
+                :totalPages="redeemableItemsTotalPages"
                 :columns="columns"
                 :rowsPerPage="rowsPerPage"
                 :actions="actions"
                 :rowType="rowType"
-                :filters="filters"
                 minWidth="min-w-[700px]"
             >
                 <template #empty>

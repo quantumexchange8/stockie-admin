@@ -1648,7 +1648,7 @@ const printPreviewReceipt = async () => {
                     :class="form.processing ? 'cursor-not-allowed pointer-events-none bg-grey-100' : 'cursor-pointer'"
                     @click="printInvoiceReceipt"
                 >
-                    <p class="text-grey-950 text-md font-medium">{{ $t('public.print_receipt') }}<</p>
+                    <p class="text-grey-950 text-md font-medium">{{ $t('public.print_receipt') }}</p>
                 </div>
                 <div 
                     class="flex py-3 px-4 items-center justify-center self-stretch rounded-[5px] h-36 border border-grey-200"
@@ -1662,7 +1662,7 @@ const printPreviewReceipt = async () => {
     </Modal>
 
     <div class="hidden">
-        <template v-if="showOrderReceipt">
+        <template v-if="showOrderReceipt && order">
             <OrderInvoice ref="orderInvoice" :orderId="order.id" @close="" />
         </template>
     </div>

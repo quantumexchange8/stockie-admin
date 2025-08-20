@@ -41,10 +41,7 @@ const attendances = ref([]);
 const attendanceRowsPerPage = ref(11);
 const isAttendanceDetailModalOpen = ref(false);
 const selectedAttendance = ref('');
-
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
+const searchQuery = ref('');
 
 const defaultLatest30Days = computed(() => {
     let currentDate = dayjs();
@@ -139,8 +136,16 @@ const updateAttendance = (updatedAttendance) => {
     targetAttendance.work_duration = updatedAttendance.work_duration;
 };
 
+const filteredAttendances = computed(() => {
+    if (!searchQuery.value) return attendances.value;
+
+    const query = searchQuery.value.toLowerCase();
+    
+    return attendances.value.filter(row => row.date.toLowerCase().includes(query));
+});
+
 const attendanceTotalPages = computed(() => {
-    return Math.ceil(attendances.value.length / attendanceRowsPerPage.value);
+    return Math.ceil(filteredAttendances.value.length / attendanceRowsPerPage.value);
 });
 
 onMounted(() => {
@@ -225,7 +230,7 @@ onMounted(() => {
             <SearchBar 
                 placeholder="Search"
                 :showFilter="false"
-                v-model="filters['global'].value"
+                v-model="searchQuery"
             />
             <DateInput
                 :inputName="'date_filter'"
@@ -235,13 +240,11 @@ onMounted(() => {
                 v-model="date_filter"
             />
         </div>
-        <div class="w-full" v-if="attendances">
+        <div class="w-full" v-if="filteredAttendances">
             <Table
                 :columns="tableColumns"
-                :rows="attendances"
+                :rows="filteredAttendances"
                 :variant="'list'"
-                :searchFilter="true"
-                :filters="filters"
                 :rowType="rowType"
                 :totalPages="attendanceTotalPages"
                 :rowsPerPage="attendanceRowsPerPage"

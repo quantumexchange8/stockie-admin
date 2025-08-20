@@ -12,7 +12,7 @@ import { transactionFormat, useCustomToast } from '@/Composables';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { FilterMatchMode } from 'primevue/api';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import CommissionDetails from './CommissionDetails.vue';
 import AddProduct from './AddProduct.vue';
 
@@ -41,10 +41,7 @@ const items = ref([
 
 const { flashMessage } = useCustomToast();
 const { formatAmount } = transactionFormat();
-const rowsPerPage = ref(11);
-const totalPages = computed(() => {
-    return Math.ceil(props.productDetails.productDetails.length / rowsPerPage.value);
-})
+
 const rowType = {
     rowGroups: false,
     expandable: false,
@@ -68,6 +65,9 @@ const isDeleteModalOpen = ref(false);
 const isProductModalOpen = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
+const productInfo = ref(props.productDetails);
+const searchQuery = ref('');
+const rowsPerPage = ref(11);
 
 const showProductModal = () => {
     isProductModalOpen.value = true;
@@ -126,9 +126,22 @@ onMounted(() => {
     flashMessage();
 });
 
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
+const filteredProducts = computed(() => {
+    if (!searchQuery.value) return productInfo.value.productDetails;
+
+    const query = searchQuery.value.toLowerCase();
+    
+    return productInfo.value.productDetails.filter(row =>
+        row.product_name.toLowerCase().includes(query) ||
+        row.price.toLowerCase().includes(query) ||
+        row.commission.toString().toLowerCase().includes(query)
+    );
 });
+
+const totalPages = computed(() => {
+    return Math.ceil(filteredProducts.value.length / rowsPerPage.value);
+})
+
 </script>
 
 <template>
@@ -155,7 +168,7 @@ const filters = ref({
                         <SearchBar 
                             placeholder="Search"
                             :showFilter="false"
-                            v-model="filters['global'].value"
+                            v-model="searchQuery"
                         />
 
                         <Button
@@ -173,11 +186,9 @@ const filters = ref({
                     </div>
                     <Table
                         :columns="commDetailsColumn"
-                        :rows="props.productDetails.productDetails"
+                        :rows="filteredProducts"
                         :actions="actions"
                         :variant="'list'"
-                        :searchFilter="true"
-                        :filters="filters"
                         :rowType="rowType"
                         :totalPages="totalPages"
                         :rowsPerPage="rowsPerPage"
@@ -222,7 +233,7 @@ const filters = ref({
 
             <div class="w-full flex flex-col p-6 justify-between items-center rounded-[5px] border border-solid border-primary-100 col-span-5 h-full">
                 <CommissionDetails 
-                    :productDetails="productDetails"
+                    :productDetails="productInfo"
                     :commissionDetails="commissionDetails"                
                 />
             </div>

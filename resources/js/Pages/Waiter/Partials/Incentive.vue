@@ -2,7 +2,7 @@
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import SearchBar from '@/Components/SearchBar.vue';
 import Table from '@/Components/Table.vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { FilterMatchMode } from 'primevue/api';
 import Tag from '@/Components/Tag.vue';
 import { Link } from '@inertiajs/vue3';
@@ -30,13 +30,14 @@ const props = defineProps({
         default: () => {},
     },
     rowType: Object,
-    totalPages: Number,
     rowsPerPage: Number,
 })
 
-const incentiveData = ref(props.incentiveData);
 const { formatAmount } = transactionFormat();
 const { exportToCSV } = useFileExport();
+
+const incentiveData = ref(props.incentiveData);
+const searchQuery = ref('');
 
 const csvExport = () => {
     const waiterName = props.waiter || 'Unknown Waiter';
@@ -59,9 +60,23 @@ const csvExport = () => {
     exportToCSV(formattedRows, `${waiterName}_Monthly Incentive Report`);
 }
 
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
+const filteredIncentiveData = computed(() => {
+    if (!searchQuery.value) return incentiveData.value;
+
+    const query = searchQuery.value.toLowerCase();
+    
+    return incentiveData.value.filter(row =>
+        dayjs(row.period_start).format('MMMM YYYY').toLowerCase().includes(query) ||
+        row.amount.toLowerCase().includes(query) ||
+        row.sales_target.toLowerCase().includes(query) ||
+        row.status.toLowerCase().includes(query)
+    );
 });
+
+const totalPages = computed(() => {
+    return Math.ceil(filteredIncentiveData.value.length / props.rowsPerPage);
+})
+
 </script>
 
 <template>
@@ -129,16 +144,14 @@ const filters = ref({
             <SearchBar 
                 placeholder="Search"
                 :showFilter="false"
-                v-model="filters['global'].value"
+                v-model="searchQuery"
             />
         </div>
-        <div class="w-full" v-if="incentiveData">
+        <div class="w-full" v-if="filteredIncentiveData">
             <Table
                 :columns="columns"
-                :rows="incentiveData"
+                :rows="filteredIncentiveData"
                 :variant="'list'"
-                :searchFilter="true"
-                :filters="filters"
                 :rowType="rowType"
                 :totalPages="totalPages"
                 :rowsPerPage="rowsPerPage"

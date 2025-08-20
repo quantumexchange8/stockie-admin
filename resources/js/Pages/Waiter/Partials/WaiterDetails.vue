@@ -50,8 +50,8 @@ const items = ref([
 const { formatAmount } = transactionFormat();
 const waiter = ref(props.waiter);
 // const attendance = ref(props.attendance);
-const commissionRowsPerPage = ref(11);
-const incentiveRowsPerPage = ref(11);
+const commissionRowsPerPage = ref(1);
+const incentiveRowsPerPage = ref(1);
 const tabs = ref([
     { key: 'Sales', title: 'Sales', disabled: false },
     { key: 'Commission', title: 'Commission', disabled: false },
@@ -98,14 +98,6 @@ const actions = {
     edit: () => ``,
     delete: () => ``,
 };
-
-const commissionTotalPages = computed(() => {
-    return Math.ceil(props.commissionData.length / commissionRowsPerPage.value);
-})
-
-const incentiveTotalPages = computed(() => {
-    return Math.ceil(props.incentiveData.length / incentiveRowsPerPage.value);
-})
 
 </script>
 
@@ -188,7 +180,6 @@ const incentiveTotalPages = computed(() => {
                                 :columns="commissionColumn"
                                 :waiter="waiter"
                                 :rowType="rowType"
-                                :totalPages="commissionTotalPages"
                                 :rowsPerPage="commissionRowsPerPage"
                             />
                         </template>
@@ -200,7 +191,6 @@ const incentiveTotalPages = computed(() => {
                                 :dateFilter="defaultDateFilter" 
                                 :incentiveData="incentiveData"
                                 :rowType="rowType"
-                                :totalPages="incentiveTotalPages"
                                 :rowsPerPage="incentiveRowsPerPage"
                             />
                         </template>

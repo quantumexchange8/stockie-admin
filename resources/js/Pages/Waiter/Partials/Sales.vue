@@ -39,6 +39,7 @@ const order = ref(props.order);
 const waiter = ref(props.waiter);
 const isLoading = ref(false);
 const salesRowsPerPage = ref(11);
+const searchQuery = ref('');
 
 const { formatAmount } = transactionFormat();
 const { exportToCSV } = useFileExport();
@@ -91,10 +92,6 @@ const closeModal = () => {
     isDetailModalOpen.value = false;
 }
 
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
-
 const csvExport = () => {
     const waiterName = waiter.value?.full_name || 'Unknown Waiter';
     const title = `${waiterName}_Daily Sales Report`;
@@ -118,8 +115,21 @@ const csvExport = () => {
     exportToCSV(formattedRows, `${waiterName}_Daily Sales Report`);
 }
 
+const filteredSales = computed(() => {
+    if (!searchQuery.value) return order.value;
+
+    const query = searchQuery.value.toLowerCase();
+    
+    return order.value.filter(row => 
+        row.created_at.toLowerCase().includes(query) ||
+        row.order_no.toLowerCase().includes(query) ||
+        row.total_amount.toString().toLowerCase().includes(query) ||
+        row.commission.toString().toLowerCase().includes(query)
+    );
+});
+
 const salesTotalPages = computed(() => {
-    return Math.ceil(order.value.length / salesRowsPerPage.value);
+    return Math.ceil(filteredSales.value.length / salesRowsPerPage.value);
 })
 
 </script>
@@ -191,7 +201,7 @@ const salesTotalPages = computed(() => {
                 <SearchBar 
                     placeholder="Search"
                     :showFilter="false"
-                    v-model="filters['global'].value"
+                    v-model="searchQuery"
                 />
                 <DateInput
                     :inputName="'date_filter'"
@@ -202,14 +212,12 @@ const salesTotalPages = computed(() => {
             />
             </div>
 
-        <div class="w-full flex justify-between" v-if="order">
+        <div class="w-full flex justify-between" v-if="filteredSales">
             <Table
                 :columns="columns"
-                :rows="order"
+                :rows="filteredSales"
                 :actions="actions"
                 :variant="'list'"
-                :searchFilter="true"
-                :filters="filters"
                 :rowType="rowType"
                 :totalPages="salesTotalPages"
                 :rowsPerPage="salesRowsPerPage"

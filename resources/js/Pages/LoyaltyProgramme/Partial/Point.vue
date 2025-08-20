@@ -15,7 +15,6 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
-    totalPages: Number,
     rowsPerPage: Number,
 });
 
@@ -78,7 +77,6 @@ const totalRedemptionCount = computed(() => {
             :rows="rows"
             :rowType="rowType"
             :actions="actions"
-            :totalPages="totalPages"
             :rowsPerPage="rowsPerPage"
         />
 

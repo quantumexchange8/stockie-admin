@@ -5,7 +5,7 @@ import { DeleteIcon, EditIcon } from '@/Components/Icons/solid';
 import Modal from '@/Components/Modal.vue';
 import Table from '@/Components/Table.vue';
 import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import EditWaiter from './EditWaiter.vue';
 import { usePhoneUtils, useCustomToast } from '@/Composables';
 
@@ -25,8 +25,6 @@ const props = defineProps({
     rowType: Object,
     totalPages: Number,
     rowsPerPage: Number,
-    searchFilter: Boolean,
-    filters: Object,
 })
 
 const form = useForm({
@@ -118,6 +116,10 @@ const submit = async () => {
     }
 }
 
+watch(() => props.rows, (newValue) => {
+    waiters.value = newValue;
+}, { immediate: true });
+
 </script>
 
 <template>
@@ -129,8 +131,6 @@ const submit = async () => {
         :rowType="rowType"
         :totalPages="totalPages"
         :rowsPerPage="rowsPerPage"
-        :searchFilter="true"
-        :filters="filters"
     >
         <template #empty>
             <EmptyWaiterIllus />

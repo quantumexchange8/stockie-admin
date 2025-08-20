@@ -45,7 +45,6 @@ const props = defineProps({
     selectedTab: Number,
 })
 
-const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
 const date_filter = ref(''); 
 const saleTransaction = ref([]);
 const { formatAmount, formatDateTime } = transactionFormat();
@@ -64,6 +63,7 @@ const rowsPerPage = ref(5);
 const lastMonthRefundTransaction = ref([]);
 const lastMonthDate = ref('');
 const docs_type = ref('refund_tranaction');
+const searchQuery = ref('');
 
 const fetchRefundTransaction = async (filters = {}) => {
 
@@ -109,10 +109,7 @@ const rowType = {
     groupRowsBy: "",
 };
 
-const saleRowsPerPage = ref(6);
-const saleTotalPages = computed(() => {
-    return Math.ceil(saleTransaction.value.length / saleRowsPerPage.value);
-})
+const saleRowsPerPage = ref(3);
 
 const action = (event, item) => {
     detailIsOpen.value = true;
@@ -187,6 +184,24 @@ const voidAction = async () => {
     }
 }
 
+const filteredSaleTransactions = computed(() => {
+    if (!searchQuery.value) return saleTransaction.value;
+
+    const query = searchQuery.value.toLowerCase();
+    
+    return saleTransaction.value.filter(row =>
+        dayjs(row.created_at).format('DD/MM/YYYY, HH:mm').toLowerCase().includes(query) ||
+        row.refund_no.toLowerCase().includes(query) ||
+        (row.customer ? row.customer.full_name.toLowerCase().includes(query) : row.customer_id.toLowerCase().includes(query)) ||
+        row.total_refund_amount.toString().toLowerCase().includes(query) ||
+        row.status.toLowerCase().includes(query)
+    );
+});
+
+const saleTotalPages = computed(() => {
+    return Math.ceil(filteredSaleTransactions.value.length / saleRowsPerPage.value);
+})
+
 </script>
 
 <template>
@@ -198,7 +213,7 @@ const voidAction = async () => {
                     <SearchBar
                         placeholder="Search"
                         :showFilter="false"
-                        v-model="filters['global'].value"
+                        v-model="searchQuery"
                         class="sm:max-w-[309px]"
                     />
                 </div>
@@ -241,13 +256,11 @@ const voidAction = async () => {
         <div class="">
             <Table
                 :columns="salesColumn"
-                :rows="saleTransaction"
+                :rows="filteredSaleTransactions"
                 :variant="'list'"
                 :rowType="rowType"
                 :totalPages="saleTotalPages"
                 :rowsPerPage="saleRowsPerPage"
-                :searchFilter="true"
-                :filters="filters"
             >
                 <template #created_at="row">
                     <span class="text-grey-900 text-sm font-medium">{{ formatDateTime(row.created_at) }}</span>

@@ -1118,7 +1118,7 @@ class EInvoiceController extends Controller
         return $checkToken->token;
     }
 
-    public function getAllSaleInvoice()
+    public function getAllSaleInvoice(Request $request)
     {
 
         // Get all payments excluding 'pending'
@@ -1142,7 +1142,21 @@ class EInvoiceController extends Controller
         // Reindex the array to return a clean structure
         // $transactions = array_values($grouped);
 
-        $transactions = ConsolidatedInvoice::with(['invoice_child', 'invoice_no'])->latest()->get();
+
+
+        $query = ConsolidatedInvoice::query();
+
+        if ($request->dateFilter) {
+            $startDate = Carbon::parse($request->dateFilter[0])->timezone('Asia/Kuala_Lumpur')->startOfDay();
+            $endDate = Carbon::parse($request->dateFilter[1] ?? $request->dateFilter[0])->timezone('Asia/Kuala_Lumpur')->endOfDay();
+    
+            $query->where(function($subQuery) use ($startDate, $endDate) {
+                $subQuery->whereDate('c_datetime', '>=', $startDate)
+                        ->whereDate('c_datetime', '<=', $endDate);
+            });
+        }
+        
+        $transactions = $query->with(['invoice_child', 'invoice_no'])->latest()->get();
 
         return response()->json($transactions);
     }

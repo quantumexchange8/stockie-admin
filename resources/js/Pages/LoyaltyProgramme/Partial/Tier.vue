@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { EmptyTierIllus } from "@/Components/Icons/illus.jsx";
 import Modal from "@/Components/Modal.vue";
 import Table from "@/Components/Table.vue";
@@ -30,10 +30,6 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
-    totalPages: {
-        type: Number,
-        required: true,
-    },
     rowsPerPage: {
         type: Number,
         required: true,
@@ -49,10 +45,7 @@ const deleteTierFormIsOpen = ref(false);
 const selectedTier = ref(null);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
-
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
+const searchQuery = ref('');
 
 const openModal = () => {
     isDirty.value = false;
@@ -125,6 +118,23 @@ const formatAmount = (num) => {
     return str.join('.');
 }
 
+const filteredRows = computed(() => {
+    if (!searchQuery.value) return props.rows;
+
+    const query = searchQuery.value.toLowerCase();
+    
+    return props.rows.filter(row =>
+        row.name.toLowerCase().includes(query) ||
+        row.min_amount.toString().toLowerCase().includes(query) ||
+        row.merged_reward_type.toLowerCase().includes(query) ||
+        row.member.toString().toLowerCase().includes(query)
+    );
+});
+
+const totalPages = computed(() => {
+    return Math.ceil(filteredRows.value.length / props.rowsPerPage);
+})
+
 </script>
 
 <template>
@@ -135,7 +145,7 @@ const formatAmount = (num) => {
                 <SearchBar 
                     placeholder="Search"
                     :showFilter="false"
-                    v-model="filters['global'].value"
+                    v-model="searchQuery"
                 />
 
                 <Button
@@ -154,14 +164,12 @@ const formatAmount = (num) => {
             <!--CurrentTierTable-->
             <Table
                 :variant="'list'"
-                :searchFilter="true"
-                :rows="rows"
+                :rows="filteredRows"
                 :totalPages="totalPages"
                 :columns="columns"
                 :rowsPerPage="rowsPerPage"
                 :actions="actions"
                 :rowType="rowType"
-                :filters="filters"
                 minWidth="min-w-[1020px]"
             >
                 <template #empty>

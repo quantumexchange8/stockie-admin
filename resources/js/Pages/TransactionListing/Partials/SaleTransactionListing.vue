@@ -45,10 +45,10 @@ const salesColumn = ref([
 ]);
 
 const saleTransaction = ref([]);
+const initialSaleTransaction = ref([]);
 const lastMonthSalesTransaction = ref([]);
 const date_filter = ref(''); 
 const lastMonthDate = ref('');
-const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
 const detailIsOpen = ref(false);
 const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
@@ -66,6 +66,7 @@ const docs_type = ref('sales_tranaction');
 const rowsPerPage = ref(5);
 const orderInvoice = ref(null);
 const showOrderReceipt = ref(false);
+const searchQuery = ref('');
 
 const props = defineProps({
     selectedTab: Number,
@@ -78,6 +79,7 @@ const fetchTransaction = async (filters = {}) => {
             params: { dateFilter: filters }
         });
 
+        initialSaleTransaction.value = response.data;
         saleTransaction.value = response.data;
 
     } catch (error) {
@@ -395,6 +397,30 @@ const printInvoiceReceipt = () => {
 //     return form.refund_item.reduce((total, item) => total + (item), 0) ?? 0;
 // })
 
+watch(() => searchQuery.value, (newValue) => {
+    if (newValue === '') {
+        // If no search query, reset rows to props.rows
+        saleTransaction.value = initialSaleTransaction.value;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    saleTransaction.value = initialSaleTransaction.value.filter(row => {
+        const receiptEndDate = dayjs(row.receipt_end_date).format('DD/MM/YYYY, HH:mm').toLowerCase();
+        const receiptNo = row.receipt_no.toLowerCase();
+        const grandTotal = row.grand_total.toString().toLowerCase();
+        const customerFullName = row.customer ? row.customer.full_name.toLowerCase() : 'guest';
+        const status = row.status.toLowerCase();
+
+        return  receiptEndDate.includes(query) ||
+                receiptNo.includes(query) ||
+                grandTotal.includes(query) ||
+                customerFullName.includes(query) ||
+                status.includes(query);
+    });
+}, { immediate: true });
+
 </script>
 
 <template>
@@ -406,7 +432,7 @@ const printInvoiceReceipt = () => {
                     <SearchBar
                         placeholder="Search"
                         :showFilter="false"
-                        v-model="filters['global'].value"
+                        v-model="searchQuery"
                         class="xl:max-w-[309px]"
                     />
                 </div>
@@ -445,8 +471,6 @@ const printInvoiceReceipt = () => {
                 :rowType="rowType"
                 :totalPages="saleTotalPages"
                 :rowsPerPage="saleRowsPerPage"
-                :searchFilter="true"
-                :filters="filters"
             >
                 <template #grand_total="row">
                     <span class="text-grey-900 text-sm font-medium">RM {{ row.grand_total }}</span>
@@ -864,7 +888,7 @@ const printInvoiceReceipt = () => {
     </Modal>
 
     <div class="hidden">
-        <template v-if="showOrderReceipt">
+        <template v-if="showOrderReceipt && selectedVal">
             <OrderInvoice ref="orderInvoice" :orderId="selectedVal.order_id" />
         </template>
     </div>

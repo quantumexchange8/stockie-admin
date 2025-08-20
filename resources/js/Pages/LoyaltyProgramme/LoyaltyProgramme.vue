@@ -26,7 +26,7 @@ const tabs = ref([
     { key: 'Points', title: 'Points', disabled: false },
     { key: 'Tier', title: 'Tier', disabled: false },
 ]);
-const tiersRowsPerPage = ref(8);
+const tiersRowsPerPage = ref(3);
 const redeemableItemsRowsPerPage = ref(8);
 
 const tiersColumns = ref([
@@ -65,14 +65,6 @@ const actions = [
     }
 ];
 
-const tiersTotalPages = computed(() => {
-    return Math.ceil(props.tiers.length / tiersRowsPerPage.value);
-})
-
-const redeemableItemsTotalPages = computed(() => {
-    return Math.ceil(props.redeemableItems.length / redeemableItemsRowsPerPage.value);
-})
-
 onMounted(() => flashMessage());
 
 </script>
@@ -98,7 +90,6 @@ onMounted(() => flashMessage());
                     :rows="redeemableItems"
                     :rowType="rowType"
                     :actions="actions[0]"
-                    :totalPages="redeemableItemsTotalPages"
                     :rowsPerPage="redeemableItemsRowsPerPage"
                 />
             </template>
@@ -110,7 +101,6 @@ onMounted(() => flashMessage());
                     :rowType="rowType"
                     :logos="logos"
                     :actions="actions[1]"
-                    :totalPages="tiersTotalPages"
                     :rowsPerPage="tiersRowsPerPage"
                 />
             </template>

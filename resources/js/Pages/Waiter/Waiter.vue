@@ -68,10 +68,7 @@ const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isLoading = ref(false);
 const commIsLoading = ref(false);
-
-const waitersTotalPages = computed(() => {
-    return Math.ceil(waitersList.value.length / waitersRowsPerPage.value);
-})
+const searchQuery = ref('');
 
 const { flashMessage } = useCustomToast();
 
@@ -167,10 +164,6 @@ onMounted(() => {
     flashMessage();
 });
 
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
-
 const updateWaitersDetails = (data) => {
     waitersList.value = data.waiters;
     waiterIdArray.value = data.waiterIds;
@@ -178,6 +171,24 @@ const updateWaitersDetails = (data) => {
     waiterNamesArray.value = data.waiterNames;
     waiterCommissionArray.value = data.waiterCommission;
 };
+
+const filteredWaiters = computed(() => {
+    if (!searchQuery.value) return waitersList.value;
+
+    const query = searchQuery.value.toLowerCase();
+    
+    return waitersList.value.filter(row =>
+        row.role_id.toLowerCase().includes(query) ||
+        row.full_name.toLowerCase().includes(query) ||
+        row.phone.toLowerCase().includes(query) ||
+        row.worker_email.toLowerCase().includes(query)
+    );
+});
+
+const waitersTotalPages = computed(() => {
+    return Math.ceil(filteredWaiters.value.length / waitersRowsPerPage.value);
+})
+
 </script>
 
 <template>
@@ -226,7 +237,7 @@ const updateWaitersDetails = (data) => {
                         <SearchBar
                             placeholder="Search"
                             :show-filter="false"
-                            v-model="filters['global'].value"
+                            v-model="searchQuery"
                         >
                         </SearchBar>
 
@@ -265,14 +276,12 @@ const updateWaitersDetails = (data) => {
 
                     <div class="w-full">
                         <WaiterTable 
-                            :rows="waitersList"
+                            :rows="filteredWaiters"
                             :columns="waiterColumns"
                             :actions="actions"
                             :rowType="rowType"
                             :totalPages="waitersTotalPages"
                             :rowsPerPage="waitersRowsPerPage"
-                            :searchFilter="true"
-                            :filters="filters"
                             @update:waiters="updateWaitersDetails"
                         />
                     </div>

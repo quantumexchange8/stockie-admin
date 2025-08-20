@@ -22,6 +22,7 @@ import TextInput from '@/Components/TextInput.vue';
 import TransactionList from './TransactionList.vue';
 import Myinvois from './Myinvois.vue';
 import { useCustomToast, useInputValidator } from '@/Composables/index.js';
+import dayjs from 'dayjs';
 
 const salesColumn = ref([
     {field: 'c_datetime', header: 'Date & Time', width: '30', sortable: true},
@@ -33,8 +34,8 @@ const salesColumn = ref([
 ]);
 
 const saleTransaction = ref([]);
+const initialSaleTransaction = ref([]);
 const date_filter = ref(''); 
-const filters = ref({ 'global': { value: null, matchMode: FilterMatchMode.CONTAINS } });
 const detailIsOpen = ref(false);
 const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
@@ -48,6 +49,8 @@ const op = ref(null);
 const cancelSubmitFormIsOpen = ref(false);
 const reason = ref('');
 const reasonError = ref('');
+const searchQuery = ref('');
+
 const { showMessage } = useCustomToast();
 
 const props = defineProps({
@@ -57,8 +60,11 @@ const props = defineProps({
 const fetchTransaction = async (filters = {}) => {
 
 try {
-    const response = await axios.get('/e-invoice/getAllSaleInvoice');
+    const response = await axios.get('/e-invoice/getAllSaleInvoice', {
+        params: { dateFilter: filters }
+    });
 
+    initialSaleTransaction.value = response.data;
     saleTransaction.value = response.data;
 
 } catch (error) {
@@ -244,6 +250,30 @@ const capFirstLetter = (status) => {
     return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Invalid';
 };
 
+watch(() => searchQuery.value, (newValue) => {
+    if (newValue === '') {
+        // If no search query, reset rows to props.rows
+        saleTransaction.value = initialSaleTransaction.value;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    saleTransaction.value = initialSaleTransaction.value.filter(row => {
+        const cDateTime = dayjs(row.c_datetime).format('DD/MM/YYYY, HH:mm').toLowerCase();
+        const invoiceNo = row.c_invoice_no.toLowerCase();
+        const totalTotal = row.c_total_amount.toString().toLowerCase();
+        const docType = row.docs_type.toLowerCase();
+        const status = row.status?.toLowerCase() ?? '';
+
+        return  cDateTime.includes(query) ||
+                invoiceNo.includes(query) ||
+                totalTotal.includes(query) ||
+                docType.includes(query) ||
+                status.includes(query);
+    });
+}, { immediate: true });
+
 </script>
 
 
@@ -256,7 +286,7 @@ const capFirstLetter = (status) => {
                     <SearchBar
                         placeholder="Search"
                         :showFilter="false"
-                        v-model="filters['global'].value"
+                        v-model="searchQuery"
                         class="sm:max-w-[309px]"
                     />
                 </div>
@@ -281,8 +311,6 @@ const capFirstLetter = (status) => {
                 :rowType="rowType"
                 :totalPages="saleTotalPages"
                 :rowsPerPage="saleRowsPerPage"
-                :searchFilter="true"
-                :filters="filters"
             >
                 <template #grand_total="row">
                     <span class="text-grey-900 text-sm font-medium">RM {{ row.grand_total }}</span>

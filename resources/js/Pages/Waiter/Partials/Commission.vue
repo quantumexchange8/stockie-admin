@@ -8,14 +8,13 @@ import { transactionFormat, useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import dayjs from 'dayjs';
 import { FilterMatchMode } from 'primevue/api';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
     data: Object,
     rowType: Object,
     columns: Array,
     waiter: Object,
-    totalPages: Number,
     rowsPerPage: Number,
 })
 
@@ -25,10 +24,6 @@ const { exportToCSV } = useFileExport();
 
 const data = ref(props.data)
 const searchQuery = ref('');
-
-const filters = ref({
-    'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
-});
 
 const csvExport = () => {
     const waiterName = props.waiter.full_name || 'Unknown Waiter';
@@ -50,23 +45,20 @@ const csvExport = () => {
     exportToCSV(formattedRows, `${waiterName}_Monthly Commission Report`);
 };
 
-watch(() => searchQuery.value, (newValue) => {
-    if(newValue === '') {
-        data.value = props.data;
-        return;
-    }
+const filteredCommissions = computed(() => {
+    if (!searchQuery.value) return data.value;
 
-    const query = newValue.toLowerCase();
+    const query = searchQuery.value.toLowerCase();
+    
+    return data.value.filter(row =>
+        row.created_at.toLowerCase().includes(query) ||
+        row.monthly_sale.toLowerCase().includes(query) ||
+        row.commissionAmt.toString().toLowerCase().includes(query)
+    );
+});
 
-    data.value = props.data.filter(filteredData => {
-        const dataMonth = filteredData.created_at.toLowerCase();
-        const dataSale = filteredData.monthly_sale.toString().toLowerCase();
-        const dataCommission = filteredData.commissionAmt.toString().toLowerCase();
-
-        return  dataMonth.includes(query) ||
-                dataSale.includes(query) ||
-                dataCommission.includes(query);
-    });
+const totalPages = computed(() => {
+    return Math.ceil(filteredCommissions.value.length / props.rowsPerPage);
 })
 
 </script>
@@ -146,10 +138,8 @@ watch(() => searchQuery.value, (newValue) => {
             <Table
                 :columns="columns"
                 :variant="'list'"
-                :rows="data"
+                :rows="filteredCommissions"
                 :rowType="rowType"
-                :searchFilter="true"
-                :filters="filters"
                 :totalPages="totalPages"
                 :rowsPerPage="rowsPerPage"
             >

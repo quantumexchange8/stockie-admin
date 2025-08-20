@@ -7,7 +7,7 @@ import SearchBar from "@/Components/SearchBar.vue";
 import Table from "@/Components/Table.vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import { FilterMatchMode } from "primevue/api";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import AddCommission from "./Partials/AddCommission.vue";
 import EditCommission from "./Partials/EditCommission.vue";
 import axios from "axios";
@@ -20,9 +20,11 @@ const selectedProduct = ref();
 const isLoading = ref(false);
 const productNames = ref([]);
 const productToAdd = ref([]);
+const initialRows = ref([]);
 const rows = ref([]);
 const isUnsavedChangesOpen = ref(false);
 const isDirty = ref(false);
+const searchQuery = ref('');
 
 const actions = {
     view: (productId) => `/configurations/productDetails/${productId}`,
@@ -41,6 +43,7 @@ const viewEmployeeComm = async () => {
         isLoading.value=true
     try {
         const response = await axios.get('/configurations/configurations/commission');
+        initialRows.value = response.data.commission;
         rows.value = response.data.commission;
         productNames.value = response.data.productNames;
         productToAdd.value = response.data.productToAdd;
@@ -147,6 +150,27 @@ const handleDefaultClick = (event) => {
 onMounted (() => {
     viewEmployeeComm();
 });
+
+watch(() => searchQuery.value, (newValue) => {
+    if (newValue === '') {
+        // If no search query, reset rows to props.rows
+        rows.value = initialRows.value;
+        return;
+    }
+
+    const query = newValue.toLowerCase();
+
+    rows.value = initialRows.value.filter(row => {
+        const commType = row.comm_type.toLowerCase();
+        const rate = row.rate.toLowerCase();
+        const productIncluded = row.product.some((product) => product.toLowerCase().includes(query));;
+
+        return  commType.includes(query) ||
+                rate.includes(query) ||
+                productIncluded;
+    });
+}, { immediate: true });
+
 </script>
 
 <template>
@@ -160,7 +184,7 @@ onMounted (() => {
             <SearchBar
                 placeholder="Search"
                 :show-filter="false"
-                v-model="filters['global'].value"
+                v-model="searchQuery"
             >
             </SearchBar>
 
@@ -206,8 +230,6 @@ onMounted (() => {
             :rows="rows"
             :actions="actions"
             :variant="'list'"
-            :searchFilter="true"
-            :filters="filters"
         >
             <template #empty>
                 <div class="flex w-full flex-col items-center justify-center gap-5">
