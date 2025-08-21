@@ -185,6 +185,7 @@ return [
     "points_earned" => "获得积分",
     "unit" => "单位",
     "date_range" => "日期范围",
+    "table_no" => "桌台号码",
 
     // "incorrect_info" => "信息不正确",
     // "duplicate_entry" => "重复的输入",
@@ -262,6 +263,14 @@ return [
         "shift_pay_in_success" => "此班次的存入历史记录已更新.",
         "shift_pay_out_success" => "此班次的支出历史记录已更新.",
         "report_export_error" => "当前查看的报告不提供 CSV 导出功能.",
+        "add_table_success" => "新桌台已成功添加.",
+        "table_deleted_success" => "选定的桌台已成功删除.",
+        "zone_added_success" => "新区域已成功添加.",
+        "zone_edited_success" => "区域名称已成功编辑.",
+        "zone_deleted_success" => "选定区域已成功删除.",
+        "zone_deleted_warning" => "选定区域仍有一些已签入的表",
+        "delete_table_warning" => "无法删除表.",
+        "delete_table_warning_message" => "表 :table_no 当前已签入。要删除该表，必须先释放它.",
     ],
 
     // Action buttons' label
@@ -315,6 +324,8 @@ return [
         "close" => "关闭",
         "pay_in" => "存入",
         "pay_out" => "支出",
+        "save_changes" => "保存更改",
+        "discard" => "放弃",
     ],
 
     // Empty states' messages
@@ -335,6 +346,7 @@ return [
         "no_table_in_zone" => "此区域没有桌子...",
         "no_shift_record" => "您尚未添加任何班次记录...",
         "no_data_available" => "无可用数据",
+        "no_table_added" => "您尚未添加任何桌台 / 厢房...",
     ],
 
     // Error pages' error messages
@@ -582,7 +594,20 @@ return [
         "cryptocurrency_market_price" => "Cryptocurrency Market Price",
     ],
     "table" => [
-        "cryptocurrency_market_price" => "Cryptocurrency Market Price",
+        "manage_zone" => "管理区域",
+        "add_table_room" => "新增桌台 / 厢房",
+        "available_seat_numbers" => "桌台的数量",
+        "select_zone" => "选择区域",
+        "number_only" => "仅数目",
+        "delete_table" => "删除此桌台吗?",
+        "delete_table_message" => "确定要删除选定的桌台吗? 一旦操作将无法撤回.",
+        "edit_table" => "编辑桌台",
+        "new_zone" => "新增区域",
+        "add_zone" => "添加区域",
+        "delete_zone" => "删除此区域?",
+        "delete_zone_message" => "此区域内的桌台和厢房将被全部删除. 您确定要删除此区域吗?",
+        "delete_table_rsvp_warning" => "取消預訂",
+        "delete_table_rsvp_warning_message" => "此桌位目前已有预订.您确定要删除所选桌位吗？此操作无法撤消.",
     ],
     "reservation" => [
         "cryptocurrency_market_price" => "Cryptocurrency Market Price",

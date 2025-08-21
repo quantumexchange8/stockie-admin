@@ -81,6 +81,7 @@ function updateValue(value) {
 function resetValue(value) {
     modelValue.value = value;
     emit("update:modelValue", value);
+    emit("onChange", value);
 }
 
 const setDateToday = () => {

@@ -16,15 +16,19 @@ return new class extends Migration
             $table->string('c_invoice_no');
             $table->dateTime('c_datetime');
             $table->string('docs_type');
-            $table->double('c_total_amount')->nullable();
-            $table->dateTime('c_period_start')->nullable();
-            $table->dateTime('c_period_end')->nullable();
-            $table->string('status')->nullable();
-            $table->string('submitted_uuid')->nullable();
-            $table->string('uuid')->nullable();
-            $table->string('longId')->nullable();
-            $table->longText('remark')->nullable();
-            $table->dateTime('cancel_expired_at')->nullable();
+            $table->double('c_amount')->nullable()->default(0);
+            $table->double('c_total_amount')->nullable()->default(0);
+            $table->dateTime('c_period_start')->nullable()->default(NULL);
+            $table->dateTime('c_period_end')->nullable()->default(NULL);
+            $table->string('status')->nullable()->default(NULL);
+            $table->string('submitted_uuid')->nullable()->default(NULL);
+            $table->string('uuid')->nullable()->default(NULL);
+            $table->string('longId')->nullable()->default(NULL);
+            $table->string('internal_id')->nullable()->default(NULL);
+            $table->dateTime('invoice_datetime')->nullable()->default(NULL);
+            $table->dateTime('rejected_at')->nullable()->default(NULL);
+            $table->longText('remark')->nullable()->default(NULL);
+            $table->dateTime('cancel_expired_at')->nullable()->default(NULL);
             $table->timestamps();
         });
     }

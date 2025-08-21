@@ -8,6 +8,7 @@ import RadioButton from '@/Components/RadioButton.vue';
 import { tableType } from '@/Composables/constants';
 import { useCustomToast } from '@/Composables';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -43,7 +44,7 @@ const formSubmit = () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: 'New table has been successfully added.',
+                    summary: wTrans('public.toast.add_table_success'),
                 });
             }, 200)
         },
@@ -80,7 +81,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 </div> -->
                 <TextInput
                     :inputName="'table_no'"
-                    :labelText="'Table / Room No.'"
+                    :labelText="$t('public.table_no')"
                     :placeholder="'eg: 1'"
                     :errorMessage="form.errors?.table_no || ''"
                     :maxlength="4"
@@ -91,15 +92,15 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <TextInput
                         :inputName="'seat'"
                         :inputType="'number'"
-                        :labelText="'No. of Seats Available'"
-                        :placeholder="'number only (eg: 6)'"
+                        :labelText="$t('public.table.available_seat_numbers')"
+                        :placeholder="`${$t('public.table.number_only')} (eg: 6)`"
                         :errorMessage="form.errors?.seat || ''"
                         v-model="form.seat"
                         class="col-span-full md:col-span-6"
                     />
                     <Dropdown
                         :inputName="'zone_id'"
-                        :labelText="'Select Zone'"
+                        :labelText="$t('public.table.select_zone')"
                         :inputArray="zones"
                         :errorMessage="form.errors?.zone_id || ''"
                         v-model="form.zone_id"
@@ -115,7 +116,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :size="'lg'"
                 @click="unsaved('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :size="'lg'"
@@ -123,7 +124,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :type="'submit'"
                 :class="{ 'opacity-25': form.processing }"
             >
-                Add
+                {{ $t('public.action.add') }}
             </Button>
         </div>
         <Modal

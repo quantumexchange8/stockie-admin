@@ -9,6 +9,7 @@ import TextInput from '@/Components/TextInput.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
 import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import UpcomingTableReservationsTable from './UpcomingTableReservationsTable.vue';
+import InputError from '@/Components/InputError.vue';
 
 const props = defineProps({
     reservation: Object,
@@ -71,9 +72,10 @@ const getTableUpcomingReservations = async (date = null) => {
             'date': date,
             'reserved_before_limit': form.reserved_before_limit,
             'reserved_limit': form.reserved_limit,
+            'reservation_id': props.reservation.id,
         };
         const response = await axios.get(route('reservations.getTableUpcomingReservations', formData));
-        occupiedTables.value = response.data.occupied_tables.filter((table) => !form.tables.includes(table));
+        occupiedTables.value = response.data.occupied_tables;
         upcomingReservations.value = response.data.upcoming_reservations;
         
     } catch (error) {
@@ -207,8 +209,16 @@ const updateSelectedTables = (event) => {
 //     form.pax = pax;
 // }
 
+const hasConflictingRsvp = computed(() => {
+    if (occupiedTables.value.length === 0 || !form.tables || (form.tables && form.tables?.length === 0)) return false;
+
+    const conflictRsvp = occupiedTables.value.filter((occupiedTable) => form.tables.includes(occupiedTable));
+
+    return conflictRsvp.length > 0;
+});
+
 const isFormValid = computed(() => {
-    return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables', 'reserved_before_limit', 'reserved_limit'].every(field => form[field]) && !form.processing;
+    return ['reservation_date', 'pax', 'name', 'phone_temp', 'tables', 'reserved_before_limit', 'reserved_limit'].every(field => form[field]) && !form.processing && !hasConflictingRsvp.value;
 });
 
 watch(() => form.reserved_before_limit, (newValue) => {
@@ -239,18 +249,20 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     v-model="form.reservation_date"
                     @onChange="getTableUpcomingReservations($event)"
                 />
-                <MultiSelect 
-                    inputName="table_no"
-                    labelText="Select table/room"
-                    placeholder="Select"
-                    class="col-span-full sm:col-span-6"
-                    :loading="isLoading"
-                    :inputArray="tablesArr"
-                    :errorMessage="form.errors?.table_no || ''"
-                    :dataValue="form.tables"
-                    v-model="form.tables"
-                    @onChange="updateSelectedTables"
-                />
+                <div class="col-span-full sm:col-span-6 flex flex-col items-start">
+                    <MultiSelect 
+                        inputName="table_no"
+                        labelText="Select table/room"
+                        placeholder="Select"
+                        :loading="isLoading"
+                        :inputArray="tablesArr"
+                        :errorMessage="form.errors?.table_no || ''"
+                        :dataValue="form.tables"
+                        v-model="form.tables"
+                        @onChange="updateSelectedTables"
+                    />
+                    <InputError :message="'The selected tables are already occupied at the selected date and time.'" v-if="hasConflictingRsvp" />
+                </div>
                 <TextInput
                     inputName="pax"
                     :inputType="'number'"

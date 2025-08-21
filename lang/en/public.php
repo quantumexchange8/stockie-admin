@@ -185,6 +185,7 @@ return [
     "points_earned" => "Points Earned",
     "unit" => "Unit",
     "date_range" => "Date Range",
+    "table_no" => "Table no.",
 
     // "incorrect_info" => "Incorrect information",
     // "duplicate_entry" => "customise_range entry",
@@ -262,6 +263,14 @@ return [
         "shift_pay_in_success" => "Pay in history for this shift has been updated.",
         "shift_pay_out_success" => "Pay out history for this shift has been updated.",
         "report_export_error" => "CSV export is not available on the currently viewed report.",
+        "add_table_success" => "New table has been successfully added.",
+        "table_deleted_success" => "Selected table has been deleted successfully.",
+        "zone_added_success" => "New Zone has been added successfully.",
+        "zone_edited_success" => "Zone name has been edited successfully.",
+        "zone_deleted_success" => "Selected zone has been deleted successfully.",
+        "zone_deleted_warning" => "Selected zone still has some table that are checked in.",
+        "delete_table_warning" => "Unable to delete table.",
+        "delete_table_warning_message" => "Table :table_no is currently checked in. To delete the table, it must be freed up first.",
     ],
 
     // Action buttons' label
@@ -315,6 +324,8 @@ return [
         "close" => "Close",
         "pay_in" => "Pay in",
         "pay_out" => "Pay out",
+        "save_changes" => "Save Changes",
+        "discard" => "Discard",
     ],
 
     // Empty states' messages
@@ -335,6 +346,7 @@ return [
         "no_table_in_zone" => "No table in this zone...",
         "no_shift_record" => "You haven’t added any shift record yet...",
         "no_data_available" => "No data available",
+        "no_table_added" => "You haven't added any table/room yet...",
     ],
 
     // Error pages' error messages
@@ -582,7 +594,20 @@ return [
         "cryptocurrency_market_price" => "Cryptocurrency",
     ],
     "table" => [
-        "cryptocurrency_market_price" => "Cryptocurrency",
+        "manage_zone" => "Manage Zone",
+        "add_table_room" => "Add Table / Room",
+        "available_seat_numbers" => "No. of seats available",
+        "select_zone" => "Select zone",
+        "number_only" => "number only",
+        "delete_table" => "Delete this table?",
+        "delete_table_message" => "Are you sure you want to delete the selected table? This action cannot be undone.",
+        "edit_table" => "Edit Table",
+        "new_zone" => "New Zone",
+        "add_zone" => "Add Zone",
+        "delete_zone" => "Delete this zone?",
+        "delete_zone_message" => "Table and room in this zone will be deleted altogether. Are you sure you want to delete this zone?",
+        "delete_table_rsvp_warning" => "Cancel reservations",
+        "delete_table_rsvp_warning_message" => "There are active reservations made for this table. Are you sure you want to delete the selected table? This action cannot be undone.",
     ],
     "reservation" => [
         "cryptocurrency_market_price" => "Cryptocurrency",

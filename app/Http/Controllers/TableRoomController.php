@@ -188,7 +188,7 @@ class TableRoomController extends Controller
                 });
             }
 
-            $zone->delete();
+            $zone->update(['status' => 'inactive']);
     
             activity()->useLog('delete-zone')
                         ->performedOn($zone)
@@ -202,13 +202,13 @@ class TableRoomController extends Controller
     
             return response()->json([
                 'severity' => 'success',
-                'summary' => "Selected zone has been deleted successfully."
+                'summary' => trans('public.toast.zone_deleted_success')
             ]);
         }
 
         return response()->json([
             'severity' => 'warn',
-            'summary' => "Selected zone still has some table that are checked in."
+            'summary' => trans('public.toast.zone_deleted_warning')
         ]);
 
         // $targetTable = Table::where('zone_id', $id)->get();
@@ -277,8 +277,8 @@ class TableRoomController extends Controller
             // Step 2: Return confirmation response 
             return response()->json([
                 'type' => 'reservation',
-                'title' => 'Cancel reservations',
-                'message' => 'There are active reservations made for this table. Are you sure you want to delete the selected table? This action cannot be undone.'
+                'title' => trans('public.table.delete_table_rsvp_warning'),
+                'message' => trans('public.table.delete_table_rsvp_warning_message')
             ]);
         }
 
@@ -286,9 +286,31 @@ class TableRoomController extends Controller
         if ($table->status !== 'Empty Seat') {
             return response()->json([
                 'type' => 'order',
-                'summary' => 'Unable to delete table',
-                'detail' => "Table $table->table_no is currently checked in. To delete the table, it must be freed up first."
+                'summary' => trans('public.toast.delete_table_warning'),
+                'detail' => trans('public.toast.delete_table_warning_message', ['table_no' => $table->table_no])
             ]);
+        }
+
+        if ($reservations->count() > 0 && $request->params['confirmation'] == true) {
+            $reservations->each(function ($rsvp) {
+                $rsvp->update([
+                    'cancel_type' => 'Others (specify under Remarks)',
+                    'remark' => 'Table has been deleted.',
+                    'handled_by' => auth()->user()->id,
+                    'status' => 'Cancelled',
+                ]);
+
+                activity()->useLog('cancel-reservation')
+                            ->performedOn($rsvp)
+                            ->event('cancelled')
+                            ->withProperties([
+                                'edited_by' => auth()->user()->full_name,
+                                'image' => auth()->user()->getFirstMediaUrl('user'),
+                                'reserved_for' => $rsvp->name,
+                                'reservation_date' => $rsvp->reservation_date,
+                            ])
+                            ->log("Reservation for $rsvp->name on $rsvp->reservation_date is cancelled.");
+            });
         }
 
         $table->update(['state' => 'inactive']);
@@ -305,7 +327,7 @@ class TableRoomController extends Controller
 
         $message = [
             'severity' => 'success',
-            'summary' => "Selected $table->type has been deleted successfully."
+            'summary' => trans('public.toast.table_deleted_success')
         ];
 
         return redirect()->route('table-room')->with(['message' => $message]);

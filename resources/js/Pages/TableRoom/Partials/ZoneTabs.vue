@@ -8,6 +8,8 @@ import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import { useCustomToast } from '@/Composables';
+import { DeleteIllus } from '@/Components/Icons/illus';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     zones: {
@@ -18,36 +20,21 @@ const props = defineProps({
         type: Number,
     }
 });
-const emit = defineEmits(['close']);
-const zonesDetail = ref();
+const emit = defineEmits(['update:zones', 'close']);
 const editModal = ref(false);
 const deleteModal = ref(false);
 const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const initialData = ref(null);
-const tabs = ref([]);
+const confirmationTitle = ref(``);
+const confirmationMessage = ref(``);
+const confirmation = ref(false);
+
 const { showMessage } = useCustomToast();
-
-watch(() => props.zones, (newValue) => {
-    zonesDetail.value = newValue ? newValue : {};
-}, { immediate: true }
-)
-
-
-const populateTabs = () => {
-tabs.value = [{ key: 'All', title: 'All', disabled: false }];
-  for (const zone of props.zones) {
-    if (zone.text) { 
-      tabs.value.push({ key: zone.text, title: zone.text, disabled: false });
-    }
-  }
-};
-
-watch(() => props.zones, populateTabs, {immediate: true});
 
 const form = useForm({
     id: '',
-    // type: '',
+    type: '',
     table_no: '',
     seat: '',
     zone_id: '',
@@ -68,12 +55,13 @@ const capitalize = (str) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-const openEditModal = (table) => {
+const openEditModal = (table, zone) => {
     form.id = table.id,
-    // form.type = table.type,
+    form.type = table.type,
     form.table_no = table.table_no,
     form.seat = table.seat.toString(),
     form.zone_id = table.zone_id,
+    form.zone_name = zone.text,
     editModal.value = true
     
     initialData.value = ({
@@ -84,9 +72,11 @@ const openEditModal = (table) => {
 };
 
 
-const openDeleteModal = (id) => {
-    // form.type = type;
+const openDeleteModal = (type, id) => {
+    form.type = type;
     form.id = id;
+    confirmationTitle.value = wTrans('public.table.delete_table');
+    confirmationMessage.value = wTrans('public.table.delete_table_message');
     deleteModal.value = true;
 }
 
@@ -103,6 +93,12 @@ const closeModal = (status) => {
             } else {
                 editModal.value = false;
                 deleteModal.value = false;
+                confirmation.value = false;
+                
+                setTimeout(() => {
+                    confirmationTitle.value = '';
+                    confirmationMessage.value = '';
+                }, 300)
             }
             break;
         }
@@ -114,6 +110,12 @@ const closeModal = (status) => {
             isUnsavedChangesOpen.value = false;
             editModal.value = false;
             deleteModal.value = false;
+            confirmation.value = false;
+                
+            setTimeout(() => {
+                confirmationTitle.value = '';
+                confirmationMessage.value = '';
+            }, 300)
             break;
         }
     }
@@ -130,7 +132,7 @@ const formSubmit = () => {
                 setTimeout(() => {
                     showMessage({ 
                         severity: 'success',
-                        summary: 'Changes saved.',
+                        summary: wTrans('public.toast.changes_saved'),
                     });
                 }, 200)
             },
@@ -145,6 +147,55 @@ const isFormValid = computed(() => {
     const valid = requiredFields.every(field => Boolean(form[field]));
     return valid;
 });
+
+// Delete inventory item
+const deleteTable = async () => {
+    form.processing = true;
+    try {
+        // Post using axios and get the new order id if new order is created
+        const response = await axios.post(`/table-room/table-room/deleteTable/${form.id}`, {
+            method: 'POST',
+            params: {
+                confirmation: confirmation.value,
+            }
+        });
+
+        if (response.data.type && response.data.type === 'reservation') {
+            confirmation.value = true;
+            confirmationTitle.value = response.data.title;
+            confirmationMessage.value = response.data.message;
+
+            return;
+
+        } else if (response.data.type && response.data.type === 'order') {
+            showMessage({ 
+                severity: 'warn',
+                summary: response.data.summary,
+                detail: response.data.detail,
+            });
+
+            return;
+        }
+        
+        setTimeout(() => {
+            showMessage({ 
+                severity: 'success',
+                summary: wTrans('public.toast.table_deleted_success'),
+            });
+        }, 200);
+
+        emit('update:zones');
+        closeModal('leave');
+        confirmationTitle.value = '';
+        confirmationMessage.value = '';
+        confirmation.value = false;
+        
+    } catch (error) {
+        console.log(error);
+    } finally {
+        form.processing = false;
+    }
+};
 
 watch(form, () => {
     const currentData = ({
@@ -167,7 +218,7 @@ watch(form, () => {
                             <template #title>
                                 <div class="flex flex-col text-center items-center p-6 gap-2">
                                     <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
-                                    <div class="text-base text-grey-900 font-medium">{{ table.seat }} seats</div>
+                                    <div class="text-base text-grey-900 font-medium">{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                 </div>
                             </template>
                             <template #footer>
@@ -175,7 +226,7 @@ watch(form, () => {
                                     <Button 
                                         :type="'button'" 
                                         :size="'md'"
-                                        @click="openEditModal(table)"
+                                        @click="openEditModal(table, zone)"
                                         class="!bg-primary-100 hover:!bg-primary-200 rounded-tl-none rounded-tr-none rounded-br-none rounded-bl-[5px]">
                                         <EditIcon 
                                             class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer" />
@@ -183,7 +234,7 @@ watch(form, () => {
                                     <Button 
                                         :type="'button'" 
                                         :size="'md'"
-                                        @click="openDeleteModal(table.id)"
+                                        @click="openDeleteModal(table.type, table.id)"
                                         class="!bg-primary-600 hover:!bg-primary-700 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-[5px]">
                                         <DeleteIcon
                                             class="w-5 h-5 text-primary-100 hover:text-primary-50 cursor-pointer pointer-events-none" />
@@ -198,7 +249,7 @@ watch(form, () => {
     </div>
 
     <Modal
-        :title="'Edit Table'"
+        :title="$t('public.table.edit_table')"
         :maxWidth="'md'"
         :closeable="true"
         :show="editModal"
@@ -209,7 +260,7 @@ watch(form, () => {
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                 <TextInput
                     :inputName="'table_no'"
-                    :labelText="'Table No.'"
+                    :labelText="$t('public.table_no')"
                     :placeholder="'eg: 1'"
                     :errorMessage="form.errors?.table_no || ''"
                     v-model="form.table_no"
@@ -219,7 +270,7 @@ watch(form, () => {
                 <TextInput
                     :inputName="'seat'"
                     :inputType="'number'"
-                    :labelText="'No. of Seats Available'"
+                    :labelText="$t('public.table.available_seat_numbers')"
                     :placeholder="'number only (eg: 6)'"
                     :errorMessage="form.errors?.seat || ''"
                     v-model="form.seat"
@@ -227,7 +278,7 @@ watch(form, () => {
                 />
                 <Dropdown
                     :inputName="'zone_id'"
-                    :labelText="'Select Zone'"
+                    :labelText="$t('public.table.select_zone')"
                     :inputArray="zones"
                     :dataValue="form.zone_id"
                     :errorMessage="form.errors?.zone_id || ''"
@@ -244,14 +295,14 @@ watch(form, () => {
                 :size="'lg'"
                 @click="closeModal('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :size="'lg'"
-                :disabled="!isFormValid"
+                :disabled="!isFormValid || form.processing"
                 :type="'submit'"
             >
-                Save Changes
+                {{ $t('public.action.save_changes') }}
             </Button>
         </div>
         <Modal
@@ -266,7 +317,7 @@ watch(form, () => {
     </form>
     </Modal>
 
-    <Modal 
+    <!-- <Modal 
         :maxWidth="'2xs'" 
         :show="deleteModal"
         :deleteConfirmation="true"
@@ -297,5 +348,45 @@ watch(form, () => {
                 </div>
             </div>
         </form>
+    </Modal> -->
+
+    <Modal
+        :maxWidth="'2xs'"
+        :closeable="true"
+        :withHeader="false"
+        :show="deleteModal"
+        @close="closeModal('leave')"
+    >
+        <div class="flex flex-col items-center gap-9 rounded-[5px] border border-solid border-primary-200 bg-white m-[-24px]">
+            <div class="w-full flex flex-col items-center gap-[10px] bg-primary-50">
+                <div class="w-full flex pt-2 justify-center items-center">
+                    <DeleteIllus />
+                </div>
+            </div>
+            <div class="flex flex-col px-6 items-center gap-1 self-stretch">
+                <span class="self-stretch text-primary-900 text-center text-lg font-medium ">{{ confirmationTitle }}</span>
+                <span class="self-stretch text-grey-900 text-center text-base font-medium">{{ confirmationMessage }}</span>
+            </div>
+
+            <div class="flex px-6 pb-6 justify-center items-start gap-3 self-stretch">
+                <Button
+                    variant="tertiary"
+                    size="lg"
+                    type="button"
+                    @click="closeModal('leave')"
+                >
+                    {{ $t('public.action.cancel') }}
+                </Button>
+                <Button
+                    variant="red"
+                    size="lg"
+                    type="submit"
+                    :disabled="form.processing"
+                    @click="deleteTable"
+                >
+                    {{ $t('public.action.remove') }}
+                </Button>
+            </div>
+        </div>
     </Modal>
 </template>

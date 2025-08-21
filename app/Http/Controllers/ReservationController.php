@@ -667,6 +667,7 @@ class ReservationController extends Controller
                                 ->get(['id', 'order_id', 'table_no']);
                                 // ->pluck('id')
                                 // ->toArray();
+        // dd($occupiedTables, $bookingDate);
 
         $filteredOccupiedTables = $occupiedTables->filter(function ($table) use ($bookingDate, $reservedBeforeLimit) {
                                             if (!$bookingDate) {
@@ -694,7 +695,9 @@ class ReservationController extends Controller
             $bookingEnd = $bookingDate->copy()->addMinutes($reservedLimit);
 
             // Query for conflicting reservations (for table disabling)
-            $conflictingReservations = Reservation::where(function($query) use ($bookingStart, $bookingEnd) {
+            $rsvpQuery = Reservation::query();
+            
+            $rsvpQuery->where(function($query) use ($bookingStart, $bookingEnd) {
                                                     // Reservation active period overlaps with our booking window
                                                     $query->where(function($q) use ($bookingStart, $bookingEnd) {
                                                             $q->whereRaw('? BETWEEN DATE_SUB(reservation_date, INTERVAL lock_before_minutes MINUTE) AND DATE_ADD(reservation_date, INTERVAL grace_period MINUTE)', 
@@ -706,8 +709,12 @@ class ReservationController extends Controller
                                                             $q->whereRaw('DATE_SUB(reservation_date, INTERVAL lock_before_minutes MINUTE) >= ?', [$bookingStart])
                                                             ->whereRaw('DATE_ADD(reservation_date, INTERVAL grace_period MINUTE) <= ?', [$bookingEnd]);
                                                         });
-                                                })
-                                                ->whereIn('status', ['Pending', 'Delayed'])
+                                                });
+            if ($request->reservation_id) {
+                $rsvpQuery->whereNot('id', $request->reservation_id);
+            }
+
+            $conflictingReservations = $rsvpQuery->whereIn('status', ['Pending', 'Delayed'])
                                                 ->get(['id', 'table_no', 'reservation_date', 'lock_before_minutes', 'grace_period']);
 
             // Get tables to disable
@@ -786,6 +793,7 @@ class ReservationController extends Controller
             'occupied_tables' => array_unique(array_merge($filteredOccupiedTables, $reservedTables)),
             'upcoming_reservations' => $upcomingReservations,
         ];
+        // dd($data);
 
         return response()->json($data);
     }

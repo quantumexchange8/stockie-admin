@@ -7,6 +7,7 @@ import { DeleteIcon, Menu2Icon, PlusIcon } from '@/Components/Icons/solid.jsx';
 import Modal from '@/Components/Modal.vue';
 import { useCustomToast } from "@/Composables";
 import { DeleteIllus } from '@/Components/Icons/illus';
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     zonesArr: {
@@ -40,6 +41,8 @@ const newZones = useForm({
 
 const addZone = () => {
     isEditing.value = false;
+    form.edit_name = "";
+    form.id = "";
     isEdited.value = true;
     newZoneCounter.value++;
     newZones.zones.push({name: '', index: newZoneCounter.value})
@@ -84,7 +87,7 @@ const submit = () => {
                     setTimeout(() => {
                     showMessage({
                         severity: 'success',
-                        summary: 'Zone name has been edited successfully.'
+                        summary: wTrans('public.toast.zone_edited_success')
                     });
                 }, 200);
                     emit('getZoneDetails');
@@ -100,7 +103,7 @@ const submit = () => {
                     emit('close', 'leave');
                     showMessage({
                         severity: 'success',
-                        summary: 'Zone has been added successfully.'
+                        summary: wTrans('public.toast.zone_added_success')
                     });
                 }
             });
@@ -158,6 +161,8 @@ const hideDeleteProductForm = () => {
 }
 
 const startEditing = (zonesArr) => {
+    if (newZones.zones.length > 0) return;
+
     isEditing.value = true;
     form.edit_name = zonesArr.text;
     form.id = zonesArr.value;
@@ -185,8 +190,8 @@ watch(
     { immediate: true } 
 );
 
-watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
-    emit('isDirty', newFormValue.isDirty || newIsEdited);
+watch([newZones, form], ([newZonesFormValue, newFormValue]) => {
+    emit('isDirty', newZonesFormValue.isDirty || newFormValue.isDirty);
 });
 
 </script>
@@ -199,7 +204,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                     <!-- existing zones -->
                     <div v-for="zonesArr in zones" :key="zonesArr.id" class="w-full flex flex-row text-grey-600 h-auto p-3 gap-4">
                         <div v-if="!isEditing || currentZoneId !== zonesArr.value" class="w-full flex flex-row justify-between">
-                            <div class="flex flex-row gap-[12px]">
+                            <div class="flex w-full flex-row gap-[12px]">
                                 <svg 
                                     width="25" 
                                     height="25" 
@@ -215,14 +220,18 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                                         stroke-linejoin="round" />
                                 </svg>
                                 <span
+                                    class="w-full"
                                     @click="startEditing(zonesArr)"
-                                    >
+                                >
                                     {{ zonesArr.text }}
                                 </span>
                             </div>
-                            <div>
-                            <DeleteIcon class="w-6 h-6 text-primary-600 hover:text-primary-700 cursor-pointer"
-                                @click="showDeleteGroupForm($event, zonesArr.value)" /></div>
+                            <div v-if="newZones.zones.length === 0">
+                                <DeleteIcon 
+                                    class="w-6 h-6 text-primary-600 hover:text-primary-700 cursor-pointer"
+                                    @click="showDeleteGroupForm($event, zonesArr.value)" 
+                                />
+                            </div>
                         </div>
                         <template v-if="isEditing && currentZoneId === zonesArr.value">
                             <TextInput
@@ -246,7 +255,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                                 @click="discardChanges()"
                                 class="!w-fit"
                             >
-                                Cancel
+                                {{ $t('public.action.cancel') }}
                             </Button>
 
                             <Button
@@ -259,7 +268,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                                 @click="submit()"
                                 class="!w-fit"
                             >
-                                Save
+                                {{ $t('public.action.save') }}
                             </Button>
                         </template>
                     </div>
@@ -290,7 +299,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             @click="removeAddZone(zones.index)"
                             class="!w-fit"
                         >
-                            Cancel
+                            {{ $t('public.action.cancel') }}
                         </Button>
 
                         <Button
@@ -303,13 +312,14 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             @click="submit()"
                             class="!w-fit"
                         >
-                            Add
+                            {{ $t('public.action.add') }}
                         </Button>
                     </div>
 
                     <!-- buttons -->
                     <div class="flex flex-col gap-4 p-2">
                         <Button
+                            v-if="!isEditing"
                             :type="'button'"
                             :variant="'secondary'" 
                             :size="'lg'" 
@@ -323,7 +333,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                                     class="w-[20px] h-[20px]"
                                 />
                             </template>
-                            New Zone
+                            {{ $t('public.table.new_zone') }}
                         </Button>
 
                         <Button
@@ -335,7 +345,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             v-if="isEditing"
                             @click="submit()"
                         >
-                            {{ isEdited ? 'Save changes' : 'Discard' }}
+                            {{ isEdited ? $t('public.action.save_changes') : $t('public.action.discard') }}
                         </Button>
 
                         <Button
@@ -347,7 +357,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                             v-if="newZones.zones.length > 1"
                             @click="submit()"
                         >
-                            Add Zone
+                            {{ $t('public.table.add_zone') }}
                         </Button>
                     </div>
                 </div>
@@ -381,8 +391,8 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                 </div>
             </div>
             <div class="flex flex-col px-6 items-center gap-1 self-stretch">
-                <span class="self-stretch text-primary-900 text-center text-lg font-medium ">Delete this zone?</span>
-                <span class="self-stretch text-grey-900 text-center text-base font-medium">Table and room in this zone will be deleted altogether. Are you sure you want to delete this zone?</span>
+                <span class="self-stretch text-primary-900 text-center text-lg font-medium ">{{ $t('public.table.delete_zone') }}</span>
+                <span class="self-stretch text-grey-900 text-center text-base font-medium">{{ $t('public.table.delete_zone_message') }}</span>
             </div>
 
             <div class="flex px-6 pb-6 justify-center items-start gap-3 self-stretch">
@@ -392,7 +402,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                     type="button"
                     @click="hideDeleteProductForm"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     variant="red"
@@ -400,7 +410,7 @@ watch([newZones, isEdited], ([newFormValue, newIsEdited]) => {
                     type="submit"
                     @click="deleteZone"
                 >
-                    Remove
+                    {{ $t('public.action.remove') }}
                 </Button>
             </div>
         </div>

@@ -117,19 +117,21 @@ class OrderController extends Controller
 
         // Eager load all necessary relationships with optimized queries
         $zones = Zone::with([
-            'tables:id,table_no,seat,zone_id,status,order_id,is_locked',
-            'tables.orderTables' => function ($query) {
-                $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
-                    ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at')
-                    ->with(['order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
-                        'order.orderTable' => function ($q) {
-                            $q->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
-                                ->select('id', 'order_id', 'table_id')
-                                ->with('table:id,table_no');
-                        },
-                        'order.voucher:id,reward_type,discount']);
-            }
-        ])->get(['id', 'name']);
+                        'tables:id,table_no,seat,zone_id,status,order_id,is_locked',
+                        'tables.orderTables' => function ($query) {
+                            $query->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
+                                ->select('id', 'table_id', 'pax', 'user_id', 'status', 'order_id', 'created_at')
+                                ->with(['order:id,pax,customer_id,amount,voucher_id,total_amount,status,created_at',
+                                    'order.orderTable' => function ($q) {
+                                        $q->whereNotIn('status', ['Order Completed', 'Empty Seat', 'Order Cancelled', 'Order Voided', 'Order Merged'])
+                                            ->select('id', 'order_id', 'table_id')
+                                            ->with('table:id,table_no');
+                                    },
+                                    'order.voucher:id,reward_type,discount']);
+                        }
+                    ])
+                    ->where('status', 'active')
+                    ->get(['id', 'name']);
 
         if ($zones->isEmpty()) {
             return response()->json([]);

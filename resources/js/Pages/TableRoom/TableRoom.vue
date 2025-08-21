@@ -17,9 +17,10 @@ import TabView from '@/Components/TabView.vue';
 import { FilterMatchMode } from 'primevue/api';
 import Toast from '@/Components/Toast.vue';
 import { useCustomToast } from '@/Composables';
+import { wTrans } from 'laravel-vue-i18n';
 
 const home = ref({
-    label: 'Table & Room',
+    label: wTrans('public.table_room_header'),
 });
 
 const props = defineProps({
@@ -46,7 +47,7 @@ const filters = ref({
 });
 
 const populateTabs = () => {
-    tabs.value = [{ key: 'All', title: 'All', disabled: false }];
+    tabs.value = [{ key: 'All', title: wTrans('public.all'), disabled: false }];
     for (const zone of zones.value) {
         if (zone.text) { 
             tabs.value.push({ key: zone.text, title: zone.text, disabled: false });
@@ -151,7 +152,7 @@ const filteredZones = computed(() => {
 </script>
 
 <template>
-    <Head title="Table & Room" />
+    <Head :title="$t('public.table_room_header')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -162,7 +163,7 @@ const filteredZones = computed(() => {
 
         <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 rounded-[5px]">
             <SearchBar 
-                :placeholder="'Search'"
+                :placeholder="$t('public.search')"
                 :inputName="'searchbar'" 
                 :showFilter="false"
                 v-model="filters['global'].value"
@@ -179,10 +180,10 @@ const filteredZones = computed(() => {
                         class="w-6 h-6"
                     />
                 </template>
-                Add Table / Room
+                {{ $t('public.table.add_table_room') }}
             </Button>
             <Modal
-                :title="'Add Table / Room'"
+                :title="$t('public.table.add_table_room')"
                 :show="createFormIsOpen"
                 :maxWidth="'md'"
                 :closeable="true"
@@ -219,12 +220,12 @@ const filteredZones = computed(() => {
                             class="w-[20px] h-[20px]"
                         />
                     </template>
-                    <span class="hidden sm:flex">Manage Zone</span>
+                    <span class="hidden sm:flex whitespace-nowrap">{{ $t('public.table.manage_zone') }}</span>
                 </Button>
                 <Modal
                     :show="isModalOpen"
                     @close="closeModal('close')"
-                    :title="'Manage Zone'"
+                    :title="$t('public.table.manage_zone')"
                     :maxWidth="'md'"
                 >
                     <ManageZone 
@@ -255,11 +256,12 @@ const filteredZones = computed(() => {
                     :zones="filteredZones" 
                     :activeTab="zone.value" 
                     v-if="zone.tables.length > 0"
+                    @update:zones="getZoneDetails"
                 />
                 <div class="flex flex-col items-center text-center" v-else>
                     <EmptyTableIllus />
                     <span class="text-primary-900 text-sm font-medium">
-                        You haven't added any table/room yet...
+                        {{ $t('public.empty.no_table_added') }}
                     </span>
                 </div>
             </template>

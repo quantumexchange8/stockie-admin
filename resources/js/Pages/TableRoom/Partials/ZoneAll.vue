@@ -10,6 +10,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import Accordion from '@/Components/Accordion.vue';
 import { useCustomToast } from '@/Composables';
 import { DeleteIllus } from '@/Components/Icons/illus';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     zones: {
@@ -71,8 +72,8 @@ const openEditModal = (table, zone) => {
 const openDeleteModal = (type, id) => {
     form.type = type;
     form.id = id;
-    confirmationTitle.value = `Delete this ${form.type}?`;
-    confirmationMessage.value = `Are you sure you want to delete the selected ${form.type}? This action cannot be undone.`;
+    confirmationTitle.value = wTrans('public.table.delete_table');
+    confirmationMessage.value = wTrans('public.table.delete_table_message');
     deleteModal.value = true;
 }
 
@@ -123,7 +124,7 @@ const formSubmit = () => {
                 setTimeout(() => {
                     showMessage({ 
                         severity: 'success',
-                        summary: 'Changes saved.',
+                        summary: wTrans('public.toast.changes_saved'),
                     });
                 }, 200)
             },
@@ -135,6 +136,7 @@ const formSubmit = () => {
 
 // Delete inventory item
 const deleteTable = async () => {
+    form.processing = true;
     try {
         // Post using axios and get the new order id if new order is created
         const response = await axios.post(`/table-room/table-room/deleteTable/${form.id}`, {
@@ -164,7 +166,7 @@ const deleteTable = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: `Selected ${form.type} has been deleted successfully.`,
+                summary: wTrans('public.toast.table_deleted_success'),
             });
         }, 200);
 
@@ -176,6 +178,8 @@ const deleteTable = async () => {
         
     } catch (error) {
         console.log(error);
+    } finally {
+        form.processing = false;
     }
 };
 
@@ -217,7 +221,7 @@ watch(form, () => {
                             <template #title>
                                 <div class="flex flex-col text-center items-center p-6 gap-2">
                                     <div class="text-xl text-primary-900 font-bold">{{ table.table_no }}</div>
-                                    <div class="text-base text-grey-900 font-medium">{{ table.seat }} seats</div>
+                                    <div class="text-base text-grey-900 font-medium">{{ table.seat }} {{ $t('public.order.seats') }}</div>
                                 </div>
                             </template>
                             <template #footer>
@@ -248,7 +252,7 @@ watch(form, () => {
     </div>
 
     <Modal
-        :title="'Edit Table'"
+        :title="$t('public.table.edit_table')"
         :maxWidth="'md'"
         :closeable="true"
         :show="editModal"
@@ -259,7 +263,7 @@ watch(form, () => {
                 <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                     <TextInput
                         :inputName="'table_no'"
-                        :labelText="'Table No.'"
+                        :labelText="$t('public.table_no')"
                         :placeholder="'eg: 1'"
                         :errorMessage="form.errors?.table_no || ''"
                         :maxlength="4"
@@ -270,7 +274,7 @@ watch(form, () => {
                     <TextInput
                         :inputName="'seat'"
                         :inputType="'number'"
-                        :labelText="'No. of Seats Available'"
+                        :labelText="$t('public.table.available_seat_numbers')"
                         :placeholder="'number only (eg: 6)'"
                         :errorMessage="form.errors?.seat || ''"
                         v-model="form.seat"
@@ -278,7 +282,7 @@ watch(form, () => {
                     />
                     <Dropdown
                         :inputName="'zone_id'"
-                        :labelText="'Select Zone'"
+                        :labelText="$t('public.table.select_zone')"
                         :placeholder="form.zone_name"
                         :inputArray="zones"
                         :dataValue="form.zone_id"
@@ -296,15 +300,14 @@ watch(form, () => {
                     :size="'lg'"
                     @click="closeModal('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :size="'lg'"
                     :disabled="!isFormValid || form.processing"
                     :type="'submit'"
-                    :class="{ 'opacity-25': form.processing }"
                 >
-                    Save Changes
+                    {{ $t('public.action.save_changes') }}
                 </Button>
             </div>
         </form>
@@ -379,15 +382,16 @@ watch(form, () => {
                     type="button"
                     @click="closeModal('leave')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     variant="red"
                     size="lg"
                     type="submit"
+                    :disabled="form.processing"
                     @click="deleteTable"
                 >
-                    Remove
+                    {{ $t('public.action.remove') }}
                 </Button>
             </div>
         </div>

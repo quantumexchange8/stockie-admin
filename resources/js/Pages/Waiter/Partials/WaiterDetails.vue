@@ -50,8 +50,8 @@ const items = ref([
 const { formatAmount } = transactionFormat();
 const waiter = ref(props.waiter);
 // const attendance = ref(props.attendance);
-const commissionRowsPerPage = ref(1);
-const incentiveRowsPerPage = ref(1);
+const commissionRowsPerPage = ref(11);
+const incentiveRowsPerPage = ref(11);
 const tabs = ref([
     { key: 'Sales', title: 'Sales', disabled: false },
     { key: 'Commission', title: 'Commission', disabled: false },
