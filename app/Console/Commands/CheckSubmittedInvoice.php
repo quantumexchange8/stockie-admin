@@ -67,11 +67,11 @@ class CheckSubmittedInvoice extends Command
         }
 
         $docsStatusApi = $this->env === 'production'
-            ? "https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documents/{$invoice->invoice_uuid}/details"
-            : "https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documents/{$invoice->invoice_uuid}/details";
+            ? "https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documents/{$invoice->uuid}/details"
+            : "https://preprod-api.myinvois.hasil.gov.my/api/v1.0/documents/{$invoice->uuid}/details";
         
         $submiturl = Http::withToken($token)->get($docsStatusApi);
-
+        
         if ($submiturl->successful()) {
             Log::debug('submission ', [
                 'invoice No.: ' => $invoice->invoice_no,
