@@ -48,7 +48,9 @@ const saleTransaction = ref([]);
 const initialSaleTransaction = ref([]);
 const lastMonthSalesTransaction = ref([]);
 const date_filter = ref(''); 
-const lastMonthDate = ref('');
+const startOfLastMonth = ref('');
+const endOfLastMonth = ref('');
+const lastMonthDate = ref([]);
 const detailIsOpen = ref(false);
 const voideIsOpen = ref(false);
 const refundIsOpen = ref(false);
@@ -102,11 +104,11 @@ const fetchLastMonthTransaction = async (filters = {}) => {
 onMounted(() => fetchTransaction());
 onMounted(() => fetchLastMonthTransaction());
 onMounted(() => {
-    const today = dayjs()
-    const startOfLastMonth = today.subtract(1, 'month').startOf('month')
-    const endOfLastMonth = today.subtract(1, 'month').endOf('month')
+    const today = dayjs();
+    startOfLastMonth.value = today.subtract(1, 'month').startOf('month').toDate();
+    endOfLastMonth.value = today.subtract(1, 'month').endOf('month').toDate();
 
-    lastMonthDate.value = `${startOfLastMonth.format('DD/MM/YYYY')} - ${endOfLastMonth.format('DD/MM/YYYY')}`
+    lastMonthDate.value = [startOfLastMonth.value, endOfLastMonth.value];
 })
 
 watch(date_filter, (newValue) => fetchTransaction(newValue));
@@ -366,10 +368,16 @@ const transactionColumn = ref([
 const submitConsolidate = async () => {
 
     try {
+        const startDate = dayjs(lastMonthDate.value[0]).format('DD/MM/YYYY');
+        const endDate = lastMonthDate.value.length > 1 
+            ? dayjs(lastMonthDate.value[1]).format('DD/MM/YYYY') 
+            : dayjs(lastMonthDate.value[0]).format('DD/MM/YYYY');
+
+        const formattedLastMonthDate = `${startDate} - ${endDate}`;
         
         $response = await axios.post('/e-invoice/submit-consolidate', {
             consolidateInvoice: lastMonthSalesTransaction.value,
-            period: lastMonthDate.value,
+            period: formattedLastMonthDate,
         });
 
         if ($response.status === 200) {
@@ -516,9 +524,10 @@ watch(() => searchQuery.value, (newValue) => {
                             :inputName="'date'"
                             :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                             :range="true"
+                            :minDate="startOfLastMonth"
+                            :maxDate="endOfLastMonth"
                             class="w-2/3 sm:w-auto sm:!max-w-[309px]"
                             v-model="lastMonthDate"
-                            disabled
                         />
                     </div>
                 </div>

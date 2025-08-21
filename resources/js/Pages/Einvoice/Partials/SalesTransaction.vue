@@ -237,13 +237,11 @@ const getStatusVariant = (status) => {
 
     const loweredStatus = status.toLowerCase();
     
-    return loweredStatus === 'submitted' 
+    return loweredStatus === 'submitted' || loweredStatus === 'valid'
         ? 'green' 
         : loweredStatus === 'cancelled' 
             ? 'grey'
-            : loweredStatus === 'pending'
-                ? 'orange' 
-                : 'red';
+            : 'red';
 };
 
 const capFirstLetter = (status) => {
