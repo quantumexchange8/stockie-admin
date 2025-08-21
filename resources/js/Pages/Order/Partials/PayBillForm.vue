@@ -1269,7 +1269,7 @@ const printPreviewReceipt = async () => {
             <!-- Main -->
             <div class="flex items-start size-full gap-4 self-stretch">
                 <!-- Bill Overview -->
-                <div class="flex w-1/3 flex-col items-start gap-y-8 self-stretch">
+                <div class="flex w-1/3 flex-col items-start gap-y-8 self-stretch max-h-[calc(100dvh-15.8rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pr-1">
                     <div class="flex flex-col items-start gap-y-8 self-stretch">
                         <div class="flex flex-col py-2 px-3 gap-y-1 items-center self-stretch">
                             <p class="text-grey-900 text-md font-normal">{{ $t('public.order.balance_due') }}</p>
@@ -1305,7 +1305,7 @@ const printPreviewReceipt = async () => {
                     </div>
 
                     <!-- Looped entered payment method and amount -->
-                    <div class="flex flex-col items-start gap-4 self-stretch max-h-[calc(100dvh-36rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
+                    <div class="flex flex-col items-start gap-4 self-stretch">
                         <template v-for="(transaction, index) in sortedTransactionMethods" :key="index">
                             <div 
                                 class="flex p-4 flex-col self-stretch gap-2 items-start rounded-[5px] border border-grey-100 shadow-sm cursor-pointer"
