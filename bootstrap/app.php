@@ -44,7 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('customers:update-tier')->yearly();
         $schedule->command('tables:reset-locked-tables')->everyFiveSeconds();
         $schedule->command('sessions:clear-expired')->hourly();
-        $schedule->command('check:submitted-invoice')->everyFiveMinutes();
+        // $schedule->command('check:submitted-invoice')->everyFiveMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
