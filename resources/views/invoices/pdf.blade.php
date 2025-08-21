@@ -33,9 +33,9 @@
                 <td>
                     <div class="merchant-name">{{ $merchant->merchant_name }}</div>
                     <div style="max-width:250px">Address: {{ $merchant->merchant_address_line1 }}, {{ $merchant->merchant_address_line2 ? $merchant->merchant_address_line2 . ',' : '' }} {{ $merchant->postal_code }} {{ $merchant->area}}, Malaysia</div>
-                    <div>Reg.No: {{ $merchant->brn_no }}</div>
-                    <div>Contact: {{ $merchant->contact }}</div>
-                    <div>Email: {{ $merchant->email }}</div>
+                    <div>Reg.No: {{ $merchant->registration_no }}</div>
+                    <div>Contact: {{ $merchant->merchant_contact }}</div>
+                    <div>Email: {{ $merchant->email_address }}</div>
                 </td>
                 <td class="right">
                     <div class="submission-uid">E-Invoice Version: 1.0</div>
