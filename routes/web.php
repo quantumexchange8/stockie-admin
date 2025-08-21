@@ -452,7 +452,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::post('/submit-consolidate', [EInvoiceController::class, 'submitConsolidate'])->name('e-invoice.submit-consolidate');
         Route::post('/cancel-submission', [EInvoiceController::class, 'cancelSubmission'])->name('e-invoice.cancel-submission');
         Route::post('/refund-consolidate', [EInvoiceController::class, 'refundConsolidate'])->name('e-invoice.refund-consolidate');
-        
+        Route::get('/downloadInvoice/{id}/download', [EInvoiceController::class, 'downloadInvoice'])->name('downloadInvoice');
     });
 
     /********* Global use **********/

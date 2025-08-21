@@ -13,6 +13,7 @@ use App\Models\PayoutConfig;
 use App\Models\State;
 use App\Models\Token;
 use App\Services\RunningNumberService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -1191,5 +1192,77 @@ class EInvoiceController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    public function downloadInvoice($id)
+    {
+        $invoice = ConsolidatedInvoice::with(['invoice_child' => function ($query) {
+            $query->where('invoice_status', 'consolidated')
+                ->orderBy('receipt_no', 'asc');
+        }])->find($id);
+        $merchant = ConfigMerchant::with(['msicCode', 'classificationCode'])->find('1');
+
+        $children = $invoice->invoice_child;
+
+        $ranges = [];
+        $start = null;
+        $prev = null;
+        $batchTotal = 0;
+        $batchStartNo = null;
+
+        foreach ($children as $child) {
+            $current = $child->receipt_no;
+            $grandTotal = $child->grand_total;
+
+            // Extract the numeric part from receipt_no (e.g. RCPT00000001 → 1)
+            preg_match('/\d+$/', $current, $matches);
+            $number = (int)$matches[0];
+
+            if ($start === null) {
+                // First element
+                $start = $current;
+                $prev = $number;
+                $batchStartNo = $number;
+                $batchTotal = $grandTotal;
+            } elseif ($number === $prev + 1) {
+                // Still consecutive → extend range
+                $prev = $number;
+                $batchTotal += $grandTotal;
+            } else {
+                // Break → save the range
+                $ranges[] = [
+                    "receipt_batch" => ($start === "RCPT" . str_pad($prev, strlen($matches[0]), "0", STR_PAD_LEFT))
+                        ? $start
+                        : $start . ' - ' . "RCPT" . str_pad($prev, strlen($matches[0]), "0", STR_PAD_LEFT),
+                    "sum_amount" => $batchTotal
+                ];
+
+                // Start new range
+                $start = $current;
+                $prev = $number;
+                $batchStartNo = $number;
+                $batchTotal = $grandTotal;
+            }
+        }
+
+         if ($start !== null) {
+            $ranges[] = [
+                "receipt_batch" => ($start === "RCPT" . str_pad($prev, strlen($matches[0]), "0", STR_PAD_LEFT))
+                    ? $start
+                    : $start . ' - ' . "RCPT" . str_pad($prev, strlen($matches[0]), "0", STR_PAD_LEFT),
+                "sum_amount" => $batchTotal
+            ];
+        }
+
+        $prodUrl = $this->env === 'production'
+            ? 'https://preprod.myinvois.hasil.gov.my/'
+            : 'https://preprod.myinvois.hasil.gov.my/';
+
+        $generateQr = $prodUrl . $invoice->invoice_uuid . '/share/' . $invoice->longId;
+
+        return Pdf::loadView('invoices.pdf', compact('invoice', 'merchant', 'ranges', 'generateQr'))
+            ->setPaper('a4')   // optional
+            ->stream("invoice-{$invoice->invoice_no}.pdf");
+
     }
 }
