@@ -102,10 +102,12 @@ class EInvoiceController extends Controller
         $c_period_end = Carbon::createFromFormat('d/m/Y', trim($endDate))->endOfDay();
 
         // Check Consolidate Invoice Row
-        if (!$this->checkConsolidateRow($c_period_start, $c_period_end, $request->consolidateInvoice)) {
-            return redirect()->back()->withErrors('You can only submit 100 e-Invoices at a time.');
-        }
+        $result = $this->checkConsolidateRow($c_period_start, $c_period_end, $request->consolidateInvoice);
 
+        if ($result !== true) {
+            return $result; // 🚀 return the 400 response
+        }
+        
         $payout = PayoutConfig::first();
 
         // 1. create consolidate parent id
@@ -1271,35 +1273,35 @@ class EInvoiceController extends Controller
 
     }
 
-    protected function checkConsolidateRow($start, $end, $consolidateInvoice)
+    private function checkConsolidateRow($start, $end, $consolidateInvoice)
     {
-        $totalInvoice = count($consolidateInvoice);
+       $totalInvoice = count($consolidateInvoice);
 
-        // 1. Rule: 100 maximum e-Invoices per submission
         if ($totalInvoice > 100) {
-            return redirect()->back()->withErrors('You can only submit 100 e-Invoices at a time.');
+            return response()->json([
+                'error' => 'You can only submit 100 e-Invoices at a time.'
+            ], 400);
         }
 
-        // 2. Rule: 300 KB per e-Invoice
         foreach ($consolidateInvoice as $invoice) {
             $encodedInvoice = base64_encode(json_encode($invoice, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             if (strlen($encodedInvoice) > 300 * 1024) {
-                return redirect()->back()->withErrors('One of the invoices exceeds 300 KB limit.');
+                return response()->json([
+                    'error' => 'One of the invoices exceeds 300 KB limit.'
+                ], 400);
             }
         }
 
-        // 3. Rule: 5 MB total submission size
         $submissionPayload = [
             'documents' => $consolidateInvoice
         ];
-        $submissionJson  = json_encode($submissionPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $submissionJson = json_encode($submissionPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
         if (strlen($submissionJson) > 5 * 1024 * 1024) {
-            return redirect()->back()->withErrors('The submission exceeds 5 MB limit.');
+            return response()->json([
+                'error' => 'The submission exceeds 5 MB limit.'
+            ], 400);
         }
-
-        // NOTE: strlen($submissionJson) in KB
-
-        return true; // all good
-
+        return true;
     }
 }

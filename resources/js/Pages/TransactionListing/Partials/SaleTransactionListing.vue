@@ -10,7 +10,7 @@ import { computed, onMounted, ref, watch, watchEffect } from 'vue';
 import { FilterMatchMode } from "primevue/api";
 import Tag from '@/Components/Tag.vue';
 import Modal from '@/Components/Modal.vue';
-import { transactionFormat } from '@/Composables';
+import { transactionFormat, useCustomToast } from '@/Composables';
 import TabView from "@/Components/TabView.vue";
 import SalesDetail from './SalesDetail.vue';
 import ProductSold from './ProductSold.vue';
@@ -58,6 +58,7 @@ const confirmRefundIsOpen = ref(false);
 const consolidateIsOpen = ref(false);
 const selectedVal = ref(null);
 const { formatAmount, formatDate } = transactionFormat();
+const { showMessage } = useCustomToast();
 const tabs = ref([
     { key: 'Sales Detail', title: 'Sales Detail', disabled: false },
     { key: 'Product Sold', title: 'Product Sold', disabled: false },
@@ -375,18 +376,24 @@ const submitConsolidate = async () => {
 
         const formattedLastMonthDate = `${startDate} - ${endDate}`;
         
-        $response = await axios.post('/e-invoice/submit-consolidate', {
+        const response = await axios.post('/e-invoice/submit-consolidate', {
             consolidateInvoice: lastMonthSalesTransaction.value,
             period: formattedLastMonthDate,
         });
 
-        if ($response.status === 200) {
+        if (response.status === 200) {
             closeConsolidate();
             fetchTransaction();
         }
 
     } catch (error) {
         console.error('error', error);
+        setTimeout(() => {
+            showMessage({
+                severity: 'error',
+                summary: error.response.data.error,
+            })
+        }, 200);
     }
 
 }
