@@ -75,7 +75,7 @@ const props = defineProps({
     selectedTab: Number,
 })
 
-const fetchTransaction = async (filters = {}) => {
+const fetchTransaction = async (filters = []) => {
 
     try {
         const response = await axios.get('/transactions/getSalesTransaction', {
@@ -90,10 +90,12 @@ const fetchTransaction = async (filters = {}) => {
     }
 };
 
-const fetchLastMonthTransaction = async (filters = {}) => {
+const fetchLastMonthTransaction = async (filters = []) => {
 
     try {
-        const response = await axios.get('/e-invoice/getLastMonthSales');
+        const response = await axios.get('/e-invoice/getLastMonthSales', {
+            params: { dateFilter: filters }
+        });
 
         lastMonthSalesTransaction.value = response.data;
 
@@ -113,6 +115,7 @@ onMounted(() => {
 })
 
 watch(date_filter, (newValue) => fetchTransaction(newValue));
+watch(lastMonthDate, (newValue) => fetchLastMonthTransaction(newValue));
 
 const rowType = {
     rowGroups: false,
@@ -223,6 +226,9 @@ const openConsolidate = () => {
 }
 const closeConsolidate = () => {
     consolidateIsOpen.value = false;
+    setTimeout(() => {
+        lastMonthDate.value = [startOfLastMonth.value, endOfLastMonth.value];
+    }, 300);
 }
 
 const updateRefundQty = (itemId, qty, productId) => {

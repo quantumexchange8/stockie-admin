@@ -38,23 +38,19 @@ class EInvoiceController extends Controller
 
     public function getLastMonthSales(Request $request)
     {
-        
-        $startOfLastMonth = Carbon::now()->subMonth()->startOfMonth(); // e.g. 2025-02-01
-        $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();     // e.g. 2025-02-29
-
         $dateFilter = $request->input('dateFilter');
+        
+        $startDate = $dateFilter && count($dateFilter) > 0
+            ? Carbon::parse($request->dateFilter[0])->timezone('Asia/Kuala_Lumpur')->startOfDay()
+            : Carbon::now()->timezone('Asia/Kuala_Lumpur')->subMonth()->startOfMonth();
 
-        if ($dateFilter && ($dateFilter >= $startOfLastMonth && $dateFilter <= $endOfLastMonth)) {
-            $startOfLastMonth = Carbon::createFromFormat('Y-m-d', $dateFilter)->startOfDay();
-            $endOfLastMonth = Carbon::createFromFormat('Y-m-d', $dateFilter)->endOfDay();
-        } else {
-            $startOfLastMonth = Carbon::now()->subMonth()->startOfMonth();
-            $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();
-        }
+        $endDate = $dateFilter && count($dateFilter) > 0
+            ? Carbon::parse($request->dateFilter[1] ?? $request->dateFilter[0])->timezone('Asia/Kuala_Lumpur')->endOfDay()
+            : Carbon::now()->timezone('Asia/Kuala_Lumpur')->subMonth()->endOfMonth();
 
         $transactions = Payment::query()
             ->where('invoice_status', 'pending')
-            ->whereBetween('receipt_end_date', [$startOfLastMonth, $endOfLastMonth])
+            ->whereBetween('receipt_end_date', [$startDate, $endDate])
             ->get();
 
         return response()->json($transactions);
