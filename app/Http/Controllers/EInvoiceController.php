@@ -101,6 +101,11 @@ class EInvoiceController extends Controller
         $c_period_start = Carbon::createFromFormat('d/m/Y', trim($startDate))->startOfDay();
         $c_period_end = Carbon::createFromFormat('d/m/Y', trim($endDate))->endOfDay();
 
+        // Check Consolidate Invoice Row
+        if (!$this->checkConsolidateRow($c_period_start, $c_period_end, $request->consolidateInvoice)) {
+            return redirect()->back()->withErrors('You can only submit 100 e-Invoices at a time.');
+        }
+
         $payout = PayoutConfig::first();
 
         // 1. create consolidate parent id
@@ -1263,6 +1268,38 @@ class EInvoiceController extends Controller
         return Pdf::loadView('invoices.pdf', compact('invoice', 'merchant', 'ranges', 'generateQr'))
             ->setPaper('a4')   // optional
             ->stream("invoice-{$invoice->invoice_no}.pdf");
+
+    }
+
+    protected function checkConsolidateRow($start, $end, $consolidateInvoice)
+    {
+        $totalInvoice = count($consolidateInvoice);
+
+        // 1. Rule: 100 maximum e-Invoices per submission
+        if ($totalInvoice > 100) {
+            return redirect()->back()->withErrors('You can only submit 100 e-Invoices at a time.');
+        }
+
+        // 2. Rule: 300 KB per e-Invoice
+        foreach ($consolidateInvoice as $invoice) {
+            $encodedInvoice = base64_encode(json_encode($invoice, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            if (strlen($encodedInvoice) > 300 * 1024) {
+                return redirect()->back()->withErrors('One of the invoices exceeds 300 KB limit.');
+            }
+        }
+
+        // 3. Rule: 5 MB total submission size
+        $submissionPayload = [
+            'documents' => $consolidateInvoice
+        ];
+        $submissionJson  = json_encode($submissionPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (strlen($submissionJson) > 5 * 1024 * 1024) {
+            return redirect()->back()->withErrors('The submission exceeds 5 MB limit.');
+        }
+
+        // NOTE: strlen($submissionJson) in KB
+
+        return true; // all good
 
     }
 }
