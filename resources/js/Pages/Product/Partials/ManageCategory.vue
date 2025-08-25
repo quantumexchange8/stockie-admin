@@ -10,6 +10,7 @@ import OverlayPanel from "@/Components/OverlayPanel.vue";
 import ReassignedProductCategory from "./ReassignedProductCategory.vue";
 import Dropdown from "@/Components/Dropdown.vue";
 import Tag from "@/Components/Tag.vue";
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     categoryArr: {
@@ -35,8 +36,8 @@ const isDirty = ref(false);
 const isUnsavedChangesOpen = ref(false);
 const isAfterAction = ref(false);
 const keepTypesArray = ref([
-    { text: 'Keep in quantity or cm', value: 'all' },
-    { text: 'Keep in quantity', value: 'qty' },
+    { text: wTrans('public.menu.keep_in_qty_cm'), value: 'all' },
+    { text: wTrans('public.menu.keep_in_qty'), value: 'qty' },
     // { text: 'Keep in cm', value: 'cm' }
 ]);
 
@@ -89,7 +90,7 @@ const submit = async () => {
                 setTimeout(() => {
                     showMessage({
                         severity: 'success',
-                        summary: 'Category has been edited successfully.'
+                        summary: wTrans('public.toast.edit_category_success')
                     });
                 }, 200);
 
@@ -111,7 +112,7 @@ const submit = async () => {
                 setTimeout(() => {
                     showMessage({
                         severity: 'success',
-                        summary: 'Category has been added successfully.'
+                        summary: wTrans('public.toast.add_category_success')
                     });
                 }, 200);
 
@@ -205,9 +206,9 @@ const updateCategories = (event) => {
 
 const getKeepTypeText = (keepType) => {
     switch (keepType) {
-        case 'all': return 'Keep in quantity or cm';
-        case 'qty': return 'Keep in quantity';
-        case 'cm': return 'Keep in cm';
+        case 'all': return wTrans('public.menu.keep_in_qty_cm').value;
+        case 'qty': return wTrans('public.menu.keep_in_qty').value;
+        case 'cm': return wTrans('public.menu.keep_in_cm').value;
     }
 }
 
@@ -289,7 +290,7 @@ watch(isEditing, (newVal) => {
                                 @click="cancelEditing"
                                 class="!size-fit"
                             >
-                                Cancel
+                                {{ $t('public.action.cancel') }}
                             </Button>
                             <Button
                                 :variant="'primary'" 
@@ -297,7 +298,7 @@ watch(isEditing, (newVal) => {
                                 :disabled="newCategories.processing"
                                 class="!size-fit"
                             >
-                                Save
+                                {{ $t('public.action.save') }}
                             </Button>
                         </template>
                     </div>
@@ -326,7 +327,7 @@ watch(isEditing, (newVal) => {
                             @click="removeAddCategory(categories.index)"
                             class="!size-fit"
                         >
-                            Cancel
+                            {{ $t('public.action.cancel') }}
                         </Button>
                         <Button
                             :variant="'primary'" 
@@ -334,7 +335,7 @@ watch(isEditing, (newVal) => {
                             :disabled="newCategories.processing"
                             class="!size-fit"
                         >
-                            Add
+                            {{ $t('public.action.add') }}
                         </Button>
                     </div>
 
@@ -352,7 +353,7 @@ watch(isEditing, (newVal) => {
                             <template #icon>
                                 <PlusIcon class="size-5"/>
                             </template>
-                            New Category
+                            {{ $t('public.action.new_category') }}
                         </Button>
                     </div>
                 </div>
@@ -361,7 +362,7 @@ watch(isEditing, (newVal) => {
     </form>
 
     <Modal 
-        :title="'Reassign Category'"
+        :title="$t('public.menu.reassign_category')"
         :show="reassignCategoryFormIsOpen" 
         :maxWidth="'sm'" 
         :closeable="true" 

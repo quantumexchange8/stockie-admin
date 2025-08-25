@@ -9,6 +9,7 @@ import TotalProductChart from './Partials/TotalProductChart.vue';
 import TopSellingProductTable from './Partials/TopSellingProductTable.vue';
 import Toast from '@/Components/Toast.vue';
 import { useCustomToast } from '@/Composables/index.js';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     products: Array,
@@ -17,25 +18,25 @@ const props = defineProps({
 });
 
 const home = ref({
-    label: 'Menu Management',
+    label: wTrans('public.menu_management_header'),
 });
 
 // only for 'list' variant of table component
 const productColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'availability', header: 'Availability', width: '13', sortable: false},
-    {field: 'product_name', header: 'Product Name', width: '50', sortable: false},
-    {field: 'price', header: 'Price', width: '15', sortable: false},
-    {field: 'stock_left', header: 'Left', width: '15', sortable: false},
+    {field: 'availability', header: wTrans('public.menu.availability'), width: '13', sortable: false},
+    {field: 'product_name', header: wTrans('public.product_name'), width: '50', sortable: false},
+    {field: 'price', header: wTrans('public.price'), width: '15', sortable: false},
+    {field: 'stock_left', header: wTrans('public.left_header'), width: '15', sortable: false},
     {field: 'action', header: '', width: '7', sortable: false, edit: true}
 ]);
 
 const topSellingProductColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'product', header: 'Product', width: '45', sortable: false},
-    {field: 'category', header: 'Category', width: '18', sortable: false},
-    {field: 'sold', header: 'Sold', width: '15', sortable: false},
-    {field: 'status', header: 'Status', width: '22', sortable: false},
+    {field: 'product', header: wTrans('public.product'), width: '45', sortable: false},
+    {field: 'category', header: wTrans('public.category'), width: '18', sortable: false},
+    {field: 'sold', header: wTrans('public.sold'), width: '15', sortable: false},
+    {field: 'status', header: wTrans('public.status'), width: '22', sortable: false},
 ]);
 
 const { flashMessage } = useCustomToast();
@@ -133,7 +134,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Menu Management" />
+    <Head :title="$t('public.menu_management_header')" />
 
     <AuthenticatedLayout>
         <template #header>

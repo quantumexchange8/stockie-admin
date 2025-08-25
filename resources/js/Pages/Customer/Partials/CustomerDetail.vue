@@ -19,6 +19,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import Textarea from '@/Components/Textarea.vue';
 import { deleteReason, expiryDates } from '@/Composables/constants';
 import { MovingIllus } from '@/Components/Icons/illus';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps ({
     customer: Object
@@ -309,6 +310,13 @@ const getKeepItemExpiryStatus = (keepItem) => {
 
 const totalPointsExpiringSoon = computed(() => {
     return expiringPointHistories.value.reduce((total, record) => total + Number(record.expire_balance), 0).toFixed(2);
+});
+
+const getDeleteReasons = computed(() => {
+    return deleteReason.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
 });
 
 onMounted(() => fetchExpiringPointHistories());
@@ -743,7 +751,7 @@ watch((editForm), (newValue) => {
                     :labelText="'Select Deletion Reason'"
                     :errorMessage="deleteForm.errors.remark ? deleteForm.errors.remark[0] : ''"
                     :inputName="'remark'"
-                    :inputArray="deleteReason"
+                    :inputArray="getDeleteReasons"
                     :placeholder="'Select'"
                     v-model="deleteForm.remark"
                 />

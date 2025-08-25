@@ -4,7 +4,6 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue'
 import { useCustomToast } from '@/Composables/index.js';
-import { cancelTypes } from '@/Composables/constants.js';
 import Textarea from '@/Components/Textarea.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -13,8 +12,18 @@ const props = defineProps({
 });
 
 const page = usePage();
-const userId = computed(() => page.props.auth.user.data.id)
-const isUnsavedChangesOpen = ref(false)
+const userId = computed(() => page.props.auth.user.data.id);
+const isUnsavedChangesOpen = ref(false);
+
+const cancelTypes = ref([
+    { text: 'Change of plan', value: 'Change of plan' },
+    { text: 'Feeling unwell', value: 'Feeling unwell' },
+    { text: 'Bad weather', value: 'Bad weather' },
+    { text: 'Work conflicts', value: 'Work conflicts' },
+    { text: 'Family emergency', value: 'Family emergency' },
+    { text: 'Forgotten reservation', value: 'Forgotten reservation' },
+    { text: 'Others (specify under Remarks)', value: 'Others (specify under Remarks)' },
+]);
 
 const { showMessage } = useCustomToast();
 

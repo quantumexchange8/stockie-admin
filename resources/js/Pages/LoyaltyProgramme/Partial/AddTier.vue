@@ -13,6 +13,7 @@ import { periodOption, rewardOption, emptyReward } from "@/Composables/constants
 import { useCustomToast } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
 import Modal from "@/Components/Modal.vue";
+import { wTrans } from "laravel-vue-i18n";
 
 //------------------------
 // DNR = DO NOT REMOVE code that has until confirmed is not needed by requirements
@@ -136,6 +137,13 @@ const handleFileSelect = (event) => {
 }
 
 const selectLogo = (logo) => (selectedLogo.value = checkFileInstance(logo) ? logo : selectedLogo.value);
+
+const getRewardOptions = computed(() => {
+    return rewardOption.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
 
 watch(selectedLogo, (newValue) => form.icon = newValue, { immediate: false });
 
@@ -267,7 +275,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <Dropdown
                                 :labelText="rewardList[index].reward_type !== '' ? `Reward Type ${index + 1}` : 'Select Reward Type'"
                                 :placeholder="'Select'"
-                                :inputArray="rewardOption"
+                                :inputArray="getRewardOptions"
                                 :inputName="'reward_type_' + index"
                                 :hint-text="'The reward can only be redeemed once.'"
                                 :dataValue="reward.reward_type"

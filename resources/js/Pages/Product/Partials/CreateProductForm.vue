@@ -12,6 +12,7 @@ import InputError from "@/Components/InputError.vue";
 import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { redeemOptions, defaultProductItem } from '@/Composables/constants';
 import Modal from '@/Components/Modal.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -96,6 +97,21 @@ const updateInventoryStockCount = async (index, id) => {
     }
 }
 
+const getTranslatedStatus = (status) => {
+    switch (status) {
+        case 'In stock': return wTrans('public.in_stock').value;
+        case 'Low in stock': return wTrans('public.low_in_stock').value;
+        case 'Out of stock': return wTransChoice('public.out_of_stock', 0).value;
+    }
+}
+
+const getRedemptionOptions = computed(() => {
+    return redeemOptions.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
+
 const isFormValid = computed(() => ['product_name', 'price', 'category_id'].every(field => form[field]) && form.items.length > 0);
 
 watch(() => form.bucket, (newValue) => {
@@ -124,7 +140,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             />
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 flex-[1_0_0] self-stretch">
                 <div class="flex items-start gap-6 self-stretch">
-                    <p class="text-grey-900 font-normal text-base">This product comes in a set (Bucket Product)</p>
+                    <p class="text-grey-900 font-normal text-base">{{ $t('public.menu.product_set_info') }}</p>
                     <Toggle
                         :inputName="'bucket'"
                         :checked="form.bucket"
@@ -141,17 +157,17 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="col-span-full xl:col-span-4 flex flex-col w-full">
                                 <Dropdown
                                     :inputName="'inventory_item_id_' +  i"
-                                    :labelText="'Select an item'"
+                                    :labelText="$t('public.select_item')"
                                     :inputArray="inventoriesArr"
                                     :grouped="true"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.inventory_item_id']  : ''"
-                                    :hintText="item.status !== 'In stock' ? item.status : ''"
+                                    :hintText="item.status !== 'In stock' ? getTranslatedStatus(item.status) : ''"
                                     v-model="item.inventory_item_id"
                                     class="[&>div:nth-child(3)]:!text-primary-700"
                                     @onChange="updateInventoryStockCount(i, $event)"
                                 >
                                     <template #value>
-                                        {{ item.inventory_item_id ? item.formatted_item_name : 'Select' }}
+                                        {{ item.inventory_item_id ? item.formatted_item_name : $t('public.select') }}
                                     </template>
                                     <template #optionGroup="group">
                                         <div class="flex flex-nowrap items-center gap-3">
@@ -169,7 +185,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             </div>
                             <NumberCounter
                                 v-if="form.bucket"
-                                :labelText="'Quantity of item in this set'"
+                                :labelText="$t('public.set_item_qty')"
                                 :inputName="'qty_' + i"
                                 :minValue="1"
                                 :maxValue="item.inventory_stock_qty"
@@ -194,13 +210,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <template #icon>
                                 <PlusIcon class="size-6" />
                             </template>
-                            Another Item
+                            {{ $t('public.another_item') }}
                         </Button>
                     </div>
                     <div class="flex flex-col items-start gap-4 self-stretch">
                         <TextInput
                             :inputId="'product_name'"
-                            :labelText="form.items.length > 1 ? 'Set name' : 'Product name'"
+                            :labelText="form.items.length > 1 ? $t('public.set_name') : $t('public.product_name')"
                             :placeholder="'eg: Heineken Light 500ml'"
                             :errorMessage="form.errors?.product_name || ''"
                             v-model="form.product_name"
@@ -212,7 +228,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 :inputId="'price'"
                                 :inputType="'number'"
                                 withDecimal
-                                :labelText="'Price'"
+                                :labelText="$t('public.price')"
                                 :iconPosition="'left'"
                                 :errorMessage="form.errors?.price || ''"
                                 v-model="form.price"
@@ -222,14 +238,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             </TextInput>
                             <Dropdown
                                 :inputName="'category_id'"
-                                :labelText="'Select category'"
+                                :labelText="$t('public.category')"
                                 :inputArray="categoryArr"
                                 :errorMessage="form.errors?.category_id || ''"
                                 v-model="form.category_id"
                             />
                         </div>
                         <RadioButton
-                            :optionArr="redeemOptions"
+                            :optionArr="getRedemptionOptions"
                             :checked="form.is_redeemable"
                             v-model:checked="form.is_redeemable"
                         />
@@ -238,13 +254,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             :inputId="'point'"
                             :inputType="'number'"
                             withDecimal
-                            :labelText="'Redeemed with'"
+                            :labelText="$tChoice('public.point', 0)"
                             :iconPosition="'right'"
                             class="!w-1/3 [&>div>input]:text-center"
                             :errorMessage="form.errors?.point || ''"
                             v-model="form.point"
                         >
-                            <template #prefix>pts</template>
+                            <template #prefix>{{ $t('public.pts') }}</template>
                         </TextInput>
                     </div>
                 </div>
@@ -257,13 +273,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :size="'lg'"
                 @click="unsaved('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Add
+                {{ $t('public.action.add') }}
             </Button>
         </div>
         <Modal

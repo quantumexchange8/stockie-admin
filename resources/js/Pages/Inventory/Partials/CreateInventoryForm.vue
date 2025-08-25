@@ -11,6 +11,7 @@ import { keepOptions, defaultInventoryItem } from '@/Composables/constants';
 import RadioButton from '@/Components/RadioButton.vue';
 import { useCustomToast } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -195,6 +196,13 @@ const removeItem = (index) => {
     }
 }
 
+const getKeepOptions = computed(() => {
+    return keepOptions.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
+
 // watch(
 //     () => form.items.map(item => item.item_code),
 //     () => validateForm(), // Runs all validations, not just item codes
@@ -282,7 +290,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 />
                             </div>
                             <RadioButton
-                                :optionArr="keepOptions"
+                                :optionArr="getKeepOptions"
                                 :checked="item.keep"
                                 :errorMessage="form.errors ? form.errors['items.' + i + '.keep'] : ''"
                                 v-model:checked="item.keep"

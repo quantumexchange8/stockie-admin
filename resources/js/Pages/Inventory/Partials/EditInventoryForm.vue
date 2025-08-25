@@ -12,6 +12,7 @@ import { useCustomToast } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 import { DeleteCustomerIllust, DeleteIllus, ProductDeactivationIllust } from '@/Components/Icons/illus';
 import Textarea from '@/Components/Textarea.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -159,6 +160,13 @@ const deleteModalDescription = computed(() => {
         : 'You cannot delete this item until you deactivate the products that include it. Would you like to proceed to deactivate those products?';
 });
 
+const getKeepOptions = computed(() => {
+    return keepOptions.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
+
 watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 </script>
 
@@ -249,7 +257,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                            </div>
                             <div class="flex items-start gap-10">
                                 <RadioButton
-                                    :optionArr="keepOptions"
+                                    :optionArr="getKeepOptions"
                                     :checked="item.keep"
                                     v-model:checked="item.keep"
                                 />

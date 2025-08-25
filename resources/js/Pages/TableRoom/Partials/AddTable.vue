@@ -5,7 +5,6 @@ import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
 import RadioButton from '@/Components/RadioButton.vue';
-import { tableType } from '@/Composables/constants';
 import { useCustomToast } from '@/Composables';
 import Modal from '@/Components/Modal.vue';
 import { wTrans } from 'laravel-vue-i18n';
@@ -22,6 +21,11 @@ const { showMessage } = useCustomToast();
 const emit = defineEmits(['close', 'isDirty']);
 const zones = ref();
 const isUnsavedChangesOpen = ref(false);
+
+// const tableType = ref([
+//     { text: 'Table', value: 'table' },
+//     { text: 'Room', value: 'room' },
+// );
 
 watch(() => props.zonesArr, (newValue) => {
     zones.value = newValue ? newValue : {};

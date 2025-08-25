@@ -255,7 +255,7 @@ onMounted(() => {
 
 <template>
     <div class="flex flex-col p-6 items-center rounded-[5px] gap-y-6 border border-red-100 overflow-hidden md:max-w-[463px]">
-        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Total Product</span>
+        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.menu.total_product') }}</span>
 
         <div class="flex flex-col justify-content-center items-center justify-center size-full" v-if="allProducts.length > 0 && !isLoading">
             <Chart 
@@ -269,7 +269,7 @@ onMounted(() => {
         </div>
         <div v-else>
             <UndetectableIllus class="w-44 h-44" />
-            <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+            <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.no_data') }}</span>
         </div>
 
         <!-- Scrollable legend container -->

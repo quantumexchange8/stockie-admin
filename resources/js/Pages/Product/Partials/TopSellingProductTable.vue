@@ -2,6 +2,7 @@
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import Tag from '@/Components/Tag.vue';
 import Table from '@/Components/Table.vue'
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -27,12 +28,20 @@ const props = defineProps({
     },
 })
 
+const getTranslatedStatus = (status) => {
+    switch (status) {
+        case 'In stock': return wTrans('public.in_stock').value;
+        case 'Low in stock': return wTrans('public.low_in_stock').value;
+        case 'Out of stock': return wTransChoice('public.out_of_stock', 0).value;
+    }
+}
+
 </script>
 
 <template>
     <div class="flex flex-col w-full p-6 gap-6 items-center rounded-[5px] border border-primary-100">
         <div class="flex items-center justify-between w-full">
-            <span class="w-full text-start text-md font-medium text-primary-900 whitespace-nowrap">Top Selling Product</span>
+            <span class="w-full text-start text-md font-medium text-primary-900 whitespace-nowrap">{{ $t('public.menu.top_selling_product') }}</span>
         </div>
         <div class="flex flex-col gap-4 justify-center overflow-y-auto w-full">
             <Table 
@@ -48,7 +57,7 @@ const props = defineProps({
                 <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </template>
                 <template #product="row">
                     <div class="flex flex-nowrap items-start gap-4">
@@ -75,14 +84,14 @@ const props = defineProps({
                                         : row.status === 'Low in stock' 
                                             ? 'yellow' 
                                             : 'green'"
-                        :value="row.status"
+                        :value="getTranslatedStatus(row.status)"
                     />
                 </template>
             </Table>
             
             <div class="flex flex-col items-center justify-center" v-else>
                 <UndetectableIllus class="w-56 h-56" />
-                <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.no_data') }}</span>
             </div>
         </div>
     </div>

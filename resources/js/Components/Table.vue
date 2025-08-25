@@ -11,6 +11,7 @@ import Tag from '@/Components/Tag.vue';
 import Paginator from 'primevue/paginator';
 import Toggle from './Toggle.vue';
 import { transactionFormat, useCustomToast } from '@/Composables';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -235,6 +236,14 @@ const checkAvailability = (item) => {
 
     return forms[item.id]?.processing || isLowInQty || itemIsDelete;
 };
+
+const getTranslatedStatus = (status) => {
+    switch (status) {
+        case 'In stock': return wTranss('public.in_stock').value;
+        case 'Low in stock': return wTrans('public.low_in_stock').value;
+        case 'Out of stock': return wTransChoice('public.out_of_stock', 0).value;
+    }
+}
 
 watch(() => props.rows, () => {
     currentPage.value = 1;
@@ -512,7 +521,7 @@ watch(paginatedRows, (newValue) => {
             <template #groupfooter="slotProps" v-if="mergedRowType.rowGroups">
                 <slot name="groupfooter" :="slotProps.data">
                     <div class="pr-[50px] text-sm font-semibold text-grey-950">
-                        Total Stock: {{ totalStockByGroup[slotProps.data.inventory.name] }}
+                        {{ $t('public.total_stock') }}: {{ totalStockByGroup[slotProps.data.inventory.name] }}
                     </div>
                 </slot>
             </template> 
@@ -643,7 +652,7 @@ watch(paginatedRows, (newValue) => {
                                     @click="redirectAction(mergedActions.view(item.id))"
                                 >
                                     <div :class="['absolute size-full !z-10 bg-black', item.status === 'Out of stock' ? 'opacity-50' : 'opacity-0 hidden']"></div>
-                                    <span class="absolute !z-20 top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.status === 'Out of stock'">Out of Stock</span>
+                                    <span class="absolute !z-20 top-[calc(50%-1rem)] left-[calc(50%-2.5rem)] bottom-0 text-white text-base font-medium" v-if="item.status === 'Out of stock'">{{ $tChoice('public.out_of_stock', 1) }}</span>
                                     <img 
                                         :src="item.image ? item.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt="ProductImage" 
@@ -667,7 +676,7 @@ watch(paginatedRows, (newValue) => {
                             <div class="flex flex-col items-start gap-y-2 justify-between size-full min-h-[117px]">
                                 <div class="flex flex-col items-start gap-y-1 size-full">
                                     <div class="w-full flex gap-2 items-center">
-                                        <Tag value="Set" v-if="item.bucket === 'set'"/>
+                                        <Tag :value="$t('public.set_header')" v-if="item.bucket === 'set'"/>
                                         <span class="w-full self-stretch text-primary-950 text-md font-semibold overflow-hidden text-ellipsis whitespace-nowrap">{{ item.product_name }}</span>
                                     </div>
                                     <div v-for="items in item.discountItems" v-if="item.discount_id !== null" class="flex flex-col items-start">
@@ -692,8 +701,8 @@ watch(paginatedRows, (newValue) => {
                                     :class="item.status === 'In stock' ? 'text-green-700' 
                                             : item.status === 'Low in stock' ? 'text-yellow-700' 
                                             : 'text-primary-600'">
-                                            <p v-if="item.status === 'Out of stock'">{{ item.status }}</p>
-                                            <p v-else>{{ item.bucket === 'set' ? `${item.stock_left} set left` : `${item.stock_left} left` }}</p>
+                                            <p v-if="item.status === 'Out of stock'">{{ getTranslatedStatus(item.status) }}</p>
+                                            <p v-else>{{ item.bucket === 'set' ? `${item.stock_left} ${$t('public.set')} ${$t('public.left')}` : `${item.stock_left} ${$t('public.left')}` }}</p>
                                     </span>
                                 </div>
                             </div>

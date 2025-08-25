@@ -10,6 +10,7 @@ import Modal from "@/Components/Modal.vue";
 import RadioButton from "@/Components/RadioButton.vue";
 import Label from "@/Components/Label.vue";
 import { employementTypeOptions } from "@/Composables/constants";
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     waiters: {
@@ -87,6 +88,13 @@ const requiredFields = ['full_name', 'phone_temp', 'email', 'role_id', 'employme
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
 })
+
+const getEmployementTypeOptions = computed(() => {
+    return employementTypeOptions.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
 
 onMounted(() => fetchWaiterPositions());
 
@@ -198,7 +206,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                         Employment type
                                     </Label>
                                     <RadioButton
-                                        :optionArr="employementTypeOptions"
+                                        :optionArr="getEmployementTypeOptions"
                                         :checked="form.employment_type"
                                         :errorMessage="form.errors?.employment_type || ''"
                                         v-model:checked="form.employment_type"
