@@ -2,17 +2,18 @@
 import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
-import { NoImageIcon, PercentageIcon, SearchIdTypeIcon, SearchTaxPayerIcon } from '@/Components/Icons/solid';
+import { ClipboardIcon, NoImageIcon, PercentageIcon, SearchIdTypeIcon, SearchTaxPayerIcon } from '@/Components/Icons/solid';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/Table.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast, usePhoneUtils } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import DateInput from '@/Components/Date.vue';
 import dayjs from 'dayjs';
 import Modal from '@/Components/Modal.vue';
+import Label from '@/Components/Label.vue';
 
 const props = defineProps({
     merchant: {
@@ -22,10 +23,10 @@ const props = defineProps({
 })
 
 const idTypeArr = [
-    { value: 'NRIC'},
-    { value: 'PASSPORT'},
-    { value: 'BRN'},
-    { value: 'ARMY'},
+    { text: 'NRIC', value: 'NRIC'},
+    { text: 'PASSPORT', value: 'PASSPORT'},
+    { text: 'BRN', value: 'BRN'},
+    { text: 'ARMY', value: 'ARMY'},
 ]
 
 const emit = defineEmits(['refetchMerchant']);
@@ -47,6 +48,7 @@ const searchType = ref(null);
 const taxpayernameVal = ref(null);
 const idType = ref(null);
 const idVal = ref(null);
+const tinVal = ref(null);
 
 const getResults = async () => {
     isLoading.value = true
@@ -250,8 +252,21 @@ const editCutOffTime = async () => {
 const openSearchTinModal = () => {
     isSearchTinOpen.value = true
 }
+
+const resetTinSearch = () => {
+    searchType.value = null;
+    taxpayernameVal.value = null;
+    idType.value = null;
+    idVal.value = null;
+    tinVal.value = null;
+};
+
 const closeSearchTinModal = () => {
     isSearchTinOpen.value = false
+
+    setTimeout(() => {
+        resetTinSearch();
+    }, 300);
 }
 
 const searchTin = async () => {
@@ -263,6 +278,9 @@ const searchTin = async () => {
             idType: idType.value,
             TINValue: idVal.value,
         })
+
+        tinVal.value = response.data;
+
     } catch (error) {
         console.error('error: ', error);
     }
@@ -297,6 +315,11 @@ const removeImage = () => {
     merchantForm.image = '';
     merchantForm.merchant_image = '';
 };
+
+const copyToClipboard = () => {
+    // Write to clipboard
+    navigator.clipboard.writeText(tinVal.value);
+}
 
 watch(() => props.merchant, (newValue) => {
     merchant_detail.value = newValue;
@@ -528,8 +551,9 @@ onMounted(() => {
                                 </template>
                             </Dropdown> 
                             
-                            <div class="flex flex-col gap-2">
-                                <InputText value="Search TIN" />
+                            <div class="flex flex-col items-start">
+                                <!-- <TextInput value="Search TIN" /> -->
+                                <Label :class="'mb-1 text-xs !font-medium text-grey-900'">Search TIN</Label>
                                 <Button @click="openSearchTinModal" type="button" >Search</Button>
                             </div>
                             
@@ -703,54 +727,64 @@ onMounted(() => {
             :show="isSearchTinOpen"
             @close="closeSearchTinModal"
         >
-            <div v-if="!searchType" class="flex flex-col md:flex-row gap-5 items-center justify-center">
-                <div  class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'taxpayerName'" >
-                    <SearchTaxPayerIcon class="w-10 h-10" />
-                    <div>Search Taxpayer Name</div>
+            <div v-if="!tinVal">
+                <div v-if="!searchType" class="flex flex-col md:flex-row gap-5 items-center justify-center">
+                    <div  class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'taxpayerName'" >
+                        <SearchTaxPayerIcon class="w-10 h-10" />
+                        <div>Search Taxpayer Name</div>
+                    </div>
+                    <div class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'idType'">
+                        <SearchIdTypeIcon class="w-10 h-10" />
+                        <div>Search by ID Type</div>
+                    </div>
                 </div>
-                <div class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'idType'">
-                    <SearchIdTypeIcon class="w-10 h-10" />
-                    <div>Search by ID Type</div>
-                </div>
-            </div>
-            <div class="flex flex-col gap-5" v-if="searchType === 'taxpayerName'">
-                <TextInput 
-                    :inputName="'taxpayernameVal'"
-                    :labelText="'Taxpayer Name'"
-                    :required="true"
-                    v-model="taxpayernameVal"
-                />
-
-                <div class="flex items-center gap-3">
-                    <Button size="md" variant="secondary" @click="(searchType = null, taxpayernameVal = null)" >Back</Button>
-                    <Button size="md" @click="searchTin">Search</Button>
-                </div>
-                
-            </div>
-
-            <div class="flex flex-col gap-5" v-if="searchType === 'idType'">
-                <div class="flex flex-col gap-3">
-                    <Dropdown 
-                        :inputName="'idType'"
-                        :labelText="'ID Type'"
-                        :required="true"
-                        :filter="false"
-                        :inputArray="idTypeArr"
-                        :dataValue="idType"
-                        v-model="idType"
-                    />
+                <div class="flex flex-col gap-5" v-if="searchType === 'taxpayerName'">
                     <TextInput 
-                        :inputName="'idVal'"
-                        :labelText="'ID Value'"
+                        :inputName="'taxpayernameVal'"
+                        :labelText="'Taxpayer Name'"
                         :required="true"
-                        v-model="idVal"
-                        :disabled="idType === null"
+                        v-model="taxpayernameVal"
                     />
+
+                    <div class="flex items-center gap-3">
+                        <Button size="md" variant="secondary" @click="resetTinSearch" >Back</Button>
+                        <Button size="md" @click="searchTin">Search</Button>
+                    </div>
+                    
                 </div>
-                <div class="flex items-center gap-3">
-                    <Button size="md" variant="secondary" @click="(searchType = null, idType = null, idVal = null)" >Back</Button>
-                    <Button size="md" @click="searchTin">Search</Button>
+
+                <div class="flex flex-col gap-5" v-if="searchType === 'idType'">
+                    <div class="flex flex-col gap-3">
+                        <Dropdown 
+                            :inputName="'idType'"
+                            :labelText="'ID Type'"
+                            :required="true"
+                            :filter="false"
+                            :inputArray="idTypeArr"
+                            :dataValue="idType"
+                            v-model="idType"
+                        />
+                        <TextInput 
+                            :inputName="'idVal'"
+                            :labelText="'ID Value'"
+                            :required="true"
+                            v-model="idVal"
+                        />
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <Button size="md" variant="secondary" @click="resetTinSearch" >Back</Button>
+                        <Button size="md" @click="searchTin">Search</Button>
+                    </div>
                 </div>
+            </div>
+
+            <div class="flex flex-col gap-5 justify-center items-center" v-else>
+                <div class="flex justify-end gap-x-2 items-center">
+                    <p class="text-grey-900 text-base font-bold text-center truncate w-32">
+                        {{ tinVal ?? '-' }}
+                    </p>
+                </div>
+                <Button size="md" variant="secondary" @click="copyToClipboard" >Copy</Button>
             </div>
         </Modal>
     </div>
