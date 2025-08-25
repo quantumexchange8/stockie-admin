@@ -226,6 +226,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::put('/editCutOffTime', [ConfigPromotionController::class, 'editCutOffTime'])->name('configurations.editCutOffTime');
         Route::put('/editAddress', [ConfigPromotionController::class, 'editAddress'])->name('configurations.editAddress');
         Route::put('/editTax', [ConfigPromotionController::class, 'editTax'])->name('configurations.editTax');
+        Route::post('/searchTIN', [ConfigPromotionController::class, 'searchTIN'])->name('configurations.searchTIN');
 
         /******* Points Settings ********/
         Route::get('/getPoint', [ConfigPromotionController::class, 'getPoint'])->name('configurations.getPoint');

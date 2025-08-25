@@ -2,7 +2,7 @@
 import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
-import { NoImageIcon, PercentageIcon } from '@/Components/Icons/solid';
+import { NoImageIcon, PercentageIcon, SearchIdTypeIcon, SearchTaxPayerIcon } from '@/Components/Icons/solid';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/Table.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -12,6 +12,7 @@ import axios from 'axios';
 import { onMounted, ref, watch } from 'vue';
 import DateInput from '@/Components/Date.vue';
 import dayjs from 'dayjs';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     merchant: {
@@ -19,6 +20,13 @@ const props = defineProps({
         default: () => {},
     },
 })
+
+const idTypeArr = [
+    { value: 'NRIC'},
+    { value: 'PASSPORT'},
+    { value: 'BRN'},
+    { value: 'ARMY'},
+]
 
 const emit = defineEmits(['refetchMerchant']);
 
@@ -34,6 +42,11 @@ const msic_codes = ref([]);
 const merchant_detail = ref(props.merchant);
 const cutOffTime = ref(null);
 const phonePrefixes = ref([{ text: '+60', value: '+60'}]);
+const isSearchTinOpen = ref(false);
+const searchType = ref(null);
+const taxpayernameVal = ref(null);
+const idType = ref(null);
+const idVal = ref(null);
 
 const getResults = async () => {
     isLoading.value = true
@@ -233,6 +246,27 @@ const editCutOffTime = async () => {
         isLoading.value = false;
     }
 }
+
+const openSearchTinModal = () => {
+    isSearchTinOpen.value = true
+}
+const closeSearchTinModal = () => {
+    isSearchTinOpen.value = false
+}
+
+const searchTin = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.post('/configurations/searchTIN', {
+            searchType: searchType.value,
+            taxpayerName: taxpayernameVal.value,  
+            idType: idType.value,
+            TINValue: idVal.value,
+        })
+    } catch (error) {
+        console.error('error: ', error);
+    }
+};
 
 const editTaxes = async () => {
     // taxForm.errors = {};
@@ -493,6 +527,12 @@ onMounted(() => {
                                     <span class="text-grey-500 text-sm font-base text-wrap max-w-full">{{ codes[slotProps.index].description }}</span>
                                 </template>
                             </Dropdown> 
+                            
+                            <div class="flex flex-col gap-2">
+                                <InputText value="Search TIN" />
+                                <Button @click="openSearchTinModal" type="button" >Search</Button>
+                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -655,5 +695,63 @@ onMounted(() => {
                 </template>
             </div>
         </form>
+
+        <Modal
+            maxWidth="sm"
+            closeable
+            title="Select TIN"
+            :show="isSearchTinOpen"
+            @close="closeSearchTinModal"
+        >
+            <div v-if="!searchType" class="flex flex-col md:flex-row gap-5 items-center justify-center">
+                <div  class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'taxpayerName'" >
+                    <SearchTaxPayerIcon class="w-10 h-10" />
+                    <div>Search Taxpayer Name</div>
+                </div>
+                <div class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'idType'">
+                    <SearchIdTypeIcon class="w-10 h-10" />
+                    <div>Search by ID Type</div>
+                </div>
+            </div>
+            <div class="flex flex-col gap-5" v-if="searchType === 'taxpayerName'">
+                <TextInput 
+                    :inputName="'taxpayernameVal'"
+                    :labelText="'Taxpayer Name'"
+                    :required="true"
+                    v-model="taxpayernameVal"
+                />
+
+                <div class="flex items-center gap-3">
+                    <Button size="md" variant="secondary" @click="(searchType = null, taxpayernameVal = null)" >Back</Button>
+                    <Button size="md" @click="searchTin">Search</Button>
+                </div>
+                
+            </div>
+
+            <div class="flex flex-col gap-5" v-if="searchType === 'idType'">
+                <div class="flex flex-col gap-3">
+                    <Dropdown 
+                        :inputName="'idType'"
+                        :labelText="'ID Type'"
+                        :required="true"
+                        :filter="false"
+                        :inputArray="idTypeArr"
+                        :dataValue="idType"
+                        v-model="idType"
+                    />
+                    <TextInput 
+                        :inputName="'idVal'"
+                        :labelText="'ID Value'"
+                        :required="true"
+                        v-model="idVal"
+                        :disabled="idType === null"
+                    />
+                </div>
+                <div class="flex items-center gap-3">
+                    <Button size="md" variant="secondary" @click="(searchType = null, idType = null, idVal = null)" >Back</Button>
+                    <Button size="md" @click="searchTin">Search</Button>
+                </div>
+            </div>
+        </Modal>
     </div>
 </template>
