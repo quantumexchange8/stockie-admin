@@ -53,7 +53,7 @@ const {
     inputType,
     hintText,
     // placeholder,
-    disabled,
+    // disabled,
     required
 } = props;
 
@@ -64,6 +64,7 @@ const emit = defineEmits(["update:modelValue", "blur"]);
 const input = ref(null);
 const inputLabel = ref('');
 const placeholderText = ref(props.placeholder);
+const isDisabled = ref(props.disabled);
 
 const focus = () => input.value?.focus();
 
@@ -145,6 +146,14 @@ watch(
     { immediate: true }
 );
 
+watch(
+    () => props.disabled,
+    (newValue) => {
+        isDisabled.value = newValue;
+    },
+    { immediate: true }
+);
+
 onMounted(() => {
     if (input.value.hasAttribute("autofocus")) {
         input.value.focus();
@@ -160,8 +169,8 @@ onMounted(() => {
             :class="[
                 'mb-1 text-xs !font-medium',
                 {
-                    'text-grey-900': disabled === false,
-                    'text-grey-500': disabled === true,
+                    'text-grey-900': isDisabled === false,
+                    'text-grey-500': isDisabled === true,
                 },
             ]"
             v-if="labelText !== ''"
@@ -188,8 +197,8 @@ onMounted(() => {
                     'active:border-red-300 active:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)]',
                     'focus:border-red-300 focus:shadow-[0px_0px_6.4px_0px_rgba(255,96,102,0.49)] focus:ring-0',
                     {
-                        'border-grey-100': disabled === true,
-                        'border-grey-300': disabled === false,
+                        'border-grey-100': isDisabled === true,
+                        'border-grey-300': isDisabled === false,
                         'border-red-500 focus:border-red-500 hover:border-red-500':
                             errorMessage,
                         'pl-11 pr-11 text-center': $slots.prefix,
@@ -213,7 +222,7 @@ onMounted(() => {
                 @blur="$emit('blur', $event)"
                 ref="input"
                 :autocomplete="inputType === 'password' ? 'current-password' : ''"
-                :disabled="disabled"
+                :disabled="isDisabled"
                 :maxlength="maxlength"
                 :placeholder="placeholderText"
             />

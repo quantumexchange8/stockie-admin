@@ -761,13 +761,13 @@ onMounted(() => {
                             :required="true"
                             :filter="false"
                             :inputArray="idTypeArr"
-                            :dataValue="idType"
                             v-model="idType"
                         />
                         <TextInput 
                             :inputName="'idVal'"
                             :labelText="'ID Value'"
                             :required="true"
+                            :disabled="!idType"
                             v-model="idVal"
                         />
                     </div>

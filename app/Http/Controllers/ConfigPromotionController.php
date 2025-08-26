@@ -632,7 +632,6 @@ class ConfigPromotionController extends Controller
 
     public function searchTIN(Request $request)
     {
-        dd($request->all());
         $merchantDetail = ConfigMerchant::first();
         $checkToken = Token::latest()->first();
         $token = $this->fetchToken($merchantDetail, $checkToken);
