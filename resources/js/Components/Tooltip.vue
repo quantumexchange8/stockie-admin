@@ -5,9 +5,58 @@ const props = defineProps({
     message: String,
     position: {
         type: String,
-        default: 'top-center',
+        default: 'top', // 'top', 'bottom', 'left', 'right'
     }
 });
+
+const side = computed(() => {
+    const p = props.position.toLowerCase();
+    if (["top", "bottom", "left", "right"].includes(p)) return p;
+    return "top";
+});
+
+const opts = computed(() => ({
+    value: props.message,
+    pt: {
+        root: {
+            class: [
+                // Position and Shadows
+                'absolute bg-primary-50 rounded py-1 px-3 shadow-[0px_6px_8.3px_-4px_rgba(16,24,40,0.10)] !z-[1113]',
+                // Spacing
+                {
+                    'ml-1': props.position === 'right',
+                    '-ml-1': props.position === 'left',
+                    '-mt-1': props.position === 'top' || (!props.position === 'right' && !props.position === 'left' && !props.position === 'top' && !props.position === 'bottom'),
+                    'mt-1': props.position === 'bottom'
+                }
+            ]
+        },
+        arrow: {
+            class: [
+                'absolute size-0 border-solid bg-transparent',
+                {
+                    // Right-aligned arrow (triangle pointing left)
+                    'border-y-[0.25rem] border-r-[0.25rem] border-l-0 border-transparent border-r-primary-50': props.position === 'right' || (!props.position === 'right' && !props.position === 'left' && !props.position === 'top' && !props.position === 'bottom'),
+                    // Left-aligned arrow (triangle pointing right)
+                    'border-y-[0.25rem] border-l-[0.25rem] border-r-0 border-transparent border-l-primary-50': props.position === 'left',
+                    // Top-aligned arrow (triangle pointing down)
+                    'border-x-[0.25rem] border-t-[0.25rem] border-b-0 border-transparent border-t-primary-50': props.position === 'top',
+                    // Bottom-aligned arrow (triangle pointing up)
+                    'border-x-[0.25rem] border-b-[0.25rem] border-t-0 border-transparent border-b-primary-50': props.position === 'bottom',
+                },
+                {
+                    '-mt-1 !-left-1': props.position === 'right',
+                    '-mt-1 !-right-1': props.position === 'left',
+                    '-ml-1 !-bottom-1': props.position === 'top' || (!props.position === 'right' && !props.position === 'left' && !props.position === 'top' && !props.position === 'bottom'),
+                    '-ml-1 !-top-1': props.position === 'bottom',
+                }
+            ]
+        },
+        text: {
+            class: ['text-primary-900 font-normal text-2xs leading-normal rounded whitespace-pre-wrap font-normal']
+        }
+    }
+}));
 
 // const { position } = props
 
@@ -82,57 +131,9 @@ const props = defineProps({
 </style> -->
 
 <template>
-    <span 
-        v-tooltip="{
-            value: message,
-            pt: {
-                root: {
-                    class: [
-                        // Position and Shadows
-                        'absolute bg-primary-50 rounded py-1 px-3 shadow-[0px_6px_8.3px_-4px_rgba(16,24,40,0.10)]',
-                        // Spacing
-                        {
-                            'ml-1': props.position === right,
-                            '-ml-1': props.position === left,
-                            '-mt-1': props.position === top || (!props.position === right && !props.position === left && !props.position === top && !props.position === bottom),
-                            'mt-1': props.position === bottom
-                        }
-                    ]
-                },
-                arrow: {
-                    class: [
-                        'absolute size-0 border-solid bg-transparent',
-                        {
-                            // Right-aligned arrow (triangle pointing left)
-                            'border-y-[0.25rem] border-r-[0.25rem] border-l-0 border-transparent border-r-primary-50': props.position === right || (!props.position === right && !props.position === left && !props.position === top && !props.position === bottom),
-                            // Left-aligned arrow (triangle pointing right)
-                            'border-y-[0.25rem] border-l-[0.25rem] border-r-0 border-transparent border-l-primary-50': props.position === left,
-                            // Top-aligned arrow (triangle pointing down)
-                            'border-x-[0.25rem] border-t-[0.25rem] border-b-0 border-transparent border-t-primary-50': props.position === top,
-                            // Bottom-aligned arrow (triangle pointing up)
-                            'border-x-[0.25rem] border-b-[0.25rem] border-t-0 border-transparent border-b-primary-50': props.position === bottom,
-                        },
-                        {
-                            '-mt-1 !-left-1': props.position === right,
-                            '-mt-1 !-right-1': props.position === left,
-                            '-ml-1 !-bottom-1': props.position === top || (!props.position === right && !props.position === left && !props.position === top && !props.position === bottom),
-                            '-ml-1 !-top-1': props.position === bottom,
-                        }
-                    ]
-                },
-                text: {
-                    class: ['text-primary-900 font-normal text-2xs leading-normal rounded whitespace-pre-wrap font-normal']
-                }
-            }
-        }"
-    >
-        <slot></slot>
-    </span>
-
-    <!-- <div 
-        :class="classes" 
-        :data-tip="message"
-    >
-        <slot></slot>
-    </div> -->
+    <span v-tooltip.top="opts" v-if="side === 'top'"><slot /></span>
+    <span v-tooltip.bottom="opts" v-else-if="side === 'bottom'"><slot /></span>
+    <span v-tooltip.left="opts" v-else-if="side === 'left'"><slot /></span>
+    <span v-tooltip.right="opts" v-else-if="side === 'right'"><slot /></span>
+    <span v-else></span>
 </template>

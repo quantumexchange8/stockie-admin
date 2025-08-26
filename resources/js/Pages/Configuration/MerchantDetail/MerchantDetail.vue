@@ -2,7 +2,7 @@
 import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
-import { ClipboardIcon, NoImageIcon, PercentageIcon, SearchIdTypeIcon, SearchTaxPayerIcon } from '@/Components/Icons/solid';
+import { CheckIcon, ClipboardIcon, NoImageIcon, PercentageIcon, SearchIdTypeIcon, SearchTaxPayerIcon } from '@/Components/Icons/solid';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/Table.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -14,6 +14,7 @@ import DateInput from '@/Components/Date.vue';
 import dayjs from 'dayjs';
 import Modal from '@/Components/Modal.vue';
 import Label from '@/Components/Label.vue';
+import Tooltip from '@/Components/Tooltip.vue';
 
 const props = defineProps({
     merchant: {
@@ -49,6 +50,7 @@ const taxpayernameVal = ref(null);
 const idType = ref(null);
 const idVal = ref(null);
 const tinVal = ref(null);
+const tinNumIsCopied = ref(false);
 
 const getResults = async () => {
     isLoading.value = true
@@ -254,19 +256,18 @@ const openSearchTinModal = () => {
 }
 
 const resetTinSearch = () => {
-    searchType.value = null;
-    taxpayernameVal.value = null;
-    idType.value = null;
-    idVal.value = null;
-    tinVal.value = null;
+    setTimeout(() => {
+        searchType.value = null;
+        taxpayernameVal.value = null;
+        idType.value = null;
+        idVal.value = null;
+        tinVal.value = null;
+    }, 500);
 };
 
 const closeSearchTinModal = () => {
     isSearchTinOpen.value = false
-
-    setTimeout(() => {
-        resetTinSearch();
-    }, 300);
+    resetTinSearch();
 }
 
 const searchTin = async () => {
@@ -319,6 +320,13 @@ const removeImage = () => {
 const copyToClipboard = () => {
     // Write to clipboard
     navigator.clipboard.writeText(tinVal.value);
+
+    tinNumIsCopied.value = true;
+
+    showMessage({
+        severity: 'success',
+        summary: 'TIN number copied successfully!'
+    });
 }
 
 watch(() => props.merchant, (newValue) => {
@@ -779,12 +787,26 @@ onMounted(() => {
             </div>
 
             <div class="flex flex-col gap-5 justify-center items-center" v-else>
-                <div class="flex justify-end gap-x-2 items-center">
+                <div class="flex justify-end gap-x-2 items-center" >
                     <p class="text-grey-900 text-base font-bold text-center truncate w-32">
                         {{ tinVal ?? '-' }}
                     </p>
                 </div>
-                <Button size="md" variant="secondary" @click="copyToClipboard" >Copy</Button>
+                <Tooltip
+                    :message="'Copy the TIN number'"
+                    :position="'top'"
+                    class="w-full"
+                >
+                    <Button 
+                        size="md" 
+                        variant="secondary" 
+                        class="w-full"
+                        @click="copyToClipboard" 
+                    >
+                        {{ tinNumIsCopied ? 'Copied' : 'Copy' }}
+                        <span class="pl-1" v-if="tinNumIsCopied"><CheckIcon class="shrink-0 text-green-900" /></span>
+                    </Button>
+                </Tooltip>
             </div>
         </Modal>
     </div>
