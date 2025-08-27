@@ -32,7 +32,7 @@ class CallbackEinvoiceController extends Controller
 
         if ($eCode === $result['token']) {
 
-            if ($data['callback_type'] && $data['callback_type'] === 'update-status') {
+            if (isset($data['callback_type']) && $data['callback_type'] === 'update-status') {
                 $result = [
                     "receipt_no" => $data['invoice_no'],
                     "submitted_uuid" => $data['submission_uuid'],
@@ -59,7 +59,7 @@ class CallbackEinvoiceController extends Controller
                     'status' => 'success',
                     'message' => 'Invoice updated successfully',
                 ], 200);
-                
+
             } else {
                 $storeInvoice = ConsolidatedInvoice::create([
                     'c_invoice_no' => $result['receipt_no'],
