@@ -28,35 +28,67 @@ class CallbackEinvoiceController extends Controller
 
         $payoutConfig = PayoutConfig::first();
         $transaction = Payment::where('receipt_no', $result['receipt_no'])->first();
-        $eCode = md5($result['receipt_no'] . 1 . $payoutConfig->api_key);
+        $eCode = md5($result['receipt_no'] . $payoutConfig->merchant_id . $payoutConfig->api_key);
 
         if ($eCode === $result['token']) {
 
-            $storeInvoice = ConsolidatedInvoice::create([
-                'c_invoice_no' => $result['receipt_no'],
-                'docs_type' => 'single_submission',
-                'c_amount' => $transaction->total_amount,
-                'c_total_amount' => $transaction->grand_total,
-                'status' => $result['status'],
-                'submitted_uuid' => $result['submitted_uuid'],
-                'uuid' => $result['uuid'],
-                'c_datetime' => $result['submission_date'],
-            ]);
+            if ($data['callback_type'] && $data['callback_type'] === 'update-status') {
+                $result = [
+                    "receipt_no" => $data['invoice_no'],
+                    "submitted_uuid" => $data['submission_uuid'],
+                    "uuid" => $data['invoice_uuid'],
+                    "longId" => $data['longId'],
+                    "status" => $data["status"],
+                    "submitted_at" => $data["submission_date"],
+                    "invoice_datetime" => $data["invoice_datetime"],
+                ];
 
-            $transaction->update([
-                'invoice_status' => $result['status'],
-                'submitted_uuid' => $result['submitted_uuid'],
-                'uuid' => $result['uuid'],
-                'submission_date' => $result['submission_date'],
-                'consolidated_parent_id' => $storeInvoice->id,
-            ]);
+                $updateInvoice = ConsolidatedInvoice::where('c_invoice_no', $result['receipt_no'])->first();
 
-            Log::info('Transaction updated ReceiptNo.: ', ['receipt' => $result['receipt_no']]);
+                $updateInvoice->update([
+                    'submitted_uuid' => $data['submission_uuid'],
+                    'uuid' => $data['invoice_uuid'],
+                    "longId" => $data['longId'],
+                    'status' => $result['status'],
+                    "submitted_at" => $data["submission_date"],
+                    'invoice_datetime' => $data['invoice_datetime'],
+                ]);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Invoice updated successfully',
-            ], 200);
+                Log::info('Consolidate updated ReceiptNo.: ', ['receipt' => $data['invoice_no']]);
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Invoice updated successfully',
+                ], 200);
+                
+            } else {
+                $storeInvoice = ConsolidatedInvoice::create([
+                    'c_invoice_no' => $result['receipt_no'],
+                    'docs_type' => 'single_submission',
+                    'c_amount' => $transaction->total_amount,
+                    'c_total_amount' => $transaction->grand_total,
+                    'status' => $result['status'],
+                    'submitted_uuid' => $result['submitted_uuid'],
+                    'uuid' => $result['uuid'],
+                    'c_datetime' => $result['submission_date'],
+                ]);
+
+                $transaction->update([
+                    'invoice_status' => $result['status'],
+                    'submitted_uuid' => $result['submitted_uuid'],
+                    'uuid' => $result['uuid'],
+                    'submission_date' => $result['submission_date'],
+                    'consolidated_parent_id' => $storeInvoice->id,
+                ]);
+
+                Log::info('Transaction updated ReceiptNo.: ', ['receipt' => $result['receipt_no']]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Invoice updated successfully',
+                ], 200);
+            }
+
+            
 
         } else {
             Log::info('eCode not match');
