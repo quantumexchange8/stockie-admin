@@ -22,11 +22,12 @@ import { MovingIllus } from '@/Components/Icons/illus';
 import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps ({
-    customer: Object
+    targetCustomer: Object
 })
 const { showMessage } = useCustomToast();
 const emit = defineEmits(['update:customerKeepItems', 'update:customerPoints']);
 const initialEditForm = ref();
+const customer = ref(props.targetCustomer);
 const selectedCustomer = ref(null);
 const selectedItem = ref(null);
 const returnItemOverlay = ref(null);
@@ -48,18 +49,18 @@ const editForm = useForm({
     remark: '',
     expired_to: '',
     keptIn: '',
-    customer_id: props.customer.id,
+    customer_id: props.targetCustomer.id,
 })
 
 const extendForm = useForm({
     id: '',
-    customer_id: props.customer.id,
+    customer_id: props.targetCustomer.id,
     expired_to: 2,
 })
 
 const deleteForm = useForm({
     id: '',
-    customer_id: props.customer.id,
+    customer_id: props.targetCustomer.id,
     remark: '',
     remark_description: '',
 })
@@ -70,8 +71,9 @@ const { formatPhone } = usePhoneUtils();
 const fetchExpiringPointHistories = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get(route('customer.getExpiringPointHistories', props.customer.id));
-        expiringPointHistories.value = response.data;
+        const response = await axios.get(route('customer.getCustomerDetails', props.targetCustomer.id));
+        expiringPointHistories.value = response.data.expiringPointHistories;
+        customer.value = response.data.newCustomerData;
 
         if (expiringPointHistories.value.length > 0) (isMessageShown.value = true);
         
@@ -110,7 +112,7 @@ const openActionsOverlay = (event, item) => {
     editForm.kept_amount = parseFloat(selectedItem.value.cm) > parseFloat(selectedItem.value.qty) ? (selectedItem.value.cm).toString() : selectedItem.value.qty;
     editForm.remark = selectedItem.value.remark ? selectedItem.value.remark : '';
     editForm.keptIn = parseFloat(selectedItem.value.cm) > parseFloat(selectedItem.value.qty) ? 'cm' : 'qty';
-    editForm.customer_id = props.customer.id;
+    editForm.customer_id = props.targetCustomer.id;
 
     initialEditForm.value = {...editForm};
 
@@ -202,7 +204,7 @@ const editKeptItem = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Successfully edited.',
+                summary: wTrans('public.toast.edit_success'),
             });
         }, 200)
         editForm.reset();
@@ -221,8 +223,8 @@ const extendKeptItem = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Expiration date extended successfully',
-                detail: 'You’ve extended the expiration date for selected kept item.'
+                summary: wTrans('public.toast.kept_item_expiry_extended_summary'),
+                detail: wTrans('public.toast.kept_item_expiry_extended_detail')
             });
         }, 200)
         extendForm.reset();
@@ -237,17 +239,19 @@ const expireKeptItem = async () => {
     try {
         const response = await axios.post(`/order-management/expireKeepItem`, {
             id: selectedItem.value.id,
-            customer_id: props.customer.id
+            customer_id: props.targetCustomer.id
         });
 
+        customer.value.keep_items = response.data;
+        customer.value.keep_items_count = response.data.length;
         emit('update:customerKeepItems', response.data);
         closeModal('leave');
 
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Kept item successfully expired',
-                detail: 'Selected item has been expired and returned to inventory.'
+                summary: wTrans('public.toast.kept_item_expired_summary'),
+                detail: wTrans('public.toast.kept_item_expired_detail')
             });
         }, 200)
     } catch (error) {
@@ -265,8 +269,8 @@ const deleteKeptItem = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Kept item successfully deleted',
-                detail: 'Selected item has been deleted from this customer’s account.'
+                summary: wTrans('public.toast.kept_item_deleted_summary'),
+                detail: wTrans('public.toast.kept_item_deleted_detail')
             });
         }, 200)
         deleteForm.reset();
@@ -321,6 +325,10 @@ const getDeleteReasons = computed(() => {
 
 onMounted(() => fetchExpiringPointHistories());
 
+watch(() => props.targetCustomer, (newValue) => {
+    customer.value = newValue;
+})
+
 watch((editForm), (newValue) => {
     initialEditForm.isDirty = newValue.id !== initialEditForm.value.id ||
                             newValue.kept_amount !== initialEditForm.value.kept_amount ||
@@ -357,10 +365,10 @@ watch((editForm), (newValue) => {
             >
                 <WarningIcon />
                 <div class="flex flex-col items-start gap-3 flex-[1_0_0]">
-                    <span class="self-stretch text-[#A35F1A] text-base font-bold">{{`${totalPointsExpiringSoon} points expiring soon:` }}</span>
+                    <span class="self-stretch text-[#A35F1A] text-base font-bold">{{`${totalPointsExpiringSoon} ${$t('public.point_expiring_soon')}::` }}</span>
                     <ul class="list-disc pl-6">
                         <template v-for="record in expiringPointHistories" :key="record.id">
-                            <li class="text-sm text-grey-950 font-normal"><span class="!font-bold">{{ `${record.expire_balance} points` }}</span> on {{ dayjs(record.expired_at).format('MMM D, YYYY') }}</li>
+                            <li class="text-sm text-grey-950 font-normal"><span class="!font-bold">{{ `${record.expire_balance} ${$tChoice('public.point', 1)}` }}</span> {{ dayjs(record.expired_at).format('MMM D, YYYY') }}</li>
                         </template>
                     </ul>
                 </div>
@@ -371,14 +379,14 @@ watch((editForm), (newValue) => {
             <div class="w-full flex justify-center items-start gap-6 self-stretch">
                 <div class="flex flex-col p-4 items-start gap-3 flex-[1_0_0] rounded-[5px] bg-gradient-to-br from-primary-900 to-[#5E0A0E] relative">
                     <div class="w-full flex justify-between items-center">
-                        <span class="text-base font-semibold text-primary-25 whitespace-nowrap w-full">Current Points</span>
+                        <span class="text-base font-semibold text-primary-25 whitespace-nowrap w-full">{{ $t('public.current_points') }}</span>
                         <CircledArrowHeadRightIcon2
                             class="w-6 h-6 text-primary-900 [&>rect]:fill-primary-25 [&>rect]:hover:fill-primary-800 cursor-pointer z-10"
                             @click="openDrawer('currentPoints', customer)" />
                     </div>
                     <div class="flex flex-col items-start gap-1">
                         <span class="text-white text-[36px] leading-normal font-light tracking-[-0.72px]">{{ formatPoints(customer.point) }}</span>
-                        <span class="text-white text-lg font-normal">pts</span>
+                        <span class="text-white text-lg font-normal">{{ $t('public.pts') }}</span>
                     </div>
                     <div class="absolute bottom-0 right-0">
                         <GiftImage />
@@ -387,7 +395,7 @@ watch((editForm), (newValue) => {
                 <div class="flex flex-col p-4 items-start gap-3 flex-[1_0_0] self-stretch rounded-[5px] border border-solid border-primary-50 
                             bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#FFFAFA] to-[#FFFFFF] relative">
                     <div class="w-full flex justify-between items-center">
-                        <span class="text-base font-semibold text-primary-900 whitespace-nowrap w-full">Current Tier</span>
+                        <span class="text-base font-semibold text-primary-900 whitespace-nowrap w-full">{{ $t('public.current_tier') }}</span>
                         <CircledArrowHeadRightIcon2
                             class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer z-10"
                             @click="openDrawer('currentTier', customer)" />
@@ -419,10 +427,10 @@ watch((editForm), (newValue) => {
         <!-- keep item -->
         <div class="w-full flex flex-col items-center gap-3 self-stretch">
             <div class="flex py-3 justify-center items-center gap-[10px] self-stretch">
-                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Keep Item ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
+                <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">{{ $t('public.keep_item_header') }} ({{ formatKeepItems(customer.keep_items).reduce((total, item) =>  total + (item.qty > item.cm ? item.qty : 1), 0) }})</span>
                 <div class="flex items-center gap-2 cursor-pointer" @click="openDrawer('keepHistory', customer)">
                     <HistoryIcon class="w-4 h-4" />
-                    <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">View History</div>
+                    <div class="bg-gradient-to-br from-primary-900 to-[#5E0A0E] text-transparent bg-clip-text text-sm font-medium">{{ $t('public.view_history') }}</div>
                 </div>
             </div>
             <div class="flex flex-col justify-end items-start gap-2 self-stretch">
@@ -480,8 +488,8 @@ watch((editForm), (newValue) => {
                         <!-- message header -->
                         <WarningIcon />
                         <div class="flex flex-col justify-between items-start flex-[1_0_0]">
-                            <span class="self-stretch text-[#A35F1A] text-base font-bold">{{ getKeepItemExpiryStatus(item) === 'soon' ? 'Expiring Soon' : 'Pending Action'  }}</span>
-                            <span class="self-stretch text-[#3E200A] text-sm font-normal">{{ getKeepItemExpiryStatus(item) === 'soon' ? `This kept item will be expired on ${dayjs(item.expired_to).format('DD/MM/YYYY')}.` : 'This item is expired. Please choose to expire it or extend the expiration date.'  }}</span>
+                            <span class="self-stretch text-[#A35F1A] text-base font-bold">{{ getKeepItemExpiryStatus(item) === 'soon' ? $t('public.expiring_soon') : $t('public.pending_action')  }}</span>
+                            <span class="self-stretch text-[#3E200A] text-sm font-normal">{{ getKeepItemExpiryStatus(item) === 'soon' ? $t('public.expired_soon_message', { expired_on: dayjs(item.expired_to).format('DD/MM/YYYY') }) : $t('public.expired_keep_message')  }}</span>
                         </div>
                     </div>
                     <div class="flex flex-col items-start gap-3 self-stretch">
@@ -497,11 +505,11 @@ watch((editForm), (newValue) => {
                             >
                         </div>
                         <div class="grid grid-cols-10 w-full items-start">
-                            <span class="col-span-2 text-grey-500 text-sm font-normal">Kept from</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.kept_from') }}</span>
                             <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.kept_from_table }}</span>
-                            <span class="col-span-2 text-grey-500 text-sm font-normal">Expire on</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.expire_on') }}</span>
                             <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.expired_to ? dayjs(item.expired_to).format('DD/MM/YYYY') : '-' }}</span>
-                            <span class="col-span-2 text-grey-500 text-sm font-normal">Kept by</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.kept_by') }}</span>
                             <div class="col-span-8 flex items-center gap-1.5 flex-[1_0_0]">
                                 <img
                                     :src="item.waiter.image ? item.waiter.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
@@ -510,7 +518,7 @@ watch((editForm), (newValue) => {
                                 >
                                 <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.waiter.full_name }}</span>
                             </div>
-                            <span class="col-span-2 text-grey-500 text-sm font-normal">Remark</span>
+                            <span class="col-span-2 text-grey-500 text-sm font-normal">{{ $t('public.remark') }}</span>
                             <span class="col-span-8 flex-[1_0_0] text-grey-950 text-sm font-normal">{{ item.remark ? item.remark : '-' }}</span>
                         </div>
                     </div>
@@ -521,7 +529,7 @@ watch((editForm), (newValue) => {
                             :size="'md'"
                             @click="openActionsOverlay($event, item)"
                         >
-                            More Action
+                            {{ $t('public.action.more_action') }}
                         </Button>
                         <Button
                             :variant="'primary'"
@@ -529,7 +537,7 @@ watch((editForm), (newValue) => {
                             :size="'md'"
                             @click="openItemOverlay($event, item)"
                         >
-                            Return Item
+                            {{ $t('public.action.return_item') }}
                         </Button>
                     </div>
                 </div>
@@ -538,7 +546,7 @@ watch((editForm), (newValue) => {
     </div>
 
     <RightDrawer
-        :header="viewType === 'keepHistory' ? 'History' : viewType === 'currentPoints' ? 'Points' : 'Tier'" 
+        :header="viewType === 'keepHistory' ? $t('public.history') : viewType === 'currentPoints' ? $tChoice('public.point', 1) : $t('public.tier')" 
         :previousTab="true"
         :show="isDrawerOpen"
         @close="closeDrawer"
@@ -549,7 +557,7 @@ watch((editForm), (newValue) => {
         <template v-else-if="viewType === 'currentPoints'"> <!-- customer point drawer -->
             <PointsDrawer 
                 :customer="selectedCustomer"
-                @update:customerPoints="emit('update:customerPoints', $event)"
+                @update:customerPoints="emit('update:customerPoints', $event);selectedCustomer.point = $event"
             />
         </template>
         <template v-else> <!-- customer tier drawer -->
@@ -569,7 +577,7 @@ watch((editForm), (newValue) => {
     <!-- More Actions -->
     <OverlayPanel ref="isMoreActionOpen" @close="closeActionsOverlay" class="[&>div]:!p-1 [&>div]:!gap-0.5">
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('edit')">
-            <span class="text-grey-900 text-base font-medium">Edit kept detail</span>
+            <span class="text-grey-900 text-base font-medium">{{ $t('public.edit_kept_detail') }}</span>
         </div>
         <!-- <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('extend')" v-if="selectedItem.expired_to">
             <span class="text-grey-900 text-base font-medium">Extend expiration date</span>
@@ -578,17 +586,17 @@ watch((editForm), (newValue) => {
             <span class="text-grey-300 text-base font-medium">Extend expiration date</span>
         </div> -->
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" v-if="getKeepItemExpiryStatus(selectedItem) === 'now'" @click="openModal('expire')">
-            <span class="text-primary-800 text-base font-medium">Mark as expired</span>
+            <span class="text-primary-800 text-base font-medium">{{ $t('public.mark_expired') }}</span>
         </div>
         <div class="flex p-3 items-center gap-2.5 self-stretch cursor-pointer" @click="openModal('delete')">
-            <span class="text-primary-800 text-base font-medium">Delete kept item</span>
+            <span class="text-primary-800 text-base font-medium">{{ $t('public.delete_kept_item') }}</span>
         </div>
     </OverlayPanel>
 
     <!-- Edit Kept Detail -->
     <Modal
         :show="isEditKeptItemOpen"
-        :title="'Edit Kept Item Detail'"
+        :title="$t('public.edit_kept_item_detail')"
         :maxWidth="'sm'"
         @close="closeModal('close')"
     >  
@@ -599,7 +607,7 @@ watch((editForm), (newValue) => {
                         <span class="self-stretch text-md font-medium">{{ selectedItem.item_name }}</span>
                         <div class="flex flex-col items-start gap-1 self-stretch">
                             <div class="flex items-center gap-3 self-stretch">
-                                <span class="text-grey-500 text-sm font-normal">From order</span>
+                                <span class="text-grey-500 text-sm font-normal">{{ $t('public.from_order') }}</span>
                                 <span class="flex-[1_0_0] text-grey-950 text-sm font-normal">{{ selectedItem.order_no }}</span>
                             </div>
                         </div>
@@ -611,7 +619,7 @@ watch((editForm), (newValue) => {
                     >
                 </div>
                 <div class="grid grid-cols-3 items-center self-stretch">
-                    <span class="text-grey-900 text-base font-bold">Kept</span>
+                    <span class="text-grey-900 text-base font-bold">{{ $t('public.kept') }}</span>
                     <NumberCounter
                         :errorMessage="editForm.errors?.kept_amount"
                         :minValue="1"
@@ -636,7 +644,7 @@ watch((editForm), (newValue) => {
                     </TextInput>
                 </div>
                 <div class="grid grid-cols-3  items-center self-stretch">
-                    <span class="text-grey-900 text-base font-bold">Remark</span>
+                    <span class="text-grey-900 text-base font-bold">{{ $t('public.remark') }}</span>
                     <Textarea 
                         :rows="3"
                         :errorMessage="editForm.errors?.remark"
@@ -646,7 +654,7 @@ watch((editForm), (newValue) => {
                     />
                 </div>
                 <div class="grid grid-cols-3 items-center self-stretch">
-                    <span class="text-grey-900 text-base font-bold">Expiration date</span>
+                    <span class="text-grey-900 text-base font-bold">{{ $t('public.expiry_date') }}</span>
                     <DateInput 
                         :errorMessage="editForm.errors?.expired_to"
                         :range="false"
@@ -664,7 +672,7 @@ watch((editForm), (newValue) => {
                         :size="'lg'"
                         @click="closeModal('close')"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         :variant="'primary'"
@@ -672,7 +680,7 @@ watch((editForm), (newValue) => {
                         :size="'lg'"
                         :disabled="isLoading"
                     >
-                        Save
+                        {{ $t('public.action.save') }}
                     </Button>
                 </div>
             </div>
@@ -740,7 +748,7 @@ watch((editForm), (newValue) => {
 
     <!-- Delete kept item -->
     <Modal
-        :title="'Delete Kept Item'"
+        :title="$t('public.delete_kept_item')"
         :show="isDeleteKeptItemOpen"
         :maxWidth="'sm'"
         @close="closeModal('close')"
@@ -748,20 +756,20 @@ watch((editForm), (newValue) => {
         <form @submit.prevent="deleteKeptItem">
             <div class="flex flex-col items-start gap-4 self-stretch">
                 <Dropdown
-                    :labelText="'Select Deletion Reason'"
+                    :labelText="$t('public.field.deletion_reason')"
                     :errorMessage="deleteForm.errors.remark ? deleteForm.errors.remark[0] : ''"
                     :inputName="'remark'"
                     :inputArray="getDeleteReasons"
-                    :placeholder="'Select'"
+                    :placeholder="$t('public.select')"
                     v-model="deleteForm.remark"
                 />
 
                 <Textarea
-                    :labelText="'Remarks'"
+                    :labelText="$t('public.remark')"
                     :errorMessage="deleteForm.errors.remark_description ? deleteForm.errors.remark_description[0] : ''"
                     :inputName="'remark_description'"
                     :rows="5"
-                    :placeholder="'Enter here'"
+                    :placeholder="$t('public.enter_here')"
                     v-model="deleteForm.remark_description"
                 />
             </div>
@@ -772,14 +780,14 @@ watch((editForm), (newValue) => {
                     :type="'button'"
                     @click="closeModal('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     :variant="'primary'"
                     :size="'lg'"
                     :type="'submit'"
                 >
-                    Delete
+                    {{ $t('public.action.delete') }}
                 </Button>
             </div>
         </form>
@@ -808,10 +816,10 @@ watch((editForm), (newValue) => {
                 </div>
                 <div class="flex flex-col gap-1" >
                     <div class="text-primary-900 text-lg font-medium text-center">
-                        Mark as Expired?
+                        {{ $t('public.mark_expired') }}?
                     </div>
                     <div class="text-gray-900 text-base font-medium text-center leading-tight" >
-                        This kept item will be marked as expired and customer can no longer redeem back this item. Are you sure you want to proceed?
+                        {{ $t('public.mark_expired_message') }}
                     </div>
                 </div>
                 <div class="flex item-center gap-3">
@@ -821,13 +829,13 @@ watch((editForm), (newValue) => {
                         @click="closeModal('close')"
                         type="button"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         size="lg"
                         :disabled="isLoading"
                     >
-                        Confirm
+                        {{ $t('public.action.confirm') }}
                     </Button>
                 </div>
             </div>

@@ -15,9 +15,10 @@ import { useCustomToast } from "@/Composables";
 import { FilterMatchMode } from "primevue/api";
 import axios from "axios";
 import { Head } from "@inertiajs/vue3";
+import { wTrans } from "laravel-vue-i18n";
 
 const home = ref({
-    label: 'Waiter',
+    label: wTrans('public.waiter_header'),
 });
 
 const props = defineProps({
@@ -73,10 +74,10 @@ const searchQuery = ref('');
 const { flashMessage } = useCustomToast();
 
 const waiterColumns = ref([
-    {field: 'role_id', header: 'ID', width: '11.5', sortable: true},
-    {field: 'full_name', header: 'Waiter', width: '21.5', sortable: true},
-    {field: 'phone', header: 'Phone', width: '20', sortable: true},
-    {field: 'worker_email', header: 'Email', width: '35', sortable: true},
+    {field: 'role_id', header: wTrans('public.field.id'), width: '11.5', sortable: true},
+    {field: 'full_name', header: wTrans('public.waiter_header'), width: '21.5', sortable: true},
+    {field: 'phone', header: wTrans('public.field.phone_no'), width: '20', sortable: true},
+    {field: 'worker_email', header: wTrans('public.field.email'), width: '35', sortable: true},
     {field: 'action', header: '', width: '20', sortable: false},
 ]);
 
@@ -192,7 +193,7 @@ const waitersTotalPages = computed(() => {
 </script>
 
 <template>
-    <Head title="Waiter" />
+    <Head :title="$t('public.waiter_header')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -235,7 +236,7 @@ const waitersTotalPages = computed(() => {
                 <div class="w-full flex flex-col gap-4 sm:p-6 bg-white sm:rounded-lg border-[#ffe1e2] border-solid border-[1px]">
                     <div class="w-full flex items-center gap-5">
                         <SearchBar
-                            placeholder="Search"
+                            :placeholder="$t('public.search')"
                             :show-filter="false"
                             v-model="searchQuery"
                         >
@@ -251,11 +252,11 @@ const waitersTotalPages = computed(() => {
                                 <PlusIcon />
                             </template>
 
-                            New Waiter
+                            {{ $t('public.action.new_waiter') }}
                             <Modal
                                 :show="isModalOpen"
                                 @close="closeModal('close')"
-                                :title="'Add New Waiter'"
+                                :title="$t('public.waiter.add_waiter')"
                                 :maxWidth="'lg'"
                             >
                                 <AddWaiter 

@@ -7,6 +7,7 @@ import Table from '@/Components/Table.vue';
 import { transactionFormat, useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 import { FilterMatchMode } from 'primevue/api';
 import { computed, ref, watch } from 'vue';
 
@@ -26,15 +27,15 @@ const data = ref(props.data)
 const searchQuery = ref('');
 
 const csvExport = () => {
-    const waiterName = props.waiter.full_name || 'Unknown Waiter';
-    const title = `${waiterName}_Monthly Commission Report`;
+    const waiterName = props.waiter.full_name || wTrans('public.waiter.unknown_waiter').value;
+    const title = `${waiterName}_${wTrans('public.waiter.monthly_commission_report').value}`;
     const currentDate = dayjs().format('DD/MM/YYYY');
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Date: title, 'Monthly Sale': '', 'Commission': '' },
         { Date: currentDate, 'Monthly Sale': '', 'Commission': '' },
-        { Date: 'Date', 'Monthly Sale': 'Monthly Sale', 'Commission': 'Commission' },
+        { Date: wTrans('public.date').value, 'Monthly Sale': wTrans('public.waiter.monthly_sale').value, 'Commission': wTrans('public.commission').value },
         ...data.value.map(row => ({
             'Date': row.created_at,
             'Monthly Sale': `RM ${row.monthly_sale}`,
@@ -42,7 +43,7 @@ const csvExport = () => {
         })),
     ];
 
-    exportToCSV(formattedRows, `${waiterName}_Monthly Commission Report`);
+    exportToCSV(formattedRows, `${waiterName}_${wTrans('public.waiter.monthly_commission_report').value}`);
 };
 
 const filteredCommissions = computed(() => {
@@ -66,7 +67,7 @@ const totalPages = computed(() => {
 <template>
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Monthly Commission Report</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.waiter.monthly_commission_report') }}</span>
             
             <Button
                 :type="'button'"
@@ -80,7 +81,7 @@ const totalPages = computed(() => {
                 <template #icon >
                     <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                 </template>
-                Export
+                {{ $t('public.action.export') }}
             </Button>
 
             <!-- <Menu as="div" class="relative inline-block text-left">
@@ -129,7 +130,7 @@ const totalPages = computed(() => {
         
         <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">
             <SearchBar 
-                placeholder="Search"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
             />
@@ -145,7 +146,7 @@ const totalPages = computed(() => {
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </template>
                 <template #created_at="data">
                     <span class="text-grey-900 text-sm font-medium line-clamp-1 truncate">{{ data.created_at }}</span>

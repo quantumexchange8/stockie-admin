@@ -275,7 +275,7 @@ onMounted(() => {
                         "
                     @click="setActive('month')"
                 >
-                    {{ $t('public.month') }}
+                    {{ $t('public.month_header') }}
                 </Button>
                 <Button
                     :type="'button'"

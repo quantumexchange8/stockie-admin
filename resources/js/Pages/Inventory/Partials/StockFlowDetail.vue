@@ -98,22 +98,22 @@ onMounted(() => {
                             <tr>
                                 <th class="w-[46%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
-                                        Date
+                                        {{ $t('public.date') }}
                                     </span> 
                                 </th>
                                 <th class="w-[18%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
-                                        Sold
+                                        {{ $t('public.sold') }}
                                     </span>
                                 </th>
                                 <th class="w-[18%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
-                                        Replenish
+                                        {{ $t('public.action.replenish') }}
                                     </span>
                                 </th>
                                 <th class="w-[18%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
-                                        Balance
+                                        {{ $t('public.balance') }}
                                     </span>
                                 </th>   
                             </tr>
@@ -153,7 +153,7 @@ onMounted(() => {
                     </table>
                     <template v-if="stockHistories.length == 0">
                         <div class="flex pt-2 items-center justify-center">
-                            <p class="text-sm text-grey-950">No result</p>
+                            <p class="text-sm text-grey-950">{{ $t('public.empty.no_result') }}</p>
                         </div>
                     </template>
                 </div>
@@ -165,22 +165,22 @@ onMounted(() => {
                             <tr>
                                 <th class="w-[40%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
-                                        Date
+                                        {{ $t('public.date') }}
                                     </span> 
                                 </th>
                                 <th class="w-[15%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
-                                        Kept
+                                        {{ $t('public.kept') }}
                                     </span>
                                 </th>
                                 <th class="w-[20%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
-                                        Reallocated
+                                        {{ $t('public.inventory.reallocated') }}
                                     </span>
                                 </th>
                                 <th class="w-[25%] py-2 px-3">
                                     <span class="flex justify-between items-center text-sm text-grey-950 font-semibold">
-                                        Kept Balance
+                                        {{ $t('public.inventory.kept_balance') }}
                                     </span>
                                 </th>
                             </tr>
@@ -221,7 +221,7 @@ onMounted(() => {
                     </table>
                     <template v-if="mergedHistories.length == 0">
                         <div class="flex pt-2 items-center justify-center">
-                            <p class="text-sm text-grey-950">No result</p>
+                            <p class="text-sm text-grey-950">{{ $t('public.empty.no_result') }}</p>
                         </div>
                     </template>
                 </div>

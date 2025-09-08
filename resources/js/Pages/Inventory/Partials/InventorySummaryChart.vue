@@ -2,6 +2,8 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import Chart from 'primevue/chart';
 import { UndetectableIllus } from '@/Components/Icons/illus.jsx';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
+import { useLangObserver } from '@/Composables/index.js';
 
 const props = defineProps({
     inventories: {
@@ -9,6 +11,8 @@ const props = defineProps({
         required: true,
     },
 })
+
+const { locale } = useLangObserver();
 
 const allInventories = ref([]);
 
@@ -33,12 +37,12 @@ const activeInventoryCount = computed(() => {
     return totalInventories > 0 ? (totalInventories - totalOutOfStockInventories) / totalInventories * 100 : 0;
 })
 
-const chartData = ref();
+// const chartData = ref();
 const chartOptions = ref();
 
-const setChartData = () => {
+const chartData = computed(() => {
     return {
-        labels: ['In stock', 'Low in stock', 'Out of stock'],
+        labels: [wTrans('public.in_stock').value, wTrans('public.low_in_stock').value, wTransChoice('public.out_of_stock', 0).value],
         datasets: [
             {
                 data: [inStockInventories.value, lowInStockInventories.value, outOfStockInventories.value],
@@ -48,7 +52,7 @@ const setChartData = () => {
             }
         ]
     };
-};
+});
 
 const setChartOptions = () => {
     const percentageText = activeInventoryCount.value.toFixed(2) + '%';
@@ -184,7 +188,7 @@ const customTooltip = (context) => {
 };
 
 const updateChart = () => {
-    chartData.value = setChartData();
+    // chartData.value = setChartData();
     chartOptions.value = setChartOptions();
 };
 
@@ -200,7 +204,7 @@ onMounted(() => {
 
 <template>
     <div class="flex flex-col p-6 gap-12 items-center rounded-[5px] border border-red-100 overflow-hidden justify-between w-full h-full">
-        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Inventory Summary</span>
+        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.inventory.inventory_summary') }}</span>
         <div class="flex justify-content-center" v-if="allInventories.length > 0">
             <Chart 
                 type="doughnut" 
@@ -213,7 +217,7 @@ onMounted(() => {
         
         <div v-else>
             <UndetectableIllus class="w-44 h-44" />
-            <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+            <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.no_data') }}</span>
         </div>
     </div>
 </template>

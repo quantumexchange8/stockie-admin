@@ -100,23 +100,23 @@ watch(() => props.selectedWaiter, (newValue) => {
     <div class="flex flex-col items-start gap-y-6 self-stretch">
         <div class="flex flex-col items-start gap-y-1 self-stretch">
             <div class="flex w-full py-1 gap-x-2 self-stretch items-center">
-                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">Date</p>
+                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">{{ $t('public.date') }}</p>
                 <p class="w-3/4 text-base font-medium text-grey-900 truncate line-clamp-1 self-stretch">{{ attendance.date ?? '-' }}</p>
             </div>
             <div class="flex w-full py-1 gap-x-2 self-stretch items-center">
-                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">Shift</p>
+                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">{{ $t('public.shift.shift') }}</p>
                 <p class="w-3/4 text-base font-medium text-grey-900 truncate line-clamp-1 self-stretch">{{ attendance.shift?.shifts?.shift_name ?? '-' }}</p>
             </div>
             <div class="flex w-full py-1 gap-x-2 self-stretch items-center">
-                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">Work</p>
+                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">{{ $t('public.waiter.work_duration') }}</p>
                 <p class="w-3/4 text-base font-medium text-grey-900 truncate line-clamp-1 self-stretch">{{ attendance.work_duration ?? '-' }}</p>
             </div>
             <div class="flex w-full py-1 gap-x-2 self-stretch items-center">
-                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">Break</p>
+                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">{{ $t('public.waiter.break_duration') }}</p>
                 <p class="w-3/4 text-base font-medium text-grey-900 truncate line-clamp-1 self-stretch">{{ attendance.break_duration ?? '-' }}</p>
             </div>
             <div class="flex w-full py-1 gap-x-2 self-stretch items-center" v-if="waiter.employment_type === 'Part-time'">
-                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">Est. rate</p>
+                <p class="w-1/4 text-base font-normal text-grey-500 truncate line-clamp-1">{{ $tChoice('public.waiter.est_hourly_rate', 0) }}</p>
                 <p class="w-3/4 text-base font-medium text-grey-900 truncate line-clamp-1 self-stretch">{{ attendance.earnings ?? 'RM 0.00' }}</p>
             </div>
         </div>
@@ -137,7 +137,7 @@ watch(() => props.selectedWaiter, (newValue) => {
                         <CheckInIcon />
                         <div class="absolute inset-x-[50%] w-px h-8 bg-grey-200"></div>
                     </div>
-                    <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">Clock out</p>
+                    <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">{{ $t('public.waiter.clock_out') }}</p>
                 </div>
             </div>
 
@@ -157,7 +157,7 @@ watch(() => props.selectedWaiter, (newValue) => {
                                 <BreakIcon />
                                 <div class="absolute inset-x-[50%] w-px h-8 bg-grey-200"></div>
                             </div>
-                            <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">Break end</p>
+                            <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">{{ $t('public.waiter.break_end') }}</p>
                         </div>
                     </div>
 
@@ -174,7 +174,7 @@ watch(() => props.selectedWaiter, (newValue) => {
                                 <BreakIcon />
                                 <div class="absolute inset-x-[50%] w-px h-8 bg-grey-200"></div>
                             </div>
-                            <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">Break start</p>
+                            <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">{{ $t('public.waiter.break_start') }}</p>
                         </div>
                     </div>
                 </template>
@@ -185,7 +185,7 @@ watch(() => props.selectedWaiter, (newValue) => {
                 <p class="w-3/12 text-base font-semibold text-grey-950 truncate line-clamp-1">{{ dayjs(attendance.check_in).format('HH:mm') }}</p>
                 <div class="w-9/12 flex gap-x-3 items-center">
                     <CheckOutIcon />
-                    <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">Clock in</p>
+                    <p class="text-sm font-normal text-grey-950 truncate line-clamp-1">{{ $t('public.waiter.clock_in') }}</p>
                 </div>
             </div>
         </div>

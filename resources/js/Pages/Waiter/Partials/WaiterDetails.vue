@@ -13,6 +13,7 @@ import Attendance from './Attendance.vue';
 import Incentive from './Incentive.vue';
 import { transactionFormat } from '@/Composables';
 import Toast from '@/Components/Toast.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     id: [Number, String],
@@ -39,12 +40,12 @@ const props = defineProps({
     },
 })
 const home = ref({
-    label: 'Waiter',
+    label: wTrans('public.waiter_header'),
     route: '/waiter'
 });
 
 const items = ref([
-    { label: 'Waiter Detail'},
+    { label: wTrans('public.waiter.waiter_detail')},
 ]);
 
 const { formatAmount } = transactionFormat();
@@ -53,37 +54,37 @@ const waiter = ref(props.waiter);
 const commissionRowsPerPage = ref(11);
 const incentiveRowsPerPage = ref(11);
 const tabs = ref([
-    { key: 'Sales', title: 'Sales', disabled: false },
-    { key: 'Commission', title: 'Commission', disabled: false },
-    { key: 'Incentive', title: 'Incentive', disabled: false },
-    { key: 'Attendance', title: 'Attendance', disabled: false },
+    { key: 'Sales', title: wTrans('public.sales'), disabled: false },
+    { key: 'Commission', title: wTrans('public.commission'), disabled: false },
+    { key: 'Incentive', title: wTrans('public.incentive'), disabled: false },
+    { key: 'Attendance', title: wTrans('public.waiter.attendance'), disabled: false },
 ]);
 
 const salesColumn = ref([
-    {field: 'created_at', header: 'Date', sortable: true},
-    {field: 'order_no', header: 'Order',sortable: true},
-    {field: 'total_amount', header: 'Sales', sortable: true},
-    {field: 'commission', header: 'Commission', sortable: true},
+    {field: 'created_at', header: wTrans('public.date'), sortable: true},
+    {field: 'order_no', header: wTrans('public.order_no'),sortable: true},
+    {field: 'total_amount', header: wTrans('public.sales'), sortable: true},
+    {field: 'commission', header: wTrans('public.commission'), sortable: true},
     {field: 'action', header: '',  sortable: false},
 ]);
 
 const commissionColumn = ref([
-    {field: 'created_at', header: 'Month', width: '60', sortable: true},
-    {field: 'total_sales', header: 'Total Sales', width: '20', sortable: true},
-    {field: 'commission', header: 'Commission', width: '20', sortable: true},
+    {field: 'created_at', header: wTrans('public.month_header'), width: '60', sortable: true},
+    {field: 'total_sales', header: wTrans('public.total_sales'), width: '20', sortable: true},
+    {field: 'commission', header: wTrans('public.commission'), width: '20', sortable: true},
 ]);
 
 const incentiveColumn = ref([
-    {field: 'period_start', header: 'Month', width: '23', sortable: true},
-    {field: 'amount', header: 'Total Sales', width: '23', sortable: true},
-    {field: 'sales_target', header: 'Incentive', width: '34', sortable: true},
-    {field: 'status', header: 'Status', width: '20', sortable: true},
+    {field: 'period_start', header: wTrans('public.month_header'), width: '23', sortable: true},
+    {field: 'amount', header: wTrans('public.total_sales'), width: '23', sortable: true},
+    {field: 'sales_target', header: wTrans('public.incentive'), width: '34', sortable: true},
+    {field: 'status', header: wTrans('public.status'), width: '20', sortable: true},
 ]);
 
 const attendanceColumn = ref([
-    {field: 'date', header: 'Date', width: '35', sortable: true},
-    {field: 'work_duration', header: 'Working Duration', width: '30', sortable: true},
-    {field: 'break_duration', header: 'Break Duration', width: '35', sortable: true},
+    {field: 'date', header: wTrans('public.date'), width: '35', sortable: true},
+    {field: 'work_duration', header: wTrans('public.waiter.working_duration_header'), width: '30', sortable: true},
+    {field: 'break_duration', header: wTrans('public.waiter.break_duration_header'), width: '35', sortable: true},
 ]);
 
 
@@ -102,7 +103,7 @@ const actions = {
 </script>
 
 <template>
-    <Head title="Waiter Detail" />
+    <Head :title="$t('public.waiter.waiter_detail')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -126,7 +127,7 @@ const actions = {
                         >
                             <div class="flex flex-col gap-1 self-stretch"> 
                                 <GrowthIcon />
-                                <span class="text-primary-100 text-sm font-medium whitespace-nowrap w-full">Total sales this month</span>
+                                <span class="text-primary-100 text-sm font-medium whitespace-nowrap w-full">{{ $t('public.waiter.total_sales_this_month') }}</span>
                                 <span class="text-primary-25 text-lg font-medium ">RM {{ formatAmount(props.total_sales) }}</span>
                             </div>
                             <div class="absolute bottom-0 right-0">
@@ -136,7 +137,7 @@ const actions = {
                         <div class="w-full flex p-5 flex-col items-start gap-2.5 grow shrink-0 basis-0 self-stretch rounded-[5px] border border-solid border-primary-100">
                             <div class="flex flex-col gap-1 self-stretch">
                                 <CommissionIcon />
-                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Commission in this month</span>
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ $t('public.waiter.commission_this_month') }}</span>
                                 <span class="text-primary-900 text-lg font-medium whitespace-nowrap">RM {{ formatAmount(props.commissionThisMonth) }}</span>
                                 <!-- <span class="text-primary-300 text-sm font-normal whitespace-nowrap">(RM {{ formatAmount(props.commissionThisMonth) }} + RM {{ formatAmount(props.incentiveThisMonth) }})</span> -->
                             </div>

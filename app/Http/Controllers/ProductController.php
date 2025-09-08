@@ -55,7 +55,7 @@ class ProductController extends Controller
                                 }
                                 $product['stock_left'] = $minStockCount;
 
-                                $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id);
+                                $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id && $item->status === 'active');
 
                                 return $product;
                             });
@@ -446,7 +446,7 @@ class ProductController extends Controller
                             }
                             $product['stock_left'] = $minStockCount;
 
-                            $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id);
+                            $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id && $item->status === 'active');
 
                             return $product;
                         });

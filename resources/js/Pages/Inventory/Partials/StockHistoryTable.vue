@@ -195,6 +195,10 @@ const rowGroupedByDates = computed(() => {
                     </DisclosurePanel>
                 </transition>
             </template>
+            <div class="flex items-center justify-center flex-col" v-else>
+                <UndetectableIllus/>
+                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            </div>
         </Disclosure>
         <div class="flex items-center justify-center flex-col" v-else>
             <UndetectableIllus/>

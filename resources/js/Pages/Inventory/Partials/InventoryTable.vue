@@ -20,6 +20,7 @@ import StockFlowDetail from './StockFlowDetail.vue';
 import { useCustomToast } from '@/Composables/index.js';
 import { useForm } from '@inertiajs/vue3';
 import Textarea from '@/Components/Textarea.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -73,8 +74,15 @@ const checkedFilters = ref({
     keepStatus: [],
 });
 
-const stockLevels = ref(['In Stock', 'Low Stock', 'Out of Stock']);
-const keepStatusArr = ref(['Active', 'Inactive']);
+const stockLevels = ref([
+    { key: 'In Stock', text: wTrans('public.in_stock') }, 
+    { key: 'Low Stock', text: wTrans('public.low_in_stock') }, 
+    { key: 'Out of Stock', text: wTransChoice('public.out_of_stock', 0) }
+]);
+const keepStatusArr = ref([
+    { key: 'Active', text: wTrans('public.active') }, 
+    { key: 'Inactive', text: wTrans('public.inactive') }
+]);
 
 const openForm = (action, id, event) => {
     isDirty.value = false;
@@ -381,7 +389,7 @@ const deleteInventory = async () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: 'Inventory item has been successfully deleted.',
+                    summary: wTrans('public.toast.delete_inventory_item_success'),
                 });
             }, 200);
     
@@ -400,15 +408,25 @@ const deleteInventory = async () => {
 
 const deleteModalTitle = computed(() => {
     return confirmationType.value === 'group'
-        ? 'Delete this group?'
-        : 'Some items in this group are in use!';
+        ? wTrans('public.inventory.delete_group')
+        : wTrans('public.inventory.delete_group_warning');
 });
 
 const deleteModalDescription = computed(() => {
     return confirmationType.value === 'group'
-        ? 'All the item inside this group will be deleted altogether. Are you sure you want to delete this group?'
-        : "You cannot delete this group until you deactivate the products that include the items in this group. Would you like to proceed to deactivate those products?";
+        ? wTrans('public.inventory.delete_group_message')
+        : wTrans('public.inventory.delete_group_warning_message');
 });
+
+const getStatusTranslatedText = (status) => {
+    let text = '';
+    switch (status) {
+        case 'In stock': return wTrans('public.in_stock').value;
+        case 'Low in stock': return wTrans('public.low_in_stock').value;
+        case 'Out of stock': return wTransChoice('public.out_of_stock', 0).value;
+    }    return text;
+}; 
+
 </script>
 
 <template>
@@ -421,13 +439,13 @@ const deleteModalDescription = computed(() => {
         <div class="flex flex-col justify-center gap-4">
             <div class="flex flex-wrap lg:flex-nowrap items-center justify-between gap-6 rounded-[5px]">
                 <SearchBar
-                    placeholder="Search"
+                    :placeholder="$t('public.search')"
                     :showFilter="true"
                     v-model="searchQuery"
                 >
                     <template #default="{ hideOverlay }">
                         <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Unit Type</span>
+                            <span class="text-grey-900 text-base font-semibold">{{ $t('public.unit_type') }}</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div 
                                     v-for="(category, index) in itemCategoryArr" 
@@ -443,7 +461,7 @@ const deleteModalDescription = computed(() => {
                             </div>
                         </div>
                         <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Stock Level</span>
+                            <span class="text-grey-900 text-base font-semibold">{{ $t('public.stock_level') }}</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div 
                                     v-for="(level, index) in stockLevels"
@@ -451,15 +469,15 @@ const deleteModalDescription = computed(() => {
                                     class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" 
                                 >
                                     <Checkbox 
-                                        :checked="checkedFilters.stockLevel.includes(level)"
-                                        @click="toggleStockLevel(level)"
+                                        :checked="checkedFilters.stockLevel.includes(level.key)"
+                                        @click="toggleStockLevel(level.key)"
                                     />
-                                    <span class="text-grey-700 text-sm font-medium">{{ level }}</span>
+                                    <span class="text-grey-700 text-sm font-medium">{{ level.text }}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Keep</span>
+                            <span class="text-grey-900 text-base font-semibold">{{ $t('public.keep') }}</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div 
                                     v-for="(status, index) in keepStatusArr" 
@@ -467,10 +485,10 @@ const deleteModalDescription = computed(() => {
                                     class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
                                 >
                                     <Checkbox 
-                                        :checked="checkedFilters.keepStatus.includes(status)"
-                                        @click="toggleKeepStatus(status)"
+                                        :checked="checkedFilters.keepStatus.includes(status.key)"
+                                        @click="toggleKeepStatus(status.key)"
                                     />
-                                    <span class="text-grey-700 text-sm font-medium">{{ status }}</span>
+                                    <span class="text-grey-700 text-sm font-medium">{{ status.text }}</span>
                                 </div>
                             </div>
                         </div>
@@ -481,13 +499,13 @@ const deleteModalDescription = computed(() => {
                                 :size="'lg'"
                                 @click="clearFilters(hideOverlay)"
                             >
-                                Clear All
+                                {{ $t('public.action.clear_all') }}
                             </Button>
                             <Button
                                 :size="'lg'"
                                 @click="applyCheckedFilters(hideOverlay)"
                             >
-                                Apply
+                                {{ $t('public.action.apply') }}
                             </Button>
                         </div>
                     </template>
@@ -504,7 +522,7 @@ const deleteModalDescription = computed(() => {
                         <template #icon>
                             <SquareStickerIcon class="w-6 h-6" />
                         </template>
-                        View Stock History
+                        {{ $t('public.action.view_stock_history') }}
                     </Button>
                     <Button
                         :type="'button'"
@@ -518,7 +536,7 @@ const deleteModalDescription = computed(() => {
                                 class="w-6 h-6"
                             />
                         </template>
-                        New Group
+                        {{ $t('public.action.new_group') }}
                     </Button>
                 </div>
             </div>
@@ -530,37 +548,37 @@ const deleteModalDescription = computed(() => {
                             <th class="w-[5%] py-2 px-3 rounded-l-[5px]"></th>
                             <th class="w-[26%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('name')">
                                 <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                    Item Name
+                                    {{ $t('public.inventory.item_name') }}
                                     <TableSortIcon class="w-4 text-primary-800 flex-shrink-0"/>
                                 </span>
                             </th>
                             <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('item_code')">
                                 <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                    Code
+                                    {{ $t('public.inventory.code') }}
                                     <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
                                 </span>
                             </th>
                             <th class="w-[10%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('item_category')">
                                 <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                    Unit
+                                    {{ $t('public.unit') }}
                                     <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
                                 </span>
                             </th>
                             <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('stock_qty')">
                                 <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                    Stock
+                                    {{ $t('public.stock') }}
                                     <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
                                 </span>
                             </th>
                             <th class="w-[11%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('name')">
                                 <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                    Keep
+                                    {{ $t('public.keep') }}
                                     <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
                                 </span>
                             </th>
                             <th class="w-[14%] py-2 px-3 cursor-pointer transition ease-in-out hover:bg-primary-200" @click="sortInventories('status')">
                                 <span class="flex justify-between items-center text-sm text-primary-900 font-semibold">
-                                    Status
+                                    {{ $t('public.status') }}
                                     <TableSortIcon class="w-4 text-primary-800 flex-shrink-0" />
                                 </span>
                             </th>
@@ -648,7 +666,7 @@ const deleteModalDescription = computed(() => {
                                                 <div class="w-[11%] py-2 px-3">{{ item.item_code }}</div>
                                                 <div class="w-[10%] py-2 px-3">{{ item.item_category.name }}</div>
                                                 <div class="w-[11%] py-2 px-3">{{ item.stock_qty }}</div>
-                                                <div class="w-[11%] py-2 px-3">{{ item.keep === 'Active' ? item.total_keep_qty : 'Not Allowed' }}</div>
+                                                <div class="w-[11%] py-2 px-3">{{ item.keep === 'Active' ? item.total_keep_qty : $t('public.inventory.not_allowed') }}</div>
                                                 <div class="w-[14%] py-2 px-3">
                                                     <Tag
                                                         :variant="item.status === 'In stock' 
@@ -656,13 +674,13 @@ const deleteModalDescription = computed(() => {
                                                                         : item.status === 'Low in stock'
                                                                             ? 'yellow'
                                                                             : 'red'"
-                                                        :value="item.status"
+                                                        :value="getStatusTranslatedText(item.status)"
                                                     />
                                                 </div>
                                                 <div class="w-[12%] py-2 px-3"></div>
                                             </div>
                                             <div class="flex justify-end pr-[50px] bg-white mt-3">
-                                                <span>Total Stock: {{ totalInventoryItemStock(group.inventory_items) }}</span>
+                                                <span>{{ $t('public.total_stock') }}: {{ totalInventoryItemStock(group.inventory_items) }}</span>
                                             </div>
                                         </DisclosurePanel>
                                     </transition>
@@ -673,7 +691,7 @@ const deleteModalDescription = computed(() => {
                             <td colspan="8">
                                 <div class="flex flex-col items-center justify-center gap-5">
                                     <EmptyIllus class="flex-shrink-0"/>
-                                    <span class="text-primary-900 text-sm font-medium">We couldn't find any result...</span>
+                                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_result_found') }}</span>
                                 </div>
                             </td>
                         </tr>
@@ -683,7 +701,7 @@ const deleteModalDescription = computed(() => {
 
             <div class="flex flex-col items-center justify-center gap-5" v-if="props.rows.length === 0">
                 <EmptyIllus class="flex-shrink-0"/>
-                <span class="text-primary-900 text-sm font-medium">You haven't added any group yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_group') }}</span>
             </div>
             
             <Paginator
@@ -762,12 +780,12 @@ const deleteModalDescription = computed(() => {
             >
                 <template #start>
                     <div class="text-xs font-medium text-grey-500">
-                        Showing: <span class="text-grey-900">{{ totalPages === 0 ? 0 : currentPage }} of {{ totalPages }}</span>
+                        {{ $t('public.showing') }}: <span class="text-grey-900">{{ totalPages === 0 ? 0 : currentPage }} of {{ totalPages }}</span>
                     </div>
                 </template>
                 <template #end>
                     <div class="flex justify-center items-center gap-2 text-xs font-medium text-grey-900 whitespace-nowrap">
-                        Go to Page: 
+                        {{ $t('public.go_to_page') }}: 
                         <TextInput
                             :inputName="'go_to_page'"
                             :placeholder="'eg: 12'"
@@ -869,7 +887,7 @@ const deleteModalDescription = computed(() => {
         </div>
 
         <Modal 
-            :title="'Add New Group'"
+            :title="$t('public.inventory.add_new_group')"
             :show="createFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
@@ -906,10 +924,10 @@ const deleteModalDescription = computed(() => {
                 </div>
                 <div class="flex flex-col gap-1" >
                     <div class="text-primary-900 text-2xl font-medium text-center">
-                        Group created!
+                        {{ $t('public.inventory.group_created') }}
                     </div>
                     <div class="text-gray-900 text-base font-medium text-center leading-tight" >
-                        Do you want to add the item in the group to your menu?
+                        {{ $t('public.inventory.group_created_message') }}
                     </div>
                 </div>
                 <div class="flex item-center gap-3">
@@ -919,20 +937,20 @@ const deleteModalDescription = computed(() => {
                         type="button"
                         @click="groupCreatedModalIsOpen = false"
                     >
-                        Maybe Later
+                        {{ $t('public.action.maybe_later') }}
                     </Button>
                     <Button
                         size="lg"
                         type="button"
                         @click="openForm('add-as-product', null, $event)"
                     >
-                        Add Now
+                        {{ $t('public.action.add_now') }}
                     </Button>
                 </div>
             </div>
         </Modal>
         <Modal 
-            :title="'Add New Product'"
+            :title="$t('public.menu.add_new_product')"
             :maxWidth="'lg'" 
             :closeable="true"
             :show="addAsProductModalIsOpen"
@@ -957,7 +975,7 @@ const deleteModalDescription = computed(() => {
         </Modal>
 
         <Modal 
-            :title="'Add New Stock'"
+            :title="$t('public.inventory.add_new_stock')"
             :show="addStockFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
@@ -982,7 +1000,7 @@ const deleteModalDescription = computed(() => {
         </Modal>
 
         <Modal 
-            :title="'Edit Group'"
+            :title="$t('public.inventory.edit_group')"
             :show="editGroupFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
@@ -1042,9 +1060,9 @@ const deleteModalDescription = computed(() => {
                             <Textarea 
                                 v-if="confirmationType === 'group'"
                                 :inputName="'remark'"
-                                :labelText="'Reason of inventory item deletetion'"
+                                :labelText="$t('public.inventory.delete_item_reason')"
                                 :errorMessage="deleteInventoryForm.errors.remark ? deleteInventoryForm.errors.remark[0] : ''"
-                                :placeholder="'Enter the reason'"
+                                :placeholder="$t('public.enter_reason')"
                                 :rows="3"
                                 v-model="deleteInventoryForm.remark"
                             />
@@ -1057,14 +1075,14 @@ const deleteModalDescription = computed(() => {
                                 type="button"
                                 @click="closeForm('delete', 'close')"
                             >
-                                {{ confirmationType === 'group' ? 'Keep' : 'Maybe later' }}
+                                {{ confirmationType === 'group' ? $t('public.keep') : $t('public.action.maybe_later') }}
                             </Button>
                             <Button
                                 v-if="confirmationType === 'group'"
                                 variant="red"
                                 size="lg"
                             >
-                                Delete
+                                {{ $t('public.action.delete') }}
                             </Button>
                             <Button
                                 v-else
@@ -1072,7 +1090,7 @@ const deleteModalDescription = computed(() => {
                                 size="lg"
                                 type="button"
                             >
-                                Go deactivate
+                                {{ $t('public.action.go_deactivate') }}
                             </Button>
                         </div>
                     </div>
@@ -1081,7 +1099,7 @@ const deleteModalDescription = computed(() => {
         </Modal>
 
         <Modal
-            :title="'Stock Flow Detail'"
+            :title="$t('public.inventory.stock_flow_detail')"
             :maxWidth="'sm'"
             :closeable="true"
             :show="isStockFlowDetailModalOpen"

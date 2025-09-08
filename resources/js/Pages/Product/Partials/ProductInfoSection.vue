@@ -6,6 +6,7 @@ import Table from '@/Components/Table.vue';
 import EditProductForm from './EditProductForm.vue';
 import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
+import { transactionFormat } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -42,6 +43,8 @@ const props = defineProps({
         default: () => [],
     },
 })
+
+const { formatAmount } = transactionFormat();
 
 const productInfo = ref();
 const category = ref();
@@ -134,7 +137,7 @@ watch( () => props.product, (newValue) => {
                     <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">
                         <PriceTagIcon class="size-6 text-primary-900"/>
                     </div>
-                    <span class="text-base text-grey-900 font-medium">RM {{ productInfo.price }}</span>
+                    <span class="text-base text-grey-900 font-medium">RM {{ formatAmount(productInfo.price) }}</span>
                 </div>
                 <div class="col-span-6 lg:col-span-full flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
                     <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">

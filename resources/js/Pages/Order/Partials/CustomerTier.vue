@@ -8,7 +8,7 @@ import Button from '@/Components/Button.vue';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import NumberCounter from '@/Components/NumberCounter.vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import { useCustomToast, useLangObserver } from '@/Composables/index.js';
+import { useCustomToast } from '@/Composables/index.js';
 import TabView from '@/Components/TabView.vue';
 import Modal from '@/Components/Modal.vue';
 import dayjs from 'dayjs';
@@ -28,7 +28,6 @@ const props = defineProps({
 const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id)
 
-const { locale } = useLangObserver();
 const { showMessage } = useCustomToast();
 
 const emit = defineEmits(['close', 'fetchZones', 'fetchOrderDetails']);
@@ -232,12 +231,7 @@ const isNotRedeemable = (reward) => {
                                     </div>
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
                                         <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">
-                                            <template v-if="locale === 'zh-Hans'">
-                                                {{ reward.ranking_reward.ranking.name }} {{ $t('public.entry_reward_for') }}
-                                            </template>
-                                            <template v-else>
-                                                {{ $t('public.entry_reward_for') }} {{ reward.ranking_reward.ranking.name }}
-                                            </template>
+                                            {{ $t('public.entry_reward_for', { rank_name: reward.ranking_reward.ranking.name }) }}
                                         </span>
                                         <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
                                         <div class="flex items-center gap-1 self-stretch">
@@ -285,12 +279,7 @@ const isNotRedeemable = (reward) => {
                                     </div>
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
                                         <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">
-                                            <template v-if="locale === 'zh-Hans'">
-                                                {{ reward.ranking_reward.ranking.name }} {{ $t('public.entry_reward_for') }}
-                                            </template>
-                                            <template v-else>
-                                                {{ $t('public.entry_reward_for') }} {{ reward.ranking_reward.ranking.name }}
-                                            </template>
+                                            {{ $t('public.entry_reward_for', { rank_name: reward.ranking_reward.ranking.name }) }}
                                         </span>
                                         <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
                                         <span class="text-grey-600 text-2xs font-normal">{{ $t('public.redeemed_on') }} {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>

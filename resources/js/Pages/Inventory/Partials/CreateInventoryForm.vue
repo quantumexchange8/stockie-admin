@@ -113,8 +113,8 @@ const formSubmit = async () => {
                 // Display success message
                 showMessage({
                     severity: 'success',
-                    summary: 'Group added successfully.',
-                    detail: 'You can always add new stock to this group.',
+                    summary: wTrans('public.toast.add_group_summary'),
+                    detail: wTrans('public.toast.add_group_detail')
                 });
 
                 // Reset the form and emit necessary events
@@ -225,7 +225,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-8 flex-[1_0_0] self-stretch">
                 <TextInput
                     :inputName="'name'"
-                    :labelText="'Group name'"
+                    :labelText="$t('public.field.group_name')"
                     :placeholder="'e.g. Beer'"
                     :errorMessage="form.errors?.name || ''"
                     v-model="form.name"
@@ -243,7 +243,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <div class="flex flex-col items-end gap-y-8 self-stretch">
                     <div class="flex flex-col gap-4 self-stretch" v-for="(item, i) in form.items" :key="i">
                         <div class="flex flex-row items-center justify-between self-stretch">
-                            <p class="text-grey-950 font-semibold text-md">Item {{ i + 1 }}</p>
+                            <p class="text-grey-950 font-semibold text-md">{{ $t('public.item') }} {{ i + 1 }}</p>
                             <DeleteIcon class="size-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer" @click="removeItem(i)" />
                         </div>
 
@@ -251,14 +251,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="flex flex-row items-start gap-x-3 self-stretch">
                                 <TextInput
                                     :inputName="'item_'+ i +'_name'"
-                                    :labelText="'Name'"
+                                    :labelText="$t('public.field.name')"
                                     :placeholder="'e.g. Danish Pilsner'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.item_name'] : ''"
                                     v-model="item.item_name"
                                 />
                                 <Dropdown
                                     :inputName="'item_'+ i +'_cat_id'"
-                                    :labelText="'Unit'"
+                                    :labelText="$t('public.unit')"
                                     :inputArray="props.itemCategoryArr"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.item_cat_id'] : ''"
                                     v-model="item.item_cat_id"
@@ -267,7 +267,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="flex flex-row items-start justify-around gap-x-3 self-stretch">
                                 <TextInput
                                     :inputName="'item_'+ i +'_code'"
-                                    :labelText="'Code'"
+                                    :labelText="$t('public.inventory.code')"
                                     :placeholder="'e.g. C0001'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.item_code'] : ''"
                                     v-model="item.item_code"
@@ -275,7 +275,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 <TextInput
                                     :inputName="'item_'+ i +'_stock_qty'"
                                     :inputType="'number'"
-                                    :labelText="'Current stock'"
+                                    :labelText="$t('public.current_stock')"
                                     :placeholder="'e.g. 100'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.stock_qty'] : ''"
                                     v-model="item.stock_qty"
@@ -283,7 +283,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 <TextInput
                                     :inputName="'item_'+ i +'_low_stock_qty'"
                                     :inputType="'number'"
-                                    :labelText="'Show low stock at'"
+                                    :labelText="$t('public.field.show_low_stock')"
                                     :placeholder="'e.g. 25'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.low_stock_qty'] : ''"
                                     v-model="item.low_stock_qty"
@@ -309,7 +309,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <template #icon>
                         <PlusIcon class="size-6 flex-shrink-0" />
                     </template>
-                    New Item
+                    {{ $t('public.action.new_item') }}
                 </Button>
             </div>
         </div>
@@ -320,13 +320,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :size="'lg'"
                 @click="close('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Add
+                {{ $t('public.action.add') }}
             </Button>
         </div>
         <Modal

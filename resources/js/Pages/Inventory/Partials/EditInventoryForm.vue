@@ -84,7 +84,7 @@ const formSubmit = () => {
         onSuccess: () => {
             showMessage({
                 severity: 'success',
-                summary: 'Changes saved.',
+                summary: wTrans('public.toast.changes_saved'),
             });
 
             form.reset();
@@ -113,7 +113,7 @@ const deleteInventoryItem = async () => {
                 removeItem(selectedItemIndex.value);
                 showMessage({ 
                     severity: 'success',
-                    summary: 'Inventory item has been successfully deleted.',
+                    summary: wTrans('public.toast.delete_inventory_item_success'),
                 });
             }, 200);
     
@@ -150,14 +150,14 @@ const removeItem = (index) => {
 
 const deleteModalTitle = computed(() => {
     return confirmationType.value === 'item'
-        ? 'Delete this item?'
-        : 'This item is in use!';
+        ? wTrans('public.inventory.delete_item')
+        : wTrans('public.inventory.delete_item_warning');
 });
 
 const deleteModalDescription = computed(() => {
     return confirmationType.value === 'item'
-        ? 'The products associated with this item cannot be reactivated and this item cannot recovered. This action cannot be undone. Are you sure you want to delete this item?'
-        : 'You cannot delete this item until you deactivate the products that include it. Would you like to proceed to deactivate those products?';
+        ? wTrans('public.inventory.delete_item_message')
+        : wTrans('public.inventory.delete_item_warning_message');
 });
 
 const getKeepOptions = computed(() => {
@@ -176,7 +176,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <!-- <div class="col-span-full md:col-span-4 h-[372px] w-full flex items-center justify-center rounded-[5px] bg-grey-50 outline-dashed outline-2 outline-grey-200"></div> -->
              <DragDropImage
                 :inputName="'image'"
-                :remarks="'Suggested image size: 1200 x 1200 pixel'"
+                :remarks="`${$t('public.suggested_image_size')}: 1200 x 1200 ${$t('public.pixel')}`"
                 :model="form.image"
                 :errorMessage="form.errors.image"
                 v-model="form.image"
@@ -185,7 +185,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <div class="col-span-full md:col-span-8 flex flex-col items-start gap-6 self-stretch">
                 <TextInput
                     :inputName="'name'"
-                    :labelText="'Group name'"
+                    :labelText="$t('public.field.group_name')"
                     :placeholder="'eg: Beer'"
                     :errorMessage="form.errors?.name || ''"
                     v-model="form.name"
@@ -204,7 +204,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <div class="flex flex-col items-end gap-4 self-stretch">
                     <div class="flex flex-col gap-4 self-stretch" v-for="(item, i) in form.items" :key="i">
                         <div class="flex flex-row items-center justify-between self-stretch">
-                            <p class="text-grey-950 font-semibold text-md">Item {{ i + 1 }}</p>
+                            <p class="text-grey-950 font-semibold text-md">{{ $t('public.item') }} {{ i + 1 }}</p>
                             <DeleteIcon 
                                 class="size-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer" 
                                 @click="openModal('item', item.id, i)" 
@@ -215,14 +215,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="flex flex-row items-start gap-x-3 self-stretch">
                                 <TextInput
                                     :inputName="'items.'+ i +'.item_name'"
-                                    :labelText="'Item '+ (i + 1) +' name'"
+                                    :labelText="`${$t('public.item')} `+ (i + 1) +` ${$t('public.field.name')}`"
                                     :placeholder="'eg: Heineken Bottle 500ml'"
                                     :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_name']  : ''"
                                     v-model="item.item_name"
                                 />
                                 <Dropdown
                                     :inputName="'items.'+ i +'.item_cat_id'"
-                                    :labelText="'Unit'"
+                                    :labelText="$t('public.unit')"
                                     :inputArray="props.itemCategoryArr"
                                     :dataValue="item.item_cat_id"
                                     :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_cat_id']  : ''"
@@ -232,7 +232,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="flex flex-row items-start justify-around gap-x-3 self-stretch">
                                 <TextInput
                                     :inputName="'items.'+ i +'.item_code'"
-                                    :labelText="'Item code'"
+                                    :labelText="$t('public.inventory.code')"
                                     :placeholder="'eg: H001'"
                                     :errorMessage="(form.errors) ? form.errors['items.' + i + '.item_code']  : ''"
                                     v-model="item.item_code"
@@ -240,7 +240,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 <TextInput
                                     :inputName="'item_'+ i +'_stock_qty'"
                                     :inputType="'number'"
-                                    :labelText="'Current stock'"
+                                    :labelText="$t('public.current_stock')"
                                     :placeholder="'e.g. 100'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.stock_qty'] : ''"
                                     :disabled="!!item.created_at"
@@ -249,7 +249,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 <TextInput
                                     :inputName="'item_'+ i +'_low_stock_qty'"
                                     :inputType="'number'"
-                                    :labelText="'Show low stock at'"
+                                    :labelText="$t('public.current_stock')"
                                     :placeholder="'e.g. 25'"
                                     :errorMessage="(form.errors) ? form.errors['items.' + i + '.low_stock_qty']  : ''"
                                     v-model="item.low_stock_qty"
@@ -276,7 +276,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <template #icon>
                         <PlusIcon class="size-6 flex-shrink-0" />
                     </template>
-                    New Item
+                        {{ $t('public.action.new_item') }}
                 </Button>
             </div>
         </div>
@@ -287,13 +287,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :size="'lg'"
                 @click="cancelForm('close')"
             >
-                Discard
+                {{ $t('public.action.discard') }}
             </Button>
             <Button
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Save Changes
+                {{ $t('public.action.save_changes') }}
             </Button>
         </div>
         <Modal
@@ -327,9 +327,9 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <Textarea 
                         v-if="confirmationType === 'item'"
                         :inputName="'remark'"
-                        :labelText="'Reason of inventory item deletetion'"
+                        :labelText="$t('public.inventory.delete_item_reason')"
                         :errorMessage="deleteInventoryItemForm.errors.remark ? deleteInventoryItemForm.errors.remark[0] : ''"
-                        :placeholder="'Enter the reason'"
+                        :placeholder="$t('public.enter_reason')"
                         :rows="3"
                         v-model="deleteInventoryItemForm.remark"
                     />
@@ -342,14 +342,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         type="button"
                         @click="closeModal"
                     >
-                        {{ confirmationType === 'item' ? 'Keep' : 'Maybe later' }}
+                        {{ confirmationType === 'item' ? $t('public.keep') : $t('public.action.maybe_later') }}
                     </Button>
                     <Button
                         v-if="confirmationType === 'item'"
                         variant="red"
                         size="lg"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                     <Button
                         v-else
@@ -357,7 +357,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         size="lg"
                         type="button"
                     >
-                        Go deactivate
+                        {{ $t('public.action.go_deactivate') }}
                     </Button>
                 </div>
             </div>

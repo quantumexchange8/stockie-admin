@@ -679,10 +679,12 @@ watch(paginatedRows, (newValue) => {
                                         <Tag :value="$t('public.set_header')" v-if="item.bucket === 'set'"/>
                                         <span class="w-full self-stretch text-primary-950 text-md font-semibold overflow-hidden text-ellipsis whitespace-nowrap">{{ item.product_name }}</span>
                                     </div>
-                                    <div v-for="items in item.discountItems" v-if="item.discount_id !== null" class="flex flex-col items-start">
-                                        <span class="text-grey-900 font-bold text-md ">RM {{ formatAmount(items.price_after) }}</span>
-                                        <span class="text-grey-900 font-normal text-sm line-through">RM {{ formatAmount(items.price_before) }}</span>
-                                    </div>
+                                    <template v-if="item.discount_id !== null" >
+                                        <div v-for="items in item.discountItems" class="flex flex-col items-start">
+                                            <span class="text-grey-900 font-bold text-md ">RM {{ formatAmount(items.price_after) }}</span>
+                                            <span class="text-grey-900 font-normal text-sm line-through">RM {{ formatAmount(items.price_before) }}</span>
+                                        </div>
+                                    </template>
                                     <div v-else>
                                         <span class="line-clamp-1 text-grey-900 text-ellipsis font-bold text-md">
                                             RM {{ formatAmount(item.price) }}

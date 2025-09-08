@@ -7,6 +7,7 @@ import OrderInvoice from '@/Pages/Order/Partials/OrderInvoice.vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { computed, onMounted, ref } from 'vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     customerId: Number,
@@ -14,11 +15,11 @@ const props = defineProps({
 const customerId = ref(props.customerId);
 const redeemHistory = ref([]);
 const tabs = ref([
-    { key: 'All', title: 'All', disabled: false },
-    { key: 'Earned', title: 'Earned', disabled: false },
-    { key: 'Used', title: 'Used', disabled: false }, 
-    { key: 'Adjusted', title: 'Adjusted', disabled: false }, 
-    { key: 'Expired', title: 'Expired', disabled: false }
+    { key: 'All', title: wTrans('public.all'), disabled: false },
+    { key: 'Earned', title: wTrans('public.earned'), disabled: false },
+    { key: 'Used', title: wTrans('public.used'), disabled: false }, 
+    { key: 'Adjusted', title: wTrans('public.adjusted'), disabled: false }, 
+    { key: 'Expired', title: wTrans('public.expired'), disabled: false }
 ]);
 const isLoading = ref(false);
 const selectedOrderId = ref(null);
@@ -27,7 +28,7 @@ const orderInvoiceModalIsOpen = ref(false);
 const getRedeemHistory = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get(`customer/getCustomerPointHistories/${props.customerId}`);
+        const response = await axios.get(`/customer/getCustomerPointHistories/${props.customerId}`);
         redeemHistory.value = response.data;
     } catch(error){
         console.error(error)
@@ -48,9 +49,9 @@ const expiredHistories = computed(() => redeemHistory.value.filter(item => item.
 
 const getRecordTitle = (item) => {
     switch (item.type) {
-        case 'Earned': return item.point_type === 'Order' ? item.payment.order.order_no : `${item.customer.rank.name} Entry Reward`;
+        case 'Earned': return item.point_type === 'Order' ? item.payment.order.order_no : `${item.customer.rank.name} ${wTrans('public.entry_reward')}`;
         case 'Used': return item.point_type === 'Redeem' ? item.redeemable_item.product_name : '';
-        case 'Expired': return 'Point Expiration';
+        case 'Expired': return wTrans('public.point_expiration');
     }
 }
 
@@ -105,7 +106,7 @@ onMounted(() => getRedeemHistory());
                                                 <div class="flex flex-col justify-center items-start flex-[1_0_0] self-stretch" v-else>
                                                     <div class="flex items-center gap-1 self-stretch">
                                                         <div class="flex items-center gap-2">
-                                                            <span class="text-primary-900 text-2xs font-normal">Adjusted by</span>
+                                                            <span class="text-primary-900 text-2xs font-normal">{{ $t('public.adjusted_by') }}</span>
                                                             <div class="flex items-center gap-1.5">
                                                                 <img
                                                                     :src="item.waiter_image"
@@ -119,7 +120,7 @@ onMounted(() => getRedeemHistory());
                                                         </div>
                                                     </div>
                                                     <div class="flex items-center gap-2 self-stretch">
-                                                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">Point Adjustment</span>
+                                                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">{{ $t('public.point_adjustment') }}</span>
                                                     </div>
                                                     <div class="flex items-start gap-1 self-stretch" v-if="item.remark">
                                                         <CommentIcon class="size-[15px]" />
@@ -131,10 +132,10 @@ onMounted(() => getRedeemHistory());
                                         </div>
                                     </div>
                                     <div class="w-1/4 flex flex-col justify-center items-end gap-4">
-                                        <span class="text-green-700 text-base font-medium whitespace-nowrap" v-if="item.type === 'Earned'">+ {{ formatPoints(item.amount) }} pts</span>
-                                        <span class="text-primary-700 text-base font-medium" v-if="item.type === 'Used' || item.type === 'Expired'">- {{ formatPoints(item.amount) }} pts</span>
-                                        <span class="text-green-700 text-base font-medium whitespace-nowrap" v-if="item.type === 'Adjusted' && item.new_balance > item.old_balance">+ {{ formatPoints(item.amount) }} pts</span>
-                                        <span class="text-primary-700 text-base font-medium" v-if="item.type === 'Adjusted' && item.new_balance < item.old_balance">- {{ formatPoints(item.amount) }} pts</span>
+                                        <span class="text-green-700 text-base font-medium whitespace-nowrap" v-if="item.type === 'Earned'">+ {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
+                                        <span class="text-primary-700 text-base font-medium" v-if="item.type === 'Used' || item.type === 'Expired'">- {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
+                                        <span class="text-green-700 text-base font-medium whitespace-nowrap" v-if="item.type === 'Adjusted' && item.new_balance > item.old_balance">+ {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
+                                        <span class="text-primary-700 text-base font-medium" v-if="item.type === 'Adjusted' && item.new_balance < item.old_balance">- {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -144,7 +145,7 @@ onMounted(() => getRedeemHistory());
                 <template v-else>
                     <div class="flex w-full flex-col items-center justify-center gap-5">
                         <UndetectableIllus />
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </div>
                 </template>
             </template>
@@ -169,7 +170,7 @@ onMounted(() => getRedeemHistory());
                                         </div>
                                     </div>
                                     <div class="w-1/4 flex flex-col justify-center items-end gap-4">
-                                        <span class="text-green-700 text-base font-medium whitespace-nowrap">+ {{ formatPoints(item.amount) }} pts</span>
+                                        <span class="text-green-700 text-base font-medium whitespace-nowrap">+ {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -179,7 +180,7 @@ onMounted(() => getRedeemHistory());
                 <template v-else>
                     <div class="flex w-full flex-col items-center justify-center gap-5">
                         <UndetectableIllus />
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </div>
                 </template>
             </template>
@@ -207,7 +208,7 @@ onMounted(() => getRedeemHistory());
                                         </div>
                                     </div>
                                     <div class="flex flex-col justify-center items-end gap-3">
-                                        <span class="text-primary-700 text-base font-medium">- {{ formatPoints(item.amount) }} pts</span>
+                                        <span class="text-primary-700 text-base font-medium">- {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -217,7 +218,7 @@ onMounted(() => getRedeemHistory());
                 <template v-else>
                     <div class="flex w-full flex-col items-center justify-center gap-5">
                         <UndetectableIllus />
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </div>
                 </template>
             </template>
@@ -240,7 +241,7 @@ onMounted(() => getRedeemHistory());
                                                 <div class="flex flex-col justify-center items-start flex-[1_0_0] self-stretch">
                                                     <div class="flex items-center gap-1 self-stretch">
                                                         <div class="flex items-center gap-2">
-                                                            <span class="text-primary-900 text-2xs font-normal">Adjusted by</span>
+                                                            <span class="text-primary-900 text-2xs font-normal">{{ $t('public.adjusted_by') }}</span>
                                                             <div class="flex items-center gap-1.5">
                                                                 <img
                                                                     :src="item.waiter_image"
@@ -254,7 +255,7 @@ onMounted(() => getRedeemHistory());
                                                         </div>
                                                     </div>
                                                     <div class="flex items-center gap-2 self-stretch">
-                                                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">Point Adjustment</span>
+                                                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">{{ $t('public.point_adjustment') }}</span>
                                                     </div>
                                                     <div class="flex items-start gap-1 self-stretch" v-if="item.remark">
                                                         <CommentIcon class="size-[15px]" />
@@ -265,8 +266,8 @@ onMounted(() => getRedeemHistory());
                                         </div>
                                     </div>
                                     <div class="flex flex-col justify-center items-end gap-3">
-                                        <span class="text-green-700 text-base font-medium whitespace-nowrap" v-if="item.new_balance >= item.old_balance">+ {{ formatPoints(item.amount) }} pts</span>
-                                        <span class="text-primary-700 text-base font-medium" v-if="item.new_balance < item.old_balance">- {{ formatPoints(item.amount) }} pts</span>
+                                        <span class="text-green-700 text-base font-medium whitespace-nowrap" v-if="item.new_balance >= item.old_balance">+ {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
+                                        <span class="text-primary-700 text-base font-medium" v-if="item.new_balance < item.old_balance">- {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -276,7 +277,7 @@ onMounted(() => getRedeemHistory());
                 <template v-else>
                     <div class="flex w-full flex-col items-center justify-center gap-5">
                         <UndetectableIllus />
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </div>
                 </template>
             </template>
@@ -299,7 +300,7 @@ onMounted(() => getRedeemHistory());
                                         </div>
                                     </div>
                                     <div class="w-1/4 flex flex-col justify-center items-end gap-3">
-                                        <span class="text-primary-700 text-base font-medium">- {{ formatPoints(item.amount) }} pts</span>
+                                        <span class="text-primary-700 text-base font-medium">- {{ formatPoints(item.amount) }} {{ $t('public.pts') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -309,7 +310,7 @@ onMounted(() => getRedeemHistory());
                 <template v-else>
                     <div class="flex w-full flex-col items-center justify-center gap-5">
                         <UndetectableIllus />
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </div>
                 </template>
             </template>

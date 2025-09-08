@@ -336,7 +336,7 @@ watch(() => searchQuery.value, (newValue) => {
                                                         {{ data.name }}
                                                     </div>
                                                     <div class="w-[24%] py-2 px-3">RM {{ formatAmount(data.total_sales) }}</div>
-                                                    <div class="w-[24%] py-2 px-3">RM {{ formatAmount(data.incentive) }}</div>
+                                                    <div class="w-[24%] py-2 px-3">RM {{ data.type == 'percentage' ? formatAmount(data.incentive * data.total_sales) : formatAmount(data.incentive) }}</div>
                                                     <div class="w-[17%] py-2 px-3">
                                                         <Menu as="div" class="relative inline-block text-left">
                                                             <div>

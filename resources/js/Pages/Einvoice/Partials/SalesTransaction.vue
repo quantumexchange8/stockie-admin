@@ -409,7 +409,7 @@ const PrintInvoice = (id) => {
                     variant="tertiary"
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
                     @click="PrintInvoice(selectedVal.id)"
-                    :disabled="selectedVal.status !== 'Valid' ? true : false"
+                    :disabled="selectedVal.status !== 'Valid' && selectedVal.docs_type === 'single_submission'"
                 >
                     <span class="text-grey-700 font-normal">Print Receipt</span>
                 </Button>

@@ -362,6 +362,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::get('/getAllCustomers', [CustomerController::class,'getAllCustomers'])->name('customer.all-customers');
         Route::get('/getCurrentOrdersCount/{id}', [CustomerController::class,'getCurrentOrdersCount'])->name('customer.current-orders-count');
         Route::get('/getExpiringPointHistories/{id}', [CustomerController::class,'getExpiringPointHistories'])->name('customer.getExpiringPointHistories');
+        Route::get('/getCustomerDetails/{id}', [CustomerController::class,'getCustomerDetails'])->name('customer.getCustomerDetails');
         Route::post('/', [CustomerController::class,'store'])->name('customer.store');
         Route::post('/returnKeepItem/{id}', [CustomerController::class,'returnKeepItem'])->name('customer.returnKeepItem');
         Route::post('/adjustPoint', [CustomerController::class, 'adjustPoint'])->name('customer.adjustPoint');

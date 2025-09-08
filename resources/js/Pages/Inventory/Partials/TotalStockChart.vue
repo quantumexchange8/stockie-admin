@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import Chart from 'primevue/chart';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     inventories: {
@@ -24,8 +25,8 @@ const totalStock = ref(
     allInventories.value.reduce((total, item) => total + item.stock_qty, 0)
 )
 
-const chartData = ref();
-const chartOptions = ref();
+// const chartData = ref();
+// const chartOptions = ref();
 
 // const createGrad = (colorOne = "#62D7FA", opacityOne = 1, colorTwo = "#ffffff", opacityTwo = 1, colorStop = 95) => {
 
@@ -51,9 +52,9 @@ const chartOptions = ref();
 //     return grd;
 // }
 
-const setChartData = () => {
+const chartData = computed(() => {
     return {
-        labels: ['In stock', 'Keep'],
+        labels: [wTrans('public.in_stock').value, wTrans('public.keep').value],
         datasets: [
             {
                 data: [totalStock.value, props.keepItemsCount],
@@ -117,9 +118,11 @@ const setChartData = () => {
             }
         ]
     };
-};
+});
 
-const setChartOptions = () => {
+const titleText = computed(() => wTrans('public.amount').value);
+
+const chartOptions = computed(() => {
     const stockText = totalStock.value;
     
     return {
@@ -159,7 +162,7 @@ const setChartOptions = () => {
             },
             titleText: {
                 display: true,
-                text: 'Amount'
+                text: wTrans('public.amount').value
             },
             animation: {
                 animateScale: true,
@@ -171,7 +174,7 @@ const setChartOptions = () => {
             },
         }
     };
-};
+});
 
 const totalStockPlugin = {
     id: 'totalStock',
@@ -179,7 +182,7 @@ const totalStockPlugin = {
         let { ctx, width, height } = chart;
         let text = chart.config.options.plugins.totalStockText.text || '0';
         ctx.save();
-        ctx.font = '600 26px Lexend';
+        ctx.font = '600 20px Lexend';
         ctx.fillStyle = '#7E171B';
         ctx.textAlign = 'center';
         ctx.fillText(text, width / 2, height / 1.9);
@@ -296,24 +299,24 @@ const hoverEffectPlugin = {
     }
 };
 
-const updateChart = () => {
-    chartData.value = setChartData();
-    chartOptions.value = setChartOptions();
-};
+// const updateChart = () => {
+//     chartData.value = setChartData();
+//     chartOptions.value = setChartOptions();
+// };
 
-watch(
-    [totalStock],
-    updateChart
-);
+// watch(
+//     [totalStock],
+//     updateChart
+// );
 
-onMounted(() => {
-    updateChart();
-});
+// onMounted(() => {
+//     updateChart();
+// });
 </script>
 
 <template>
     <div class="flex flex-col p-6 items-center rounded-[5px] border border-red-100 overflow-hidden">
-        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Total Stock</span>
+        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.total_stock') }}</span>
         <div class="flex justify-center items-center">
             <Chart 
                 type="doughnut" 

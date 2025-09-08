@@ -7,9 +7,10 @@ import axios from "axios";
 import Toast from "@/Components/Toast.vue";
 import { useCustomToast } from "@/Composables/index";
 import { Head } from "@inertiajs/vue3";
+import { wTrans, wTransChoice } from "laravel-vue-i18n";
 
 const home = ref({
-    label: 'Customer',
+    label: wTrans('public.customer_header'),
 });
 
 const props = defineProps({
@@ -27,11 +28,11 @@ const highestPoints = computed(() => {
 });
 
 const customerColumn = ref([
-    { field: 'ranking', header: 'Tier', width: '13', sortable: true},
-    { field: 'full_name', header: 'Customer', width: '28', sortable: true},
-    { field: 'point', header: 'Points', width: '13', sortable: true},
-    { field: 'keep_items_count', header: 'Keep', width: '13', sortable: true},
-    { field: 'created_at', header: 'Joined date', width: '20', sortable: true},
+    { field: 'ranking', header: wTrans('public.tier'), width: '13', sortable: true},
+    { field: 'full_name', header: wTrans('public.customer_header'), width: '28', sortable: true},
+    { field: 'point', header: wTransChoice('public.point', 1), width: '13', sortable: true},
+    { field: 'keep_items_count', header: wTrans('public.keep'), width: '13', sortable: true},
+    { field: 'created_at', header: wTrans('public.customer.joined_date'), width: '20', sortable: true},
     { field: 'action', header: '', width: '13', sortable: false, edit: true},
 ])
 
@@ -88,7 +89,7 @@ onMounted(() => flashMessage());
 </script>
 
 <template>
-    <Head title="Customer" />
+    <Head :title="$t('public.customer_header')" />
 
     <AuthenticatedLayout>
         <template #header>

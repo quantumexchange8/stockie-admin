@@ -15,6 +15,7 @@ import Breadcrumb from '@/Components/Breadcrumb.vue';
 import { EmptyIllus, OrderDeliveredIllus } from '@/Components/Icons/illus'
 import Toast from '@/Components/Toast.vue';
 import { useCustomToast } from '@/Composables/index.js';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     inventories: Array,
@@ -25,16 +26,16 @@ const props = defineProps({
 });
 
 const home = ref({
-    label: 'Inventory',
+    label: wTrans('public.inventory_header'),
 });
 
 const keepHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
-    {field: 'keep_date', header: 'Date', width: '13.3', sortable: false},
-    {field: 'keep_item.customer.full_name', header: 'Customer', width: '25', sortable: false},
-    {field: 'item_name', header: 'Item Name', width: '38', sortable: false},
-    {field: 'qty', header: 'Qty', width: '11.2', sortable: false},
-    {field: 'keep_item.expired_to', header: 'Expire In', width: '12.5', sortable: false},
+    {field: 'expired_from', header: wTrans('public.inventory.kept_date'), width: '20', sortable: false},
+    {field: 'customer.full_name', header: wTrans('public.customer_header'), width: '25', sortable: false},
+    {field: 'order_item_subitem.product_item.inventory_item.item_name', header: wTrans('public.inventory.item_name'), width: '25', sortable: false},
+    {field: 'qty', header: wTrans('public.qty'), width: '11.2', sortable: false},
+    {field: 'expired_to', header: wTrans('public.inventory.expire_in'), width: '18.8', sortable: false},
 ]);
 
 const { flashMessage } = useCustomToast();
@@ -167,7 +168,7 @@ const hideAddStockForm = (status) => {
 </script>
 
 <template>
-    <Head title="Inventory" />
+    <Head :title="$t('public.inventory_header')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -187,7 +188,7 @@ const hideAddStockForm = (status) => {
                                 <TotalGroupsIcon class="text-primary-900"/>
                             </div>
                             <div class="flex flex-col items-start gap-2 self-stretch">
-                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Group</span>
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ $t('public.inventory.total_group') }}</span>
                                 <span class="text-lg font-medium text-primary-900">{{ initialInventories.length }}</span>
                             </div>
                         </div>
@@ -196,7 +197,7 @@ const hideAddStockForm = (status) => {
                                 <TotalItemsIcon class="text-primary-900"/>
                             </div>
                             <div class="flex flex-col items-start gap-2 self-stretch">
-                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Item</span>
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ $t('public.inventory.total_item') }}</span>
                                 <span class="text-lg font-medium text-primary-900">{{ allInventoryItems.length }}</span>
                             </div>
                         </div>
@@ -207,7 +208,7 @@ const hideAddStockForm = (status) => {
                                 <TotalStockIcon class="text-primary-900"/>
                             </div>
                             <div class="flex flex-col items-start gap-2 self-stretch">
-                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Stock</span>
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ $t('public.total_stock') }}</span>
                                 <span class="text-lg font-medium text-primary-900">{{ totalStock }}</span>
                             </div>
                         </div>
@@ -216,7 +217,7 @@ const hideAddStockForm = (status) => {
                                 <EmptyStockIcon class="text-primary-900"/>
                             </div>
                             <div class="flex flex-col items-start gap-2 self-stretch">
-                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Out of Stock</span>
+                                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ $tChoice('public.out_of_stock', 1) }}</span>
                                 <span class="text-lg font-medium text-primary-600">{{ totalOutofStockItems }}</span>
                             </div>
                         </div>
@@ -280,21 +281,23 @@ const hideAddStockForm = (status) => {
                 />
                     
                 <div class="col-span-full md:col-span-8 flex flex-col p-6 gap-6 items-center rounded-[5px] border border-red-100 overflow-x-auto">
-                    <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Out of Stock Item</span>
+                    <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.inventory.item_out_of_stock') }}</span>
                     <div class="flex items-start justify-start self-stretch gap-6" v-if="outOfStockItems.length > 0">
                         <div class="flex flex-col justify-between gap-4 p-3 min-w-48 rounded-[5px] border self-stretch border-primary-50" v-for="(item, index) in outOfStockItems" :key="index">
                             <span class="text-base font-medium text-grey-900">{{ item.item_name }}</span>
                             <div class="flex flex-col items-start self-stretch gap-2">
                                 <div class="flex flex-col gap-2 p-3">
-                                    <span class="text-sm font-medium text-primary-900">Product affected</span>
+                                    <span class="text-sm font-medium text-primary-900" v-if="item.products.length > 0">{{ $t('public.product_affected') }}</span>
                                     <div class="flex items-center gap-3">
                                         <!-- <div class="w-10 h-10 rounded-sm border border-grey-100 bg-white" v-for="(product, subIndex) in item.products" :key="subIndex"></div> -->
-                                         <template v-for="(productItem, index) in item.products" :key="index">
-                                            <img class="bg-grey-50 border border-grey-200 h-10 w-10" 
-                                                :src="productItem.image ? productItem.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
-                                                alt=""
-                                            />
-                                         </template>
+                                        <template v-if="item.products.length > 0">
+                                            <template v-for="(productItem, index) in item.products" :key="index">
+                                                <img class="bg-grey-50 border border-grey-200 h-10 w-10" 
+                                                    :src="productItem.image ? productItem.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'"
+                                                    alt=""
+                                                />
+                                            </template>
+                                        </template>
                                     </div>
                                 </div>
                                 <Button
@@ -302,18 +305,18 @@ const hideAddStockForm = (status) => {
                                     :size="'md'"
                                     @click="showAddStockForm(item.inventory_id)"
                                 >
-                                    Replenish
+                                    {{ $t('public.action.replenish') }}
                                 </Button>
                             </div>
                         </div>
                     </div>
                     <div class="flex justify-center items-center gap-2" v-else>
-                        <span class="text-sm font-medium text-primary-900">Seems like everything is in stock!</span>
+                        <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.all_in_stock') }}</span>
                         <EmptyIllus />
                     </div>
                 </div>
                 <Modal 
-                    :title="'Add New Stock'"
+                    :title="$t('public.inventory.add_new_stock')"
                     :show="addStockFormIsOpen" 
                     :maxWidth="'lg'" 
                     :closeable="true" 

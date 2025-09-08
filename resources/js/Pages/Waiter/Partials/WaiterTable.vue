@@ -8,6 +8,7 @@ import { useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import EditWaiter from './EditWaiter.vue';
 import { usePhoneUtils, useCustomToast } from '@/Composables';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     rows: {
@@ -103,7 +104,7 @@ const submit = async () => {
 
         showMessage({
             severity: 'success',
-            summary: `Selected waiter has been successfully deleted.`,
+            summary: wTrans('public.toast.delete_waiter_success'),
         })
         
         setTimeout(() => {
@@ -134,7 +135,7 @@ watch(() => props.rows, (newValue) => {
     >
         <template #empty>
             <EmptyWaiterIllus />
-                <span class="text-primary-900 text-sm font-medium">You haven’t added any waiter yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_waiter') }}</span>
         </template>
         <template #editAction="rows">
             <EditIcon
@@ -172,7 +173,7 @@ watch(() => props.rows, (newValue) => {
 
     <!-- edit modal -->
     <Modal
-        :title="'Edit'"
+        :title="$t('public.waiter.edit_waiter_detail')"
         :maxWidth="'lg'"
         :closeable="true"
         :show="isEditWaiterOpen"
@@ -211,8 +212,8 @@ watch(() => props.rows, (newValue) => {
                 </div>
                 <div class="flex flex-col gap-5">
                     <div class="flex flex-col gap-1 text-center">
-                        <span class="text-primary-900 text-lg font-medium self-stretch">Delete this waiter?</span>
-                        <span class="text-grey-900 text-base font-medium self-stretch">Are you sure you want to delete the selected waiter? This action cannot be undone.</span>
+                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ $t('public.waiter.delete_waiter') }}</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">{{ $t('public.waiter.delete_waiter_message') }}</span>
                     </div>
                 </div>
 
@@ -223,14 +224,14 @@ watch(() => props.rows, (newValue) => {
                         type="button"
                         @click="closeModal('leave')"
                     >
-                        Keeps
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="red"
                         size="lg"
                         type="submit"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                 </div>
             </div>

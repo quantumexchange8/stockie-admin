@@ -62,21 +62,21 @@ class CustomerController extends Controller
                                         return $total + $itemQty;
                                     }, 0);
 
-                                    if ($customer->rank) {
-                                        $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
-                                    }
+                                    // if ($customer->rank) {
+                                    //     $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
+                                    // }
 
-                                    foreach ($customer->keepItems as $key => $keepItem) {
-                                        $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-                                        $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
-                                        unset($keepItem->orderItemSubitem);
+                                    // foreach ($customer->keepItems as $key => $keepItem) {
+                                    //     $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                                    //     $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+                                    //     unset($keepItem->orderItemSubitem);
 
-                                        $keepItem->image = $keepItem->orderItemSubitem->productItem 
-                                                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-                                                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                                    //     $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                    //                 ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                    //                 : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
 
-                                        $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
-                                    }
+                                    //     $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+                                    // }
 
                                     return $customer;
                                 });
@@ -127,26 +127,31 @@ class CustomerController extends Controller
                                     $query->where('status', '!=', 'void')
                                           ->orWhereNull('status'); // Handle NULL cases
                                 })
+                                ->orderBy('full_name')
                                 ->get()
                                 ->map(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
-                                    $customer->keep_items_count = $customer->keepItems->count();
+                                    $customer->keep_items_count = $customer->keepItems->reduce(function ($total, $item) {
+                                        $itemQty = $item->qty > $item->cm ? $item->qty : 1;
 
-                                    if ($customer->rank) {
-                                        $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
-                                    }
+                                        return $total + $itemQty;
+                                    }, 0);
 
-                                    foreach ($customer->keepItems as $key => $keepItem) {
-                                        $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-                                        $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
-                                        unset($keepItem->orderItemSubitem);
+                                    // if ($customer->rank) {
+                                    //     $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
+                                    // }
 
-                                        $keepItem->image = $keepItem->orderItemSubitem->productItem 
-                                                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-                                                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                                    // foreach ($customer->keepItems as $key => $keepItem) {
+                                    //     $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                                    //     $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+                                    //     unset($keepItem->orderItemSubitem);
 
-                                        $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
-                                    }
+                                    //     $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                    //                 ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                    //                 : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+                                    //     $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+                                    // }
 
                                     return $customer;
                                 });
@@ -184,26 +189,35 @@ class CustomerController extends Controller
                                                 ]);
                                     }
                                 ])
+                                ->where(function ($query) {
+                                    $query->where('status', '!=', 'void')
+                                          ->orWhereNull('status'); // Handle NULL cases
+                                })
+                                ->orderBy('full_name')
                                 ->get()
                                 ->map(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
-                                    $customer->keep_items_count = $customer->keepItems->count();
+                                    $customer->keep_items_count = $customer->keepItems->reduce(function ($total, $item) {
+                                        $itemQty = $item->qty > $item->cm ? $item->qty : 1;
 
-                                    if ($customer->rank) {
-                                        $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
-                                    }
+                                        return $total + $itemQty;
+                                    }, 0);
 
-                                    foreach ($customer->keepItems as $key => $keepItem) {
-                                        $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-                                        $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
-                                        unset($keepItem->orderItemSubitem);
+                                    // if ($customer->rank) {
+                                    //     $customer->rank->image = $customer->rank->getFirstMediaUrl('ranking');
+                                    // }
 
-                                        $keepItem->image = $keepItem->orderItemSubitem->productItem 
-                                                    ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-                                                    : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+                                    // foreach ($customer->keepItems as $key => $keepItem) {
+                                    //     $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+                                    //     $keepItem->order_no = $keepItem->orderItemSubitem->orderItem->order['order_no'];
+                                    //     unset($keepItem->orderItemSubitem);
 
-                                        $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
-                                    }
+                                    //     $keepItem->image = $keepItem->orderItemSubitem->productItem 
+                                    //                 ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+                                    //                 : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+
+                                    //     $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+                                    // }
 
                                     return $customer;
                                 });
@@ -274,7 +288,7 @@ class CustomerController extends Controller
                     'keep_item_id' => $item->id,
                     'qty' => $deletedKeepQty,
                     'cm' => number_format((float) $item->cm, 2, '.', ''),
-                    'keep_date' => $item->created_at,
+                    'keep_date' => $item->expired_from,
                     'kept_balance' => $newKeptBalance,
                     'user_id' => auth()->user()->id,
                     'kept_from_table' => $item->kept_from_table,
@@ -451,7 +465,7 @@ class CustomerController extends Controller
             'keep_item_id' => $id,
             'qty' => $request->type === 'qty' ? round($request->return_qty, 2) : 0.00,
             'cm' => $request->type === 'cm' ? round($selectedItem->cm, 2) : 0.00,
-            'keep_date' => $selectedItem->created_at,
+            'keep_date' => $selectedItem->expired_from,
             'kept_balance' => $request->type === 'qty' ? $inventoryItem->current_kept_amt - $request->return_qty : $inventoryItem->current_kept_amt,
             'user_id' => auth()->user()->id,
             'kept_from_table' => $selectedItem->kept_from_table,
@@ -488,10 +502,18 @@ class CustomerController extends Controller
     public function getKeepHistories (string $id) 
     {
         $keepHistories = KeepHistory::with([
+                                        'keepItem.orderItemSubitem.productItem.inventoryItem.inventory.media',
+                                        'keepItem.orderItemSubitem.productItem.product.media',
+                                        'keepItem.waiter.media',
+                                        'waiter.media',
+                                    ])
+                                    ->with([
                                         'keepItem:id,order_item_subitem_id,customer_id,qty,cm,remark,user_id,status,expired_from,expired_to',
                                         'keepItem.orderItemSubitem:id,order_item_id,product_item_id', 
-                                        'keepItem.orderItemSubitem.productItem:id,inventory_item_id', 
-                                        'keepItem.orderItemSubitem.productItem.inventoryItem:id,item_name', 
+                                        'keepItem.orderItemSubitem.productItem:id,inventory_item_id,product_id', 
+                                        'keepItem.orderItemSubitem.productItem.product:id', 
+                                        'keepItem.orderItemSubitem.productItem.inventoryItem:id,item_name,inventory_id', 
+                                        'keepItem.orderItemSubitem.productItem.inventoryItem.inventory:id', 
                                         'keepItem.waiter:id,full_name',
                                         'waiter:id,full_name'
                                     ])
@@ -742,7 +764,8 @@ class CustomerController extends Controller
         $data = Customer::where(function ($query) {
                             $query->where('status', '!=', 'void')
                                 ->orWhereNull('status'); // Handle NULL cases
-                        });
+                        })
+                        ->orderBy('full_name');
 
         return $data;
     }
@@ -958,7 +981,7 @@ class CustomerController extends Controller
         });
     }
     
-    public function getExpiringPointHistories(string $id)
+    protected function fetchExpiringPointHistories(string $id)
     {
         $expiringNotificationTimer = Setting::where([
                                                 ['name', 'Point Expiration Notification'],
@@ -990,6 +1013,71 @@ class CustomerController extends Controller
                                                 })
                                                 ->get(['id', 'expire_balance', 'expired_at']);
 
-        return response()->json($expiringPointHistories);
+        return $expiringPointHistories;
+    }
+    
+    public function getExpiringPointHistories(string $id)
+    {
+        $data = $this->fetchExpiringPointHistories($id);
+
+        return response()->json($data);
+    }
+    
+    public function getCustomerDetails(string $id)
+    {
+        $expiringPointHistories = $this->fetchExpiringPointHistories($id);
+
+        $newCustomerData = Customer::with([
+                                    'media',
+                                    'rank.media',    // eager load media relation for rank
+                                    'keepItems.orderItemSubitem.productItem.inventoryItem.inventory.media',
+                                    'keepItems.orderItemSubitem.productItem.product.media',
+                                    'keepItems.waiter.media',
+                                ])
+                                ->with([
+                                    'rank:id,name',
+                                    'keepItems' => function ($query) {
+                                        $query->where('status', 'Keep')
+                                                ->with([
+                                                    'orderItemSubitem.productItem:id,inventory_item_id,product_id',
+                                                    'orderItemSubitem.productItem.inventoryItem:id,item_name,inventory_id',
+                                                    'orderItemSubitem.productItem.inventoryItem.inventory:id',
+                                                    'orderItemSubitem.productItem.product:id',
+                                                    'orderItemSubitem.orderItem.order:id,order_no',
+                                                    'waiter:id,full_name'
+                                                ]);
+                                    }
+                                ])
+                                ->select('id', 'full_name', 'email', 'phone', 'ranking', 'point', 'status', 'created_at')
+                                ->find($id);
+        
+        
+        $newCustomerData['image'] = $newCustomerData->getFirstMediaUrl('customer');
+        $newCustomerData['keep_items_count'] = $newCustomerData['keepItems']->reduce(function ($total, $item) {
+            $itemQty = $item['qty'] > $item['cm'] ? $item['qty'] : 1;
+
+            return $total + $itemQty;
+        }, 0);
+
+        if ($newCustomerData['rank']) {
+            $newCustomerData['rank']['image'] = $newCustomerData['rank']->getFirstMediaUrl('ranking');
+        }
+
+        foreach ($newCustomerData['keepItems'] as $key => $keepItem) {
+            $keepItem['item_name'] = $keepItem['orderItemSubitem']['productItem']['inventoryItem']['item_name'];
+            $keepItem['order_no'] = $keepItem['orderItemSubitem']['orderItem']['order']['order_no'];
+            unset($keepItem['orderItemSubitem']);
+
+            $keepItem['image'] = $keepItem['orderItemSubitem']['productItem'] 
+                        ? $keepItem['orderItemSubitem']['productItem']['product']->getFirstMediaUrl('product') 
+                        : $keepItem['orderItemSubitem']['productItem']['inventoryItem']['inventory']->getFirstMediaUrl('inventory');
+
+            $keepItem['waiter']['image'] = $keepItem['waiter']->getFirstMediaUrl('user');
+        }
+
+        return response()->json([
+            'expiringPointHistories' => $expiringPointHistories,
+            'newCustomerData' => $newCustomerData,
+        ]);
     }
 }

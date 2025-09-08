@@ -142,7 +142,7 @@ class ConfigEmployeeIncProgController extends Controller
                                         ->with('waiter:id,full_name')
                                         ->select([
                                             'id', 'user_id', 'amount','sales_target', 
-                                            'rate', 'status', 'period_start'
+                                            'rate', 'type', 'status', 'period_start'
                                         ])
                                         ->orderBy('period_start')
                                         ->get()
@@ -152,6 +152,7 @@ class ConfigEmployeeIncProgController extends Controller
                                             'total_sales' => $empIncentive->amount,
                                             'monthly_sale' => number_format($empIncentive->sales_target, 2),
                                             'incentive' => round($empIncentive->rate, 2),
+                                            'type' => $empIncentive->type,
                                             'status' => $empIncentive->status,
                                             'image' => $empIncentive->waiter?->getFirstMediaUrl('user'),
                                             'period_start' => $empIncentive->period_start

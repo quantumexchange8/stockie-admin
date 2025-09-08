@@ -305,6 +305,8 @@ const expireKeptItem = async () => {
             customer_id: props.customer.id
         });
 
+        customer.value.keep_items = response.data;
+        customer.value.keep_items_count = response.data.length;
         emit('update:customerKeepItems', response.data);
         closeModal('leave');
 
@@ -382,6 +384,10 @@ const getDeleteReasons = computed(() => {
 });
 
 onMounted(() => fetchExpiringPointHistories());
+
+watch(() => props.targetCustomer, (newValue) => {
+    customer.value = newValue;
+})
 
 watch((editForm), (newValue) => {
     initialEditForm.isDirty = newValue.id !== initialEditForm.value.id ||

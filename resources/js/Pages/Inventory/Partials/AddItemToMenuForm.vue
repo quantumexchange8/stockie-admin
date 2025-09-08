@@ -12,6 +12,7 @@ import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
 import { keepOptions, defaultProductItem } from '@/Composables/constants';
 import { useCustomToast } from '@/Composables';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     inventoryToAdd: Object,
@@ -56,7 +57,7 @@ const formSubmit = () => {
         onSuccess: () => {
             showMessage({
                 severity: 'success',
-                summary: 'Products has been successfully added to your menu.',
+                summary: wTrans('public.toast.add_product_to_menu_success'),
             });
             form.reset();
             emit('close');
@@ -125,7 +126,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <div class="flex flex-col items-start gap-y-6 self-stretch">
                 <div class="flex flex-col gap-y-4 self-stretch" v-for="(item, i) in form.items" :key="i">
                     <div class="flex flex-row items-center justify-between self-stretch">
-                        <p class="text-grey-950 font-semibold text-md">Item {{ i + 1 }}</p>
+                        <p class="text-grey-950 font-semibold text-md">{{ $t('public.item') }} {{ i + 1 }}</p>
                         <DeleteIcon 
                             v-if="form.items.length > 1"
                             class="size-6 self-center flex-shrink-0 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer" 
@@ -145,7 +146,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="w-full flex flex-row items-start gap-x-4 self-stretch">
                                 <Dropdown
                                     :inputName="'inventory_item_id_' +  i"
-                                    :labelText="'Select an item'"
+                                    :labelText="$t('public.select_item')"
                                     :inputArray="getInventoryItemArr(item)"
                                     grouped
                                     disabled
@@ -180,7 +181,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 /> -->
                                 <TextInput
                                     :inputId="'product_name_' +  i"
-                                    :labelText="'Product name'"
+                                    :labelText="$t('public.product_name')"
                                     :placeholder="'eg: Heineken Light 500ml'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.product_name']  : ''"
                                     v-model="item.product_name"
@@ -191,7 +192,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     :inputId="'price_' +  i"
                                     :inputType="'number'"
                                     withDecimal
-                                    :labelText="'Price'"
+                                    :labelText="$t('public.price')"
                                     :iconPosition="'left'"
                                     :placeholder="'0.00'"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.price']  : ''"
@@ -202,7 +203,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 </TextInput>
                                 <Dropdown
                                     :inputName="'category_id_' +  i"
-                                    :labelText="'Select category'"
+                                    :labelText="$t('public.select_category')"
                                     :inputArray="categoryArr"
                                     :errorMessage="form.errors ? form.errors['items.' + i + '.category_id']  : ''"
                                     v-model="item.category_id"
@@ -261,13 +262,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :size="'lg'"
                 @click="unsaved('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Add
+                {{ $t('public.action.add') }}
             </Button>
         </div>
         <Modal
