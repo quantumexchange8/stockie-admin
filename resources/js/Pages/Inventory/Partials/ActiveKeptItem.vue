@@ -14,6 +14,7 @@ import CustomerDetail from '@/Pages/Customer/Partials/CustomerDetail.vue';
 import ViewHistory from '@/Pages/Customer/Partials/ViewHistory.vue';
 import { Head } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
@@ -25,12 +26,12 @@ const props = defineProps({
 const { formatPhone } = usePhoneUtils();
 
 const home = ref({
-    label: 'Inventory',
+    label: wTrans('public.inventory_header'),
     route: '/inventory/inventory'
 });
 
 const items = ref([
-    { label: 'Kept Item'},
+    { label: wTrans('public.kept_item_header')},
 ]);
 
 const defaultLatest6Months = computed(() => {
@@ -48,16 +49,15 @@ const rowType = {
     expandable: false,
     groupRowsBy: '',
 }
-const totalPages = computed(() => {
-    return Math.ceil(props.activeKeptItem.length / rowsPerPage.value);
-})
+
 const columns = ref([
-    { field: 'created_at', header: 'Kept Date', width: '20', sortable: true},
-    { field: 'customer.full_name', header: 'Customer', width: '25', sortable: true},
-    { field: 'order_item_subitem.product_item.inventory_item.item_name', header: 'Item Name', width: '25', sortable: true},
-    { field: 'qty', header: 'Qty', width: '11.2', sortable: true},
-    { field: 'expired_to', header: 'Expire in', width: '18.8', sortable: true},
+    { field: 'expired_from', header: wTrans('public.inventory.kept_date'), width: '20', sortable: true},
+    { field: 'customer.full_name', header: wTrans('public.customer_header'), width: '25', sortable: true},
+    { field: 'order_item_subitem.product_item.inventory_item.item_name', header: wTrans('public.inventory.item_name'), width: '25', sortable: true},
+    { field: 'qty', header: wTrans('public.qty'), width: '11.2', sortable: true},
+    { field: 'expired_to', header: wTrans('public.inventory.expire_in'), width: '18.8', sortable: true},
 ])
+
 const searchQuery = ref('');
 const rows = ref(props.activeKeptItem);
 const isLoading = ref(false);
@@ -67,15 +67,20 @@ const checkedFilters = ref({
     expiresIn: [],
     keptIn: [],
 })
-const expireInDays = ref([
-    { text: '3 days', value: 3},
-    { text: '7 days', value: 7},
-    { text: '14 days', value: 14},
-    { text: '30 days', value: 30}
+
+const totalPages = computed(() => {
+    return Math.ceil(rows.value.length / rowsPerPage.value);
+})
+
+const expireInDays = computed(() => [
+    { text: `3 ${wTransChoice('public.day', 1).value}`, value: 3},
+    { text: `7 ${wTransChoice('public.day', 1).value}`, value: 7},
+    { text: `14 ${wTransChoice('public.day', 1).value}`, value: 14},
+    { text: `30 ${wTransChoice('public.day', 1).value}`, value: 30}
 ]);
 const keptInCategory = ref([
-    { text: 'CM', value: 'cm'},
-    { text: 'Quantity', value: 'qty'}
+    { text: wTrans('public.cm'), value: 'cm'},
+    { text: wTrans('public.quantity'), value: 'qty'}
 ]);
 
 // functions
@@ -94,11 +99,11 @@ const getTimeDifference = (date) => {
     }
 
     if (months > 0) {
-        return `${months} months`;
+        return `${months} ${wTransChoice('public.month', 1).value}`;
     } else if (days > 0) {
-        return `${days} days`;
+        return `${days} ${wTransChoice('public.day', 1).value}`;
     } else {
-        return `${days} day`;
+        return `${days} ${wTransChoice('public.day', 0).value}`;
     }
 };
 
@@ -166,8 +171,8 @@ const applyCheckedFilters = (close) => {
     close();
 }
 
-watch(() => date_filter.value, (newValue) => {
-    filterKeptItems(newValue, checkedFilters.value);
+watch(() => date_filter.value, () => {
+    filterKeptItems(date_filter.value, checkedFilters.value);
 })
 
 watch(() => searchQuery.value, (newValue) => {
@@ -197,7 +202,7 @@ watch(() => searchQuery.value, (newValue) => {
 </script>
 
 <template>
-    <Head title="Active Kept Items" />
+    <Head :title="$t('public.inventory.active_kept_item')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -209,7 +214,7 @@ watch(() => searchQuery.value, (newValue) => {
         
         <div class="flex flex-col items-start gap-6 p-6 rounded-[5px] border border-solid border-primary-100">
             <div class="flex items-center gap-2.5 self-stretch">
-                <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium">Active Kept Item</span>
+                <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium">{{ $t('public.inventory.active_kept_item') }}</span>
                 <Button
                     :variant="'tertiary'"
                     :type="'button'"
@@ -221,19 +226,19 @@ watch(() => searchQuery.value, (newValue) => {
                     <template #icon>
                         <SquareStickerIcon class="w-6 h-6" />
                     </template>
-                    View Keep History
+                    {{ $t('public.inventory.view_keep_history') }}
                 </Button>
             </div>
 
             <div class="flex items-start gap-5 self-stretch">
                 <SearchBar
                     :showFilter="true"
-                    :placeholder="'Search'"
+                    :placeholder="$t('public.search')"
                     v-model="searchQuery"
                 >
                     <template #default="{ hideOverlay }">
                         <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Expire in</span>
+                            <span class="text-grey-900 text-base font-semibold">{{ $t('public.inventory.expire_in') }}</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div 
                                     v-for="(expire, index) in expireInDays" 
@@ -249,7 +254,7 @@ watch(() => searchQuery.value, (newValue) => {
                             </div>
                         </div>
                         <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Kept in</span>
+                            <span class="text-grey-900 text-base font-semibold">{{ $t('public.inventory.kept_in') }}</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div 
                                     v-for="(kept, index) in keptInCategory" 
@@ -271,13 +276,13 @@ watch(() => searchQuery.value, (newValue) => {
                                 :size="'lg'"
                                 @click="clearFilters(hideOverlay)"
                             >
-                                Clear All
+                                {{ $t('public.action.clear_all') }}
                             </Button>
                             <Button
                                 :size="'lg'"
                                 @click="applyCheckedFilters(hideOverlay)"
                             >
-                                Apply
+                                {{ $t('public.action.apply') }}
                             </Button>
                         </div>
                     </template>
@@ -303,8 +308,8 @@ watch(() => searchQuery.value, (newValue) => {
                 class="[&>div>div>table>tbody>tr>td]:px-3 [&>div>div>table>tbody>tr>td]:py-2"
                 v-if="rows.length > 0 && !isLoading"
             >
-                <template #created_at="rows">
-                    <span class="text-grey-900 text-sm font-medium">{{ dayjs(rows.created_at).format('DD/MM/YYYY') }}</span>
+                <template #expired_from="rows">
+                    <span class="text-grey-900 text-sm font-medium">{{ dayjs(rows.expired_from).format('DD/MM/YYYY') }}</span>
                 </template>
                 <template #customer.full_name="rows">
                     <div class="flex items-center gap-2">
@@ -332,19 +337,19 @@ watch(() => searchQuery.value, (newValue) => {
 
             <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </div>
         </div>
 
         <!-- customer keep item drawer -->
         <RightDrawer
             :title="''"
-            :header="'Customer Detail'"
+            :header="$t('public.customer_detail')"
             :show="isDrawerOpen"
             @close="closeDrawer"
         >
             <CustomerDetail
-                :customer="selectedCustomer" 
+                :targetCustomer="selectedCustomer" 
             />
         </RightDrawer>
     </AuthenticatedLayout>

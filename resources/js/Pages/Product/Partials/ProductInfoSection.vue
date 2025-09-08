@@ -6,6 +6,7 @@ import Table from '@/Components/Table.vue';
 import EditProductForm from './EditProductForm.vue';
 import Button from '@/Components/Button.vue';
 import Modal from '@/Components/Modal.vue';
+import { transactionFormat } from '@/Composables';
 
 const props = defineProps({
     errors: Object,
@@ -42,6 +43,8 @@ const props = defineProps({
         default: () => [],
     },
 })
+
+const { formatAmount } = transactionFormat();
 
 const productInfo = ref();
 const category = ref();
@@ -101,7 +104,7 @@ watch( () => props.product, (newValue) => {
 <template>
     <div class="col-span-full lg:col-span-4 flex flex-col p-6 gap-6 items-start rounded-[5px] border border-red-100">
         <div class="flex items-center justify-between w-full">
-            <span class="w-full text-start text-md font-medium text-primary-900">Product Detail</span>
+            <span class="w-full text-start text-md font-medium text-primary-900">{{ $t('public.menu.product_detail') }}</span>
             <div class="flex flex-nowrap gap-2">
                 <EditIcon 
                     class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer"
@@ -134,7 +137,7 @@ watch( () => props.product, (newValue) => {
                     <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">
                         <PriceTagIcon class="size-6 text-primary-900"/>
                     </div>
-                    <span class="text-base text-grey-900 font-medium">RM {{ productInfo.price }}</span>
+                    <span class="text-base text-grey-900 font-medium">RM {{ formatAmount(productInfo.price) }}</span>
                 </div>
                 <div class="col-span-6 lg:col-span-full flex justify-start items-center w-full p-3 gap-4 border border-primary-100 bg-white rounded-[5px]">
                     <div class="bg-primary-50 rounded-[5px] flex items-center justify-center p-2">
@@ -155,8 +158,8 @@ watch( () => props.product, (newValue) => {
                     <PointsBoxIcon class="size-6 text-primary-900"/>
                 </div>
                 <span class="text-base text-grey-900 font-medium">
-                    Redeem with 
-                    <span class="!font-semibold !font-primary-900">{{ productInfo.point }} pts</span>
+                    {{ $t('public.redeem_with') }} 
+                    <span class="!font-semibold !font-primary-900">{{ productInfo.point }} {{ $t('public.pts') }}</span>
                 </span>
             </div>
             <div class="flex items-start w-full rounded-[5px]">
@@ -182,7 +185,7 @@ watch( () => props.product, (newValue) => {
         </div>
     </div>
     <Modal
-        :title="'Edit Product'"
+        :title="$t('public.menu.edit_product')"
         :show="editProductFormIsOpen" 
         :maxWidth="'lg'" 
         :closeable="true" 
@@ -213,8 +216,8 @@ watch( () => props.product, (newValue) => {
         :closeable="true" 
         :deleteConfirmation="true"
         :deleteUrl="`/menu-management/products/deleteProduct/${product.id}`"
-        :confirmationTitle="'Delete this product?'"
-        :confirmationMessage="'Are you sure you want to delete the selected product? This action cannot be undone.'"
+        :confirmationTitle="$t('public.menu.delete_product')"
+        :confirmationMessage="$t('public.menu.delete_product_message')"
         @close="closeModal('leave')"
         v-if="product"
     />

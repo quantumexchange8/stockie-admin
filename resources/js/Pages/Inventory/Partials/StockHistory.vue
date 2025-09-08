@@ -10,52 +10,53 @@ import { FilterMatchMode } from 'primevue/api';
 import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     stockHistories: Array
 })
 
 const home = ref({
-    label: 'Inventory',
+    label: wTrans('public.inventory_header'),
     route: '/inventory/inventory'
 });
 const items = ref([
-    { label: 'Stock History' },
+    { label: wTrans('public.inventory.stock_history') },
 ]);
 
 const tabs = ref([
-    { key: 'All', title: 'All', disabled: false },
-    { key: 'In', title: 'In', disabled: false },
-    { key: 'Out', title: 'Out', disabled: false },
+    { key: 'All', title: wTrans('public.all'), disabled: false },
+    { key: 'In', title: wTrans('public.in'), disabled: false },
+    { key: 'Out', title: wTrans('public.out'), disabled: false },
 ]);
 
 // only for 'list' variant of table component
 const allStockHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
     {field: 'inventory.name', header: '', width: '0', sortable: false},
-    {field: 'inventory_item', header: 'Item Name', width: '40', sortable: true},
-    {field: 'old_stock', header: 'Previous Stock', width: '20', sortable: true},
-    {field: 'in', header: 'In', width: '10', sortable: true},
-    {field: 'out', header: 'Out', width: '10', sortable: true},
-    {field: 'current_stock', header: 'Current Stock', width: '20', sortable: true},
+    {field: 'inventory_item', header: wTrans('public.inventory.item_name'), width: '40', sortable: true},
+    {field: 'old_stock', header: wTrans('public.inventory.previous_stock'), width: '20', sortable: true},
+    {field: 'in', header: wTrans('public.in'), width: '10', sortable: true},
+    {field: 'out', header: wTrans('public.out'), width: '10', sortable: true},
+    {field: 'current_stock', header: wTrans('public.current_stock'), width: '20', sortable: true},
 ]);
 
 const allInStockHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
     {field: 'inventory.name', header: '', width: '0', sortable: false},
-    {field: 'inventory_item', header: 'Item Name', width: '40', sortable: true},
-    {field: 'old_stock', header: 'Previous Stock', width: '20', sortable: true},
-    {field: 'in', header: 'In', width: '20', sortable: true},
-    {field: 'current_stock', header: 'Current Stock', width: '20', sortable: true},
+    {field: 'inventory_item', header: wTrans('public.inventory.item_name'), width: '40', sortable: true},
+    {field: 'old_stock', header: wTrans('public.inventory.previous_stock'), width: '20', sortable: true},
+    {field: 'in', header: wTrans('public.in'), width: '20', sortable: true},
+    {field: 'current_stock', header: wTrans('public.current_stock'), width: '20', sortable: true},
 ]);
 
 const allOutStockHistoryColumns = ref([
     // For row group options, the groupRowsBy set inside the rowType, will have its width set to be the left most invisible column width
     {field: 'inventory.name', header: '', width: '0', sortable: false},
-    {field: 'inventory_item', header: 'Item Name', width: '40', sortable: true},
-    {field: 'old_stock', header: 'Previous Stock', width: '20', sortable: true},
-    {field: 'out', header: 'Out', width: '20', sortable: true},
-    {field: 'current_stock', header: 'Current Stock', width: '20', sortable: true},
+    {field: 'inventory_item', header: wTrans('public.inventory.item_name'), width: '40', sortable: true},
+    {field: 'old_stock', header: wTrans('public.inventory.previous_stock'), width: '20', sortable: true},
+    {field: 'out', header: wTrans('public.out'), width: '20', sortable: true},
+    {field: 'current_stock', header: wTrans('public.current_stock'), width: '20', sortable: true},
 ]);
 
 const stockHistories = ref(props.stockHistories);
@@ -104,7 +105,7 @@ watch(() => date_filter.value, () => {
 </script>
 
 <template>
-    <Head title="Stock History" />
+    <Head :title="$t('public.inventory.stock_history')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -116,7 +117,7 @@ watch(() => date_filter.value, () => {
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
             <SearchBar
-                placeholder="Search"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="filters['global'].value"
                 class="col-span-full md:col-span-7"

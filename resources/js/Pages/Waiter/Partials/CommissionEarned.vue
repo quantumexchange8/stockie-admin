@@ -5,6 +5,7 @@ import Chart from "primevue/chart";
 import { ref, onMounted, watch } from "vue";
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { transactionFormat } from '@/Composables';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps ({
     waiterNames: {
@@ -23,9 +24,15 @@ const props = defineProps ({
 })
 
 const emit = defineEmits(['applyCommFilter', 'isLoading']);
-const graphFilter = ref(['This month', 'This year']);
-const selectedFilter = ref(graphFilter.value[0]);
+
 const { formatAmount } = transactionFormat();
+
+const graphFilter = ref([
+    { key: 'This month', text: wTrans('public.this_month') }, 
+    { key: 'This year', text: wTrans('public.this_year') }
+]);
+const selectedFilter = ref(graphFilter.value[0]);
+
 // const formattedCommission = props.waiterCommission.map(value => formatAmount(value));
 const preloadedImages = props.waiterImages.map((src) => {
     const img = new Image();
@@ -37,13 +44,13 @@ const chartData = ref([]);
 const chartOptions = ref();
 
 const isSelected = (filter) => {
-    return selectedFilter.value && filter === selectedFilter.value;
+    return selectedFilter.value && filter === selectedFilter.value.key;
 };
 
 const applyCommFilter = (filter) => {
     emit('isLoading', true)
     selectedFilter.value = filter;
-    emit('applyCommFilter', selectedFilter.value);
+    emit('applyCommFilter', selectedFilter.value.key);
 }
 
 const setChartData = () => {
@@ -130,7 +137,7 @@ const setChartOptions = () => {
                 },
                 title: {
                     display: true,
-                    text: 'Commission Amount (RM)',
+                    text: () => wTrans('public.waiter.commission_amount').value,
                     align: 'center',
                     color: '#48070A',
                     font: {
@@ -392,7 +399,7 @@ onMounted(() => {
     <div class="flex flex-col w-full h-full items-end gap-6">
         <div class="flex flex-col items-start gap-[10px] self-stretch">
             <div class="flex justify-between items-center self-stretch  whitespace-nowrap">
-                <span class="text-md font-medium text-primary-900 w-full">Commission Earned</span>
+                <span class="text-md font-medium text-primary-900 w-full">{{ $t('public.waiter.commission_earned') }}</span>
 
                 <!-- menu for year filter -->
                 <Menu as="div" class="relative inline-block text-left">
@@ -401,7 +408,7 @@ onMounted(() => {
                             :disabled="isLoading"
                             :class="{'border-grey-100 opacity-60 pointer-events-none cursor-default': isLoading }"
                             class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
-                            <span class="text-primary-900 font-base text-md">{{ selectedFilter }}</span>
+                            <span class="text-primary-900 font-base text-md">{{ selectedFilter.text }}</span>
                             <DropdownIcon class="rotate-180 text-primary-900"/>
                         </MenuButton>
                     </div>
@@ -420,24 +427,24 @@ onMounted(() => {
                             <MenuItem
                                 v-slot="{ active }"
                                 v-for="filter in graphFilter"
-                                :key="filter"
+                                :key="filter.key"
                             >
                                 <button
                                     type="button"
                                     :class="[
-                                        { 'bg-primary-50 flex justify-between': isSelected(filter) },
-                                        { 'bg-white hover:bg-[#fff9f980]': !isSelected(filter) },
+                                        { 'bg-primary-50 flex justify-between': isSelected(filter.key) },
+                                        { 'bg-white hover:bg-[#fff9f980]': !isSelected(filter.key) },
                                         'group flex w-full items-center rounded-md px-6 py-3 text-base text-gray-900',
                                     ]"
                                     @click="applyCommFilter(filter)"
                                 >
                                     <span
                                         :class="[
-                                            { 'text-primary-900 text-center text-base font-medium': isSelected(filter) },
-                                            { 'text-grey-700 text-center text-base font-normal group-hover:text-primary-800': !isSelected(filter) },
+                                            { 'text-primary-900 text-center text-base font-medium': isSelected(filter.key) },
+                                            { 'text-grey-700 text-center text-base font-normal group-hover:text-primary-800': !isSelected(filter.key) },
                                         ]"
                                     >
-                                        {{ filter }}
+                                        {{ filter.text }}
                                     </span>
                                 </button>
                             </MenuItem>
@@ -461,7 +468,7 @@ onMounted(() => {
                 <template v-else>
                     <div class="flex flex-col w-full h-full justify-center items-center">
                         <UndetectableIllus class="w-44 h-44"/>
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </div>
                 </template>
             </div>

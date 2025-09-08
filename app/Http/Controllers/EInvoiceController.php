@@ -13,6 +13,7 @@ use App\Models\PayoutConfig;
 use App\Models\State;
 use App\Models\Token;
 use App\Services\RunningNumberService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -37,23 +38,19 @@ class EInvoiceController extends Controller
 
     public function getLastMonthSales(Request $request)
     {
-        
-        $startOfLastMonth = Carbon::now()->subMonth()->startOfMonth(); // e.g. 2025-02-01
-        $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();     // e.g. 2025-02-29
-
         $dateFilter = $request->input('dateFilter');
+        
+        $startDate = $dateFilter && count($dateFilter) > 0
+            ? Carbon::parse($request->dateFilter[0])->timezone('Asia/Kuala_Lumpur')->startOfDay()
+            : Carbon::now()->timezone('Asia/Kuala_Lumpur')->subMonth()->startOfMonth();
 
-        if ($dateFilter && ($dateFilter >= $startOfLastMonth && $dateFilter <= $endOfLastMonth)) {
-            $startOfLastMonth = Carbon::createFromFormat('Y-m-d', $dateFilter)->startOfDay();
-            $endOfLastMonth = Carbon::createFromFormat('Y-m-d', $dateFilter)->endOfDay();
-        } else {
-            $startOfLastMonth = Carbon::now()->subMonth()->startOfMonth();
-            $endOfLastMonth = Carbon::now()->subMonth()->endOfMonth();
-        }
+        $endDate = $dateFilter && count($dateFilter) > 0
+            ? Carbon::parse($request->dateFilter[1] ?? $request->dateFilter[0])->timezone('Asia/Kuala_Lumpur')->endOfDay()
+            : Carbon::now()->timezone('Asia/Kuala_Lumpur')->subMonth()->endOfMonth();
 
         $transactions = Payment::query()
             ->where('invoice_status', 'pending')
-            ->whereBetween('receipt_end_date', [$startOfLastMonth, $endOfLastMonth])
+            ->whereBetween('receipt_end_date', [$startDate, $endDate])
             ->get();
 
         return response()->json($transactions);
@@ -100,6 +97,13 @@ class EInvoiceController extends Controller
         $c_period_start = Carbon::createFromFormat('d/m/Y', trim($startDate))->startOfDay();
         $c_period_end = Carbon::createFromFormat('d/m/Y', trim($endDate))->endOfDay();
 
+        // Check Consolidate Invoice Row
+        $result = $this->checkConsolidateRow($c_period_start, $c_period_end, $request->consolidateInvoice);
+
+        if ($result !== true) {
+            return $result; // 🚀 return the 400 response
+        }
+        
         $payout = PayoutConfig::first();
 
         // 1. create consolidate parent id
@@ -1191,5 +1195,109 @@ class EInvoiceController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    public function downloadInvoice($id)
+    {
+        $invoice = ConsolidatedInvoice::with(['invoice_child' => function ($query) {
+            $query->where('invoice_status', 'consolidated')
+                ->orderBy('receipt_no', 'asc');
+        }])->find($id);
+        $merchant = ConfigMerchant::with(['msicCode', 'classificationCode'])->find('1');
+
+        $children = $invoice->invoice_child;
+
+        $ranges = [];
+        $start = null;
+        $prev = null;
+        $batchTotal = 0;
+        $batchStartNo = null;
+
+        foreach ($children as $child) {
+            $current = $child->receipt_no;
+            $grandTotal = $child->grand_total;
+
+            // Extract the numeric part from receipt_no (e.g. RCPT00000001 → 1)
+            preg_match('/\d+$/', $current, $matches);
+            $number = (int)$matches[0];
+
+            if ($start === null) {
+                // First element
+                $start = $current;
+                $prev = $number;
+                $batchStartNo = $number;
+                $batchTotal = $grandTotal;
+            } elseif ($number === $prev + 1) {
+                // Still consecutive → extend range
+                $prev = $number;
+                $batchTotal += $grandTotal;
+            } else {
+                // Break → save the range
+                $ranges[] = [
+                    "receipt_batch" => ($start === "RCPT" . str_pad($prev, strlen($matches[0]), "0", STR_PAD_LEFT))
+                        ? $start
+                        : $start . ' - ' . "RCPT" . str_pad($prev, strlen($matches[0]), "0", STR_PAD_LEFT),
+                    "sum_amount" => $batchTotal
+                ];
+
+                // Start new range
+                $start = $current;
+                $prev = $number;
+                $batchStartNo = $number;
+                $batchTotal = $grandTotal;
+            }
+        }
+
+         if ($start !== null) {
+            $ranges[] = [
+                "receipt_batch" => ($start === "RCPT" . str_pad($prev, strlen($matches[0]), "0", STR_PAD_LEFT))
+                    ? $start
+                    : $start . ' - ' . "RCPT" . str_pad($prev, strlen($matches[0]), "0", STR_PAD_LEFT),
+                "sum_amount" => $batchTotal
+            ];
+        }
+
+        $prodUrl = $this->env === 'production'
+            ? 'https://preprod.myinvois.hasil.gov.my/'
+            : 'https://preprod.myinvois.hasil.gov.my/';
+
+        $generateQr = $prodUrl . $invoice->invoice_uuid . '/share/' . $invoice->longId;
+
+        return Pdf::loadView('invoices.pdf', compact('invoice', 'merchant', 'ranges', 'generateQr'))
+            ->setPaper('a4')   // optional
+            ->stream("invoice-{$invoice->invoice_no}.pdf");
+
+    }
+
+    private function checkConsolidateRow($start, $end, $consolidateInvoice)
+    {
+       $totalInvoice = count($consolidateInvoice);
+
+        if ($totalInvoice > 100) {
+            return response()->json([
+                'error' => 'You can only submit 100 e-Invoices at a time.'
+            ], 400);
+        }
+
+        foreach ($consolidateInvoice as $invoice) {
+            $encodedInvoice = base64_encode(json_encode($invoice, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            if (strlen($encodedInvoice) > 300 * 1024) {
+                return response()->json([
+                    'error' => 'One of the invoices exceeds 300 KB limit.'
+                ], 400);
+            }
+        }
+
+        $submissionPayload = [
+            'documents' => $consolidateInvoice
+        ];
+        $submissionJson = json_encode($submissionPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if (strlen($submissionJson) > 5 * 1024 * 1024) {
+            return response()->json([
+                'error' => 'The submission exceeds 5 MB limit.'
+            ], 400);
+        }
+        return true;
     }
 }

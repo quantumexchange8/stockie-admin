@@ -237,7 +237,7 @@ const toggleNode = (node) => {
                         <TransactionListingIcon aria-hidden="true" />
                     </template>
                 </SidebarLink>
-                <!-- <SidebarLink
+                <SidebarLink
                     :title="$t('public.einvoice_submission_header')"
                     :href="route('e-invoice.einvoice-listing')"
                     :active="route().current('e-invoice.einvoice-listing')"
@@ -246,7 +246,7 @@ const toggleNode = (node) => {
                     <template #icon>
                         <EInvoiceIcon aria-hidden="true" />
                     </template>
-                </SidebarLink> -->
+                </SidebarLink>
             </div>
         </div>
 

@@ -55,7 +55,7 @@ class ProductController extends Controller
                                 }
                                 $product['stock_left'] = $minStockCount;
 
-                                $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id);
+                                $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id && $item->status === 'active');
 
                                 return $product;
                             });
@@ -123,7 +123,7 @@ class ProductController extends Controller
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => 'Product has been successfully added to your menu.'
+            'summary' => trans('public.toast.add_product_success')
         ];
 
         return redirect()->back()->with(['message' => $message]);
@@ -187,7 +187,7 @@ class ProductController extends Controller
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => 'Product has been successfully added to your menu.'
+            'summary' => trans('public.toast.add_product_success')
         ];
 
         return redirect()->back()->with(['message' => $message]);
@@ -446,7 +446,7 @@ class ProductController extends Controller
                             }
                             $product['stock_left'] = $minStockCount;
 
-                            $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id);
+                            $product->discountItems = $product->discountItems->filter(fn($item) => $item->discount_id === $product->discount_id && $item->status === 'active');
 
                             return $product;
                         });
@@ -611,7 +611,7 @@ class ProductController extends Controller
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => 'Changes saved.'
+            'summary' => trans('public.toast.changes_saved')
         ];
 
         return redirect()->back()->with(['message' => $message]);
@@ -625,7 +625,7 @@ class ProductController extends Controller
         $existingProduct = Product::with('productItems')->find($id);
 
         $severity = 'error';
-        $summary = 'Selected product unable to be deleted.';
+        $summary = trans('public.toast.delete_product_error');
 
         if ($existingProduct) {
             // Soft delete all related items in bulk
@@ -637,7 +637,7 @@ class ProductController extends Controller
             $existingProduct->delete();
 
             $severity = 'success';
-            $summary = 'Selected product has been successfully deleted.';
+            $summary = trans('public.toast.delete_product_success');
         }
 
         $message = [ 
@@ -659,7 +659,7 @@ class ProductController extends Controller
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => 'Selected product item has been successfully deleted.'
+            'summary' => trans('public.toast.delete_product_item_success')
         ];
 
         return redirect()->back()->with(['message' => $message]);

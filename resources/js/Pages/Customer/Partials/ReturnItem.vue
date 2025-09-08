@@ -59,7 +59,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
     <form class="flex flex-col items-center gap-9 rounded-[5px]" novalidate @submit.prevent="submit">
         <div class="flex flex-col gap-6 w-96">
             <div class="flex justify-between items-start self-stretch">
-                <span class="text-md font-medium text-primary-950 text-center whitespace-nowrap">Select Quantity</span>
+                <span class="text-md font-medium text-primary-950 text-center whitespace-nowrap">{{ $t('public.customer.select_quantity') }}</span>
                 <TimesIcon
                     class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                     @click="$emit('close')"
@@ -97,7 +97,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :size="'lg'"
                         @click="emit('close')"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         :type="'submit'"
@@ -105,7 +105,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                         :size="'lg'"
                         :disabled="!isFormValid"
                     >
-                        Return
+                        {{$t('public.action.return')}}
                     </Button>
                 </div>
             </div>

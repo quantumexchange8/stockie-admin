@@ -245,7 +245,10 @@ class DashboardController extends Controller
             'labels' => $filteredSalesData['labels'],
             'activeTables' => $activeTables,
             'reservations' => $todayReservations,
-            'customers' => Customer::all(),
+            'customers' => Customer::where(function ($query) {
+                            $query->where('status', '!=', 'void')
+                                ->orWhereNull('status'); // Handle NULL cases
+                        })->get(),
             'tables' => Table::orderBy('zone_id')->get(),
             'occupiedTables' => Table::where('status', '!=', 'Empty Seat')->get(),
             'waiters' => $waiters,

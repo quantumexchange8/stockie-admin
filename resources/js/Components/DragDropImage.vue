@@ -83,7 +83,7 @@ const imageClasses = computed(() => [
                             class="!w-fit absolute top-[calc(50%+2.5rem)]"
                             v-if="!hasFile && !modelValue"
                         >
-                            Select an image
+                            {{ $t('public.select_image') }}
                         </Button>
                         <Button 
                             @click="updateUpload(files, chooseCallback)" 
@@ -132,8 +132,8 @@ const imageClasses = computed(() => [
                                 />
                             </svg>
                             <div class="flex flex-col justify-center items-center gap-1">
-                                <p class="text-lg font-semibold text-grey-300">Drag & drop</p>
-                                <p class="text-base font-normal text-grey-300">or</p>
+                                <p class="text-lg font-semibold text-grey-300">{{ $t('public.drag_drop') }}</p>
+                                <p class="text-base font-normal text-grey-300">{{ $t('public.or') }}</p>
                                 <div class="h-11"></div>
                             </div>
                         </div>

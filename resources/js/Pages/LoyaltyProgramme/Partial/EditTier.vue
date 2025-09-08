@@ -17,6 +17,7 @@ import { useCustomToast } from "@/Composables";
 import InputError from "@/Components/InputError.vue";
 import Modal from "@/Components/Modal.vue";
 import { DeleteIllus } from "@/Components/Icons/illus";
+import { wTrans } from "laravel-vue-i18n";
 
 //------------------------
 // DNR = DO NOT REMOVE code that has until confirmed is not needed by requirements
@@ -211,6 +212,13 @@ const checkSelectedIcon = (logo) => {
     return logo === selectedLogo.value;
 };
 
+const getRewardOptions = computed(() => {
+    return rewardOption.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
+
 // const getProductStockLeft = (freeItem) => {
 //     return ;
 // }
@@ -338,7 +346,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         <Dropdown
                             :labelText="reward.reward_type !== '' ? `Reward Type ${index + 1}` : 'Select Reward Type'"
                             :placeholder="'Select'"
-                            :inputArray="rewardOption"
+                            :inputArray="getRewardOptions"
                             :inputName="'reward_type_' + index"
                             :hint-text="'The reward can only be redeemed once.'"
                             :dataValue="reward.reward_type"

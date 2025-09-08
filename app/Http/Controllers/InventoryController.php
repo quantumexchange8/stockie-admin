@@ -78,22 +78,23 @@ class InventoryController extends Controller
         $endDate = Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->addDay()->format('Y-m-d');
         $startDate = Carbon::now()->subDays(30)->setTimezone('Asia/Kuala_Lumpur')->format('Y-m-d');
 
-        $recentKeepHistories = KeepHistory::with([
-                                                'keepItem.orderItemSubitem.productItem.inventoryItem',
-                                                'keepItem.customer:id,full_name,phone', 
-                                            ])
-                                            ->whereBetween('created_at', [$startDate, $endDate])
-                                            ->where('status', 'Keep')
-                                            ->orderBy('created_at', 'desc')
-                                            ->limit(5)
-                                            ->get()
-                                            ->transform(function ($history) {
-                                                $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
-                                                $history->customer_image = $history->keepItem->customer->getFirstMediaUrl('customer');
-                                                unset($history->keepItem->orderItemSubitem);
+        $activeKeptItem = $this->getKeptItem(null, null, true);
+        // $recentKeepHistories = KeepHistory::with([
+        //                                         'keepItem.orderItemSubitem.productItem.inventoryItem',
+        //                                         'keepItem.customer:id,full_name,phone', 
+        //                                     ])
+        //                                     ->whereBetween('created_at', [$startDate, $endDate])
+        //                                     ->where('status', 'Keep')
+        //                                     ->orderBy('created_at', 'desc')
+        //                                     ->limit(5)
+        //                                     ->get()
+        //                                     ->transform(function ($history) {
+        //                                         $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
+        //                                         $history->customer_image = $history->keepItem->customer->getFirstMediaUrl('customer');
+        //                                         unset($history->keepItem->orderItemSubitem);
 
-                                                return $history;
-                                            });
+        //                                         return $history;
+        //                                     });
 
         $categories = Category::select(['id', 'name'])
                                 ->orderBy('id')
@@ -122,7 +123,7 @@ class InventoryController extends Controller
         return Inertia::render('Inventory/Inventory', [
             'inventories' => $inventories,
             // 'outOfStockItems' => $outOfStockItems,
-            'recentKeepHistories' => $recentKeepHistories,
+            'recentKeepHistories' => $activeKeptItem,
             'categories' => $categories,
             'itemCategories' => $itemCategories,
             'keepItemsCount' => (int)$keepItemsCount
@@ -813,8 +814,8 @@ class InventoryController extends Controller
                                             'keepItem.customer:id,full_name,status',
                                             'keepItem.waiter:id,full_name'
                                         ])
-                                        ->whereBetween('created_at', $dateFilter)
-                                        ->orderBy('created_at', 'desc')
+                                        ->whereBetween('keep_date', $dateFilter)
+                                        ->orderBy('keep_date', 'desc')
                                         ->get()
                                         ->transform(function ($history) {
                                             $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
@@ -844,18 +845,13 @@ class InventoryController extends Controller
         $query = KeepHistory::query();
 
         if ($dateFilter && gettype($dateFilter) === 'array') {
-            // Single date filter
-            if (count($dateFilter) === 1) {
-                $date = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-                $query->whereDate('created_at', $date);
-            }
-            // Range date filter
-            if (count($dateFilter) > 1) {
-                $startDate = (new \DateTime($dateFilter[0]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-                $endDate = (new \DateTime($dateFilter[1]))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-                $query->whereDate('created_at', '>=', $startDate)
-                        ->whereDate('created_at', '<=', $endDate);
-            }
+            $startDate = Carbon::parse($dateFilter[0])->timezone('Asia/Kuala_Lumpur')->startOfDay();
+            $endDate = Carbon::parse($dateFilter[1] ?? $dateFilter[0])->timezone('Asia/Kuala_Lumpur')->endOfDay();
+    
+            $query->where(function($subQuery) use ($startDate, $endDate) {
+                $subQuery->whereDate('keep_date', '>=', $startDate)
+                        ->whereDate('keep_date', '<=', $endDate);
+            });
         }
 
         if ($checkedFilters && is_array($checkedFilters)) {
@@ -882,7 +878,7 @@ class InventoryController extends Controller
                             'keepItem.customer:id,full_name,status', 
                             'keepItem.waiter:id,full_name'
                         ])
-                        ->orderBy('created_at', 'desc')
+                        ->orderBy('keep_date', 'desc')
                         ->get()
                         ->transform(function ($history) {
                             $history->item_name = $history->keepItem->orderItemSubitem->productItem->inventoryItem->item_name;
@@ -972,7 +968,7 @@ class InventoryController extends Controller
         ]);
     }
 
-    private function getKeptItem($dateFilter = null, $checkedFilters = null)
+    private function getKeptItem($dateFilter = null, $checkedFilters = null, $limit = false)
     {
         $query = KeepItem::with([
                                 'customer:email,full_name,id,phone,point,ranking,status',
@@ -981,20 +977,17 @@ class InventoryController extends Controller
                                 'customer.keepItems.orderItemSubitem.productItem.inventoryItem',
                                 'orderItemSubitem.productItem.inventoryItem'
                             ])
-                            ->where('status', 'Keep')
-                            ->whereDate('created_at', '>=', now()->subMonths(6)->timezone('Asia/Kuala_Lumpur'));
+                            ->where('status', 'Keep');
+                            // ->whereDate('expired_from', '>=', now()->subMonths(6)->timezone('Asia/Kuala_Lumpur'));
     
         if ($dateFilter) {
-            $dateFilter = array_map(function ($date) {
-                return (new \DateTime($date))->setTimezone(new \DateTimeZone('Asia/Kuala_Lumpur'))->format('Y-m-d');
-            }, $dateFilter);
+            $startDate = Carbon::parse($dateFilter[0])->timezone('Asia/Kuala_Lumpur')->startOfDay();
+            $endDate = Carbon::parse($dateFilter[1] ?? $dateFilter[0])->timezone('Asia/Kuala_Lumpur')->endOfDay();
     
-            if (count($dateFilter) === 1) {
-                $query->whereDate('created_at', '=', $dateFilter[0]);
-            } else {
-                $query->whereDate('created_at', '>=', $dateFilter[0])
-                      ->whereDate('created_at', '<=', $dateFilter[1]);
-            }
+            $query->where(function($subQuery) use ($startDate, $endDate) {
+                $subQuery->whereDate('expired_from', '>=', $startDate)
+                        ->whereDate('expired_from', '<=', $endDate);
+            });
         }
 
         if ($checkedFilters) {
@@ -1011,27 +1004,31 @@ class InventoryController extends Controller
                 }
             }
         }
+        
+        if ($limit) {
+            $query->limit(5);
+        }
     
-        $activeKeptItem = $query->get();
+        $activeKeptItem = $query->orderBy('expired_from', 'desc')->get();
     
         $activeKeptItem->each(function ($keepItem) {
             if ($keepItem->customer) {
                 $keepItem->customer->image = $keepItem->customer->getFirstMediaUrl('customer');
             }
 
-            if ($keepItem->customer->rank) {
-                $keepItem->customer->rank->image = $keepItem->customer->rank->getFirstMediaUrl('ranking');
-            }
+            // if ($keepItem->customer->rank) {
+            //     $keepItem->customer->rank->image = $keepItem->customer->rank->getFirstMediaUrl('ranking');
+            // }
 
-            foreach ($keepItem->customer->keepItems as $keepItem) {
-                $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
-                $keepItem->image = $keepItem->orderItemSubitem->productItem 
-                            ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
-                            : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
-                unset($keepItem->orderItemSubitem);
+            // foreach ($keepItem->customer->keepItems as $keepItem) {
+            //     $keepItem->item_name = $keepItem->orderItemSubitem->productItem->inventoryItem['item_name'];
+            //     $keepItem->image = $keepItem->orderItemSubitem->productItem 
+            //                 ? $keepItem->orderItemSubitem->productItem->product->getFirstMediaUrl('product') 
+            //                 : $keepItem->orderItemSubitem->productItem->inventoryItem->inventory->getFirstMediaUrl('inventory');
+            //     unset($keepItem->orderItemSubitem);
                 
-                $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
-            }
+            //     $keepItem->waiter->image = $keepItem->waiter->getFirstMediaUrl('user');
+            // }
         });
     
         return $activeKeptItem;
@@ -1064,13 +1061,13 @@ class InventoryController extends Controller
                                     ])
                                     ->whereIn('status', ['Keep', 'Served', 'Returned', 'Deleted'])
                                     ->whereColumn('qty', '>', 'cm')
-                                    ->orderBy('created_at', 'desc')
+                                    ->orderBy('keep_date', 'desc')
                                     ->get()
                                     ->map(function ($record) {
                                         return [
                                             'type' => 'keep',
                                             'keep_item' => $record->keepItem,
-                                            'date' => $record->created_at,
+                                            'date' => $record->keep_date,
                                             'kept' => $record->status === 'Keep' ? $record->qty : 0,
                                             'reallocated' => in_array($record->status, ['Served', 'Returned', 'Deleted']) ? $record->qty * -1 : 0,
                                             'kept_balance' => $record->kept_balance

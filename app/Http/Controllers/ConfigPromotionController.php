@@ -8,8 +8,10 @@ use App\Models\ConfigPromotion;
 use App\Models\ItemCategory;
 use App\Models\MSICCodes;
 use App\Models\Setting;
+use App\Models\Token;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
@@ -18,6 +20,14 @@ use Inertia\Inertia;
 
 class ConfigPromotionController extends Controller
 {
+
+    protected $env;
+    public function __construct()
+    {
+        $this->env = env('APP_ENV');
+    }
+
+
     /**
      * Display a listing of the resource.
      */
@@ -620,6 +630,69 @@ class ConfigPromotionController extends Controller
         return redirect()->back();
     }
 
+    public function searchTIN(Request $request)
+    {
+        $merchantDetail = ConfigMerchant::first();
+        $checkToken = Token::latest()->first();
+        $token = $this->fetchToken($merchantDetail, $checkToken);
+        if (!$token) {
+            Log::error('Failed to fetch token');
+            return;
+        }
+        
+        if ($request->searchType === 'taxpayerName') {
+            $request->validate([
+                'taxpayerName' => 'required|string|max:255',
+            ]);
+
+            $prodUrl = $this->env === 'production'
+                    ? 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/taxpayer/search/tin?taxpayerName=' . $request->taxpayerName
+                    : 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/taxpayer/search/tin?taxpayerName=' . $request->taxpayerName;
+
+            
+            $submiturl = Http::withToken($token)->get($prodUrl);
+
+            Log::info('searchTIN ', [
+                'url' => $prodUrl,
+                'response' => $submiturl,
+            ]);
+
+            if ($submiturl->successful()) {
+                return response()->json($submiturl['tin']);
+            } else {
+                return response()->json(['message' => 'Invalid search type'], 400);
+            }
+        }
+        if ($request->searchType === 'idType') {
+            $request->validate([
+                'idType' => 'required|string|max:255',
+                'TINValue' => 'required|string|max:255',
+            ]);
+
+            $prodUrl = $this->env === 'production'
+                    ? 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/taxpayer/search/tin?idType=' . $request->idType . '&idValue=' . $request->TINValue
+                    : 'https://preprod-api.myinvois.hasil.gov.my/api/v1.0/taxpayer/search/tin?idType=' . $request->idType . '&idValue=' . $request->TINValue;
+
+            
+            $submiturl = Http::withToken($token)->get($prodUrl);
+
+            Log::info('searchTIN ', [
+                'url' => $prodUrl,
+                'response' => $submiturl,
+            ]);
+
+            if ($submiturl->successful()) {
+                return response()->json($submiturl['tin']);
+            } else {
+                return response()->json(['message' => 'Invalid search type'], 400);
+            }
+        }
+
+
+        return response()->json(['message' => 'Invalid search type'], 400);
+
+    }
+
     public function getCutOffTime()
     {
         $cutOffTime = Setting::where([
@@ -707,5 +780,39 @@ class ConfigPromotionController extends Controller
             ]);
         }
 
+    }
+
+    private function fetchToken($merchantDetail, $checkToken)
+    {
+        if (!$checkToken || Carbon::now() >= $checkToken->expired_at) {
+            $access_token_api = $this->env === 'production'
+                ? 'https://preprod-api.myinvois.hasil.gov.my/connect/token' 
+                : 'https://preprod-api.myinvois.hasil.gov.my/connect/token';
+
+            $response = Http::asForm()->post($access_token_api, [
+                'client_id' => $merchantDetail->irbm_client_id, 
+                'client_secret' => $merchantDetail->irbm_client_key,
+                'grant_type' => 'client_credentials',
+                'scope' => 'InvoicingAPI',
+            ]);
+
+            if ($response->successful()) {
+                Token::where('merchant_id', $merchantDetail->id)->delete();
+
+                return Token::create([
+                    'merchant_id' => $merchantDetail->id,
+                    'token' => $response['access_token'],
+                    'expired_at' => Carbon::now()->addHour(),
+                ])->token;
+            } else {
+                Log::error('Failed to get access token', [
+                    'status' => $response->status(),
+                    'error' => $response->body()
+                ]);
+                return null;
+            }
+        }
+
+        return $checkToken->token;
     }
 }

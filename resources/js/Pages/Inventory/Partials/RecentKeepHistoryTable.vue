@@ -9,6 +9,7 @@ import Table from '@/Components/Table.vue'
 import Button from '@/Components/Button.vue'
 import dayjs from 'dayjs';
 import { usePhoneUtils } from '@/Composables';
+import { wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -51,11 +52,11 @@ const getTimeDifference = (date) => {
     }
 
     if (months > 0) {
-        return `${months} months`;
+        return `${months} ${wTransChoice('public.month', 1).value}`;
     } else if (days > 0) {
-        return `${days} days`;
+        return `${days} ${wTransChoice('public.day', 1).value}`;
     } else {
-        return `${days} day`;
+        return `${days} ${wTransChoice('public.day', 0).value}`;
     }
 };
 
@@ -64,7 +65,7 @@ const getTimeDifference = (date) => {
 <template>
     <div class="flex flex-col w-full p-6 gap-6 items-center rounded-[5px] border border-primary-100">
         <div class="flex items-center justify-between w-full">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap">Recent Keep History</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap">{{ $t('public.inventory.active_kept_item') }}</span>
             <Link :href="route('activeKeptItem')">
                 <CircledArrowHeadRightIcon2  
                     class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
@@ -86,9 +87,9 @@ const getTimeDifference = (date) => {
                 <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </template>
-                <template #keep_date="row">
+                <!-- <template #keep_date="row">
                     <span class="text-grey-900 text-sm font-medium">{{ dayjs(row.keep_date).format('DD/MM/YYYY') }}</span>
                 </template>
                 <template #keep_item.customer.full_name="row">
@@ -112,12 +113,37 @@ const getTimeDifference = (date) => {
                 </template>
                 <template #keep_item.expired_to="row">
                     <span class="text-grey-900 text-sm font-medium">{{ row.keep_item.expired_to ? getTimeDifference(row.keep_item.expired_to) : '-' }}</span>
+                </template> -->
+                <template #expired_from="rows">
+                    <span class="text-grey-900 text-sm font-medium">{{ dayjs(rows.expired_from).format('DD/MM/YYYY') }}</span>
+                </template>
+                <template #customer.full_name="rows">
+                    <div class="flex items-center gap-2">
+                        <img 
+                            :src="rows.customer.image ? rows.customer.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
+                            alt="CustomerImage"
+                            class="size-9 object-contain rounded-full"
+                        >
+                        <div class="flex flex-col justify-center items-start flex-[1_0_0]">
+                            <span class="line-clamp-1 self-stretch text-grey-950 text-ellipsis text-sm font-semibold">{{ rows.customer.full_name }}</span>
+                            <span class="self-stretch text-grey-900 text-sm font-normal line-clamp-1">{{ formatPhone(rows.customer.phone) }}</span>
+                        </div>
+                    </div>
+                </template>
+                <template #order_item_subitem.product_item.inventory_item.item_name="rows">
+                    <span class="flex-[1_0_0] text-grey-900 text-sm font-semibold">{{ rows.order_item_subitem.product_item.inventory_item.item_name }}</span>
+                </template>
+                <template #qty="rows">
+                    <span class="text-grey-900 text-sm font-medium">{{ parseFloat(rows.qty) > parseFloat(rows.cm) ? `x ${rows.qty}` : `${parseInt(rows.cm)} cm` }}</span>
+                </template>
+                <template #expired_to="rows">
+                    <span class="text-grey-900 text-sm font-medium">{{ rows.expired_to ? getTimeDifference(rows.expired_to) : '-' }}</span>
                 </template>
             </Table>
             
             <div class="flex flex-col items-center justify-center" v-else>
                 <UndetectableIllus class="w-56 h-56" />
-                <span class="text-sm font-medium text-primary-900">No data can be shown yet...</span>
+                <span class="text-sm font-medium text-primary-900">{{ $t('public.empty.no_data') }}</span>
             </div>
         </div>
     </div>

@@ -87,7 +87,7 @@ watch( () => props.waiter, (newValue) => {
 <template>
     <div class="flex flex-col gap-6">
         <div class="relative flex gap-5">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Waiter Detail</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.waiter.waiter_detail') }}</span>
             <div class="flex flex-nowrap gap-2">
                     <EditIcon 
                         class="w-5 h-5 text-primary-900 hover:text-primary-800 cursor-pointer"
@@ -117,7 +117,7 @@ watch( () => props.waiter, (newValue) => {
                         />
                     </div>
                     <span class="text-base font-semibold text-grey-900">{{ waiterDetail.full_name }}</span>
-                    <span class="text-sm font-normal text-grey-500">{{ waiterDetail.employment_type }}</span>
+                    <span class="text-sm font-normal text-grey-500">{{ waiterDetail.employment_type === 'Full-time' ? $t('public.waiter.full_time') : $t('public.waiter.part_time') }}</span>
                 </div>
             </div>
             <div class="w-full grid grid-rows-3 divide-y divide-primary-50">
@@ -137,7 +137,7 @@ watch( () => props.waiter, (newValue) => {
                     <div class="flex w-8 h-8 items-center justify-center bg-primary-50">
                         <SalaryIcon class="text-primary-900"/>
                     </div>
-                    <span class="text-base font-medium text-grey-900 py-[14px]">RM {{ formatAmount(waiterDetail.salary) }}/{{ waiterDetail.employment_type === 'Full-time' ? 'month' : 'hour' }}</span>
+                    <span class="text-base font-medium text-grey-900 py-[14px]">RM {{ formatAmount(waiterDetail.salary) }}/{{ waiterDetail.employment_type === 'Full-time' ? $tChoice('public.month', 0) : $t('public.hour') }}</span>
                 </div>
             </div>
         </div>
@@ -145,7 +145,7 @@ watch( () => props.waiter, (newValue) => {
 
     <!-- edit modal -->
     <Modal
-        :title="'Edit'"
+        :title="$t('public.waiter.edit_waiter_detail')"
         :maxWidth="'lg'"
         :closeable="true"
         :show="isEditWaiterOpen"
@@ -185,8 +185,8 @@ watch( () => props.waiter, (newValue) => {
                 </div>
                 <div class="flex flex-col gap-5">
                     <div class="flex flex-col gap-1 text-center">
-                        <span class="text-primary-900 text-lg font-medium self-stretch">Delete this waiter?</span>
-                        <span class="text-grey-900 text-base font-medium self-stretch">Are you sure you want to delete the selected waiter? This action cannot be undone.</span>
+                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ $t('public.waiter.delete_waiter') }}</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">{{ $t('public.waiter.delete_waiter_message') }}</span>
                     </div>
                 </div>
 
@@ -197,14 +197,14 @@ watch( () => props.waiter, (newValue) => {
                         type="button"
                         @click="closeModal('stay')"
                     >
-                        Keep
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="red"
                         size="lg"
                         type="submit"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                 </div>
             </div>

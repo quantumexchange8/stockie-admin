@@ -2,16 +2,19 @@
 import Button from '@/Components/Button.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import { UndetectableIllus } from '@/Components/Icons/illus';
-import { NoImageIcon, PercentageIcon } from '@/Components/Icons/solid';
+import { CheckIcon, ClipboardIcon, NoImageIcon, PercentageIcon, SearchIdTypeIcon, SearchTaxPayerIcon } from '@/Components/Icons/solid';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/Table.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast, usePhoneUtils } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import DateInput from '@/Components/Date.vue';
 import dayjs from 'dayjs';
+import Modal from '@/Components/Modal.vue';
+import Label from '@/Components/Label.vue';
+import Tooltip from '@/Components/Tooltip.vue';
 
 const props = defineProps({
     merchant: {
@@ -19,6 +22,13 @@ const props = defineProps({
         default: () => {},
     },
 })
+
+const idTypeArr = [
+    { text: 'NRIC', value: 'NRIC'},
+    { text: 'PASSPORT', value: 'PASSPORT'},
+    { text: 'BRN', value: 'BRN'},
+    { text: 'ARMY', value: 'ARMY'},
+]
 
 const emit = defineEmits(['refetchMerchant']);
 
@@ -34,6 +44,13 @@ const msic_codes = ref([]);
 const merchant_detail = ref(props.merchant);
 const cutOffTime = ref(null);
 const phonePrefixes = ref([{ text: '+60', value: '+60'}]);
+const isSearchTinOpen = ref(false);
+const searchType = ref(null);
+const taxpayernameVal = ref(null);
+const idType = ref(null);
+const idVal = ref(null);
+const tinVal = ref(null);
+const tinNumIsCopied = ref(false);
 
 const getResults = async () => {
     isLoading.value = true
@@ -234,6 +251,42 @@ const editCutOffTime = async () => {
     }
 }
 
+const openSearchTinModal = () => {
+    isSearchTinOpen.value = true
+}
+
+const resetTinSearch = () => {
+    setTimeout(() => {
+        searchType.value = null;
+        taxpayernameVal.value = null;
+        idType.value = null;
+        idVal.value = null;
+        tinVal.value = null;
+    }, 500);
+};
+
+const closeSearchTinModal = () => {
+    isSearchTinOpen.value = false
+    resetTinSearch();
+}
+
+const searchTin = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.post('/configurations/searchTIN', {
+            searchType: searchType.value,
+            taxpayerName: taxpayernameVal.value,  
+            idType: idType.value,
+            TINValue: idVal.value,
+        })
+
+        tinVal.value = response.data;
+
+    } catch (error) {
+        console.error('error: ', error);
+    }
+};
+
 const editTaxes = async () => {
     // taxForm.errors = {};
     if (taxForm.taxes.length > 0) {
@@ -263,6 +316,18 @@ const removeImage = () => {
     merchantForm.image = '';
     merchantForm.merchant_image = '';
 };
+
+const copyToClipboard = () => {
+    // Write to clipboard
+    navigator.clipboard.writeText(tinVal.value);
+
+    tinNumIsCopied.value = true;
+
+    showMessage({
+        severity: 'success',
+        summary: 'TIN number copied successfully!'
+    });
+}
 
 watch(() => props.merchant, (newValue) => {
     merchant_detail.value = newValue;
@@ -493,6 +558,13 @@ onMounted(() => {
                                     <span class="text-grey-500 text-sm font-base text-wrap max-w-full">{{ codes[slotProps.index].description }}</span>
                                 </template>
                             </Dropdown> 
+                            
+                            <div class="flex flex-col items-start">
+                                <!-- <TextInput value="Search TIN" /> -->
+                                <Label :class="'mb-1 text-xs !font-medium text-grey-900'">Search TIN</Label>
+                                <Button @click="openSearchTinModal" type="button" >Search</Button>
+                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -655,5 +727,87 @@ onMounted(() => {
                 </template>
             </div>
         </form>
+
+        <Modal
+            maxWidth="sm"
+            closeable
+            title="Select TIN"
+            :show="isSearchTinOpen"
+            @close="closeSearchTinModal"
+        >
+            <div v-if="!tinVal">
+                <div v-if="!searchType" class="flex flex-col md:flex-row gap-5 items-center justify-center">
+                    <div  class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'taxpayerName'" >
+                        <SearchTaxPayerIcon class="w-10 h-10" />
+                        <div>Search Taxpayer Name</div>
+                    </div>
+                    <div class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'idType'">
+                        <SearchIdTypeIcon class="w-10 h-10" />
+                        <div>Search by ID Type</div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-5" v-if="searchType === 'taxpayerName'">
+                    <TextInput 
+                        :inputName="'taxpayernameVal'"
+                        :labelText="'Taxpayer Name'"
+                        :required="true"
+                        v-model="taxpayernameVal"
+                    />
+
+                    <div class="flex items-center gap-3">
+                        <Button size="md" variant="secondary" @click="resetTinSearch" >Back</Button>
+                        <Button size="md" @click="searchTin">Search</Button>
+                    </div>
+                    
+                </div>
+
+                <div class="flex flex-col gap-5" v-if="searchType === 'idType'">
+                    <div class="flex flex-col gap-3">
+                        <Dropdown 
+                            :inputName="'idType'"
+                            :labelText="'ID Type'"
+                            :required="true"
+                            :filter="false"
+                            :inputArray="idTypeArr"
+                            v-model="idType"
+                        />
+                        <TextInput 
+                            :inputName="'idVal'"
+                            :labelText="'ID Value'"
+                            :required="true"
+                            :disabled="!idType"
+                            v-model="idVal"
+                        />
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <Button size="md" variant="secondary" @click="resetTinSearch" >Back</Button>
+                        <Button size="md" @click="searchTin">Search</Button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-5 justify-center items-center" v-else>
+                <div class="flex justify-end gap-x-2 items-center" >
+                    <p class="text-grey-900 text-base font-bold text-center truncate w-32">
+                        {{ tinVal ?? '-' }}
+                    </p>
+                </div>
+                <Tooltip
+                    :message="'Copy the TIN number'"
+                    :position="'top'"
+                    class="w-full"
+                >
+                    <Button 
+                        size="md" 
+                        variant="secondary" 
+                        class="w-full"
+                        @click="copyToClipboard" 
+                    >
+                        {{ tinNumIsCopied ? 'Copied' : 'Copy' }}
+                        <span class="pl-1" v-if="tinNumIsCopied"><CheckIcon class="shrink-0 text-green-900" /></span>
+                    </Button>
+                </Tooltip>
+            </div>
+        </Modal>
     </div>
 </template>

@@ -237,13 +237,11 @@ const getStatusVariant = (status) => {
 
     const loweredStatus = status.toLowerCase();
     
-    return loweredStatus === 'submitted' 
+    return loweredStatus === 'submitted' || loweredStatus === 'valid'
         ? 'green' 
         : loweredStatus === 'cancelled' 
             ? 'grey'
-            : loweredStatus === 'pending'
-                ? 'orange' 
-                : 'red';
+            : 'red';
 };
 
 const capFirstLetter = (status) => {
@@ -273,6 +271,10 @@ watch(() => searchQuery.value, (newValue) => {
                 status.includes(query);
     });
 }, { immediate: true });
+
+const PrintInvoice = (id) => {
+    window.open(`/e-invoice/downloadInvoice/${id}/download`, "_blank");
+}
 
 </script>
 
@@ -394,19 +396,20 @@ watch(() => searchQuery.value, (newValue) => {
 
         <OverlayPanel ref="op" @close="closeOverlay" class="[&>div]:p-0">
             <div class="flex flex-col items-center border-2 border-primary-50 rounded-md">
-                <Button
+                <!-- <Button
                     type="button"
                     variant="tertiary"
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
                     @click="ConfirmCancel"
                 >
                     <span class="text-grey-700 font-normal">Cancel Submission</span>
-                </Button>
+                </Button> -->
                 <Button
                     type="button"
                     variant="tertiary"
-                    disabled
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
+                    @click="PrintInvoice(selectedVal.id)"
+                    :disabled="selectedVal.status !== 'Valid' && selectedVal.docs_type === 'single_submission'"
                 >
                     <span class="text-grey-700 font-normal">Print Receipt</span>
                 </Button>

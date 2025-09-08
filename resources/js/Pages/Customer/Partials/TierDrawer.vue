@@ -6,6 +6,7 @@ import Toast from '@/Components/Toast.vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { computed, onMounted, ref } from 'vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps ({
     customer: Object
@@ -13,13 +14,13 @@ const props = defineProps ({
 
 const rewards = ref([]);
 const tabs = ref([
-    { key: 'Active', title: 'Active', disabled: false },
-    { key: 'Redeemed', title: 'Redeemed', disabled: false },
+    { key: 'Active', title: wTrans('public.active'), disabled: false },
+    { key: 'Redeemed', title: wTrans('public.redeemed'), disabled: false },
 ]);
 
 const getTierRewards = async () => {
     try {
-        const response = await axios.get(`customer/tierRewards/${props.customer.id}`);
+        const response = await axios.get(`/customer/tierRewards/${props.customer.id}`);
         rewards.value = response.data;
     } catch (error) {
         console.error(error)
@@ -32,9 +33,9 @@ onMounted(() => getTierRewards());
 
 const getRewardTitle = (reward) => {
     switch (reward.ranking_reward.reward_type) {
-        case 'Discount (Amount)': return `RM ${reward.ranking_reward.discount}  Discount`;
-        case 'Discount (Percentage)': return `${reward.ranking_reward.discount} % Discount`;
-        case 'Bonus Point': return `${reward.ranking_reward.bonus_point}  Bonus Point`;
+        case 'Discount (Amount)': return `RM ${reward.ranking_reward.discount} ${wTrans('public.discount').value}`;
+        case 'Discount (Percentage)': return `${reward.ranking_reward.discount} % ${wTrans('public.discount').value}`;
+        case 'Bonus Point': return `${reward.ranking_reward.bonus_point} ${wTrans('public.bonus_point').value}`;
         case 'Free Item': return `${reward.ranking_reward.item_qty} x ${reward.ranking_reward.product.product_name}`;
     }
 };
@@ -49,7 +50,7 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
     <div class="flex flex-col p-6 items-center shrink-0 max-h-[calc(100dvh-4rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
         <div class="flex flex-col p-6 justify-center items-center gap-2 self-stretch rounded-[5px] bg-primary-25">
             <div class="flex flex-col justify-center items-center gap-4 relative">
-                <span class="self-stretch text-grey-900 text-base font-medium">Current Tier</span>
+                <span class="self-stretch text-grey-900 text-base font-medium">{{ $t('public.current_tier') }}</span>
                 <template v-if="customer.rank">
                     <div class="flex flex-col justify-center items-center gap-2">
                         <img 
@@ -68,14 +69,14 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
         </div>
 
         <div class="flex flex-col items-start self-stretch">
-            <span class="flex-[1_0_0] text-primary-900 text-md font-semibold py-3">Tier Rewards</span>
+            <span class="flex-[1_0_0] text-primary-900 text-md font-semibold py-3">{{ $t('public.tier_rewards') }}</span>
             <TabView :tabs="tabs">
                 <template #active>
                     <div class="flex flex-col items-center self-stretch max-h-[calc(100dvh-24rem)] overflow-y-auto scrollbar-thin scrollbar-webkit pr-1 gap-y-4">
                         <Toast 
                             inline
                             severity="info"
-                            summary="You can redeem the rewards only when the customer has checked-in to one table/room."
+                            :summary="$t('public.customer.redeem_reward_info')"
                             :closable="false"
                         />
                         <template v-if="activeTierRewards.length > 0">
@@ -87,14 +88,16 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
                                         <ProductQualityIcon class="text-primary-900" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
                                     </div>
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ reward.ranking_reward.ranking.name }}</span>
+                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">
+                                            {{ $t('public.entry_reward_for', { rank_name: reward.ranking_reward.ranking.name }) }}
+                                        </span>
                                         <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
                                         <div class="flex items-center gap-1 self-stretch">
                                             <template v-if="reward.ranking_reward.min_purchase === 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)' || reward.ranking_reward.reward_type === 'Discount (Percentage)')">
-                                                <span class="text-primary-900 text-2xs font-normal">Min spend: RM {{ reward.ranking_reward.min_purchase_amount }}</span>
+                                                <span class="text-primary-900 text-2xs font-normal">{{ $t('public.min_spend') }}: RM {{ reward.ranking_reward.min_purchase_amount }}</span>
                                             </template>
                                             <template v-if="reward.ranking_reward.min_purchase !== 'active' && (reward.ranking_reward.reward_type === 'Discount (Amount)'|| reward.ranking_reward.reward_type === 'Discount (Percentage)')">
-                                                <span class="text-primary-900 text-2xs font-normal">No min. spend</span>
+                                                <span class="text-primary-900 text-2xs font-normal">{{ $t('public.no_min_spend') }}</span>
                                             </template>
                                         </div>
                                     </div>
@@ -104,7 +107,7 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
                         <template v-else>
                             <div class="flex w-full flex-col items-center justify-center gap-5">
                                 <UndetectableIllus />
-                                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                             </div>
                         </template>
                     </div>
@@ -121,19 +124,21 @@ const redeemedTierRewards = computed(() => rewards.value.filter((reward) => rewa
                                         <ProductQualityIcon class="text-grey-300" v-if="reward.ranking_reward.reward_type === 'Free Item'"/>
                                     </div>
                                     <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ reward.ranking_reward.ranking.name }}</span>
+                                        <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">
+                                            {{ $t('public.entry_reward_for', { rank_name: reward.ranking_reward.ranking.name }) }}
+                                        </span>
                                         <span class="self-stretch text-primary-950 text-base font-medium">{{ getRewardTitle(reward) }} </span>
-                                        <span class="text-grey-600 text-2xs font-normal">Redeemed on {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>
+                                        <span class="text-grey-600 text-2xs font-normal">{{ $t('public.redeemed_on') }} {{ dayjs(reward.updated_at).format('DD/MM/YYYY') }}</span>
                                     </div>
                                 </div>
 
-                                <p class="text-grey-300 text-base font-semibold col-span-4 text-center">Redeemed</p>
+                                <p class="text-grey-300 text-base font-semibold col-span-4 text-center">{{ $t('public.redeemed') }}</p>
                             </div>
                         </template>
                         <template v-else>
                             <div class="flex w-full flex-col items-center justify-center gap-5">
                                 <UndetectableIllus />
-                                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                             </div>
                         </template>
                     </div>

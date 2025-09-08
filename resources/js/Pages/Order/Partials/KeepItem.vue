@@ -353,11 +353,9 @@ const toggleExpiration = (orderItemId, expiration) => {
 const updateValidPeriod = (orderItemId, option) => {
     form.items.forEach((item) => {
         if (item.order_item_id === orderItemId) {
-            item.expired_from = option === 0  || typeof option === 'object' 
-                                ? dayjs(option[0]).format('YYYY-MM-DD') 
-                                : dayjs().format('YYYY-MM-DD');
-            item.expired_to = option === 0 || typeof option === 'object' 
-                                ? dayjs(option[1]).format('YYYY-MM-DD') 
+            item.expired_from = dayjs().format('YYYY-MM-DD');
+            item.expired_to = typeof option === 'object' 
+                                ? dayjs(item.date_range).format('YYYY-MM-DD') 
                                 : dayjs().add(option, 'month').format('YYYY-MM-DD');
         }
     });
@@ -781,8 +779,9 @@ onMounted(() => {
                                                     v-if="form.items.find(i => i.order_item_id === order_item.id).expired_period === 0"
                                                     :labelText="''"
                                                     :inputName="'date_range_' + index"
-                                                    :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
-                                                    :range="true"
+                                                    :placeholder="'DD/MM/YYYY'"
+                                                    :range="false"
+                                                    :minDate="new Date()"
                                                     @onChange="updateValidPeriod(order_item.id, $event)"
                                                     v-model="form.items.find(i => i.order_item_id === order_item.id).date_range"
                                                 />

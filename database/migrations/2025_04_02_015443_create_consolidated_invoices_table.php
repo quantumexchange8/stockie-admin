@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('uuid')->nullable()->default(NULL);
             $table->string('longId')->nullable()->default(NULL);
             $table->string('internal_id')->nullable()->default(NULL);
+            $table->dateTime('submitted_at')->nullable()->default(NULL);
             $table->dateTime('invoice_datetime')->nullable()->default(NULL);
             $table->dateTime('rejected_at')->nullable()->default(NULL);
             $table->longText('remark')->nullable()->default(NULL);

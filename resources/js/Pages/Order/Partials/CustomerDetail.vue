@@ -305,6 +305,8 @@ const expireKeptItem = async () => {
             customer_id: props.customer.id
         });
 
+        customer.value.keep_items = response.data;
+        customer.value.keep_items_count = response.data.length;
         emit('update:customerKeepItems', response.data);
         closeModal('leave');
 
@@ -374,7 +376,18 @@ const getKeepItemExpiryStatus = (keepItem) => {
     return expiredStatus;
 };
 
+const getDeleteReasons = computed(() => {
+    return deleteReason.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
+
 onMounted(() => fetchExpiringPointHistories());
+
+watch(() => props.targetCustomer, (newValue) => {
+    customer.value = newValue;
+})
 
 watch((editForm), (newValue) => {
     initialEditForm.isDirty = newValue.id !== initialEditForm.value.id ||
@@ -393,7 +406,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
 
 <template>
     <RightDrawer 
-        :header="viewType === 'keepHistory' ? $t('public.history') : viewType === 'currentPoints' ? $t('public.points') : $t('public.tier')" 
+        :header="viewType === 'keepHistory' ? $t('public.history') : viewType === 'currentPoints' ? $tChoice('public.point', 1) : $t('public.tier')" 
         previousTab
         v-model:show="drawerIsVisible"
         @close="closeDrawer"
@@ -455,7 +468,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     <span class="self-stretch text-[#A35F1A] text-base font-bold">{{`${totalPointsExpiringSoon} ${$t('public.point_expiring_soon')}:` }}</span>
                     <ul class="list-disc pl-6">
                         <template v-for="record in expiringPointHistories" :key="record.id">
-                            <li class="text-sm text-grey-950 font-normal"><span class="!font-bold">{{ `${record.expire_balance} ${$t('public.points')},` }}</span> {{ dayjs(record.expired_at).format('MMM D, YYYY') }}</li>
+                            <li class="text-sm text-grey-950 font-normal"><span class="!font-bold">{{ `${record.expire_balance} ${$tChoice('public.point', 1)},` }}</span> {{ dayjs(record.expired_at).format('MMM D, YYYY') }}</li>
                         </template>
                     </ul>
                 </div>
@@ -876,7 +889,7 @@ const isFormValid = computed(() => ['type', 'return_qty'].every(field => form[fi
                     :labelText="$t('public.field.deletion_reason')"
                     :errorMessage="deleteForm.errors.remark ? deleteForm.errors.remark[0] : ''"
                     :inputName="'remark'"
-                    :inputArray="deleteReason"
+                    :inputArray="getDeleteReasons"
                     :placeholder="$t('public.select')"
                     v-model="deleteForm.remark"
                 />

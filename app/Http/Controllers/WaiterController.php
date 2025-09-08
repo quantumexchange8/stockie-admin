@@ -922,7 +922,9 @@ class WaiterController extends Controller
     {
         $positions = WaiterPosition::get()
                                     ->map(fn ($position) => [
-                                        'text' => ucwords($position->name),
+                                        'text' => ucwords($position->name) === 'Waiter' 
+                                            ? trans('public.waiter_header')
+                                            : trans('public.waiter.captain'),
                                         'value' => $position->id
                                     ]);
 

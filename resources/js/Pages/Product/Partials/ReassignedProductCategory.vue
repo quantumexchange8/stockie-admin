@@ -1,21 +1,14 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useForm } from '@inertiajs/vue3';
-import TextInput from '@/Components/TextInput.vue';
 import Button from '@/Components/Button.vue'
 import Dropdown from '@/Components/Dropdown.vue'
-import DragDropImage from '@/Components/DragDropImage.vue'
-import RadioButton from '@/Components/RadioButton.vue'
-import Toggle from '@/Components/Toggle.vue'
-import NumberCounter from '@/Components/NumberCounter.vue';
-import InputError from "@/Components/InputError.vue";
-import { PlusIcon, DeleteIcon } from '@/Components/Icons/solid';
-import { redeemOptions, defaultProductItem } from '@/Composables/constants';
 import Modal from '@/Components/Modal.vue';
 import Message from '@/Components/Message.vue';
 import Tag from '@/Components/Tag.vue';
 import { DeleteIllus, UndetectableIllus } from '@/Components/Icons/illus';
 import { useCustomToast } from '@/Composables/index.js';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     selectedCategory: Object,
@@ -61,8 +54,8 @@ const submit = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Selected product category has been deleted.',
-                detail: 'Products in this category have been moved to different categories.',
+                summary: wTrans('public.toast.delete_product_category_summary'),
+                detail: wTrans('public.toast.delete_product_category_detail'),
             });
         }, 200);
     } catch (error) {
@@ -142,10 +135,10 @@ watch(() => props.categoryArr, (newValue) => {
             <Message 
                 v-if="products.length > 0"
                 severity="warn" 
-                :title="`${products.length} items need to be re-assigned to another category`" 
+                :title="$t('public.menu.reassign_cat_message_title', { count: products.length })"
             >
                 <template #content>
-                    <p class="text-sm font-normal text-yellow-950">To proceed with removing this category, please assign a new category to each product.</p>
+                    <p class="text-sm font-normal text-yellow-950">{{ $t('public.menu.reassign_cat_message') }}</p>
                 </template>
             </Message>
 
@@ -158,14 +151,14 @@ watch(() => props.categoryArr, (newValue) => {
                             class="col-span-3 size-[60px] rounded-[1.5px] border-[0.3px] border-grey-100 object-contain"
                         >
                         <div class="col-span-9 flex flex-col gap-y-1 items-start justify-center self-stretch">
-                            <Tag value="Set" v-if="product.bucket === 'set'"/>
+                            <Tag :value="$t('public.set_header')" v-if="product.bucket === 'set'"/>
                             <p class="text-base font-medium text-grey-900 self-stretch">
                                 {{ product.product_name }}
                             </p>
                         </div>
                     </div>
                     <Dropdown
-                        placeholder="Select Category"
+                        :placeholder="$t('public.select_category')"
                         :inputName="'new_category_id_' +  index"
                         :inputArray="categories"
                         :errorMessage="form.errors ? form.errors['items.' + index + '.new_category_id']  : ''"
@@ -179,7 +172,7 @@ watch(() => props.categoryArr, (newValue) => {
         <template v-else>
             <div class="flex flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">There are no products to reassign...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_product_reassign') }}</span>
             </div>
         </template>
 
@@ -190,7 +183,7 @@ watch(() => props.categoryArr, (newValue) => {
                 :size="'lg'"
                 @click="unsaved('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :type="'button'"
@@ -198,7 +191,7 @@ watch(() => props.categoryArr, (newValue) => {
                 :disabled="!isFormValid"
                 @click="showDeleteGroupForm"
             >
-                Save & Delete Category
+                {{ $t('public.menu.save_delete_category') }}
             </Button>
         </div>
         <Modal
@@ -226,10 +219,10 @@ watch(() => props.categoryArr, (newValue) => {
                 </div>
                 <div class="flex flex-col gap-1" >
                     <span class="text-primary-900 text-lg font-medium text-center self-stretch" >
-                        Delete this category?
+                        {{ $t('public.menu.delete_category') }}
                     </span>
                     <span class="text-grey-900 text-center text-base font-medium self-stretch" >
-                        Are you sure you want to delete this category? This action cannot be undone.
+                        {{ $t('public.menu.delete_category_message') }}
                     </span>
                 </div>
                 <div class="flex item-center gap-3">
@@ -239,7 +232,7 @@ watch(() => props.categoryArr, (newValue) => {
                         type="button"
                         @click="hideDeleteCategoryForm"
                     >
-                        Keep
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="red"
@@ -247,7 +240,7 @@ watch(() => props.categoryArr, (newValue) => {
                         type="submit"
                         :disabled="form.processing"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                 </div>
             </div>

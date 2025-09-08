@@ -15,17 +15,18 @@ import { useFileExport } from '@/Composables';
 import Button from '@/Components/Button.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import Toast from '@/Components/Toast.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     keepHistories: Array
 })
 const home = ref({
-    label: 'Inventory',
+    label: wTrans('public.inventory_header'),
     route: '/inventory/inventory'
 });
 const items = ref([
-    { label: 'Active Kept Item', route: '/inventory/inventory/activeKeptItem' },
-    { label: 'Keep History' }
+    { label: wTrans('public.inventory.active_kept_item'), route: '/inventory/inventory/activeKeptItem' },
+    { label: wTrans('public.inventory.keep_history') }
 ]);
 
 // refs
@@ -42,9 +43,9 @@ const date_filter = ref(defaultLatest3Months.value);
 
 // arrays
 const tabs = ref([
-    { key: 'Keep', title: 'Keep', disabled: false },
-    { key: 'Served/Returned', title: 'Served/Returned', disabled: false },
-    { key: 'Expired', title: 'Expired', disabled: false },
+    { key: 'Keep', title: wTrans('public.keep'), disabled: false },
+    { key: 'Served/Returned', title: wTrans('public.served_returned'), disabled: false },
+    { key: 'Expired', title: wTrans('public.expired'), disabled: false },
 ]);
 const tranformedTabs = computed(() => {
     return tabs.value.map((tab) => {
@@ -58,16 +59,16 @@ const checkedFilters = ref({
     keptIn: [],
 })
 
-const expireInDays = ref([
-    { text: '3 days', value: 3},
-    { text: '7 days', value: 7},
-    { text: '14 days', value: 14},
-    { text: '30 days', value: 30}
+const expireInDays = computed(() => [
+    { text: `3 ${wTransChoice('public.day', 1).value}`, value: 3},
+    { text: `7 ${wTransChoice('public.day', 1).value}`, value: 7},
+    { text: `14 ${wTransChoice('public.day', 1).value}`, value: 14},
+    { text: `30 ${wTransChoice('public.day', 1).value}`, value: 30}
 ]);
 
 const keptInCategory = ref([
-    { text: 'CM', value: 'cm'},
-    { text: 'Quantity', value: 'qty'}
+    { text: wTrans('public.cm'), value: 'cm'},
+    { text: wTrans('public.quantity'), value: 'qty'}
 ]);
 
 const { exportToCSV } = useFileExport();
@@ -102,32 +103,38 @@ const getFilteredRows = (tab) => {
 }
 
 const csvExport = (action_type) => {
-    const title = 'Keep History';
     const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
     const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
     let rows = [];
+    let translatedAction = '';
 
     switch (action_type) {
         case 'all':
             rows = initialKeepHistories.value;
+            translatedAction = wTrans('public.all').value;
             break;
         case 'keep':
             rows = keepHistories.value.filter((history) => history.status == 'Keep');
+            translatedAction = wTrans('public.keep').value;
             break;
         case 'served-returned':
             rows = keepHistories.value.filter((history) => history.status == 'Returned' || history.status == 'Served');
+            translatedAction = wTrans('public.served_returned').value;
             break;
         case 'expired':
             rows = keepHistories.value.filter((history) => history.status == 'Expired');
+            translatedAction = wTrans('public.expired').value;
             break;
     }
+
+    const title = `${wTrans('public.inventory.keep_history').value} - (${translatedAction})`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { 'Item Name': title, 'Quantity': '', 'Date': '', 'Keep For': '' },
         { 'Item Name': dateRange, 'Quantity': '', 'Date': '', 'Keep For': '' },
-        { 'Item Name': 'Item Name', 'Quantity': 'Quantity', 'Date': 'Date', 'Keep For': 'Keep For' },
+        { 'Item Name': wTrans('public.inventory.item_name').value, 'Quantity': wTrans('public.quantity').value, 'Date': wTrans('public.date').value, 'Keep For': wTrans('public.field.keep_for').value },
         ...rows.map(row => ({
             'Item Name': row.item_name,
             'Quantity': row.qty,
@@ -136,7 +143,7 @@ const csvExport = (action_type) => {
         })),
     ];
 
-    exportToCSV(formattedRows, 'Keep History');
+    exportToCSV(formattedRows, wTrans('public.inventory.keep_history').value);
 }
 
 const changeActiveTab = (event) => {
@@ -213,7 +220,7 @@ watch(() => searchQuery.value, (newValue) => {
 </script>
 
 <template>
-    <Head title="Keep History" />
+    <Head :title="$t('public.inventory.keep_history')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -228,12 +235,12 @@ watch(() => searchQuery.value, (newValue) => {
         <div class="flex flex-col p-6 items-start gap-6 rounded-[5px] border-solid border border-primary-100">
             <div class="flex items-start gap-2.5 self-stretch">
                 <div class="flex justify-between items-center flex-[1_0_0] self-stretch">
-                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium">Keep History</span>
+                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium">{{ $t('public.inventory.keep_history') }}</span>
                     <Menu as="div" class="relative inline-block text-left">
                         <div>
                             <MenuButton
                                 class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
-                                Export
+                                {{ $t('public.action.export') }}
                                 <UploadIcon class="size-4 cursor-pointer" />
                             </MenuButton>
                         </div>
@@ -253,7 +260,7 @@ watch(() => searchQuery.value, (newValue) => {
                                         { 'bg-grey-50 pointer-events-none': initialKeepHistories.length === 0 },
                                         'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                     ]" :disabled="initialKeepHistories.length === 0" @click="csvExport('all')">
-                                        All
+                                        {{ $t('public.all') }}
                                     </button>
                                 </MenuItem>
                                 <MenuItem v-slot="{ active }">
@@ -262,7 +269,7 @@ watch(() => searchQuery.value, (newValue) => {
                                         { 'bg-grey-50 pointer-events-none': keepHistories.filter((history) => history.status == 'Keep').length === 0 },
                                         'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                     ]" :disabled="keepHistories.filter((history) => history.status == 'Keep').length === 0" @click="csvExport('keep')">
-                                        Keep
+                                        {{ $t('public.keep') }}
                                     </button>
                                 </MenuItem>
                                 <MenuItem v-slot="{ active }">
@@ -271,7 +278,7 @@ watch(() => searchQuery.value, (newValue) => {
                                         { 'bg-grey-50 pointer-events-none': keepHistories.filter((history) => history.status == 'Returned' || history.status == 'Served').length === 0 },
                                         'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                     ]" :disabled="keepHistories.filter((history) => history.status == 'Returned' || history.status == 'Served').length === 0" @click="csvExport('served-returned')">
-                                        Served/Returned
+                                        {{ $t('public.served_returned') }}
                                     </button>
                                 </MenuItem>
                                 <MenuItem v-slot="{ active }">
@@ -280,7 +287,7 @@ watch(() => searchQuery.value, (newValue) => {
                                         { 'bg-grey-50 pointer-events-none': keepHistories.filter((history) => history.status == 'Expired').length === 0 },
                                         'group flex w-full items-center rounded-md px-4 py-2 text-sm text-gray-900',
                                     ]" :disabled="keepHistories.filter((history) => history.status == 'Expired').length === 0" @click="csvExport('expired')">
-                                        Expired
+                                        {{ $t('public.expired') }}
                                     </button>
                                 </MenuItem>
                             </MenuItems>
@@ -299,7 +306,7 @@ watch(() => searchQuery.value, (newValue) => {
                         <div class="flex flex-col pb-6 gap-6 flex-[1_0_0] w-full">
                             <div class="flex items-start gap-5 self-stretch">
                                 <SearchBar
-                                    placeholder="Search"
+                                    :placeholder="$t('public.search')"
                                     :showFilter="true"
                                     v-model="searchQuery"
                                 >
@@ -343,13 +350,13 @@ watch(() => searchQuery.value, (newValue) => {
                                                 :size="'lg'"
                                                 @click="clearFilters(hideOverlay)"
                                             >
-                                                Clear All
+                                                {{ $t('public.action.clear_all') }}
                                             </Button>
                                             <Button
                                                 :size="'lg'"
                                                 @click="applyCheckedFilters(hideOverlay)"
                                             >
-                                                Apply
+                                                {{ $t('public.action.apply') }}
                                             </Button>
                                         </div>
                                     </template>

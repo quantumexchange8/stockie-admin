@@ -27,6 +27,8 @@ class ConsolidatedInvoice extends Model
         'submitted_uuid',
         'uuid',
         'submission_date',
+        'longId',
+        'submitted_at',
     ];
 
     public function invoice_child(): HasMany

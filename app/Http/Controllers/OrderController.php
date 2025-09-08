@@ -170,7 +170,11 @@ class OrderController extends Controller
         //     };
         // });
 
-        $customers = Customer::orderBy('full_name')
+        $customers = Customer::where(function ($query) {
+                                    $query->where('status', '!=', 'void')
+                                        ->orWhereNull('status'); // Handle NULL cases
+                                })
+                                ->orderBy('full_name')
                                 ->get(['id', 'full_name', 'phone'])
                                 ->map(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
@@ -837,7 +841,7 @@ class OrderController extends Controller
                                         'keep_item_id' => $ki->id,
                                         'qty' => $ki->qty,
                                         'cm' => number_format((float) $ki->cm, 2, '.', ''),
-                                        'keep_date' => $ki->created_at,
+                                        'keep_date' => $ki->expired_from,
                                         'kept_balance' => $ki->qty > $ki->cm ? $inventoryItem->current_kept_amt - $ki->qty : $inventoryItem->current_kept_amt,
                                         'remark' => 'Cancelled order',
                                         'user_id' => auth()->user()->id,
@@ -931,7 +935,7 @@ class OrderController extends Controller
                                         'keep_item_id' => $ki->id,
                                         'qty' => $ki->qty,
                                         'cm' => number_format((float) $ki->cm, 2, '.', ''),
-                                        'keep_date' => $ki->created_at,
+                                        'keep_date' => $ki->expired_from,
                                         'kept_balance' => $ki->qty > $ki->cm ? $inventoryItem->current_kept_amt - $ki->qty : $inventoryItem->current_kept_amt,
                                         'remark' => 'Cancelled order',
                                         'user_id' => auth()->user()->id,
@@ -1060,7 +1064,7 @@ class OrderController extends Controller
                     'order_item_id' => $orderItem->id,
                     'qty' => $keepHistory->qty,
                     'cm' => number_format((float) $keepHistory->cm, 2, '.', ''),
-                    'keep_date' => $keepItem->created_at,
+                    'keep_date' => $keepItem->expired_from,
                     'kept_balance' => $inventoryItem->current_kept_amt,
                     'user_id' => auth()->user()->id,
                     'kept_from_table' => $keepItem->kept_from_table,
@@ -1736,7 +1740,7 @@ class OrderController extends Controller
                                             'keep_item_id' => $newKeep->id,
                                             'qty' => $reqItem['type'] === 'qty' ? round($item['amount'], 2) : 0.00,
                                             'cm' => $reqItem['type'] === 'cm' ? number_format((float) $item['amount'], 2, '.', '') : '0.00',
-                                            'keep_date' => $newKeep->created_at,
+                                            'keep_date' => $newKeep->expired_from,
                                             'kept_balance' => $reqItem['type'] === 'qty' ? $tempOrderItem->current_kept_amt + $item['amount'] : $tempOrderItem->current_kept_amt,
                                             'user_id' => auth()->user()->id,
                                             'kept_from_table' => $orderTableNames,
@@ -2144,7 +2148,7 @@ class OrderController extends Controller
                     'order_item_id' => $newOrderItem->id,
                     'qty' => $request->type === 'qty' ? round($request->return_qty, 2) : 0.00,
                     'cm' => $request->type === 'cm' ? number_format((float) $keepItem->cm, 2, '.', '') : '0.00',
-                    'keep_date' => $keepItem->created_at,
+                    'keep_date' => $keepItem->expired_from,
                     'kept_balance' => $request->type === 'qty' ? $inventoryItem->current_kept_amt - $request->return_qty : $inventoryItem->current_kept_amt,
                     'user_id' => auth()->user()->id,
                     'kept_from_table' => $keepItem->kept_from_table,
@@ -2797,10 +2801,10 @@ class OrderController extends Controller
             // Get kick drawer data
             $response = array_merge($response, $this->kickDrawer());
 
-            // // POST CT Einvoice
-            // Log::debug('order', ['order' => $order['id']]);
+            // POST CT Einvoice
+            Log::debug('order', ['order' => $order['id']]);
 
-            // $this->storeAtCtInvoice($payment, collect($order['id']));
+            $this->storeAtCtInvoice($payment, collect($order['id']));
         }
 
         return $response ?? 'Payment Unsuccessfull.';
@@ -3796,7 +3800,7 @@ class OrderController extends Controller
                     'keep_item_id' => $keepItem->id,
                     'qty' => $expiredKeepItem,
                     'cm' => $keepItem->cm,
-                    'keep_date' => $keepItem->created_at,
+                    'keep_date' => $keepItem->expired_from,
                     'kept_balance' => $newKeptBalance,
                     'user_id' => auth()->user()->id,
                     'kept_from_table' => $keepItem->kept_from_table,
@@ -3916,7 +3920,7 @@ class OrderController extends Controller
             'keep_item_id' => $targetItem->id,
             'qty' => $deletedKeepQty,
             'cm' => number_format((float) $targetItem->cm, 2, '.', ''),
-            'keep_date' => $targetItem->created_at,
+            'keep_date' => $targetItem->expired_from,
             'kept_balance' => $newKeptBalance,
             'remark' => $validatedData['remark'] . $remarkDesc,
             'user_id' => auth()->user()->id,
@@ -4618,7 +4622,11 @@ class OrderController extends Controller
             'status' => 'verified',
         ]);
 
-        $customers = Customer::orderBy('full_name')
+        $customers = Customer::where(function ($query) {
+                                    $query->where('status', '!=', 'void')
+                                        ->orWhereNull('status'); // Handle NULL cases
+                                })
+                                ->orderBy('full_name')
                                 ->get(['id', 'full_name', 'phone'])
                                 ->map(function ($customer) {
                                     $customer->image = $customer->getFirstMediaUrl('customer');
@@ -6026,18 +6034,18 @@ class OrderController extends Controller
         $addText("Scan QR below to request your e-Invoice");
         $addText(""); // Empty line
         
-        // // Generate QR code
-        // $qrData = $url;
-        // $qrLen = strlen($qrData) + 3;
-        // $pL = $qrLen % 256;
-        // $pH = intval($qrLen / 256);
+        // Generate QR code
+        $qrData = $url;
+        $qrLen = strlen($qrData) + 3;
+        $pL = $qrLen % 256;
+        $pH = intval($qrLen / 256);
 
-        // $buffer .= "\x1D\x28\x6B\x03\x00\x31\x43\x05"; // Module size (5)
-        // $buffer .= "\x1D\x28\x6B\x03\x00\x31\x45\x31"; // Error correction level L
-        // $buffer .= "\x1D\x28\x6B" . chr($pL) . chr($pH) . "\x31\x50\x30" . $qrData; // Store data
-        // $buffer .= "\x1D\x28\x6B\x03\x00\x31\x51\x30"; // Print the QR
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x43\x05"; // Module size (5)
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x45\x31"; // Error correction level L
+        $buffer .= "\x1D\x28\x6B" . chr($pL) . chr($pH) . "\x31\x50\x30" . $qrData; // Store data
+        $buffer .= "\x1D\x28\x6B\x03\x00\x31\x51\x30"; // Print the QR
         
-        // $addText(""); // Empty line
+        $addText(""); // Empty line
         $addText("Thank you for your visit!");
         $addText("Order invoice generated by");
         $addText("STOXPOS");

@@ -7,6 +7,7 @@ import DragDropImage from '@/Components/DragDropImage.vue'
 import Label from '@/Components/Label.vue';
 import Modal from '@/Components/Modal.vue';
 import { useCustomToast } from '@/Composables/index.js';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     errors: Object,
@@ -64,8 +65,8 @@ const formSubmit = () => {
             onSuccess: () => {
                 showMessage({
                     severity: 'success',
-                    summary: 'Stock replenished successfully.',
-                    detail: `You've replenished stock for ${replenishedItem}`,
+                    summary: wTrans('public.toast.replenish_stock_summary'),
+                    detail: wTrans('public.toast.replenish_stock_detail', { item_name: replenishedItem }),
                 });
 
                 form.reset();
@@ -127,7 +128,7 @@ watch(
                             :for="'item_'+ i +'_stock_qty'"
                             class="text-sm !font-medium text-grey-900 whitespace-nowrap"
                         >
-                            Remaining stock: <span class="text-green-700">{{ item.stock_qty }}</span>
+                            {{ $t('public.inventory.remaining_stock') }}: <span class="text-green-700">{{ item.stock_qty }}</span>
                         </Label>
                     </div>
                     <NumberCounter
@@ -146,13 +147,13 @@ watch(
                 :size="'lg'"
                 @click="unsaved('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Save
+                {{ $t('public.action.save') }}
             </Button>
         </div>
         <Modal

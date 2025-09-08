@@ -4,13 +4,13 @@
 //                                  MENU MANAGEMENT
 // ----------------------------------------------------------------------------------
 export const keepOptions = [
-    { text: 'Keep is allowed', value: 'Active' },
-    { text: 'Keep is not allowed', value: 'Inactive' },
+    { text: 'public.keep_allowed', value: 'Active' },
+    { text: 'public.keep_not_allowed', value: 'Inactive' },
 ];
 
 export const redeemOptions = [
-    { text: 'Redemption is allowed', value: true },
-    { text: 'Redemption is not allowed', value: false },
+    { text: 'public.redemption_allowed', value: true },
+    { text: 'public.redemption_not_allowed', value: false },
 ];
 
 export const defaultProductItem = {
@@ -37,8 +37,8 @@ export const defaultInventoryItem = {
 //                                  WAITER
 // ----------------------------------------------------------------------------------
 export const employementTypeOptions = [
-    { text: 'Full-time', value: 'Full-time' },
-    { text: 'Part-time', value: 'Part-time' },
+    { text: 'public.waiter.full_time', value: 'Full-time' },
+    { text: 'public.waiter.part_time', value: 'Part-time' },
 ];
 
 // ----------------------------------------------------------------------------------
@@ -53,22 +53,10 @@ export const periodOption = [
 ];
 
 export const rewardOption = [
-    {
-        text: "Discount (Amount)",
-        value: "Discount (Amount)",
-    },
-    {
-        text: "Discount (Percentage)",
-        value: "Discount (Percentage)",
-    },
-    {
-        text: "Bonus Point",
-        value: "Bonus Point",
-    },
-    {
-        text: "Free Item",
-        value: "Free Item",
-    },
+    { text: "public.amount_discount", value: "Discount (Amount)" },
+    { text: "public.percent_discount", value: "Discount (Percentage)" },
+    { text: "public.bonus_point", value: "Bonus Point" },
+    { text: "public.free_item", value: "Free Item" },
 ];
 
 export const emptyReward = () => {
@@ -95,29 +83,6 @@ export const defaultPointItem = {
 };
 
 // ----------------------------------------------------------------------------------
-//                                  TABLE & ROOM
-// ----------------------------------------------------------------------------------
-
-export const tableType = [
-    { text: 'Table', value: 'table' },
-    { text: 'Room', value: 'room' },
-];
-
-// ----------------------------------------------------------------------------------
-//                                  Reservation
-// ----------------------------------------------------------------------------------
-
-export const cancelTypes = [
-    { text: 'Change of plan', value: 'Change of plan' },
-    { text: 'Feeling unwell', value: 'Feeling unwell' },
-    { text: 'Bad weather', value: 'Bad weather' },
-    { text: 'Work conflicts', value: 'Work conflicts' },
-    { text: 'Family emergency', value: 'Family emergency' },
-    { text: 'Forgotten reservation', value: 'Forgotten reservation' },
-    { text: 'Others (specify under Remarks)', value: 'Others (specify under Remarks)' },
-];
-
-// ----------------------------------------------------------------------------------
 //                                  Order
 // ----------------------------------------------------------------------------------
 
@@ -132,10 +97,10 @@ export const expiryDates = [
 ]
 
 export const deleteReason = [
-    { text: "Incorrect information", value: 'Incorrect information'},
-    { text: "Duplicate entry", value: 'Duplicate entry'},
-    { text: "Customer asked to delete", value: 'Customer asked to delete'},
-    { text: "Others (specify under Remarks)", value: 'Others'},
+    { text: "public.incorrect_info", value: 'Incorrect information'},
+    { text: "public.duplicate_entry", value: 'Duplicate entry'},
+    { text: "public.customer_asked_delete", value: 'Customer asked to delete'},
+    { text: "public.others_specify_remark", value: 'Others'},
 ]
 
 // ----------------------------------------------------------------------------------
@@ -143,31 +108,31 @@ export const deleteReason = [
 // ----------------------------------------------------------------------------------
 
 export const permissionList = [
-    { text: "Dashboard", value: 'dashboard' },
-    { text: "Order Management", value: 'order-management' },
-    { text: "Shift Control", value: 'shift-control' },
-    { text: "Shift Record", value: 'shift-record' },
-    { text: "Menu Management", value: 'menu-management' },
-    { text: "All Report", value: 'all-report' },
-    { text: "Inventory", value: 'inventory' },
-    { text: "Waiter", value: 'waiter' },
-    { text: "Customer", value: 'customer' },
-    { text: "Table & Room", value: 'table-room' },
-    { text: "Reservation", value: 'reservation' },
-    { text: "Transaction Listing", value: 'transaction-listing' },
-    { text: "e-Invoice Submission", value: 'einvoice-submission' },
-    { text: "Loyalty Programme", value: 'loyalty-programme' },
-    { text: "Admin User", value: 'admin-user' },
-    { text: "Sales Analysis", value: 'sales-analysis' },
-    { text: "Activity Logs", value: 'activity-logs' },
-    { text: "Configuration", value: 'configuration' },
-    { text: "Free Up Table", value: 'free-up-table' },
+    { text: "public.dashboard_header", value: 'dashboard' },
+    { text: "public.order_management_header", value: 'order-management' },
+    { text: "public.shift_control_header", value: 'shift-control' },
+    { text: "public.shift_record_header", value: 'shift-record' },
+    { text: "public.menu_management_header", value: 'menu-management' },
+    { text: "public.all_report_header", value: 'all-report' },
+    { text: "public.inventory_header", value: 'inventory' },
+    { text: "public.waiter_header", value: 'waiter' },
+    { text: "public.customer_header", value: 'customer' },
+    { text: "public.table_room_header", value: 'table-room' },
+    { text: "public.reservation_header", value: 'reservation' },
+    { text: "public.transaction_listing_header", value: 'transaction-listing' },
+    { text: "public.einvoice_submission_header", value: 'einvoice-submission' },
+    { text: "public.loyalty_programme_header", value: 'loyalty-programme' },
+    { text: "public.admin_user_header", value: 'admin-user' },
+    { text: "public.sales_analysis_header", value: 'sales-analysis' },
+    { text: "public.activity_logs_header", value: 'activity-logs' },
+    { text: "public.configuration_header", value: 'configuration' },
+    { text: "public.action.free_up_table", value: 'free-up-table' },
 ]
 
 // ----------------------------------------------------------------------------------
 //                                  CONFIG PRINTER
 // ----------------------------------------------------------------------------------
 export const kickCashDrawerOptions = [
-    { text: 'Enable open cash drawer', value: true },
-    { text: 'Disable open cash drawer', value: false },
+    { text: 'public.configuration.enable_cash_drawer', value: true },
+    { text: 'public.configuration.disable_cash_drawer', value: false },
 ];

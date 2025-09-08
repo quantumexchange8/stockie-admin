@@ -14,6 +14,7 @@ import Toast from '@/Components/Toast.vue';
 import { useCustomToast, useFileExport } from '@/Composables/index.js';
 import TabView from '@/Components/TabView.vue';
 import RedemptionHistoryTable from './RedemptionHistoryTable.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     product: Object,
@@ -25,31 +26,31 @@ const props = defineProps({
 })
 
 const home = ref({
-    label: 'Menu Management',
+    label: wTrans('public.menu_management_header'),
     route: '/menu-management/products'
 });
 
 const items = ref([
-    { label: 'Product Detail' },
+    { label: wTrans('public.menu.product_detail') },
 ]);
 
 const saleHistoriesColumns = ref([
-    {field: 'date', header: 'Date', width: '25', sortable: true},
-    {field: 'time', header: 'Time', width: '25', sortable: true},
-    {field: 'total_price', header: 'Amount', width: '25', sortable: true},
-    {field: 'qty', header: 'Quantity', width: '25', sortable: true},
+    {field: 'date', header: wTrans('public.date'), width: '25', sortable: true},
+    {field: 'time', header: wTrans('public.time'), width: '25', sortable: true},
+    {field: 'total_price', header: wTrans('public.amount'), width: '25', sortable: true},
+    {field: 'qty', header: wTrans('public.quantity'), width: '25', sortable: true},
 ]);
 
 const redemptionHistoriesColumns = ref([
-    {field: 'redemption_date', header: 'Date', width: '20', sortable: true},
-    {field: 'amount', header: 'Redeemed with', width: '30', sortable: true},
-    {field: 'qty', header: 'Quantity', width: '15', sortable: true},
-    {field: 'handled_by.full_name', header: 'Redeemed by', width: '35', sortable: true},
+    {field: 'redemption_date', header: wTrans('public.date'), width: '20', sortable: true},
+    {field: 'amount', header: wTrans('public.redeemed_with'), width: '30', sortable: true},
+    {field: 'qty', header: wTrans('public.quantity'), width: '15', sortable: true},
+    {field: 'handled_by.full_name', header: wTrans('public.redeemed_by'), width: '35', sortable: true},
 ]);
 
 const productItemsColumns = ref([
-    {field: 'item', header: 'Item', width: '70', sortable: false},
-    {field: 'inventory_item.stock_qty', header: 'Stock', width: '30', sortable: false},
+    {field: 'item', header: wTrans('public.item'), width: '70', sortable: false},
+    {field: 'inventory_item.stock_qty', header: wTrans('public.stock'), width: '30', sortable: false},
 ]);
 
 // const defaultLatest30Days = computed(() => {
@@ -63,8 +64,8 @@ const { flashMessage } = useCustomToast();
 const { exportToCSV } = useFileExport();
 
 const tabs = ref([
-    { key: 'Sale Histories', title: 'Sale Histories', disabled: false },
-    { key: 'Redemption Histories', title: 'Redemption Histories', disabled: false },
+    { key: 'Sale Histories', title: wTransChoice('public.menu.sales_history', 0), disabled: false },
+    { key: 'Redemption Histories', title: wTransChoice('public.menu.redemption_history', 0), disabled: false },
 ]);
 const product = ref(props.product);
 const saleHistories = ref(props.saleHistories);
@@ -157,7 +158,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Product Detail" />
+    <Head :title="$t('public.menu.product_detail')" />
 
     <AuthenticatedLayout>
         <template #header>

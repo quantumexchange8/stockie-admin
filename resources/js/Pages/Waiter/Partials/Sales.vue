@@ -12,6 +12,7 @@ import Modal from '@/Components/Modal.vue';
 import axios from 'axios';
 import { transactionFormat, useFileExport } from '@/Composables';
 import Button from '@/Components/Button.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     dateFilter: Array,
@@ -82,10 +83,10 @@ watch(() => date_filter.value, () => {
 })
 
 const orderColumn = ref([
-    {field: 'product_name', header: 'Product Name', width: '37', sortable: true},
-    {field: 'serve_qty', header: 'Quantity', width: '20', sortable: true},
-    {field: 'price', header: 'Price', width: '20', sortable: true},
-    {field: 'commission', header: 'Commission', width: '23', sortable: true},
+    {field: 'product_name', header: wTrans('public.product_name'), width: '37', sortable: true},
+    {field: 'serve_qty', header: wTrans('public.quantity'), width: '20', sortable: true},
+    {field: 'price', header: wTrans('public.price'), width: '20', sortable: true},
+    {field: 'commission', header: wTrans('public.commission'), width: '23', sortable: true},
 ])
 
 const closeModal = () => {
@@ -93,17 +94,17 @@ const closeModal = () => {
 }
 
 const csvExport = () => {
-    const waiterName = waiter.value?.full_name || 'Unknown Waiter';
-    const title = `${waiterName}_Daily Sales Report`;
+    const waiterName = waiter.value?.full_name || wTrans('public.waiter.unknown_waiter').value;
+    const title = `${waiterName}_${wTrans('public.waiter.daily_sales_report').value}`;
     const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
     const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Date: title, 'Order No.': '', 'Amount': '', 'Commission': '' },
         { Date: dateRange, 'Order No.': '', 'Amount': '', 'Commission': '' },
-        { Date: 'Date', 'Order No.': 'Order No.', 'Amount': 'Amount', 'Commission': 'Commission' },
+        { Date: wTrans('public.date').value, 'Order No.': wTrans('public.order_no').value, 'Amount': wTrans('public.sales').value, 'Commission': wTrans('public.commission').value },
         ...order.value.map(row => ({
             'Date': row.created_at,
             'Order No.': row.order_no,
@@ -112,7 +113,7 @@ const csvExport = () => {
         })),
     ];
 
-    exportToCSV(formattedRows, `${waiterName}_Daily Sales Report`);
+    exportToCSV(formattedRows, `${waiterName}_${wTrans('public.waiter.daily_sales_report').value}`);
 }
 
 const filteredSales = computed(() => {
@@ -137,7 +138,7 @@ const salesTotalPages = computed(() => {
 <template>
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Daily Sales Report</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.waiter.daily_sales_report') }}</span>
             
             <Button
                 :type="'button'"
@@ -151,7 +152,7 @@ const salesTotalPages = computed(() => {
                 <template #icon >
                     <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                 </template>
-                Export
+                {{ $t('public.action.export') }}
             </Button>
 
             <!-- <Menu as="div" class="relative inline-block text-left">
@@ -199,7 +200,7 @@ const salesTotalPages = computed(() => {
         </div>
             <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">
                 <SearchBar 
-                    placeholder="Search"
+                    :placeholder="$t('public.search')"
                     :showFilter="false"
                     v-model="searchQuery"
                 />
@@ -224,7 +225,7 @@ const salesTotalPages = computed(() => {
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </template>
                 <template #created_at="order">
                     <span class="text-grey-900 text-sm font-medium">{{ order.created_at }}</span>
@@ -250,7 +251,7 @@ const salesTotalPages = computed(() => {
 
     <!-- detail modal -->
      <Modal
-        :title="'View Detail'"
+        :title="$t('public.waiter.view_detail')"
         :max-width="'md'"
         :closeable="true"
         :show="isDetailModalOpen"

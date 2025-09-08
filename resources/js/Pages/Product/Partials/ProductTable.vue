@@ -18,6 +18,7 @@ import { useForm } from '@inertiajs/vue3';
 import { transactionFormat, useCustomToast } from '@/Composables';
 import TabView from '@/Components/TabView.vue';
 import ManageCategory from './ManageCategory.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: {
@@ -81,7 +82,11 @@ const checkedFilters = ref({
     priceRange: [0, maxProductPrice.value],
 });
 
-const stockLevels = ref(['In stock', 'Low in stock', 'Out of stock']);
+const stockLevels = ref([
+    {text: wTrans('public.in_stock'), value: 'In stock'}, 
+    {text: wTrans('public.low_in_stock'), value: 'Low in stock'}, 
+    {text: wTransChoice('public.out_of_stock', 0), value: 'Out of stock'}
+]);
 
 const filters = ref({
     'global': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -300,7 +305,7 @@ onMounted(() => {
         value: 0
     });
 
-    tabCategories.value = categories.value.map((item) => ({ key: item.text, title: item.text, disabled: false }));
+    tabCategories.value = categories.value.map((item) => ({ key: item.text, title: item.text !== 'All' ? item.text : wTrans('public.all'), disabled: false }));
 });
 
 const getCategoryFilteredRows = (category) => {
@@ -323,18 +328,26 @@ const checkAvailability = (row) => {
     return forms[row.id].processing || isLowInQty || itemIsDelete;
 };
 
+const getTranslatedStatus = (status) => {
+    switch (status) {
+        case 'In stock': return wTrans('public.in_stock').value;
+        case 'Low in stock': return wTrans('public.low_in_stock').value;
+        case 'Out of stock': return wTransChoice('public.out_of_stock', 0).value;
+    }
+}
+
 </script>
 <template>
     <div class="flex flex-col p-6 gap-6 justify-center rounded-[5px] border border-red-100">
         <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 rounded-[5px]">
             <SearchBar
-                placeholder="Search"
+                :placeholder="$t('public.search')"
                 :showFilter="true"
                 v-model="searchQuery"
             >
                 <template #default="{ hideOverlay }">
                     <div class="flex flex-col self-stretch gap-4 items-start">
-                        <span class="text-grey-900 text-base font-semibold">Stock Level</span>
+                        <span class="text-grey-900 text-base font-semibold">{{ $t('public.stock_level') }}</span>
                         <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                             <div 
                                 v-for="(level, index) in stockLevels"
@@ -342,15 +355,15 @@ const checkAvailability = (row) => {
                                 class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]" 
                             >
                                 <Checkbox 
-                                    :checked="checkedFilters.stockLevel.includes(level)"
-                                    @click="toggleStockLevel(level)"
+                                    :checked="checkedFilters.stockLevel.includes(level.value)"
+                                    @click="toggleStockLevel(level.value)"
                                 />
-                                <span class="text-grey-700 text-sm font-medium">{{ level }}</span>
+                                <span class="text-grey-700 text-sm font-medium">{{ level.text }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="flex flex-col self-stretch gap-y-14 items-start">
-                        <span class="text-grey-900 text-base font-semibold">Price Range</span>
+                        <span class="text-grey-900 text-base font-semibold">{{ $t('public.menu.price_range') }}</span>
                         <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                             <div class="flex items-center w-full">
                                 <Slider 
@@ -364,7 +377,7 @@ const checkAvailability = (row) => {
                     <div class="flex flex-col self-stretch gap-4 items-start">
                         <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                             <div class="inline-flex w-full gap-2 justify-between border border-grey-100 rounded-[5px]">
-                                <span>Show redeemable products only</span>
+                                <span>{{ $t('public.menu.show_redeemable_product') }}</span>
                                 <Checkbox 
                                     :checked="checkedFilters.isRedeemable.includes(true)"
                                     @click="toggleRedeemableStatus()"
@@ -379,13 +392,13 @@ const checkAvailability = (row) => {
                             :size="'lg'"
                             @click="clearFilters(hideOverlay)"
                         >
-                            Clear All
+                            {{ $t('public.action.clear_all') }}
                         </Button>
                         <Button
                             :size="'lg'"
                             @click="applyCheckedFilters(hideOverlay)"
                         >
-                            Apply
+                            {{ $t('public.action.apply') }}
                         </Button>
                     </div>
                 </template>
@@ -425,7 +438,7 @@ const checkAvailability = (row) => {
                             class="w-6 h-6"
                         />
                     </template>
-                    New Product
+                    {{ $t('public.action.new_product') }}
                 </Button>
             </div>
         </div>
@@ -450,12 +463,12 @@ const checkAvailability = (row) => {
                                 class="w-[20px] h-[20px]"
                             />
                         </template>
-                        <span class="hidden sm:flex whitespace-nowrap">Manage Category</span>
+                        <span class="hidden sm:flex whitespace-nowrap">{{ $t('public.menu.manage_category') }}</span>
                     </Button>
                     <Modal
                         :show="manageCategoryFormIsOpen"
                         @close="closeModal('close')"
-                        :title="'Manage Category'"
+                        :title="$t('public.menu.manage_category')"
                         :maxWidth="'md'"
                     >
                         <ManageCategory
@@ -494,7 +507,7 @@ const checkAvailability = (row) => {
                         <template #empty>
                             <div class="flex flex-col items-center justify-center gap-5">
                                 <EmptyIllus />
-                                <span class="text-primary-900 text-sm font-medium">You haven't added any products yet...</span>
+                                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_product_added') }}</span>
                             </div>
                         </template>
                         <template #editAction="product">
@@ -538,7 +551,7 @@ const checkAvailability = (row) => {
                         <!-- Only 'list' variant has individual slots while 'grid' variant has an 'item-body' slot -->
                         <template #empty>
                             <EmptyIllus />
-                            <span class="text-primary-900 text-sm font-medium">You haven't added any products yet...</span>
+                            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_product_added') }}</span>
                         </template>
                         <template #editAction="row">
                             <EditIcon
@@ -567,14 +580,17 @@ const checkAvailability = (row) => {
                                 /> -->
                                 <div class="relative rounded-[5px] border border-grey-100]">
                                     <div :class="['absolute size-14 bg-black', row.stock_left == 0 ? 'opacity-50' : 'opacity-0']"></div>
-                                    <span class="absolute top-[calc(50%-0.5rem)] left-[calc(50%-1.45rem)] bottom-0 text-white text-[8px] font-medium" v-if="row.stock_left === 0">Out of Stock</span>
+                                    <span class="absolute top-[calc(50%-0.5rem)] left-[calc(50%-1.45rem)] bottom-0 text-white text-[8px] font-medium" v-if="row.stock_left === 0">{{ $tChoice('public.out_of_stock', 1) }}</span>
                                     <img 
                                         :src="row.image ? row.image : 'https://www.its.ac.id/tmesin/wp-content/uploads/sites/22/2022/07/no-image.png'" 
                                         alt="ProductImage" 
                                         class="size-14 object-contain"
                                     />
                                 </div>
-                                <span class="text-grey-900 text-sm font-medium">{{ row.product_name }}</span>
+                                <div class="flex flex-col items-start justify-start">
+                                    <Tag :value="$t('public.set_header')" v-if="row.bucket === 'set'"/>
+                                    <span class="text-grey-900 text-sm font-medium">{{ row.product_name }}</span>
+                                </div>
                             </div>
                         </template>
                         <template #price="row">
@@ -587,8 +603,8 @@ const checkAvailability = (row) => {
                         <template #stock_left="row">
                             <span class="inline-block align-middle"
                                     :class="row.status === 'In stock' ? 'text-green-700' : row.status === 'Low in stock' ? 'text-yellow-700' : 'text-primary-600'">
-                                <p v-if="row.status === 'Out of stock'">{{ row.status }}</p>
-                                <p v-else>{{ row.bucket === 'set' ? `${row.stock_left} set` : row.stock_left }}</p>
+                                <p v-if="row.status === 'Out of stock'">{{ getTranslatedStatus(row.status) }}</p>
+                                <p v-else>{{ row.bucket === 'set' ? `${row.stock_left} ${$t('public.set')}` : row.stock_left }}</p>
                             </span>
                         </template>
                     </Table>
@@ -596,7 +612,7 @@ const checkAvailability = (row) => {
             </TabView>
         </div>
         <Modal 
-            :title="'Add New Product'"
+            :title="$t('public.menu.add_new_product')"
             :show="createFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
@@ -619,7 +635,7 @@ const checkAvailability = (row) => {
             </Modal>
         </Modal>
         <Modal 
-            :title="'Edit Product'"
+            :title="$t('public.menu.edit_product')"
             :show="editProductFormIsOpen" 
             :maxWidth="'lg'" 
             :closeable="true" 
@@ -650,8 +666,8 @@ const checkAvailability = (row) => {
             :closeable="true" 
             :deleteConfirmation="true"
             :deleteUrl="`/menu-management/products/deleteProduct/${selectedProduct}`"
-            :confirmationTitle="'Delete this product?'"
-            :confirmationMessage="'Are you sure you want to delete the selected product? This action cannot be undone.'"
+            :confirmationTitle="$t('public.menu.delete_product')"
+            :confirmationMessage="$t('public.menu.delete_product_message')"
             @close="closeModal('leave')"
             v-if="selectedProduct"
         />

@@ -7,6 +7,7 @@ import Toggle from '@/Components/Toggle.vue';
 import { useCustomToast } from '@/Composables';
 import { permissionList } from '@/Composables/constants';
 import { useForm } from '@inertiajs/vue3';
+import { wTrans } from 'laravel-vue-i18n';
 import { computed, ref } from 'vue';
 
 const form = useForm({
@@ -93,6 +94,13 @@ const hasPermissionSelected = computed(() => {
 
     return true;
 })
+
+const getPermissionList = computed(() => {
+    return permissionList.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
 
 const isFormValid = computed(() => {
     return ['role_id', 'password', 'full_name', 'email', 'position', 'image'].every(field => form[field]);
@@ -221,7 +229,7 @@ const isFormValid = computed(() => {
             
                 <!-- form -->
                 <div class="flex flex-col max-h-[320px] items-start self-stretch divide-y-[1px] divide-grey-100 overflow-y-auto scrollbar-webkit scrollbar-thin">
-                    <div class="flex py-4 pr-5 justify-between items-center self-stretch" v-for="permission in permissionList">
+                    <div class="flex py-4 pr-5 justify-between items-center self-stretch" v-for="permission in getPermissionList">
                         <span class="text-grey-950 text-base font-medium">Allow '{{ permission.text }}' access</span>
                         <Toggle
                             :checked="!!form.permission.find(exist_permission => exist_permission === permission.value)"

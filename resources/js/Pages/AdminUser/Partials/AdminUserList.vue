@@ -8,10 +8,11 @@ import Toggle from '@/Components/Toggle.vue';
 import { useCustomToast } from '@/Composables';
 import { permissionList } from '@/Composables/constants';
 import { useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import EditAdminDetail from './EditAdminDetail.vue';
 import AddSubAdmin from './AddSubAdmin.vue';
 import { DeleteIllus, UndetectableIllus } from '@/Components/Icons/illus';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     userList: {
@@ -212,6 +213,13 @@ const updateUserList = (updatedUsers) => {
     selectedUser.value = updatedSelectedUser;
 };
 
+const getPermissionList = computed(() => {
+    return permissionList.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
+
 watch((editForm), (newValue) => {
     isDirty.value = newValue.full_name !== initialEditForm.value.full_name ||
                     newValue.role_id !== initialEditForm.value.role_id ||
@@ -364,7 +372,7 @@ watch(() => searchQuery.value, (newValue) => {
             </div>
 
             <div class="flex flex-col items-start flex-[1_0_0] self-stretch divide-y divide-grey-100 max-h-[417px] overflow-y-auto scrollbar-webkit scrollbar-thin">
-                <div class="flex py-4 justify-between items-center self-stretch" v-for="permission in permissionList">
+                <div class="flex py-4 justify-between items-center self-stretch" v-for="permission in getPermissionList">
                     <span class="text-grey-950 text-base font-medium">Allow '{{ permission.text }}' access</span>
                     <Toggle
                         :checked="!!selectedUser.permissions.find(exist_permission => exist_permission.name === permission.value)"

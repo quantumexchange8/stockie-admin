@@ -10,6 +10,7 @@ import Modal from "@/Components/Modal.vue";
 import RadioButton from "@/Components/RadioButton.vue";
 import Label from "@/Components/Label.vue";
 import { employementTypeOptions } from "@/Composables/constants";
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     waiters: {
@@ -72,7 +73,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({
                     severity: 'success',
-                    summary: 'Changes saved',
+                    summary: wTrans('public.toast.changes_saved'),
                 });
             }, 200)
         },
@@ -87,6 +88,13 @@ const requiredFields = ['full_name', 'phone_temp', 'email', 'role_id', 'employme
 const isFormValid = computed(() => {
     return requiredFields.every(field => form[field]);
 })
+
+const getEmployementTypeOptions = computed(() => {
+    return employementTypeOptions.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
 
 onMounted(() => fetchWaiterPositions());
 
@@ -106,7 +114,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <div class="flex flex-grow flex-col gap-[48px]">
                         <div class="flex flex-col md:gap-6">
                             <div class="md:text-[20px] text-[#48070A]">
-                                Personal Detail
+                                {{ $t('public.waiter.personal_detail') }}
                             </div>
 
                             <div class="flex flex-col gap-4">
@@ -123,7 +131,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 </div> -->
 
                                 <TextInput
-                                    label-text="Full name"
+                                    :label-text="$t('public.field.full_name')"
                                     :placeholder="'eg: John Doe'"
                                     inputId="full_name"
                                     type="'text'"
@@ -134,7 +142,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
                                 <div class="flex gap-4">
                                     <TextInput
-                                        labelText="Phone number"
+                                        :labelText="$t('public.field.phone_no')"
                                         inputId="phone"
                                         :inputType="'number'"
                                         :errorMessage="form.errors?.phone || ''"
@@ -150,7 +158,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     </TextInput>
 
                                     <TextInput
-                                        label-text="Email address"
+                                        :label-text="$t('public.field.email')"
                                         :placeholder="'eg: johndoe@gmail.com'"
                                         inputId="email"
                                         type="'email'"
@@ -168,7 +176,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             </div>
                             <div class="flex gap-4">
                                 <TextInput
-                                    :label-text="'Staff ID'"
+                                    :label-text="$t('public.field.staff_id')"
                                     :placeholder="'eg: J8192'"
                                     :inputId="'role_id'"
                                     required
@@ -177,7 +185,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     v-model="form.role_id"
                                 />
                                 <TextInput
-                                    :label-text="`Salary per ` + (form.employment_type === 'Full-time' ? 'month (basic)' : 'hour')"
+                                    :label-text="form.employment_type === 'Full-time' ? $t('public.field.salary_monthly') : $t('public.field.salary_hourly')"
                                     inputId="salary"
                                     :inputType="'number'"
                                     withDecimal
@@ -195,10 +203,10 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <div class="flex gap-4">
                                 <div class="w-full flex flex-col gap-y-1 items-start self-stretch">
                                     <Label required class="mb-1 text-xs !font-medium text-grey-900">
-                                        Employment type
+                                        {{ $t('public.field.employment_type') }}
                                     </Label>
                                     <RadioButton
-                                        :optionArr="employementTypeOptions"
+                                        :optionArr="getEmployementTypeOptions"
                                         :checked="form.employment_type"
                                         :errorMessage="form.errors?.employment_type || ''"
                                         v-model:checked="form.employment_type"
@@ -206,7 +214,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 </div>
                                 <div class="w-full flex flex-col gap-y-1 items-start self-stretch">
                                     <Label required class="mb-1 text-xs !font-medium text-grey-900">
-                                        Waiter Position
+                                        {{ $t('public.field.waiter_position') }}
                                     </Label>
                                     <RadioButton
                                         :optionArr="waiterPositionOptions"
@@ -220,11 +228,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
                         <div class="flex flex-col md:gap-6 w-full">
                             <div class="md:text-[20px] text-[#48070A]">
-                                Account Detail
+                                {{ $t('public.profile.account_detail') }}
                             </div>
                             <div class="flex gap-4">
                                 <TextInput
-                                    label-text="Email address"
+                                    :labelText="$t('public.field.email')"
                                     :placeholder="'for STOXPOS account log-in'"
                                     inputId="stockie_email"
                                     type="'email'"
@@ -233,7 +241,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                     v-model="form.stockie_email"
                                 />
                                 <TextInput
-                                    label-text="Password"
+                                    :labelText="$t('public.field.password')"
                                     :placeholder="'for STOXPOS account log-in'"
                                     inputId="password"
                                     :inputType="'password'"
@@ -246,7 +254,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             <TextInput
                                 inputId="passcode"
                                 :inputType="'number'"
-                                labelText="Clock in passcode"
+                                :labelText="$t('public.field.clock_in_passcode')"
                                 placeholder="eg: 123456"
                                 class="!w-1/2"
                                 :maxlength="6"
@@ -264,7 +272,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         @click="unsaved('close')"
                         :size="'lg'"
                     >
-                        Discard
+                        {{ $t('public.action.discard') }}
                     </Button>
                     <Button
                         variant="primary"
@@ -273,7 +281,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         :disabled="!isFormValid || form.processing"
                         :class="{ 'opacity-25': form.processing }"
                     >
-                        Save Changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
             </div>

@@ -11,6 +11,7 @@ import { UploadIcon } from '@/Components/Icons/solid';
 import dayjs from 'dayjs';
 import { transactionFormat, useFileExport } from '@/Composables';
 import Button from '@/Components/Button.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     waiter: {
@@ -40,24 +41,27 @@ const incentiveData = ref(props.incentiveData);
 const searchQuery = ref('');
 
 const csvExport = () => {
-    const waiterName = props.waiter || 'Unknown Waiter';
-    const title = `${waiterName}_Monthly Incentive Report`;
+    const waiterName = props.waiter || wTrans('public.waiter.unknown_waiter').value;
+    const title = `${waiterName}_${wTrans('public.waiter.monthly_incentive_report').value}`;
     const currentDate = dayjs().format('DD/MM/YYYY');
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Date: title, 'Total Sales': '', 'Incentive': '', 'Status': '' },
         { Date: currentDate, 'Total Sales': '', 'Incentive': '', 'Status': '' },
-        { Date: 'Date', 'Total Sales': 'Total Sales', 'Incentive': 'Incentive', 'Status': 'Status' },
+        { Date: wTrans('public.date').value, 'Total Sales': wTrans('public.total_sales').value, 'Incentive': wTrans('public.incentive').value, 'Status': wTrans('public.status').value },
         ...incentiveData.value.map(row => ({
             'Date': dayjs(row.period_start).format('MMMM YYYY'),
             'Total Sales': `RM ${formatAmount(row.amount)}`,
-            'Incentive': `RM ${formatAmount(row.sales_target)} ` +  (row.type == 'percentage' ? `(${parseInt(row.rate * 100)}% of total sales)` : `(RM ${row.rate} of total sales)`),
-            'Status': row.status,        
+            'Incentive': `RM ${formatAmount(row.sales_target)} (` + 
+                (row.type == 'percentage' 
+                    ? wTrans('public.waiter.incentive_reward_percent', { percent: `${parseInt(row.rate * 100)}%` }).value
+                    : wTrans('public.waiter.incentive_reward_amount', { amount: `RM ${row.rate}` }).value ) + ')',
+            'Status': row.status === 'Pending' ? wTrans('public.pending').value : wTrans('public.paid').value,        
         })),
     ];
 
-    exportToCSV(formattedRows, `${waiterName}_Monthly Incentive Report`);
+    exportToCSV(formattedRows, `${waiterName}_${wTrans('public.waiter.monthly_incentive_report').value}`);
 }
 
 const filteredIncentiveData = computed(() => {
@@ -82,7 +86,7 @@ const totalPages = computed(() => {
 <template>
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Monthly Incentive Report</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.waiter.monthly_incentive_report') }}</span>
             
             <Button
                 :type="'button'"
@@ -96,7 +100,7 @@ const totalPages = computed(() => {
                 <template #icon >
                     <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                 </template>
-                Export
+                {{ $t('public.action.export') }}
             </Button>
 
             <!-- <Menu as="div" class="relative inline-block text-left">
@@ -142,7 +146,7 @@ const totalPages = computed(() => {
         
         <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">
             <SearchBar 
-                placeholder="Search"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
             />
@@ -158,7 +162,7 @@ const totalPages = computed(() => {
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </template>
                 <template #period_start="row">
                     <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">{{ dayjs(row.period_start).format('MMMM YYYY') }}</span>
@@ -168,15 +172,19 @@ const totalPages = computed(() => {
                 </template>
                 <template #sales_target="row">
                     <div v-if="row.sales_target != 0" class="inline-flex items-center whitespace-nowrap gap-0.5">
-                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ formatAmount(row.sales_target) }} </span>
+                        <span class="line-clamp-1 text-grey-900 text-ellipsis text-sm font-medium">RM {{ row.type == 'percentage' ? formatAmount(row.rate * row.amount) : formatAmount(row.rate) }} </span>
                         <span class="line-clamp-1 text-primary-900 text-ellipsis text-sm font-medium">
-                            ({{ row.type == 'percentage' ? `${parseInt(row.rate * 100)}%` : `RM ${row.rate}` }} of total sales)
+                            ({{ 
+                                row.type == 'percentage' 
+                                    ? $t('public.waiter.incentive_reward_percent', { percent: `${parseInt(row.rate * 100)}%` })
+                                    : $t('public.waiter.incentive_reward_amount', { amount: `RM ${row.rate}` }) 
+                            }}) 
                         </span>
                     </div>
                 </template>
                 <template #status="row">
                     <Link :href="route('configuration.incentCommDetail', row.incentive_id)">
-                        <Tag :variant="'green'" :value="row.status" />
+                        <Tag :variant="'green'" :value="row.status === 'Pending' ? $t('public.pending') : $t('public.paid')" />
                     </Link>
                 </template>
             </Table>

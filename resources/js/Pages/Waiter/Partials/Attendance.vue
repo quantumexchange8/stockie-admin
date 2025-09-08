@@ -13,6 +13,7 @@ import duration from 'dayjs/plugin/duration';
 import dayjs from 'dayjs';
 import Modal from '@/Components/Modal.vue';
 import AttendanceDetail from './AttendanceDetail.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 dayjs.extend(duration)
 
 const props = defineProps({
@@ -75,17 +76,17 @@ const viewAttendance = async (filters = {}, id) => {
 };
 
 const csvExport = () => {
-    const waiterName = waiter.value?.full_name || 'Unknown Waiter';
-    const title = `Waiter_${waiterName}_Attendance Report`;
+    const waiterName = waiter.value?.full_name || wTrans('public.waiter.unknown_waiter').value;
+    const title = `${wTrans('public.waiter_header').value}_${waiterName}_${wTrans('public.waiter.attendance_report').value}`;
     const startDate = dayjs(date_filter.value[0]).format('DD/MM/YYYY');
     const endDate = date_filter.value[1] != null ? dayjs(date_filter.value[1]).format('DD/MM/YYYY') : dayjs(date_filter.value[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     let formattedRows = [
         { Date: title, 'Working Duration': '', 'Break Duration': '' },
         { Date: dateRange, 'Working Duration': '', 'Break Duration': '' },
-        { Date: 'Date', 'Working Duration': 'Working Duration', 'Break Duration': 'Break Duration' },
+        { Date: wTrans('public.date').value, 'Working Duration': wTrans('public.waiter.working_duration_header').value, 'Break Duration': wTrans('public.waiter.break_duration_header').value },
         ...attendances.value.map(row => {
             let data = {
                 'Date': row.date,
@@ -107,12 +108,12 @@ const csvExport = () => {
                 row['Est. Rate (RM/hour)'] = '';
 
             } else if (index == 2) {
-                row['Est. Rate (RM/hour)'] = 'Est. Rate (RM/hour)';
+                row['Est. Rate (RM/hour)'] = wTransChoice('public.waiter.est_hourly_rate', 1).value;
             }
         });
     }
 
-    exportToCSV(formattedRows, `Waiter_${waiterName}_Attendance Report`);
+    exportToCSV(formattedRows, `${wTrans('public.waiter_header').value}_${waiterName}_${wTrans('public.waiter.attendance_report').value}`);
 };
 
 const openModal = (attendance) => {
@@ -136,6 +137,40 @@ const updateAttendance = (updatedAttendance) => {
     targetAttendance.work_duration = updatedAttendance.work_duration;
 };
 
+const calcTotalEstRate = (rates) => {
+    let total = 0;
+
+    rates.forEach(rate => {
+        // Remove "RM" and commas, then parse as float
+        const amount = parseFloat(rate.replace(/[^\d.]/g, ""));
+        if (!isNaN(amount)) {
+        total += amount;
+        }
+    });
+
+    // Format back as "RM" with 2 decimals
+    return `RM ${total.toFixed(2)}`;
+};
+
+const calcTotalDuration = (durations) => {
+    let totalMinutes = 0;
+
+    durations.forEach(duration => {
+        const match = duration.match(/(\d+)h\s*(\d+)m/); 
+        if (match) {
+        const hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        totalMinutes += (hours * 60) + minutes;
+        }
+    });
+
+    // Convert back to hours + minutes
+    const totalHours = Math.floor(totalMinutes / 60);
+    const remainingMinutes = totalMinutes % 60;
+
+    return `${String(totalHours).padStart(2, "0")}h ${String(remainingMinutes).padStart(2, "0")}m`;
+};
+
 const filteredAttendances = computed(() => {
     if (!searchQuery.value) return attendances.value;
 
@@ -154,7 +189,7 @@ onMounted(() => {
         // tableColumns.value[0]
         tableColumns.value.push({
             field: 'earnings', 
-            header: 'Est. Rate (RM/hour)', 
+            header: wTransChoice('public.waiter.est_hourly_rate', 1), 
             width: '30', 
             sortable: true
         });
@@ -166,7 +201,7 @@ onMounted(() => {
 <template>
     <div class="w-full flex flex-col p-6 items-start justify-between gap-6 rounded-[5px] border border-solid border-red-100 overflow-y-auto">
         <div class="inline-flex items-center w-full justify-between gap-2.5">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Attendance Report</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.waiter.attendance_report') }}</span>
             
             <Button
                 :type="'button'"
@@ -180,7 +215,7 @@ onMounted(() => {
                 <template #icon >
                     <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                 </template>
-                Export
+                {{ $t('public.action.export') }}
             </Button>
 
             <!-- <Menu as="div" class="relative inline-block text-left">
@@ -228,7 +263,7 @@ onMounted(() => {
         </div>
         <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">
             <SearchBar 
-                placeholder="Search"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
             />
@@ -252,7 +287,7 @@ onMounted(() => {
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </template>
                 <template #date="row">
                     <span class="text-grey-900 text-sm font-medium">{{ row.date }}</span>
@@ -265,11 +300,17 @@ onMounted(() => {
                     <span class="text-grey-900 text-sm font-medium">{{ row.break_duration ?? '-' }}</span>
                 </template>
             </Table>
+            <!-- <div class="w-full">
+                <p class="w-[35%]">{{ $t('public.total') }}</p>
+                <p class="w-[30%]">{{ calcTotalDuration(filteredAttendances.map((a) => a.work_duration)) }}</p>
+                <p class="w-[35%]">{{ calcTotalDuration(filteredAttendances.map((a) => a.break_duration)) }}</p>
+                <p v-if="tableColumns.some((col) => col.header === 'earnings')" class="w-[30%]">{{ calcTotalEstRate(filteredAttendances.map((a) => a.earnings)) }}</p>
+            </div> -->
         </div>
     </div>
 
     <Modal
-        :title="'Attendance Detail'"
+        :title="$t('public.waiter.attendance_detail')"
         :maxWidth="'xs'"
         :closeable="true"
         :show="isAttendanceDetailModalOpen"

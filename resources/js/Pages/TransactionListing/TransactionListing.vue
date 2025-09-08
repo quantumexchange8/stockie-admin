@@ -6,6 +6,7 @@ import Breadcrumb from '@/Components/Breadcrumb.vue';
 import TabView from "@/Components/TabView.vue";
 import SaleTransactionListing from './Partials/SaleTransactionListing.vue';
 import RefundTransactionListing from './Partials/RefundTransactionListing.vue';
+import Toast from '@/Components/Toast.vue';
 
 const home = ref({
     label: 'Transaction Listing',
@@ -32,7 +33,7 @@ const tabs = ref([
             />
         </template>
 
-        <!-- <Toast /> -->
+        <Toast />
 
         <div class="w-full p-6 flex flex-col border border-primary-100 rounded-[5px]">
             <div class="text-primary-900 text-md font-medium">

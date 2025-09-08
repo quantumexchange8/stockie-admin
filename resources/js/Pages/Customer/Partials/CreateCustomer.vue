@@ -79,7 +79,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <TextInput
                 required
                 :inputName="'full_name'"
-                :labelText="$t('public.field.name')"
+                :labelText="$t('public.field.full_name')"
                 :placeholder="'e.g. Tan Mei Wah'"
                 :errorMessage="form.errors && form.errors.full_name ? form.errors.full_name[0] : ''"
                 v-model="form.full_name"

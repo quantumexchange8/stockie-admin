@@ -20,6 +20,7 @@ import dayjs from "dayjs";
 import CreateCustomer from "./CreateCustomer.vue";
 import EditCustomer from "./EditCustomer.vue";
 import Textarea from "@/Components/Textarea.vue";
+import { wTrans, wTransChoice } from "laravel-vue-i18n";
 
 
 const props = defineProps ({
@@ -202,16 +203,16 @@ const toggleKeepStatus = () => {
 }
 
 const csvExport = () => {
-    const title = 'Customer List';
+    const title = wTrans('public.customer.customer_list').value;
     const currentDate = dayjs().format('DD/MM/YYYY');
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Tier: title, 'Customer': '', 'Points': '', 'Keep': '', 'Joined Date': '' },
         { Tier: currentDate, 'Customer': '', 'Points': '', 'Keep': '', 'Joined Date': '' },
-        { Tier: 'Tier', 'Customer': 'Customer', 'Points': 'Points', 'Keep': 'Keep', 'Joined Date': 'Joined Date' },
+        { Tier: wTrans('public.tier').value, 'Customer': wTrans('public.customer_header').value, 'Points': wTransChoice('public.point', 1).value, 'Keep': wTrans('public.keep').value, 'Joined Date': wTrans('public.customer.joined_date').value },
         ...customer.value.map(row => ({
-            'Tier': parseInt(row.ranking) !== 0 ? row.rank.name : 'No Tier',
+            'Tier': parseInt(row.ranking) !== 0 ? row.rank.name : wTrans('public.customer.no_tier').value,
             'Customer': row.full_name,
             'Points': row.point,
             'Keep': row.keep_items_count,
@@ -219,7 +220,7 @@ const csvExport = () => {
         }))
     ];
 
-    exportToCSV(formattedRows, 'Customer List');
+    exportToCSV(formattedRows, wTrans('public.customer.customer_list').value);
 }
 
 const formatPoints = (points) => {
@@ -252,7 +253,7 @@ const importKeepItems = async () => {
             setTimeout(() => {
                 showMessage({
                     severity: 'success',
-                    summary: 'Keep item list has been imported successfully.'
+                    summary: wTrans('public.toast.keep_items_imported_success')
                 });
             }, 200);
         },
@@ -454,29 +455,29 @@ watch (() => searchQuery.value, (newValue) => {
         const email = customer.email?.toLowerCase();
         const phoneNumber = customer.phone?.toString().toLowerCase();
         // const keptItem = customer.keep_items ? customer.keep_items.item_name.toLowerCase() : '';
-        const keptItems = Array.isArray(customer.keep_items)
-            ? customer.keep_items.some(item => item.item_name.toLowerCase().includes(query))
-            : false;
+        // const keptItems = Array.isArray(customer.keep_items)
+        //     ? customer.keep_items.some(item => item.item_name.toLowerCase().includes(query))
+        //     : false;
 
         return  tier.includes(query) ||
                 name.includes(query) ||
                 email?.includes(query) ||
-                phoneNumber?.includes(query) ||
-                keptItems;
+                phoneNumber?.includes(query);
+                // keptItems;
                 // phoneNumber.includes(query);
     })
 }, { immediate: true })
 
 const deleteModalTitle = computed(() => {
     return customerCurrentOrdersCount.value > 0
-        ? 'This customer still has open orders!'
-        : 'Passcode Required';
+        ? wTrans('public.customer.delete_customer_warning')
+        : wTrans('public.customer.delete_customer');
 });
 
 const deleteModalDescription = computed(() => {
     return customerCurrentOrdersCount.value > 0
-        ? 'You cannot delete this customer until all current orders are completed and paid. Would you like to proceed to view customer order?'
-        : 'To delete this customer, you have to enter the passcode provided from the master admin.';
+        ? wTrans('public.customer.delete_customer_warning_message')
+        : wTrans('public.customer.delete_customer_message');
 });
 
 const totalPages = computed(() => {
@@ -489,7 +490,7 @@ const totalPages = computed(() => {
     <div class="flex flex-col gap-5">
         <div class="flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]">
             <div class="inline-flex items-center w-full justify-between gap-2.5">
-                <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Visited Customer</span>
+                <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.customer.visited_customer') }}</span>
                 <input 
                     type="file" 
                     ref="fileInput" 
@@ -506,8 +507,8 @@ const totalPages = computed(() => {
                     @click="triggerFileInput"
                     :disabled="isLoading"
                 >
-                    <template v-if="isLoading">Processing...</template>
-                    <template v-else>Import Keep Items</template>
+                    <template v-if="isLoading">{{ $t('public.customer.processing') }}</template>
+                    <template v-else>{{ $t('public.customer.import_keep_item') }}</template>
                 </Button>
             
                 <Button
@@ -522,7 +523,7 @@ const totalPages = computed(() => {
                     <template #icon >
                         <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                     </template>
-                    Export
+                    {{ $t('public.action.export') }}
                 </Button>
                 
                 <!-- <Menu as="div" class="relative inline-block text-left">
@@ -571,13 +572,13 @@ const totalPages = computed(() => {
 
             <div class="w-full flex gap-5 flex-wrap sm:flex-nowrap items-center justify-between">
                 <SearchBar 
-                    placeholder="Search"
+                    :placeholder="$t('public.search')"
                     :showFilter="true"
                     v-model="searchQuery"
                 >
                     <template #default="{ hideOverlay }">
                         <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Tier</span>
+                            <span class="text-grey-900 text-base font-semibold">{{ $t('public.tier') }}</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div 
                                     v-for="(tier, index) in rankingArr" 
@@ -593,7 +594,7 @@ const totalPages = computed(() => {
                             </div>
                         </div>
                         <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Points</span>
+                            <span class="text-grey-900 text-base font-semibold">{{ $tChoice('public.point', 1) }}</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div class="flex items-center w-full">
                                     <Slider 
@@ -607,7 +608,7 @@ const totalPages = computed(() => {
                         <div class="flex flex-col self-stretch gap-4 items-start">
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div class="inline-flex w-full gap-2 justify-between border border-grey-100 rounded-[5px]">
-                                    <span>With keep item only</span>
+                                    <span>{{ $t('public.customer.with_keep_item_only') }}</span>
                                     <Checkbox 
                                         :checked="checkedFilters.keepItems.includes(true)"
                                         @click="toggleKeepStatus()"
@@ -622,13 +623,13 @@ const totalPages = computed(() => {
                                 :size="'lg'"
                                 @click="clearFilters(hideOverlay)"
                             >
-                                Clear All
+                                {{ $t('public.action.clear_all') }}
                             </Button>
                             <Button
                                 :size="'lg'"
                                 @click="applyCheckedFilters(hideOverlay)"
                             >
-                                Apply
+                                {{ $t('public.action.apply') }}
                             </Button>
                         </div>
                     </template>
@@ -644,7 +645,7 @@ const totalPages = computed(() => {
                     <template #icon>
                         <PlusIcon class="w-6 h-6"/>
                     </template>
-                    New Customer
+                    {{ $t('public.action.new_customer') }}
                 </Button>
             </div>
 
@@ -662,7 +663,7 @@ const totalPages = computed(() => {
             >
                 <template #empty>
                     <UndetectableIllus class="w-44 h-44"/>
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </template>
                 <template #editAction="customer">
                     <EditIcon
@@ -679,7 +680,7 @@ const totalPages = computed(() => {
                 <template #ranking="customer">
                     <Tag
                         :variant="parseInt(customer.ranking) !== 0 ? 'default' : 'grey'"
-                        :value="parseInt(customer.ranking) !== 0 ? customer.rank.name : 'No Tier'"
+                        :value="parseInt(customer.ranking) !== 0 ? customer.rank.name : $t('public.customer.no_tier')"
                     />
                 </template>
                 <template #full_name="customer">
@@ -692,7 +693,7 @@ const totalPages = computed(() => {
                     </template>
                 </template>
                 <template #point="customer">
-                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ formatPoints(customer.point) }} pts</span>
+                    <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ formatPoints(customer.point) }} {{ $t('public.pts') }}</span>
                 </template>
                 <template #created_at="customer">
                     <span class="text-grey-900 text-sm font-medium line-clamp-1 flex-[1_0_0]">{{ dayjs(customer.created_at).format('DD/MM/YYYY') }}</span>
@@ -705,8 +706,8 @@ const totalPages = computed(() => {
         :maxWidth="'2xs'"
         :closeable="true"
         :show="isDeleteCustomerOpen"
-        :confirmationTitle="`Passcode Required`"
-        :confirmationMessage="`To delete this customer, you have to enter the passcode provided from the master admin.`"
+        :confirmationTitle="$t('public.customer.delete_customer')"
+        :confirmationMessage="$t('public.customer.delete_customer_message')"
         @close="closeModal('close')"
         :withHeader="false"
     >
@@ -723,7 +724,7 @@ const totalPages = computed(() => {
                     <TextInput
                         v-if="customerCurrentOrdersCount === 0"
                         required
-                        :labelText="'Passcode'"
+                        :labelText="$t('public.field.passcode')"
                         inputName="password"
                         inputType="password"
                         :errorMessage="form.errors && form.errors.password ? form.errors.password : ''"
@@ -732,9 +733,9 @@ const totalPages = computed(() => {
                     <Textarea 
                         v-if="customerCurrentOrdersCount === 0"
                         :inputName="'remark'"
-                        :labelText="'Reason of customer deletetion'"
+                        :labelText="$t('public.field.delete_customer_reason')"
                         :errorMessage="form.errors && form.errors.remark ? form.errors.remark : ''"
-                        :placeholder="'Enter the reason'"
+                        :placeholder="$t('public.enter_reason')"
                         :rows="3"
                         v-model="form.remark"
                     />
@@ -747,7 +748,7 @@ const totalPages = computed(() => {
                         type="button"
                         @click="closeModal('close')"
                     >
-                        {{ customerCurrentOrdersCount > 0 ? 'Maybe later' : 'Cancel' }}
+                        {{ customerCurrentOrdersCount > 0 ? $t('public.action.maybe_later') : $t('public.action.cancel') }}
                     </Button>
                     <Button
                         v-if="customerCurrentOrdersCount === 0"
@@ -755,7 +756,7 @@ const totalPages = computed(() => {
                         size="lg"
                         type="submit"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                     <Button
                         v-else
@@ -763,7 +764,7 @@ const totalPages = computed(() => {
                         size="lg"
                         type="button"
                     >
-                        Go view
+                        {{ $t('public.go_view') }}
                     </Button>
                 </div>
             </div>
@@ -771,7 +772,7 @@ const totalPages = computed(() => {
     </Modal>
 
     <Modal 
-        :title="'Create New Customer'"
+        :title="$t('public.checked_in_customer')"
         :show="isCreateCustomerOpen" 
         :maxWidth="'xs'" 
         :closeable="true" 
@@ -794,7 +795,7 @@ const totalPages = computed(() => {
     </Modal>
 
     <Modal 
-        :title="'Edit Customer'"
+        :title="$t('public.customer.edit_customer')"
         :show="isEditCustomerOpen" 
         :maxWidth="'xs'" 
         :closeable="true" 
@@ -822,12 +823,12 @@ const totalPages = computed(() => {
     <!-- right drawer -->
      <RightDrawer
         :title="''"
-        :header="'Customer Detail'"
+        :header="$t('public.customer_detail')"
         :show="isSidebarOpen"
         @close="hideSideBar"
      >
         <CustomerDetail 
-            :customer="selectedCustomer"
+            :targetCustomer="selectedCustomer"
             @update:customerKeepItems="selectedCustomer.keep_items = $event"
             @update:customerPoints="selectedCustomer.point = $event"
         />

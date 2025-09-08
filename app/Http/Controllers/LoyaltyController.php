@@ -380,6 +380,10 @@ class LoyaltyController extends Controller
         $spendings = $monthlySpent->pluck('spent')->toArray();
 
         $customers = Customer::where('ranking', $id)
+                            ->where(function ($query) {
+                                $query->where('status', '!=', 'void')
+                                    ->orWhereNull('status'); // Handle NULL cases
+                            })
                             ->select('full_name', 'created_at', 'total_spending')
                             ->get();
 

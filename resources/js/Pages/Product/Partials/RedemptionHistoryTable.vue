@@ -10,6 +10,7 @@ import { useFileExport } from '@/Composables/index.js';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { UploadIcon } from '@/Components/Icons/solid';
 import Button from '@/Components/Button.vue';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     dateFilter: Array,
@@ -82,13 +83,13 @@ const csvExport = () => {
     const title = props.productName;
     const startDate = dayjs(props.dateFilter[0]).format('DD/MM/YYYY');
     const endDate = props.dateFilter[1] != null ? dayjs(props.dateFilter[1]).format('DD/MM/YYYY') : dayjs(props.dateFilter[0]).endOf('day').format('DD/MM/YYYY');
-    const dateRange = `Date Range: ${startDate} - ${endDate}`;
+    const dateRange = `${wTrans('public.date_range').value}: ${startDate} - ${endDate}`;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Date: title, 'Redeemable_Item': '', 'Quantity': '', 'Redeemed_By': '' },
         { Date: dateRange, 'Redeemable_Item': '', 'Quantity': '', 'Redeemed_By': '' },
-        { Date: 'Date', 'Redeemable_Item': 'Redeemable_Item', 'Quantity': 'Quantity', 'Redeemed_By': 'Redeemed_By' },
+        { Date: wTrans('public.date').value, 'Redeemable_Item': wTrans('public.redeemed_with').value, 'Quantity': wTrans('public.quantity').value, 'Redeemed_By': wTrans('public.redeemed_by').value },
         ...redemptionHistories.value.map(row => ({
             'Date': dayjs(row.redemption_date).format('DD/MM/YYYY'),
             'Redeemable_Item': row.redeemable_item.product_name,
@@ -97,7 +98,7 @@ const csvExport = () => {
         })),
     ];
 
-    exportToCSV(formattedRows, 'Redemption History');
+    exportToCSV(formattedRows, wTransChoice('public.menu.redemption_history', 0).value);
 }
 </script>
 
@@ -116,7 +117,7 @@ const csvExport = () => {
                 <template #icon >
                     <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                 </template>
-                Export
+                {{ $t('public.action.export') }}
             </Button>
 
             <!-- <Menu as="div" class="relative inline-block text-left">
@@ -175,7 +176,7 @@ const csvExport = () => {
 
         <div class="flex items-start gap-5">
             <SearchBar
-                placeholder="Search"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
                 class="col-span-full md:col-span-7"
@@ -200,13 +201,13 @@ const csvExport = () => {
         >
             <template #empty>
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </template>
             <template #redemption_date="row">
                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ dayjs(row.redemption_date).format('YYYY/MM/DD') }}</span>
             </template>
             <template #amount="row">
-                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.amount }} pts</span>
+                <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.amount }} {{ $t('public.pts') }}</span>
             </template>
             <template #handled_by.full_name="row">
                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ row.handled_by.full_name }}</span>

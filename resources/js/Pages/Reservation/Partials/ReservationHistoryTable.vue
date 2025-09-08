@@ -74,7 +74,7 @@ const hideReservationDetailForm = () => {
     reservationDetailIsOpen.value = false;
     setTimeout(() => {
         selectedReservation.value = null;
-    }, 300);
+    }, 500);
 }
 
 const resetFilters = () => {

@@ -7,6 +7,7 @@ import { computed, ref, watch } from 'vue';
 import Modal from '@/Components/Modal.vue';
 import RadioButton from '@/Components/RadioButton.vue';
 import { kickCashDrawerOptions } from '@/Composables/constants';
+import { wTrans } from 'laravel-vue-i18n';
 
 const emit = defineEmits(['isDirty', 'closeModal', 'update:printers'])
 
@@ -51,6 +52,13 @@ const unsaved = (status) => {
     emit('closeModal', status);
 }
 
+const getKickCashDrawerOptions = computed(() => {
+    return kickCashDrawerOptions.map((opt) => ({
+        ...opt,
+        text: wTrans(opt.text).value,
+    }));
+});
+
 const isFormValid = computed(() => {
     return ['name', 'ip_address', 'port_number'].every(field => form[field]) && !form.processing;
 })
@@ -88,7 +96,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 v-model="form.temp_port"
             />
             <RadioButton
-                :optionArr="kickCashDrawerOptions"
+                :optionArr="getKickCashDrawerOptions"
                 :checked="form.kick_cash_drawer"
                 v-model:checked="form.kick_cash_drawer"
             />

@@ -226,6 +226,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::put('/editCutOffTime', [ConfigPromotionController::class, 'editCutOffTime'])->name('configurations.editCutOffTime');
         Route::put('/editAddress', [ConfigPromotionController::class, 'editAddress'])->name('configurations.editAddress');
         Route::put('/editTax', [ConfigPromotionController::class, 'editTax'])->name('configurations.editTax');
+        Route::post('/searchTIN', [ConfigPromotionController::class, 'searchTIN'])->name('configurations.searchTIN');
 
         /******* Points Settings ********/
         Route::get('/getPoint', [ConfigPromotionController::class, 'getPoint'])->name('configurations.getPoint');
@@ -361,6 +362,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::get('/getAllCustomers', [CustomerController::class,'getAllCustomers'])->name('customer.all-customers');
         Route::get('/getCurrentOrdersCount/{id}', [CustomerController::class,'getCurrentOrdersCount'])->name('customer.current-orders-count');
         Route::get('/getExpiringPointHistories/{id}', [CustomerController::class,'getExpiringPointHistories'])->name('customer.getExpiringPointHistories');
+        Route::get('/getCustomerDetails/{id}', [CustomerController::class,'getCustomerDetails'])->name('customer.getCustomerDetails');
         Route::post('/', [CustomerController::class,'store'])->name('customer.store');
         Route::post('/returnKeepItem/{id}', [CustomerController::class,'returnKeepItem'])->name('customer.returnKeepItem');
         Route::post('/adjustPoint', [CustomerController::class, 'adjustPoint'])->name('customer.adjustPoint');
@@ -452,7 +454,7 @@ Route::middleware(['auth', 'single.session'])->group(function () {
         Route::post('/submit-consolidate', [EInvoiceController::class, 'submitConsolidate'])->name('e-invoice.submit-consolidate');
         Route::post('/cancel-submission', [EInvoiceController::class, 'cancelSubmission'])->name('e-invoice.cancel-submission');
         Route::post('/refund-consolidate', [EInvoiceController::class, 'refundConsolidate'])->name('e-invoice.refund-consolidate');
-        
+        Route::get('/downloadInvoice/{id}/download', [EInvoiceController::class, 'downloadInvoice'])->name('downloadInvoice');
     });
 
     /********* Global use **********/

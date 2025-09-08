@@ -9,6 +9,7 @@ import Modal from '@/Components/Modal.vue';
 import DateInput from '@/Components/Date.vue';
 import Button from '@/Components/Button.vue';
 import { useCustomToast } from '@/Composables';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     rows: Array,
@@ -53,27 +54,27 @@ const emit = defineEmits(['getKeepHistories']);
 // console.log(props.rows);
 
 const activeColumns = ref([
-    {field: 'keep_date', header: 'Kept Date', width: '20.2', sortable: true},
-    {field: 'item_name', header: 'Item Name', width: '29.3', sortable: true},
-    {field: 'qty', header: 'Qty', width: '11.9', sortable: true},
-    {field: 'keep_item.expired_to', header: 'Expire on', width: '20.1', sortable: true},
-    {field: 'keep_item.customer.full_name', header: 'Keep For', width: '18.5', sortable: true},
+    {field: 'keep_date', header: wTrans('public.inventory.kept_date'), width: '20.2', sortable: true},
+    {field: 'item_name', header: wTrans('public.inventory.item_name'), width: '29.3', sortable: true},
+    {field: 'qty', header: wTrans('public.qty'), width: '11.9', sortable: true},
+    {field: 'keep_item.expired_to', header: wTrans('public.expire_on'), width: '20.1', sortable: true},
+    {field: 'keep_item.customer.full_name', header: wTrans('public.field.keep_for'), width: '18.5', sortable: true},
 ]);
 
 const servedColumns = ref([
-    { field: 'updated_at', header: 'Served Date', width: '24.2', sortable: true},
-    { field: 'item_name', header: 'Item', width: '26.2', sortable: true},
-    { field: 'qty', header: 'Qty', width: '8.2', sortable: true},
-    { field: 'keep_item.customer.full_name', header: 'Customer', width: '23.2', sortable: true},
-    { field: 'keep_item.waiter.full_name', header: 'Served By', width: '23.2', sortable: true},
+    { field: 'updated_at', header: wTrans('public.inventory.served_date'), width: '24.2', sortable: true},
+    { field: 'item_name', header: wTrans('public.item'), width: '26.2', sortable: true},
+    { field: 'qty', header: wTrans('public.qty'), width: '8.2', sortable: true},
+    { field: 'keep_item.customer.full_name', header: wTrans('public.customer_header'), width: '23.2', sortable: true},
+    { field: 'keep_item.waiter.full_name', header: wTrans('public.served_by'), width: '23.2', sortable: true},
 ])
 
 const expiredColumns = ref([
-    { field: 'keep_item.expired_to', header: 'Expired Date', width: '24', sortable: true},
-    { field: 'item_name', header: 'Item', width: '23', sortable: true},
-    { field: 'qty', header: 'Qty', width: '10', sortable: true},
-    { field: 'keep_item.customer.full_name', header: 'Customer', width: '23', sortable: true},
-    { field: 'action', header: 'Action', width: '20', sortable: true},
+    { field: 'keep_item.expired_to', header: wTrans('public.inventory.expired_date'), width: '24', sortable: true},
+    { field: 'item_name', header: wTrans('public.item'), width: '33', sortable: true},
+    { field: 'qty', header: wTrans('public.qty'), width: '10', sortable: true},
+    { field: 'keep_item.customer.full_name', header: wTrans('public.customer_header'), width: '33', sortable: true},
+    // { field: 'action', header: wTrans('public.action_header'), width: '20', sortable: true},
 ])
 
 const rowsPerPage = ref(12);
@@ -100,8 +101,8 @@ const reactivateExpiredItems = () => {
                 closeModal('leave');
                 showMessage({ 
                     severity: 'success',
-                    summary: 'Kept item has been reactivated successfully',
-                    detail: "You’ve extended the expiration date for selected kept item.",
+                    summary: wTrans('public.toast.reactivate_kept_item_summary'),
+                    detail: wTrans('public.toast.reactivate_kept_item_detail'),
                 });
                 form.reset();
                 emit('getKeepHistories');
@@ -315,21 +316,21 @@ const isLatestRecord = (keep_item_id, id) => {
                     {{ rows.keep_item.customer.full_name }}
                 </span>
             </template>
-            <template #action="rows">
+            <!-- <template #action="rows">
                 <span class="line-clamp-1 overflow-visible flex-[1_0_0] text-ellipsis text-sm font-semibold decoration-solid decoration-auto"
                     :class="isLatestRecord(rows.keep_item.id, rows.id) ? 'text-primary-900 cursor-pointer underline underline-offset-auto' : 'text-grey-200 cursor-not-allowed'"
                     @click.stop="openModal(rows)"
                 >
-                    Reactivate
+                    {{ $t('public.action.reactivate') }}
                 </span>
-            </template>
+            </template> -->
         </Table>
     </div>
 
     <!-- customer keep item drawer -->
      <RightDrawer
         :title="''"
-        :header="'Customer Detail'"
+        :header="$t('public.customer_detail')"
         :show="isDrawerOpen"
         @close="closeDrawer"
      >
@@ -341,7 +342,7 @@ const isLatestRecord = (keep_item_id, id) => {
 
      <!-- Extend expiration date -->
     <Modal
-        :title="'Extend to'"
+        :title="$t('public.extend_to')"
         :maxWidth="'xs'"
         :show="isReactivateOpen"
         @close="closeModal('close')"
@@ -361,7 +362,7 @@ const isLatestRecord = (keep_item_id, id) => {
                         :size="'lg'"
                         @click="closeModal('close')"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         :variant="'primary'"
@@ -369,7 +370,7 @@ const isLatestRecord = (keep_item_id, id) => {
                         :size="'lg'"
                         :disabled="form.expiry_date === ''"
                     >
-                        Confirm
+                        {{ $t('public.action.confirm') }}
                     </Button>
                 </div>
             </div>

@@ -33,6 +33,7 @@ const props = defineProps({
         default: false,
     },
     minDate: Date,
+    maxDate: Date,
     disabledDates: [Date, Array],
     hintText: {
         type: String,
@@ -189,6 +190,7 @@ onMounted(() => {
             showIcon
             :manualInput="true"
             :minDate="minDate"
+            :maxDate="maxDate"
             :disabledDates="disabledDates"
             :showTime="props.withTime"
             :placeholder="props.placeholder"
