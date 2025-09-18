@@ -5,6 +5,7 @@ import { ref, watch, computed } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import RedemptionHistoryTable from './RedemptionHistoryTable.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     redemptionHistories: Array,
@@ -12,18 +13,18 @@ const props = defineProps({
 });
 
 const home = ref({
-    label: 'Loyalty Programme',
+    label: wTrans('public.loyalty_programme_header'),
     route: '/loyalty-programme/loyalty-programme'
 });
 const items = ref([
-    { label: 'Recent Redemption' },
+    { label: wTrans('public.loyalty.recent_redemption') },
 ]);
 
 const columns = ref([
-    {field: 'redemption_date', header: 'Date', width: '20', sortable: false},
-    {field: 'redeemable_item', header: 'Redeemed Item', width: '45', sortable: true},
-    {field: 'qty', header: 'Quantity', width: '15', sortable: false},
-    {field: 'handled_by', header: 'Redeemed by', width: '20', sortable: false},
+    {field: 'redemption_date', header: wTrans('public.date'), width: '20', sortable: false},
+    {field: 'redeemable_item', header: wTrans('public.redeemed_product'), width: '45', sortable: true},
+    {field: 'qty', header: wTrans('public.quantity'), width: '15', sortable: false},
+    {field: 'handled_by', header: wTrans('public.redeemed_by'), width: '20', sortable: false},
 ]);
 
 const redemptionHistories = ref(props.redemptionHistories);
@@ -71,7 +72,7 @@ const totalPages = computed(() => {
 </script>
 
 <template>
-    <Head title="Recent Redemption" />
+    <Head :title="$t('public.loyalty.recent_redemption')" />
 
     <AuthenticatedLayout>
         <template #header>

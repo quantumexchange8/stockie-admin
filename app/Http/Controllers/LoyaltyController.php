@@ -280,7 +280,7 @@ class LoyaltyController extends Controller
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => 'New tier has been added successfully.'
+            'summary' => trans('public.toast.add_tier_success')
         ];
 
         return redirect()->back()->with(['message' => $message]);
@@ -596,7 +596,7 @@ class LoyaltyController extends Controller
 
         $message = [ 
             'severity' => 'success', 
-            'summary' => 'Changes saved.'
+            'summary' => trans('public.toast.changes_saved')
         ];
 
         return redirect()->back()->with(['message' => $message]);
@@ -635,7 +635,7 @@ class LoyaltyController extends Controller
 
         $message = [ 
             'severity' => 'error', 
-            'summary' => 'Error deleting redeemable item.'
+            'summary' => trans('public.toast.delete_tier_error')
         ];
 
         if ($existingRanking) {
@@ -657,7 +657,7 @@ class LoyaltyController extends Controller
 
             $message = [ 
                 'severity' => 'success', 
-                'summary' => 'Selected tier has been deleted successfully.'
+                'summary' => trans('public.toast.delete_tier_success')
             ];
         }
 

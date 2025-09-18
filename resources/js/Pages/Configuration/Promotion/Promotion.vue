@@ -60,8 +60,8 @@ const closeModal = (status) => {
 }
 
 const updatePromotions = (newPromotions) => {
-    filteredActivePromotions.value = newPromotions.Active;
-    filteredInactivePromotions.value = newPromotions.Inactive;
+    filteredActivePromotions.value = newPromotions.Active ?? [];
+    filteredInactivePromotions.value = newPromotions.Inactive ?? [];
 }
 
 watch(() => searchQuery.value, (newValue) => {
@@ -113,12 +113,12 @@ watch(() => props.InactivePromotions, (newValue) => {
     
     <div class="flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]">
         <div class="flex flex-col justify-center flex-[1_0_0] h-6">
-            <p class="text-md font-medium text-primary-900">Promotion List</p>
+            <p class="text-md font-medium text-primary-900">{{ $t('public.config.promotion_list') }}</p>
         </div>
         <div class="flex w-full gap-5 self-stretch flex-wrap md:flex-nowrap">
             <SearchBar
                 :inputName="'searchbar'"
-                :placeholder="'Search'"
+                :placeholder="$t('public.search')"
                 v-model="searchQuery"
             />
             <Button
@@ -133,10 +133,10 @@ watch(() => props.InactivePromotions, (newValue) => {
                         class="w-6 h-6"
                     />
                 </template>
-                New Promotion
+                {{ $t('public.action.new_promotion') }}
             </Button>
             <Modal 
-                :title="'Add New Promotion'"
+                :title="$t('public.config.add_new_promotion')"
                 :show="createFormIsOpen" 
                 :maxWidth="'md'" 
                 :closeable="true" 
@@ -174,7 +174,7 @@ watch(() => props.InactivePromotions, (newValue) => {
                                 : 'text-blue-100 hover:text-primary-500',
                             ]"
                         >
-                            Active ({{ filteredActivePromotions?.length }})
+                            {{ `${$t('public.active')} (${filteredActivePromotions?.length ?? '0'})` }}
                         </button>
                     </Tab>
                     <Tab
@@ -190,7 +190,7 @@ watch(() => props.InactivePromotions, (newValue) => {
                                 : 'text-blue-100 hover:text-primary-800',
                             ]"
                         >
-                            Inactive ({{ filteredInactivePromotions?.length }})
+                            {{ `${$t('public.inactive')} (${filteredInactivePromotions?.length ?? '0'})` }}
                         </button>
                     </Tab>
                 </TabList>

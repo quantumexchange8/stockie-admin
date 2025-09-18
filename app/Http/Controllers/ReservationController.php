@@ -207,8 +207,8 @@ class ReservationController extends Controller
 
             if (!$hasOpenedShift) {
                 return redirect()->back()->withErrors([
-                    'summary' => 'No shift has been opened yet',
-                    'detail' => "You'll need to open a shift before you can place order"
+                    'summary' => trans('public.empty.no_shift_opened'),
+                    'detail' => trans('public.empty.need_open_shift')
                 ]);
             }
 
@@ -222,8 +222,8 @@ class ReservationController extends Controller
 
             if ($hasCheckedIn) {
                 return redirect()->back()->withErrors([
-                    'summary' => 'Table in use',
-                    'detail' => "The selected tables for the reservation are currently in use"
+                    'summary' => trans('public.reservation.table_in_use_warning'),
+                    'detail' => trans('public.reservation.table_in_use_message')
                 ]);
             }
 

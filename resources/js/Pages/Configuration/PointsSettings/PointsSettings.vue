@@ -7,6 +7,7 @@ import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const point = ref({});
 const pointExpirationSettings = ref({});
@@ -69,7 +70,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({
                     severity: 'success', 
-                    summary: 'Point calculation updated.'
+                    summary: wTrans('public.toast.update_point_calculation')
                 });
             }, 200)
             getCurrentPoint();
@@ -89,7 +90,7 @@ const setPointExpirationSettings = () => {
             setTimeout(() => {
                 showMessage({
                     severity: 'success', 
-                    summary: 'Point expiration settings updated.'
+                    summary: wTrans('public.toast.update_point_expiration_settings')
                 });
             }, 200)
             getPointExpirationSettings();
@@ -124,7 +125,7 @@ onMounted(() => {
         <form @submit.prevent="submit">
             <div class="w-full flex justify-between items-center self-stretch pb-6">
                 <div class="w-full flex flex-col justify-center flex-[1_0_0]">
-                    <span class="w-full text-primary-900 text-md font-medium">Point Calculation</span>
+                    <span class="w-full text-primary-900 text-md font-medium">{{ $t('public.config.point_calculation') }}</span>
                 </div>
                 <Button
                     :type="'submit'"
@@ -132,12 +133,12 @@ onMounted(() => {
                     :disabled="!isFormValid || form.processing"
                     class="!w-fit"
                 >
-                    Save Changes
+                    {{ $t('public.action.save_changes') }}
                 </Button>
             </div>
         
             <div class="flex items-center gap-4">
-                <span>Spend</span>
+                <span>{{ $t('public.loyalty.spend') }}</span>
                 <TextInput
                     :inputId="'value'"
                     :inputType="'number'"
@@ -152,7 +153,7 @@ onMounted(() => {
                         <span class="text-grey-700 text-base font-normal">RM</span>
                     </template>
                 </TextInput>
-                <span>equal to</span>
+                <span>{{ $t('public.equal_to') }}</span>
                 <TextInput
                     :inputId="'point'"
                     :inputType="'number'"
@@ -164,7 +165,7 @@ onMounted(() => {
                     class="max-w-[218px] [&>div:nth-child(1)>input]:text-left [&>div:nth-child(1)>input]:pr-4 [&>div:nth-child(1)>input]:pl-4"
                 >
                     <template #prefix>
-                        <span class="text-grey-700 text-base font-normal">point</span>
+                        <span class="text-grey-700 text-base font-normal">{{ $tChoice('public.point_lowercase', 0) }}</span>
                     </template>
                 </TextInput>
             </div>
@@ -175,7 +176,7 @@ onMounted(() => {
             <form @submit.prevent="setPointExpirationSettings">
                 <div class="w-full flex justify-between items-center self-stretch pb-6">
                     <div class="w-full flex flex-col justify-center flex-[1_0_0]">
-                        <span class="w-full text-primary-900 text-md font-medium">Point Expiration Behaviour</span>
+                        <span class="w-full text-primary-900 text-md font-medium">{{ $t('public.config.point_expiration_behaviour') }}</span>
                     </div>
                     <Button
                         :type="'submit'"
@@ -183,7 +184,7 @@ onMounted(() => {
                         :disabled="!isExpirationSettingsFormValid || expirationSettingsForm.processing"
                         class="!w-fit"
                     >
-                        Save Changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
         
@@ -193,7 +194,7 @@ onMounted(() => {
                             :inputId="'days_to_expire'"
                             :inputType="'number'"
                             :errorMessage="expirationSettingsForm.errors?.days_to_expire"
-                            :labelText="'Points Expiration'"
+                            :labelText="$t('public.config.points_expiration')"
                             required
                             :placeholder="'0'"
                             v-model="expirationSettingsForm.days_to_expire"
@@ -201,7 +202,7 @@ onMounted(() => {
                         />
                         <TextInput
                             disabled
-                            modelValue="days after added to account"
+                            :modelValue="$t('public.config.days_after_added')"
                         />
                     </div>
 
@@ -211,7 +212,7 @@ onMounted(() => {
                             required
                             class="mb-1 text-xs !font-medium text-grey-900"
                         >
-                           Expiration Notification
+                           {{ $t('public.config.expiration_notification') }}
                         </Label>
                         <div class="flex items-end gap-x-1">
                             <TextInput
@@ -224,7 +225,7 @@ onMounted(() => {
                             />
                             <TextInput
                                 disabled
-                                modelValue="days before expiration"
+                                :modelValue="$t('public.config.days_before_expiration')"
                             />
                         </div>
                     </div>

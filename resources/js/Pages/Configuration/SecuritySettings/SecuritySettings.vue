@@ -6,13 +6,14 @@ import Toast from '@/Components/Toast.vue';
 import { useCustomToast } from '@/Composables';
 import { router, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
+import { wTrans } from 'laravel-vue-i18n';
 import { computed, onMounted, ref } from 'vue';
 
 const isLoading = ref(false);
 const alDuration = ref(null);
 const timerDurationTypes = ref([
-    { text: 'seconds of inactivity', value: 'seconds' },
-    { text: 'minutes of inactivity', value: 'minutes' },
+    { text: wTrans('public.config.secs_of_inactivity'), value: 'seconds' },
+    { text: wTrans('public.config.mins_of_inactivity'), value: 'minutes' },
 ]);
 
 const { showMessage } = useCustomToast();
@@ -61,7 +62,7 @@ const unlockAllTables = async () => {
 
             showMessage({ 
                 severity: 'info',
-                summary: 'All tables have been unlocked'
+                summary: wTrans('public.toast.all_table_unlocked')
             });
         },
         onError: (errors) => {
@@ -84,7 +85,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({
                     severity: 'success', 
-                    summary: 'Auto-unlock durations successfully updated.'
+                    summary: wTrans('public.toast.update_auto_lock_duration_success')
                 });
             }, 200)
             getCurrentAutoUnlockDuration();
@@ -113,7 +114,7 @@ onMounted(() => {
         <form @submit.prevent="submit">
             <div class="w-full flex justify-between items-center self-stretch pb-6">
                 <div class="w-full flex flex-col justify-center flex-[1_0_0]">
-                    <span class="w-full text-primary-900 text-md font-medium">Auto-Lock Settings</span>
+                    <span class="w-full text-primary-900 text-md font-medium">{{ $t('public.config.auto_lock_settings') }}</span>
                 </div>
                 <div class="flex items-end gap-x-3">
                     <Button
@@ -124,7 +125,7 @@ onMounted(() => {
                         class="!w-fit"
                         @click="unlockAllTables"
                     >
-                        Unlock All Table
+                        {{ $t('public.action.unlock_all_table') }}
                     </Button>
                     <Button
                         :type="'submit'"
@@ -132,7 +133,7 @@ onMounted(() => {
                         :disabled="!isFormValid || form.processing"
                         class="!w-fit"
                     >
-                        Save Changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
             </div>
@@ -142,7 +143,7 @@ onMounted(() => {
                     :inputId="'value'"
                     :inputType="'number'"
                     :errorMessage="form.errors?.value"
-                    :labelText="'Unlock Table After'"
+                    :labelText="$t('public.field.unlock_table_after')"
                     required
                     :placeholder="'0'"
                     v-model="form.value"

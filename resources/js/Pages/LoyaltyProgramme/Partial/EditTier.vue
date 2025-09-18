@@ -163,7 +163,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({
                     severity: 'success',
-                    summary: 'Tier has been edited successfully.'
+                    summary: wTrans('public.toast.edit_tier_success')
                 });
             }, 200);
         },
@@ -236,7 +236,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <div class="flex flex-col gap-4">
                     <TextInput
                         :placeholder="'eg: Gold / VIP etc'"
-                        :labelText="'Tier Name'"
+                        :labelText="$t('public.loyalty.tier_name')"
                         :errorMessage="form.errors?.name ?? ''"
                         inputName="name"
                         type="'text'"
@@ -245,7 +245,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 </div>
                 <div class="w-full flex flex-wrap sm:flex-nowrap gap-6">
                     <div class="flex flex-col gap-1">
-                        <p class="text-xs">Select an icon</p>
+                        <p class="text-xs">{{ $t('public.field.select_icon') }}</p>
                         <div class="w-[308px] flex flex-wrap gap-4 items-end">
                             <!-- Existing icons from database -->
                             <template v-for="logo in logoPreview" :key="logo" v-if="logoPreview.length > 0">
@@ -284,7 +284,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
 
                     <TextInput
                         class="w-[366px] text-center-input"
-                        :labelText="'Amount spend to achieve this tier'"
+                        :labelText="$t('public.field.amount_spend_to_achieve')"
                         inputId="min_amount"
                         :errorMessage="form.errors?.min_amount  ?? ''"
                         :iconPosition="'left'"
@@ -296,7 +296,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 </div>
                 <div class="justify-end flex gap-3">
                     <span class="text-grey-900 text-base font-normal">
-                        This tier is entitled to entry reward(s)
+                        {{ $t('public.field.tier_entry_rewards') }}
                     </span>
                     <Toggle
                         class="xl:col-span-2"
@@ -311,8 +311,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <Toast 
                     inline
                     severity="info"
-                    summary="Edit entry reward for this tier"
-                    detail="The changes will only be applied to new entry member only."
+                    :summary="$t('public.loyalty.edit_entry_reward_summary')"
+                    :detail="$t('public.loyalty.edit_entry_reward_detail')"
                     actionLabel="OK"
                     :closable="false"
                 />
@@ -334,7 +334,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     </Accordion> -->
                     <div class="flex flex-col gap-4" v-for="(reward, index) in form.rewards">
                         <div class="flex justify-between items-center self-stretch">
-                            <span class="text-md font-bold text-grey-900">Reward {{ index + 1 }}</span>
+                            <span class="text-md font-bold text-grey-900">{{ `${$t('public.field.reward')} ${index + 1}` }}</span>
                             <!-- *DNR* -->
                             <DeleteIcon
                                 v-if="reward.isFullyRedeemed"
@@ -344,11 +344,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         </div>
                         <!-- Reward type selection -->
                         <Dropdown
-                            :labelText="reward.reward_type !== '' ? `Reward Type ${index + 1}` : 'Select Reward Type'"
-                            :placeholder="'Select'"
+                            :labelText="reward.reward_type !== '' ? `${$t('public.field.reward_type')} ${index + 1}` : $t('public.field.select_reward_type')"
+                            :placeholder="$t('public.select')"
                             :inputArray="getRewardOptions"
                             :inputName="'reward_type_' + index"
-                            :hint-text="'The reward can only be redeemed once.'"
+                            :hint-text="$t('public.field.reward_redeem_once')"
                             :dataValue="reward.reward_type"
                             v-model="reward.reward_type"
                             :errorMessage="form.errors ? form.errors['items.' + index + '.reward_type']  : ''"
@@ -370,7 +370,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                             :iconPosition="reward.reward_type === 'Discount (Amount)' ? 'left' : 'right'"
                                             :inputName="'discount_' + index"
                                             :errorMessage="form.errors ? form.errors['items.' + index + '.discount']  : ''"
-                                            :labelText="reward.reward_type === 'Discount (Amount)' ? 'Discount Amount' : 'Discount Percentage'"
+                                            :labelText="reward.reward_type === 'Discount (Amount)' ? $t('public.field.discount_amount') : $t('public.field.discount_percentage')"
                                             inputId="discount"
                                             :inputType="'number'"
                                             withDecimal
@@ -383,7 +383,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                             :inputName="'min_purchase_amount_' + index"
                                             :iconPosition="'left'"
                                             :errorMessage="form.errors ? form.errors['items.' + index + '.min_purchase_amount']  : ''"
-                                            labelText="Minimum purchase amount"
+                                            :labelText="$t('public.field.minimum_purchase_amount')"
                                             inputId="min_purchase_amount"
                                             :inputType="'number'"
                                             v-model="reward.min_purchase_amount"
@@ -392,7 +392,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                         </TextInput>
                                     </div>
                                     <div class="justify-end flex gap-3">
-                                        <p class="font-normal">With minimum purchase</p>
+                                        <p class="font-normal">{{ $t('public.field.with_minimum_purchase') }}</p>
                                         <Toggle
                                             class="xl:col-span-2"
                                             :checked="reward.min_purchase === 'active'"
@@ -408,7 +408,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 <!--Bonus Point -->
                                 <template v-if="reward.reward_type === 'Bonus Point'">
                                     <TextInput
-                                        :labelText="'Bonus point get'"
+                                        :labelText="$t('public.field.bonus_point_get')"
                                         :placeholder="'10'"
                                         :iconPosition="'right'"
                                         v-model="reward.bonus_point"
@@ -417,7 +417,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                         withDecimal
                                         :errorMessage="form.errors ? form.errors['items.' + index + '.bonus_point']  : ''"
                                     >
-                                        <template #prefix>pts</template>
+                                        <template #prefix>{{ $t('public.pts') }}</template>
                                     </TextInput>
                                 </template>
 
@@ -425,14 +425,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                                 <template v-if="reward.reward_type === 'Free Item'">
                                     <div class="flex gap-3 flex-wrap sm:flex-nowrap items-start justify-center">
                                         <Dropdown
-                                            :labelText="'Select a product'"
+                                            :labelText="$t('public.field.select_product')"
                                             :inputArray="items"
                                             imageOption
                                             :inputName="'free_item_' + index"
                                             :errorMessage="form.errors ? form.errors['items.' + index + '.free_item']  : ''"
                                             :dataValue="reward.free_item"
                                             v-model="reward.free_item"
-                                            placeholder="Select"
+                                            :placeholder="$t('public.search')"
                                             class="w-full"
                                             @onChange="initializeMinItemQty($event, index)"
                                         />
@@ -492,7 +492,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     @click="addReward"
                     v-if="form.reward === 'active'"
                 >
-                    Another Reward
+                    {{ $t('public.action.another_reward') }}
                 </Button>
 
                 <div class="flex gap-4 pt-3">
@@ -502,7 +502,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         :size="'lg'"
                         @click="closeModal('close')"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button 
                         variant="primary" 
@@ -510,7 +510,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         :type="'submit'"
                         :disabled="!isFormValid"
                     >
-                        Save Changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
             </div>
@@ -541,8 +541,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <DeleteIllus/>
                 </div>
                 <div class="flex flex-col justify-center items-center self-stretch gap-1 px-6">
-                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">Remove this reward?</p>
-                    <p class="text-center text-grey-900 text-base font-medium self-stretch">By removing this reward, new members entering this tier will no longer benefit from it. Are you sure you want to remove?</p>
+                    <p class="text-center text-primary-900 text-lg font-medium self-stretch">{{ $t('public.loyalty.remove_reward') }}</p>
+                    <p class="text-center text-grey-900 text-base font-medium self-stretch">{{ $t('public.loyalty.remove_reward_message') }}</p>
                 </div>
                 <div class="flex px-6 pb-6 justify-center items-end gap-4 self-stretch">
                     <Button
@@ -551,7 +551,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         :size="'lg'"
                         @click="closeDeleteRewardModal"
                     >
-                        Keep
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button 
                         :size="'lg'"
@@ -559,7 +559,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         :disabled="form.processing"
                         @click="removeReward(selectedReward)"
                     >
-                        Remove
+                        {{ $t('public.action.remove') }}
                     </Button>
                 </div>
             </div>

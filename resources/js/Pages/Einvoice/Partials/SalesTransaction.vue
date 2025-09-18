@@ -23,13 +23,14 @@ import TransactionList from './TransactionList.vue';
 import Myinvois from './Myinvois.vue';
 import { useCustomToast, useInputValidator } from '@/Composables/index.js';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 
 const salesColumn = ref([
-    {field: 'c_datetime', header: 'Date & Time', width: '30', sortable: true},
-    {field: 'c_invoice_no', header: 'Transaction No. ', width: '30', sortable: true},
-    {field: 'c_total_amount', header: 'Total', width: '18', sortable: true},
-    {field: 'docs_type', header: 'Type', width: '20', sortable: true},
-    {field: 'status', header: 'Status', width: '15', sortable: true},
+    {field: 'c_datetime', header: wTrans('public.date_time'), width: '30', sortable: true},
+    {field: 'c_invoice_no', header: wTrans('public.transaction_no'), width: '30', sortable: true},
+    {field: 'c_total_amount', header: wTrans('public.total'), width: '18', sortable: true},
+    {field: 'docs_type', header: wTrans('public.type'), width: '20', sortable: true},
+    {field: 'status', header: wTrans('public.status'), width: '15', sortable: true},
     {field: 'action', header: '', width: '5', sortable: false},
 ]);
 
@@ -42,8 +43,8 @@ const refundIsOpen = ref(false);
 const selectedVal = ref(null);
 const { formatAmount, formatDate } = transactionFormat();
 const tabs = ref([
-    { key: 'Transaction List', title: 'Transaction List', disabled: false },
-    { key: 'MyInvois', title: 'MyInvois', disabled: false },
+    { key: 'Transaction List', title: wTrans('public.einvoice.transaction_list'), disabled: false },
+    { key: 'MyInvois', title: wTrans('public.einvoice.myinvois'), disabled: false },
 ]);
 const op = ref(null);
 const cancelSubmitFormIsOpen = ref(false);
@@ -213,13 +214,13 @@ const submit = async () => {
         if (response.data.status === 'success') {
             showMessage({
                 severity: 'success',
-                summary: 'Consolidated Invoice Cancelled'
+                summary: wTrans('public.toast.consolidate_invoice_cancelled')
             });
             fetchTransaction();
         } else {
             showMessage({
                 severity: 'error',
-                summary: 'Invoice cannot be cancelled after 72 hours'
+                summary: wTrans('public.toast.cancel_invoice_warning')
             });
         } 
 
@@ -227,7 +228,7 @@ const submit = async () => {
         console.error('error ', error);
         showMessage({
             severity: 'error',
-            summary: 'Something went wrong, please try again later.'
+            summary: wTrans('public.toast.something_wrong')
         });
     }
 }
@@ -243,6 +244,20 @@ const getStatusVariant = (status) => {
             ? 'grey'
             : 'red';
 };
+
+const getTranslatedStatus = (status) => {
+    if (!status) return 'red';
+
+    const loweredStatus = status.toLowerCase();
+
+    switch (loweredStatus) {
+        case 'submitted': return wTrans('public.submitted').value;
+        case 'valid': return wTrans('public.valid').value;
+        case 'invalid': return wTrans('public.invalid').value;
+        case 'rejected': return wTrans('public.rejected').value;
+        case 'cancelled': return wTrans('public.cancelled').value;
+    }
+}
 
 const capFirstLetter = (status) => {
     return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Invalid';
@@ -286,7 +301,7 @@ const PrintInvoice = (id) => {
             <div class="flex items-center gap-3 w-full">
                 <div class="w-full">
                     <SearchBar
-                        placeholder="Search"
+                        :placeholder="$t('public.search')"
                         :showFilter="false"
                         v-model="searchQuery"
                         class="sm:max-w-[309px]"
@@ -318,12 +333,12 @@ const PrintInvoice = (id) => {
                     <span class="text-grey-900 text-sm font-medium">RM {{ row.grand_total }}</span>
                 </template>
                 <template #docs_type="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.docs_type === 'sales_transaction' ? 'Consolidated' : 'Single Submission' }}</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ row.docs_type === 'sales_transaction' ? $t('public.einvoice.consolidated') : $t('public.einvoice.single_submission') }}</span>
                 </template>
                 <template #status="row">
                     <Tag
                         :variant="getStatusVariant(row.status)"
-                        :value="capFirstLetter(row.status)"
+                        :value="getTranslatedStatus(capFirstLetter(row.status))"
                     />
                 </template>
                 <template #action="row">
@@ -338,7 +353,7 @@ const PrintInvoice = (id) => {
     <Modal 
         :show="detailIsOpen"
         @close="closeAction"
-        :title="'Submission detail'"
+        :title="$t('public.einvoice.submission_detail')"
         :maxWidth="'sm'"
     >
         <div class="flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit max-h-[calc(100dvh-8rem)]">
@@ -347,38 +362,38 @@ const PrintInvoice = (id) => {
                     <div>
                         <Tag 
                             :variant="getStatusVariant(selectedVal.status)"  
-                            :value="capFirstLetter(selectedVal.status)" 
+                            :value="getTranslatedStatus(capFirstLetter(selectedVal.status))" 
                         />
                     </div>
                     <div @click="actionOption($event, row)"><DotVerticleIcon /></div>
                 </div>
                 <div class="grid grid-cols-2 gap-5">
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Submmission Date & Time</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.einvoice.submission_date_time') }}</div>
                         <div class="text-gray-900 text-base font-bold">{{ selectedVal.c_datetime }}</div>
                     </div>
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Transaction No.</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.transaction_no') }}</div>
                         <div class="text-gray-900 text-base font-bold">{{ selectedVal.c_invoice_no }}</div>
                     </div>
                     
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Total</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.total') }}</div>
                         <div class="text-gray-900 text-base font-bold">RM {{ formatAmount(selectedVal.c_total_amount) }}</div>
                     </div>
                     <div v-if="selectedVal.invoice_child.length > 0" class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Customer</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.customer_header') }}</div>
                         <div class="text-gray-900 text-base font-bold flex items-center gap-2">
-                            <div>{{ selectedVal.user ?  selectedVal.user : 'General Public'}}</div>
+                            <div>{{ selectedVal.user ?  selectedVal.user : $t('public.einvoice.general_public')}}</div>
                         </div>
                     </div>
                     <div v-if="selectedVal.docs_type === 'sales_transaction'" class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Date Period</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.date_period') }}</div>
                         <div class="text-gray-900 text-base font-bold">{{ formatDate(selectedVal.c_period_start) }} - {{ formatDate(selectedVal.c_period_end) }}</div>
                     </div>
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Document Type</div>
-                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.docs_type === 'sales_transaction' ? 'Consolidated' : 'Single Submission' }}</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.document_type') }}</div>
+                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.docs_type === 'sales_transaction' ? $t('public.einvoice.consolidated') : $t('public.einvoice.single_submission') }}</div>
                     </div>
                 </div>
             </div>
@@ -411,7 +426,7 @@ const PrintInvoice = (id) => {
                     @click="PrintInvoice(selectedVal.id)"
                     :disabled="selectedVal.status !== 'Valid' && selectedVal.docs_type === 'single_submission'"
                 >
-                    <span class="text-grey-700 font-normal">Print Receipt</span>
+                    <span class="text-grey-700 font-normal">{{ $t('public.print_receipt') }}</span>
                 </Button>
             </div>
         </OverlayPanel>
@@ -430,16 +445,16 @@ const PrintInvoice = (id) => {
                 </div>
                 <div class="flex flex-col gap-1" >
                     <div class="text-primary-900 text-2xl font-medium text-center">
-                        Cancel Submission
+                        {{ $t('public.einvoice.cancel_submission') }}
                     </div>
                     <div class="text-gray-900 text-base font-medium text-center leading-tight" >
-                        Are you sure you want to cancel this Consolidated Invoice submission?
+                        {{ $t('public.einvoice.cancel_submission_warning') }}
                     </div>
                     <div>
                         <TextInput 
                             :inputName="'name'"
-                            :labelText="'Reason'"
-                            :placeholder="'e.g. Wrong details'"
+                            :labelText="$t('public.reason')"
+                            :placeholder="`e.g. ${$t('public.einvoice.wrong_details')}`"
                             :errorMessage="reasonError"
                             v-model="reason"
                         />
@@ -452,7 +467,7 @@ const PrintInvoice = (id) => {
                         type="button"
                         @click="hideConfirmCancel"
                     >
-                        Keep
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="red"
@@ -460,7 +475,7 @@ const PrintInvoice = (id) => {
                         :disabled="form.processing"
                         @click="submit"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                 </div>
             </div>

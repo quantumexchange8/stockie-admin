@@ -21,9 +21,9 @@ const total_amount = computed(() => {
 
 <div class="flex flex-col bg-[#FCFCFC]">
     <div class="flex items-center py-2 px-3 gap-3 bg-gray-100">
-        <div class="max-w-[105px] w-full">Date</div>
-        <div class="max-w-[244px] w-full">Transaction No.</div>
-        <div class="max-w-[102px] w-full text-right">Amount</div>
+        <div class="max-w-[105px] w-full">{{ $t('public.date') }}</div>
+        <div class="max-w-[244px] w-full">{{ $t('public.transaction_no') }}</div>
+        <div class="max-w-[102px] w-full text-right">{{ $t('public.amount') }}</div>
     </div>
     <div v-if="selectedVal.invoice_child.length > 0" class="flex flex-col p-3 gap-4 max-h-64 overflow-y-scroll">
         <div v-for="invoice in selectedVal.invoice_child">
@@ -37,11 +37,11 @@ const total_amount = computed(() => {
         </div>
         <div class="flex justify-between items-center text-grey-950 text-sm font-semibold">
             <div class="flex items-center gap-3">
-                <span>Transaction Total</span>
+                <span>{{ $t('public.einvoice.transaction_total') }}</span>
                 <span>{{ selectedVal.invoice_child.length }}</span>
             </div>
             <div class="flex items-center gap-3">
-                <span>Amount Total</span>
+                <span>{{ $t('public.einvoice.amount_total') }}</span>
                 <span>RM {{ total_amount  }}</span>
             </div>
         </div>

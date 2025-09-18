@@ -102,11 +102,11 @@ const redeemableItemsTotalPages = computed(() => {
 
 <template>
     <div class="flex flex-col p-6 gap-5 rounded-[5px] border border-red-100 overflow-y-auto">
-        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Redeemable Item List</span>
+        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.loyalty.redeemable_item_list') }}</span>
         <div class="flex flex-col gap-6">
             <div class="flex gap-5 flex-wrap sm:flex-nowrap">
                 <SearchBar 
-                    placeholder="Search"
+                    :placeholder="$t('public.search')"
                     :showFilter="false"
                     v-model="searchQuery"
                 />
@@ -138,7 +138,7 @@ const redeemableItemsTotalPages = computed(() => {
                 <template #empty>
                     <div class="flex flex-col gap-5 items-center">
                         <EmptyIllus/>
-                        <span class="text-primary-900 text-sm font-medium">You haven't added any redeemable item yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_redeemable_item') }}</span>
                     </div>
                 </template>
                 <!-- <template #editAction="row">
@@ -165,7 +165,7 @@ const redeemableItemsTotalPages = computed(() => {
                     </div>
                 </template>
                 <template #point="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.point }} pts</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ `${row.point} ${$t('public.pts')}` }}</span>
                 </template>
                 <template #stock_left="row">
                     <span class="text-primary-600 inline-block align-middle">{{ row.stock_left }}</span>

@@ -32,8 +32,8 @@ const totalRedemptionCount = computed(() => {
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-5">
             <div class="col-span-full sm:col-span-4 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
                 <div class="flex flex-col gap-2 items-center md:items-start">
-                    <span class="text-sm font-medium text-grey-900 whitespace-nowrap">Points Given Away</span>
-                    <span class="text-lg font-medium text-primary-900">{{ totalPointsGivenAway }} pts</span>
+                    <span class="text-sm font-medium text-grey-900 whitespace-nowrap">{{ $t('public.loyalty.point_given_awaay') }}</span>
+                    <span class="text-lg font-medium text-primary-900">{{ `${totalPointsGivenAway} ${$t('public.pts')}` }}</span>
                 </div>
                 <div class="hidden bg-primary-50 rounded-[5px] md:flex items-center justify-center gap-2.5 w-16 h-16">
                     <PointsIcon class="text-primary-900 size-8"/>
@@ -41,7 +41,7 @@ const totalRedemptionCount = computed(() => {
             </div>
             <div class="col-span-full sm:col-span-4 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
                 <div class="flex flex-col gap-2 items-center md:items-start">
-                    <span class="text-sm font-medium text-grey-900 whitespace-nowrap">Counts of Redemption</span>
+                    <span class="text-sm font-medium text-grey-900 whitespace-nowrap">{{ $t('public.loyalty.redemption_count') }}</span>
                     <span class="text-lg font-medium text-primary-900">{{ totalRedemptionCount }}</span>
                 </div>
                 <div class="hidden bg-primary-50 rounded-[5px] md:flex items-center justify-center gap-2.5 w-16 h-16">
@@ -50,7 +50,7 @@ const totalRedemptionCount = computed(() => {
             </div>
             <div class="col-span-full sm:col-span-4 flex justify-center md:justify-between gap-3 border border-primary-100 p-5 rounded-[5px]">
                 <div class="flex flex-col gap-2 items-center md:items-start">
-                    <span class="text-sm font-medium text-grey-900 whitespace-nowrap">Redeemable Item</span>
+                    <span class="text-sm font-medium text-grey-900 whitespace-nowrap">{{ $t('public.loyalty.redeemable_item') }}</span>
                     <span class="text-lg font-medium text-primary-900">{{ rows.length }}</span>
                 </div>
                 <div class="hidden bg-primary-50 rounded-[5px] md:flex items-center justify-center gap-2.5 w-16 h-16">

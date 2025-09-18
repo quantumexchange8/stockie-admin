@@ -13,6 +13,7 @@ import SearchBar from '@/Components/SearchBar.vue';
 import DateInput from '@/Components/Date.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import Button from '@/Components/Button.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     tables: Array,
@@ -42,7 +43,11 @@ const defaultLatestMonth = computed(() => {
 });
 const date_filter = ref(defaultLatestMonth.value);
 const isLoading = ref(false);
-const reservationStatus = ref(['Completed', 'No show', 'Cancelled']);
+const reservationStatus = ref([
+    { text: wTrans('public.completed'), key: 'Completed' }, 
+    { text: wTrans('public.no_show'), key: 'No show' }, 
+    { text: wTrans('public.cancelled'), key: 'Cancelled' }
+]);
 const checkedFilters = ref({
     status: [],
 })
@@ -130,6 +135,17 @@ const getStatusVariant = (status) => {
     }
 }; 
 
+const getTranslatedStatus = (status) => {
+    switch (status) {
+        case 'Pending': return wTrans('public.pending').value;
+        case 'Checked in': return wTrans('public.checked_in').value;
+        case 'Delayed': return wTrans('public.delayed').value;
+        case 'Completed': return wTrans('public.completed').value;
+        case 'No show': return wTrans('public.no_show').value;
+        case 'Cancelled': return wTrans('public.cancelled').value;
+    }
+}; 
+
 watch(() => searchQuery.value, (newValue) => {
     if (newValue === '') {
         rows.value = [...initialRows.value];
@@ -162,7 +178,7 @@ watch(() => date_filter.value, (newValue) => {
 <template>
     <div class="flex flex-col p-6 gap-6 rounded-[5px] border border-red-100 overflow-y-auto">
         <div class="flex justify-between items-center">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">History</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.history') }}</span>
             <!-- <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -214,13 +230,13 @@ watch(() => date_filter.value, (newValue) => {
 
         <div class="flex justify-end items-start gap-5 self-stretch">
             <SearchBar
-                placeholder="Search"
+                :placeholder="$t('public.search')"
                 :showFilter="true"
                 v-model="searchQuery"
             >
             <template #default="{ hideOverlay }">
                 <div class="flex flex-col self-stretch gap-4 items-start">
-                    <span class="text-grey-900 text-base font-semibold">Status</span>
+                    <span class="text-grey-900 text-base font-semibold">{{ $t('public.status') }}</span>
                     <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                         <div 
                             v-for="(status, index) in reservationStatus" 
@@ -228,10 +244,10 @@ watch(() => date_filter.value, (newValue) => {
                             class="flex py-2 px-3 gap-2 items-center border border-grey-100 rounded-[5px]"
                         >
                             <Checkbox
-                                :checked="checkedFilters.status.includes(status)"
-                                @click="toggleStatus(status)"
+                                :checked="checkedFilters.status.includes(status.key)"
+                                @click="toggleStatus(status.key)"
                             />
-                            <span class="text-grey-700 text-sm font-medium">{{ status }}</span>
+                            <span class="text-grey-700 text-sm font-medium">{{ status.text }}</span>
                         </div>
                     </div>
                 </div>
@@ -242,13 +258,13 @@ watch(() => date_filter.value, (newValue) => {
                         :size="'lg'"
                         @click="clearFilters(hideOverlay)"
                     >
-                        Clear All
+                        {{ $t('public.action.clear_all') }}
                     </Button>
                     <Button
                         :size="'lg'"
                         @click="applyCheckedFilters(hideOverlay)"
                     >
-                        Apply
+                        {{ $t('public.action.apply') }}
                     </Button>
                 </div>
             </template>
@@ -304,14 +320,14 @@ watch(() => date_filter.value, (newValue) => {
                             </div>
                         </div>
                     </div>
-                    <Tag :variant="getStatusVariant(reservation.status)" :value="reservation.status" />
+                    <Tag :variant="getStatusVariant(reservation.status)" :value="getTranslatedStatus(reservation.status)" />
                 </div>
             </div>
         </div>
 
         <div class="flex flex-col gap-5 items-center"  v-else>
             <EmptyIllus/>
-            <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
+            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_reservation') }}</span>
         </div>
 
         <!-- <Table
@@ -328,7 +344,7 @@ watch(() => date_filter.value, (newValue) => {
             <template #empty>
                 <div class="flex flex-col gap-5 items-center">
                     <EmptyIllus/>
-                    <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_reservation') }}</span>
                 </div>
             </template>
             <template #reservation_no="row">{{ row.reservation_no }}</template>
@@ -353,7 +369,7 @@ watch(() => date_filter.value, (newValue) => {
 
     <!-- View reservation detail -->
     <Modal 
-        :title="'Reservation Detail'"
+        :title="$t('public.reservation.reservation_detail')"
         :show="reservationDetailIsOpen" 
         :maxWidth="'sm'" 
         @close="hideReservationDetailForm"

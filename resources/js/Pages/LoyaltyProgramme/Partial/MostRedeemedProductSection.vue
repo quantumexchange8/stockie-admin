@@ -23,7 +23,7 @@ const getTotalRedemption = (histories) => histories.reduce((total, record) => to
 
 <template>
     <div class="flex flex-col justify-start items-center gap-6 border border-primary-100 p-6 rounded-[5px]">
-        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Most Redeemed Product</span>
+        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.loyalty.most_redeemed_product') }}</span>
         <div class="h-full flex flex-col items-start self-stretch gap-4" v-if="mostRedeemedProduct.length > 0">
             <div class="w-full flex flex-nowrap items-center gap-7" v-for="(product, index) in mostRedeemedProduct" :key="index" >
                 <span class="text-sm text-primary-900 font-medium">{{ index + 1 }}</span>
@@ -35,7 +35,7 @@ const getTotalRedemption = (histories) => histories.reduce((total, record) => to
                     />
                     <div class="flex flex-col items-start gap-1">
                         <span class="text-grey-900 text-sm font-medium self-stretch overflow-hidden text-ellipsis"> {{ product.product_name }}</span>
-                        <span class="text-grey-500 text-xs font-medium">{{ getTotalRedemption(product.point_histories) }} redemption</span>
+                        <span class="text-grey-500 text-xs font-medium">{{ $t('public.loyalty.product_redemption_count', { count: getTotalRedemption(product.point_histories) }) }}</span>
                     </div>
                 </div>
             </div>
@@ -43,7 +43,7 @@ const getTotalRedemption = (histories) => histories.reduce((total, record) => to
         <template v-else>
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </div>
         </template>
     </div>

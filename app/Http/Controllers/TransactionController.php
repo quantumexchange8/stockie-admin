@@ -119,6 +119,7 @@ class TransactionController extends Controller
                                         'refund_details.FilterOrderItems:id,order_id,product_id,item_qty,refund_qty,amount_before_discount,discount_amount,amount',
                                         'refund_details.FilterOrderItems.product:id,product_name,price',
                                         'product:id,product_name,price',
+                                        'payment:id,point_earned,grand_total',
                                     ]);
 
         if ($request->dateFilter) {

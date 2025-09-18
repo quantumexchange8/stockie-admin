@@ -9,6 +9,7 @@ import { DeleteIllus, UndetectableIllus } from '@/Components/Icons/illus';
 import { useCustomToast } from '@/Composables/index.js';
 import Table from '@/Components/Table.vue';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const isLoading = ref(false);
 const isCreatePrinterOpen = ref(false);
@@ -22,11 +23,11 @@ const isDirty = ref(false);
 const { showMessage } = useCustomToast();
 
 const columns = ref([
-    { field: 'name', header: 'Printer Name', width: '30', sortable: false},
-    { field: 'ip_address', header: 'IP', width: '15', sortable: false},
-    { field: 'port_number', header: 'Port', width: '10', sortable: false},
-    { field: 'kick_cash_drawer', header: 'Open Cash Drawer', width: '23', sortable: false},
-    { field: 'action', header: 'Action', width: '22', sortable: false},
+    { field: 'name', header: wTrans('public.config.printer_name'), width: '30', sortable: false},
+    { field: 'ip_address', header: wTrans('public.config.ip_address'), width: '15', sortable: false},
+    { field: 'port_number', header: wTrans('public.config.port_number'), width: '10', sortable: false},
+    { field: 'kick_cash_drawer', header: wTrans('public.config.open_cash_drawer'), width: '23', sortable: false},
+    { field: 'action', header: wTrans('public.action_header'), width: '22', sortable: false},
 ])
 
 const getAllPrinters = async () => {
@@ -102,7 +103,7 @@ const deletePrinter = async () => {
         setTimeout(() => {
             showMessage({ 
                 severity: 'success',
-                summary: 'Printer has been successfully deleted.',
+                summary: wTrans('public.toast.delete_printer_success'),
             });
         }, 200);
         
@@ -110,7 +111,7 @@ const deletePrinter = async () => {
         console.error("Print failed:", err);
         showMessage({
             severity: 'error',
-            summary: 'Delete printer failed',
+            summary: wTrans('public.toast.delete_printer_error'),
             detail: err.message
         });
     } finally {
@@ -132,16 +133,16 @@ const testPrint = async (printer_name) => {
             let detail = '';
 
             if (!printer) {
-                summary = 'Unable to detect selected printer';
-                detail = 'Please contact admin to setup the printer.';
+                summary = wTrans('public.toast.undetectable_printer_summary');
+                detail = wTrans('public.toast.undetectable_printer_detail');
 
             } else if (!printer.ip_address) {
-                summary = 'Invalid printer IP address';
-                detail = 'Please contact admin to setup the printer IP address.';
+                summary = wTrans('public.toast.invalid_printer_ip_summary')
+                detail = wTrans('public.toast.invalid_printer_ip_detail');
 
             } else if (!printer.port_number) {
-                summary = 'Invalid printer port number';
-                detail = 'Please contact admin to setup the printer port number.';
+                summary = wTrans('public.toast.invalid_printer_port_summary');
+                detail = wTrans('public.toast.invalid_printer_port_detail');
             }
 
             showMessage({
@@ -161,7 +162,7 @@ const testPrint = async (printer_name) => {
 
         } catch (e) {
             console.error('Failed to open app:', e);
-            alert(`Failed to open STOXPOS app \n ${e}`);
+            alert(`${wTrans('public.toast.app_connection_error')} \n ${e}`);
 
         }
         
@@ -169,7 +170,7 @@ const testPrint = async (printer_name) => {
         console.error("Print failed:", err);
         showMessage({
             severity: 'error',
-            summary: 'Print failed',
+            summary: wTrans('public.toast.test_delete_printer_error'),
             detail: err.message
         });
     }
@@ -185,7 +186,7 @@ onMounted(() => {
     <div class="w-full flex flex-col p-6 items-start self-stretch gap-6 border border-primary-100 rounded-[5px]">
         <div class="flex w-full items-center justify-between gap-[10px]">
             <span class="text-md font-medium text-primary-900">
-                Printer Listing
+                {{ $t('public.config.printer_listing') }}
             </span>
             <!-- <Button
                 :type="'button'"
@@ -197,7 +198,7 @@ onMounted(() => {
                 <template #icon>
                     <PlusIcon />
                 </template>
-                Add Printer
+                {{ $t('public.action.add_printer') }}
             </Button> -->
         </div>
 
@@ -210,7 +211,7 @@ onMounted(() => {
             <template #empty>
                 <div class="flex w-full flex-col items-center justify-center gap-5 h-fit">
                     <UndetectableIllus />
-                    <span class="text-primary-900 text-sm font-medium">You haven’t added any printer yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_printer') }}</span>
                 </div>
             </template>
             <template #name="row">
@@ -223,7 +224,7 @@ onMounted(() => {
                 <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ row.port_number }}</span>
             </template>
             <template #kick_cash_drawer="row">
-                <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ !!row.kick_cash_drawer ? 'Enabled' : 'Disabled' }}</span>
+                <span class="line-clamp-1 flex-[1_0_0] text-ellipsis text-sm font-medium">{{ !!row.kick_cash_drawer ? $t('public.enabled') : $t('public.disabled') }}</span>
             </template>
             <template #action="row">
                 <div class="flex justify-end items-center gap-2 size-full">
@@ -233,7 +234,7 @@ onMounted(() => {
                         class="!w-fit"
                         @click="testPrint(row.name)"
                     >
-                        Test Print
+                        {{ $t('public.action.test_printer') }}
                     </Button>
                     <EditIcon
                         class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer flex-shrink-0"
@@ -252,7 +253,7 @@ onMounted(() => {
         :show="isCreatePrinterOpen"
         :maxWidth="'sm'"
         :closeable="true"
-        :title="'Add Printer'"
+        :title="$t('public.action.add_printer')"
         @close="closeModal('close')"
     >
         <CreatePrinterForm
@@ -275,7 +276,7 @@ onMounted(() => {
         :show="isEditPrinterOpen"
         :maxWidth="'sm'"
         :closeable="true"
-        :title="'Edit Printer'"
+        :title="$t('public.config.edit_printer')"
         @close="closeModal('close')"
     >
         <EditPrinterForm
@@ -310,8 +311,8 @@ onMounted(() => {
                 </div>
                 <div class="flex flex-col gap-5">
                     <div class="flex flex-col gap-1 text-center">
-                        <span class="text-primary-900 text-lg font-medium self-stretch">Delete this printer?</span>
-                        <span class="text-grey-900 text-base font-medium self-stretch">The action that is linked to the printer will be unable to print anything. Are you sure you want to delete this printer?</span>
+                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ $t('public.config.delete_printer') }}</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">{{ $t('public.config.delete_printer_warning') }}</span>
                     </div>
                 </div>
 
@@ -322,13 +323,13 @@ onMounted(() => {
                         type="button"
                         @click="closeModal('close')"
                     >
-                        Keep
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="red"
                         size="lg"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                 </div>
             </div>

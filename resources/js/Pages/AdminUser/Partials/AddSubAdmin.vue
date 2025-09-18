@@ -47,7 +47,7 @@ const addAdmin = async () => {
 
         showMessage({
             severity: 'success',
-            summary: 'Successfully added.'
+            summary: wTrans('public.toast.add_success')
         });
 
         emit('update:users', response.data);
@@ -119,144 +119,146 @@ const isFormValid = computed(() => {
             leave-to-class="opacity-0 translate-x-8"
             mode="out-in"
         >
-        <!-- Step 1: Set up sub-admin detail -->
-            <div class="flex flex-col gap-6 items-start w-full" v-if="!isAddAdminClicked">
-                <!-- header -->
-                <div class="flex items-start gap-6">
-                    <div class="flex items-center gap-3">
-                        <div class="flex rounded-full justify-center items-center bg-primary-900 size-5">
-                            <span class="text-white text-xs font-normal">1</span>
+            <div>
+                <!-- Step 1: Set up sub-admin detail -->
+                <div v-show="!isAddAdminClicked" class="flex flex-col gap-6 items-start w-full">
+                    <!-- header -->
+                    <div class="flex items-start gap-6">
+                        <div class="flex items-center gap-3">
+                            <div class="flex rounded-full justify-center items-center bg-primary-900 size-5">
+                                <span class="text-white text-xs font-normal">1</span>
+                            </div>
+                            <span class="text-grey-950 text-base font-normal">{{ $t('public.admin.setup_sub_admin_detail') }}</span>
                         </div>
-                        <span class="text-grey-950 text-base font-normal">Set up sub-admin detail</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="flex rounded-full justify-center items-center bg-grey-200 size-5">
-                            <span class="text-white text-xs font-normal text-center shrink-0">2</span>
+                        <div class="flex items-center gap-3">
+                            <div class="flex rounded-full justify-center items-center bg-grey-200 size-5">
+                                <span class="text-white text-xs font-normal text-center shrink-0">2</span>
+                            </div>
+                            <span class="text-grey-300 text-base font-normal">{{ $t('public.admin.control_access') }}</span>
                         </div>
-                        <span class="text-grey-300 text-base font-normal">Control access</span>
                     </div>
-                </div>
-            
-                <!-- form -->
-                <div class="flex items-start gap-6 self-stretch w-full pb-3">
-                    <DragDropImage 
-                        :errorMessage="form.errors?.image ? form.errors.image[0] : ''"
-                        :inputName="'image'"
-                        v-model="form.image"
-                        class="!max-w-[320px] !h-[320px]"
-                    />
-
-                    <div class="flex flex-col items-start gap-4 self-stretch w-full pr-1 max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
-                        <TextInput 
-                            :labelText="'ID'"
-                            :placeholder="'e.g. 000001'"
-                            :required="true"
-                            :inputName="'role_id'"
-                            :errorMessage="form.errors?.role_id ? form.errors.role_id[0] : ''"
-                            v-model="form.role_id"
+                
+                    <!-- form -->
+                    <div class="flex items-start gap-6 self-stretch w-full pb-3">
+                        <DragDropImage 
+                            :errorMessage="form.errors?.image ? form.errors.image[0] : ''"
+                            :inputName="'image'"
+                            v-model="form.image"
+                            class="!max-w-[320px] !h-[320px]"
                         />
 
-                        <TextInput 
-                            :labelText="'Password'"
-                            :placeholder="'Enter your password here'"
-                            :inputName="'password'"
-                            :inputType="'password'"
-                            :errorMessage="form.errors?.password ? form.errors.password[0] : ''"
-                            v-model="form.password"
-                        />
+                        <div class="flex flex-col items-start gap-4 self-stretch w-full pr-1 max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
+                            <TextInput 
+                                :labelText="$t('public.field.id')"
+                                :placeholder="'e.g. 000001'"
+                                :required="true"
+                                :inputName="'role_id'"
+                                :errorMessage="form.errors?.role_id ? form.errors.role_id[0] : ''"
+                                v-model="form.role_id"
+                            />
 
-                        <TextInput
-                            :labelText="'Name'"
-                            :placeholder="'e.g. John Doe'"
-                            :required="true"
-                            :inputName="'full_name'"
-                            :errorMessage="form.errors?.full_name ? form.errors.full_name[0] : ''"
-                            v-model="form.full_name"
-                        />
-                        
-                        <TextInput
-                            labelText="Email"
-                            :placeholder="'e.g. johndoe@gmail.com'"
-                            inputId="email"
-                            type="'email'"
-                            required
-                            :errorMessage="form.errors?.email ? form.errors.email[0] : ''"
-                            v-model="form.email"
-                        />
+                            <TextInput 
+                                :labelText="$t('public.field.password')"
+                                :placeholder="$t('public.login.password_placeholder')"
+                                :inputName="'password'"
+                                :inputType="'password'"
+                                :errorMessage="form.errors?.password ? form.errors.password[0] : ''"
+                                v-model="form.password"
+                            />
 
-                        <TextInput 
-                            :labelText="'Title'"
-                            :placeholder="'e.g. Accountant'"
-                            :required="true"
-                            :inputName="'position'"
-                            :errorMessage="form.errors?.position ? form.errors.position[0] : ''"
-                            v-model="form.position"
-                        />
-                    </div>
-                </div>
-                <Button
-                    :variant="'primary'"
-                    :type="'button'"
-                    :size="'lg'"
-                    :iconPosition="'right'"
-                    :disabled="form.processing || !isFormValid"
-                    @click="addAdminClicked"
-                >
-                    <template #icon>
-                        <ArrowRightIcon class="size-5"/>
-                    </template>
-                    Next
-                </Button>
-            </div>
+                            <TextInput
+                                :labelText="$t('public.field.name')"
+                                :placeholder="'e.g. John Doe'"
+                                :required="true"
+                                :inputName="'full_name'"
+                                :errorMessage="form.errors?.full_name ? form.errors.full_name[0] : ''"
+                                v-model="form.full_name"
+                            />
+                            
+                            <TextInput
+                                :labelText="$t('public.field.email')"
+                                :placeholder="'e.g. johndoe@gmail.com'"
+                                inputId="email"
+                                type="'email'"
+                                required
+                                :errorMessage="form.errors?.email ? form.errors.email[0] : ''"
+                                v-model="form.email"
+                            />
 
-            <!-- Step 2: Control access -->
-            <div class="flex flex-col gap-6 items-start w-full" v-else>
-                <!-- header -->
-                <div class="flex items-start gap-6">
-                    <div class="flex items-center gap-3">
-                        <div class="flex rounded-full justify-center items-center bg-primary-900 size-5">
-                            <span class="text-white text-xs font-normal">1</span>
+                            <TextInput 
+                                :labelText="$t('public.field.title')"
+                                :placeholder="'e.g. Accountant'"
+                                :required="true"
+                                :inputName="'position'"
+                                :errorMessage="form.errors?.position ? form.errors.position[0] : ''"
+                                v-model="form.position"
+                            />
                         </div>
-                        <span class="text-grey-950 text-base font-normal">Set up sub-admin detail</span>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <div class="flex rounded-full justify-center items-center bg-primary-900 size-5">
-                            <span class="text-white text-xs font-normal">2</span>
-                        </div>
-                        <span class="text-grey-950 text-base font-normal">Control access</span>
-                    </div>
-                </div>
-            
-                <!-- form -->
-                <div class="flex flex-col max-h-[320px] items-start self-stretch divide-y-[1px] divide-grey-100 overflow-y-auto scrollbar-webkit scrollbar-thin">
-                    <div class="flex py-4 pr-5 justify-between items-center self-stretch" v-for="permission in getPermissionList">
-                        <span class="text-grey-950 text-base font-medium">Allow '{{ permission.text }}' access</span>
-                        <Toggle
-                            :checked="!!form.permission.find(exist_permission => exist_permission === permission.value)"
-                            :disabled="form.processing"
-                            @change="updatePermission(permission.value)"
-                        >
-                        </Toggle>
-                    </div>
-                </div>
-
-                <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
-                    <Button
-                        :variant="'tertiary'"
-                        :size="'lg'"
-                        :type="'button'"
-                        @click="addAdminClicked"
-                    >
-                        Go back
-                    </Button>
                     <Button
                         :variant="'primary'"
+                        :type="'button'"
                         :size="'lg'"
-                        :type="'submit'"
-                        :disabled="form.processing || !isFormValid || !hasPermissionSelected"
+                        :iconPosition="'right'"
+                        :disabled="form.processing || !isFormValid"
+                        @click="addAdminClicked"
                     >
-                        Add
+                        <template #icon>
+                            <ArrowRightIcon class="size-5"/>
+                        </template>
+                        {{ $t('public.action.next') }}
                     </Button>
+                </div>
+
+                <!-- Step 2: Control access -->
+                <div v-show="isAddAdminClicked" class="flex flex-col gap-6 items-start w-full">
+                    <!-- header -->
+                    <div class="flex items-start gap-6">
+                        <div class="flex items-center gap-3">
+                            <div class="flex rounded-full justify-center items-center bg-primary-900 size-5">
+                                <span class="text-white text-xs font-normal">1</span>
+                            </div>
+                            <span class="text-grey-950 text-base font-normal">{{ $t('public.admin.setup_sub_admin_detail') }}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex rounded-full justify-center items-center bg-primary-900 size-5">
+                                <span class="text-white text-xs font-normal">2</span>
+                            </div>
+                            <span class="text-grey-950 text-base font-normal">{{ $t('public.admin.control_access') }}</span>
+                        </div>
+                    </div>
+                
+                    <!-- form -->
+                    <div class="flex flex-col max-h-[320px] items-start self-stretch divide-y-[1px] divide-grey-100 overflow-y-auto scrollbar-webkit scrollbar-thin">
+                        <div class="flex py-4 pr-5 justify-between items-center self-stretch" v-for="permission in getPermissionList">
+                            <span class="text-grey-950 text-base font-medium">{{ $t('public.admin.allow_permission_access', { permission: permission.text }) }}</span>
+                            <Toggle
+                                :checked="!!form.permission.find(exist_permission => exist_permission === permission.value)"
+                                :disabled="form.processing"
+                                @change="updatePermission(permission.value)"
+                            >
+                            </Toggle>
+                        </div>
+                    </div>
+
+                    <div class="flex pt-3 justify-center items-end gap-4 self-stretch">
+                        <Button
+                            :variant="'tertiary'"
+                            :size="'lg'"
+                            :type="'button'"
+                            @click="addAdminClicked"
+                        >
+                            {{ $t('public.action.go_back') }}
+                        </Button>
+                        <Button
+                            :variant="'primary'"
+                            :size="'lg'"
+                            :type="'submit'"
+                            :disabled="form.processing || !isFormValid || !hasPermissionSelected"
+                        >
+                            {{ $t('public.action.add') }}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </transition>

@@ -174,7 +174,7 @@ const editPermission = async (permission) => {
         users.value = response.data;
         showMessage({
             severity: 'success',
-            summary: hasPermission ? `This admin now has access to ‘${permission.text}’.` : `Access to ‘${permission.text}’ has been restricted for this admin.`,
+            summary: hasPermission ? wTrans('public.toast.admin_permission_granted', { permission: permission.text }) : wTrans('public.toast.admin_permission_restricted', { permission: permission.text }),
         })
         setTimeout(() => {
             isProcessing.value = false; 
@@ -191,7 +191,7 @@ const deleteAdmin = async () => {
 
         showMessage({
             severity: 'success',
-            summary: `This admin has been deleted.`,
+            summary: wTrans('public.toast.admin_deleted'),
         })
 
         closeDelete();
@@ -254,7 +254,7 @@ watch(() => searchQuery.value, (newValue) => {
         <div class="flex items-start gap-5 self-stretch">
             <SearchBar 
                 :showFilter="false"
-                :placeholder="'Search'"
+                :placeholder="$t('public.search')"
                 v-model="searchQuery"
             />
             <Button
@@ -268,7 +268,7 @@ watch(() => searchQuery.value, (newValue) => {
                 <template #icon>
                     <PlusIcon class="size-6" />
                 </template>
-                Add sub-admin
+                {{ $t('public.action.add_sub_admin') }}
             </Button>
         </div>
 
@@ -303,12 +303,12 @@ watch(() => searchQuery.value, (newValue) => {
 
         <div class="flex w-full flex-col items-center justify-center gap-5" v-else>
             <UndetectableIllus />
-            <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+            <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
         </div>
     </div>
 
     <Modal
-        :title="'Sub-admin detail'"
+        :title="$t('public.admin.sub_admin_detail')"
         :show="isDetailShow"
         :maxWidth="'md'"
         @close="closeDetail('close')"
@@ -327,19 +327,19 @@ watch(() => searchQuery.value, (newValue) => {
                         <span class="self-stretch text-grey-950 text-md font-bold">{{ selectedUser.full_name }}</span>
                         <div class="flex flex-col items-start gap-1 self-stretch">
                             <div class="grid grid-cols-3 items-start gap-3 self-stretch">
-                                <span class="col-span-1 text-grey-500 text-xs font-normal">Admin ID</span>
+                                <span class="col-span-1 text-grey-500 text-xs font-normal">{{ $t('public.field.admin_id') }}</span>
                                 <span class="text-grey-950 text-xs font-semibold col-span-2 truncate">{{ selectedUser.role_id }}</span>
                             </div>
                             <div class="grid grid-cols-3 items-start gap-3 self-stretch">
-                                <span class="col-span-1 text-grey-500 text-xs font-normal">Email</span>
-                                <span class="text-grey-950 text-xs font-semibold col-span-2 truncate">{{ selectedUser.email }}efeuefefefefefe</span>
+                                <span class="col-span-1 text-grey-500 text-xs font-normal">{{ $t('public.field.email') }}</span>
+                                <span class="text-grey-950 text-xs font-semibold col-span-2 truncate">{{ selectedUser.email }}</span>
                             </div>
                             <div class="grid grid-cols-3 items-start gap-3 self-stretch">
-                                <span class="col-span-1 text-grey-500 text-xs font-normal">Title</span>
+                                <span class="col-span-1 text-grey-500 text-xs font-normal">{{ $t('public.field.title') }}</span>
                                 <span class="text-grey-950 text-xs font-semibold col-span-2 truncate">{{ capitilize(selectedUser.position) }}</span>
                             </div>
                             <div class="grid grid-cols-3 items-center gap-3 self-stretch">
-                                <span class="col-span-1 text-grey-500 text-xs font-normal">Password</span>
+                                <span class="col-span-1 text-grey-500 text-xs font-normal">{{ $t('public.field.password') }}</span>
                                 <div class="flex items-center gap-1 col-span-2">
                                     <template v-for="n in 8" :key="n">
                                         <!-- <div class="text-[10px]">&#x2022;</div> -->
@@ -359,21 +359,21 @@ watch(() => searchQuery.value, (newValue) => {
                         :type="'button'"
                         @click="openDelete"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                     <Button
                         :variant="'primary'"
                         :type="'button'"
                         @click="openEdit()"
                     >
-                        Edit
+                        {{ $t('public.action.edit') }}
                     </Button>
                 </div>
             </div>
 
             <div class="flex flex-col items-start flex-[1_0_0] self-stretch divide-y divide-grey-100 max-h-[417px] overflow-y-auto scrollbar-webkit scrollbar-thin">
                 <div class="flex py-4 justify-between items-center self-stretch" v-for="permission in getPermissionList">
-                    <span class="text-grey-950 text-base font-medium">Allow '{{ permission.text }}' access</span>
+                    <span class="text-grey-950 text-base font-medium">{{ $t('public.admin.allow_permission_access', { permission: permission.text }) }}</span>
                     <Toggle
                         :checked="!!selectedUser.permissions.find(exist_permission => exist_permission.name === permission.value)"
                         :disabled="form.processing || isProcessing"
@@ -389,7 +389,7 @@ watch(() => searchQuery.value, (newValue) => {
         <Modal
             :show="isEditShow"
             :maxWidth="'md'"
-            :title="'Edit Sub-admin'"
+            :title="$t('public.admin.edit_sub_admin')"
             @close="closeEdit('close')"
         >
             <EditAdminDetail 
@@ -425,8 +425,8 @@ watch(() => searchQuery.value, (newValue) => {
                     </div>
                     <div class="flex flex-col gap-5">
                         <div class="flex flex-col gap-1 text-center">
-                            <span class="text-primary-900 text-lg font-medium self-stretch">Delete this admin?</span>
-                            <span class="text-grey-900 text-base font-medium self-stretch">Are you sure you want to delete the selected admin? This action cannot be undone.</span>
+                            <span class="text-primary-900 text-lg font-medium self-stretch">{{ $t('public.admin.delete_admin') }}</span>
+                            <span class="text-grey-900 text-base font-medium self-stretch">{{ $t('public.admin.delete_admin_message') }}</span>
                         </div>
                     </div>
 
@@ -437,13 +437,13 @@ watch(() => searchQuery.value, (newValue) => {
                             type="button"
                             @click="closeDelete"
                         >
-                            Keep
+                            {{ $t('public.keep') }}
                         </Button>
                         <Button
                             variant="red"
                             size="lg"
                         >
-                            Delete
+                            {{ $t('public.action.delete') }}
                         </Button>
                     </div>
                 </div>
@@ -468,7 +468,7 @@ watch(() => searchQuery.value, (newValue) => {
     <Modal
         :show="isAddAdminOpen"
         :maxWidth="'md'"
-        :title="'Add Sub-admin'"
+        :title="$t('public.admin.add_sub_admin_header')"
         @close="closeAddAdmin('close')"
     >
         <AddSubAdmin 

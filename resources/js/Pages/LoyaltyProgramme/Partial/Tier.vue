@@ -9,6 +9,7 @@ import AddTier from "./AddTier.vue";
 import { FilterMatchMode } from 'primevue/api';
 import { PlusIcon, EditIcon, DeleteIcon } from '@/Components/Icons/solid';
 import EditTier from "./EditTier.vue";
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     columns: {
@@ -118,6 +119,24 @@ const formatAmount = (num) => {
     return str.join('.');
 }
 
+const getTranslatedType = (merged_type) => {
+    // split raw merged types
+    const typeArr = merged_type.split(', ');
+
+    // translate without mutating original
+    const translatedTypes = typeArr.map((type) => {
+        switch (type) {
+            case 'Discount (Amount)': return wTrans('public.amount_discount').value;
+            case 'Discount (Percentage)': return wTrans('public.percent_discount').value;
+            case 'Free Item': return wTrans('public.free_item').value;
+            case 'Bonus Point': return wTrans('public.bonus_point').value;
+            default: return type;
+        }
+    });
+
+    return translatedTypes.join(', ');
+}
+
 const filteredRows = computed(() => {
     if (!searchQuery.value) return props.rows;
 
@@ -139,11 +158,11 @@ const totalPages = computed(() => {
 
 <template>
     <div class="flex flex-col p-6 gap-5 rounded-[5px] border border-red-100 overflow-y-auto">
-        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Current Tier List</span>
+        <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.loyalty.current_tier_list') }}</span>
         <div class="flex flex-col gap-5">
             <div class="flex gap-5 flex-wrap sm:flex-nowrap">
                 <SearchBar 
-                    placeholder="Search"
+                    :placeholder="$t('public.search')"
                     :showFilter="false"
                     v-model="searchQuery"
                 />
@@ -158,7 +177,7 @@ const totalPages = computed(() => {
                     <template #icon>
                         <PlusIcon />
                     </template>
-                    New Tier
+                    {{ $t('public.action.new_tier') }}
                 </Button>
             </div>
             <!--CurrentTierTable-->
@@ -170,12 +189,12 @@ const totalPages = computed(() => {
                 :rowsPerPage="rowsPerPage"
                 :actions="actions"
                 :rowType="rowType"
-                minWidth="min-w-[1020px]"
+                minWidth="min-w-[1070px]"
             >
                 <template #empty>
                     <div class="flex flex-col gap-5 items-center">
                         <EmptyTierIllus/>
-                        <span class="text-primary-900 text-sm font-medium">You haven't added any tier yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_tier') }}</span>
                     </div>
                 </template>
                 <template #editAction="row">
@@ -201,7 +220,7 @@ const totalPages = computed(() => {
                     <span class="text-primary-900 text-sm font-medium">RM {{ formatAmount(row.min_amount) }}</span>
                 </template>
                 <template #merged_reward_type="row">
-                    <span class="text-primary-900 text-sm font-medium overflow-hidden text-ellipsis">{{ row.merged_reward_type || '-' }}</span>
+                    <span class="text-primary-900 text-sm font-medium overflow-hidden text-ellipsis">{{ row.merged_reward_type ? getTranslatedType(row.merged_reward_type) : '-' }}</span>
                 </template>
                 <template #member="row">
                     <span class="">{{ row.member ?? 0 }}</span>
@@ -209,7 +228,7 @@ const totalPages = computed(() => {
             </Table>
             <Modal
                 :show="isModalOpen"
-                :title="'Add New Tier'"
+                :title="$t('public.loyalty.add_new_tier')"
                 :maxWidth="'md'"
                 @close="closeModal('close')"
             >
@@ -230,7 +249,7 @@ const totalPages = computed(() => {
                 </Modal>
             </Modal>
             <Modal 
-                :title="'Edit Tier'"
+                :title="$t('public.loyalty.edit_tier')"
                 :show="editTierFormIsOpen" 
                 :maxWidth="'md'" 
                 @close="closeModal('close')"
@@ -261,8 +280,8 @@ const totalPages = computed(() => {
                 :closeable="true" 
                 :deleteConfirmation="true"
                 :deleteUrl="actions.delete(selectedTier)"
-                :confirmationTitle="'Delete this tier?'"
-                :confirmationMessage="'All the member in this tier will not be entitled to any tier. Are you sure you want to delete this tier?'"
+                :confirmationTitle="$t('public.loyalty.delete_tier')"
+                :confirmationMessage="$t('public.loyalty.delete_tier_message')"
                 @close="hideDeleteTierForm"
                 v-if="selectedTier"
             />

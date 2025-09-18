@@ -132,11 +132,11 @@ watch(() => props.currentSelectedShift, (newValue) => {
                                     <p class="text-grey-950 font-semibold text-base text-right">RM {{ Number(selectedShift.service_tax_amount).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex justify-between items-start self-stretch">
-                                    <p class="text-grey-700 font-normal text-base">{{ $t('public.refunds') }}</p>
+                                    <p class="text-grey-700 font-normal text-base">{{ $tChoice('public.refund', 1) }}</p>
                                     <p class="text-grey-950 font-semibold text-base text-right">- RM {{ Number(selectedShift.total_refund).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex justify-between items-start self-stretch">
-                                    <p class="text-grey-700 font-normal text-base">{{ $t('public.voids') }}</p>
+                                    <p class="text-grey-700 font-normal text-base">{{ $tChoice('public.void', 1) }}</p>
                                     <p class="text-grey-950 font-semibold text-base text-right">- RM {{ Number(selectedShift.total_void).toFixed(2) }}</p>
                                 </div>
                                 <div class="flex justify-between items-start self-stretch">

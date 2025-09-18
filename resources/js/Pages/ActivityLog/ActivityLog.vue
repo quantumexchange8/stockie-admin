@@ -10,10 +10,11 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { wTrans } from 'laravel-vue-i18n';
 import { computed, ref, watch } from 'vue';
 
 const home = ref({
-    label: 'Activity Logs',
+    label: wTrans('public.activity_logs_header'),
 });
 
 const props = defineProps({
@@ -114,7 +115,7 @@ watch(() => date_filter.value, (newValue) => {
 </script>
 
 <template>
-    <Head title="Activity Logs" />
+    <Head :title="$t('public.activity_logs_header')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -122,17 +123,17 @@ watch(() => date_filter.value, (newValue) => {
         </template>
 
         <div class="flex flex-col p-6 items-start gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
-            <span class="h-[25px] text-primary-900 text-md font-medium">Activity Logs</span>
+            <span class="h-[25px] text-primary-900 text-md font-medium">{{ $t('public.activity_logs_header') }}</span>
             <div class="flex items-start gap-5 self-stretch">
                 <SearchBar 
                     :showFilter="true"
-                    :placeholder="'Search'"
+                    :placeholder="$t('public.search')"
                     v-model="searchQuery"
                 >
             
                     <template #default="{ hideOverlay }">
                         <div class="flex flex-col self-stretch gap-4 items-start">
-                            <span class="text-grey-900 text-base font-semibold">Action</span>
+                            <span class="text-grey-900 text-base font-semibold">{{ $t('public.action_header') }}</span>
                             <div class="flex gap-3 self-stretch items-start justify-center flex-wrap">
                                 <div 
                                     v-for="(action, index) in actions" 
@@ -154,13 +155,13 @@ watch(() => date_filter.value, (newValue) => {
                                 :size="'lg'"
                                 @click="clearFilters(hideOverlay)"
                             >
-                                Clear All
+                                {{ $t('public.action.clear_all') }}
                             </Button>
                             <Button
                                 :size="'lg'"
                                 @click="applyCheckedFilters(hideOverlay)"
                             >
-                                Apply
+                                {{ $t('public.action.apply') }}
                             </Button>
                         </div>
                     </template>
@@ -199,7 +200,7 @@ watch(() => date_filter.value, (newValue) => {
             <template v-else>
                 <div class="flex w-full flex-col items-center justify-center gap-5">
                     <UndetectableIllus />
-                    <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                    <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                 </div>
             </template>
         </div>

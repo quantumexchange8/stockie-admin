@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
-import { wTrans } from 'laravel-vue-i18n';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: Array,
@@ -196,7 +196,7 @@ const csvExport = () => {
     const formattedRows = [
         { Method: title, 'No.of Sales': '', 'Sales (RM)': '', 'No.of Refund': '', 'Refund (RM)': '', 'Balance (RM)': '' },
         { Method: dateRange, 'No.of Sales': '', 'Sales (RM)': '', 'No.of Refund': '', 'Refund (RM)': '', 'Balance (RM)': '' },
-        { Method: wTrans('public.method').value, 'No.of Sales': wTrans('public.report.no_of_sales').value, 'Sales (RM)': `${wTrans('public.sales').value} (RM)`, 'No.of Refund': wTrans('public.report.no_of_refund').value, 'Refund (RM)': `${wTrans('public.refunds').value} (RM)`, 'Balance (RM)': `${wTrans('public.balance').value} (RM)` },
+        { Method: wTrans('public.method').value, 'No.of Sales': wTrans('public.report.no_of_sales').value, 'Sales (RM)': `${wTrans('public.sales').value} (RM)`, 'No.of Refund': wTrans('public.report.no_of_refund').value, 'Refund (RM)': `${wTransChoice('public.refund', 1).value} (RM)`, 'Balance (RM)': `${wTrans('public.balance').value} (RM)` },
         ...paymentMethods.value.map(method => ({
             'Method': method.text.value,
             'No.of Sales': getTotalSalesCount(method.value),

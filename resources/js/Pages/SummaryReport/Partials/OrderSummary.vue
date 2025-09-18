@@ -4,6 +4,7 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import { DropdownIcon, UploadIcon } from '@/Components/Icons/solid';
 import { useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+import { wTrans } from 'laravel-vue-i18n';
 import Chart from 'primevue/chart';
 import { ref, onMounted, watch } from "vue";
 
@@ -234,21 +235,21 @@ watch(
 );
 
 const csvExport = () => {
-    const orderYear = selected.value || 'Unknown';
-    const title = `Year ${orderYear} Order Summary`;
+    const orderYear = selected.value || wTrans('public.unknown').value;
+    const title = wTrans('public.analysis.order_summary_year', { year: orderYear }).value;
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Month: title, 'Order Count': '' },
-        { Month: 'Month', 'Order Count': 'Order Count' },
+        { Month: wTrans('public.month_header').value, 'Order Count': wTrans('public.analysis.order_count').value },
         ...props.ordersArray.map((orders, index) => ({
             'Month': months[index], 
             'Order Count': orders, 
         })),
     ];
 
-    exportToCSV(formattedRows, `Year_${orderYear}_Order Summary`);
+    exportToCSV(formattedRows, title);
 };
 
 onMounted(() => {
@@ -260,7 +261,7 @@ onMounted(() => {
 <template>
     <div class="flex flex-col !h-full justify-between py-6 items-center gap-6 rounded-[5px] border border-solid border-primary-100">
         <div class="flex px-6 justify-between items-center self-stretch">
-            <span class="flex-[1_0_0] text-primary-900 text-md font-medium ">Order Summary</span>
+            <span class="flex-[1_0_0] text-primary-900 text-md font-medium ">{{ $t('public.analysis.order_summary') }}</span>
             <div class="flex items-center gap-6">
                 <!-- menu for year filter -->
                 <Menu as="div" class="relative inline-block text-left">
@@ -326,7 +327,7 @@ onMounted(() => {
                     <template #icon >
                         <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                     </template>
-                    Export
+                    {{ $t('public.action.export') }}
                 </Button>
 
                  <!-- <Menu as="div" class="relative inline-block text-left">
@@ -377,7 +378,7 @@ onMounted(() => {
         <template v-if="props.ordersArray.length === 0 || isLoading">
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </div>
         </template>
 

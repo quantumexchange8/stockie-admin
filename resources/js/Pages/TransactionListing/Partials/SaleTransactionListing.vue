@@ -25,6 +25,7 @@ import TextInput from '@/Components/TextInput.vue';
 import dayjs from 'dayjs'
 import Dropdown from '@/Components/Dropdown.vue';
 import OrderInvoice from '@/Pages/Order/Partials/OrderInvoice.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const clearFilters = (close) => {
     checkedFilters.value = resetFilters();
@@ -36,11 +37,11 @@ const clearFilters = (close) => {
 };
 
 const salesColumn = ref([
-    {field: 'receipt_end_date', header: 'Date & Time', width: '20', sortable: true},
-    {field: 'receipt_no', header: 'Transaction No. ', width: '22', sortable: true},
-    {field: 'grand_total', header: 'Total', width: '18', sortable: true},
-    {field: 'customer.full_name', header: 'Customer', width: '20', sortable: true},
-    {field: 'status', header: 'Status', width: '15', sortable: true},
+    {field: 'receipt_end_date', header: wTrans('public.date_time'), width: '20', sortable: true},
+    {field: 'receipt_no', header: wTrans('public.transaction_no'), width: '22', sortable: true},
+    {field: 'grand_total', header: wTrans('public.total'), width: '18', sortable: true},
+    {field: 'customer.full_name', header: wTrans('public.customer_header'), width: '20', sortable: true},
+    {field: 'status', header: wTrans('public.status'), width: '15', sortable: true},
     {field: 'action', header: '', width: '5', sortable: false},
 ]);
 
@@ -60,9 +61,9 @@ const selectedVal = ref(null);
 const { formatAmount, formatDate } = transactionFormat();
 const { showMessage } = useCustomToast();
 const tabs = ref([
-    { key: 'Sales Detail', title: 'Sales Detail', disabled: false },
-    { key: 'Product Sold', title: 'Product Sold', disabled: false },
-    { key: 'Payment Method', title: 'Payment Method', disabled: false },
+    { key: 'Sales Detail', title: wTrans('public.sales_detail'), disabled: false },
+    { key: 'Product Sold', title: wTrans('public.transaction.product_sold'), disabled: false },
+    { key: 'Payment Method', title: wTrans('public.payment_method'), disabled: false },
 ]);
 const op = ref(null);
 const docs_type = ref('sales_tranaction');
@@ -206,6 +207,10 @@ const refundModal = () => {
 
 const closeRefundModal = () => {
     refundIsOpen.value = false;
+    const transaction = saleTransaction.value.find((sale) => sale.id === selectedVal.value.id);
+    transaction.order.filter_order_items.forEach(orderItem => delete orderItem.refund_quantities);
+
+    setTimeout(() => form.reset(), 300);
 }
 
 const confirmRefundModal = () => {
@@ -217,8 +222,8 @@ const closeConfirmRefundModal = () => {
 }
 
 const refundMethod = [
-    { text: 'Cash', value: 'Cash'},
-    { text: 'Others', value: 'Others'},
+    { text: wTrans('public.cash'), value: 'Cash'},
+    { text: wTrans('public.others_header'), value: 'Others'},
 ]
 
 const openConsolidate = () => {
@@ -236,11 +241,11 @@ const updateRefundQty = (itemId, qty, productId) => {
     if (!orderItem || orderItem.item_qty === 0) return; // Prevent division by zero
 
     const unitPrice = parseFloat(orderItem.amount) / orderItem.item_qty; // Calculate per-unit price
-    const refundAmount = qty * unitPrice; // Refund amount based on qty
+    const refundAmount = (qty || 0) * unitPrice; // Refund amount based on qty
 
     const existingItem = form.refund_item.find(item => item.id === itemId);
     if (existingItem) {
-        existingItem.refund_quantities = qty;
+        existingItem.refund_quantities = qty || 0;
         existingItem.refund_amount = refundAmount; // Update refund amount
         existingItem.product_id = productId; // Update refund amount
         existingItem.total_keep_subitem_qty = orderItem.total_keep_subitem_qty; // Update refund amount
@@ -248,7 +253,7 @@ const updateRefundQty = (itemId, qty, productId) => {
     } else {
         form.refund_item.push({ 
             id: itemId, 
-            refund_quantities: qty, 
+            refund_quantities: qty || 0, 
             refund_amount: refundAmount, 
             product_id: productId, 
             total_keep_subitem_qty: orderItem.total_keep_subitem_qty,
@@ -267,7 +272,7 @@ const subTotalRefundAmount = computed(() => {
         if (!orderItem || orderItem.item_qty === 0) return total; // Prevent division by zero
 
         const unitPrice = parseFloat(orderItem.amount) / orderItem.item_qty; // Get per unit price
-        return total + item.refund_quantities * unitPrice;
+        return total + (item.refund_quantities || 0) * unitPrice;
     }, 0).toFixed(2) || 0;
 });
 
@@ -279,10 +284,27 @@ const totalSstRefund = computed(() => {
     if (form.refund_tax === true) {
         const subtotal = parseFloat(selectedVal.value.total_amount) || 0; // Ensure subtotal exists
         const sstAmount = parseFloat(selectedVal.value.sst_amount) || 0; // Ensure SST exists
+        const refundSubTotalAmount = parseFloat(subTotalRefundAmount.value) || 0; // Ensure SST exists
         
-        if (subtotal === 0) return "0.00"; // Prevent division by zero
+        if (subtotal === 0 | refundSubTotalAmount === 0) return "0.00"; // Prevent division by zero
 
-        return ((subTotalRefundAmount.value / subtotal) * sstAmount).toFixed(2) || 0;
+        return ((refundSubTotalAmount / subtotal) * sstAmount).toFixed(2) || 0;
+    }
+    
+});
+
+const sstPercentage = computed(() => { 
+    if (!selectedVal.value || !selectedVal.value.order || !selectedVal.value.order.filter_order_items) {
+        return "0"; // Return default value if data is missing
+    }
+
+    if (form.refund_tax === true) {
+        const subtotal = parseFloat(selectedVal.value.total_amount) || 0; // Ensure subtotal exists
+        const sstAmount = parseFloat(selectedVal.value.sst_amount) || 0; // Ensure SST exists
+
+        if (subtotal === 0 || sstAmount === 0) return "0"; // Prevent division by zero
+
+        return Math.round((sstAmount / subtotal) * 100).toFixed() || 0;
     }
     
 });
@@ -295,10 +317,11 @@ const totalServiceTaxRefund = computed(() => {
     if (form.refund_tax === true) {
         const subtotal = parseFloat(selectedVal.value.total_amount) || 0; // Ensure subtotal exists
         const serviceTaxAmount = parseFloat(selectedVal.value.service_tax_amount) || 0; // Ensure SST exists
+        const refundSubTotalAmount = parseFloat(subTotalRefundAmount.value) || 0; // Ensure SST exists
 
-        if (subtotal === 0) return "0.00"; // Prevent division by zero
+        if (subtotal === 0 || refundSubTotalAmount === 0) return "0.00"; // Prevent division by zero
 
-        return ((subTotalRefundAmount.value / subtotal) * serviceTaxAmount).toFixed(2) || 0;
+        return ((refundSubTotalAmount / subtotal) * serviceTaxAmount).toFixed(2) || 0;
     }
 });
 
@@ -308,10 +331,11 @@ const totalRoundingRefund = computed(() => {
     if (form.refund_tax === true) {
         const subtotal = parseFloat(selectedVal.value.total_amount) || 0;
         const roundingAmount = parseFloat(selectedVal.value.rounding) || 0;
+        const refundSubTotalAmount = parseFloat(subTotalRefundAmount.value) || 0; // Ensure SST exists
 
-        if (subtotal === 0) return 0; // Prevent division by zero
+        if (subtotal === 0 || refundSubTotalAmount === 0) return '0.00'; // Prevent division by zero
 
-        return ((subTotalRefundAmount.value / subtotal) * roundingAmount).toFixed(2) || 0;
+        return ((refundSubTotalAmount / subtotal) * roundingAmount).toFixed(2) || 0;
     }
     
 });
@@ -363,13 +387,13 @@ const cancelRefund = () => {
 }
 
 const docsType = [
-    { text: 'Sales Tranaction', value: 'sales_tranaction'},
+    { text: wTrans('public.sales_transaction'), value: 'sales_tranaction'},
 ]
 
 const transactionColumn = ref([
-    {field: 'receipt_end_date', header: 'Date', width: '20', sortable: true},
-    {field: 'receipt_no', header: 'Transaction No.', width: '50', sortable: true},
-    {field: 'total_amount', header: 'Total', width: '30', sortable: true},
+    {field: 'receipt_end_date', header: wTrans('public.date'), width: '20', sortable: true},
+    {field: 'receipt_no', header: wTrans('public.transaction_no'), width: '50', sortable: true},
+    {field: 'total_amount', header: wTrans('public.total'), width: '30', sortable: true},
 ])
 
 const submitConsolidate = async () => {
@@ -414,6 +438,14 @@ const printInvoiceReceipt = () => {
     setTimeout(() => orderInvoice.value.testPrintReceipt(), 200);
 }
 
+const getTranslatedStatus = (status) => {
+    switch (status) {
+        case 'Pending': return wTrans('public.pending').value;
+        case 'Successful': return wTrans('public.successful').value;
+        case 'Voided': return wTrans('public.voided').value;
+    }
+}
+
 // const refundItemKeptQty = computed(() => {
 //     return form.refund_item.reduce((total, item) => total + (item), 0) ?? 0;
 // })
@@ -451,7 +483,7 @@ watch(() => searchQuery.value, (newValue) => {
             <div class="flex items-center gap-3 w-full">
                 <div class="w-full">
                     <SearchBar
-                        placeholder="Search"
+                        :placeholder="$t('public.search')"
                         :showFilter="false"
                         v-model="searchQuery"
                         class="xl:max-w-[309px]"
@@ -479,7 +511,7 @@ watch(() => searchQuery.value, (newValue) => {
                         <template #icon>
                             <PlusIcon />
                         </template>
-                        Consolidate
+                        {{ $t('public.action.consolidate') }}
                     </Button>
                 </div>
             </div>
@@ -497,7 +529,7 @@ watch(() => searchQuery.value, (newValue) => {
                     <span class="text-grey-900 text-sm font-medium">RM {{ row.grand_total }}</span>
                 </template>
                 <template #customer.full_name="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.customer ? row.customer.full_name : 'Guest' }}</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ row.customer ? row.customer.full_name : $t('public.guest') }}</span>
                 </template>
                 <template #status="row">
                     <Tag
@@ -506,7 +538,7 @@ watch(() => searchQuery.value, (newValue) => {
                                 : row.status === 'Voided' 
                                     ? 'red'
                                     : 'grey'"
-                        :value="row.status"
+                        :value="getTranslatedStatus(row.status)"
                     />
                 </template>
                 <template #action="row">
@@ -521,7 +553,7 @@ watch(() => searchQuery.value, (newValue) => {
     <Modal
         :show="consolidateIsOpen"
         @close="closeConsolidate"
-        :title="'Submit consolidated invoice'"
+        :title="$t('public.transaction.submit_consolidated_invoice')"
         :maxWidth="'lg'"
     >
         <div class="flex flex-col gap-8">
@@ -529,8 +561,8 @@ watch(() => searchQuery.value, (newValue) => {
             <div class="w-full flex gap-6">
                 <div class="flex flex-col gap-4 w-full">
                     <div class="flex flex-col gap-1">
-                        <div class="text-grey-950 text-base font-bold">Date Period</div>
-                        <div class="text-grey-950 text-sm">Transaction which has not yet been validated from last month.</div>
+                        <div class="text-grey-950 text-base font-bold">{{ $t('public.date_period') }}</div>
+                        <div class="text-grey-950 text-sm">{{ $t('public.transaction.last_month_transaction_unvalidated') }}</div>
                     </div>
                     <div>
                         <DateInput
@@ -546,8 +578,8 @@ watch(() => searchQuery.value, (newValue) => {
                 </div>
                 <div class="flex flex-col gap-4 w-full">
                     <div class="flex flex-col gap-1">
-                        <div class="text-grey-950 text-base font-bold">Document Type</div>
-                        <div class="text-grey-950 text-sm">Document type you’ll consolidate.</div>
+                        <div class="text-grey-950 text-base font-bold">{{ $t('public.document_type') }}</div>
+                        <div class="text-grey-950 text-sm">{{ $t('public.transaction.document_type_to_consolidate') }}</div>
                     </div>
                     <div>
                         <Dropdown
@@ -565,8 +597,8 @@ watch(() => searchQuery.value, (newValue) => {
             <!-- Submittable transaction -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-1">
-                    <div class="text-grey-950 text-base font-bold">Submittable Transaction</div>
-                    <div class="text-grey-950 text-sm">Transaction which has not yet been submitted to LHDN’s MyInvois for validation.</div>
+                    <div class="text-grey-950 text-base font-bold">{{ $t('public.transaction.submittable_transaction') }}</div>
+                    <div class="text-grey-950 text-sm">{{ $t('public.transaction.transaction_unsubmitted') }}</div>
                 </div>
                 <div class="max-h-[calc(100dvh-25rem)] overflow-y-auto scrollbar-thin scrollbar-webkit">
                     <Table
@@ -586,8 +618,8 @@ watch(() => searchQuery.value, (newValue) => {
                     </Table>
                 </div>
                 <div class="w-full flex gap-4">
-                    <Button variant="tertiary">Cancel</Button>
-                    <Button :disabled="!lastMonthSalesTransaction.length > 0" @click="submitConsolidate">Submit</Button>
+                    <Button variant="tertiary">{{ $t('public.action.cancel') }}</Button>
+                    <Button :disabled="!lastMonthSalesTransaction.length > 0" @click="submitConsolidate">{{ $t('public.action.submit') }}</Button>
                 </div>
             </div>
         </div>
@@ -596,7 +628,7 @@ watch(() => searchQuery.value, (newValue) => {
     <Modal
         :show="detailIsOpen"
         @close="closeAction"
-        :title="'Sales transaction detail'"
+        :title="$t('public.transaction.sales_transaction_detail')"
         :maxWidth="'sm'"
     >
         <template v-if="selectedVal">
@@ -606,36 +638,36 @@ watch(() => searchQuery.value, (newValue) => {
                         <div>
                             <Tag 
                                 :variant="selectedVal.status === 'Successful' ? 'green' : selectedVal.status === 'Voided' ? 'red' : 'grey' "  
-                                :value="selectedVal.status === 'Successful' ? 'Completed' : 'Voided'" 
+                                :value="selectedVal.status === 'Successful' ? $t('public.completed') : $t('public.voided')" 
                             />
                         </div>
                         <div class="cursor-pointer" @click="actionOption($event, row)"><DotVerticleIcon /></div>
                     </div>
                     <div class="grid grid-cols-2 gap-5">
                         <div class="flex flex-col gap-1">
-                            <div class="text-gray-900 text-base">Date & Time</div>
+                            <div class="text-gray-900 text-base">{{ $t("public.date_time") }}</div>
                             <div class="text-gray-900 text-base font-bold">{{ selectedVal.receipt_end_date }}</div>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <div class="text-gray-900 text-base">Transaction No.</div>
+                            <div class="text-gray-900 text-base">{{ $t('public.transaction_no') }}</div>
                             <div class="text-gray-900 text-base font-bold">{{ selectedVal.receipt_no }}</div>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <div class="text-gray-900 text-base">Total</div>
+                            <div class="text-gray-900 text-base">{{ $t('public.total') }}</div>
                             <div class="text-gray-900 text-base font-bold">RM {{ formatAmount(selectedVal.grand_total) }}</div>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <div class="text-gray-900 text-base">Customer</div>
+                            <div class="text-gray-900 text-base">{{ $t('public.customer_header') }}</div>
                             <div class="text-gray-900 text-base font-bold flex items-center gap-2">
                                 <div class="max-w-5 max-h-5" v-if="selectedVal.customer">
                                     <img :src="selectedVal.customer.profile_photo ? selectedVal.customer.profile_photo : '' " alt="">
                                 </div>
-                                <div>{{ selectedVal.customer ?  selectedVal.customer.full_name : 'Guest'}}</div>
+                                <div>{{ selectedVal.customer ?  selectedVal.customer.full_name : $t('public.guest')}}</div>
                             </div>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <div class="text-gray-900 text-base">Points Given</div>
-                            <div class="text-gray-900 text-base font-bold">{{ selectedVal.customer ? selectedVal.point_earned : 0}} pts</div>
+                            <div class="text-gray-900 text-base">{{ $t('public.transaction.points_given') }}</div>
+                            <div class="text-gray-900 text-base font-bold">{{ selectedVal.customer ? selectedVal.point_earned : '0.00'}} {{ $t('public.pts') }}</div>
                         </div>
                     </div>
                 </div>
@@ -662,7 +694,7 @@ watch(() => searchQuery.value, (newValue) => {
                         class="w-fit border-0 hover:bg-primary-50 !justify-start"
                         @click="ConfirmVoid"
                     >
-                        <span class="text-grey-700 font-normal">Void</span>
+                        <span class="text-grey-700 font-normal">{{ $tChoice('public.void', 0) }}</span>
                     </Button>
                     <Button
                         type="button"
@@ -670,7 +702,7 @@ watch(() => searchQuery.value, (newValue) => {
                         class="w-fit border-0 hover:bg-primary-50 !justify-start"
                         @click="refundModal"
                     >
-                        <span class="text-grey-700 font-normal">Refund</span>
+                        <span class="text-grey-700 font-normal">{{ $tChoice('public.refund', 0) }}</span>
                     </Button>
                     <Button
                         type="button"
@@ -678,7 +710,7 @@ watch(() => searchQuery.value, (newValue) => {
                         class="w-fit border-0 hover:bg-primary-50 !justify-start"
                         @click="printInvoiceReceipt"
                     >
-                        <span class="text-grey-700 font-normal">Print Receipt</span>
+                        <span class="text-grey-700 font-normal">{{ $t('public.print_receipt') }}</span>
                     </Button>
                 </div>
             </OverlayPanel>
@@ -699,13 +731,13 @@ watch(() => searchQuery.value, (newValue) => {
                     </div>
                     <div class="flex flex-col gap-5 pt-6">
                         <div class="flex flex-col gap-1 text-center self-stretch">
-                            <span class="text-primary-900 text-lg font-medium self-stretch">{{ selectedVal.order.total_kept_item_qty > 0 ? `${selectedVal.order.total_kept_item_qty} kept item found` : 'Void this transaction?' }}</span>
-                            <span class="text-grey-900 text-base font-medium self-stretch">
+                            <span class="text-primary-900 text-lg font-medium self-stretch">{{ selectedVal.order.total_kept_item_qty > 0 ? $t('public.transaction.count_kept_item_found', { count: selectedVal.order.total_kept_item_qty }) : $t('public.transaction.void_transaction') }}</span>
+                            <span class="text-grey-900 text-base font-medium self-stretch"> 
                                 {{ 
                                     selectedVal.order.total_kept_item_qty > 0
-                                            ? 'By voiding this transaction, the kept item(s) will be removed from the customer’s account. Are you sure you want to void this bill?'
-                                            : 'Voiding this transaction will remove it from active records and reverse any associated points or balances. This action cannot be undone.' 
-                                }}
+                                            ? $t('public.transaction.void_transaction_warning')
+                                            : $t('public.transaction.void_transaction_effect') 
+                                }} 
                             </span>
                         </div>
                     </div>
@@ -716,14 +748,14 @@ watch(() => searchQuery.value, (newValue) => {
                             type="button"
                             @click="closeConfirmmVoid"
                         >
-                            Keep
+                            {{ $t('public.keep') }}
                         </Button>
                         <Button
                             variant="primary"
                             size="lg"
                             @click="voidAction"
                         >
-                            Void
+                            {{ $tChoice('public.void', 0) }}
                         </Button>
                     </div>
                 </div>
@@ -735,7 +767,7 @@ watch(() => searchQuery.value, (newValue) => {
                 :closeable="true"
                 :show="refundIsOpen"
                 @close="closeRefundModal"
-                :title="'Select refund item'"
+                :title="$t('public.transaction.select_refund_item')"
             >
                 <div class="flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-webkit max-h-[calc(100dvh-8rem)]">
                     <div class="p-4 flex items-center gap-10">
@@ -744,16 +776,16 @@ watch(() => searchQuery.value, (newValue) => {
                                 <ToastInfoIcon />
                             </div>
                             <div class="flex flex-col gap-1">
-                                <div class="text-blue-500 text-base font-medium">Refunds are limited to cost items only.</div>
-                                <div class="text-sm text-gray-700">Kept item, redeemed product, and entry reward item will not show in this list.</div>
+                                <div class="text-blue-500 text-base font-medium">{{ $t('public.transaction.refund_limited') }}</div>
+                                <div class="text-sm text-gray-700">{{ $t('public.transaction.list_excluded_items') }}</div>
                             </div>
                         </div>
                         <div>
-                            <Button >OK</Button>
+                            <Button >{{ $t('public.action.ok') }}</Button>
                         </div>
                     </div>
                     <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px] min-h-40 max-h-80 overflow-y-scroll">
-                        <div class="text-gray-950 text-md font-semibold">Select refund item</div>
+                        <div class="text-gray-950 text-md font-semibold">{{ $t('public.transaction.select_refund_item') }}</div>
                         <div class="flex flex-col gap-4">
                             <div v-for="item in selectedVal.order.filter_order_items" :key="item.id" class="flex items-center gap-6"  >
                                 <div class="text-gray-900 text-base font-normal">{{ item.item_qty }}x</div>
@@ -767,7 +799,7 @@ watch(() => searchQuery.value, (newValue) => {
                                         <span v-else>RM{{ item.amount }}</span>
                                     </div>
                                     <div v-if="item.total_keep_subitem_qty > 0" class="flex !w-fit items-center justify-cente gap-2.5 px-3 py-1 rounded-[5px] bg-primary-600">
-                                        <p class="text-primary-50 text-2xs">{{ `${item.total_keep_subitem_qty} item kept` }}</p>
+                                        <p class="text-primary-50 text-2xs">{{ $t('public.transaction.count_item_kept', { count: item.total_keep_subitem_qty }) }}</p>
                                     </div>
                                 </div>
                                 <div>
@@ -782,14 +814,14 @@ watch(() => searchQuery.value, (newValue) => {
                                             class="!w-fit whitespace-nowrap max-w-[139px]"
                                         />
                                     </template>
-                                    <span v-else class="text-red-500 text-sm font-medium">Fully Refunded</span>
+                                    <span v-else class="text-red-500 text-sm font-medium">{{ $t('public.transaction.fully_refunded') }}</span>
                                 </div>
                             </div>
                         </div>
                         
                     </div>
                     <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px]">
-                        <div class="text-gray-950 text-md font-semibold">Refund Method</div>
+                        <div class="text-gray-950 text-md font-semibold">{{ $t('public.transaction.refund_method') }}</div>
                         <div>
                             <RadioButton
                                 :optionArr="refundMethod"
@@ -801,7 +833,7 @@ watch(() => searchQuery.value, (newValue) => {
                             <TextInput
                                 label-text=""
                                 :inputType="'text'"
-                                :placeholder="'Enter others details'"
+                                :placeholder="$t('public.transaction.enter_others_details')"
                                 v-model="form.refund_others"
                                 autofocus
                                 autocomplete="refund_others"
@@ -809,12 +841,12 @@ watch(() => searchQuery.value, (newValue) => {
                         </div>
                     </div>
                     <div class="border border-gray-100 bg-white p-5 shadow-container flex flex-col gap-5 rounded-[5px]">
-                        <div class="text-gray-950 text-md font-semibold">Refund Reason</div>
+                        <div class="text-gray-950 text-md font-semibold">{{ $t('public.transaction.refund_reason') }}</div>
                         <div>
                             <TextInput
                                 label-text=""
                                 :inputType="'text'"
-                                :placeholder="'Enter refund reason'"
+                                :placeholder="$t('public.transaction.enter_refund_reason')"
                                 v-model="form.refund_reason"
                                 autofocus
                                 autocomplete="refund_reason"
@@ -823,24 +855,24 @@ watch(() => searchQuery.value, (newValue) => {
                     </div>
                     <div class=" py-4 px-3 flex flex-col gap-5 bg-[#FCFCFC]">
                         <div class="flex items-center justify-between">
-                            <div>Total Refund</div>
+                            <div>{{ $t('public.transaction.total_refund') }}</div>
                             <div>RM {{ totalRefundAmount }}</div>
                         </div>
                         <div v-if="form.refund_tax === true" class="flex flex-col gap-1">
                             <div class="flex items-center w-full">
-                                <div class="text-gray-900 text-base w-full">Sub-total</div>
+                                <div class="text-gray-900 text-base w-full">{{ $t('public.sub_total') }}</div>
                                 <div class="text-gray-900 font-bold text-base text-right w-full">{{ subTotalRefundAmount }}</div>
                             </div>
                             <div class="flex items-center w-full">
-                                <div class="text-gray-900 text-base w-full">SST(6%)</div>
+                                <div class="text-gray-900 text-base w-full">{{ `SST(${sstPercentage}%)` }}</div>
                                 <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalSstRefund }}</div>
                             </div>
                             <div class="flex items-center w-full">
-                                <div class="text-gray-900 text-base w-full">Service Tax</div>
+                                <div class="text-gray-900 text-base w-full">{{ $t('public.service_tax') }}</div>
                                 <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalServiceTaxRefund }}</div>
                             </div>
                             <div class="flex items-center w-full">
-                                <div class="text-gray-900 text-base w-full">Rouding</div>
+                                <div class="text-gray-900 text-base w-full">{{ $t('public.rounding') }}</div>
                                 <div class="text-gray-900 font-bold text-base text-right w-full">{{ totalRoundingRefund }}</div>
                             </div>
                         </div>
@@ -849,18 +881,18 @@ watch(() => searchQuery.value, (newValue) => {
                                 v-model:checked="form.refund_tax"
                                 :value="'refund_with_tax'"
                             />
-                            <span>Refund with taxes</span>
+                            <span>{{ $t('public.transaction.refund_with_taxes') }}</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="w-full">
                             <Button size="lg" variant="tertiary" class="w-full" @click="cancelRefund">
-                                Cancel
+                                {{ $t('public.action.cancel') }}
                             </Button>
                         </div>
                         <div class="w-full">
                             <Button size="lg" variant="primary" class="w-full" :disabled="!isFormValid" @click="confirmRefundModal">
-                                Confirm
+                                {{ $t('public.action.confirm') }}
                             </Button>
                         </div>
                     </div>
@@ -882,8 +914,8 @@ watch(() => searchQuery.value, (newValue) => {
                         </div>
                         <div class="flex flex-col gap-5 pt-6">
                             <div class="flex flex-col gap-1 text-center self-stretch">
-                                <span class="text-primary-900 text-lg font-medium self-stretch">Heads-up!</span>
-                                <span class="text-grey-900 text-base font-medium self-stretch">This refund applies to regular items only. Kept items will remain existing status and are not eligible for refund.</span>
+                                <span class="text-primary-900 text-lg font-medium self-stretch">{{ $t('public.transaction.heads_up') }}</span>
+                                <span class="text-grey-900 text-base font-medium self-stretch">{{ $t('public.transaction.refund_regular_only') }}</span>
                             </div>
                         </div>
                         <div class="flex justify-center items-start self-stretch gap-3">
@@ -893,14 +925,14 @@ watch(() => searchQuery.value, (newValue) => {
                                 type="button"
                                 @click="closeConfirmRefundModal"
                             >
-                                Cancel
+                                {{ $t('public.action.cancel') }}
                             </Button>
                             <Button
                                 variant="primary"
                                 size="lg"
                                 @click="confirmRefund"
                             >
-                                Confirm
+                                {{ $t('public.action.confirm') }}
                             </Button>
                         </div>
                     </div>

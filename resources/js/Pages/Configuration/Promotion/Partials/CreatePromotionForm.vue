@@ -9,6 +9,7 @@ import { useCustomToast } from '@/Composables';
 import dayjs from 'dayjs';
 import { computed, ref, watch } from 'vue';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 defineProps({
     errors:Object
@@ -57,8 +58,8 @@ const formSubmit = async () => {
             form.reset();
             showMessage({ 
                 severity: 'success',
-                summary: 'Promotion has been added.',
-                detail: 'Promotion will be visible to waiter and customer during the active period.',
+                summary: wTrans('public.toast.add_promotion_summary'),
+                detail: wTrans('public.toast.add_promotion_detail'),
             });
         }, 200);
     } catch (error) {
@@ -99,7 +100,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[calc(100dvh-18rem)] pl-1 pr-2 py-1 overflow-y-auto scrollbar-thin scrollbar-webkit">
             <DragDropImage
                 inputName="image"
-                remarks="Suggested image size: 1920 x 1080 pixel"
+                :remarks="`${$t('public.suggested_image_size')}: 1920 x 1080 ${$t('public.pixel')}`"
                 :errorMessage="form.errors.promotion_image ? form.errors.promotion_image[0] : ''"
                 v-model="form.promotion_image"
                 class="col-span-full h-[244px]"
@@ -108,14 +109,14 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <div class="flex flex-col items-start gap-4 self-stretch">
                     <TextInput
                         :inputName="'title'"
-                        :labelText="'Title'"
+                        :labelText="$t('public.field.title')"
                         :placeholder="'eg: Heineken B1F1 Promotion'"
                         :errorMessage="form.errors.title ? form.errors.title[0] : ''"
                         v-model="form.title"
                     />
                     <DateInput
                         :inputName="'promotionPeriod'"
-                        :labelText="'Promotion Active Period'"
+                        :labelText="$t('public.field.promotion_active_period')"
                         :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
                         :range="true"
                         :minDate="new Date()"
@@ -125,8 +126,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     />
                     <Textarea
                         :inputName="'description'"
-                        :labelText="'Description'"
-                        :placeholder="'eg: promotion date and time, detail of the promotion and etc'"
+                        :labelText="$t('public.field.description')"
+                        :placeholder="`eg: ${$t('public.config.promo_desc_placeholder')}`"
                         :rows="5"
                         class="col-span-full xl:col-span-4"
                         :errorMessage="form.errors.description ? form.errors.description[0] : ''" 
@@ -142,13 +143,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :size="'lg'"
                 @click="unsaved('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :size="'lg'"
                 :disabled="!isFormValid"
             >
-                Add
+                {{ $t('public.action.add') }}
             </Button>
         </div>
     </form>

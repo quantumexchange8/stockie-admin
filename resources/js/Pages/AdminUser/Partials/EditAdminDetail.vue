@@ -5,6 +5,7 @@ import Modal from '@/Components/Modal.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useCustomToast } from '@/Composables';
 import { useForm } from '@inertiajs/vue3';
+import { wTrans } from 'laravel-vue-i18n';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
@@ -62,7 +63,7 @@ const editDetails = async () => {
 
         showMessage({
             severity: 'success',
-            summary: 'Successfully edited.',
+            summary: wTrans('public.toast.edit_success'),
         });
 
         emit('update:users', response.data);
@@ -107,7 +108,7 @@ watch((editForm), (newValue) => {
 
             <div class="flex flex-col items-start gap-4 self-stretch w-full pr-1 max-h-[calc(100dvh-22rem)] overflow-y-auto scrollbar-webkit scrollbar-thin">
                 <TextInput 
-                    :labelText="'ID'"
+                    :labelText="$t('public.field.id')"
                     :placeholder="'e.g. 00000'"
                     :required="true"
                     :inputName="'role_id'"
@@ -116,8 +117,8 @@ watch((editForm), (newValue) => {
                 />
 
                 <TextInput 
-                    :labelText="'Password'"
-                    :placeholder="'Enter your password here'"
+                    :labelText="$t('public.field.password')"
+                    :placeholder="$t('public.login.password_placeholder')"
                     :required="true"
                     :inputName="'password'"
                     :inputType="'password'"
@@ -126,7 +127,7 @@ watch((editForm), (newValue) => {
                 />
 
                 <TextInput 
-                    :labelText="'Name'"
+                    :labelText="$t('public.field.name')"
                     :placeholder="'e.g. John Doe'"
                     :required="true"
                     :inputName="'full_name'"
@@ -135,7 +136,7 @@ watch((editForm), (newValue) => {
                 />
                         
                 <TextInput
-                    labelText="Email"
+                    :labelText="$t('public.field.email')"
                     :placeholder="'e.g. johndoe@gmail.com'"
                     inputId="email"
                     type="'email'"
@@ -145,7 +146,7 @@ watch((editForm), (newValue) => {
                 />
 
                 <TextInput 
-                    :labelText="'Title'"
+                    :labelText="$t('public.field.title')"
                     :placeholder="'e.g. Accountant'"
                     :required="true"
                     :inputName="'position'"
@@ -162,7 +163,7 @@ watch((editForm), (newValue) => {
                 :size="'lg'"
                 @click="close('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :variant="'primary'"
@@ -170,7 +171,7 @@ watch((editForm), (newValue) => {
                 :size="'lg'"
                 :disabled="editForm.processing || !isFormValid"
             >
-                Save
+                {{ $t('public.action.save') }}
             </Button>
         </div>
     </form>      

@@ -2,6 +2,7 @@
 import { UndetectableIllus } from '@/Components/Icons/illus';
 import { DropdownIcon } from '@/Components/Icons/solid';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+import { wTrans } from 'laravel-vue-i18n';
 import Chart from "primevue/chart";
 import { watch } from 'vue';
 import { onMounted, ref } from 'vue';
@@ -21,16 +22,19 @@ const emit = defineEmits(['applyFilter', 'isLoading']);
 const chartData = ref();
 const chartOptions = ref();
 
-const graphFilter = ref(['This month', 'This year']);
+const graphFilter = ref([
+    { key: 'This month', text: wTrans('public.this_month') }, 
+    { key: 'This year', text: wTrans('public.this_year') }
+]);
 const selected = ref(graphFilter.value[0]);
 const isSelected = (filter) => {
-    return selected.value && filter === selected.value;
+    return selected.value && filter === selected.value.key;
 };
 
 const applyFilter = (filter) => {
     emit('isLoading', true);
-    selected.value = graphFilter.value.find(f => f === filter);
-    emit('applyFilter', selected.value);
+    selected.value = graphFilter.value.find(f => f.key === filter);
+    emit('applyFilter', selected.value.key);
 }
 
 const setChartData = () => {
@@ -278,7 +282,7 @@ onMounted(() => {
 <template>
 <div class="flex flex-col gap-6 w-full h-full">
         <div class="flex justify-between items-center self-stretch whitespace-nowrap w-full">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Member Spending</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.loyalty.member_spending') }}</span>
             <!-- menu for year filter -->
             <Menu as="div" class="relative inline-block text-left">
                 <div>
@@ -286,7 +290,7 @@ onMounted(() => {
                         :disabled="isLoading"
                         :class="{'border-grey-100 opacity-60 pointer-events-none cursor-default': isLoading }"
                         class="inline-flex items-center gap-3 justify-end py-3 pl-4 w-full ">
-                        <span class="text-primary-900 font-base text-md">{{ selected }}</span>
+                        <span class="text-primary-900 font-base text-md">{{ selected.text }}</span>
                         <DropdownIcon class="rotate-180 text-primary-900"/>
                     </MenuButton>
                 </div>
@@ -305,24 +309,24 @@ onMounted(() => {
                         <MenuItem
                             v-slot="{ active }"
                             v-for="filter in graphFilter"
-                            :key="filter"
+                            :key="filter.key"
                         >
                             <button
                                 type="button"
                                 :class="[
-                                    { 'bg-primary-50 flex justify-between': isSelected(filter) },
-                                    { 'bg-white hover:bg-[#fff9f980]': !isSelected(filter) },
+                                    { 'bg-primary-50 flex justify-between': isSelected(filter.key) },
+                                    { 'bg-white hover:bg-[#fff9f980]': !isSelected(filter.key) },
                                     'group flex w-full items-center rounded-md px-6 py-3 text-base text-gray-900',
                                 ]"
-                                @click="applyFilter(filter)"
+                                @click="applyFilter(filter.key)"
                             >
                                 <span
                                     :class="[
-                                        { 'text-primary-900 text-center text-base font-medium': isSelected(filter) },
-                                        { 'text-grey-700 text-center text-base font-normal group-hover:text-primary-800': !isSelected(filter) },
+                                        { 'text-primary-900 text-center text-base font-medium': isSelected(filter.key) },
+                                        { 'text-grey-700 text-center text-base font-normal group-hover:text-primary-800': !isSelected(filter.key) },
                                     ]"
                                 >
-                                    {{ filter }}
+                                    {{ filter.text }}
                                 </span>
                             </button>
                         </MenuItem>
@@ -342,7 +346,7 @@ onMounted(() => {
         <template v-else>
             <div class="flex flex-col w-full h-full justify-center items-center">
                 <UndetectableIllus class="w-44 h-44"/>
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </div>
         </template>
     </div>     

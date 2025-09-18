@@ -133,6 +133,6 @@ export const permissionList = [
 //                                  CONFIG PRINTER
 // ----------------------------------------------------------------------------------
 export const kickCashDrawerOptions = [
-    { text: 'public.configuration.enable_cash_drawer', value: true },
-    { text: 'public.configuration.disable_cash_drawer', value: false },
+    { text: 'public.config.enable_cash_drawer', value: true },
+    { text: 'public.config.disable_cash_drawer', value: false },
 ];

@@ -5,9 +5,10 @@ import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AdminUserList from './Partials/AdminUserList.vue';
 import Toast from '@/Components/Toast.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const home = ref({
-    label: 'Admin User',
+    label: wTrans('public.admin_user_header'),
 });
 
 const props = defineProps({
@@ -30,7 +31,7 @@ const refetchAdminUsers = async () => {
 </script>
 
 <template>
-    <Head title="Admin User" />
+    <Head :title="$t('public.admin_user_header')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -40,7 +41,7 @@ const refetchAdminUsers = async () => {
         <Toast />
 
         <div class="flex flex-col p-6 items-start gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
-            <span class="flex flex-col justify-center text-primary-900 text-md font-medium">Admin User List</span>
+            <span class="flex flex-col justify-center text-primary-900 text-md font-medium">{{ $t('public.admin.admin_user_list') }}</span>
             
             <AdminUserList 
                 :userList="users"

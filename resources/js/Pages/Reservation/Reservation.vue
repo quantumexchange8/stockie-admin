@@ -5,9 +5,10 @@ import Breadcrumb from "@/Components/Breadcrumb.vue";
 import ReservationTable from "./Partials/ReservationTable.vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head } from "@inertiajs/vue3";
+import { wTrans } from "laravel-vue-i18n";
 
 const home = ref({
-    label: 'Reservation',
+    label: wTrans('public.reservation_header'),
 });
 
 const props = defineProps({
@@ -60,7 +61,7 @@ const fetchReservations = async () => {
 </script>
 
 <template>
-    <Head title="Reservation" />
+    <Head :title="$t('public.reservation_header')" />
 
     <AuthenticatedLayout>
         <template #header>

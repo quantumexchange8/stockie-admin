@@ -12,6 +12,7 @@ import Textarea from '@/Components/Textarea.vue';
 import { PromotionsNoVal } from "@/Components/NoDatas/Images";
 import { DeleteIllus } from "@/Components/Icons/illus";
 import DragDropImage from "@/Components/DragDropImage.vue";
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     ActivePromotions: Array
@@ -92,7 +93,7 @@ const submit = () => {
     form.promotion_to = (endDate.getFullYear() < 10 ? '0' + endDate.getFullYear() : endDate.getFullYear()) + '/' + ((endDate.getMonth() + 1) < 10 ? '0' + (endDate.getMonth() + 1) : (endDate.getMonth() + 1)) + '/' + (endDate.getDate()  < 10 ? '0' + endDate.getDate() : endDate.getDate());
 
     const routeURL = actionVal.value === 'edit' ? 'configurations.promotion.edit' : 'configurations.promotion.delete';
-    const toastSummary = actionVal.value === 'edit' ? 'Selected promotion has been edited successfully.' : 'Selected promotion has been deleted successfully.';
+    const toastSummary = actionVal.value === 'edit' ? wTrans('public.toast.edit_promo_success') : wTrans('public.toast.delete_promo_success');
 
     form.post(route(routeURL), {
         preserveScroll: true,
@@ -161,7 +162,7 @@ watch(form, () => {
     <div v-if="ActivePromotions.length === 0" class="flex flex-col items-center justify-center gap-5">
         <PromotionsNoVal />
         <div class="text-primary-900 text-sm font-medium">
-            You haven’t added any promotion yet...
+            {{ $t('public.empty.no_promo') }}
         </div>
     </div>
     <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-5 select-none h-full">
@@ -177,7 +178,7 @@ watch(form, () => {
                 <div class="">
                     <div class="pb-2 px-3 flex flex-col gap-1">
                         <div class="text-gray-500 text-2xs font-medium leading-tight" >
-                            Active Period: {{ formatDate(promotion.promotion_from) }} - {{ formatDate(promotion.promotion_to) }}
+                            {{ `${$t('public.config.active_period')}: ${formatDate(promotion.promotion_from)} - ${formatDate(promotion.promotion_to)}` }}
                         </div>
                         <div class="text-base text-gray-900 font-semibold leading-tight">
                             {{ promotion.title }}
@@ -208,7 +209,7 @@ watch(form, () => {
     </div>
 
     <Modal 
-        :title="'Edit Promotion'"
+        :title="$t('public.config.edit_promo')"
         :maxWidth="'md'" 
         :closeable="true"
         :show="editModal"
@@ -220,7 +221,7 @@ watch(form, () => {
                 <div class="w-full h-56">
                     <DragDropImage
                         inputName="image"
-                        remarks="Suggested image size: 1920 x 1080 pixel"
+                        :remarks="`${$t('public.suggested_image_size')}: 1920 x 1080 ${$t('public.pixel')}`"
                         :modelValue="form.promotion_image"
                         :errorMessage="form.errors.promotion_image"
                         v-model="form.promotion_image"
@@ -229,14 +230,14 @@ watch(form, () => {
                 </div>
                 <div class="flex flex-col gap-4">
                     <div class="space-y-1">
-                        <Label value="Title"/>
+                        <Label :value="$t('public.field.title')"/>
                         <TextInput 
                             :inputName="'title'"
                             v-model="form.title"
                         />
                     </div>
                     <div class="space-y-1">
-                        <Label value="Promotion Active Period"/>
+                        <Label :value="$t('public.field.promotion_active_period')"/>
                         <DateInput
                             :inputName="'promotionPeriod'"
                             :placeholder="'DD/MM/YYYY - DD/MM/YYYY'"
@@ -247,10 +248,10 @@ watch(form, () => {
                         />
                     </div>
                     <div class="space-y-1">
-                        <Label value="Description"/>
+                        <Label :value="$t('public.field.description')"/>
                         <Textarea
                             :inputName="'description'"
-                            :placeholder="'eg: promotion date and time, detail of the promotion and etc'"
+                            :placeholder="`eg: ${$t('public.config.promo_desc_placeholder')}`"
                             :rows="5"
                             class="col-span-full xl:col-span-4"
                             :errorMessage="form.errors.description" 
@@ -265,7 +266,7 @@ watch(form, () => {
                         type="button"
                         @click="closeModal('close')"
                     >
-                        Cancel
+                        {{ $t('public.action.cancel') }}
                     </Button>
                     <Button
                         variant="primary"
@@ -273,7 +274,7 @@ watch(form, () => {
                         :disabled="form.processing || !isFormValid"
                         type="submit"
                     >
-                        Save Changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
             </div>
@@ -303,10 +304,10 @@ watch(form, () => {
                 </div>
                 <div class="flex flex-col gap-1" >
                     <span class="text-primary-900 text-lg font-medium text-center self-stretch" >
-                        Delete promotion?
+                        {{ $t('public.config.delete_promo') }}
                     </span>
                     <span class="text-grey-900 text-center text-base font-medium self-stretch" >
-                        Are you sure you want to delete the selected promotion? This action cannot be undone.
+                        {{ $t('public.config.delete_promo_message') }}
                     </span>
                 </div>
                 <div class="flex item-center gap-3">
@@ -316,7 +317,7 @@ watch(form, () => {
                         type="button"
                         @click="closeDeleteModal()"
                     >
-                        Keep
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="red"
@@ -324,7 +325,7 @@ watch(form, () => {
                         type="submit"
                         :disabled="form.processing"
                     >
-                        Delete
+                        {{ $t('public.action.delete') }}
                     </Button>
                 </div>
             </div>

@@ -21,24 +21,25 @@ import TextInput from "@/Components/TextInput.vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import Dropdown from "@/Components/Dropdown.vue";
 import dayjs from 'dayjs'
+import { wTrans } from "laravel-vue-i18n";
 
 const salesColumn = ref([
-    {field: 'created_at', header: 'Date & Time', width: '18', sortable: true},
-    {field: 'refund_no', header: 'Refund No. ', width: '21.5', sortable: true},
-    {field: 'total_refund_amount', header: 'Total', width: '16', sortable: true},
-    {field: 'customer.full_name', header: 'Customer', width: '23.5', sortable: true},
-    {field: 'status', header: 'Status', width: '16', sortable: true},
+    {field: 'created_at', header: wTrans('public.date_time'), width: '18', sortable: true},
+    {field: 'refund_no', header: wTrans('public.transaction.refund_no'), width: '21.5', sortable: true},
+    {field: 'total_refund_amount', header: wTrans('public.total'), width: '16', sortable: true},
+    {field: 'customer.full_name', header: wTrans('public.customer_header'), width: '23.5', sortable: true},
+    {field: 'status', header: wTrans('public.status'), width: '16', sortable: true},
     {field: 'action', header: '', width: '5', sortable: false},
 ]);
 
 const docsType = [
-    { text: 'Refund Tranaction', value: 'refund_tranaction'},
+    { text: wTrans('public.refund_transaction'), value: 'refund_tranaction'},
 ]
 
 const transactionColumn = ref([
-    {field: 'created_at', header: 'Date', width: '20', sortable: true},
-    {field: 'refund_no', header: 'Refund No.', width: '100%', sortable: true},
-    {field: 'total_refund_amount', header: 'Total', width: '10', sortable: true},
+    {field: 'created_at', header: wTrans('public.date'), width: '20', sortable: true},
+    {field: 'refund_no', header: wTrans('public.transaction.refund_no'), width: '100%', sortable: true},
+    {field: 'total_refund_amount', header: wTrans('public.total'), width: '10', sortable: true},
 ])
 
 const props = defineProps({
@@ -51,9 +52,9 @@ const { formatAmount, formatDateTime } = transactionFormat();
 const detailIsOpen = ref(false);
 const selectedVal = ref(null);
 const tabs = ref([
-    { key: 'Refund Detail', title: 'Refund Detail', disabled: false },
-    { key: 'Refund Product', title: 'Refund Product', disabled: false },
-    { key: 'Refund Method', title: 'Refund Method', disabled: false },
+    { key: 'Refund Detail', title: wTrans('public.transaction.refund_detail'), disabled: false },
+    { key: 'Refund Product', title: wTrans('public.transaction.refund_product'), disabled: false },
+    { key: 'Refund Method', title: wTrans('public.transaction.refund_method'), disabled: false },
 ]);
 const op = ref(null);
 const voideIsOpen = ref(false);
@@ -184,6 +185,14 @@ const voidAction = async () => {
     }
 }
 
+const getTranslatedStatus = (status) => {
+    switch (status) {
+        case 'Pending': return wTrans('public.pending').value;
+        case 'Completed': return wTrans('public.completed').value;
+        case 'Voided': return wTrans('public.voided').value;
+    }
+}
+
 const filteredSaleTransactions = computed(() => {
     if (!searchQuery.value) return saleTransaction.value;
 
@@ -211,7 +220,7 @@ const saleTotalPages = computed(() => {
             <div class="flex items-center gap-3 w-full">
                 <div class="w-full">
                     <SearchBar
-                        placeholder="Search"
+                        :placeholder="$t('public.search')"
                         :showFilter="false"
                         v-model="searchQuery"
                         class="sm:max-w-[309px]"
@@ -227,7 +236,7 @@ const saleTotalPages = computed(() => {
                     />
                 </div> -->
             </div>
-            <div class="flex items-center lg:justify-between xl:justify-center gap-5 lg:w-full xl:max-w-[500px]">
+            <div class="flex items-center lg:justify-between xl:justify-end gap-5 lg:w-full xl:max-w-[500px]">
                 <div class="">
                     <DateInput
                         :inputName="'date_filter'"
@@ -248,7 +257,7 @@ const saleTotalPages = computed(() => {
                         <template #icon>
                             <PlusIcon />
                         </template>
-                        Consolidate
+                        {{ $t('public.action.consolidate') }}
                     </Button>
                 </div>
             </div>
@@ -269,7 +278,7 @@ const saleTotalPages = computed(() => {
                     <span class="text-grey-900 text-sm font-medium">RM {{ formatAmount(row.total_refund_amount) }}</span>
                 </template>
                 <template #customer.full_name="row">
-                    <span class="text-grey-900 text-sm font-medium">{{ row.customer ? row.customer.full_name : 'Guest' }}</span>
+                    <span class="text-grey-900 text-sm font-medium">{{ row.customer ? row.customer.full_name : $t('public.guest') }}</span>
                 </template>
                 <template #status="row">
                     <Tag
@@ -278,7 +287,7 @@ const saleTotalPages = computed(() => {
                                 : row.status === 'Voided' 
                                     ? 'red'
                                     : 'grey'"
-                        :value="row.status"
+                        :value="getTranslatedStatus(row.status)"
                     />
                 </template>
                 <template #action="row">
@@ -293,7 +302,7 @@ const saleTotalPages = computed(() => {
     <Modal
         :show="detailIsOpen"
         @close="closeAction"
-        :title="'Sales transaction detail'"
+        :title="$t('public.transaction.sales_transaction_detail')"
         :maxWidth="'sm'"
     >
         <!-- {{ selectedVal }} -->
@@ -303,36 +312,36 @@ const saleTotalPages = computed(() => {
                     <div>
                         <Tag 
                             :variant="selectedVal.status === 'Completed' ? 'green' : selectedVal.status === 'Voided' ? 'red' : 'grey' "  
-                            :value="selectedVal.status === 'Completed' ? 'Completed' : 'Voided'" 
+                            :value="selectedVal.status === 'Completed' ? $t('public.completed') : $t('public.voided')" 
                         />
                     </div>
                     <!-- <div @click="actionOption($event, row)"><DotVerticleIcon /></div> -->
                 </div>
                 <div class="grid grid-cols-2 gap-5">
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Date & Time</div>
+                        <div class="text-gray-900 text-base">{{ $t("public.date_time") }}</div>
                         <div class="text-gray-900 text-base font-bold">{{ formatDateTime(selectedVal.created_at) }}</div>
                     </div>
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Transaction No.</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.transaction_no') }}</div>
                         <div class="text-gray-900 text-base font-bold">{{ selectedVal.refund_no }}</div>
                     </div>
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Total</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.total') }}</div>
                         <div class="text-gray-900 text-base font-bold">RM {{ formatAmount(selectedVal.total_refund_amount) }}</div>
                     </div>
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Customer</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.customer_header') }}</div>
                         <div class="text-gray-900 text-base font-bold flex items-center gap-2">
                             <div class="max-w-5 max-h-5" v-if="selectedVal.customer">
                                 <img :src="selectedVal.customer.profile_photo ? selectedVal.customer.profile_photo : '' " alt="">
                             </div>
-                            <div>{{ selectedVal.customer ?  selectedVal.customer.full_name : 'Guest'}}</div>
+                            <div>{{ selectedVal.customer ?  selectedVal.customer.full_name : $t('public.guest')}}</div>
                         </div>
                     </div>
                     <div class="flex flex-col gap-1">
-                        <div class="text-gray-900 text-base">Points Given</div>
-                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.customer ? selectedVal.point_earned : 0}} pts</div>
+                        <div class="text-gray-900 text-base">{{ $t('public.transaction.points_given') }}</div>
+                        <div class="text-gray-900 text-base font-bold">{{ selectedVal.customer && selectedVal.payment ? ((selectedVal.total_refund_amount / selectedVal.payment.grand_total) * selectedVal.payment.point_earned).toFixed(2) : '0.00'}} {{ $t('public.pts') }}</div>
                     </div>
                 </div>
             </div>
@@ -366,7 +375,7 @@ const saleTotalPages = computed(() => {
                     variant="tertiary"
                     class="w-fit border-0 hover:bg-primary-50 !justify-start"
                 >
-                    <span class="text-grey-700 font-normal">Print Receipt</span>
+                    <span class="text-grey-700 font-normal">{{ $t('public.print_receipt') }}</span>
                 </Button>
             </div>
         </OverlayPanel>
@@ -387,8 +396,8 @@ const saleTotalPages = computed(() => {
                 </div>
                 <div class="flex flex-col gap-5 pt-6">
                     <div class="flex flex-col gap-1 text-center self-stretch">
-                        <span class="text-primary-900 text-lg font-medium self-stretch">Void this transaction?</span>
-                        <span class="text-grey-900 text-base font-medium self-stretch">Voiding this transaction will remove it from active records and reverse any associated points or balances. This action cannot be undone.</span>
+                        <span class="text-primary-900 text-lg font-medium self-stretch">{{ $t('public.transaction.void_transaction') }}</span>
+                        <span class="text-grey-900 text-base font-medium self-stretch">{{ $t('public.transaction.void_transaction_effect') }}</span>
                     </div>
                 </div>
                 <div class="flex justify-center items-start self-stretch gap-3">
@@ -398,14 +407,14 @@ const saleTotalPages = computed(() => {
                         type="button"
                         @click="closeConfirmmVoid"
                     >
-                        Keep
+                        {{ $t('public.keep') }}
                     </Button>
                     <Button
                         variant="primary"
                         size="lg"
                         @click="voidAction"
                     >
-                        Void
+                        {{ $tChoice('public.void', 0) }}
                     </Button>
                 </div>
             </div>
@@ -416,7 +425,7 @@ const saleTotalPages = computed(() => {
     <Modal
         :show="consolidateIsOpen"
         @close="closeConsolidate"
-        :title="'Submit consolidated invoice'"
+        :title="$t('public.transaction.submit_consolidated_invoice')"
         :maxWidth="'lg'"
     >
         <div class="flex flex-col gap-8">
@@ -424,8 +433,8 @@ const saleTotalPages = computed(() => {
             <div class="w-full flex gap-6">
                 <div class="flex flex-col gap-4 w-full">
                     <div class="flex flex-col gap-1">
-                        <div class="text-grey-950 text-base font-bold">Date Period</div>
-                        <div class="text-grey-950 text-sm">Transaction which has not yet been validated from last month.</div>
+                        <div class="text-grey-950 text-base font-bold">{{ $t('public.date_period') }}</div>
+                        <div class="text-grey-950 text-sm">{{ $t('public.transaction.last_month_transaction_unvalidated') }}</div>
                     </div>
                     <div>
                         <DateInput
@@ -440,8 +449,8 @@ const saleTotalPages = computed(() => {
                 </div>
                 <div class="flex flex-col gap-4 w-full">
                     <div class="flex flex-col gap-1">
-                        <div class="text-grey-950 text-base font-bold">Document Type</div>
-                        <div class="text-grey-950 text-sm">Document type you’ll consolidate.</div>
+                        <div class="text-grey-950 text-base font-bold">{{ $t('public.document_type') }}</div>
+                        <div class="text-grey-950 text-sm">{{ $t('public.transaction.document_type_to_consolidate') }}</div>
                     </div>
                     <div>
                         <Dropdown
@@ -459,8 +468,8 @@ const saleTotalPages = computed(() => {
             <!-- Submittable transaction -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-1">
-                    <div class="text-grey-950 text-base font-bold">Submittable Transaction</div>
-                    <div class="text-grey-950 text-sm">Transaction which has not yet been submitted to LHDN’s MyInvois for validation.</div>
+                    <div class="text-grey-950 text-base font-bold">{{ $t('public.transaction.submittable_transaction') }}<</div>
+                    <div class="text-grey-950 text-sm">{{ $t('public.transaction.transaction_unsubmitted') }}</div>
                 </div>
                 <div class="max-h-[50vh] overflow-y-auto">
                     <Table
@@ -479,8 +488,8 @@ const saleTotalPages = computed(() => {
                     </Table>
                 </div>
                 <div class="w-full flex gap-4">
-                    <Button variant="tertiary">Cancel</Button>
-                    <Button @click="submitConsolidate">Submit</Button>
+                    <Button variant="tertiary">{{ $t('public.action.cancel') }}</Button>
+                    <Button @click="submitConsolidate">{{ $t('public.action.submit') }}</Button>
                 </div>
             </div>
         </div>

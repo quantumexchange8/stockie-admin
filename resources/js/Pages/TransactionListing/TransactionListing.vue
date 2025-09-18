@@ -7,9 +7,10 @@ import TabView from "@/Components/TabView.vue";
 import SaleTransactionListing from './Partials/SaleTransactionListing.vue';
 import RefundTransactionListing from './Partials/RefundTransactionListing.vue';
 import Toast from '@/Components/Toast.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const home = ref({
-    label: 'Transaction Listing',
+    label: wTrans('public.transaction_listing_header'),
 });
 
 const props = defineProps({
@@ -17,14 +18,14 @@ const props = defineProps({
 })
 
 const tabs = ref([
-    { key: 'Sales Transaction', title: 'Sales Transaction', disabled: false },
-    { key: 'Refund Transaction', title: 'Refund Transaction', disabled: false },
+    { key: 'Sales Transaction', title: wTrans('public.sales_transaction'), disabled: false },
+    { key: 'Refund Transaction', title: wTrans('public.refund_transaction'), disabled: false },
 ]);
 
 </script>
 
 <template>
-    <Head title="Transaction Listing" />
+    <Head :title="$t('public.transaction_listing_header')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -37,7 +38,7 @@ const tabs = ref([
 
         <div class="w-full p-6 flex flex-col border border-primary-100 rounded-[5px]">
             <div class="text-primary-900 text-md font-medium">
-                Transaction
+                {{ $t('public.transaction_header') }}
             </div>
             <div class="flex flex-col gap-6">
                 <TabView :tabs="tabs" :selectedTab="props.selectedTab ? props.selectedTab : 0">

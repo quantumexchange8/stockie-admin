@@ -7,14 +7,15 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import ReservationHistoryTable from "./ReservationHistoryTable.vue";
 import { Head } from "@inertiajs/vue3";
 import axios from "axios";
+import { wTrans } from "laravel-vue-i18n";
 
 const home = ref({
-    label: 'Reservation',
+    label: wTrans('public.reservation_header'),
     route: '/reservation'
 });
 
 const items = ref([
-    { label: 'Reservation History' },
+    { label: wTrans('public.reservation.reservation_history') },
 ]);
 
 const props = defineProps({
@@ -56,7 +57,7 @@ const rowType = {
 </script>
 
 <template>
-    <Head title="Reservation History" />
+    <Head :title="$t('public.reservation.reservation_history')" />
     
     <AuthenticatedLayout>
         <template #header>

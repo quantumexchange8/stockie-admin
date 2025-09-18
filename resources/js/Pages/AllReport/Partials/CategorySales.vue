@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { transactionFormat } from '@/Composables';
 import dayjs from 'dayjs';
-import { wTrans } from 'laravel-vue-i18n';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const props = defineProps({
     columns: Array,
@@ -141,7 +141,7 @@ const csvExport = () => {
     const formattedRows = [
         { Category: title, 'Sold': '', 'Gross (RM)': '', 'Disc. (RM)': '', 'Tax (RM)': '', 'Refund (RM)': '', 'Net (RM)': '' },
         { Category: dateRange, 'Sold': '', 'Gross (RM)': '', 'Disc. (RM)': '', 'Tax (RM)': '', 'Refund (RM)': '', 'Net (RM)': '' },
-        { Category: wTrans('public.category').value, 'Sold': wTrans('public.sold').value, 'Gross (RM)': `${wTrans('public.report.gross').value} (RM)`, 'Disc. (RM)': `${wTrans('public.report.disc').value} (RM)`, 'Tax (RM)': `${wTrans('public.report.tax').value} (RM)`, 'Refund (RM)': `${wTrans('public.refunds').value} (RM)`, 'Net (RM)': `${wTrans('public.report.net').value} (RM)` },
+        { Category: wTrans('public.category').value, 'Sold': wTrans('public.sold').value, 'Gross (RM)': `${wTrans('public.report.gross').value} (RM)`, 'Disc. (RM)': `${wTrans('public.report.disc').value} (RM)`, 'Tax (RM)': `${wTrans('public.report.tax').value} (RM)`, 'Refund (RM)': `${wTransChoice('public.refund', 1).value} (RM)`, 'Net (RM)': `${wTrans('public.report.net').value} (RM)` },
         ...props.rows.map(row => ({
             'Category': row.name,
             'Sold': getCategoryTotalQtySold(row),

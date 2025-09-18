@@ -9,9 +9,10 @@ import SalesProductOrder from './Partials/SalesProductOrder.vue';
 import OrderSummary from './Partials/OrderSummary.vue';
 import axios from 'axios';
 import SalesCategory from './Partials/SalesCategory.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const home = ref({
-    label: 'Summary Reports'
+    label: wTrans('public.analysis.summary_report_header')
 });
 
 const props = defineProps({
@@ -118,12 +119,11 @@ onMounted(async()=> {
 
 <template>
 
-    <Head title="Summary Reports" />
+    <Head :title="$t('public.analysis.summary_report_header')" />
 
     <AuthenticatedLayout>
         <template #header>
-            <Breadcrumb :home="home"
-            />
+            <Breadcrumb :home="home" />
         </template>
 
         <Toast />

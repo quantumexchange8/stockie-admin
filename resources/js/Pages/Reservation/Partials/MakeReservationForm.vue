@@ -11,6 +11,7 @@ import { useCustomToast, usePhoneUtils } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
 import UpcomingTableReservationsTable from './UpcomingTableReservationsTable.vue';
 import InputError from '@/Components/InputError.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     customers: Array,
@@ -117,8 +118,8 @@ const submit = () => {
         onSuccess: () => {
             setTimeout(() => {
                 showMessage({ 
-                    severity: 'success',
-                    summary: `Reservation has been made to '${getTableNames(form.table_no)}'.`,
+                    severity: 'success', 
+                    summary: wTrans('public.toast.make_reservation_success', { table_no: getTableNames(form.table_no) }),
                 });
                 form.reset();
             }, 200);
@@ -230,8 +231,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 <div class="w-full grid grid-cols-1 sm:grid-cols-12 items-start self-stretch gap-5">
                     <DateInput 
                         inputName="reservation_date"
-                        labelText="Select date and time"
-                        placeholder="Select Date and Time"
+                        :labelText="$t('public.field.select_date_time')"
+                        :placeholder="$t('public.field.select_date_time')"
                         class="col-span-full sm:col-span-6"
                         :required="true"
                         withTime
@@ -243,8 +244,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <div class="col-span-full sm:col-span-6 flex flex-col items-start">
                         <MultiSelect 
                             inputName="table_no"
-                            labelText="Select table/room"
-                            placeholder="Select"
+                            :labelText="$t('public.field.select_table_room')"
+                            :placeholder="$t('public.search')"
                             required
                             :loading="isLoading"
                             :inputArray="tablesArr"
@@ -252,13 +253,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                             v-model="form.tables"
                             @onChange="updateSelectedTables"
                         />
-                        <InputError :message="'The selected tables are already occupied at the selected date and time.'" v-if="hasConflictingRsvp" />
+                        <InputError :message="$t('public.reservation.conflicted_reservation_message')" v-if="hasConflictingRsvp" />
                     </div>
                     <TextInput
                         inputName="pax"
                         :inputType="'number'"
-                        labelText="No. of pax"
-                        placeholder="Enter here"
+                        :labelText="$t('public.no_of_pax')"
+                        :placeholder="$t('public.enter_here')"
                         class="col-span-full sm:col-span-6"
                         required
                         :errorMessage="form.errors?.pax || ''"
@@ -266,8 +267,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     />
                     <Dropdown
                         inputName="name"
-                        labelText="Select or enter guest name"
-                        placeholder="Select"
+                        :labelText="$t('public.field.select_enter_name')"
+                        :placeholder="$t('public.select')"
                         class="col-span-full sm:col-span-6"
                         required
                         imageOption
@@ -279,7 +280,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <TextInput
                         inputName="phone"
                         :inputType="'number'"
-                        labelText="Contact no."
+                        :labelText="$t('public.field.contact_no')"
                         placeholder="11 1234 5678"
                         iconPosition="left"
                         class="col-span-full sm:col-span-6 [&>div:nth-child(2)>input]:text-left"
@@ -292,7 +293,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     </TextInput>
                     <TextInput
                         inputName="lock_before_minutes"
-                        labelText="Table lock before"
+                        :labelText="$t('public.field.table_lock_before')"
                         placeholder="10"
                         :inputType="'number'"
                         iconPosition="right"
@@ -302,11 +303,11 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         v-model="form.reserved_before_limit"
                         
                     >
-                        <template #prefix>minutes</template>
+                        <template #prefix>{{ $tChoice('public.minute', 1) }}</template>
                     </TextInput>
                     <TextInput
                         inputName="grace_period"
-                        labelText="Grace period"
+                        :labelText="$t('public.field.grace_period')"
                         placeholder="10"
                         :inputType="'number'"
                         iconPosition="right"
@@ -316,7 +317,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                         v-model="form.reserved_limit"
                         
                     >
-                        <template #prefix>minutes</template>
+                        <template #prefix>{{ $tChoice('public.minute', 1) }}</template>
                     </TextInput>
                 </div>
 
@@ -332,13 +333,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     size="lg"
                     @click="unsaved('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     size="lg"
                     :disabled="!isFormValid"
                 >
-                    Done
+                    {{ $t('public.action.done') }}
                 </Button>
             </div>
         </div>

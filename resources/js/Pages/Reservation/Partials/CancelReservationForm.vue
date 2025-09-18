@@ -6,6 +6,7 @@ import Dropdown from '@/Components/Dropdown.vue'
 import { useCustomToast } from '@/Composables/index.js';
 import Textarea from '@/Components/Textarea.vue';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     reservation: Object,
@@ -15,14 +16,14 @@ const page = usePage();
 const userId = computed(() => page.props.auth.user.data.id);
 const isUnsavedChangesOpen = ref(false);
 
-const cancelTypes = ref([
-    { text: 'Change of plan', value: 'Change of plan' },
-    { text: 'Feeling unwell', value: 'Feeling unwell' },
-    { text: 'Bad weather', value: 'Bad weather' },
-    { text: 'Work conflicts', value: 'Work conflicts' },
-    { text: 'Family emergency', value: 'Family emergency' },
-    { text: 'Forgotten reservation', value: 'Forgotten reservation' },
-    { text: 'Others (specify under Remarks)', value: 'Others (specify under Remarks)' },
+const cancelTypes = computed(() => [
+    { text: wTrans('public.reservation.change_plan'), value: 'Change of plan' },
+    { text: wTrans('public.reservation.feeling_unwell'), value: 'Feeling unwell' },
+    { text: wTrans('public.reservation.bad_weather'), value: 'Bad weather' },
+    { text: wTrans('public.reservation.work_conflicts'), value: 'Work conflicts' },
+    { text: wTrans('public.reservation.family_emergency'), value: 'Family emergency' },
+    { text: wTrans('public.reservation.forgotten_reservation'), value: 'Forgotten reservation' },
+    { text: wTrans('public.reservation.other_reason'), value: 'Others (specify under Remarks)' },
 ]);
 
 const { showMessage } = useCustomToast();
@@ -47,7 +48,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: "Selected reservation has been cancelled.",
+                    summary: wTrans('public.toast.cancelled_rsvp_success'),
                 });
                 form.reset();
             }, 200);
@@ -71,15 +72,15 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <div class="flex flex-col gap-y-4 items-start self-stretch">
                 <Dropdown
                     inputName="cancel_type"
-                    labelText="Select Cancellation Reason"
+                    :labelText="$t('public.field.cancel_rsvp_reason')"
                     :inputArray="cancelTypes"
                     :errorMessage="form.errors?.cancel_type || ''"
                     v-model="form.cancel_type"
                 />
                 <Textarea
                     :inputName="'remark'"
-                    :labelText="'Remarks'"
-                    :placeholder="'Enter here'"
+                    :labelText="$t('public.remark')"
+                    :placeholder="$t('public.enter_here')"
                     :rows="5"
                     class="col-span-full xl:col-span-4"
                     :errorMessage="form.errors?.remark || ''" 
@@ -94,13 +95,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     size="lg"
                     @click="unsaved('close')"
                 >
-                    Maybe Later
+                    {{ $t('public.action.maybe_later') }}
                 </Button>
                 <Button
                     size="lg"
                     :disabled="!isFormValid"
                 >
-                    Cancel Reservation
+                    {{ $t('public.action.cancel_reservation') }}
                 </Button>
             </div>
         </div>

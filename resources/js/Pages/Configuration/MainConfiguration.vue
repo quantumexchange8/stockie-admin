@@ -16,9 +16,10 @@ import axios from "axios";
 import ShiftSetting from "./Shift/ShiftSetting.vue";
 import SecuritySettings from "./SecuritySettings/SecuritySettings.vue";
 import PrintingSettings from "./PrintingSettings/PrintingSettings.vue";
+import { wTrans } from "laravel-vue-i18n";
 
 const home = ref({
-    label: 'Configuration',
+    label: wTrans('public.configuration_header'),
 });
 
 const props = defineProps({
@@ -29,15 +30,15 @@ const props = defineProps({
 })
 
 const tabs = ref([
-    { key: 'Discount Settings', title: 'Discount Settings', disabled: false },
-    { key: 'Employee Commission', title: 'Employee Commission', disabled: false },
-    { key: 'Employee Incentive Programme', title: 'Employee Incentive Programme', disabled: false }, 
-    { key: 'Employee Shift Settings', title: 'Employee Shift Settings', disabled: false },
-    { key: 'Promotion', title: 'Promotion', disabled: false },
-    { key: 'Invoice Setting', title: 'Invoice Setting', disabled: false },
-    { key: 'Points Settings', title: 'Points Settings', disabled: false }, 
-    { key: 'Security Settings', title: 'Security Settings', disabled: false }, 
-    { key: 'Printing Settings', title: 'Printing Settings', disabled: false }
+    { key: 'Discount Settings', title: wTrans('public.config.discount_settings'), disabled: false },
+    { key: 'Employee Commission', title: wTrans('public.config.employee_commission'), disabled: false },
+    { key: 'Employee Incentive Programme', title: wTrans('public.config.employee_incentive_programme'), disabled: false }, 
+    { key: 'Employee Shift Settings', title: wTrans('public.config.employee_shift_settings'), disabled: false },
+    { key: 'Promotion', title: wTrans('public.config.promotion'), disabled: false },
+    { key: 'Invoice Setting', title: wTrans('public.config.invoice_settings'), disabled: false },
+    { key: 'Points Settings', title: wTrans('public.config.points_settings'), disabled: false }, 
+    { key: 'Security Settings', title: wTrans('public.config.security_settings'), disabled: false }, 
+    { key: 'Printing Settings', title: wTrans('public.config.printing_settings'), disabled: false }
 ]);
 
 const merchant = ref(props.merchant);
@@ -56,7 +57,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Configuration" />
+    <Head :title="$t('public.configuration_header')" />
 
     <AuthenticatedLayout>
         <template #header>

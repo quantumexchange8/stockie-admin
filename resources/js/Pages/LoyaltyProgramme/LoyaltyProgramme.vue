@@ -8,6 +8,7 @@ import Point from "./Partial/Point.vue";
 import Toast from '@/Components/Toast.vue'
 import { useCustomToast } from '@/Composables/index.js';
 import { Head } from "@inertiajs/vue3";
+import { wTrans, wTransChoice } from "laravel-vue-i18n";
 
 const props = defineProps({
     tiers: Array,
@@ -17,31 +18,31 @@ const props = defineProps({
     logos: Array,
 });
 const home = ref({
-    label: 'Loyalty Programme',
+    label: wTrans('public.loyalty_programme_header'),
 });
 
 const { flashMessage } = useCustomToast();
 
 const tabs = ref([
-    { key: 'Points', title: 'Points', disabled: false },
-    { key: 'Tier', title: 'Tier', disabled: false },
+    { key: 'Points', title: wTransChoice('public.point', 1), disabled: false },
+    { key: 'Tier', title: wTrans('public.tier'), disabled: false },
 ]);
 const tiersRowsPerPage = ref(3);
 const redeemableItemsRowsPerPage = ref(8);
 
 const tiersColumns = ref([
-    { field: "icon", header: "Icon", width: "9", sortable: false },
-    { field: "name", header: "Tier Name", width: "15", sortable: true },
-    { field: "min_amount", header: "Amount spend to achive", width: "24", sortable: true },
-    { field: "merged_reward_type", header: "Entry Rewards", width: "29", sortable: true },
-    { field: "member", header: "Member", width: "13", sortable: true },
+    { field: "icon", header: wTrans('public.loyalty.icon'), width: "9", sortable: false },
+    { field: "name", header: wTrans('public.loyalty.tier_name'), width: "15", sortable: true },
+    { field: "min_amount", header: wTrans('public.loyalty.achieve_spend_amount'), width: "24", sortable: true },
+    { field: "merged_reward_type", header: wTrans('public.entry_rewards'), width: "29", sortable: true },
+    { field: "member", header: wTrans('public.loyalty.member'), width: "13", sortable: true },
     { field: "action", header: "", width: "10", sortable: false, edit: true },
 ]);
 
 const redeemableItemsColumns = ref([
-    { field: "product_name", header: "Product Name", width: "58", sortable: true },
-    { field: "point", header: "Redeemed with", width: "25", sortable: true },
-    { field: "stock_left", header: "Left", width: "17", sortable: true },
+    { field: "product_name", header: wTrans('public.product_name'), width: "58", sortable: true },
+    { field: "point", header: wTrans('public.redeemed_with'), width: "25", sortable: true },
+    { field: "stock_left", header: wTrans('public.left_header'), width: "17", sortable: true },
 ]);
 
 const rowType = {
@@ -70,7 +71,7 @@ onMounted(() => flashMessage());
 </script>
 
 <template>
-    <Head title="Loyalty Programme" />
+    <Head :title="$t('public.loyalty_programme_header')" />
 
     <AuthenticatedLayout>
         <template #header>

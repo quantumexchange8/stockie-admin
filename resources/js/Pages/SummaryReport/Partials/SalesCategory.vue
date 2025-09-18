@@ -4,8 +4,9 @@ import { UndetectableIllus } from '@/Components/Icons/illus';
 import { DropdownIcon, UploadIcon } from '@/Components/Icons/solid';
 import { transactionFormat, useFileExport } from '@/Composables';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+import { wTrans } from 'laravel-vue-i18n';
 import Chart from 'primevue/chart';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
     salesCategory: {
@@ -20,7 +21,7 @@ const props = defineProps({
     isLoading: Boolean,
 })
 const emit = defineEmits(['applySalesFilter', 'isLoading']);
-const chartData = ref();
+// const chartData = ref();
 const chartOptions = ref();
 const categories = ref(props.categories);
 const { exportToCSV } = useFileExport();
@@ -58,24 +59,24 @@ const useYearFilter = (year, category) => {
 
 const csvExport = () => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const salesYear = selectedYear.value || 'Unknown';
-    const salesCategory = selectedCategory.value || 'Unknown category';
-    const title = `Year ${salesYear} Sales in ${salesCategory}`;
+    const salesYear = selectedYear.value || wTrans('public.unknown').value;
+    const salesCategory = selectedCategory.value || wTrans('public.unknown').value;
+    const title = wTrans('public.analysis.sales_in_year', { year: salesYear, category: salesCategory }).value;
 
     // Use consistent keys with empty values, and put title/date range in the first field
     const formattedRows = [
         { Month: title, 'Sales': '' },
-        { Month: 'Month', 'Sales': 'Sales' },
+        { Month: wTrans('public.month_header').value, 'Sales': wTrans('public.sales').value },
         ...props.salesCategory.map((salesCategory, index) => ({
             'Month': months[index], 
             'Sales': `RM ${formatAmount(salesCategory)}`,
         })),
     ];
 
-    exportToCSV(formattedRows, `Year_${salesYear}_Sales in ${salesCategory}`);
+    exportToCSV(formattedRows, title);
 }
 
-const setChartData = () => {
+const chartData = computed(() => {
     const salesData = props.salesCategory.map(value => parseFloat(value).toFixed(2));
     const lastPeriod = props.lastPeriodSales.map(value => parseFloat(value).toFixed(2));
 
@@ -83,7 +84,7 @@ const setChartData = () => {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         datasets: [
             {
-                label: 'Current Period',
+                label: wTrans('public.analysis.current_period').value,
                 data: salesData,
                 fill: true,
                 borderColor: '#7E171B',
@@ -113,7 +114,7 @@ const setChartData = () => {
                 },
             },
             {
-                label: 'Last Period',
+                label: wTrans('public.analysis.last_period').value,
                 data: lastPeriod,
                 fill: false,
                 borderColor: '#FFC7C9',
@@ -129,7 +130,7 @@ const setChartData = () => {
             }
         ]
     };
-};
+});
 
 const setChartOptions = () => {
 
@@ -366,7 +367,7 @@ const customPlugin = {
 };
 
 const updateChart = () => {
-    chartData.value = setChartData();
+    // chartData.value = setChartData();
     chartOptions.value = setChartOptions(); 
 };
 
@@ -386,7 +387,7 @@ onMounted(() => {
 <template>
     <div class="w-full h-full flex flex-col py-6 items-center gap-6 rounded-[5px] border border-solid border-primary-100">
         <div class="flex px-6 justify-between items-center self-stretch">
-            <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">Sales in Category</span>
+            <span class="flex-[1_0_0] text-primary-900 text-md font-semibold">{{ $t('public.analysis.sales_in_category') }}</span>
             <!-- year filter and export here -->
             <div class="flex items-center gap-6">
                 <Menu as="div" class="relative inline-block text-left">
@@ -452,7 +453,7 @@ onMounted(() => {
                     <template #icon >
                         <UploadIcon class="size-4 cursor-pointer flex-shrink-0"/>
                     </template>
-                    Export
+                    {{ $t('public.action.export') }}
                 </Button>
 
                  <!-- <Menu as="div" class="relative inline-block text-left">
@@ -527,11 +528,11 @@ onMounted(() => {
                     <div class="flex justify-center items-start gap-4">
                         <div class="flex items-center gap-2">
                             <div class="size-4 bg-primary-900 rounded-full"></div>
-                            <span class="text-grey-700 text-sm font-medium">Current Period</span>
+                            <span class="text-grey-700 text-sm font-medium">{{ $t('public.analysis.current_period') }}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="size-4 bg-primary-200 rounded-full"></div>
-                            <span class="text-grey-700 text-sm font-medium">Last Period</span>
+                            <span class="text-grey-700 text-sm font-medium">{{ $t('public.analysis.last_period') }}</span>
                         </div>
                     </div>
                 </div>
@@ -552,7 +553,7 @@ onMounted(() => {
         <template v-else>
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </div>
         </template>
     </div>

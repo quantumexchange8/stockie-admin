@@ -16,7 +16,7 @@ import EmployeeEarning from './Partials/EmployeeEarning.vue';
 import { transactionFormat, useCustomToast } from '@/Composables/index.js';
 import ProductSales from './Partials/ProductSales.vue';
 import CategorySales from './Partials/CategorySales.vue';
-import { wTrans } from 'laravel-vue-i18n';
+import { wTrans, wTransChoice } from 'laravel-vue-i18n';
 
 const { showMessage } = useCustomToast();
 const { formatAmount } = transactionFormat();
@@ -39,8 +39,8 @@ const salesSummaryHeader = computed(() => [
     { title: wTrans('public.date'), width: '14' },
     { title: `${wTrans('public.report.gross').value} (RM)`, width: '14' },
     { title: `${wTrans('public.report.tax').value} (RM)`, width: '14' },
-    { title: `${wTrans('public.refunds').value} (RM)`, width: '16' },
-    { title: `${wTrans('public.voids').value} (RM)`, width: '14' },
+    { title: `${wTransChoice('public.refund', 1).value} (RM)`, width: '16' },
+    { title: `${wTransChoice('public.void', 1).value} (RM)`, width: '14' },
     { title: `${wTrans('public.report.disc').value} (RM)`, width: '14' },
     { title: `${wTrans('public.report.net').value} (RM)`, width: '14' },
 ]);
@@ -50,7 +50,7 @@ const paymentMethodHeader = computed(() => [
     { title: wTrans('public.report.no_of_sales'), width: '16' },
     { title: `${wTrans('public.sales').value} (RM)`, width: '16' },
     { title: wTrans('public.report.no_of_refund'), width: '16' },
-    { title: `${wTrans('public.refunds').value} (RM)`, width: '16' },
+    { title: `${wTransChoice('public.refund', 1).value} (RM)`, width: '16' },
     { title: `${wTrans('public.balance').value} (RM)`, width: '16' },
 ]);
 
@@ -60,7 +60,7 @@ const productSalesHeader = computed(() => [
     { title: `${wTrans('public.report.gross').value} (RM)`, width: '14' },
     { title: `${wTrans('public.report.disc').value} (RM)`, width: '14' },
     { title: `${wTrans('public.report.tax').value} (RM)`, width: '14' },
-    { title: `${wTrans('public.refunds').value} (RM)`, width: '15' },
+    { title: `${wTransChoice('public.refund', 1).value} (RM)`, width: '15' },
     { title: `${wTrans('public.report.net').value} (RM)`, width: '14' },
 ]);
 
@@ -70,7 +70,7 @@ const categorySalesHeader = computed(() => [
     { title: `${wTrans('public.report.gross').value} (RM)`, width: '14' },
     { title: `${wTrans('public.report.disc').value} (RM)`, width: '14' },
     { title: `${wTrans('public.report.tax').value} (RM)`, width: '14' },
-    { title: `${wTrans('public.refunds').value} (RM)`, width: '15' },
+    { title: `${wTransChoice('public.refund', 1).value} (RM)`, width: '15' },
     { title: `${wTrans('public.report.net').value} (RM)`, width: '14' },
 ]);
 

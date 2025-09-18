@@ -47,7 +47,7 @@ const submit = async () => {
             form.reset();
             showMessage({ 
                 severity: 'success',
-                summary: 'Printer details has been edited.',
+                summary:  wTrans('public.toast.edit_printer_success'),
             });
         }, 200);
 
@@ -85,7 +85,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 required
                 disabled
                 :inputName="'name'"
-                :labelText="'Printer Name'"
+                :labelText="$t('public.config.printer_name')"
                 :placeholder="'eg: Cashier'"
                 :errorMessage="form.errors.name ? form.errors.name[0] : ''"
                 v-model="form.name"
@@ -93,7 +93,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
             <TextInput
                 required
                 :inputName="'ip_address'"
-                :labelText="'IP'"
+                :labelText="$t('public.config.ip_address')"
                 :placeholder="'eg: 128.999.092'"
                 :errorMessage="form.errors.ip_address ? form.errors.ip_address[0] : ''"
                 v-model="form.ip_address"
@@ -102,7 +102,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 required
                 :inputType="'number'"
                 :inputName="'port_number'"
-                :labelText="'Port'"
+                :labelText="$t('public.config.port_number')"
                 :placeholder="'eg: 9100'"
                 :errorMessage="form.errors.port_number ? form.errors.port_number[0] : ''"
                 v-model="form.temp_port"
@@ -121,7 +121,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :size="'lg'"
                 @click="unsaved('close')"
             >
-                Cancel
+                {{ $t('public.action.cancel') }}
             </Button>
             <Button
                 :type="'submit'"
@@ -129,7 +129,7 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                 :class="{ 'opacity-25': form.processing }"
                 :disabled="!isFormValid || form.processing"
             >
-                Save Changes
+                {{ $t('public.action.save_changes') }}
             </Button>
         </div>
     </form>

@@ -18,6 +18,7 @@ import CheckInGuestForm from './CheckInGuestForm.vue';
 import { usePhoneUtils, useCustomToast, useFileExport } from '@/Composables/index.js';
 import CancelReservationForm from './CancelReservationForm.vue';
 import DelayReservationForm from './DelayReservationForm.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     customers: Array,
@@ -85,7 +86,7 @@ const markReservationAsNoShow = (id) => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: "Reservation has been marked as 'No show'.",
+                    summary: wTrans('public.toast.mark_rsvp_success'),
                 });
             }, 200);
             emit('fetchReservations')
@@ -210,7 +211,7 @@ watch(() => props.rows, (newRows) => {
 <template>
     <div class="flex flex-col p-6 gap-5 rounded-[5px] border border-red-100 overflow-y-auto">
         <div class="flex justify-between items-center">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Upcoming Reservation</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.reservation.upcoming_reservation') }}</span>
             <!-- <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
@@ -263,7 +264,7 @@ watch(() => props.rows, (newRows) => {
         <div class="flex flex-col gap-6">
             <div class="w-full flex gap-5 flex-wrap md:flex-nowrap">
                 <SearchBar 
-                    placeholder="Search"
+                    :placeholder="$t('public.search')"
                     :showFilter="false"
                     v-model="searchQuery"
                 />
@@ -278,7 +279,7 @@ watch(() => props.rows, (newRows) => {
                         :href="route('reservations.viewReservationHistory')"
                     >
                         <template #icon><SquareStickerIcon class="flex-shrink-0 !size-5" /></template>
-                        View Reservation History
+                        {{ $t('public.action.view_reservation_history') }}
                     </Button>
 
                     <Button
@@ -289,7 +290,7 @@ watch(() => props.rows, (newRows) => {
                         @click="openForm('create')"
                     >
                         <template #icon><PlusIcon class="flex-shrink-0 !size-5" /></template>
-                        Add Reservation
+                        {{ $t('public.action.add_reservaion') }}
                     </Button>
                 </div>
             </div>
@@ -310,7 +311,7 @@ watch(() => props.rows, (newRows) => {
                 <template #empty>
                     <div class="flex flex-col gap-5 items-center">
                         <EmptyIllus/>
-                        <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_reservation') }}</span>
                     </div>
                 </template>
                 <template #reservation_no="rows">{{ rows.reservation_no }}</template>
@@ -383,7 +384,7 @@ watch(() => props.rows, (newRows) => {
                             :disabled="reservation.status === 'Checked in'"
                             @click="handleCheckIn(reservation, $event)"
                         >
-                            {{ reservation.status === 'Checked in' ?  'Customer checked-in' : 'Check-in customer' }}
+                            {{ reservation.status === 'Checked in' ? $t('public.customer_checked_in') : $t('public.action.check_in_customer') }}
                         </Button>
                     </div>
                 </div>
@@ -391,7 +392,7 @@ watch(() => props.rows, (newRows) => {
 
             <div class="flex flex-col gap-5 items-center"  v-else>
                 <EmptyIllus />
-                <span class="text-primary-900 text-sm font-medium">You haven't added any reservation yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_reservation') }}</span>
             </div>
     
             <!-- Open reservation action menu -->
@@ -407,7 +408,7 @@ watch(() => props.rows, (newRows) => {
                         :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
                         @click="selectedReservation.status !== 'Checked in' ? markReservationAsNoShow(selectedReservation.id) : ''"
                     >
-                        <p class="text-grey-900 text-base font-medium ">Mark as no show </p>
+                        <p class="text-grey-900 text-base font-medium ">{{ $t('public.action.mark_no_show') }} </p>
                         <NoShowIcon class="flex-shrink-0 size-5 text-primary-900" />
                     </div>
 
@@ -416,7 +417,7 @@ watch(() => props.rows, (newRows) => {
                         :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
                         @click="selectedReservation.status !== 'Checked in' ? openForm('delay', selectedReservation) : ''"
                     >
-                        <p class="text-grey-900 text-base font-medium ">Delay reservation </p>
+                        <p class="text-grey-900 text-base font-medium ">{{ $t('public.action.delay_reservation') }} </p>
                         <HourGlassIcon class="flex-shrink-0 size-5 text-primary-900" />
                     </div>
 
@@ -425,7 +426,7 @@ watch(() => props.rows, (newRows) => {
                         :class="selectedReservation.status !== 'Checked in' ? 'cursor-pointer' : 'cursor-not-allowed bg-grey-50'"
                         @click="selectedReservation.status !== 'Checked in' ? openForm('cancel', selectedReservation) : ''"
                     >
-                        <p class="text-primary-800 text-base font-medium ">Cancel reservation </p>
+                        <p class="text-primary-800 text-base font-medium ">{{ $t('public.action.cancel_reservation') }} </p>
                         <CircledTimesIcon class="flex-shrink-0 size-5 fill-primary-600 text-white" />
                     </div>
                 </div>
@@ -434,7 +435,7 @@ watch(() => props.rows, (newRows) => {
             <!-- Make reservation -->
             <Modal
                 :show="makeReservationFormIsOpen"
-                :title="'Make Reservation'"
+                :title="$t('public.reservation.make_reservation')"
                 :maxWidth="'sm'"
                 @close="closeForm('close')"
             >
@@ -457,7 +458,7 @@ watch(() => props.rows, (newRows) => {
             
             <!-- View reservation detail -->
             <Modal 
-                :title="'Reservation Detail'"
+                :title="$t('public.reservation.reservation_detail')"
                 :show="reservationDetailIsOpen" 
                 :maxWidth="'sm'" 
                 @close="closeForm('close')"
@@ -481,7 +482,7 @@ watch(() => props.rows, (newRows) => {
 
             <!-- Check in customer -->
             <Modal 
-                :title="'Assign Seat'"
+                :title="$t('public.assign_seat')"
                 :show="checkInFormIsOpen" 
                 :maxWidth="'xs'" 
                 @close="closeForm('close')"
@@ -505,7 +506,7 @@ watch(() => props.rows, (newRows) => {
             </Modal>
 
             <Modal 
-                :title="'Delay Reservation'"
+                :title="$t('public.action.delay_reservation')"
                 :show="delayReservationFormIsOpen" 
                 :maxWidth="'2xs'" 
                 @close="closeForm('close')"
@@ -527,7 +528,7 @@ watch(() => props.rows, (newRows) => {
             </Modal>
 
             <Modal 
-                :title="'Cancel Reservation'"
+                :title="$t('public.action.cancel_reservation')"
                 :show="cancelReservationFormIsOpen" 
                 :maxWidth="'sm'" 
                 @close="closeForm('close')"

@@ -70,7 +70,7 @@ watch(() => searchQuery.value, (newValue) => {
     <div class="flex flex-col gap-6">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
             <SearchBar
-                placeholder="Search"
+                :placeholder="$t('public.search')"
                 :showFilter="false"
                 v-model="searchQuery"
                 class="col-span-full md:col-span-7"
@@ -97,7 +97,7 @@ watch(() => searchQuery.value, (newValue) => {
         >
             <template #empty>
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </template>
             <template #redemption_date="row">
                 <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ dayjs(row.redemption_date).format('YYYY/MM/DD') }}</span>

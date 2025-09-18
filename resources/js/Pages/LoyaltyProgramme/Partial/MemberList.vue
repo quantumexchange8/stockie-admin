@@ -4,6 +4,7 @@ import { defineProps } from "vue";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { transactionFormat, useFileExport } from "@/Composables";
 import { UploadIcon } from "@/Components/Icons/solid";
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     id: String,
@@ -31,13 +32,13 @@ const { formatAmount } = transactionFormat();
 const { exportToCSV } = useFileExport();
 
 const csvExport = () => {
-    const tierName = props.tierName || 'Unknown tier';
+    const tierName = props.tierName || wTrans('public.loyalty.unknown_tier').value;
     const mappedMemberList = props.rows.map(member => ({
         'Member name': member.full_name,
         'Joined on': member.joined_on,
         'Total spent': 'RM' + member.total_spending,
     }));
-    exportToCSV(mappedMemberList, `${tierName}_Member List`);
+    exportToCSV(mappedMemberList, `${tierName} ${wTrans('public.loyalty.member_list').value}`);
 }
 
 </script>
@@ -46,13 +47,13 @@ const csvExport = () => {
     <div class="flex flex-col p-6 gap-6 rounded-[5px] border border-red-100 overflow-y-auto">
         <div class="flex gap-[10px]">
             <span class="w-full text-primary-900 text-md font-medium whitespace-nowrap">
-                Member List ({{ rows.length }})
+                {{ `${$t('public.loyalty.member_list')} (${rows.length})` }}
             </span>
             <Menu as="div" class="relative inline-block text-left">
                 <div>
                     <MenuButton
-                        class="inline-flex items-center w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
-                        Export
+                        class="inline-flex items-center whitespace-nowrap w-full justify-center rounded-[5px] gap-2 bg-white border border-primary-800 px-4 py-2 text-sm font-medium text-primary-900 hover:text-primary-800">
+                        {{ $t('public.action.export') }}
                         <UploadIcon class="size-4 cursor-pointer" />
                     </MenuButton>
                 </div>

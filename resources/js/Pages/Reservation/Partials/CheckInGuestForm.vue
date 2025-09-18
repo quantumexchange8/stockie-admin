@@ -7,6 +7,7 @@ import TextInput from '@/Components/TextInput.vue';
 import MultiSelect from '@/Components/MultiSelect.vue';
 import { useCustomToast } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     reservation: Object,
@@ -101,7 +102,7 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: "We've checked in the customers to selected table.",
+                    summary: wTrans('public.toast.check_in_table_success'),
                 });
                 form.reset();
             }, 200);
@@ -166,13 +167,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     </span>
                     <span class="text-primary-900" v-else>{{ newSelectedTables }}</span>
                 </p>
-                <p class="text-primary-800 text-xs font-normal self-stretch" v-if="selectedTables.some((table) => table.disabled === true)">Some selected table/room are currently unavailable, please replace with another one.</p>
+                <p class="text-primary-800 text-xs font-normal self-stretch" v-if="selectedTables.some((table) => table.disabled === true)">{{ $t('public.reservation.unavailable_table_message') }}</p>
                 <div class="flex flex-col gap-6 items-center self-stretch">
                     <MultiSelect 
                         v-if="selectedTables.some((table) => table.disabled === true)"
                         inputName="table_no"
-                        labelText="Select table/room"
-                        placeholder="Select"
+                        :labelText="$t('public.field.select_table_room')"
+                        :placeholder="$t('public.select')"
                         class="col-span-full sm:col-span-6"
                         :loading="isLoading"
                         :inputArray="tablesArr"
@@ -184,15 +185,15 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     <TextInput
                         inputName="pax"
                         :inputType="'number'"
-                        labelText="No. of pax"
-                        placeholder="No. of pax"
+                        :labelText="$t('public.no_of_pax')"
+                        :placeholder="$t('public.no_of_pax')"
                         disabled
                         :errorMessage="form.errors?.pax || ''"
                         v-model="form.pax"
                     />
                     <Dropdown
                         inputName="assigned_waiter"
-                        labelText="Assign Waiter"
+                        :labelText="$t('public.field.assign_waiter')"
                         imageOption
                         :inputArray="waiters"
                         :errorMessage="form.errors?.assigned_waiter || ''"
@@ -208,13 +209,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty));
                     size="lg"
                     @click="unsaved('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     size="lg"
                     :disabled="!isFormValid"
                 >
-                    Check in
+                    {{ $t('public.action.check_in') }}
                 </Button>
             </div>
         </div>

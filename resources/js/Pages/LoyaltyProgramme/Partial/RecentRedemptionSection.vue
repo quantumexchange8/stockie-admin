@@ -25,7 +25,7 @@ const recentRedemptions = computed(() => {
 <template>
     <div class="flex flex-col justify-start items-center gap-6 border border-primary-100 p-6 rounded-[5px]">
         <div class="flex items-center justify-between w-full">
-            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Recent Redemption</span>
+            <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.loyalty.recent_redemption') }}</span>
             <Link :href="route('loyalty-programme.points.showRecentRedemptions')">
                 <CircledArrowHeadRightIcon2  
                     class="w-6 h-6 text-primary-25 [&>rect]:fill-primary-900 [&>rect]:hover:fill-primary-800 hover:cursor-pointer"
@@ -48,10 +48,8 @@ const recentRedemptions = computed(() => {
 
             <div class="w-full flex flex-nowrap items-center gap-6 px-6 py-4 self-stretch bg-primary-50 rounded-[5px]">
                 <div class="flex flex-col items-start justify-center self-stretch gap-2">
-                    <span class="text-primary-900 text-base font-semibold self-stretch">Maximise Customer Delight</span>
-                    <span class="text-grey-500 text-xs font-normal self-stretch">
-                        Introducing more <span class="text-primary-900">enchanting redeemable item</span> to your customer is one of the way to keep them engaged. 
-                    </span>
+                    <span class="text-primary-900 text-base font-semibold self-stretch">{{ $t('public.loyalty.maximise_customer_delight') }}</span>
+                    <span class="text-grey-500 text-xs font-normal self-stretch" v-html="$t('public.loyalty.maximise_customer_delight_message')"></span>
                 </div>
                 <GiftsIllus class="flex-shrink-0 w-40 h-24"/>
             </div>
@@ -59,7 +57,7 @@ const recentRedemptions = computed(() => {
         <template v-else>
             <div class="flex w-full flex-col items-center justify-center gap-5">
                 <UndetectableIllus />
-                <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
             </div>
         </template>
     </div>

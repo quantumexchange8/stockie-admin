@@ -10,6 +10,7 @@ import MemberList from "./MemberList.vue";
 import Toast from '@/Components/Toast.vue'
 import { transactionFormat } from '@/Composables';
 import MemberSpending from "./MemberSpending.vue";
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     id: String,
@@ -24,18 +25,18 @@ const props = defineProps({
 });
 
 const home = ref({
-    label: 'Loyalty Programme',
+    label: wTrans('public.loyalty_programme_header'),
     route: '/loyalty-programme/loyalty-programme'
 });
 
 const items = ref([
-    { label: 'Tier Detail' },
+    { label: wTrans('public.loyalty.tier_detail') },
 ]);
 
 const columns = ref([
-    { field: "full_name", header: "Member name", width: "46", sortable: true },
-    { field: "created_at", header: "Joined on", width: "26", sortable: true },
-    { field: "total_spend", header: "Total spent",  width: "28", sortable: true },
+    { field: "full_name", header: wTrans('public.loyalty.member_name'), width: "46", sortable: true },
+    { field: "created_at", header: wTrans('public.loyalty.joined_on'), width: "26", sortable: true },
+    { field: "total_spend", header: wTrans('public.loyalty.total_spent'),  width: "28", sortable: true },
 ]);
 
 const rowsPerPage = ref(11);
@@ -165,7 +166,7 @@ const showDeleteTierForm = (event) => {
 </script>
 
 <template>
-    <Head title="Tier Detail" />
+    <Head :title="$t('public.loyalty.tier_detail')" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -206,16 +207,16 @@ const showDeleteTierForm = (event) => {
             <!-- tier detail -->
             <div class="w-full col-span-full lg:col-span-5 flex flex-col p-6 gap-6 rounded-[5px] border border-red-100">
                 <div class="flex justify-between">
-                    <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">Tier Detail</span>
+                    <span class="text-md font-medium text-primary-900 whitespace-nowrap w-full">{{ $t('public.loyalty.tier_detail') }}</span>
                     <div class="flex gap-2">
                         <EditIcon
                             class="w-6 h-6 text-primary-900 hover:text-primary-800 cursor-pointer"
                             @click="showEditTierForm"
                         />
-                        <DeleteIcon
+                        <!-- <DeleteIcon
                             class="w-6 h-6 block transition duration-150 ease-in-out text-primary-600 hover:text-primary-700 cursor-pointer"
                             @click="showDeleteTierForm"
-                        />
+                        /> -->
                     </div>
                 </div>
                 <div class="flex gap-4 items-center self-stretch">
@@ -232,7 +233,7 @@ const showDeleteTierForm = (event) => {
                     </div>
                     <div class="flex gap-2">
                         <span class="text-grey-900 text-base font-medium">
-                            Spend
+                            {{ $t('public.loyalty.spend') }}
                         </span>
                         <span class="text-primary-900 text-base font-semibold">
                             RM {{ formatAmount(props.tier.min_amount) }}
@@ -241,7 +242,7 @@ const showDeleteTierForm = (event) => {
                 </div>
 
                 <div class="flex px-3 py-2 justify-between items-center self-stretch rounded-[5px] bg-primary-50" v-if="props.reward.length > 0">
-                    <span class="flex-[1_0_0] text-primary-900 text-sm font-semibold">Entry Reward for this Tier</span>
+                    <span class="flex-[1_0_0] text-primary-900 text-sm font-semibold">{{ $t('public.loyalty.entry_reward_for_this_tier') }}</span>
                 </div>
 
                 <!-- entry reward for this tier -->
@@ -259,27 +260,27 @@ const showDeleteTierForm = (event) => {
                             </template>
                         </div>
                         <div class="flex flex-col justify-center items-start gap-1 flex-[1_0_0]">
-                            <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">Entry Reward for {{ props.tier.name }}</span>
+                            <span class="line-clamp-1 self-stretch text-grey-900 text-ellipsis text-sm font-medium">{{ $t('public.entry_reward_for', { rank_name: props.tier.name }) }}</span>
                             <span class="self-stretch text-primary-950 text-base font-medium">
                                 <template v-if="reward.reward_type === 'Discount (Amount)'">
-                                    RM {{ reward.discount }} Discount
+                                    {{ `RM ${reward.discount} ${$t('public.discount')}` }}
                                 </template>
                                 <template v-if="reward.reward_type === 'Discount (Percentage)'">
-                                    {{ reward.discount }}% Discount
+                                    {{ `${reward.discount}% ${$t('public.discount')}` }}
                                 </template>
                                 <template v-if="reward.reward_type === 'Bonus Point'">
-                                    {{ reward.bonus_point }} Bonus Point
+                                    {{ `${reward.bonus_point} ${$t('public.bonus_point')}` }}
                                 </template>
                                 <template v-if="reward.reward_type === 'Free Item'">
-                                    {{ reward.item_qty }}x {{ reward.item_name }}
+                                    {{ `${reward.item_qty}x ${reward.item_name}` }}
                                 </template>
                             </span>
                             <div class="flex items-center gap-1 self-stretch">
                                 <template v-if="reward.min_purchase === 'active' && (reward.reward_type === 'Discount (Amount)' || reward.reward_type === 'Discount (Percentage)')">
-                                    <span class="text-primary-900 text-2xs font-normal">Min spend: RM {{ reward.min_purchase_amount }}</span>
+                                    <span class="text-primary-900 text-2xs font-normal">{{ `${$t('public.min_spend')}: RM ${reward.min_purchase_amount}` }}</span>
                                 </template>
                                 <template v-if="reward.min_purchase !== 'active' && (reward.reward_type === 'Discount (Percentage)'|| reward.reward_type === 'Discount (Percentage)')">
-                                    <span class="text-primary-900 text-2xs font-normal">No min. spend</span>
+                                    <span class="text-primary-900 text-2xs font-normal">{{ $t('public.no_min_spend') }}</span>
                                 </template>
                             </div>
                             <!-- <template v-if="reward.reward_type !== 'Bonus Point'">
@@ -291,7 +292,7 @@ const showDeleteTierForm = (event) => {
                 
             </div>
             <Modal 
-                :title="'Edit Tier'"
+                :title="$t('public.loyalty.edit_tier')"
                 :show="editTierFormIsOpen" 
                 :maxWidth="'md'" 
                 @close="closeModal('close')"
@@ -323,8 +324,8 @@ const showDeleteTierForm = (event) => {
                 :closeable="true" 
                 :deleteConfirmation="true"
                 :deleteUrl="`/loyalty-programme/tiers/destroy/${props.id}`"
-                :confirmationTitle="'Delete this tier?'"
-                :confirmationMessage="'All the member in this tier will not be entitled to any tier. Are you sure you want to delete this tier?'"
+                :confirmationTitle="$t('public.loyalty.delete_tier')"
+                :confirmationMessage="$t('public.loyalty.delete_tier_message')"
                 @close="closeModal('leave')"
                 v-if="props.id"
             />

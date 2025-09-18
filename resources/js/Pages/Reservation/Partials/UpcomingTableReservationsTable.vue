@@ -19,9 +19,9 @@ watch(() => props.upcomingReservations, (newvalue) => {
 
     <div class="flex flex-col bg-[#FCFCFC]">
         <div class="flex w-full items-center py-2 px-3 gap-3 bg-gray-100">
-            <div class="w-1/3 text-sm text-gray-950 font-semibold">Date</div>
-            <div class="w-1/3 text-sm text-gray-950 font-semibold">Time</div>
-            <div class="w-1/3 text-sm text-gray-950 font-semibold">Table</div>
+            <div class="w-1/3 text-sm text-gray-950 font-semibold">{{ $t('public.date') }}</div>
+            <div class="w-1/3 text-sm text-gray-950 font-semibold">{{ $t('public.time') }}</div>
+            <div class="w-1/3 text-sm text-gray-950 font-semibold">{{ $t('public.table_no') }}</div>
         </div>
         <div class="flex flex-col p-3 gap-4">
             <template v-for="(item, index) in reservations" :key="item.id" >

@@ -15,6 +15,7 @@ import { CheckCircleIcon, CircledArrowHeadRightIcon2, CircledTimesIcon, DefaultI
 import dayjs from 'dayjs';
 import OverlayPanel from '@/Components/OverlayPanel.vue';
 import Button from '@/Components/Button.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     customers: Array,
@@ -69,7 +70,7 @@ const markReservationAsNoShow = (id) => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: "Reservation has been marked as 'No show'.",
+                    summary: wTrans('public.toast.mark_rsvp_success'),
                 });
             }, 200);
             
@@ -257,7 +258,7 @@ const closeOverlay = () => {
                             :disabled="reservation.status === 'Checked in'"
                             @click.stop="openForm('check-in', reservation)"
                         >
-                            {{ reservation.status === 'Checked in' ?  'Customer checked-in' : $t('public.action.check_in_customer') }}
+                            {{ reservation.status === 'Checked in' ? $t('public.customer_checked_in') : $t('public.action.check_in_customer') }}
                         </Button>
                     </div>
                 </div>
@@ -308,7 +309,7 @@ const closeOverlay = () => {
 
     <!-- View reservation detail -->
     <Modal 
-        :title="'Reservation Detail'"
+        :title="$t('public.reservation.reservation_detail')"
         :show="reservationDetailIsOpen" 
         :maxWidth="'sm'" 
         @close="closeForm('close')"
@@ -332,7 +333,7 @@ const closeOverlay = () => {
 
     <!-- Check in customer -->
     <Modal 
-        :title="'Assign Seat'"
+        :title="$t('public.assign_seat')"
         :show="checkInFormIsOpen" 
         :maxWidth="'xs'" 
         @close="closeForm('close')"
@@ -356,7 +357,7 @@ const closeOverlay = () => {
     </Modal>
 
     <Modal 
-        :title="'Delay Reservation'"
+        :title="$t('public.action.delay_reservation')"
         :show="delayReservationFormIsOpen" 
         :maxWidth="'2xs'" 
         @close="closeForm('close')"
@@ -378,7 +379,7 @@ const closeOverlay = () => {
     </Modal>
 
     <Modal 
-        :title="'Cancel Reservation'"
+        :title="$t('public.action.cancel_reservation')"
         :show="cancelReservationFormIsOpen" 
         :maxWidth="'sm'" 
         @close="closeForm('close')"

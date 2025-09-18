@@ -15,6 +15,7 @@ import dayjs from 'dayjs';
 import Modal from '@/Components/Modal.vue';
 import Label from '@/Components/Label.vue';
 import Tooltip from '@/Components/Tooltip.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     merchant: {
@@ -156,8 +157,8 @@ const taxForm = useForm({
 })
 
 const taxesColumn = ([
-    { field: 'name', header: 'Tax type', width: '80', sortable: false},
-    { field: 'value', header: 'Percentage', width: '20', sortable: false}
+    { field: 'name', header: wTrans('public.config.tax_type'), width: '70', sortable: false},
+    { field: 'value', header: wTrans('public.config.percentage'), width: '30', sortable: false}
 ])
 
 const handleImageUpload = () => fileInput.value.click();
@@ -189,7 +190,7 @@ const editDetails = async () => {
         merchant_detail.value = response.data;
         showMessage({
             severity: 'success',
-            summary: 'Merchant details has been edited successfully.'
+            summary: wTrans('public.toast.edit_merchant_details_success')
         });
         emit('refetchMerchant');
         merchantForm.clearErrors();
@@ -211,7 +212,7 @@ const editAddress = async () => {
         merchant_detail.value = response.data;
         showMessage({
             severity: 'success',
-            summary: 'Merchant address has been edited successfully.'
+            summary: wTrans('public.toast.edit_merchant_address_success')
         });
         emit('refetchMerchant');
         addressForm.clearErrors();
@@ -237,7 +238,7 @@ const editCutOffTime = async () => {
         cutOffTimeForm.start_at = dayjs(cutOffTime.value.value).toDate();
         showMessage({
             severity: 'success',
-            summary: 'Cut-off time has been edited successfully.'
+            summary: wTrans('public.toast.edit_cut_off_time_success')
         });
         cutOffTimeForm.clearErrors();
 
@@ -295,7 +296,7 @@ const editTaxes = async () => {
             onSuccess: () => {
                 showMessage({
                     severity: 'success',
-                    summary: `Taxes edited successfully.`
+                    summary: wTrans('public.toast.edit_taxes_success')
                 });
                 getResults();
                 taxForm.reset();
@@ -325,7 +326,7 @@ const copyToClipboard = () => {
 
     showMessage({
         severity: 'success',
-        summary: 'TIN number copied successfully!'
+        summary: wTrans('public.toast.copy_tin_number_success')
     });
 }
 
@@ -345,7 +346,7 @@ onMounted(() => {
         <form novalidate @submit="editDetails" class="w-full">
             <div class="flex flex-col p-6 items-start gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
                 <div class="flex justify-between items-center self-stretch">
-                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">Merchant Detail</span>
+                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">{{ $t('public.config.merchant_detail') }}</span>
                     <Button
                         :type="'button'"
                         :variant="'primary'"
@@ -354,7 +355,7 @@ onMounted(() => {
                         class="!w-fit"
                         @click="editDetails"
                     >
-                        Save changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
                 <div class="flex flex-col items-start gap-6 self-stretch">
@@ -387,7 +388,7 @@ onMounted(() => {
                                     class="!w-fit !h-fit inset-0 absolute hidden justify-self-center self-center group-hover:flex"
                                     @click="removeImage"
                                 >
-                                    Remove
+                                    {{ $t('public.action.remove') }}
                                 </Button>
                             </div>
                             <InputError class="text-nowrap" :message="merchantForm.errors.merchant_image ? merchantForm.errors.merchant_image[0] : ''" />
@@ -398,7 +399,7 @@ onMounted(() => {
                             :type="'button'"
                             @click="handleImageUpload"
                         >
-                            Upload Photo
+                            {{ $t('public.action.upload_photo') }}
                         </Button>
                         <input 
                             type="file" 
@@ -414,7 +415,7 @@ onMounted(() => {
                         <div class="flex items-start gap-4 self-stretch">
                             <TextInput 
                                 :inputName="'merchant_name'"
-                                :labelText="'Merchant Name'"
+                                :labelText="$t('public.config.merchant_name')"
                                 :errorMessage="merchantForm.errors.name ? merchantForm.errors.name[0] : ''"
                                 :required="true"
                                 v-model="merchantForm.name"
@@ -422,7 +423,7 @@ onMounted(() => {
 
                             <TextInput 
                                 :inputName="'tin_no'"
-                                :labelText="'TIN No.'"
+                                :labelText="$t('public.config.tin_no')"
                                 :errorMessage="merchantForm.errors.tin_no ? merchantForm.errors.tin_no[0] : ''"
                                 :required="true"
                                 v-model="merchantForm.tin_no"
@@ -434,7 +435,7 @@ onMounted(() => {
                             <TextInput 
                                 :inputName="'registration_no'"
                                 :inputType="'number'"
-                                :labelText="'Registration No.'"
+                                :labelText="$t('public.config.registration_no')"
                                 :errorMessage="merchantForm.errors.registration_no ? merchantForm.errors.registration_no[0] : ''"
                                 :required="true"
                                 :maxlength="12"
@@ -444,7 +445,7 @@ onMounted(() => {
                             <!-- MSIC code is fixed 5 digits -->
                             <Dropdown 
                                 :inputName="'msic_code'"
-                                :labelText="'MSIC Code'"
+                                :labelText="$t('public.config.msic_code')"
                                 :errorMessage="merchantForm.errors.msic_code ? merchantForm.errors.msic_code[0] : ''"
                                 :required="true"
                                 :filter="true"
@@ -468,7 +469,7 @@ onMounted(() => {
                         <div class="flex items-start gap-4 self-stretch">
                             <div class="flex flex-col items-start gap-1 w-full">
                                 <div class="flex items-start gap-1">
-                                    <span class="text-grey-900 text-xs font-medium">Phone No.</span>
+                                    <span class="text-grey-900 text-xs font-medium">{{ $t('public.field.phone_no') }}</span>
                                     <span class="text-primary-600 text-xs font-medium">*</span>
                                 </div>
                                 <div class="flex items-start gap-2 self-stretch">
@@ -492,7 +493,7 @@ onMounted(() => {
 
                             <TextInput 
                                 :inputName="'email_address'"
-                                :labelText="'Email Address'"
+                                :labelText="$t('public.field.email')"
                                 :errorMessage="merchantForm.errors.email_address ? merchantForm.errors.email_address[0] : ''"
                                 :required="true"
                                 v-model="merchantForm.email_address"
@@ -502,7 +503,7 @@ onMounted(() => {
                         <div class="flex items-start gap-4 self-stretch">
                             <TextInput 
                                 :inputName="'sst_registration_no'"
-                                :labelText="'SST Registration No.'"
+                                :labelText="$t('public.config.sst_registration_no')"
                                 :errorMessage="merchantForm.errors.sst_registration_no ? merchantForm.errors.sst_registration_no[0] : ''"
                                 :required="true"
                                 v-model="merchantForm.sst_registration_no"
@@ -510,7 +511,7 @@ onMounted(() => {
 
                             <TextInput 
                                 :inputName="'business_activity_desc'"
-                                :labelText="'Business Activity Description'"
+                                :labelText="$t('public.config.business_activity_desc')"
                                 :errorMessage="merchantForm.errors.description ? merchantForm.errors.description[0] : ''"
                                 :required="true"
                                 v-model="merchantForm.description"
@@ -520,7 +521,7 @@ onMounted(() => {
                         <div class="flex items-start gap-4 self-stretch">
                             <TextInput 
                                 :inputName="'irbm_client_id'"
-                                :labelText="'IRBM Client ID'"
+                                :labelText="$t('public.config.irbm_client_id')"
                                 :errorMessage="merchantForm.errors.irbm_client_id ? merchantForm.errors.irbm_client_id[0] : ''"
                                 :required="true"
                                 v-model="merchantForm.irbm_client_id"
@@ -528,7 +529,7 @@ onMounted(() => {
 
                             <TextInput 
                                 :inputName="'irbm_client_key'"
-                                :labelText="'IRBM Client Key'"
+                                :labelText="$t('public.config.irbm_client_key')"
                                 :errorMessage="merchantForm.errors.irbm_client_key ? merchantForm.errors.irbm_client_key[0] : ''"
                                 :required="true"
                                 v-model="merchantForm.irbm_client_key"
@@ -539,7 +540,7 @@ onMounted(() => {
                         <div class="flex items-start gap-4 self-stretch">
                             <Dropdown 
                                 :inputName="'classification_code'"
-                                :labelText="'Classification Code'"
+                                :labelText="$t('public.config.classification_code')"
                                 :errorMessage="merchantForm.errors.classification_code ? merchantForm.errors.classification_code[0] : ''"
                                 :required="true"
                                 :withDescription="true"
@@ -561,8 +562,8 @@ onMounted(() => {
                             
                             <div class="flex flex-col items-start">
                                 <!-- <TextInput value="Search TIN" /> -->
-                                <Label :class="'mb-1 text-xs !font-medium text-grey-900'">Search TIN</Label>
-                                <Button @click="openSearchTinModal" type="button" >Search</Button>
+                                <Label :class="'mb-1 text-xs !font-medium text-grey-900'">{{ $t('public.config.search_tin') }}</Label>
+                                <Button @click="openSearchTinModal" type="button" >{{ $t('public.search') }}</Button>
                             </div>
                             
                         </div>
@@ -575,7 +576,7 @@ onMounted(() => {
         <form novalidate @submit="editAddress" class="w-full">
             <div class="flex flex-col p-6 items-start gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
                 <div class="flex justify-between items-center self-stretch">
-                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">Merchant Address</span>
+                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">{{ $t('public.config.merchant_address') }}</span>
                     <Button
                         :type="'button'"
                         :variant="'primary'"
@@ -584,14 +585,14 @@ onMounted(() => {
                         class="!w-fit"
                         @click="editAddress"
                     >
-                        Save changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
                 <div class="flex flex-col items-start gap-3 self-stretch">
                     <div class="flex items-start gap-4 self-stretch">
                         <TextInput 
                             :inputName="'address_line1'"
-                            :labelText="'Address Line 1'"
+                            :labelText="$t('public.config.address_line_1')"
                             :required="true"
                             :errorMessage="addressForm.errors.address_line1 ? addressForm.errors.address_line1[0] : ''"
                             v-model="addressForm.address_line1"
@@ -599,7 +600,7 @@ onMounted(() => {
 
                         <TextInput 
                             :inputName="'address_line2'"
-                            :labelText="'Address Line 2'"
+                            :labelText="$t('public.config.address_line_2')"
                             :required="true"
                             :errorMessage="addressForm.errors.address_line2 ? addressForm.errors.address_line2[0] : ''"
                             v-model="addressForm.address_line2"
@@ -610,7 +611,7 @@ onMounted(() => {
                             <TextInput 
                                 :inputName="'postal_code'"
                                 :inputType="'number'"
-                                :labelText="'Postal Code'"
+                                :labelText="$t('public.config.postal_code')"
                                 :required="true"
                                 :maxlength="5"
                                 :errorMessage="addressForm.errors.postal_code ? addressForm.errors.postal_code[0] : ''"
@@ -619,7 +620,7 @@ onMounted(() => {
 
                             <TextInput 
                                 :inputName="'area'"
-                                :labelText="'Area'"
+                                :labelText="$t('public.config.area')"
                                 :required="true"
                                 :errorMessage="addressForm.errors.area ? addressForm.errors.area[0] : ''"
                                 v-model="addressForm.area"
@@ -628,7 +629,7 @@ onMounted(() => {
 
                         <TextInput 
                             :inputName="'state'"
-                            :labelText="'State'"
+                            :labelText="$t('public.config.state')"
                             :required="true"
                             :errorMessage="addressForm.errors.state ? addressForm.errors.state[0] : ''"
                             v-model="addressForm.state"
@@ -642,7 +643,7 @@ onMounted(() => {
         <form novalidate @submit="editCutOffTime" class="w-full">
             <div class="flex flex-col p-6 items-start gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
                 <div class="flex justify-between items-center self-stretch">
-                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">Cut-off Time</span>
+                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">{{ $t('public.config.cutoff_time') }}</span>
                     <Button
                         :type="'button'"
                         :variant="'primary'"
@@ -651,7 +652,7 @@ onMounted(() => {
                         class="!w-fit"
                         @click="editCutOffTime"
                     >
-                        Save changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
                 <div class="flex flex-col items-start gap-3 self-stretch">
@@ -660,7 +661,7 @@ onMounted(() => {
                             timeOnly
                             required
                             :inputName="'start_at'"
-                            :labelText="'Start At'"
+                            :labelText="$t('public.field.start_at')"
                             :placeholder="'09:00'"
                             class="!w-1/2"
                             :errorMessage="cutOffTimeForm.errors.start_at ? cutOffTimeForm.errors.start_at[0] : ''"
@@ -675,7 +676,7 @@ onMounted(() => {
         <form novalidate @submit="editTaxes" class="w-full" >
             <div class="flex flex-col p-6 items-start gap-6 self-stretch rounded-[5px] border border-solid border-primary-100">
                 <div class="flex justify-between items-center self-stretch">
-                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">Tax Settings</span>
+                    <span class="flex flex-col justify-center flex-[1_0_0] text-primary-900 text-md font-medium h-[25px]">{{ $t('public.config.tax_settings') }}</span>
                     <Button
                         :type="'button'"
                         :variant="'primary'"
@@ -684,7 +685,7 @@ onMounted(() => {
                         class="!w-fit"
                         @click="editTaxes"
                     >
-                        Save changes
+                        {{ $t('public.action.save_changes') }}
                     </Button>
                 </div>
 
@@ -697,15 +698,16 @@ onMounted(() => {
                 >
                     <template #empty>
                         <UndetectableIllus class="size-44" />
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </template>
-                    <!-- <template #name="taxes">
-                        <TextInput 
+                    <template #name="taxes">
+                        <!-- <TextInput 
                             :inputName="'name_' + taxes.id"
                             :errorMessage="taxForm.errors ? taxForm.errors['name.'+taxes.id] : null"
                             v-model="taxForm.taxes.find((tax) => tax.id === taxes.id).name"
-                        />
-                    </template> -->
+                        /> -->
+                        <p class="text-sm font-medium text-grey-900">{{ taxes.name === 'Service Tax' ? $t('public.service_tax') : taxes.name }}</p>
+                    </template>
                     <template #value="taxes">
                         <TextInput 
                             :inputName="'percentage_' + taxes.id"
@@ -722,7 +724,7 @@ onMounted(() => {
                 <template v-else>
                     <div class="flex w-full flex-col items-center justify-center gap-5">
                         <UndetectableIllus />
-                        <span class="text-primary-900 text-sm font-medium">No data can be shown yet...</span>
+                        <span class="text-primary-900 text-sm font-medium">{{ $t('public.empty.no_data') }}</span>
                     </div>
                 </template>
             </div>
@@ -731,7 +733,7 @@ onMounted(() => {
         <Modal
             maxWidth="sm"
             closeable
-            title="Select TIN"
+            :title="$t('public.config.select_tin')"
             :show="isSearchTinOpen"
             @close="closeSearchTinModal"
         >
@@ -739,24 +741,24 @@ onMounted(() => {
                 <div v-if="!searchType" class="flex flex-col md:flex-row gap-5 items-center justify-center">
                     <div  class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'taxpayerName'" >
                         <SearchTaxPayerIcon class="w-10 h-10" />
-                        <div>Search Taxpayer Name</div>
+                        <div>{{ $t('public.config.search_taxpayer_name') }}</div>
                     </div>
                     <div class="w-full border border-gray-400 rounded-md shadow-sm flex flex-col gap-3 items-center p-3 hover:bg-gray-100 cursor-pointer" @click="searchType = 'idType'">
                         <SearchIdTypeIcon class="w-10 h-10" />
-                        <div>Search by ID Type</div>
+                        <div>{{ $t('public.config.search_by_id_type') }}</div>
                     </div>
                 </div>
                 <div class="flex flex-col gap-5" v-if="searchType === 'taxpayerName'">
                     <TextInput 
                         :inputName="'taxpayernameVal'"
-                        :labelText="'Taxpayer Name'"
+                        :labelText="$t('public.config.taxpayer_name')"
                         :required="true"
                         v-model="taxpayernameVal"
                     />
 
                     <div class="flex items-center gap-3">
-                        <Button size="md" variant="secondary" @click="resetTinSearch" >Back</Button>
-                        <Button size="md" @click="searchTin">Search</Button>
+                        <Button size="md" variant="secondary" @click="resetTinSearch" >{{ $t('public.action.back') }}</Button>
+                        <Button size="md" @click="searchTin">{{ $t('public.search') }}</Button>
                     </div>
                     
                 </div>
@@ -765,7 +767,7 @@ onMounted(() => {
                     <div class="flex flex-col gap-3">
                         <Dropdown 
                             :inputName="'idType'"
-                            :labelText="'ID Type'"
+                            :labelText="$t('public.config.id_type')"
                             :required="true"
                             :filter="false"
                             :inputArray="idTypeArr"
@@ -773,15 +775,15 @@ onMounted(() => {
                         />
                         <TextInput 
                             :inputName="'idVal'"
-                            :labelText="'ID Value'"
+                            :labelText="$t('public.config.id_value')"
                             :required="true"
                             :disabled="!idType"
                             v-model="idVal"
                         />
                     </div>
                     <div class="flex items-center gap-3">
-                        <Button size="md" variant="secondary" @click="resetTinSearch" >Back</Button>
-                        <Button size="md" @click="searchTin">Search</Button>
+                        <Button size="md" variant="secondary" @click="resetTinSearch" >{{ $t('public.action.back') }}</Button>
+                        <Button size="md" @click="searchTin">{{ $t('public.search') }}<</Button>
                     </div>
                 </div>
             </div>
@@ -793,7 +795,7 @@ onMounted(() => {
                     </p>
                 </div>
                 <Tooltip
-                    :message="'Copy the TIN number'"
+                    :message="$t('public.config.copy_tin_number')"
                     :position="'top'"
                     class="w-full"
                 >
@@ -803,7 +805,7 @@ onMounted(() => {
                         class="w-full"
                         @click="copyToClipboard" 
                     >
-                        {{ tinNumIsCopied ? 'Copied' : 'Copy' }}
+                        {{ tinNumIsCopied ? $t('public.config.copied') : $t('public.config.copy') }}
                         <span class="pl-1" v-if="tinNumIsCopied"><CheckIcon class="shrink-0 text-green-900" /></span>
                     </Button>
                 </Tooltip>

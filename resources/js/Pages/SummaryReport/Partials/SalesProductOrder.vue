@@ -55,7 +55,7 @@ const formatNumbers = (value) => {
             >
                 <div class="flex flex-col gap-1 self-stretch"> 
                     <GrowthIcon />
-                    <span class="text-primary-100 text-sm font-medium whitespace-nowrap w-full">Total sales</span>
+                    <span class="text-primary-100 text-sm font-medium whitespace-nowrap w-full">{{ $t('public.total_sales') }}</span>
                     <span class="text-primary-25 text-lg font-medium ">RM {{ formatCurrency(props.totalSales) }}</span>
                 </div>
                 <div class="absolute bottom-0 right-0">
@@ -69,7 +69,7 @@ const formatNumbers = (value) => {
             >
                 <BottleIcon />
                 <div class="flex flex-col gap-1 self-stretch">
-                    <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Product Sold</span>
+                    <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ $t('public.analysis.total_product_sold') }}</span>
                     <span class="text-primary-900 text-lg font-medium whitespace-nowrap">{{ formatNumbers(props.totalProducts) }}</span>
                 </div>
             </div>
@@ -80,7 +80,7 @@ const formatNumbers = (value) => {
             >
                 <div class="flex flex-col gap-1 self-stretch">
                     <ListIcon />
-                    <span class="text-grey-900 text-sm font-medium whitespace-nowrap">Total Order</span>
+                    <span class="text-grey-900 text-sm font-medium whitespace-nowrap">{{ $t('public.analysis.total_order') }}</span>
                     <span class="text-primary-900 text-lg font-medium whitespace-nowrap">{{ formatNumbers(props.totalOrders ) }}</span>
                 </div>
             </div>

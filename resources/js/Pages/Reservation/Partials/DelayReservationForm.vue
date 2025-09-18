@@ -6,6 +6,7 @@ import Button from '@/Components/Button.vue';
 import DateInput from '@/Components/Date.vue'
 import { useCustomToast } from '@/Composables/index.js';
 import Modal from '@/Components/Modal.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const props = defineProps({
     reservation: Object,
@@ -38,8 +39,8 @@ const submit = () => {
             setTimeout(() => {
                 showMessage({ 
                     severity: 'success',
-                    summary: `Selected reservation has been delayed to ${dayjs(form.new_reservation_date).format('DD/MM/YYYY HH:mm')}.`,
-                });
+                    summary: wTrans('public.toast.delay_rsvp_success', { date: dayjs(form.new_reservation_date).format('DD/MM/YYYY HH:mm') }),
+                }); 
                 form.reset();
             }, 200);
             emit('fetchReservations');
@@ -59,8 +60,8 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty))
         <div class="flex flex-col gap-6">
             <DateInput 
                 inputName="new_reservation_date"
-                labelText="Delay to"
-                placeholder="Select Date and Time"
+                :labelText="$t('public.reservation.delayed_to')"
+                :placeholder="$t('public.field.select_date_time')"
                 withTime
                 :minDate="new Date()"
                 :errorMessage="form.errors?.new_reservation_date || ''"
@@ -74,13 +75,13 @@ watch(form, (newValue) => emit('isDirty', newValue.isDirty))
                     size="lg"
                     @click="unsaved('close')"
                 >
-                    Cancel
+                    {{ $t('public.action.cancel') }}
                 </Button>
                 <Button
                     size="lg"
                     :disabled="!isFormValid"
                 >
-                    Save
+                    {{ $t('public.action.save') }}
                 </Button>
             </div>
         </div>

@@ -7,9 +7,10 @@ import TabView from "@/Components/TabView.vue";
 import Toast from "@/Components/Toast.vue";
 import SalesTransaction from './Partials/SalesTransaction.vue';
 import RefundTransaction from './Partials/RefundTransaction.vue';
+import { wTrans } from 'laravel-vue-i18n';
 
 const home = ref({
-    label: 'e-Invoice Submission',
+    label: wTrans('public.einvoice_submission_header'),
 });
 
 const props = defineProps({
@@ -17,7 +18,7 @@ const props = defineProps({
 })
 
 const tabs = ref([
-    { key: 'Sales Transaction', title: 'Sales Transaction', disabled: false },
+    { key: 'Sales Transaction', title: wTrans('public.sales_transaction'), disabled: false },
     // { key: 'Refund Transaction', title: 'Refund Transaction', disabled: false },
 ]);
 
@@ -26,7 +27,7 @@ const tabs = ref([
 </script>
 
 <template>
-    <Head title="e-Invoice Submission" />
+    <Head :title="$t('public.einvoice_submission_header')" />
 
     <AuthenticatedLayout>
         <template #header>
